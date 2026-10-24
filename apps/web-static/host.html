@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Re:Cooplay ホスト</title>
+<style>
+  :root { --bg:#0f1216; --panel:#1a1f26; --line:#2b323c; --text:#e8ecf1; --muted:#8b95a3; --ok:#3fb950; --ng:#f85149; --warn:#d29922; --accent:#4c8dff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui, sans-serif; padding:20px; }
+  h1 { font-size:20px; margin:0 0 16px; display:flex; align-items:center; gap:12px; }
+  h1 small { color:var(--muted); font-weight:400; font-size:13px; }
+  h2 { font-size:14px; color:var(--muted); margin:0 0 10px; font-weight:600; }
+  .grid { display:grid; grid-template-columns:minmax(280px, 380px) 1fr; gap:20px; }
+  @media (max-width:900px) { .grid { grid-template-columns:1fr; } }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; }
+  .qrs { display:flex; flex-direction:column; gap:16px; }
+  .qr { background:#fff; border-radius:8px; padding:8px; width:220px; }
+  .qr svg { display:block; width:100%; height:auto; }
+  .qrbox { display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
+  .qrbox .label { font-size:13px; color:var(--muted); }
+  .qrbox .url { font-family:ui-monospace, monospace; font-size:15px; }
+  .hint { font-size:12px; color:var(--muted); line-height:1.6; }
+  .warnbox { border:1px solid var(--warn); color:var(--warn); border-radius:8px; padding:8px 10px; font-size:12px; }
+  select, button { background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:13px; }
+  .slots { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:20px; }
+  .slot { border:1px solid var(--line); border-radius:10px; padding:12px; min-height:170px; }
+  .slot.on { border-color:var(--ok); }
+  .slot.off { border-color:var(--ng); }
+  .slot .head { display:flex; align-items:baseline; gap:8px; }
+  .slot .name { font-size:26px; font-weight:800; }
+  .slot .role { color:var(--muted); font-size:12px; }
+  .slot .st { margin-left:auto; font-size:12px; }
+  .slot.on .st { color:var(--ok); } .slot.off .st { color:var(--ng); }
+  .slot dl { display:grid; grid-template-columns:auto 1fr; gap:2px 10px; font-size:12px; margin:10px 0 0; }
+  .slot dt { color:var(--muted); } .slot dd { margin:0; font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .keys { display:flex; gap:4px; flex-wrap:wrap; margin-top:8px; min-height:24px; }
+  .keys span { background:var(--accent); border-radius:6px; padding:2px 8px; font-size:12px; font-weight:700; }
+  .flash { animation:flash .3s; }
+  @keyframes flash { from { background:#4c8dff33; } to { background:transparent; } }
+  #log { height:340px; overflow:auto; font-family:ui-monospace, monospace; font-size:12px; line-height:1.5; background:var(--bg); border-radius:8px; padding:8px; }
+  #log .disconnect, #log .reject_full { color:var(--ng); } #log .join, #log .reconnect { color:var(--ok); }
+  .toolbar { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+  .toolbar label { font-size:12px; color:var(--muted); display:flex; gap:4px; align-items:center; }
+  #conn { font-size:12px; }
+  /* キーボード反映テスト */
+  #kb { margin-bottom:20px; }
+  #kb.focus { border-color:var(--accent); }
+  .kbbar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:12px; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button { border:none; border-radius:0; padding:6px 12px; }
+  .seg button.sel { background:var(--accent); }
+  .pill { font-size:12px; padding:3px 10px; border-radius:999px; background:var(--bg); }
+  .pill.ok { color:var(--ok); } .pill.ng { color:var(--ng); } .pill.warn { color:var(--warn); }
+  .kgrid { display:grid; grid-template-columns:repeat(8, 1fr); gap:8px; }
+  @media (max-width:1100px) { .kgrid { grid-template-columns:repeat(4, 1fr); } }
+  .kcell { border:1px solid var(--line); border-radius:10px; padding:8px; text-align:center; }
+  .kcell .big { font-size:20px; font-weight:800; }
+  .kcell .from { font-size:11px; color:var(--muted); }
+  .lights { display:flex; justify-content:center; gap:6px; margin-top:6px; }
+  .lights i { width:14px; height:14px; border-radius:50%; background:var(--line); display:inline-block; }
+  .lights i.phone.on { background:var(--warn); } .lights i.inj.on { background:var(--accent); } .lights i.recv.on { background:var(--ok); }
+  .legend { font-size:11px; color:var(--muted); display:flex; gap:12px; margin-top:8px; }
+  .legend i { width:10px; height:10px; border-radius:50%; display:inline-block; vertical-align:middle; margin-right:4px; }
+  .kstats { display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin-top:12px; font-size:12px; color:var(--muted); }
+  .kstats div { background:var(--bg); border-radius:8px; padding:6px 8px; }
+  .kstats b { display:block; color:var(--text); font-size:16px; font-variant-numeric:tabular-nums; }
+  #klog { height:140px; overflow:auto; font-family:ui-monospace, monospace; font-size:12px; line-height:1.5; background:var(--bg); border-radius:8px; padding:8px; margin-top:12px; }
+  #klog .miss { color:var(--ng); } #klog .phys { color:var(--muted); }
+</style>
+</head>
+<body>
+<h1>Re:Cooplay 通信テスト <small id="conn">サーバー接続中…</small></h1>
+
+<div class="grid">
+  <div class="panel qrs">
+    <div>
+      <h2>① Wi-Fi に接続</h2>
+      <div id="wifi"></div>
+    </div>
+    <div>
+      <h2>② 参加用 URL を開く</h2>
+      <div style="margin-bottom:8px"><select id="ifsel"></select> <button id="reload">IP 再取得</button></div>
+      <div id="urlqr"></div>
+    </div>
+    <div class="hint">
+      スマホが「インターネットなし」と表示しても Wi-Fi 接続を維持してください。<br>
+      Android はモバイルデータを OFF にすると確実です（自動でモバイル回線に逃げるのを防ぐ）。
+    </div>
+  </div>
+
+  <div>
+    <div class="panel" id="ctrl" style="margin-bottom:20px">
+      <div class="kbbar">
+        <h2 style="margin:0">進行・入力注入</h2>
+        <a href="/game" target="_blank" style="color:var(--accent); font-size:13px; margin-left:auto">疑似ゲーム画面を開く ↗</a>
+      </div>
+      <div class="kbbar">
+        <span style="font-size:12px; color:var(--muted)">進行</span>
+        <span class="pill" id="phaseState">-</span>
+        <div class="seg" id="phaseSeg">
+          <button data-phase="lobby">ロビー</button><button data-phase="coop">協力プレイ</button><button data-phase="paused">一時停止</button>
+        </div>
+        <span style="font-size:12px; color:var(--muted)">START に必要な人数</span>
+        <div class="seg" id="reqSeg"><button data-req="1">1</button><button data-req="2">2</button><button data-req="3">3</button></div>
+        <label style="font-size:12px; color:var(--muted); display:flex; gap:4px; align-items:center"><input type="checkbox" id="autoResume"> 切断から戻ったら自動で再開</label>
+      </div>
+      <div class="kbbar" style="margin-bottom:0">
+        <span style="font-size:12px; color:var(--muted)">注入</span>
+        <div class="seg" id="modeSeg">
+          <button data-mode="off">OFF</button>
+          <button data-mode="test">テスト（疑似ゲーム画面を選択中のみ）</button>
+          <button data-mode="on">常時ON（実ゲーム用）</button>
+        </div>
+        <span class="pill" id="injState">-</span>
+      </div>
+    </div>
+    <div class="slots" id="slots"></div>
+    <div class="panel">
+      <div class="toolbar">
+        <h2 style="margin:0">ログ</h2>
+        <button id="clear">クリア</button>
+        <button id="reset" style="margin-left:auto">スロットをリセット</button>
+      </div>
+      <div id="log"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  let info = null;
+
+  async function loadInfo() {
+    info = await (await fetch('/api/info')).json();
+    const sel = $('ifsel');
+    const prev = sel.value;
+    sel.innerHTML = '';
+    info.urls.forEach((u, i) => {
+      const o = document.createElement('option');
+      o.value = i;
+      o.textContent = `${u.address} (${u.name}${u.hotspot ? ' / ホットスポット' : ''})`;
+      sel.appendChild(o);
+    });
+    if (prev && Number(prev) < info.urls.length) sel.value = prev;
+    renderUrl();
+
+    $('wifi').innerHTML = info.wifi
+      ? `<div class="qrbox"><div class="qr">${info.wifi.qr}</div><div class="label">ネットワーク名</div><div class="url">${escapeHtml(info.wifi.ssid)}</div></div>`
+      : `<div class="hint">config.json に SSID / パスワードを書くと Wi-Fi 接続用 QR を表示します。<br>未設定の場合は Windows の「設定 → ネットワークとインターネット → モバイル ホットスポット」に表示される名前とパスワードで手動接続してください。</div>`;
+  }
+
+  function renderUrl() {
+    const u = info?.urls[$('ifsel').value];
+    if (!u) {
+      $('urlqr').innerHTML = '<div class="warnbox">ネットワークが見つかりません。モバイル ホットスポットを ON にして「IP 再取得」を押してください。</div>';
+      return;
+    }
+    $('urlqr').innerHTML =
+      (u.hotspot ? '' : '<div class="warnbox" style="margin-bottom:8px">選択中はホットスポット (192.168.137.x) ではありません。ホットスポットを ON にして「IP 再取得」を押してください。</div>') +
+      `<div class="qrbox"><div class="qr">${u.qr}</div><div class="url">${u.url}</div></div>`;
+  }
+
+  $('ifsel').addEventListener('change', renderUrl);
+  $('reload').addEventListener('click', loadInfo);
+
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
+
+  // ---- スロット表示 ----
+  function ago(t, now) { return t ? ((now - t) / 1000).toFixed(1) + 's前' : '-'; }
+  function device(ua) {
+    if (!ua) return '-';
+    if (/iPhone|iPad/.test(ua)) return 'iOS';
+    const m = ua.match(/Android [\d.]+; ([^;)]+)/);
+    return m ? `Android ${m[1]}` : /Android/.test(ua) ? 'Android' : ua.slice(0, 30);
+  }
+
+  function renderSlots(slots, now) {
+    $('slots').innerHTML = slots.map((s) => {
+      if (!s.assigned) {
+        return `<div class="slot" id="slot-${s.name}"><div class="head"><span class="name">${s.name}</span><span class="role">${s.role}</span><span class="st" style="color:var(--muted)">空き</span></div></div>`;
+      }
+      const c = s.clientStats;
+      return `<div class="slot ${s.connected ? 'on' : 'off'}" id="slot-${s.name}">
+        <div class="head"><span class="name">${s.name}</span><span class="role">${s.role}</span><span class="st">${s.connected ? '接続中' : '切断'}</span></div>
+        <dl>
+          <dt>端末</dt><dd>${escapeHtml(device(s.ua))} / ${s.ip || '-'}</dd>
+          <dt>最終受信</dt><dd>${ago(s.lastSeen, now)}</dd>
+          <dt>再接続</dt><dd>${s.reconnects}回</dd>
+          <dt>受信</dt><dd>${s.events}件 (欠落 ${s.lost} / 順序逆転 ${s.outOfOrder})</dd>
+          <dt>RTT</dt><dd>${c ? `平均 ${c.avg} / p95 ${c.p95} / 最大 ${c.max} ms` : '-'}</dd>
+          <dt>未ACK</dt><dd>${c ? c.unacked : '-'}</dd>
+          <dt>経路</dt><dd>${{ open: 'WebRTC+WS', connecting: 'RTC接続中', failed: 'WSのみ（RTC失敗）', none: 'WSのみ' }[s.rtcState] || '-'}</dd>
+          <dt>先着</dt><dd>RTC ${s.via?.rtc ?? 0} / WS ${s.via?.ws ?? 0}</dd>
+          <dt>RTC遅延</dt><dd>${c?.rtc ? `平均 ${c.rtc.avg} / p95 ${c.rtc.p95} / 最大 ${c.rtc.max} ms` : '-'}</dd>
+          <dt>視点欠落</dt><dd>${s.lookLost ?? 0}件（累積値で補完）</dd>
+        </dl>
+        <div class="keys">${s.pressed.map((k) => `<span>${escapeHtml(k)}</span>`).join('')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ---- ログ ----
+  function addLog(entry) {
+    if (entry.burst) return;
+    const el = document.createElement('div');
+    el.className = entry.kind;
+    const time = new Date(entry.t).toLocaleTimeString('ja-JP', { hour12: false }) + '.' + String(entry.t % 1000).padStart(3, '0');
+    const { t, kind, ...rest } = entry;
+    el.textContent = `${time}  ${kind.padEnd(11)} ${Object.entries(rest).map(([k, v]) => `${k}=${Array.isArray(v) ? '[' + v.join(',') + ']' : v}`).join(' ')}`;
+    const log = $('log');
+    const stick = log.scrollTop + log.clientHeight >= log.scrollHeight - 10;
+    log.appendChild(el);
+    while (log.childElementCount > 1000) log.firstChild.remove();
+    if (stick) log.scrollTop = log.scrollHeight;
+  }
+  $('clear').addEventListener('click', () => { $('log').innerHTML = ''; });
+
+  // ---- 進行・注入の操作 ----
+  function renderCtrl(game, inj) {
+    if (game) {
+      const label = { lobby: 'ロビー（ホストのリモコン）', coop: '協力プレイ中', paused: '一時停止中' }[game.phase];
+      $('phaseState').textContent = label + (game.reason ? '（' + game.reason + '）' : '') + ` / 接続 ${game.connected.length}人`;
+      $('phaseState').className = 'pill ' + (game.phase === 'coop' ? 'ok' : game.phase === 'paused' ? 'warn' : '');
+      document.querySelectorAll('#phaseSeg button').forEach((el) => el.classList.toggle('sel', el.dataset.phase === game.phase));
+      document.querySelectorAll('#reqSeg button').forEach((el) => el.classList.toggle('sel', Number(el.dataset.req) === game.required));
+      $('autoResume').checked = !!game.autoResume;
+    }
+    if (inj) {
+      $('injState').textContent = !inj.available ? `注入不可: ${inj.error}` : inj.active ? '注入: 有効' : inj.mode === 'off' ? '注入: OFF' : '注入: 停止中（疑似ゲーム画面が非選択）';
+      $('injState').className = 'pill ' + (inj.active ? 'ok' : inj.mode === 'off' ? '' : 'warn');
+      document.querySelectorAll('#modeSeg button').forEach((el) => el.classList.toggle('sel', el.dataset.mode === inj.mode));
+    }
+  }
+  document.querySelectorAll('#phaseSeg button').forEach((el) => el.addEventListener('click', () => ws?.send(JSON.stringify({ type: 'phase', phase: el.dataset.phase }))));
+  document.querySelectorAll('#reqSeg button').forEach((el) => el.addEventListener('click', () => ws?.send(JSON.stringify({ type: 'required', required: Number(el.dataset.req) }))));
+  $('autoResume').addEventListener('change', (e) => ws?.send(JSON.stringify({ type: 'auto_resume', on: e.target.checked })));
+  document.querySelectorAll('#modeSeg button').forEach((el) => el.addEventListener('click', () => {
+    if (el.dataset.mode === 'on' && !confirm('常時ONにすると、スマホの入力が「今選択されているウィンドウ」に送られます。よろしいですか？')) return;
+    ws?.send(JSON.stringify({ type: 'inject_mode', mode: el.dataset.mode }));
+  }));
+
+  // ---- WebSocket (モニター) ----
+  let ws;
+  function connect() {
+    ws = new WebSocket(`ws://${location.host}/ws`);
+    ws.onopen = () => { $('conn').textContent = 'サーバー接続OK'; $('conn').style.color = 'var(--ok)'; ws.send(JSON.stringify({ type: 'monitor', page: 'host' })); };
+    ws.onclose = () => { $('conn').textContent = 'サーバー切断 — 再接続中'; $('conn').style.color = 'var(--ng)'; setTimeout(connect, 1000); };
+    ws.onmessage = (ev) => {
+      const msg = JSON.parse(ev.data);
+      if (msg.type === 'state') { renderSlots(msg.slots, msg.now); renderCtrl(msg.game, msg.inject); }
+      else if (msg.type === 'game') renderCtrl(msg.game, null);
+      else if (msg.type === 'log') addLog(msg.entry);
+    };
+  }
+  $('reset').addEventListener('click', () => {
+    if (confirm('全スロットを解放します。接続中のスマホは切断されます。')) ws?.send(JSON.stringify({ type: 'reset' }));
+  });
+
+  loadInfo();
+  setInterval(() => { if (!info?.urls.some((u) => u.hotspot)) loadInfo(); }, 5000);
+  connect();
+})();
+</script>
+</body>
+</html>
