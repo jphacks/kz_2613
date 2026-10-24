@@ -349,3 +349,14 @@
 - `allow-firewall.ps1` にUTF-8のBOMを付けた（Windows PowerShell 5.1が日本語を正しく読むため）。`-Program .\recooplay-host.exe` で配布フォルダからも使える。
 - 検証：`cargo build --release --locked`（host-rs・desktop）成功。`package.ps1` で5.7MBのzipを作成した。`%TEMP%` に展開し、リポジトリの外から `RECOOPLAY_DRY_RUN=1`・`PORT=18600` で `recooplay-desktop.exe` を起動した。展開先の `recooplay-host.exe` が起動し、`/`・`/app`・`/api/info` が200を返した。展開先の `logs/` にログ（`hotkey ok`・`server_start`・`shutdown`）が残った。ウィンドウを閉じると両方のプロセスが終了した。`allow-firewall.ps1` の構文をPowerShell 5.1のパーサーで確認した（実行はしていない）。
 - **未検証：** 開発環境のないWindows 11での起動、ファイアウォールの許可手順の実施、スマホ3台の参加、SmartScreenの警告（署名なし）。
+
+## 2026-10-25 — #5 明示操作でのみ実行するWindows入力プローブ（Claude Code）
+- `apps/host-rs/src/bin/recooplay-input-probe.rs` を追加した。ホストとは別の実行ファイル `recooplay-input-probe.exe` で、`focus.rs`・`input.rs` を共有する。キー（W・Space・Shift・Ctrl+W）、クリック・長押し・ホイール、相対マウスを順に送る（#6〜#8 の実機確認用）。
+  - 手動のarming：標準入力に `ARM` を入れるまで送らない（PowerShellのパイプが付けるBOMは無視する）。
+  - 入力先の確認：送る直前に毎回、前面がMinecraftか確かめる。外れたら全解放して待ち、30秒で中止する。
+  - 独立した緊急停止：`Ctrl+Alt+F12`（`GetAsyncKeyState` を10msごとに確認）、`Ctrl+C`・ウィンドウを閉じる（`SetConsoleCtrlHandler` の中で全解放）。
+  - finallyの全解放：完走・中止・停止・panicのどれでも、押しているものを離してから終わる。
+  - `--mock`：OSに送らない（`RECOOPLAY_DRY_RUN` と同じ）。前面の判定と停止を標準入力で差し替える。
+- `windows` crate に `Win32_System_Console` を追加した（Cargo.lock は変わらない）。CIに `input-probe-sim` を追加した。
+- 検証：`cargo build --release --locked` 成功。`node scripts/sim/input-probe-sim.mjs` を3回連続で **4/4合格**（ARM以外・入力が閉じたときは送らない、完走で押下が残らない、W押下中に入力先から外れる→全解放・外れている間は送らない・戻ると再開、長押し中のstop→全解放・終了コード2・停止後は送らない）。実モード（`--mock` なし、Minecraftは起動していない）で `ARM` を入れると、送信0件のまま入力先を30秒待ち、終了コード3で中止した。
+- **未検証：** Minecraft実機での各手順（#6〜#8）、実際の `Ctrl+Alt+F12`・`Ctrl+C`・ウィンドウを閉じたときの全解放（OS入力の自動送信は行っていない）。
