@@ -67,6 +67,15 @@ test('進行: 一時停止の理由を表示する', () => {
   assert.match(p('emergency stop'), /緊急停止/);
 });
 
+test('進行: テストモードをMinecraftへの入力中と誤表示しない', () => {
+  const coop = { ...game(['P1', 'P2', 'P3']), phase: 'coop' };
+  for (const active of [false, true]) {
+    const view = phaseView(coop, { mode: 'test', active });
+    assert.match(view.detail, /疑似ゲーム画面/);
+    assert.doesNotMatch(view.detail, /Minecraft に操作を送っています/);
+  }
+});
+
 test('リモコン: 右・Enter で次、左・Esc で前の画面へ。端で止まる', () => {
   let ui = { screen: 'join', game: null };
   ui = navigate(ui, 'RIGHT');
