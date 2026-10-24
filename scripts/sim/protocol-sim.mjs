@@ -544,6 +544,25 @@ async function main() {
       await mon.waitFor((m) => m.type === 'state' && m.inject.mode === 'on', { what: 'inject on' });
     }, { rustOnly: true });
 
+    await check('緊急停止: 切断待ちのpaused中でも自動復帰を解除し、全員戻っても再開しない', async () => {
+      let from = p1.mark();
+      mon.send({ type: 'auto_resume', on: true });
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', from);
+      from = p1.mark();
+      p2.close();
+      await p1.waitFor(m => m.type === 'game' && m.game.phase === 'paused' && /disconnected$/.test(m.game.reason || ''), { from });
+      from = p1.mark();
+      host.child.stdin.write('stop\n');
+      const stopped = await p1.waitFor(m => m.type === 'game' && m.game.reason === 'emergency stop', { from });
+      assert(stopped.game.autoResumeUntil === 0, '自動復帰の期限が残っている');
+      from = p1.mark();
+      p2 = await join('P2');
+      await welcome(p2);
+      await sleep(350);
+      assert(!p1.msgs.slice(from).some(m => m.type === 'game' && m.game.phase === 'coop'), '緊急停止後に自動復帰した');
+    }, { rustOnly: true });
+
     await check('進行: P1 の END で lobby', async () => {
       const from = p1.mark();
       p1.send({ type: 'command', cmd: 'END' });
