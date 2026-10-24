@@ -328,3 +328,11 @@
 - レビュー中に追加された旧Python/Reactひな形と旧CIの削除も確認した。削除対象は未実装の入力ドライバー・ヘルス表示・案内画面とその試験であり、Rust・静的画面・Node参照実装は保持されている。READMEとLICENSEは変更していない。構成チェックと構築・運用資料をRustへ整合し、初期構築依頼は過去の記録と明示した。
 - AGENTS.mdの重複記載と削除後に実行できないUvicornの説明を整理し、独立したtools-venvの作成手順を追記した。libclang 18.1.1はLOCALAPPDATAの開発用環境にも用意し、旧ホストのソース削除に依存しないようにした。
 - 構成チェックは成功。先行実装の最終確認はRust通信32/32、Node19/19、単体3/3、終了2/2、表示11/11、4画面構文。最終ActionsのRust/Tauriジョブと構成チェックの成功を条件にマージする。OS入力は無効化する。Issueの一括クローズは行わない。
+
+## 2026-10-25 — #35 Minecraftへの移行・復帰時のセッション維持（Claude Code）
+- 判断の記録：`docs/decisions/2026-10-25-session-keep.md`（[P]）。
+- Rust版ホスト：PCアプリの画面を `monitor`（`page: app`）として区別し、`focus` を受け取る。協力プレイ中にPCアプリが前面になったら、全解放して `paused`（`app focus`、自動復帰なし）へ移す。選んだゲームを `game.title` として保持し、`select_game` で変更する。ロビー以外で変えたら全解放して `lobby`（`game change`）へ戻す。参加者と役割はそのまま。
+- PCアプリ（`app.html`）：前面になった・外れたことを `focus` で送る。ゲームの選択をホストへ送り、ホストの値で表示する。スマホ画面は停止理由「PCアプリの画面に戻った」「PCの緊急停止」を表示する。
+- `protocol.md` に `page: app`・`focus`（app）・`select_game`・`game.title` を追記した。
+- 検証：`cargo build --release --locked`・`cargo test --release --locked`（3件）成功。`node scripts/sim/protocol-sim.mjs` を3回連続で **34/34合格**（PCアプリへの手動復帰→全解放・paused・リモコンがPC画面へ届く・役割維持・RESUME、協力プレイ中のゲーム変更→全解放・lobby・参加者維持、同じゲーム・未知のゲームは無視、を追加）。`--target node` **19/19合格**。`app-view-test` **11/11合格**。`check-static-pages` 構文OK。
+- **未検証：** WebView2のウィンドウでの `focus` の届き方、Minecraftとの実際の切り替え（#37）。
