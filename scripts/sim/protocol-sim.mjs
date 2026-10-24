@@ -509,6 +509,31 @@ async function main() {
       await injected(mon, 'SPACE', 'up', mfrom);
     }, { rustOnly: true });
 
+    await check('入力先: フォーカス喪失前と対象外の間に届いた欠番待ち入力を、復帰後へ持ち越さない', async () => {
+      const old = p1.epoch;
+      const n = p1.iseq + 1;
+      p1.send({ type: 'input', iseq: n + 1, epoch: old, button: 'JUMP', state: 'down' });
+      let from = p1.mark();
+      host.child.stdin.write('target off\n');
+      const off = await p1.waitFor(m => m.type === 'game' && m.game.inputTarget === true, { from });
+      assert(off.game.epoch > old, '入力先から外れてもepochが変わらない');
+      p1.send({ type: 'input', iseq: n + 2, epoch: off.game.epoch, button: 'FWD', state: 'down' });
+      from = p1.mark();
+      host.child.stdin.write('target on\n');
+      const on = await p1.waitFor(m => m.type === 'game' && m.game.inputActive, { from });
+      assert(on.game.epoch > off.game.epoch, '入力先へ戻ってもepochが変わらない');
+      const mfrom = mon.mark();
+      p1.send({ type: 'input', iseq: n, epoch: old, button: 'JUMP', state: 'up' });
+      p1.iseq = n + 2;
+      const ack = await p1.waitFor(m => m.type === 'ack' && m.iseq === n + 2);
+      assert(ack.stale, '対象外の入力を復帰後に処理した');
+      await noPress(mon, mfrom);
+      p1.input('JUMP', 'down');
+      await injected(mon, 'SPACE', 'down', mfrom);
+      p1.input('JUMP', 'up');
+      await injected(mon, 'SPACE', 'up', mfrom);
+    }, { rustOnly: true });
+
     await check('切断: coop 中の切断で paused、切断者以外の押下も全解放する', async () => {
       p1.input('FWD', 'up'); // 前の試験の押下が残っていれば離す (既に離れていれば何もしない)
       await sleep(150);

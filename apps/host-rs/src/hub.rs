@@ -860,11 +860,12 @@ impl Hub {
             }
         };
         if ok != self.target_ok {
-            let before = self.can_inject();
             self.target_ok = ok;
-            if before && !self.can_inject() {
+            if self.inject == InjectMode::On {
                 self.release_outputs(None);
                 self.reset_look();
+                // 外れた時も戻った時も、通信中・受信待ちの旧入力と視点を持ち越さない。
+                self.advance_epoch();
             }
             // ウィンドウのタイトル (ワールド名など) はログに残さない
             self.log("target_focus", json!({ "ok": ok, "process": fg.as_ref().map(|f| f.process.clone()) }));
