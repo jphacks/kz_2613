@@ -170,6 +170,13 @@
 - WebRTC経路と、15秒の期限切れ後の自動復帰はこのシミュレーションでは扱っていない。
 - **未検証：** Rust版の実際のSendInput、スマホ実機3台、Minecraft、Tauri。
 
+## 2026-10-24 — #11 通信契約の版番号（Claude Code）
+- Rust版ホスト：`hello` の `protocolVersion` が `1` でない（欠落・別の値・文字列）場合、`{type:"error", code:"protocol_version", protocolVersion:1}` を返して4005で閉じ、枠を割り当てない。`welcome` に `protocolVersion` を追加。
+- スマホ画面：`hello` に `protocolVersion: 1` を付ける。`error`/4005を受けたら再接続をやめ、再読み込みを案内する。
+- protocol.mdに版と変更規則（文書・シミュレーション・版を同じPRで更新）を追記した。
+- 検証：`cargo build --release` 成功（警告は既存の2件のみ）。`node scripts/sim/protocol-sim.mjs` **18/18合格**（版不一致3パターンを追加）。`--target node` は試作品のまま **17/17合格**（Rust版で追加した契約は対象外）。`node scripts/sim/check-static-pages.mjs` で3画面のスクリプトの構文を確認。
+- スマホ実機での表示確認は未実施。
+
 ## 2026-10-24 — PR #71の接続認可を修正（Codex）
 
 - WebSocketのHostを待受ポートとPCのアドレスに制限し、別Origin・`null`を403で拒否する。Originなしはループバックの非ブラウザ検証接続だけ許可する。識別済み接続でのhello再送と管理接続への変更は4007で拒否し、1接続が複数枠を取得する問題を修正した。Rust版とNode参照実装へ同じ認可修正を適用した。
@@ -177,3 +184,8 @@
 - Rust stable 1.99.1（MSVC）を導入。既存Visual Studio 2022、Strawberry Perl 5.42.3、開発用Python環境のlibclang 18.1.1を使用する。`cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml` は成功（初回18分）。Documents配下のtarget生成はアクセス拒否となったため、開発用の `CARGO_TARGET_DIR` をLOCALAPPDATAへ指定した。Git付属PerlではOpenSSL構築に必要なモジュールが不足したため、Strawberry Perlを使う。
 - Rust版も `node scripts/sim/protocol-sim.mjs --bin <CARGO_TARGET_DIR>/release/recooplay-host.exe` で **19/19合格**。`cargo test --release --locked --manifest-path apps/host-rs/Cargo.toml` はOrigin・Hostの単体試験 **1/1合格**。構造確認・JavaScriptの構文検査も成功。取り込み後の構成に合わせてAGENTS.mdと技術資料の状況説明を更新した。既存の未使用関数とOpenSSLのデバッグ用PDB不足の警告は残るが、ビルドは成功している。
 - Rustの実入力・Minecraft・スマホ実機・Tauriは未検証のまま。実運用の自動復帰の初期値・許可条件は変更していない。
+
+## 2026-10-24 — PR #72をmainへ追従して再検証（Codex）
+
+- #71のOrigin・Host確認と1接続1枠の認可を取り込み、版番号の確認と併用するよう競合を解消した。
+- `cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml` 成功。Rustの通信シミュレーション **20/20合格**、Node参照実装 **19/19合格**。`check-static-pages.mjs` は3画面の構文検査に成功。OS入力はdry-runで無効化した。実機試験は実施していない。
