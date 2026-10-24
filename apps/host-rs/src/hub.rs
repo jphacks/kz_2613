@@ -22,7 +22,7 @@ use crate::rtc::{Peer, RtcSignal};
 const SLOT_NAMES: [&str; 3] = ["P1", "P2", "P3"];
 const SLOT_ROLES: [&str; 3] = ["移動・ホスト", "視点", "アクション"];
 /// 通信契約の版 (docs/architecture/protocol.md)。変えるときは protocol.md とシミュレーションも同時に更新する
-const PROTOCOL_VERSION: u64 = 1;
+const PROTOCOL_VERSION: u64 = 3;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
@@ -134,7 +134,6 @@ struct Slot {
     look_cx: f64, // 視点の累積移動量 (パケットが欠けても次のパケットで取り戻せる)
     look_cy: f64,
     look_lost: u64,
-    look_epoch: u64, // look_cx / look_cy がどの進行状態 (epoch) の累積値か。epoch ごとに 0 から数え直す
 }
 
 impl Slot {
@@ -166,7 +165,6 @@ impl Slot {
             look_cx: 0.0,
             look_cy: 0.0,
             look_lost: 0,
-            look_epoch: 0,
         }
     }
 }
@@ -605,7 +603,7 @@ impl Hub {
         self.reset_look();
         self.game.phase = phase;
         self.game.reason = Some(reason.to_string());
-        self.game.epoch += 1;
+        self.advance_epoch();
         self.log("phase", json!({ "phase": phase.name(), "reason": reason, "epoch": self.game.epoch }));
         self.push_game();
     }
@@ -1162,7 +1160,7 @@ impl Hub {
                     }
                 }
                 self.game.phase = Phase::Lobby;
-                self.game.epoch += 1;
+                self.advance_epoch();
                 self.log("reset", json!({}));
                 self.push_game();
                 self.push_state();
@@ -1223,6 +1221,10 @@ impl Hub {
         };
         // 同じ端末の古い接続を置き換え
         let old = self.slots[idx].as_ref().unwrap().conn.filter(|&c| c != id);
+        if old.is_some() {
+            // 別タブ等による置換も切断として全解放し、旧接続の押下を持ち越さない。
+            self.mark_disconnected(idx, "replaced");
+        }
         self.close(old, 4000, "replaced");
         let ua: String = s(msg, "ua").unwrap_or_default().chars().take(200).collect();
         let now = now_ms();
@@ -1241,7 +1243,6 @@ impl Hub {
         slot.look_seq = 0;
         slot.look_cx = 0.0;
         slot.look_cy = 0.0;
-        slot.look_epoch = 0;
         slot.ibuf.clear();
         slot.rtc = None;
         slot.rtc_state = "none";
@@ -1404,8 +1405,11 @@ impl Hub {
 
     /// 視点は累積値で届くので、欠けたパケットの分も次のパケットで取り戻せる。古いパケットは捨てる
     fn accept_look(&mut self, idx: usize, msg: &Value) {
+        // 別epochの累積値は現在の基準にも混ぜない。
+        if msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
+            return;
+        }
         let Some(lseq) = num(msg, "lseq").map(|n| n as i64) else { return };
-        let current = self.game.epoch;
         let slot = self.slots[idx].as_mut().unwrap();
         if lseq <= slot.look_seq {
             return;
@@ -1414,22 +1418,22 @@ impl Hub {
             slot.look_lost += (lseq - slot.look_seq - 1) as u64;
         }
         slot.look_seq = lseq;
-        slot.events += 1;
-        // 前の進行状態の移動量は捨て、基準にも使わない。スマホは epoch が変わると累積値を 0 から数え直すので、
-        // 新しい epoch の最初のパケットは 0 を基準にする (古い epoch の最後のパケットが欠けても、その分が混ざらない)
-        if msg.get("epoch").and_then(Value::as_u64) != Some(current) {
-            return;
-        }
-        if slot.look_epoch != current {
-            slot.look_epoch = current;
-            slot.look_cx = 0.0;
-            slot.look_cy = 0.0;
-        }
         let cx = num(msg, "cx").unwrap_or(0.0);
         let cy = num(msg, "cy").unwrap_or(0.0);
         let (dx, dy) = (cx - slot.look_cx, cy - slot.look_cy);
         slot.look_cx = cx;
         slot.look_cy = cy;
+        slot.events += 1;
         self.handle_look(idx, dx, dy);
+    }
+
+    fn advance_epoch(&mut self) {
+        self.game.epoch += 1;
+        // 送信側と同じくepochごとに累積値と順序番号を0から始める。
+        for slot in self.slots.iter_mut().flatten() {
+            slot.look_seq = 0;
+            slot.look_cx = 0.0;
+            slot.look_cy = 0.0;
+        }
     }
 }
