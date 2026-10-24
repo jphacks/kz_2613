@@ -234,6 +234,8 @@
         setStatus(msg.reconnected ? '再接続OK' : '接続OK', 'ok');
         render();
       } else if (msg.type === 'game') {
+        // 視点の累積値は進行状態 (epoch) ごとに 0 から数える。PC 側も新しい epoch は 0 を基準にする
+        if (msg.game.epoch !== game?.epoch) { look.cx = 0; look.cy = 0; }
         game = msg.game;
         render();
       } else if (msg.type === 'pong') {

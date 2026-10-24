@@ -134,6 +134,7 @@ struct Slot {
     look_cx: f64, // 視点の累積移動量 (パケットが欠けても次のパケットで取り戻せる)
     look_cy: f64,
     look_lost: u64,
+    look_epoch: u64, // look_cx / look_cy がどの進行状態 (epoch) の累積値か。epoch ごとに 0 から数え直す
 }
 
 impl Slot {
@@ -165,6 +166,7 @@ impl Slot {
             look_cx: 0.0,
             look_cy: 0.0,
             look_lost: 0,
+            look_epoch: 0,
         }
     }
 }
@@ -1076,6 +1078,9 @@ impl Hub {
         let kind = s(&msg, "type").unwrap_or_default();
 
         if kind == "monitor" {
+            if !matches!(conn.role, Role::Unknown) {
+                return self.close(Some(id), 4007, "already identified");
+            }
             if !conn.loopback {
                 return self.close(Some(id), 4003, "monitor only from PC");
             }
@@ -1162,6 +1167,9 @@ impl Hub {
     }
 
     fn on_hello(&mut self, id: u64, msg: &Value) {
+        if !matches!(self.conns[&id].role, Role::Unknown) {
+            return self.close(Some(id), 4007, "already identified");
+        }
         // 版が合わない画面 (古いキャッシュなど) は理由を返して閉じる。枠は割り当てない
         let version = msg.get("protocolVersion").and_then(Value::as_u64);
         if version != Some(PROTOCOL_VERSION) {
@@ -1228,6 +1236,7 @@ impl Hub {
         slot.look_seq = 0;
         slot.look_cx = 0.0;
         slot.look_cy = 0.0;
+        slot.look_epoch = 0;
         slot.ibuf.clear();
         slot.rtc = None;
         slot.rtc_state = "none";
@@ -1391,6 +1400,7 @@ impl Hub {
     /// 視点は累積値で届くので、欠けたパケットの分も次のパケットで取り戻せる。古いパケットは捨てる
     fn accept_look(&mut self, idx: usize, msg: &Value) {
         let Some(lseq) = num(msg, "lseq").map(|n| n as i64) else { return };
+        let current = self.game.epoch;
         let slot = self.slots[idx].as_mut().unwrap();
         if lseq <= slot.look_seq {
             return;
@@ -1399,16 +1409,22 @@ impl Hub {
             slot.look_lost += (lseq - slot.look_seq - 1) as u64;
         }
         slot.look_seq = lseq;
+        slot.events += 1;
+        // 前の進行状態の移動量は捨て、基準にも使わない。スマホは epoch が変わると累積値を 0 から数え直すので、
+        // 新しい epoch の最初のパケットは 0 を基準にする (古い epoch の最後のパケットが欠けても、その分が混ざらない)
+        if msg.get("epoch").and_then(Value::as_u64) != Some(current) {
+            return;
+        }
+        if slot.look_epoch != current {
+            slot.look_epoch = current;
+            slot.look_cx = 0.0;
+            slot.look_cy = 0.0;
+        }
         let cx = num(msg, "cx").unwrap_or(0.0);
         let cy = num(msg, "cy").unwrap_or(0.0);
         let (dx, dy) = (cx - slot.look_cx, cy - slot.look_cy);
         slot.look_cx = cx;
         slot.look_cy = cy;
-        slot.events += 1;
-        // 前の進行状態の移動量は捨てる (累積値の基準は更新するので、次の差分には混ざらない)
-        if msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
-            return;
-        }
         self.handle_look(idx, dx, dy);
     }
 }
