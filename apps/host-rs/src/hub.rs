@@ -21,7 +21,7 @@ use crate::rtc::{Peer, RtcSignal};
 const SLOT_NAMES: [&str; 3] = ["P1", "P2", "P3"];
 const SLOT_ROLES: [&str; 3] = ["移動・ホスト", "視点", "アクション"];
 /// 通信契約の版 (docs/architecture/protocol.md)。変えるときは protocol.md とシミュレーションも同時に更新する
-const PROTOCOL_VERSION: u64 = 1;
+const PROTOCOL_VERSION: u64 = 3;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
@@ -552,7 +552,7 @@ impl Hub {
         self.reset_look();
         self.game.phase = phase;
         self.game.reason = Some(reason.to_string());
-        self.game.epoch += 1;
+        self.advance_epoch();
         self.log("phase", json!({ "phase": phase.name(), "reason": reason, "epoch": self.game.epoch }));
         self.push_game();
     }
@@ -1044,7 +1044,7 @@ impl Hub {
                     }
                 }
                 self.game.phase = Phase::Lobby;
-                self.game.epoch += 1;
+                self.advance_epoch();
                 self.log("reset", json!({}));
                 self.push_game();
                 self.push_state();
@@ -1281,6 +1281,10 @@ impl Hub {
 
     /// 視点は累積値で届くので、欠けたパケットの分も次のパケットで取り戻せる。古いパケットは捨てる
     fn accept_look(&mut self, idx: usize, msg: &Value) {
+        // 別epochの累積値は現在の基準にも混ぜない。
+        if msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
+            return;
+        }
         let Some(lseq) = num(msg, "lseq").map(|n| n as i64) else { return };
         let slot = self.slots[idx].as_mut().unwrap();
         if lseq <= slot.look_seq {
@@ -1296,10 +1300,16 @@ impl Hub {
         slot.look_cx = cx;
         slot.look_cy = cy;
         slot.events += 1;
-        // 前の進行状態の移動量は捨てる (累積値の基準は更新するので、次の差分には混ざらない)
-        if msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
-            return;
-        }
         self.handle_look(idx, dx, dy);
+    }
+
+    fn advance_epoch(&mut self) {
+        self.game.epoch += 1;
+        // 送信側と同じくepochごとに累積値と順序番号を0から始める。
+        for slot in self.slots.iter_mut().flatten() {
+            slot.look_seq = 0;
+            slot.look_cx = 0.0;
+            slot.look_cy = 0.0;
+        }
     }
 }
