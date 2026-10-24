@@ -1,6 +1,6 @@
 # Re:Cooplay PC アプリ（Tauri / WebView2）
 
-PC ホスト（`apps/host-rs` の `recooplay-host.exe`）を子プロセスとして起動し、PC の画面（`/host`）をアプリのウィンドウに表示する。通信・入力の注入はすべてホストが行い、このアプリは枠だけを担う（Issue #36）。
+PC ホスト（`apps/host-rs` の `recooplay-host.exe`）を子プロセスとして起動し、参加・ゲーム選択・分担確認の画面（`/app`）を表示する。診断画面は `/host` に残す。通信・入力の注入はすべてホストが行う（Issue #36）。
 
 **検証状況：** このPCでのビルドと起動・終了の確認のみ（BUILD_LOG 参照）。スマホ実機・Minecraft・配布パッケージ（#41）は未検証。
 
@@ -8,7 +8,7 @@ PC ホスト（`apps/host-rs` の `recooplay-host.exe`）を子プロセスと�
 
 | ファイル | 役割 |
 |---|---|
-| `src/main.rs` | ホストの起動・待ち受けの確認・終了処理。ウィンドウに `http://127.0.0.1:<port>/host` を表示する |
+| `src/main.rs` | ホストの起動・待ち受けの確認・終了処理。ウィンドウに `http://127.0.0.1:<port>/app` を表示する |
 | `ui/index.html` | ホストの起動を待つ間の画面と、起動できなかったときの案内 |
 | `tauri.conf.json`、`capabilities/` | Tauri の設定。ホストの画面には Tauri の API を開放しない |
 | `icons/` | 仮のアイコン |
