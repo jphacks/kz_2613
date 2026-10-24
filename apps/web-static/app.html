@@ -107,6 +107,8 @@
     <h2>遊ぶゲーム</h2>
     <div id="games"></div>
     <p class="muted" style="font-size:13px">ゲームの自動検出・自動起動はまだありません。ゲームは手動で起動してください。</p>
+    <!-- Minecraft Usage Guidelines の免責表示 (docs/decisions/2026-10-25-minecraft-usage-terms.md) -->
+    <p class="muted" style="font-size:12px">NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.<br>Re:Cooplay は Minecraft の公式製品ではなく、Mojang・Microsoft の承認・提携はありません。</p>
     <div class="actions"><button data-go="join">← 参加に戻る</button><button class="primary" data-go="roles">次へ：分担を確認 →</button></div>
   </section>
 
@@ -142,17 +144,25 @@
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-  // 表示中の画面と選んだゲームは PC 画面だけの状態 (セッション・役割はホストが保持する)
+  // 表示中の画面は PC 画面だけの状態。選んだゲーム・セッション・役割はホストが保持する
   let ui = { screen: 'join', game: GAMES[0].id };
-  try { ui = { ...ui, ...JSON.parse(localStorage.getItem('recooplay.app') || '{}') }; } catch {}
+  try { ui.screen = JSON.parse(localStorage.getItem('recooplay.app') || '{}').screen || ui.screen; } catch {}
   if (!SCREENS.includes(ui.screen)) ui.screen = 'join';
   let state = null, game = null, inject = null;
 
   function setUi(next) {
-    ui = next;
-    try { localStorage.setItem('recooplay.app', JSON.stringify(ui)); } catch {}
+    // ゲームの変更はホストへ送る (協力プレイ中ならホストが全解放して準備中へ戻す)。表示はホストの返事で変わる
+    if (next.game !== ui.game && ws?.readyState === 1) ws.send(JSON.stringify({ type: 'select_game', title: next.game }));
+    ui = { ...next, game: game?.title || next.game };
+    try { localStorage.setItem('recooplay.app', JSON.stringify({ screen: ui.screen })); } catch {}
     render();
   }
+
+  // この画面が前面になったことをホストへ知らせる。協力プレイ中に Minecraft から手動で戻ると、
+  // ホストは全キーを離して一時停止し、ホストのスマホをリモコンに戻す
+  function sendFocus() { if (ws?.readyState === 1) ws.send(JSON.stringify({ type: 'focus', focused: document.hasFocus() })); }
+  window.addEventListener('focus', sendFocus);
+  window.addEventListener('blur', sendFocus);
 
   $('steps').innerHTML = SCREENS.map((s) => `<button data-go="${s}">${SCREEN_TITLES[s]}</button>`).join('');
   document.addEventListener('click', (e) => {
@@ -239,12 +249,13 @@
   let ws = null;
   function connect() {
     ws = new WebSocket(`ws://${location.host}/ws`);
-    ws.onopen = () => { $('conn').textContent = 'ホスト接続OK'; $('conn').className = 'pill ok'; ws.send(JSON.stringify({ type: 'monitor', page: 'app' })); };
+    ws.onopen = () => { $('conn').textContent = 'ホスト接続OK'; $('conn').className = 'pill ok'; ws.send(JSON.stringify({ type: 'monitor', page: 'app' })); sendFocus(); };
     ws.onclose = () => { $('conn').textContent = 'ホストとの接続が切れました'; $('conn').className = 'pill ng'; setTimeout(connect, 1000); };
     ws.onmessage = (ev) => {
       const m = JSON.parse(ev.data);
-      if (m.type === 'state') { state = m; game = m.game; inject = m.inject; render(); }
-      else if (m.type === 'game') { game = m.game; render(); }
+      if (m.type === 'state') { state = m; game = m.game; inject = m.inject; }
+      else if (m.type === 'game') game = m.game;
+      if (m.type === 'state' || m.type === 'game') { if (game?.title) ui.game = game.title; render(); }
       // この画面が前面のときだけ反応する (Minecraft が前面ならキー入力として Minecraft へ届いている)
       else if (m.type === 'remote' && m.state === 'down' && document.hasFocus()) setUi(navigate(ui, m.control));
     };

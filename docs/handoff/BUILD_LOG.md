@@ -334,3 +334,36 @@
 - 1:06のセッションで、P3が切断（891秒）してから88秒後の再接続（979秒）で自動復帰した。期限（15秒）を過ぎた後は、明示のRESUMEまで再開しない仕様に反する。原因：Rust版は、同じ端末の接続の置き換え（`replaced`）も切断として扱う。そのため、切断待ちの`paused`中に置き換えが起きると、期限が「今から15秒」に延びていた。
 - 修正：期限は協力プレイから止まった時に始める。期限内に別の人が切れたときだけ延ばし、期限後の切断や置き換えでは延ばさない（Rust版・Node参照実装）。
 - 検証：`cargo build --release --locked` 成功。シミュレーションに「期限後の再接続と置き換えで再開しない・期限が延びない」を追加した。修正前のホストでは不合格（再現した）。修正後は `protocol-sim.mjs` を3回連続で **33/33合格**、`--target node` **20/20合格**。
+
+## 2026-10-25 — #35 Minecraftへの移行・復帰時のセッション維持（Claude Code）
+- 判断の記録：`docs/decisions/2026-10-25-session-keep.md`（[P]）。
+- Rust版ホスト：PCアプリの画面を `monitor`（`page: app`）として区別し、`focus` を受け取る。協力プレイ中にPCアプリが前面になったら、全解放して `paused`（`app focus`、自動復帰なし）へ移す。選んだゲームを `game.title` として保持し、`select_game` で変更する。ロビー以外で変えたら全解放して `lobby`（`game change`）へ戻す。参加者と役割はそのまま。
+- PCアプリ（`app.html`）：前面になった・外れたことを `focus` で送る。ゲームの選択をホストへ送り、ホストの値で表示する。スマホ画面は停止理由「PCアプリの画面に戻った」「PCの緊急停止」を表示する。
+- `protocol.md` に `page: app`・`focus`（app）・`select_game`・`game.title` を追記した。
+- 検証：`cargo build --release --locked`・`cargo test --release --locked`（3件）成功。`node scripts/sim/protocol-sim.mjs` を3回連続で **34/34合格**（PCアプリへの手動復帰→全解放・paused・リモコンがPC画面へ届く・役割維持・RESUME、協力プレイ中のゲーム変更→全解放・lobby・参加者維持、同じゲーム・未知のゲームは無視、を追加）。`--target node` **19/19合格**。`app-view-test` **11/11合格**。`check-static-pages` 構文OK。
+- **未検証：** WebView2のウィンドウでの `focus` の届き方、Minecraftとの実際の切り替え（#37）。
+
+## 2026-10-25 — #42 Minecraftの名称・画面・デモ素材の利用条件（Claude Code）
+- 公式のMinecraft Usage Guidelines（<https://www.minecraft.net/en-us/usage-guidelines>、2026-10-25に取得）を読み、要点と本プロジェクトへの当てはめを `docs/decisions/2026-10-25-minecraft-usage-terms.md` に記録した（[E]は公式の記述、[P]は当てはめ）。
+- 要点：名称は副題・説明でだけ使う。ロゴ・ブランドを使わない。「NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT」に類する免責表示を関連資料すべてに入れる。自分のプレイ動画・スクリーンショットは無料で見られる形なら共有できる。ゲームファイルを再配布しない。
+- PCアプリの②ゲーム選択の画面に免責表示を加えた。リポジトリ内の画像（アイコン・ワイヤーフレーム）にMinecraftの素材がないことを確認した。
+- 検証：`node scripts/sim/check-static-pages.mjs` 構文OK。
+- **未確認：** 発表資料・デモ動画（未作成。作成後に記録の表で個別確認する）、EULA本文の精読、JPHacksの規約との照合、READMEへの免責表示（READMEの変更はユーザーの指示を待つ）。
+
+## 2026-10-25 — #41 Windows配布パッケージ（Claude Code）
+- `scripts/windows/package.ps1` を追加した。release ビルド済みのアプリ・ホストと静的画面一式・設定の例・ファイアウォールの許可スクリプト・LICENSE・利用者向け `README.txt` を、`dist/ReCooplay-<版>-windows-x64.zip` にまとめる。インストーラー（Tauriのバンドル）ではなく、展開して起動する形にした。アプリは自分のフォルダから画面とホストを探すため、変更は不要だった。
+- `allow-firewall.ps1` にUTF-8のBOMを付けた（Windows PowerShell 5.1が日本語を正しく読むため）。`-Program .\recooplay-host.exe` で配布フォルダからも使える。
+- 検証：`cargo build --release --locked`（host-rs・desktop）成功。`package.ps1` で5.7MBのzipを作成した。`%TEMP%` に展開し、リポジトリの外から `RECOOPLAY_DRY_RUN=1`・`PORT=18600` で `recooplay-desktop.exe` を起動した。展開先の `recooplay-host.exe` が起動し、`/`・`/app`・`/api/info` が200を返した。展開先の `logs/` にログ（`hotkey ok`・`server_start`・`shutdown`）が残った。ウィンドウを閉じると両方のプロセスが終了した。`allow-firewall.ps1` の構文をPowerShell 5.1のパーサーで確認した（実行はしていない）。
+- **未検証：** 開発環境のないWindows 11での起動、ファイアウォールの許可手順の実施、スマホ3台の参加、SmartScreenの警告（署名なし）。
+
+## 2026-10-25 — PR #82の利用条件資料のレビュー（Codex）
+- 公式Usage GuidelinesとEULAを再取得した。ガイドラインの連絡先要件に対しGitHub Issueで充足とする記載を修正し、公開可能な責任者・直接連絡先は未決定として残した。
+- 自作動画・無料公開だけを理由に利用可能と断定せず、汎用製品の宣伝・会場投影・実際の発表素材の個別確認を残した。大会運営の判断で権利者の条件を上書きできないことも明記した。
+- `node scripts/sim/check-static-pages.mjs` は4画面の構文確認に成功。Issue #42は発表素材・連絡先・EULA全体と大会規約の照合が残るため閉じない。
+
+## 2026-10-25 — PR #83の配布スクリプトのレビュー（Codex）
+- 既存の配布フォルダを無条件に再帰削除する処理を廃止し、既存出力は拒否して保持する。出力をリポジトリ内に限定し、ディレクトリリンクも拒否する。`CARGO_TARGET_DIR`に対応し、両exeのPEヘッダーでWindows x64を確認する。
+- host-rs・desktopの`cargo build --release --locked --manifest-path ...`が成功。`CARGO_TARGET_DIR`をLOCALAPPDATAの開発用出力先に設定し、Windows PowerShell 5.1で`package.ps1 -Out dist/review83-20261025`を実行して5.7MBのzipを生成した。
+- 既存出力の拒否とzipハッシュの不変、範囲外出力の拒否を確認。梱包内容はexe2本・静的5ファイル・設定例・許可スクリプト・LICENSE・説明のみ。実設定・ログ・トークンを含まない。
+- 展開したホストを`RECOOPLAY_DRY_RUN=1`・`RECOOPLAY_NO_CONFIG=1`・`RECOOPLAY_STDIN_CONTROL=1`で起動し、`/`・`/app`・`/api/info`が200、`quit`でshutdown記録と終了コード0を確認した。ファイアウォール設定は変更していない。
+- PR #82の免責表示はブラウザでゲーム選択画面を描画して確認した。Tauri実機やMinecraftの確認には読み替えない。Issue #41はクリーンなWindows 11とスマホ3台の条件が残るため閉じない。
