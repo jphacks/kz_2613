@@ -1,6 +1,6 @@
 # Issue駆動開発の共通ルール
 
-CodexとClaude Codeは同じ `docs/requirements/requirements-v0.2.md` と
+CodexとClaude Codeは同じ `docs/requirements/requirements-v0.3.md` と
 `docs/decisions/` を参照する。後の明示的なユーザー判断を優先し、提案を確定扱いしない。
 
 使用言語は `AGENTS.md` に従う。Markdown資料、コミットの件名・本文、

@@ -6,7 +6,7 @@
 
 Windows 11でRe:Cooplay（`jphacks/kz_2613`）の初期環境を構築してください。
 
-最初にルートの `AGENTS.md`、`CLAUDE.md`、`docs/requirements/requirements-v0.2.md`、`docs/decisions/2026-10-24-user-decisions.md`、`docs/decisions/tech-stack-provisional.md`、`docs/architecture/validation-gates.md` を読んでください。UIの作り込みより、確実に動くMinecraft Java Editionのデモを優先します。
+最初にルートの `AGENTS.md`、`CLAUDE.md`、`docs/requirements/requirements-v0.3.md`、`docs/decisions/2026-10-24-user-decisions.md`、`docs/decisions/tech-stack.md`、`docs/architecture/validation-gates.md` を読んでください。UIの作り込みより、確実に動くMinecraft Java Editionのデモを優先します。
 
 **作業：** 基本の開発環境を整備し、ホストとWebのひな形が利用可能なPCでビルド・テストできることを確認してください。対象は初期構築の段階で、ゲーム操作機能の完成ではありません。既存JPHACKS READMEの構造とLICENSEを保持し、既存ファイルとGitの状態を確認して他の人の変更を上書きしないでください。
 

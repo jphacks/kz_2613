@@ -4,7 +4,7 @@
 - [ ] ZIPを展開し、`repo_overlay` の中身だけをリポジトリのルートへコピーする。
 - [ ] 元の `README.md` と `LICENSE` の内容が保持されている。
 - [ ] 継続して適用する開発ルールとして `AGENTS.md` と `CLAUDE.md` を読む。
-- [ ] 2026-10-24時点の共有要件 `docs/requirements/requirements-v0.2.md` を読む。
+- [ ] 2026-10-24時点の共有要件 `docs/requirements/requirements-v0.3.md` を読む。
 - [ ] 後から決まった入力・技術構成の判断が `docs/decisions/` に記録されている。
 - [ ] `py -3 scripts/verify_overlay.py` が成功する。
 - [ ] Python 3.12環境を構築し、ホストのpytestが成功する。Minecraft試験とは区別する。
