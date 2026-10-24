@@ -357,7 +357,7 @@ impl Hub {
                 phase: Phase::Lobby,
                 host_ready: false,
                 prepare_status: String::new(),
-                required: config.required_players,
+                required: 3,
                 reason: None,
                 auto_resume: config.auto_resume,
                 auto_resume_ms: config.auto_resume_ms,
@@ -1351,7 +1351,7 @@ impl Hub {
                 }
             }
             "required" => {
-                if let Some(r) = msg.get("required").and_then(Value::as_u64).filter(|r| (1..=3).contains(r)) {
+                if let Some(r) = msg.get("required").and_then(Value::as_u64).filter(|r| *r == 3) {
                     self.game.required = r;
                     self.log("required", json!({ "required": r }));
                     self.push_game();
