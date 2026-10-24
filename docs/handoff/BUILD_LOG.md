@@ -259,3 +259,9 @@
 - 試験用に、`RECOOPLAY_DRY_RUN=1` と `RECOOPLAY_FAKE_TARGET` のときだけ、標準入力の `target on`/`target off` で判定を差し替えられる。
 - 検証：`cargo build --release` 成功。`cargo test --release`：判定の単体試験2件（Minecraftの一致、Javaの別アプリ・ブラウザのMinecraft Wiki・ランチャー・Re:Cooplay自身は不一致）合格。`node scripts/sim/protocol-sim.mjs` を3回連続で **25/25合格**（W押下中に入力先から外れる→Wの解放・注入停止・スマホへの通知、外れている間の押下は注入しない、戻った後は新しい押下だけ注入、を追加）。`--target node` **17/17合格**。実際の前面判定がこのPCで動く（前面 `explorer.exe` → 対象外）ことをダッシュボードの状態で確認。スマホ画面の警告表示をheadless Edgeの画面キャプチャで確認。
 - **未検証：** Minecraft実機を前面にしたときの一致（実際のプロセス名・タイトル、G1-D）、Wを押したままAlt+Tabしたときの実入力。
+
+## 2026-10-24 — PR #78の入力先変更とepochを整合（Codex）
+
+- 入力先から外れた時と戻った時に、全出力・視点を解放してepochを進める。フォーカス喪失前や対象外の間の欠番待ち入力が、復帰後に処理される経路を防ぐ。
+- スマホも同じ画面のままepochが変わった場合に全操作を解放する。遅延入力を復帰後に流しても押下されず、新しい押下だけが通る回帰試験を追加した。
+- 静的画面と試験スクリプトの構文検査に成功。先行PRの統合後にRustで検証する。Minecraft実機と実際のAlt+Tab・SendInputは未検証。
