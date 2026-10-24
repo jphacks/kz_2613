@@ -683,6 +683,15 @@ impl Hub {
             return;
         }
         let accepted = match (cmd, self.game.phase) {
+            ("OPEN_GAME", Phase::Preparing | Phase::Paused) => {
+                self.game.prepare_status = if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
+                    "dry-run：実ウィンドウは操作しません".into()
+                } else { match crate::focus::activate(&self.target) {
+                    Ok(()) => "対象ゲームを前面にしました".into(),
+                    Err(reason) => format!("{}。Minecraftを手動で前面にしてください",reason),
+                }};
+                self.push_game(); true
+            }
             ("PREPARE" | "START", Phase::Lobby) if self.can_prepare() => {
                 self.game.host_ready = false;
                 self.game.prepare_status = if self.fake_target.is_some() {
@@ -1314,6 +1323,7 @@ impl Hub {
                 }
             }
             "prepare" => { if self.can_prepare() { self.command(0, "PREPARE"); } }
+            "open_game" => { if self.connected_slots().contains(&0) { self.command(0, "OPEN_GAME"); } }
             "select_game" => {
                 let Some(t) = s(msg, "title").filter(|t| TITLES.contains(&t.as_str())) else { return };
                 if t == self.game.title {
@@ -1519,7 +1529,7 @@ impl Hub {
             "command" if via == Via::Ws => {
                 let cmd = s(&msg, "cmd").unwrap_or_default();
                 self.log("command", json!({ "slot": SLOT_NAMES[idx], "cmd": cmd }));
-                if matches!(cmd.as_str(), "READY" | "RESUME" | "PREPARE" | "START")
+                if matches!(cmd.as_str(), "READY" | "RESUME" | "PREPARE" | "START" | "OPEN_GAME")
                     && msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
                     self.send(self.slots[idx].as_ref().and_then(|s| s.conn), &json!({"type":"command_result","cmd":cmd,"accepted":false,"reasons":["画面の状態が古くなっています。更新を待ってください"]}));
                     return;

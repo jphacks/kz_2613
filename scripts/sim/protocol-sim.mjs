@@ -920,6 +920,15 @@ async function main() {
       { const nextState = p1.mark(); mon.send({ type: 'inject_mode', mode: 'on' }); if (target === 'rust') await p1.waitFor(m=>m.type==='game',{from:nextState}); }
     });
 
+    await check('ゲーム切替: 対象の前面化要求は準備・一時停止中のP1だけで、Readyや入力ONを代行しない',async()=>{
+      const before = p1.epoch, from = p1.mark();
+      p2.send({type:'command',cmd:'OPEN_GAME'});await sleep(50);
+      assert(!p1.msgs.slice(from).some(m=>m.type==='game'),'P2が前面化した');
+      p1.send({type:'command',cmd:'OPEN_GAME'});
+      const g=await p1.waitFor(m=>m.type==='game' && m.game.prepareStatus.includes('dry-run'),{from});
+      assert(g.game.phase==='paused' && g.game.epoch===before,'前面化で開始状態を変更した');
+    },{rustOnly:true});
+
     await check('緊急停止: 全員の押下を即座に解放し、注入を OFF にして一時停止する (自動復帰しない)', async () => {
       let from = p1.mark();
       const from3 = p3.mark();
