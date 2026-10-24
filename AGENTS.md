@@ -46,7 +46,6 @@
 - `apps/desktop/`：TauriのPCアプリ。Rustホストの子プロセスを起動・終了する。
 - `apps/web-static/`：MVPのスマホ画面・PC管理画面・疑似ゲーム画面。
 - `apps/node-ref/`：Node.js参照実装。通信・入力の比較対象。
-- `apps/desktop/`：PCアプリの枠（Tauri / WebView2）。Rust版ホストを子プロセスとして起動し、PC画面を表示する。
 - `scripts/sim/`：通信契約のシミュレーションと画面の試験（OS入力なし）。
 - 旧Python（FastAPI）・Reactのひな形は #68 で削除した。
 - `docs/`：共有要件、判断、設計、検証の証拠。
