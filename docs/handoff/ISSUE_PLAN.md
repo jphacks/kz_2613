@@ -1,91 +1,92 @@
-# 初期開発Issue計画
+# 開発Issue計画 — 観測事実と未完了条件の整理
 
-2026-10-24に作成し、同日、試作品の実機検証を正とするユーザー判断（`docs/decisions/2026-10-24-prototype-validated.md`）に基づいて改訂した。
-P0はデモの成立、P1は体験の改善、P2は将来のバックログ。前提のIssueが完了したらblockedを外す。
+PR #65はユーザー承認後にmainへマージ済み（58c5c6f）。この計画はその要件v0.3・設計と今回の明示指示に合わせたPR #66の修正案。
+[E]はNode試作品の観測区分で、今後の明示的なユーザー判断を優先する。RustはPC上のシミュレーションのみ実施済み。Minecraft・Tauri・Rust実機は未検証。
 
-**改訂の要点**
-- **新規 N1〜N4**：試作品の取り込み、Rust版の実機比較、CIの移行、不安定な端末の診断。
-- **完了**：試作品で検証を終えたもの（#5・#10・#23・#31）。
-- **取り込み待ち**：試作品で実装・検証済みのもの（#13・#14・#16〜#18・#20・#24〜#27・#29・#30・#32・#44・#45）。N1・N2で完了とする。
-- **改訂**：
-  - Rust・WebRTC・操作割当の変更に合わせて書き換えた（#6〜#9・#11・#12・#15・#19・#21・#22・#36・#41）。
-  - #28（方向ボタンの視点）は、ドラッグ視点（#45）の採用によりクローズする。
-- 要件の参照先を `requirements-v0.3.md` に更新した。その他のIssueは内容を変えていない。
+## 完了判定と反映範囲
+
+- #1〜#4の初期構築だけが既存の完了。#5・#23・#31は元の完了条件に未確認事項が残るため未完了で保持する。#10も端末別の記録を確認するまで完了扱いしない。
+- #28は方針変更によるクローズ候補で、今回は閉じない。PR #66のmainマージとIssueの一括クローズは別途ユーザーの実施前確認が必要。
+- 新規Issueは実在する番号を登録済み：N1=[#67](https://github.com/jphacks/kz_2613/issues/67)、N3=[#68](https://github.com/jphacks/kz_2613/issues/68)、N2=[#69](https://github.com/jphacks/kz_2613/issues/69)、N4=[#70](https://github.com/jphacks/kz_2613/issues/70)。N1等は計画内の識別子でありIssue番号ではない。
+- 試作品取り込み #67 → 代替CI #68 → Rust実機比較 #69の順とする。#69には安全なプローブ #5も必要。旧ひな形の削除は代替CI準備後に #68 で行い、#67へ相互依存させない。
+- 自動復帰の実運用初期値・使用条件は未決定。ホストPAUSEは常に非自動。通信切断はON/OFF・期限内/外・全員の復帰と入力解放を分けて検証する。
+- 各Issueの状況は観測記録と受入条件を照合する。現行GitHubへの本文・依存関係の同期結果はBUILD_LOGとPR #66へ記録する。
+
+## 一覧
 
 | ID | Issue | 成果物 | 優先度/種別/対象 | 前提 | 状況 |
 |---|---|---|---|---|---|
-| S0 | [#1](https://github.com/jphacks/kz_2613/issues/1) | [Phase 0][P0] リポジトリ初期環境を安全に統合する | P0/infra/host | なし | 完了 |
-| S1 | [#2](https://github.com/jphacks/kz_2613/issues/2) | [Phase 0][P0] Python 3.12 APIの起動・ヘルスチェックを確立する | P0/infra/host | [#1](https://github.com/jphacks/kz_2613/issues/1) | 完了 |
-| S2 | [#3](https://github.com/jphacks/kz_2613/issues/3) | [Phase 0][P0] Reactの型検査・テスト・静的ビルド配信を確立する | P0/infra/web | [#1](https://github.com/jphacks/kz_2613/issues/1), [#2](https://github.com/jphacks/kz_2613/issues/2) | 完了 |
-| S3 | [#4](https://github.com/jphacks/kz_2613/issues/4) | [Phase 0][P0] CI・共通開発ルールとIssue運用を整備する | P0/infra/host | [#2](https://github.com/jphacks/kz_2613/issues/2), [#3](https://github.com/jphacks/kz_2613/issues/3) | 完了 |
-| N1 | 新規 | [Phase 1][P0] 検証済みの試作品をリポジトリへ取り込む | P0/infra/host | [#65](https://github.com/jphacks/kz_2613/issues/65) | 未着手（新規） |
-| N2 | 新規 | [Phase 1][P0] Rust版ホストを実機3台で参照実装と比較する | P0/test/host | なし | 未着手（新規） |
-| N3 | 新規 | [Phase 1][P0] CIをRustのビルド・テストとプロトコルシミュレーションへ移行する | P0/infra/host | N1（新規） | 未着手（新規） |
-| V0 | [#5](https://github.com/jphacks/kz_2613/issues/5) | [Phase 1][P0] 注入モードと疑似ゲーム画面でWindows入力の経路を検証する | P0/feature/input | [#4](https://github.com/jphacks/kz_2613/issues/4) | 完了 |
-| V1 | [#6](https://github.com/jphacks/kz_2613/issues/6) | [Phase 1][P0] SendInputキー入力をMinecraft実機で検証する | P0/test/input | なし | 未着手（内容を改訂） |
-| V2 | [#7](https://github.com/jphacks/kz_2613/issues/7) | [Phase 1][P0] 左右クリック・長押し・ホイールをMinecraft実機で検証する | P0/test/input | なし | 未着手（内容を改訂） |
-| V3 | [#8](https://github.com/jphacks/kz_2613/issues/8) | [Phase 1][P0] 相対マウス視点操作の成立性をMinecraft実機で検証する | P0/test/input | なし | 未着手（内容を改訂） |
-| V4 | [#9](https://github.com/jphacks/kz_2613/issues/9) | [Phase 1][P0] Windowsホットスポットと上流なしLAN接続を検証する | P0/test/network | なし | 未着手（内容を改訂） |
-| V5 | [#10](https://github.com/jphacks/kz_2613/issues/10) | [Phase 1][P0] Android・iPhoneの基本Web表示とPointer Eventsを検証する | P0/test/web | [#4](https://github.com/jphacks/kz_2613/issues/4) | 完了 |
-| B0 | [#11](https://github.com/jphacks/kz_2613/issues/11) | [Phase 2][P0] 通信契約v1（WebSocket＋WebRTC）に版番号を付けて維持する | P0/feature/network | N1（新規） | 未着手（内容を改訂） |
-| B1 | [#12](https://github.com/jphacks/kz_2613/issues/12) | [Phase 2][P0] 再接続用トークンをサーバー発行の推測困難な値にする | P0/feature/host | N1（新規） | 未着手（内容を改訂） |
-| B2 | [#13](https://github.com/jphacks/kz_2613/issues/13) | [Phase 2][P0] 接続順でホスト・P1/P2/P3を固定する | P0/feature/host | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| B3 | [#14](https://github.com/jphacks/kz_2613/issues/14) | [Phase 2][P0] 再接続で元の枠・ホスト権を復元する | P0/feature/host | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| B4 | [#15](https://github.com/jphacks/kz_2613/issues/15) | [Phase 2][P0] 状態機械にepochを追加し旧状態の遅延入力を拒否する | P0/feature/host | N1（新規） | 未着手（内容を改訂） |
-| B5 | [#16](https://github.com/jphacks/kz_2613/issues/16) | [Phase 2][P0] 役割・モード・管理操作の認可を実装する | P0/feature/host | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| B6 | [#17](https://github.com/jphacks/kz_2613/issues/17) | [Phase 2][P0] 保持キー・ボタンと入力所有状態を管理する | P0/feature/input | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| B7 | [#18](https://github.com/jphacks/kz_2613/issues/18) | [Phase 2][P0] 心拍・通信断・終了時の全入力解放を実装する | P0/feature/input | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| B8 | [#19](https://github.com/jphacks/kz_2613/issues/19) | [Phase 2][P0] onモードで前面ウィンドウがMinecraftか確認して注入する | P0/feature/input | N1（新規）, [#6](https://github.com/jphacks/kz_2613/issues/6) | 未着手（内容を改訂） |
-| B9 | [#20](https://github.com/jphacks/kz_2613/issues/20) | [Phase 2][P0] 検証済みSendInputアダプターを入力エンジンへ接続する | P0/feature/input | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| B10 | [#21](https://github.com/jphacks/kz_2613/issues/21) | [Phase 2][P0] スマホ回線に依存しないPCの緊急停止を実装する | P0/feature/host | N1（新規） | 未着手（内容を改訂） |
-| B11 | [#22](https://github.com/jphacks/kz_2613/issues/22) | [Phase 2][P0] 診断ログからIP・端末情報・clientIdを除く | P0/feature/host | N1（新規） | 未着手（内容を改訂） |
-| B12 | [#23](https://github.com/jphacks/kz_2613/issues/23) | [Phase 2][P0] LANの3ブラウザHTTP・WebSocket・WebRTCを検証する | P0/test/network | [#16](https://github.com/jphacks/kz_2613/issues/16), [#9](https://github.com/jphacks/kz_2613/issues/9), [#10](https://github.com/jphacks/kz_2613/issues/10) | 完了 |
-| N4 | 新規 | [Phase 2][P1] 無線が不安定な端末を診断・案内する | P1/feature/network | N1（新規） | 未着手（新規） |
-| W0 | [#24](https://github.com/jphacks/kz_2613/issues/24) | [Phase 3][P0] 役割・接続状態と再接続UIを実装する | P0/feature/web | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| W1 | [#25](https://github.com/jphacks/kz_2613/issues/25) | [Phase 3][P0] Pointer Eventsの共通押下・解放処理を実装する | P0/feature/web | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| W2 | [#26](https://github.com/jphacks/kz_2613/issues/26) | [Phase 3][P0] ホスト用の矢印・Enter・Escリモコンを実装する | P0/feature/web | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| W3 | [#27](https://github.com/jphacks/kz_2613/issues/27) | [Phase 3][P0] P1の移動スティック・ジャンプ・スニーク・ダッシュを実装する | P0/feature/web | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| W4 | [#28](https://github.com/jphacks/kz_2613/issues/28) | [Phase 3][P0] P2の方向ボタン視点コントローラーを実装する | P0/feature/web | [#25](https://github.com/jphacks/kz_2613/issues/25), [#16](https://github.com/jphacks/kz_2613/issues/16) | クローズ（方針変更） |
-| W5 | [#29](https://github.com/jphacks/kz_2613/issues/29) | [Phase 3][P0] P3の攻撃・使う・持ち物・インベントリ・捨てるを実装する | P0/feature/web | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| W6 | [#30](https://github.com/jphacks/kz_2613/issues/30) | [Phase 3][P0] ホストSTART・PAUSE・RESUME・ENDと開始条件のUIを実装する | P0/feature/web | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| W7 | [#31](https://github.com/jphacks/kz_2613/issues/31) | [Phase 3][P0] Android・iPhoneで全コントローラーを実機検証する | P0/test/web | [#30](https://github.com/jphacks/kz_2613/issues/30), [#20](https://github.com/jphacks/kz_2613/issues/20), [#23](https://github.com/jphacks/kz_2613/issues/23) | 完了 |
-| D0 | [#32](https://github.com/jphacks/kz_2613/issues/32) | [Phase 4][P0] 参加用QR・URL・人数画面を実装する | P0/feature/desktop | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| D1 | [#33](https://github.com/jphacks/kz_2613/issues/33) | [Phase 4][P0] 手動起動を許容するゲーム選択画面を実装する | P0/feature/desktop | [#32](https://github.com/jphacks/kz_2613/issues/32) | 未着手 |
-| D2 | [#34](https://github.com/jphacks/kz_2613/issues/34) | [Phase 4][P0] 3人の操作分担確認画面を実装する | P0/feature/desktop | [#33](https://github.com/jphacks/kz_2613/issues/33) | 未着手 |
-| D3 | [#35](https://github.com/jphacks/kz_2613/issues/35) | [Phase 4][P0] Minecraftへの移行・復帰時もセッションを維持する | P0/feature/desktop | [#34](https://github.com/jphacks/kz_2613/issues/34), [#19](https://github.com/jphacks/kz_2613/issues/19), [#30](https://github.com/jphacks/kz_2613/issues/30) | 未着手 |
-| D4 | [#36](https://github.com/jphacks/kz_2613/issues/36) | [Phase 4][P0] Tauri（WebView2）のPCアプリ枠とブラウザ代替を実装する | P0/feature/desktop | N1（新規） | 未着手（内容を改訂） |
-| D5 | [#37](https://github.com/jphacks/kz_2613/issues/37) | [Phase 4][P0] フォーカス切替とPC GUIの実機検証を行う | P0/test/desktop | [#36](https://github.com/jphacks/kz_2613/issues/36), [#20](https://github.com/jphacks/kz_2613/issues/20) | 未着手 |
-| E0 | [#38](https://github.com/jphacks/kz_2613/issues/38) | [Phase 5][P0] 3台同時操作と役割・管理権のE2Eを検証する | P0/test/host | [#31](https://github.com/jphacks/kz_2613/issues/31), [#37](https://github.com/jphacks/kz_2613/issues/37) | 未着手 |
-| E1 | [#39](https://github.com/jphacks/kz_2613/issues/39) | [Phase 5][P0] 切断・再接続・緊急停止の障害試験を行う | P0/test/input | [#38](https://github.com/jphacks/kz_2613/issues/38), [#21](https://github.com/jphacks/kz_2613/issues/21) | 未着手 |
-| E2 | [#40](https://github.com/jphacks/kz_2613/issues/40) | [Phase 5][P0] Minecraft協力プレイの反復デモを検証する | P0/test/host | [#39](https://github.com/jphacks/kz_2613/issues/39) | 未着手 |
-| E3 | [#41](https://github.com/jphacks/kz_2613/issues/41) | [Phase 5][P0] Windows配布パッケージ（Tauriバンドル）を作る | P0/infra/desktop | [#36](https://github.com/jphacks/kz_2613/issues/36), [#39](https://github.com/jphacks/kz_2613/issues/39) | 未着手（内容を改訂） |
-| E4 | [#42](https://github.com/jphacks/kz_2613/issues/42) | [Phase 5][P0] ゲーム画面・名称・デモ素材の利用条件を確認する | P0/docs/desktop | [#4](https://github.com/jphacks/kz_2613/issues/4) | 未着手 |
-| E5 | [#43](https://github.com/jphacks/kz_2613/issues/43) | [Phase 5][P0] READMEと発表デモ・当日復旧手順を整備する | P0/docs/host | [#40](https://github.com/jphacks/kz_2613/issues/40), [#41](https://github.com/jphacks/kz_2613/issues/41), [#42](https://github.com/jphacks/kz_2613/issues/42) | 未着手 |
-| P11 | [#44](https://github.com/jphacks/kz_2613/issues/44) | [Phase 6][P1] P1移動を仮想スティックへ拡張する | P0/feature/web | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| P12 | [#45](https://github.com/jphacks/kz_2613/issues/45) | [Phase 6][P1] P2視点をスワイプ・感度調整へ拡張する | P0/feature/web | N1（新規）, N2（新規） | 取り込み待ち（試作品で検証済み） |
-| P13 | [#46](https://github.com/jphacks/kz_2613/issues/46) | [Phase 6][P1] ホストリモコンにタッチパッド・クリック・Eキーを追加する | P1/feature/web | [#40](https://github.com/jphacks/kz_2613/issues/40) | 未着手 |
-| P14 | [#47](https://github.com/jphacks/kz_2613/issues/47) | [Phase 6][P1] Pause中の役割指定・交換を実装する | P1/feature/host | [#40](https://github.com/jphacks/kz_2613/issues/40) | 未着手 |
-| P15 | [#48](https://github.com/jphacks/kz_2613/issues/48) | [Phase 6][P1] PCゲーム一覧を矢印・Enter・Escで選択可能にする | P1/feature/desktop | [#40](https://github.com/jphacks/kz_2613/issues/40) | 未着手 |
-| P16 | [#49](https://github.com/jphacks/kz_2613/issues/49) | [Phase 6][P1] ゲーム起動パスの手動登録を追加する | P1/feature/desktop | [#40](https://github.com/jphacks/kz_2613/issues/40) | 未着手 |
-| P17 | [#50](https://github.com/jphacks/kz_2613/issues/50) | [Phase 6][P1] 操作ボタン配置とキー割当の編集を追加する | P1/feature/web | [#47](https://github.com/jphacks/kz_2613/issues/47) | 未着手 |
-| P18 | [#51](https://github.com/jphacks/kz_2613/issues/51) | [Phase 6][P1] QR参加案内・Ready表示と開始前の説明を改善する | P1/feature/web | [#40](https://github.com/jphacks/kz_2613/issues/40) | 未着手 |
-| P19 | [#52](https://github.com/jphacks/kz_2613/issues/52) | [Phase 6][P1] 横画面・安全領域と操作フィードバックを改善する | P1/feature/web | [#40](https://github.com/jphacks/kz_2613/issues/40) | 未着手 |
-| P110 | [#53](https://github.com/jphacks/kz_2613/issues/53) | [Phase 6][P1] ゲーム別入力プリセットをローカル保存する | P1/feature/host | [#40](https://github.com/jphacks/kz_2613/issues/40) | 未着手 |
-| P21 | [#54](https://github.com/jphacks/kz_2613/issues/54) | [Phase 7][P2] ローカルランチャー情報からゲーム候補を検出する | P2/feature/desktop | [#49](https://github.com/jphacks/kz_2613/issues/49) | 未着手 |
-| P22 | [#55](https://github.com/jphacks/kz_2613/issues/55) | [Phase 7][P2] Minecraftランチャー検出と起動支援を追加する | P2/feature/desktop | [#49](https://github.com/jphacks/kz_2613/issues/49) | 未着手 |
-| P23 | [#56](https://github.com/jphacks/kz_2613/issues/56) | [Phase 7][P2] 任意のPCアプリの手動登録を一般化する | P2/feature/desktop | [#49](https://github.com/jphacks/kz_2613/issues/49) | 未着手 |
-| P24 | [#57](https://github.com/jphacks/kz_2613/issues/57) | [Phase 7][P2] 2〜4人の可変人数と役割枠を設計・実装する | P2/feature/host | [#47](https://github.com/jphacks/kz_2613/issues/47) | 未着手 |
-| P25 | [#58](https://github.com/jphacks/kz_2613/issues/58) | [Phase 7][P2] 操作量・重要度に基づく役割提案を試作する | P2/feature/host | [#57](https://github.com/jphacks/kz_2613/issues/57) | 未着手 |
-| P26 | [#59](https://github.com/jphacks/kz_2613/issues/59) | [Phase 7][P2] ジャイロ等の身体的入力を実験する | P2/feature/web | [#53](https://github.com/jphacks/kz_2613/issues/53) | 未着手 |
-| P27 | [#60](https://github.com/jphacks/kz_2613/issues/60) | [Phase 7][P2] 入力プロファイルから操作UIを生成する | P2/feature/web | [#53](https://github.com/jphacks/kz_2613/issues/53), [#50](https://github.com/jphacks/kz_2613/issues/50) | 未着手 |
-| P28 | [#61](https://github.com/jphacks/kz_2613/issues/61) | [Phase 7][P2] Minecraft以外の1タイトルで入力対応を検証する | P2/test/input | [#53](https://github.com/jphacks/kz_2613/issues/53) | 未着手 |
-| P29 | [#62](https://github.com/jphacks/kz_2613/issues/62) | [Phase 7][P2] 終了後の役割交換とリトライ導線を追加する | P2/feature/web | [#47](https://github.com/jphacks/kz_2613/issues/47) | 未着手 |
-| P210 | [#63](https://github.com/jphacks/kz_2613/issues/63) | [Phase 7][P2] ローカル接続のワンタップ化・Legacy APを調査する | P2/feature/network | [#9](https://github.com/jphacks/kz_2613/issues/9), [#40](https://github.com/jphacks/kz_2613/issues/40) | 未着手 |
+| S0 | [#1](https://github.com/jphacks/kz_2613/issues/1) | [Phase 0][P0] リポジトリ初期環境を安全に統合する | P0/infra/host | なし | 完了（既存の初期構築） |
+| S1 | [#2](https://github.com/jphacks/kz_2613/issues/2) | [Phase 0][P0] Python 3.12 APIの起動・ヘルスチェックを確立する | P0/infra/host | [#1](https://github.com/jphacks/kz_2613/issues/1) | 完了（既存の初期構築） |
+| S2 | [#3](https://github.com/jphacks/kz_2613/issues/3) | [Phase 0][P0] Reactの型検査・テスト・静的ビルド配信を確立する | P0/infra/web | [#1](https://github.com/jphacks/kz_2613/issues/1), [#2](https://github.com/jphacks/kz_2613/issues/2) | 完了（既存の初期構築） |
+| S3 | [#4](https://github.com/jphacks/kz_2613/issues/4) | [Phase 0][P0] CI・共通開発ルールとIssue運用を整備する | P0/infra/host | [#2](https://github.com/jphacks/kz_2613/issues/2), [#3](https://github.com/jphacks/kz_2613/issues/3) | 完了（既存の初期構築） |
+| N1 | [#67](https://github.com/jphacks/kz_2613/issues/67) | [Phase 1][P0] 試作品・Rust版・静的画面と比較用シミュレーションを取り込む | P0/infra/host | PR #65はユーザー承認後にmainへマージ済み。取り込みは別の実装作業とする。 | 未完了 |
+| N2 | [#69](https://github.com/jphacks/kz_2613/issues/69) | [Phase 1][P0] Rust版を実機3台でNode参照実装と比較する | P0/test/host | [#67](https://github.com/jphacks/kz_2613/issues/67), [#68](https://github.com/jphacks/kz_2613/issues/68), #5 | 未完了 |
+| N3 | [#68](https://github.com/jphacks/kz_2613/issues/68) | [Phase 1][P0] Rustと通信シミュレーションへCIを移行する | P0/infra/host | [#67](https://github.com/jphacks/kz_2613/issues/67) | 未完了 |
+| V0 | [#5](https://github.com/jphacks/kz_2613/issues/5) | [Phase 1][P0] 明示操作でのみ実行するWindows入力プローブを用意する | P0/feature/input | [#4](https://github.com/jphacks/kz_2613/issues/4), [#67](https://github.com/jphacks/kz_2613/issues/67) | 一部確認・未完了 |
+| V1 | [#6](https://github.com/jphacks/kz_2613/issues/6) | [Phase 1][P0] SendInputキー入力をMinecraft実機で検証する | P0/test/input | [#5](https://github.com/jphacks/kz_2613/issues/5) | 未完了 |
+| V2 | [#7](https://github.com/jphacks/kz_2613/issues/7) | [Phase 1][P0] 左右クリック・長押し・ホイールをMinecraft実機で検証する | P0/test/input | [#5](https://github.com/jphacks/kz_2613/issues/5) | 未完了 |
+| V3 | [#8](https://github.com/jphacks/kz_2613/issues/8) | [Phase 1][P0] 相対マウス視点操作の成立性をMinecraft実機で検証する | P0/test/input | [#5](https://github.com/jphacks/kz_2613/issues/5) | 未完了 |
+| V4 | [#9](https://github.com/jphacks/kz_2613/issues/9) | [Phase 1][P0] Windowsホットスポットと上流なしLAN接続を検証する | P0/test/network | なし | 未完了 |
+| V5 | [#10](https://github.com/jphacks/kz_2613/issues/10) | [Phase 1][P0] Android・iPhoneの基本Web表示とPointer Eventsを検証する | P0/test/web | なし | 一部確認・未完了 |
+| B0 | [#11](https://github.com/jphacks/kz_2613/issues/11) | [Phase 2][P0] 通信契約v1（WebSocket＋WebRTC）に版番号を付けて維持する | P0/feature/network | [#67](https://github.com/jphacks/kz_2613/issues/67) | 未完了 |
+| B1 | [#12](https://github.com/jphacks/kz_2613/issues/12) | [Phase 2][P0] 再接続用トークンをサーバー発行の推測困難な値にする | P0/feature/host | [#67](https://github.com/jphacks/kz_2613/issues/67) | 未完了 |
+| B2 | [#13](https://github.com/jphacks/kz_2613/issues/13) | [Phase 2][P0] 接続順でホスト・P1/P2/P3を固定する | P0/feature/host | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| B3 | [#14](https://github.com/jphacks/kz_2613/issues/14) | [Phase 2][P0] 再接続で元の枠・ホスト権を復元する | P0/feature/host | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| B4 | [#15](https://github.com/jphacks/kz_2613/issues/15) | [Phase 2][P0] 状態機械にepochを追加し旧状態の遅延入力を拒否する | P0/feature/host | [#67](https://github.com/jphacks/kz_2613/issues/67) | 未完了 |
+| B5 | [#16](https://github.com/jphacks/kz_2613/issues/16) | [Phase 2][P0] 役割・モード・管理操作の認可を実装する | P0/feature/host | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| B6 | [#17](https://github.com/jphacks/kz_2613/issues/17) | [Phase 2][P0] 保持キー・ボタンと入力所有状態を管理する | P0/feature/input | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| B7 | [#18](https://github.com/jphacks/kz_2613/issues/18) | [Phase 2][P0] 心拍・通信断・終了時の全入力解放を実装する | P0/feature/input | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| B8 | [#19](https://github.com/jphacks/kz_2613/issues/19) | [Phase 2][P0] onモードで前面ウィンドウがMinecraftか確認して注入する | P0/feature/input | [#67](https://github.com/jphacks/kz_2613/issues/67), [#6](https://github.com/jphacks/kz_2613/issues/6) | 未完了 |
+| B9 | [#20](https://github.com/jphacks/kz_2613/issues/20) | [Phase 2][P0] 検証済みSendInputアダプターを入力エンジンへ接続する | P0/feature/input | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| B10 | [#21](https://github.com/jphacks/kz_2613/issues/21) | [Phase 2][P0] スマホ回線に依存しないPCの緊急停止を実装する | P0/feature/host | [#67](https://github.com/jphacks/kz_2613/issues/67) | 未完了 |
+| B11 | [#22](https://github.com/jphacks/kz_2613/issues/22) | [Phase 2][P0] 診断ログからIP・端末情報・clientIdを除く | P0/feature/host | [#67](https://github.com/jphacks/kz_2613/issues/67) | 未完了 |
+| B12 | [#23](https://github.com/jphacks/kz_2613/issues/23) | [Phase 2][P0] LANの3ブラウザHTTP・WebSocket・WebRTCを検証する | P0/test/network | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69), [#16](https://github.com/jphacks/kz_2613/issues/16), [#9](https://github.com/jphacks/kz_2613/issues/9), [#10](https://github.com/jphacks/kz_2613/issues/10) | 一部確認・未完了 |
+| N4 | [#70](https://github.com/jphacks/kz_2613/issues/70) | [Phase 2][P1] 無線が不安定な端末の診断と案内を整備する | P1/feature/network | [#67](https://github.com/jphacks/kz_2613/issues/67) | 未完了 |
+| W0 | [#24](https://github.com/jphacks/kz_2613/issues/24) | [Phase 3][P0] 役割・接続状態と再接続UIを実装する | P0/feature/web | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| W1 | [#25](https://github.com/jphacks/kz_2613/issues/25) | [Phase 3][P0] Pointer Eventsの共通押下・解放処理を実装する | P0/feature/web | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| W2 | [#26](https://github.com/jphacks/kz_2613/issues/26) | [Phase 3][P0] ホスト用の矢印・Enter・Escリモコンを実装する | P0/feature/web | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| W3 | [#27](https://github.com/jphacks/kz_2613/issues/27) | [Phase 3][P0] P1の移動スティック・ジャンプ・スニーク・ダッシュを実装する | P0/feature/web | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| W4 | [#28](https://github.com/jphacks/kz_2613/issues/28) | [Phase 3][P0] P2の方向ボタン視点コントローラーを実装する | P0/feature/web | なし | 方針変更・クローズ候補（未実施） |
+| W5 | [#29](https://github.com/jphacks/kz_2613/issues/29) | [Phase 3][P0] P3の攻撃・使う・持ち物・インベントリ・捨てるを実装する | P0/feature/web | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| W6 | [#30](https://github.com/jphacks/kz_2613/issues/30) | [Phase 3][P0] ホストSTART・PAUSE・RESUME・ENDと開始条件のUIを実装する | P0/feature/web | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| W7 | [#31](https://github.com/jphacks/kz_2613/issues/31) | [Phase 3][P0] Android・iPhoneで全コントローラーを実機検証する | P0/test/web | [#69](https://github.com/jphacks/kz_2613/issues/69), [#30](https://github.com/jphacks/kz_2613/issues/30), [#20](https://github.com/jphacks/kz_2613/issues/20), [#23](https://github.com/jphacks/kz_2613/issues/23) | 一部確認・未完了 |
+| D0 | [#32](https://github.com/jphacks/kz_2613/issues/32) | [Phase 4][P0] 参加用QR・URL・人数画面を実装する | P0/feature/desktop | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| D1 | [#33](https://github.com/jphacks/kz_2613/issues/33) | [Phase 4][P0] 手動起動を許容するゲーム選択画面を実装する | P0/feature/desktop | [#32](https://github.com/jphacks/kz_2613/issues/32) | 未完了 |
+| D2 | [#34](https://github.com/jphacks/kz_2613/issues/34) | [Phase 4][P0] 3人の操作分担確認画面を実装する | P0/feature/desktop | [#33](https://github.com/jphacks/kz_2613/issues/33) | 未完了 |
+| D3 | [#35](https://github.com/jphacks/kz_2613/issues/35) | [Phase 4][P0] Minecraftへの移行・復帰時もセッションを維持する | P0/feature/desktop | [#34](https://github.com/jphacks/kz_2613/issues/34), [#19](https://github.com/jphacks/kz_2613/issues/19), [#30](https://github.com/jphacks/kz_2613/issues/30) | 未完了 |
+| D4 | [#36](https://github.com/jphacks/kz_2613/issues/36) | [Phase 4][P0] Tauri（WebView2）のPCアプリ枠とブラウザ代替を実装する | P0/feature/desktop | [#67](https://github.com/jphacks/kz_2613/issues/67), [#68](https://github.com/jphacks/kz_2613/issues/68) | 未完了 |
+| D5 | [#37](https://github.com/jphacks/kz_2613/issues/37) | [Phase 4][P0] フォーカス切替とPC GUIの実機検証を行う | P0/test/desktop | [#36](https://github.com/jphacks/kz_2613/issues/36), [#20](https://github.com/jphacks/kz_2613/issues/20) | 未完了 |
+| E0 | [#38](https://github.com/jphacks/kz_2613/issues/38) | [Phase 5][P0] 3台同時操作と役割・管理権のE2Eを検証する | P0/test/host | [#31](https://github.com/jphacks/kz_2613/issues/31), [#37](https://github.com/jphacks/kz_2613/issues/37) | 未完了 |
+| E1 | [#39](https://github.com/jphacks/kz_2613/issues/39) | [Phase 5][P0] 切断・再接続・緊急停止の障害試験を行う | P0/test/input | [#38](https://github.com/jphacks/kz_2613/issues/38), [#21](https://github.com/jphacks/kz_2613/issues/21), [#19](https://github.com/jphacks/kz_2613/issues/19), [#12](https://github.com/jphacks/kz_2613/issues/12), [#15](https://github.com/jphacks/kz_2613/issues/15), [#18](https://github.com/jphacks/kz_2613/issues/18) | 未完了 |
+| E2 | [#40](https://github.com/jphacks/kz_2613/issues/40) | [Phase 5][P0] Minecraft協力プレイの反復デモを検証する | P0/test/host | [#39](https://github.com/jphacks/kz_2613/issues/39) | 未完了 |
+| E3 | [#41](https://github.com/jphacks/kz_2613/issues/41) | [Phase 5][P0] Windows配布パッケージ（Tauriバンドル）を作る | P0/infra/desktop | [#36](https://github.com/jphacks/kz_2613/issues/36), [#39](https://github.com/jphacks/kz_2613/issues/39) | 未完了 |
+| E4 | [#42](https://github.com/jphacks/kz_2613/issues/42) | [Phase 5][P0] ゲーム画面・名称・デモ素材の利用条件を確認する | P0/docs/desktop | [#4](https://github.com/jphacks/kz_2613/issues/4) | 未完了 |
+| E5 | [#43](https://github.com/jphacks/kz_2613/issues/43) | [Phase 5][P0] READMEと発表デモ・当日復旧手順を整備する | P0/docs/host | [#40](https://github.com/jphacks/kz_2613/issues/40), [#41](https://github.com/jphacks/kz_2613/issues/41), [#42](https://github.com/jphacks/kz_2613/issues/42) | 未完了 |
+| P11 | [#44](https://github.com/jphacks/kz_2613/issues/44) | [Phase 6][P0] P1移動を仮想スティックへ拡張する | P0/feature/web | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| P12 | [#45](https://github.com/jphacks/kz_2613/issues/45) | [Phase 6][P0] P2視点をスワイプ・感度調整へ拡張する | P0/feature/web | [#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69) | 取り込み・再確認待ち |
+| P13 | [#46](https://github.com/jphacks/kz_2613/issues/46) | [Phase 6][P1] ホストリモコンにタッチパッド・クリック・Eキーを追加する | P1/feature/web | [#40](https://github.com/jphacks/kz_2613/issues/40) | 未完了 |
+| P14 | [#47](https://github.com/jphacks/kz_2613/issues/47) | [Phase 6][P1] Pause中の役割指定・交換を実装する | P1/feature/host | [#40](https://github.com/jphacks/kz_2613/issues/40) | 未完了 |
+| P15 | [#48](https://github.com/jphacks/kz_2613/issues/48) | [Phase 6][P1] PCゲーム一覧を矢印・Enter・Escで選択可能にする | P1/feature/desktop | [#40](https://github.com/jphacks/kz_2613/issues/40) | 未完了 |
+| P16 | [#49](https://github.com/jphacks/kz_2613/issues/49) | [Phase 6][P1] ゲーム起動パスの手動登録を追加する | P1/feature/desktop | [#40](https://github.com/jphacks/kz_2613/issues/40) | 未完了 |
+| P17 | [#50](https://github.com/jphacks/kz_2613/issues/50) | [Phase 6][P1] 操作ボタン配置とキー割当の編集を追加する | P1/feature/web | [#47](https://github.com/jphacks/kz_2613/issues/47) | 未完了 |
+| P18 | [#51](https://github.com/jphacks/kz_2613/issues/51) | [Phase 6][P1] QR参加案内・Ready表示と開始前の説明を改善する | P1/feature/web | [#40](https://github.com/jphacks/kz_2613/issues/40) | 未完了 |
+| P19 | [#52](https://github.com/jphacks/kz_2613/issues/52) | [Phase 6][P1] 横画面・安全領域と操作フィードバックを改善する | P1/feature/web | [#40](https://github.com/jphacks/kz_2613/issues/40) | 未完了 |
+| P110 | [#53](https://github.com/jphacks/kz_2613/issues/53) | [Phase 6][P1] ゲーム別入力プリセットをローカル保存する | P1/feature/host | [#40](https://github.com/jphacks/kz_2613/issues/40) | 未完了 |
+| P21 | [#54](https://github.com/jphacks/kz_2613/issues/54) | [Phase 7][P2] ローカルランチャー情報からゲーム候補を検出する | P2/feature/desktop | [#49](https://github.com/jphacks/kz_2613/issues/49) | 未完了 |
+| P22 | [#55](https://github.com/jphacks/kz_2613/issues/55) | [Phase 7][P2] Minecraftランチャー検出と起動支援を追加する | P2/feature/desktop | [#49](https://github.com/jphacks/kz_2613/issues/49) | 未完了 |
+| P23 | [#56](https://github.com/jphacks/kz_2613/issues/56) | [Phase 7][P2] 任意のPCアプリの手動登録を一般化する | P2/feature/desktop | [#49](https://github.com/jphacks/kz_2613/issues/49) | 未完了 |
+| P24 | [#57](https://github.com/jphacks/kz_2613/issues/57) | [Phase 7][P2] 2〜4人の可変人数と役割枠を設計・実装する | P2/feature/host | [#47](https://github.com/jphacks/kz_2613/issues/47) | 未完了 |
+| P25 | [#58](https://github.com/jphacks/kz_2613/issues/58) | [Phase 7][P2] 操作量・重要度に基づく役割提案を試作する | P2/feature/host | [#57](https://github.com/jphacks/kz_2613/issues/57) | 未完了 |
+| P26 | [#59](https://github.com/jphacks/kz_2613/issues/59) | [Phase 7][P2] ジャイロ等の身体的入力を実験する | P2/feature/web | [#53](https://github.com/jphacks/kz_2613/issues/53) | 未完了 |
+| P27 | [#60](https://github.com/jphacks/kz_2613/issues/60) | [Phase 7][P2] 入力プロファイルから操作UIを生成する | P2/feature/web | [#53](https://github.com/jphacks/kz_2613/issues/53), [#50](https://github.com/jphacks/kz_2613/issues/50) | 未完了 |
+| P28 | [#61](https://github.com/jphacks/kz_2613/issues/61) | [Phase 7][P2] Minecraft以外の1タイトルで入力対応を検証する | P2/test/input | [#53](https://github.com/jphacks/kz_2613/issues/53) | 未完了 |
+| P29 | [#62](https://github.com/jphacks/kz_2613/issues/62) | [Phase 7][P2] 終了後の役割交換とリトライ導線を追加する | P2/feature/web | [#47](https://github.com/jphacks/kz_2613/issues/47) | 未完了 |
+| P210 | [#63](https://github.com/jphacks/kz_2613/issues/63) | [Phase 7][P2] ローカル接続のワンタップ化・Legacy APを調査する | P2/feature/network | [#9](https://github.com/jphacks/kz_2613/issues/9), [#40](https://github.com/jphacks/kz_2613/issues/40) | 未完了 |
 
 ## 各Issueの作業・完了条件
 
 ### S0 — [#1](https://github.com/jphacks/kz_2613/issues/1)
-
 
 ## 概要
 [Phase 0][P0] リポジトリ初期環境を安全に統合する
@@ -121,7 +122,6 @@ P0はデモの成立、P1は体験の改善、P2は将来のバックログ。�
 
 ### S1 — [#2](https://github.com/jphacks/kz_2613/issues/2)
 
-
 ## 概要
 [Phase 0][P0] Python 3.12 APIの起動・ヘルスチェックを確立する
 
@@ -155,7 +155,6 @@ P0はデモの成立、P1は体験の改善、P2は将来のバックログ。�
 - Minecraft入力や実機ゲートの完了は含まない。
 
 ### S2 — [#3](https://github.com/jphacks/kz_2613/issues/3)
-
 
 ## 概要
 [Phase 0][P0] Reactの型検査・テスト・静的ビルド配信を確立する
@@ -191,7 +190,6 @@ P0はデモの成立、P1は体験の改善、P2は将来のバックログ。�
 
 ### S3 — [#4](https://github.com/jphacks/kz_2613/issues/4)
 
-
 ## 概要
 [Phase 0][P0] CI・共通開発ルールとIssue運用を整備する
 
@@ -224,132 +222,135 @@ P0はデモの成立、P1は体験の改善、P2は将来のバックログ。�
 - コマンド・環境・画面確認: docs/handoff/BUILD_LOG.md
 - Minecraft入力や実機ゲートの完了は含まない。
 
-### N1 — 新規
+### N1 — [#67](https://github.com/jphacks/kz_2613/issues/67)
 
 ## 概要
-[Phase 1][P0] 検証済みの試作品をリポジトリへ取り込む
-
-## 状況（2026-10-24）
-試作品（Node.js参照実装・Rust版ホスト・静的画面・シミュレーション）はリポジトリ外にある。
+[Phase 1][P0] 試作品・Rust版・静的画面と比較用シミュレーションを取り込む
 
 ## 背景・関連要件
-要件ID: AT-22, NFR-11, NFR-12
-- docs/requirements/requirements-v0.3.md
-- docs/decisions/2026-10-24-prototype-validated.md
-- docs/architecture/system-design.md
-- docs/architecture/protocol.md
-- docs/architecture/validation-gates.md
+PR #65の要件v0.3・通信契約と、PR #66のIssue計画に対応する。AT-22、NFR-11/12、G4-C。PR #65は承認・main反映済み、PR #66はマージ承認待ち。
 
 ## 作業内容
-- [ ] `apps/host` をRust版ホスト（hub・rtc・input・controls・netinfo・config）で置き換え、Pythonのひな形を削除する
-- [ ] `apps/web` を静的画面（スマホ `index.html`、ダッシュボード `host.html`、疑似ゲーム画面 `game.html`）で置き換え、Reactのひな形を削除する
-- [ ] `tools/reference` にNode.js参照実装と、プロトコルのシミュレーション（権限・連打・視点の補間・二重経路・自動復帰）を置く
-- [ ] `config.example.json` とファイアウォールの許可スクリプトを追加する。READMEとLICENSEは変更しない
+- [ ] Node.js参照実装、Rust版ホスト、静的HTML/CSS/JavaScript、シミュレーションをレビュー可能な形でリポジトリへ追加する
+- [ ] 依存・起動・設定例を記録し、秘密情報を除く。設定例へ実ゲームの自動復帰初期値を決定済みとして書かない
+- [ ] RECOOPLAY_DRY_RUN=1でNode/Rustの権限・時間処理・切断・視点・二重経路・復帰設定を比較する
+- [ ] 既存Python/Reactひな形と既存CIを残して追加し、削除・置換はN3で代替CIの準備後に行う
+- [ ] 取り込みだけでMinecraft・Tauri・Rust実機を検証済みにしない
 
 ## 完了条件
-- [ ] `apps/host` をRust版ホスト（hub・rtc・input・controls・netinfo・config）で置き換え、Pythonのひな形を削除する
-- [ ] `apps/web` を静的画面（スマホ `index.html`、ダッシュボード `host.html`、疑似ゲーム画面 `game.html`）で置き換え、Reactのひな形を削除する
-- [ ] `tools/reference` にNode.js参照実装と、プロトコルのシミュレーション（権限・連打・視点の補間・二重経路・自動復帰）を置く
-- [ ] `config.example.json` とファイアウォールの許可スクリプトを追加する。READMEとLICENSEは変更しない
-- [ ] `cargo build --release` が成功する
-- [ ] 注入なし（`RECOOPLAY_DRY_RUN=1`）のシミュレーション4種が、参照実装とRust版の両方で合格する
-- [ ] スマホ1台以上で参加・操作できることを確認する
-- [ ] 関連テストまたは手動試験の実行コマンド・観測結果を記録する
-- [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
+- [ ] Node.js参照実装、Rust版ホスト、静的HTML/CSS/JavaScript、シミュレーションをレビュー可能な形でリポジトリへ追加する
+- [ ] 依存・起動・設定例を記録し、秘密情報を除く。設定例へ実ゲームの自動復帰初期値を決定済みとして書かない
+- [ ] RECOOPLAY_DRY_RUN=1でNode/Rustの権限・時間処理・切断・視点・二重経路・復帰設定を比較する
+- [ ] 既存Python/Reactひな形と既存CIを残して追加し、削除・置換はN3で代替CIの準備後に行う
+- [ ] 取り込みだけでMinecraft・Tauri・Rust実機を検証済みにしない
+- [ ] 実行コマンド・観測結果・コミットをBUILD_LOGへ記録する
+- [ ] 必要な設計・構築手順を更新する
 
 ## 依存関係
-[#65](https://github.com/jphacks/kz_2613/issues/65)
-
-### N2 — 新規
-
-## 概要
-[Phase 1][P0] Rust版ホストを実機3台で参照実装と比較する
-
-## 状況（2026-10-24）
-Rust版はPC上のシミュレーションで参照実装と一致した。実際のSendInputと実機での試験は未実施。
-
-## 背景・関連要件
-要件ID: G4-C, AT-22, NFR-03, NFR-19
-- docs/requirements/requirements-v0.3.md
-- docs/decisions/2026-10-24-prototype-validated.md
-- docs/architecture/system-design.md
-- docs/architecture/protocol.md
-- docs/architecture/validation-gates.md
-
-## 作業内容
-- [ ] Android 2台とiPhoneで、参加・WebRTC接続・役割・START/PAUSE/RESUME/END・切断と自動復帰を試す
-- [ ] 疑似ゲーム画面の `test` モードで、キー・マウス・視点の受信を照合する
-- [ ] 往復遅延・視点の途切れ・照合の遅延を、BUILD_LOGにある参照実装の数値と比べる
-
-## 完了条件
-- [ ] Android 2台とiPhoneで、参加・WebRTC接続・役割・START/PAUSE/RESUME/END・切断と自動復帰を試す
-- [ ] 疑似ゲーム画面の `test` モードで、キー・マウス・視点の受信を照合する
-- [ ] 往復遅延・視点の途切れ・照合の遅延を、BUILD_LOGにある参照実装の数値と比べる
-- [ ] 照合で届かなかった入力が0件（テスト方法による既知の例外を除く）
-- [ ] 遅延・途切れが参照実装と同等以下であることを記録する
-- [ ] 関連テストまたは手動試験の実行コマンド・観測結果を記録する
-- [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
-
-## 依存関係
-なし
+PR #65はユーザー承認後にmainへマージ済み。取り込みは別の実装作業とする。
 
 ## 備考
-実機検証。端末・OS/ブラウザ・Minecraft版・ネットワーク・実施日/操作者・実測結果を記録する。未実施は未検証とする。
+今回はIssueの作成・整理だけを行う。実装・実機試験は未着手。mainへのマージとIssueの一括クローズはユーザー確認前に行わない。
 
-### N3 — 新規
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
+
+### N2 — [#69](https://github.com/jphacks/kz_2613/issues/69)
 
 ## 概要
-[Phase 1][P0] CIをRustのビルド・テストとプロトコルシミュレーションへ移行する
-
-## 状況（2026-10-24）
-現在のCIはPythonとReactのひな形を検証している。
+[Phase 1][P0] Rust版を実機3台でNode参照実装と比較する
 
 ## 背景・関連要件
-要件ID: NFR-12
-- docs/requirements/requirements-v0.3.md
-- docs/decisions/2026-10-24-prototype-validated.md
-- docs/architecture/system-design.md
-- docs/architecture/protocol.md
-- docs/architecture/validation-gates.md
+PR #65の要件v0.3・通信契約と、PR #66のIssue計画に対応する。AT-22、NFR-11/12、G4-C。PR #65は承認・main反映済み、PR #66はマージ承認待ち。
 
 ## 作業内容
-- [ ] windows-latestで、Rust・CMake・Perl・libclangを用意し、`cargo build --release` と `cargo test` と `cargo clippy` を実行する（ビルド結果をキャッシュする）
-- [ ] Rust版ホストを注入なしで起動し、プロトコルのシミュレーションを実行する
-- [ ] Python・ReactのCIジョブと `verify_overlay.py` の対象を整理する
+- [ ] 取り込み済みコミット・起動手順を固定し、明示開始と独立した停止手段を準備する
+- [ ] Android/iPhoneを含む3台でHTTP・WS・WebRTC、役割、START/PAUSE/RESUME/ENDを疑似ゲーム画面で比較する
+- [ ] 1人の切断時にも全参加者の合成キー・マウスボタンが解放され、待機入力と視点が破棄されることを確認する
+- [ ] 復帰設定ON/OFF、15秒の期限内/外、ホストPAUSEを分け、旧押下が戻らないことを確認する
+- [ ] Rust実機結果をNodeの観測と区別して記録する。Minecraftでの自動復帰初期値・使用条件は決定しない
 
 ## 完了条件
-- [ ] windows-latestで、Rust・CMake・Perl・libclangを用意し、`cargo build --release` と `cargo test` と `cargo clippy` を実行する（ビルド結果をキャッシュする）
-- [ ] Rust版ホストを注入なしで起動し、プロトコルのシミュレーションを実行する
-- [ ] Python・ReactのCIジョブと `verify_overlay.py` の対象を整理する
-- [ ] プルリクエストでRustのビルドとシミュレーションが自動で実行され、成功する
-- [ ] 関連テストまたは手動試験の実行コマンド・観測結果を記録する
-- [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
+- [ ] 取り込み済みコミット・起動手順を固定し、明示開始と独立した停止手段を準備する
+- [ ] Android/iPhoneを含む3台でHTTP・WS・WebRTC、役割、START/PAUSE/RESUME/ENDを疑似ゲーム画面で比較する
+- [ ] 1人の切断時にも全参加者の合成キー・マウスボタンが解放され、待機入力と視点が破棄されることを確認する
+- [ ] 復帰設定ON/OFF、15秒の期限内/外、ホストPAUSEを分け、旧押下が戻らないことを確認する
+- [ ] Rust実機結果をNodeの観測と区別して記録する。Minecraftでの自動復帰初期値・使用条件は決定しない
+- [ ] 実行コマンド・観測結果・コミットをBUILD_LOGへ記録する
+- [ ] 必要な設計・構築手順を更新する
 
 ## 依存関係
-N1（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#68](https://github.com/jphacks/kz_2613/issues/68), #5
+
+## 備考
+今回はIssueの作成・整理だけを行う。実装・実機試験は未着手。mainへのマージとIssueの一括クローズはユーザー確認前に行わない。
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
+
+### N3 — [#68](https://github.com/jphacks/kz_2613/issues/68)
+
+## 概要
+[Phase 1][P0] Rustと通信シミュレーションへCIを移行する
+
+## 背景・関連要件
+PR #65の要件v0.3・通信契約と、PR #66のIssue計画に対応する。AT-22、NFR-11/12、G4-C。PR #65は承認・main反映済み、PR #66はマージ承認待ち。
+
+## 作業内容
+- [ ] 取り込んだRustのビルド・テストとNode/Rust比較シミュレーションをGitHub Actionsで実行する
+- [ ] CIは入力注入なしとし、ゲームや実機の合格を代用しない
+- [ ] 代替チェックの成功後に旧Python/Reactひな形の削除・置換と構造確認・セットアップ手順の更新を同じPRで行う
+- [ ] mainのCIを途中で壊す削除を先行しない。Reactは任意で、静的画面をMVPの基準にする
+
+## 完了条件
+- [ ] 取り込んだRustのビルド・テストとNode/Rust比較シミュレーションをGitHub Actionsで実行する
+- [ ] CIは入力注入なしとし、ゲームや実機の合格を代用しない
+- [ ] 代替チェックの成功後に旧Python/Reactひな形の削除・置換と構造確認・セットアップ手順の更新を同じPRで行う
+- [ ] mainのCIを途中で壊す削除を先行しない。Reactは任意で、静的画面をMVPの基準にする
+- [ ] 実行コマンド・観測結果・コミットをBUILD_LOGへ記録する
+- [ ] 必要な設計・構築手順を更新する
+
+## 依存関係
+[#67](https://github.com/jphacks/kz_2613/issues/67)
+
+## 備考
+今回はIssueの作成・整理だけを行う。実装・実機試験は未着手。mainへのマージとIssueの一括クローズはユーザー確認前に行わない。
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### V0 — [#5](https://github.com/jphacks/kz_2613/issues/5)
 
 ## 概要
-[Phase 1][P0] 注入モードと疑似ゲーム画面でWindows入力の経路を検証する
+[Phase 1][P0] 明示操作でのみ実行するWindows入力プローブを用意する
 
-## 状況（2026-10-24）
-**完了。** 試作品で実装・検証した。手動で注入を有効にする仕組みは、注入モード（初期値 `off`、`test` は疑似ゲーム画面の選択中だけ、`on` は実ゲーム用）で実現した。スマホ回線に依存しない緊急停止は #21 に分けた。
+## 状況（今回の整合性確認）
+**未完了・クローズしない。** 元のIssue #5の条件を維持する。Node試作品のoff/test/onと疑似ゲーム画面への注入は観測済みだが、対象確認・独立した非常停止・finally全解放・起動/import時非送信・mock安全経路を満たす成果物と証拠は未確認。
 
 ## 背景・関連要件
-要件ID: ENV-01, FR-026, FR-027, FR-035
 - docs/requirements/requirements-v0.3.md
 - docs/decisions/2026-10-24-prototype-validated.md
 - docs/architecture/system-design.md
 - docs/architecture/protocol.md
 - docs/architecture/validation-gates.md
+要件ID: ENV-01, ENV-02, FR-026, FR-034, FR-035
 
-## 完了証拠
-- 疑似ゲーム画面（OSが受け取った入力だけで動く画面）で、注入通知と受信を1件ずつ照合した
-- WebSocketのみの回：1509件中1500件が届いた。届かなかった7件はテスト方法によるもの
-- WebRTCを入れた回：858件中858件が届いた。遅延は中央値2.5ms・95%値21.3ms
-- SendInputの失敗0件。スキャンコードのキー・左右ボタン・ホイール・相対移動を確認した
-- 詳細：docs/handoff/BUILD_LOG.md「通信試作品による実機検証」
+## 作業内容
+- [ ] Windows限定、対象確認、手動arming、非常停止とfinally全解放を備える独立プローブを実装する
+- [ ] 起動時やimport時に入力を送らずmockで安全経路を確認し実機手順を記す
+- [ ] 注入off/test/onの存在を、入力先確認と独立した非常停止が完成した証拠としない
+
+## 完了条件
+- [ ] Windows限定、対象確認、手動arming、非常停止とfinally全解放を備える独立プローブを実装する
+- [ ] 起動時やimport時に入力を送らずmockで安全経路を確認し実機手順を記す
+- [ ] 注入off/test/onの存在を、入力先確認と独立した非常停止が完成した証拠としない
+- [ ] 実行コマンド・対象コミット・実測結果をBUILD_LOGに記録する
+- [ ] 必要な共通文書を更新し、未確認条件を完了扱いしない
+
+## 依存関係
+[#4](https://github.com/jphacks/kz_2613/issues/4), [#67](https://github.com/jphacks/kz_2613/issues/67)
+
+## 備考
+本Issueのプローブ内の対象確認・停止を先に満たす。製品全体のフォーカス監視 #19と緊急停止 #21も未実装の別成果物として残し、相互依存の循環を作らない。操作者の明示開始前にOS入力を送らない。
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### V1 — [#6](https://github.com/jphacks/kz_2613/issues/6)
 
@@ -383,10 +384,14 @@ N1（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-なし
+[#5](https://github.com/jphacks/kz_2613/issues/5)
 
 ## 備考
 実機検証。端末・OS/ブラウザ・Minecraft版・ネットワーク・実施日/操作者・実測結果を記録する。未実施は未検証とする。
+
+安全なプローブ #5 の完了後に、操作者が明示開始して実施する。試作品の注入成功だけでMinecraftの合格を主張しない。
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### V2 — [#7](https://github.com/jphacks/kz_2613/issues/7)
 
@@ -416,10 +421,14 @@ N1（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-なし
+[#5](https://github.com/jphacks/kz_2613/issues/5)
 
 ## 備考
 実機検証。端末・OS/ブラウザ・Minecraft版・ネットワーク・実施日/操作者・実測結果を記録する。未実施は未検証とする。
+
+安全なプローブ #5 の完了後に、操作者が明示開始して実施する。試作品の注入成功だけでMinecraftの合格を主張しない。
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### V3 — [#8](https://github.com/jphacks/kz_2613/issues/8)
 
@@ -451,10 +460,14 @@ N1（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-なし
+[#5](https://github.com/jphacks/kz_2613/issues/5)
 
 ## 備考
 実機検証。端末・OS/ブラウザ・Minecraft版・ネットワーク・実施日/操作者・実測結果を記録する。未実施は未検証とする。
+
+安全なプローブ #5 の完了後に、操作者が明示開始して実施する。試作品の注入成功だけでMinecraftの合格を主張しない。
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### V4 — [#9](https://github.com/jphacks/kz_2613/issues/9)
 
@@ -491,13 +504,15 @@ N1（新規）
 ## 備考
 実機検証。端末・OS/ブラウザ・Minecraft版・ネットワーク・実施日/操作者・実測結果を記録する。未実施は未検証とする。
 
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
+
 ### V5 — [#10](https://github.com/jphacks/kz_2613/issues/10)
 
 ## 概要
 [Phase 1][P0] Android・iPhoneの基本Web表示とPointer Eventsを検証する
 
 ## 状況（2026-10-24）
-**完了。** 試作品で検証した。
+**一部確認・未完了。** Node試作品の接続・操作は観測済み。元の完了条件にある回転・非表示・長押し等の端末別記録を確認し、不足条件を追試する。
 
 ## 背景・関連要件
 要件ID: ENV-04, NFR-02, NFR-07
@@ -510,6 +525,12 @@ N1（新規）
 ## 完了証拠
 - Android 10 Chrome×2、iOS 18.7 Safari×2で、コントローラーの表示・長押し・複数の指（同時押し）・pointercancel・画面の非表示時の解放を確認した
 - 詳細：docs/handoff/BUILD_LOG.md「通信試作品による実機検証」
+
+## 残る完了条件
+- [ ] 元のIssueにある両OSの押下・解放・複数指・非表示・回転・長押しの試験結果を記録する
+- [ ] 端末・OS・ブラウザの版と手順、残留入力の有無を記録する
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### B0 — [#11](https://github.com/jphacks/kz_2613/issues/11)
 
@@ -539,7 +560,9 @@ N1（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### B1 — [#12](https://github.com/jphacks/kz_2613/issues/12)
 
@@ -571,7 +594,9 @@ N1（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### B2 — [#13](https://github.com/jphacks/kz_2613/issues/13)
 
@@ -600,7 +625,9 @@ N1（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### B3 — [#14](https://github.com/jphacks/kz_2613/issues/14)
 
@@ -629,7 +656,9 @@ N1（新規）, N2（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### B4 — [#15](https://github.com/jphacks/kz_2613/issues/15)
 
@@ -659,7 +688,9 @@ N1（新規）, N2（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### B5 — [#16](https://github.com/jphacks/kz_2613/issues/16)
 
@@ -688,7 +719,9 @@ N1（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### B6 — [#17](https://github.com/jphacks/kz_2613/issues/17)
 
@@ -717,7 +750,9 @@ N1（新規）, N2（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### B7 — [#18](https://github.com/jphacks/kz_2613/issues/18)
 
@@ -746,7 +781,14 @@ N1（新規）, N2（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+## 追加の安全条件
+- [ ] 一時停止への遷移では切断枠だけでなく全参加者のキー・マウスボタンを即時解放する
+- [ ] 最低押下時間より安全停止を優先し、待機入力と視点を破棄する
+- [ ] 全員が同時保持した切断試験の結果をNode/Rust実機別に記録する
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### B8 — [#19](https://github.com/jphacks/kz_2613/issues/19)
 
@@ -776,7 +818,9 @@ N1（新規）, N2（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, [#6](https://github.com/jphacks/kz_2613/issues/6)
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#6](https://github.com/jphacks/kz_2613/issues/6)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### B9 — [#20](https://github.com/jphacks/kz_2613/issues/20)
 
@@ -807,7 +851,9 @@ Minecraftが入力を受け付けるかは #6〜#8 で確認する。
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### B10 — [#21](https://github.com/jphacks/kz_2613/issues/21)
 
@@ -837,7 +883,9 @@ N1（新規）, N2（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### B11 — [#22](https://github.com/jphacks/kz_2613/issues/22)
 
@@ -867,60 +915,73 @@ N1（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### B12 — [#23](https://github.com/jphacks/kz_2613/issues/23)
 
 ## 概要
 [Phase 2][P0] LANの3ブラウザHTTP・WebSocket・WebRTCを検証する
 
-## 状況（2026-10-24）
-**完了。** 試作品で検証した（上流回線ありの状態）。上流回線なしは #9。
+## 状況（今回の整合性確認）
+**一部確認・未完了。** Node試作品では上流回線ありの3台接続を観測した。元のIssue #23にある上流回線なしの3台接続、信頼LAN限定のbind/firewallとサーバー認可の検証を省略しない。
 
 ## 背景・関連要件
-要件ID: FR-002, G2-B, G2-C
 - docs/requirements/requirements-v0.3.md
 - docs/decisions/2026-10-24-prototype-validated.md
 - docs/architecture/system-design.md
 - docs/architecture/protocol.md
 - docs/architecture/validation-gates.md
-
-## 完了証拠
-- Android 10 Chrome×2、iOS 18.7 Safari×2の組み合わせ3台で、HTTP・WebSocket・WebRTCが成立した。WebSocketの欠落は0件
-- WebRTCで、不安定な端末の視点の途切れが42%から1.7%に、往復遅延の最大が2015msから221msになった
-- 詳細：docs/handoff/BUILD_LOG.md
-
-### N4 — 新規
-
-## 概要
-[Phase 2][P1] 無線が不安定な端末を診断・案内する
-
-## 状況（2026-10-24）
-端末Bは、端末側の無線停止で4秒を超える途絶を繰り返した。WebRTCで視点の途切れは1.7%に減ったが、停止そのものは残る。
-
-## 背景・関連要件
-要件ID: EN-111, NFR-19
-- docs/requirements/requirements-v0.3.md
-- docs/decisions/2026-10-24-prototype-validated.md
-- docs/architecture/system-design.md
-- docs/architecture/protocol.md
-- docs/architecture/validation-gates.md
+要件ID: FR-002, ENV-03, NFR-01, G2-B, AT-01, AT-17
 
 ## 作業内容
-- [ ] ダッシュボードに、端末ごとの視点の途切れ率・4秒を超えた途絶の回数・経路を表示する
-- [ ] 基準を超えた端末に、対処（省電力OFF、モバイルデータOFF、5GHzへの固定、PCへ近づける）を案内する
-- [ ] 端末Bで対処ごとに途絶の回数を測り、効果を記録する
+- [ ] 信頼LAN限定のbind/firewall手順で3台のHTTP/WS参加を試験する
+- [ ] 上流回線なしで3台が接続しサーバー認可される結果と端末版を記録する
+- [ ] 取り込み済みRustでWebRTC併用・WS代替も確認し、Node実機とRust実機の結果を分ける
 
 ## 完了条件
-- [ ] ダッシュボードに、端末ごとの視点の途切れ率・4秒を超えた途絶の回数・経路を表示する
-- [ ] 基準を超えた端末に、対処（省電力OFF、モバイルデータOFF、5GHzへの固定、PCへ近づける）を案内する
-- [ ] 端末Bで対処ごとに途絶の回数を測り、効果を記録する
-- [ ] 不安定な端末を画面から特定でき、対処の効果が記録されている
-- [ ] 関連テストまたは手動試験の実行コマンド・観測結果を記録する
-- [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
+- [ ] 信頼LAN限定のbind/firewall手順で3台のHTTP/WS参加を試験する
+- [ ] 上流回線なしで3台が接続しサーバー認可される結果と端末版を記録する
+- [ ] 取り込み済みRustでWebRTC併用・WS代替も確認し、Node実機とRust実機の結果を分ける
+- [ ] 実行コマンド・対象コミット・実測結果をBUILD_LOGに記録する
+- [ ] 必要な共通文書を更新し、未確認条件を完了扱いしない
 
 ## 依存関係
-N1（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69), [#16](https://github.com/jphacks/kz_2613/issues/16), [#9](https://github.com/jphacks/kz_2613/issues/9), [#10](https://github.com/jphacks/kz_2613/issues/10)
+
+## 備考
+上流なしの確認は #9 の記録を再利用してよいが、未実施のまま本Issueを閉じない。
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
+
+### N4 — [#70](https://github.com/jphacks/kz_2613/issues/70)
+
+## 概要
+[Phase 2][P1] 無線が不安定な端末の診断と案内を整備する
+
+## 背景・関連要件
+PR #65の要件v0.3・通信契約と、PR #66のIssue計画に対応する。AT-22、NFR-11/12、G4-C。PR #65は承認・main反映済み、PR #66はマージ承認待ち。
+
+## 作業内容
+- [ ] 接続経路・到着間隔・復帰回数から通信の途切れを診断する
+- [ ] 省電力・Wi-Fi帯域等の手動確認を案内し、個別端末への効果は実測して記録する
+- [ ] IP・端末識別子・トークンを公開ログへ記録せず、設定を無断で変更しない
+
+## 完了条件
+- [ ] 接続経路・到着間隔・復帰回数から通信の途切れを診断する
+- [ ] 省電力・Wi-Fi帯域等の手動確認を案内し、個別端末への効果は実測して記録する
+- [ ] IP・端末識別子・トークンを公開ログへ記録せず、設定を無断で変更しない
+- [ ] 実行コマンド・観測結果・コミットをBUILD_LOGへ記録する
+- [ ] 必要な設計・構築手順を更新する
+
+## 依存関係
+[#67](https://github.com/jphacks/kz_2613/issues/67)
+
+## 備考
+今回はIssueの作成・整理だけを行う。実装・実機試験は未着手。mainへのマージとIssueの一括クローズはユーザー確認前に行わない。
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### W0 — [#24](https://github.com/jphacks/kz_2613/issues/24)
 
@@ -949,7 +1010,9 @@ N1（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### W1 — [#25](https://github.com/jphacks/kz_2613/issues/25)
 
@@ -978,7 +1041,9 @@ N1（新規）, N2（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### W2 — [#26](https://github.com/jphacks/kz_2613/issues/26)
 
@@ -1007,7 +1072,9 @@ N1（新規）, N2（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### W3 — [#27](https://github.com/jphacks/kz_2613/issues/27)
 
@@ -1038,7 +1105,9 @@ N1（新規）, N2（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### W4 — [#28](https://github.com/jphacks/kz_2613/issues/28)
 
@@ -1046,7 +1115,7 @@ N1（新規）, N2（新規）
 [Phase 3][P0] P2の方向ボタン視点コントローラーを実装する
 
 ## 状況（2026-10-24）
-**方針変更によりクローズ。** 方針変更によりクローズ。P2の視点は、ドラッグ領域による相対移動（#45、要件定義v0.3でP0へ取り込み）を実機で検証して採用した。
+**方針変更によるクローズ候補（未実施）。** ユーザーの実施前確認を待つ。P2の視点は、ドラッグ領域による相対移動（#45、要件定義v0.3でP0へ取り込み）を実機で検証して採用した。
 
 ## 背景・関連要件
 要件ID: FR-021, EN-102
@@ -1055,6 +1124,8 @@ N1（新規）, N2（新規）
 - docs/architecture/system-design.md
 - docs/architecture/protocol.md
 - docs/architecture/validation-gates.md
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### W5 — [#29](https://github.com/jphacks/kz_2613/issues/29)
 
@@ -1085,7 +1156,9 @@ N1（新規）, N2（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### W6 — [#30](https://github.com/jphacks/kz_2613/issues/30)
 
@@ -1114,27 +1187,47 @@ N1（新規）, N2（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+自動復帰の実運用初期値・許可条件は未決定。ホストPAUSEはON/OFFによらず非自動、通信切断は設定・期限・安全条件を満たす場合の試験として扱う。
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### W7 — [#31](https://github.com/jphacks/kz_2613/issues/31)
 
 ## 概要
 [Phase 3][P0] Android・iPhoneで全コントローラーを実機検証する
 
-## 状況（2026-10-24）
-**完了。** 試作品で検証した。Minecraftでの確認は #6〜#8・#40。
+## 状況（今回の整合性確認）
+**一部確認・未完了。** 元のIssue #31の条件を維持する。Node試作品の操作照合858/858は記録されているが、回転・pointercancel・画面ロック等の個別結果とRust実機の確認は揃っていない。
 
 ## 背景・関連要件
-要件ID: AT-18, ENV-04
 - docs/requirements/requirements-v0.3.md
 - docs/decisions/2026-10-24-prototype-validated.md
 - docs/architecture/system-design.md
 - docs/architecture/protocol.md
 - docs/architecture/validation-gates.md
+要件ID: NFR-02, NFR-07, G-05, AT-18
 
-## 完了証拠
-- 3台（Android 10 Chrome×2、iOS 18.7 Safari×2の組み合わせ）で、ホストのリモコン・P1の移動スティック・P2のドラッグ視点・P3のアクションを、疑似ゲーム画面で照合した（858件中858件が届いた）
-- 詳細：docs/handoff/BUILD_LOG.md
+## 作業内容
+- [ ] 実装済み各役割で長押し/複数指/回転/キャンセル/画面ロックを試す
+- [ ] 両OSの端末・版・観測結果と残留入力の有無を記録する
+- [ ] 各項目をAndroid/iPhone別に記録し、Nodeの過去の観測と取り込み済みRustの再試験を区別する
+
+## 完了条件
+- [ ] 実装済み各役割で長押し/複数指/回転/キャンセル/画面ロックを試す
+- [ ] 両OSの端末・版・観測結果と残留入力の有無を記録する
+- [ ] 各項目をAndroid/iPhone別に記録し、Nodeの過去の観測と取り込み済みRustの再試験を区別する
+- [ ] 実行コマンド・対象コミット・実測結果をBUILD_LOGに記録する
+- [ ] 必要な共通文書を更新し、未確認条件を完了扱いしない
+
+## 依存関係
+[#69](https://github.com/jphacks/kz_2613/issues/69), [#30](https://github.com/jphacks/kz_2613/issues/30), [#20](https://github.com/jphacks/kz_2613/issues/20), [#23](https://github.com/jphacks/kz_2613/issues/23)
+
+## 備考
+未記録の条件を推測してチェック済みにしない。Minecraftの確認は #6〜#8・#40で別途行う。
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### D0 — [#32](https://github.com/jphacks/kz_2613/issues/32)
 
@@ -1165,10 +1258,11 @@ N1（新規）, N2（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### D1 — [#33](https://github.com/jphacks/kz_2613/issues/33)
-
 
 ## 概要
 [Phase 4][P0] 手動起動を許容するゲーム選択画面を実装する
@@ -1196,8 +1290,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。
 
-### D2 — [#34](https://github.com/jphacks/kz_2613/issues/34)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### D2 — [#34](https://github.com/jphacks/kz_2613/issues/34)
 
 ## 概要
 [Phase 4][P0] 3人の操作分担確認画面を実装する
@@ -1225,8 +1320,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。
 
-### D3 — [#35](https://github.com/jphacks/kz_2613/issues/35)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### D3 — [#35](https://github.com/jphacks/kz_2613/issues/35)
 
 ## 概要
 [Phase 4][P0] Minecraftへの移行・復帰時もセッションを維持する
@@ -1253,6 +1349,8 @@ N1（新規）, N2（新規）
 
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### D4 — [#36](https://github.com/jphacks/kz_2613/issues/36)
 
@@ -1282,10 +1380,11 @@ pywebviewの案は、PCホストのRust化により置き換えた。画面は�
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#68](https://github.com/jphacks/kz_2613/issues/68)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### D5 — [#37](https://github.com/jphacks/kz_2613/issues/37)
-
 
 ## 概要
 [Phase 4][P0] フォーカス切替とPC GUIの実機検証を行う
@@ -1313,8 +1412,9 @@ N1（新規）
 ## 備考
 実機検証。端末・OS/ブラウザ・Minecraft版・ネットワーク・実施日/操作者・実測結果を記録する。未実施は未検証とする。
 
-### E0 — [#38](https://github.com/jphacks/kz_2613/issues/38)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### E0 — [#38](https://github.com/jphacks/kz_2613/issues/38)
 
 ## 概要
 [Phase 5][P0] 3台同時操作と役割・管理権のE2Eを検証する
@@ -1327,11 +1427,11 @@ N1（新規）
 - docs/architecture/validation-gates.md
 
 ## 作業内容
-- [ ] 3人で移動+視点+アクション、2人Start拒否とホスト限定Pause/Resumeを試す
+- [ ] 3人で移動+視点+アクション、必要人数=3での2人Start拒否と試験用人数設定ごとの境界とホスト限定Pause/Resumeを試す
 - [ ] 実機構成、遅延の中央値/上位分位、主観的操作性を記録する
 
 ## 完了条件
-- [ ] 3人で移動+視点+アクション、2人Start拒否とホスト限定Pause/Resumeを試す
+- [ ] 3人で移動+視点+アクション、必要人数=3での2人Start拒否と試験用人数設定ごとの境界とホスト限定Pause/Resumeを試す
 - [ ] 実機構成、遅延の中央値/上位分位、主観的操作性を記録する
 - [ ] 関連テストまたは手動試験の実行コマンド・観測結果を記録する
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
@@ -1342,37 +1442,55 @@ N1（新規）
 ## 備考
 実機検証。端末・OS/ブラウザ・Minecraft版・ネットワーク・実施日/操作者・実測結果を記録する。未実施は未検証とする。
 
-### E1 — [#39](https://github.com/jphacks/kz_2613/issues/39)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### E1 — [#39](https://github.com/jphacks/kz_2613/issues/39)
 
 ## 概要
 [Phase 5][P0] 切断・再接続・緊急停止の障害試験を行う
 
+## 状況（今回の整合性確認）
+**未完了。** ホストPAUSEと通信切断を区別する。15秒以内の復帰はNode試作品の観測として保持し、Minecraft実運用の初期値・使用条件は安全確認後のユーザー判断を待つ。
+
 ## 背景・関連要件
-要件ID: G3-B, G-06, AT-10, AT-11, AT-12, AT-15, AT-16
 - docs/requirements/requirements-v0.3.md
-- docs/decisions/2026-10-24-user-decisions.md
+- docs/decisions/2026-10-24-prototype-validated.md
 - docs/architecture/system-design.md
+- docs/architecture/protocol.md
 - docs/architecture/validation-gates.md
+要件ID: G3-B, FR-019, FR-032, FR-035, SM-04, AT-10, AT-11, AT-12, AT-15, AT-16
 
 ## 作業内容
-- [ ] 長押し中のWi-Fi断/ホスト断/タブ閉鎖/ロック/強制停止を試し元枠復帰を確認する
-- [ ] 全キー解放・自動再開なし・トークン失効とPC停止の証拠を残す
+- [ ] 全参加者がキー・マウスボタンを同時保持した状態で、Wi-Fi断・ホスト断・タブ閉鎖・ロック・強制停止を試す
+- [ ] coopからpausedへの遷移で全参加者の合成キー・マウスボタンを即時解放し、連打キュー・視点の未処理分を破棄する
+- [ ] ホストPAUSEでは自動復帰設定ON/OFFのどちらでも自動再開しないことを確認する
+- [ ] 通信切断・設定ONでは15秒の期限内/外、P1を含む全員の復帰、WebRTC準備、対象・停止手段を分けて試す
+- [ ] 通信切断・設定OFFと期限外では、接続が戻ってもホストの明示RESUMEまで再開しないことを確認する
+- [ ] 復帰時に元の枠を維持し、旧押下や遅延入力が復活せず新しい押下から開始することを確認する
+- [ ] トークン失効・再認証、旧epoch拒否、入力先ウィンドウ喪失、スマホ回線に依存しないPC緊急停止を試す
+- [ ] Node観測・Rust実機・Minecraftの結果を分けて記録し、実運用初期値と許可条件は未決定のまま判断材料を提示する
 
 ## 完了条件
-- [ ] 長押し中のWi-Fi断/ホスト断/タブ閉鎖/ロック/強制停止を試し元枠復帰を確認する
-- [ ] 全キー解放・自動再開なし・トークン失効とPC停止の証拠を残す
-- [ ] 関連テストまたは手動試験の実行コマンド・観測結果を記録する
-- [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
+- [ ] 全参加者がキー・マウスボタンを同時保持した状態で、Wi-Fi断・ホスト断・タブ閉鎖・ロック・強制停止を試す
+- [ ] coopからpausedへの遷移で全参加者の合成キー・マウスボタンを即時解放し、連打キュー・視点の未処理分を破棄する
+- [ ] ホストPAUSEでは自動復帰設定ON/OFFのどちらでも自動再開しないことを確認する
+- [ ] 通信切断・設定ONでは15秒の期限内/外、P1を含む全員の復帰、WebRTC準備、対象・停止手段を分けて試す
+- [ ] 通信切断・設定OFFと期限外では、接続が戻ってもホストの明示RESUMEまで再開しないことを確認する
+- [ ] 復帰時に元の枠を維持し、旧押下や遅延入力が復活せず新しい押下から開始することを確認する
+- [ ] トークン失効・再認証、旧epoch拒否、入力先ウィンドウ喪失、スマホ回線に依存しないPC緊急停止を試す
+- [ ] Node観測・Rust実機・Minecraftの結果を分けて記録し、実運用初期値と許可条件は未決定のまま判断材料を提示する
+- [ ] 実行コマンド・対象コミット・実測結果をBUILD_LOGに記録する
+- [ ] 必要な共通文書を更新し、未確認条件を完了扱いしない
 
 ## 依存関係
-[#38](https://github.com/jphacks/kz_2613/issues/38), [#21](https://github.com/jphacks/kz_2613/issues/21)
+[#38](https://github.com/jphacks/kz_2613/issues/38), [#21](https://github.com/jphacks/kz_2613/issues/21), [#19](https://github.com/jphacks/kz_2613/issues/19), [#12](https://github.com/jphacks/kz_2613/issues/12), [#15](https://github.com/jphacks/kz_2613/issues/15), [#18](https://github.com/jphacks/kz_2613/issues/18)
 
 ## 備考
-実機検証。端末・OS/ブラウザ・Minecraft版・ネットワーク・実施日/操作者・実測結果を記録する。未実施は未検証とする。
+ONの試験は操作者が明示開始した管理下で行い、実ゲームの安全要件を省略しない。単一の『自動再開なし』を全ケースへ適用しない。
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### E2 — [#40](https://github.com/jphacks/kz_2613/issues/40)
-
 
 ## 概要
 [Phase 5][P0] Minecraft協力プレイの反復デモを検証する
@@ -1399,6 +1517,8 @@ N1（新規）
 
 ## 備考
 実機検証。端末・OS/ブラウザ・Minecraft版・ネットワーク・実施日/操作者・実測結果を記録する。未実施は未検証とする。
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### E3 — [#41](https://github.com/jphacks/kz_2613/issues/41)
 
@@ -1430,8 +1550,9 @@ PyInstallerの案は、PCホストのRust化により置き換えた。
 ## 依存関係
 [#36](https://github.com/jphacks/kz_2613/issues/36), [#39](https://github.com/jphacks/kz_2613/issues/39)
 
-### E4 — [#42](https://github.com/jphacks/kz_2613/issues/42)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### E4 — [#42](https://github.com/jphacks/kz_2613/issues/42)
 
 ## 概要
 [Phase 5][P0] ゲーム画面・名称・デモ素材の利用条件を確認する
@@ -1459,8 +1580,9 @@ PyInstallerの案は、PCホストのRust化により置き換えた。
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。
 
-### E5 — [#43](https://github.com/jphacks/kz_2613/issues/43)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### E5 — [#43](https://github.com/jphacks/kz_2613/issues/43)
 
 ## 概要
 [Phase 5][P0] READMEと発表デモ・当日復旧手順を整備する
@@ -1488,10 +1610,12 @@ PyInstallerの案は、PCホストのRust化により置き換えた。
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。
 
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
+
 ### P11 — [#44](https://github.com/jphacks/kz_2613/issues/44)
 
 ## 概要
-[Phase 6][P1] P1移動を仮想スティックへ拡張する
+[Phase 6][P0] P1移動を仮想スティックへ拡張する
 
 ## 状況（2026-10-24）
 **取り込み待ち。** 仕様は試作品（Node.js参照実装）で実装・実機確認済み。Rust版ホストへ移植済みで、PC上のシミュレーションでは参照実装と一致した。リポジトリへの取り込み（N1）と実機の再確認（N2）で完了とする。
@@ -1517,12 +1641,14 @@ PyInstallerの案は、PCホストのRust化により置き換えた。
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### P12 — [#45](https://github.com/jphacks/kz_2613/issues/45)
 
 ## 概要
-[Phase 6][P1] P2視点をスワイプ・感度調整へ拡張する
+[Phase 6][P0] P2視点をスワイプ・感度調整へ拡張する
 
 ## 状況（2026-10-24）
 **取り込み待ち。** 仕様は試作品（Node.js参照実装）で実装・実機確認済み。Rust版ホストへ移植済みで、PC上のシミュレーションでは参照実装と一致した。リポジトリへの取り込み（N1）と実機の再確認（N2）で完了とする。
@@ -1548,10 +1674,11 @@ N1（新規）, N2（新規）
 - [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
-N1（新規）, N2（新規）
+[#67](https://github.com/jphacks/kz_2613/issues/67), [#69](https://github.com/jphacks/kz_2613/issues/69)
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
 ### P13 — [#46](https://github.com/jphacks/kz_2613/issues/46)
-
 
 ## 概要
 [Phase 6][P1] ホストリモコンにタッチパッド・クリック・Eキーを追加する
@@ -1579,8 +1706,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P14 — [#47](https://github.com/jphacks/kz_2613/issues/47)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P14 — [#47](https://github.com/jphacks/kz_2613/issues/47)
 
 ## 概要
 [Phase 6][P1] Pause中の役割指定・交換を実装する
@@ -1608,8 +1736,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P15 — [#48](https://github.com/jphacks/kz_2613/issues/48)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P15 — [#48](https://github.com/jphacks/kz_2613/issues/48)
 
 ## 概要
 [Phase 6][P1] PCゲーム一覧を矢印・Enter・Escで選択可能にする
@@ -1637,8 +1766,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P16 — [#49](https://github.com/jphacks/kz_2613/issues/49)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P16 — [#49](https://github.com/jphacks/kz_2613/issues/49)
 
 ## 概要
 [Phase 6][P1] ゲーム起動パスの手動登録を追加する
@@ -1666,8 +1796,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P17 — [#50](https://github.com/jphacks/kz_2613/issues/50)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P17 — [#50](https://github.com/jphacks/kz_2613/issues/50)
 
 ## 概要
 [Phase 6][P1] 操作ボタン配置とキー割当の編集を追加する
@@ -1695,8 +1826,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P18 — [#51](https://github.com/jphacks/kz_2613/issues/51)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P18 — [#51](https://github.com/jphacks/kz_2613/issues/51)
 
 ## 概要
 [Phase 6][P1] QR参加案内・Ready表示と開始前の説明を改善する
@@ -1724,8 +1856,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P19 — [#52](https://github.com/jphacks/kz_2613/issues/52)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P19 — [#52](https://github.com/jphacks/kz_2613/issues/52)
 
 ## 概要
 [Phase 6][P1] 横画面・安全領域と操作フィードバックを改善する
@@ -1753,8 +1886,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P110 — [#53](https://github.com/jphacks/kz_2613/issues/53)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P110 — [#53](https://github.com/jphacks/kz_2613/issues/53)
 
 ## 概要
 [Phase 6][P1] ゲーム別入力プリセットをローカル保存する
@@ -1782,8 +1916,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P21 — [#54](https://github.com/jphacks/kz_2613/issues/54)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P21 — [#54](https://github.com/jphacks/kz_2613/issues/54)
 
 ## 概要
 [Phase 7][P2] ローカルランチャー情報からゲーム候補を検出する
@@ -1811,8 +1946,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P22 — [#55](https://github.com/jphacks/kz_2613/issues/55)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P22 — [#55](https://github.com/jphacks/kz_2613/issues/55)
 
 ## 概要
 [Phase 7][P2] Minecraftランチャー検出と起動支援を追加する
@@ -1840,8 +1976,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P23 — [#56](https://github.com/jphacks/kz_2613/issues/56)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P23 — [#56](https://github.com/jphacks/kz_2613/issues/56)
 
 ## 概要
 [Phase 7][P2] 任意のPCアプリの手動登録を一般化する
@@ -1869,8 +2006,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P24 — [#57](https://github.com/jphacks/kz_2613/issues/57)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P24 — [#57](https://github.com/jphacks/kz_2613/issues/57)
 
 ## 概要
 [Phase 7][P2] 2〜4人の可変人数と役割枠を設計・実装する
@@ -1898,8 +2036,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P25 — [#58](https://github.com/jphacks/kz_2613/issues/58)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P25 — [#58](https://github.com/jphacks/kz_2613/issues/58)
 
 ## 概要
 [Phase 7][P2] 操作量・重要度に基づく役割提案を試作する
@@ -1927,8 +2066,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P26 — [#59](https://github.com/jphacks/kz_2613/issues/59)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P26 — [#59](https://github.com/jphacks/kz_2613/issues/59)
 
 ## 概要
 [Phase 7][P2] ジャイロ等の身体的入力を実験する
@@ -1956,8 +2096,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P27 — [#60](https://github.com/jphacks/kz_2613/issues/60)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P27 — [#60](https://github.com/jphacks/kz_2613/issues/60)
 
 ## 概要
 [Phase 7][P2] 入力プロファイルから操作UIを生成する
@@ -1985,8 +2126,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P28 — [#61](https://github.com/jphacks/kz_2613/issues/61)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P28 — [#61](https://github.com/jphacks/kz_2613/issues/61)
 
 ## 概要
 [Phase 7][P2] Minecraft以外の1タイトルで入力対応を検証する
@@ -2014,8 +2156,9 @@ N1（新規）, N2（新規）
 ## 備考
 実機検証。端末・OS/ブラウザ・Minecraft版・ネットワーク・実施日/操作者・実測結果を記録する。未実施は未検証とする。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P29 — [#62](https://github.com/jphacks/kz_2613/issues/62)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P29 — [#62](https://github.com/jphacks/kz_2613/issues/62)
 
 ## 概要
 [Phase 7][P2] 終了後の役割交換とリトライ導線を追加する
@@ -2043,8 +2186,9 @@ N1（新規）, N2（新規）
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
 
-### P210 — [#63](https://github.com/jphacks/kz_2613/issues/63)
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
 
+### P210 — [#63](https://github.com/jphacks/kz_2613/issues/63)
 
 ## 概要
 [Phase 7][P2] ローカル接続のワンタップ化・Legacy APを調査する
@@ -2071,3 +2215,5 @@ N1（新規）, N2（新規）
 
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。 P0完了後のバックログ。今回の初期構築では実装しない。
+
+**管理状態：** 未完了で保持する。観測事実だけで完了扱いせず、Issueのクローズは実施前にユーザーへ確認する。
