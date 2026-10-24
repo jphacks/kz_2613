@@ -21,9 +21,10 @@ Node 参照実装（`apps/node-ref/server.js`）と同じ仕様・同じメッ�
 必要なもの: Rust（MSVC）、Visual Studio の C++ ツールと CMake、Perl（OpenSSL のビルド用。Strawberry Perl のポータブル版で可）。
 
 ```powershell
-$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:LOCALAPPDATA\strawberry-perl\perl\bin;C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;$env:PATH"
+$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:LOCALAPPDATA\ReCooplay\StrawberryPerl\perl\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;$env:PATH"
+$env:LIBCLANG_PATH = "$PWD\apps\host\.venv\Lib\site-packages\clang\native"
 cd apps\host-rs
-cargo build --release
+cargo build --release --locked
 ```
 
 ## 起動
