@@ -28,7 +28,7 @@
 | `ping` | WS | `t`、`stats`（RTTの平均・95%値・最大、`rtc`側の統計、`via`） | 1秒ごとに送る。サーバーは `pong` を返す |
 | `command` | WS | `cmd`: `START` / `PAUSE` / `RESUME` / `END` | **P1のみ有効** |
 | `input` | **WSとWebRTCの両方** | `iseq`（通し番号）、`epoch`（押した時点の `game.epoch`）、`button`（操作名）、`state`（`down`/`up`）、`t`、`burst`（通信テスト） | サーバーは番号順に、先に届いたほうで1回だけ処理する。`epoch` が現在と違う（なしを含む）入力は番号だけ消費し、押下・解放とも処理しない。WS版には `seq` も付く |
-| `look` | WebRTC（つながらなければWS） | `lseq`、`epoch`、`cx`、`cy`（接続してからの累積移動量） | 30Hz、ACKなし。欠けても次の値で取り戻せる。P2・協力プレイ中、かつ `epoch` が現在と同じときだけ有効（違う場合は累積値の基準だけ更新し、移動量は捨てる） |
+| `look` | WebRTC（つながらなければWS） | `lseq`、`epoch`、`cx`、`cy`（その `epoch` になってからの累積移動量。スマホは `epoch` が変わると0から数え直す） | 30Hz、ACKなし。欠けても次の値で取り戻せる。P2・協力プレイ中、かつ `epoch` が現在と同じときだけ有効。違う `epoch` のパケットは移動量も基準も使わない。ホストは新しい `epoch` の最初のパケットを0基準で受け取るので、前の `epoch` の最後のパケットが欠けても混ざらない |
 | `ka` | WebRTC | `t` | 協力プレイ中に50msごとに送る。サーバーは `kpong` を返す |
 | `rtc-offer` / `rtc-cand` | WS | `sdp` / `cand`、`mid` | WebRTCのシグナリング。offerはスマホ側から送る |
 
