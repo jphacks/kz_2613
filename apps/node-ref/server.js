@@ -422,7 +422,8 @@ function markDisconnected(name, reason) {
   log('disconnect', { slot: name, reason, released });
   // 協力プレイ中に誰かが切れたら共同入力を止める (ホストの自動交代はしない)
   if (game.phase === 'coop' || (game.phase === 'paused' && game.reason?.endsWith('disconnected'))) {
-    game.autoResumeUntil = Date.now() + game.autoResumeMs;
+    // 期限内に別の人が切れたときだけ延ばす。期限を過ぎた後は明示の RESUME まで再開しない
+    if (game.phase === 'coop' || Date.now() <= game.autoResumeUntil) game.autoResumeUntil = Date.now() + game.autoResumeMs;
     if (game.phase === 'coop') setPhase('paused', `${name} disconnected`);
     else pushGame();
   } else pushGame();
