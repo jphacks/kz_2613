@@ -85,20 +85,26 @@ Phase 0の完了証拠はBUILD_LOG.mdとGitHub Actionsを参照。以降の機�
 - docs/architecture/validation-gates.md
 
 ## 作業内容
-- [ ] README・LICENSE保持、構造・ignore・共有仕様を確認する
-- [ ] verify_overlayとコミット対象の確認結果をBUILD_LOGへ残す
+- [x] README・LICENSE保持、構造・ignore・共有仕様を確認する
+- [x] verify_overlayとコミット対象の確認結果をBUILD_LOGへ残す
 
 ## 完了条件
-- [ ] README・LICENSE保持、構造・ignore・共有仕様を確認する
-- [ ] verify_overlayとコミット対象の確認結果をBUILD_LOGへ残す
-- [ ] 関連テストまたは手動試験の実行コマンド・観測結果を記録する
-- [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
+- [x] README・LICENSE保持、構造・ignore・共有仕様を確認する
+- [x] verify_overlayとコミット対象の確認結果をBUILD_LOGへ残す
+- [x] 関連テストまたは手動試験の実行コマンド・観測結果を記録する
+- [x] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
 なし
 
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。
+
+## 完了証拠
+- 初期構築: https://github.com/jphacks/kz_2613/commit/7327b5ec4acf46e00c0f97f96aafa4fe2a9650ff
+- GitHub Actions（Windows/Ubuntu/web統合、全ジョブ成功）: https://github.com/jphacks/kz_2613/actions/runs/40082069275
+- コマンド・環境・画面確認: docs/handoff/BUILD_LOG.md
+- Minecraft入力や実機ゲートの完了は含まない。
 
 
 ### S1 — [#2](https://github.com/jphacks/kz_2613/issues/2)
@@ -114,20 +120,26 @@ Phase 0の完了証拠はBUILD_LOG.mdとGitHub Actionsを参照。以降の機�
 - docs/architecture/validation-gates.md
 
 ## 作業内容
-- [ ] venvと固定依存を整備しpytest/ruffを実行する
-- [ ] healthはscaffoldでgame_input_ready=false、再現手順を記録する
+- [x] venvと固定依存を整備しpytest/ruffを実行する
+- [x] healthはscaffoldでgame_input_ready=false、再現手順を記録する
 
 ## 完了条件
-- [ ] venvと固定依存を整備しpytest/ruffを実行する
-- [ ] healthはscaffoldでgame_input_ready=false、再現手順を記録する
-- [ ] 関連テストまたは手動試験の実行コマンド・観測結果を記録する
-- [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
+- [x] venvと固定依存を整備しpytest/ruffを実行する
+- [x] healthはscaffoldでgame_input_ready=false、再現手順を記録する
+- [x] 関連テストまたは手動試験の実行コマンド・観測結果を記録する
+- [x] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
 [#1](https://github.com/jphacks/kz_2613/issues/1)
 
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。
+
+## 完了証拠
+- 初期構築: https://github.com/jphacks/kz_2613/commit/7327b5ec4acf46e00c0f97f96aafa4fe2a9650ff
+- GitHub Actions（Windows/Ubuntu/web統合、全ジョブ成功）: https://github.com/jphacks/kz_2613/actions/runs/40082069275
+- コマンド・環境・画面確認: docs/handoff/BUILD_LOG.md
+- Minecraft入力や実機ゲートの完了は含まない。
 
 
 ### S2 — [#3](https://github.com/jphacks/kz_2613/issues/3)
@@ -143,20 +155,26 @@ Phase 0の完了証拠はBUILD_LOG.mdとGitHub Actionsを参照。以降の機�
 - docs/architecture/validation-gates.md
 
 ## 作業内容
-- [ ] npm lockを生成しcheck/Vitest/build、FastAPI配信を確認する
-- [ ] PC・スマホひな形とローカルJS/CSSを確認し記録する
+- [x] npm lockを生成しcheck/Vitest/build、FastAPI配信を確認する
+- [x] PC・スマホひな形とローカルJS/CSSを確認し記録する
 
 ## 完了条件
-- [ ] npm lockを生成しcheck/Vitest/build、FastAPI配信を確認する
-- [ ] PC・スマホひな形とローカルJS/CSSを確認し記録する
-- [ ] 関連テストまたは手動試験の実行コマンド・観測結果を記録する
-- [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
+- [x] npm lockを生成しcheck/Vitest/build、FastAPI配信を確認する
+- [x] PC・スマホひな形とローカルJS/CSSを確認し記録する
+- [x] 関連テストまたは手動試験の実行コマンド・観測結果を記録する
+- [x] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
 [#1](https://github.com/jphacks/kz_2613/issues/1), [#2](https://github.com/jphacks/kz_2613/issues/2)
 
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。
+
+## 完了証拠
+- 初期構築: https://github.com/jphacks/kz_2613/commit/7327b5ec4acf46e00c0f97f96aafa4fe2a9650ff
+- GitHub Actions（Windows/Ubuntu/web統合、全ジョブ成功）: https://github.com/jphacks/kz_2613/actions/runs/40082069275
+- コマンド・環境・画面確認: docs/handoff/BUILD_LOG.md
+- Minecraft入力や実機ゲートの完了は含まない。
 
 
 ### S3 — [#4](https://github.com/jphacks/kz_2613/issues/4)
@@ -172,20 +190,26 @@ Phase 0の完了証拠はBUILD_LOG.mdとGitHub Actionsを参照。以降の機�
 - docs/architecture/validation-gates.md
 
 ## 作業内容
-- [ ] npm ci、Python/TS検証、PR/Issueテンプレートと共通運用を整備する
-- [ ] GitHub Actionsの成功とIssue計画・BUILD_LOGを記録する
+- [x] npm ci、Python/TS検証、PR/Issueテンプレートと共通運用を整備する
+- [x] GitHub Actionsの成功とIssue計画・BUILD_LOGを記録する
 
 ## 完了条件
-- [ ] npm ci、Python/TS検証、PR/Issueテンプレートと共通運用を整備する
-- [ ] GitHub Actionsの成功とIssue計画・BUILD_LOGを記録する
-- [ ] 関連テストまたは手動試験の実行コマンド・観測結果を記録する
-- [ ] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
+- [x] npm ci、Python/TS検証、PR/Issueテンプレートと共通運用を整備する
+- [x] GitHub Actionsの成功とIssue計画・BUILD_LOGを記録する
+- [x] 関連テストまたは手動試験の実行コマンド・観測結果を記録する
+- [x] 必要な共通文書とdocs/handoff/BUILD_LOG.mdを更新する
 
 ## 依存関係
 [#2](https://github.com/jphacks/kz_2613/issues/2), [#3](https://github.com/jphacks/kz_2613/issues/3)
 
 ## 備考
 設計案[H]/[P]は確定事項と区別し、変更理由をdocs/decisions/へ残す。
+
+## 完了証拠
+- 初期構築: https://github.com/jphacks/kz_2613/commit/7327b5ec4acf46e00c0f97f96aafa4fe2a9650ff
+- GitHub Actions（Windows/Ubuntu/web統合、全ジョブ成功）: https://github.com/jphacks/kz_2613/actions/runs/40082069275
+- コマンド・環境・画面確認: docs/handoff/BUILD_LOG.md
+- Minecraft入力や実機ゲートの完了は含まない。
 
 
 ### V0 — [#5](https://github.com/jphacks/kz_2613/issues/5)
