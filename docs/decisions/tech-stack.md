@@ -25,7 +25,7 @@
 | PCアプリの枠 | Tauri（WebView2）。代替は通常のブラウザ | 採用（未検証） | 同じHTMLをそのまま表示する |
 | QR | 参加URLのQRとWi-Fi接続用のQR（`WIFI:T:WPA;S:..;P:..;;`）をSVGで生成する | **検証済み**（URL QR） | オフラインで生成する。Wi-Fi接続用QRは `config.json` に記載した場合だけ表示する |
 | 設定 | `config.json`（port、wifi、requiredPlayers、injectMode、autoResume、lookSmoothMin/MaxMs） | **検証済み** | Node・Rustで共通の項目 |
-| ログ | セッションごとのJSONL（`logs/session-*.jsonl`） | **検証済み** | 入力・注入・照合結果・接続を記録し、事後分析に使う。**IP・端末情報・clientIdを記録している点はNFR-13に反するため、修正が必要** |
+| ログ | セッションごとのJSONL（`logs/session-*.jsonl`） | **検証済み** | 入力・注入・照合結果・接続を記録し、事後分析に使う。Rust版はIP・User-Agent・clientId・再接続トークンを記録せず、枠名と端末の種類（iOS/Android/Windows/other）だけを残す（#22、PC上のシミュレーションで確認）。Node参照実装は試作品のまま記録する |
 | 検証方法 | ①プロトコル単位のシミュレーション（注入なしの `RECOOPLAY_DRY_RUN=1` で動作）②疑似ゲーム画面による実入力の照合 ③実機3台 | **検証済み** | シミュレーションは言語に依存しないため、Rust版の合格判定にもそのまま使う |
 | 配布 | Tauriのバンドル、または単一exe | 未検証 | |
 | Rustのビルド環境 | Rust（MSVC）、Visual StudioのC++ツールとCMake、Perl（OpenSSLのビルド用）、libclang（bindgen用） | **構築済み**（このPCでビルドに成功、初回のビルドは約12分） | 手順は `docs/handoff/SETUP_WINDOWS.md` に記載する |

@@ -190,3 +190,8 @@
 - 検証：`cargo build --release` 成功（既存の警告2件のみ）。`node scripts/sim/protocol-sim.mjs` を3回連続で **22/22合格**。追加した試験：PAUSE直前（coop）に押した `LEFT` がpaused後に届いても ← キーにならない、RESUME直前（paused）に押した `LEFT` がcoop後に届いても A キーにならない、pausedのときの `look` をcoopで反映しない、`epoch` なしの入力を処理しない、現在の `epoch` は処理する。`--target node` **17/17合格**。
 - 試験の途中で、前の試験で押したままのWが一時停止で解放される（正しい挙動）のを誤検出したため、試験側を「押下の注入がないこと」の確認に直した。
 - スマホ実機での確認は未実施。
+
+## 2026-10-24 — #22 診断ログの匿名化（Claude Code）
+- Rust版ホスト：`join`・`reconnect`・`reject_full` のログから `ip`・`ua`・`clientId` を除き、枠名と端末の種類（User-Agentから判定した `iOS`/`Android`/`Windows`/`other`）だけを記録する。PC画面向けの状態スナップショットからも `clientId` を除いた。ダッシュボードの端末・IP表示はループバック限定のまま維持する（ログには書かない）。
+- 検証：`cargo build --release` 成功。`node scripts/sim/protocol-sim.mjs` **23/23合格**（JSONLログに `clientId`・IP・User-Agent・項目名 `ip`/`ua`/`clientId` が含まれず、`join` に `slot`・`device` があることを追加）。`--target node` **17/17合格**。
+- 実機のログ（スマホ3台）での確認は未実施。
