@@ -1,6 +1,6 @@
 # 技術構成 — 試作品の実機検証に基づく選定
 
-**位置づけ：** Node.js試作品での観測を根拠に技術構成を整理する（[記録](2026-10-24-prototype-validated.md)）。[E]は観測の区分で、今後の明示的なユーザー判断が優先する。旧仮案のPython/FastAPI/Reactひな形は現行リポジトリに残り、Rust・静的画面への取り込みは後続作業。
+**位置づけ：** Node.js試作品での観測を根拠に技術構成を整理する（[記録](2026-10-24-prototype-validated.md)）。[E]は観測の区分で、今後の明示的なユーザー判断が優先する。旧仮案のPython/FastAPI/Reactひな形を保持し、#67でRust版を `apps/host-rs/`、静的画面を `apps/web-static/`、Node参照実装を `apps/node-ref/` に取り込んだ。
 
 各項目の検証状況は次のとおり区別する。
 
