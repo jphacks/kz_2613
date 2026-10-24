@@ -343,3 +343,9 @@
 - PCアプリの②ゲーム選択の画面に免責表示を加えた。リポジトリ内の画像（アイコン・ワイヤーフレーム）にMinecraftの素材がないことを確認した。
 - 検証：`node scripts/sim/check-static-pages.mjs` 構文OK。
 - **未確認：** 発表資料・デモ動画（未作成。作成後に記録の表で個別確認する）、EULA本文の精読、JPHacksの規約との照合、READMEへの免責表示（READMEの変更はユーザーの指示を待つ）。
+
+## 2026-10-25 — #41 Windows配布パッケージ（Claude Code）
+- `scripts/windows/package.ps1` を追加した。release ビルド済みのアプリ・ホストと静的画面一式・設定の例・ファイアウォールの許可スクリプト・LICENSE・利用者向け `README.txt` を、`dist/ReCooplay-<版>-windows-x64.zip` にまとめる。インストーラー（Tauriのバンドル）ではなく、展開して起動する形にした。アプリは自分のフォルダから画面とホストを探すため、変更は不要だった。
+- `allow-firewall.ps1` にUTF-8のBOMを付けた（Windows PowerShell 5.1が日本語を正しく読むため）。`-Program .\recooplay-host.exe` で配布フォルダからも使える。
+- 検証：`cargo build --release --locked`（host-rs・desktop）成功。`package.ps1` で5.7MBのzipを作成した。`%TEMP%` に展開し、リポジトリの外から `RECOOPLAY_DRY_RUN=1`・`PORT=18600` で `recooplay-desktop.exe` を起動した。展開先の `recooplay-host.exe` が起動し、`/`・`/app`・`/api/info` が200を返した。展開先の `logs/` にログ（`hotkey ok`・`server_start`・`shutdown`）が残った。ウィンドウを閉じると両方のプロセスが終了した。`allow-firewall.ps1` の構文をPowerShell 5.1のパーサーで確認した（実行はしていない）。
+- **未検証：** 開発環境のないWindows 11での起動、ファイアウォールの許可手順の実施、スマホ3台の参加、SmartScreenの警告（署名なし）。
