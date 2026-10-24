@@ -376,7 +376,8 @@
   // 入力 (押下/解放): WebSocket (確実) と WebRTC (速い) の両方に同じ番号で送る
   function sendInput(obj) {
     if (!isOpen()) return false;
-    const msg = { type: 'input', ...obj, iseq: ++iseq, t: performance.now() };
+    // epoch: 押した時点の進行状態。PC は状態が変わった後に届いた古い入力を処理しない
+    const msg = { type: 'input', ...obj, iseq: ++iseq, epoch: game?.epoch, t: performance.now() };
     pending.set(msg.iseq, msg.t);
     sent++;
     if (rtcOpen()) { try { dc.send(JSON.stringify(msg)); } catch {} }
@@ -524,7 +525,7 @@
     if ((accX || accY) && game?.phase === 'coop' && me === 'P2' && isOpen()) {
       look.cx += accX;
       look.cy += accY;
-      const msg = { type: 'look', lseq: ++look.seq, cx: Math.round(look.cx * 100) / 100, cy: Math.round(look.cy * 100) / 100 };
+      const msg = { type: 'look', lseq: ++look.seq, epoch: game.epoch, cx: Math.round(look.cx * 100) / 100, cy: Math.round(look.cy * 100) / 100 };
       if (rtcOpen()) dc.send(JSON.stringify(msg));
       else sendWs(msg);
       sent++;

@@ -183,3 +183,10 @@
 - スマホ画面：トークンをlocalStorageに保存し、`hello` で提示する。4006では再接続をやめ、PCでのリセットを案内する。
 - 検証：`cargo build --release` 成功（既存の警告2件のみ）。`node scripts/sim/protocol-sim.mjs` **21/21合格**（トークンの形式・枠ごとの重複なし、トークンなし・ゼロ・他枠のトークンでの乗っ取り拒否と元接続の維持、PC画面へのメッセージとJSONLログにトークンが出ないことを追加）。`--target node` **17/17合格**。
 - スマホ実機での再接続（画面の再読み込み・Wi-Fi断）は未実施。
+
+## 2026-10-24 — #15 epoch（Claude Code）
+- Rust版ホスト：進行の変更（`set_phase`）とリセットで `epoch` を1増やし、`game` に含める。`input` の `epoch` が現在と違う（なしを含む）場合は番号を消費して `ack`（`stale: true`）だけ返し、押下・解放とも処理しない（ログは `stale_input`）。`look` も同様に移動量を捨てる（累積値の基準は更新）。
+- スマホ画面：`input`・`look` に最新の `game.epoch` を付ける。
+- 検証：`cargo build --release` 成功（既存の警告2件のみ）。`node scripts/sim/protocol-sim.mjs` を3回連続で **22/22合格**。追加した試験：PAUSE直前（coop）に押した `LEFT` がpaused後に届いても ← キーにならない、RESUME直前（paused）に押した `LEFT` がcoop後に届いても A キーにならない、pausedのときの `look` をcoopで反映しない、`epoch` なしの入力を処理しない、現在の `epoch` は処理する。`--target node` **17/17合格**。
+- 試験の途中で、前の試験で押したままのWが一時停止で解放される（正しい挙動）のを誤検出したため、試験側を「押下の注入がないこと」の確認に直した。
+- スマホ実機での確認は未実施。

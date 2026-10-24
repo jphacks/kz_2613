@@ -26,8 +26,8 @@
 | `hello` | WS | `protocolVersion`（必須、現在は `1`）、`clientId`（端末のlocalStorageに保存、最大64文字）、`token`（再接続時。`welcome` で受け取った値）、`ua`、`nextIseq` | 参加・再接続する。同じ `clientId` は、`token` が一致した場合だけ元の枠へ戻る（なし・不一致は `error`（`bad_token`）を返して4006で閉じ、元の接続には影響しない）。版がない・違う場合は `error` を返して4005で閉じ、枠を割り当てない |
 | `ping` | WS | `t`、`stats`（RTTの平均・95%値・最大、`rtc`側の統計、`via`） | 1秒ごとに送る。サーバーは `pong` を返す |
 | `command` | WS | `cmd`: `START` / `PAUSE` / `RESUME` / `END` | **P1のみ有効** |
-| `input` | **WSとWebRTCの両方** | `iseq`（通し番号）、`button`（操作名）、`state`（`down`/`up`）、`t`、`burst`（通信テスト） | サーバーは番号順に、先に届いたほうで1回だけ処理する。WS版には `seq` も付く |
-| `look` | WebRTC（つながらなければWS） | `lseq`、`cx`、`cy`（接続してからの累積移動量） | 30Hz、ACKなし。欠けても次の値で取り戻せる。P2・協力プレイ中のみ有効 |
+| `input` | **WSとWebRTCの両方** | `iseq`（通し番号）、`epoch`（押した時点の `game.epoch`）、`button`（操作名）、`state`（`down`/`up`）、`t`、`burst`（通信テスト） | サーバーは番号順に、先に届いたほうで1回だけ処理する。`epoch` が現在と違う（なしを含む）入力は番号だけ消費し、押下・解放とも処理しない。WS版には `seq` も付く |
+| `look` | WebRTC（つながらなければWS） | `lseq`、`epoch`、`cx`、`cy`（接続してからの累積移動量） | 30Hz、ACKなし。欠けても次の値で取り戻せる。P2・協力プレイ中、かつ `epoch` が現在と同じときだけ有効（違う場合は累積値の基準だけ更新し、移動量は捨てる） |
 | `ka` | WebRTC | `t` | 協力プレイ中に50msごとに送る。サーバーは `kpong` を返す |
 | `rtc-offer` / `rtc-cand` | WS | `sdp` / `cand`、`mid` | WebRTCのシグナリング。offerはスマホ側から送る |
 
@@ -50,11 +50,11 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | `full` | — | 満員。続いて接続を閉じる（4004） |
 | `game` | `game`（下記） | 進行の状態が変わるたびに全員へ送る |
 | `pong` | `t` | |
-| `ack` | `iseq`、`t`、`via`（`ws`/`rtc`） | 入力を処理した。`via` は先に届いた経路 |
+| `ack` | `iseq`、`t`、`via`（`ws`/`rtc`）、`stale`（古い `epoch` で処理しなかった場合 `true`） | 入力を受け取った。`via` は先に届いた経路 |
 | `kpong` | `t` | WebRTC経由で返す |
 | `rtc-answer` / `rtc-cand` | `sdp`、`sdpType` / `cand`、`mid` | |
 
-**`game` の内容：** `phase`（`lobby`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`
+**`game` の内容：** `phase`（`lobby`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`、`epoch`（進行が変わるたび・リセットで1増える。初期値1）
 
 **WebSocketの終了コード：** 4000 = 同じ端末の別タブに置き換えられた、4001 = PCでリセットした、4002 = `clientId` なし、4003 = モニターはPCのみ、4004 = 満員、4005 = 通信契約の版が違う（スマホは再接続をやめ、再読み込みを案内する）、4006 = 再接続のトークンがない・一致しない（スマホは再接続をやめ、PCでのリセットを案内する）
 
