@@ -282,3 +282,8 @@
 - `AGENTS.md`（構成・コマンド）、`DEVELOPMENT_WORKFLOW.md`、`SETUP_WINDOWS.md`、`tech-stack.md`、`apps/host-rs/README.md` を更新した。libclangの例は `apps/host/.venv` から開発用の別の仮想環境（`%LOCALAPPDATA%\ReCooplay\tools-venv`）に変えた。過去の記録（BUILD_LOG・判断記録・初期構築の依頼文）は当時のまま残す。
 - 削除前に、`rust.yml` がGitHub Actionsで成功していることを確認した（#80：`host-rs` 7分57秒・12分53秒、`desktop` 3分23秒・3分44秒、既存の `host`・`web` も成功）。
 - 検証：`python scripts/verify_overlay.py`（26件）PASS。
+
+## 2026-10-25 — PR #80のCI安全設定を追加（Codex）
+
+- 全ジョブでRECOOPLAY_DRY_RUN=1を明示し、Rustの単体試験も含めてOS入力を無効化する。quit・EOFで全解放するshutdown-simをCIへ追加した。
+- 先行PRの最新修正を統合してから最終Actionsを実行し、Rustホスト・Tauri・通信・終了・表示・構文と既存ひな形の結果を確認する。実機検証の代わりにはしない。

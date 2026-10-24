@@ -8,6 +8,7 @@ on:
   pull_request:
 env:
   CARGO_TERM_COLOR: never
+  RECOOPLAY_DRY_RUN: '1'
 jobs:
   host-rs:
     runs-on: windows-latest
@@ -39,6 +40,8 @@ jobs:
         working-directory: apps/host-rs
       - name: 通信契約のシミュレーション（Rust 版）
         run: node scripts/sim/protocol-sim.mjs
+      - name: 終了通知と親プロセス消失時の全解放
+        run: node scripts/sim/shutdown-sim.mjs
       - name: 比較用の Node 参照実装を準備
         run: npm ci --no-audit --no-fund
         working-directory: apps/node-ref
