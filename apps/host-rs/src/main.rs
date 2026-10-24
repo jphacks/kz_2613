@@ -5,6 +5,7 @@
 
 mod config;
 mod controls;
+mod hotkey;
 mod hub;
 mod input;
 mod netinfo;
@@ -81,7 +82,7 @@ async fn main() {
 
     let (tx, rx) = std::sync::mpsc::channel::<Event>();
     let log_dir = std::env::var("RECOOPLAY_LOG_DIR").map(PathBuf::from).unwrap_or_else(|_| root.join("logs"));
-    let hub = match Hub::new(tx.clone(), &config, input, &log_dir) {
+    let mut hub = match Hub::new(tx.clone(), &config, input, &log_dir) {
         Ok(h) => h,
         Err(e) => {
             eprintln!("ログを作成できません: {e}");
@@ -108,7 +109,15 @@ async fn main() {
     if !addrs.iter().any(|a| a.hotspot) {
         println!("  ※ 192.168.137.x が見つかりません。モバイルホットスポットが OFF の可能性があります（ON にした後はダッシュボードを再読込）");
     }
+
+    // 緊急停止のホットキー (スマホ・ダッシュボードの通信に頼らない)
+    let hotkey = hotkey::start(tx.clone());
+    match &hotkey {
+        Ok(()) => println!("  緊急停止          : {} (全キーを離して注入を OFF)", hotkey::LABEL),
+        Err(e) => println!("  ※ 緊急停止 {} を登録できません: {e}", hotkey::LABEL),
+    }
     println!();
+    hub.set_hotkey_status(hotkey);
 
     // セッションの中枢は専用スレッド (視点の 4ms 刻みなどを非同期ランタイムに左右されずに回す)
     std::thread::Builder::new().name("hub".into()).spawn(move || hub.run(rx, port)).expect("hub thread");
@@ -131,12 +140,29 @@ async fn main() {
                 for line in std::io::stdin().lines() {
                     match line.as_deref().map(str::trim) {
                         Ok("quit") | Err(_) => break,
+                        Ok("stop") => {
+                            let _ = tx.send(Event::EmergencyStop { source: "app" });
+                        }
                         _ => {}
                     }
                 }
                 let _ = tx.send(Event::Shutdown);
             })
             .expect("stdin-control thread");
+    }
+
+    // コンソールのウィンドウを閉じた場合も押しっぱなしのキーを離してから終了する (Windows は数秒だけ待ってくれる)
+    #[cfg(windows)]
+    {
+        let tx = tx.clone();
+        tokio::spawn(async move {
+            if let Ok(mut close) = tokio::signal::windows::ctrl_close() {
+                if close.recv().await.is_some() {
+                    let _ = tx.send(Event::Shutdown);
+                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                }
+            }
+        });
     }
 
     // Ctrl+C: 押しっぱなしのキーを離してから終了する
