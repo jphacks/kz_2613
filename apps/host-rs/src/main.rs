@@ -121,6 +121,24 @@ async fn main() {
         wifi: Arc::new(config.wifi.clone()),
     };
 
+    // デスクトップアプリ (apps/desktop) から起動された場合: 標準入力の "quit" か、親が終了して入力が閉じたら
+    // 押しっぱなしのキーを離してから終了する (親が異常終了しても入力を残さない)
+    if std::env::var("RECOOPLAY_STDIN_CONTROL").as_deref() == Ok("1") {
+        let tx = tx.clone();
+        std::thread::Builder::new()
+            .name("stdin-control".into())
+            .spawn(move || {
+                for line in std::io::stdin().lines() {
+                    match line.as_deref().map(str::trim) {
+                        Ok("quit") | Err(_) => break,
+                        _ => {}
+                    }
+                }
+                let _ = tx.send(Event::Shutdown);
+            })
+            .expect("stdin-control thread");
+    }
+
     // Ctrl+C: 押しっぱなしのキーを離してから終了する
     tokio::spawn(async move {
         if tokio::signal::ctrl_c().await.is_ok() {

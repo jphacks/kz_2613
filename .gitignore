@@ -32,3 +32,5 @@ Thumbs.db
 # Re:Cooplay 試作品の実行時ファイル
 /config.json
 apps/host-rs/target/
+apps/desktop/target/
+apps/desktop/gen/
