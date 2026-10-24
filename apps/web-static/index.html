@@ -66,6 +66,7 @@
 
   footer { display:flex; gap:8px; align-items:center; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
   footer button { margin-left:auto; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--muted); font-size:11px; }
+  #inputWarn { display:none; margin:0 12px; padding:8px 12px; border-radius:10px; background:rgba(210,153,34,0.15); color:var(--warn); font-size:13px; text-align:center; }
   #full { display:none; position:fixed; inset:0; background:var(--bg); align-items:center; justify-content:center; text-align:center; padding:24px; font-size:18px; z-index:10; }
 </style>
 </head>
@@ -78,6 +79,8 @@
     <span class="pill" id="phase">-</span>
   </div>
 </header>
+<!-- PC の入力先 (Minecraft) が前面にないとき: 押しても PC に届かない -->
+<div id="inputWarn">PCの画面がMinecraftになっていません。ホストがMinecraftを前面に戻すまで操作は届きません。</div>
 
 <main>
   <!-- ロビー / 一時停止: ホストのリモコン -->
@@ -541,6 +544,7 @@
     const label = { lobby: 'ロビー', coop: '協力プレイ中', paused: '一時停止中' }[phase];
     $('phase').textContent = label;
     $('phase').className = 'pill ' + phase;
+    $('inputWarn').style.display = game.inputTarget ? 'block' : 'none';
     const view = phase === 'coop' ? 'v-' + me : isHost ? 'v-remote' : 'v-wait';
     if (view !== lastView) {
       releaseAll(); // 画面が変わる時は押しっぱなしを解除

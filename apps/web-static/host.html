@@ -229,7 +229,12 @@
       $('autoResume').checked = !!game.autoResume;
     }
     if (inj) {
-      $('injState').textContent = !inj.available ? `注入不可: ${inj.error}` : inj.active ? '注入: 有効' : inj.mode === 'off' ? '注入: OFF' : '注入: 停止中（疑似ゲーム画面が非選択）';
+      const tgt = inj.target;
+      const waiting = inj.mode === 'on' && tgt && !tgt.ok
+        ? `注入: 停止中（前面が入力先ではありません: ${tgt.process || '不明'}）`
+        : '注入: 停止中（疑似ゲーム画面が非選択）';
+      $('injState').textContent = !inj.available ? `注入不可: ${inj.error}` : inj.active ? '注入: 有効' : inj.mode === 'off' ? '注入: OFF' : waiting;
+      $('injState').title = tgt ? `常時ONの入力先: ${tgt.expect}` : '';
       $('injState').className = 'pill ' + (inj.active ? 'ok' : inj.mode === 'off' ? '' : 'warn');
       document.querySelectorAll('#modeSeg button').forEach((el) => el.classList.toggle('sel', el.dataset.mode === inj.mode));
       // 緊急停止: スマホやこの画面が応答しなくても、PC のキー操作だけで全キーを離して注入を OFF にできる

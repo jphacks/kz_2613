@@ -28,7 +28,7 @@ const PROTOCOL_VERSION = 1;
 function startHost() {
   const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-sim-'));
   // config.json の影響を受けないよう、画面だけを持つ一時ルートを使う
-  const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1' };
+  const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1' };
   let cmd;
   let cmdArgs;
   if (target === 'node') {
@@ -413,6 +413,36 @@ async function main() {
       await injected(mon, 'SPACE', 'down', from);
       p1.input('JUMP', 'up');
       await injected(mon, 'SPACE', 'up', from);
+    }, { rustOnly: true });
+
+    await check('入力先: 常時 ON でも前面が入力先でなくなったら全解放し、押下を注入しない。PC 画面とスマホに知らせる', async () => {
+      p1.input('FWD', 'up');
+      await sleep(150);
+      let mfrom = mon.mark();
+      p1.input('FWD', 'down');
+      await injected(mon, 'KEY_W', 'down', mfrom);
+      mfrom = mon.mark();
+      const from = p1.mark();
+      host.child.stdin.write('target off\n'); // 例: Alt+Tab で別のウィンドウへ切り替えた
+      await injected(mon, 'KEY_W', 'up', mfrom);
+      const st = await mon.waitFor((m) => m.type === 'state' && m.inject.target && !m.inject.target.ok, { from: mfrom, what: 'target off' });
+      assert(st.inject.mode === 'on' && !st.inject.active, '入力先でないのに注入が有効');
+      const g = await p1.waitFor((m) => m.type === 'game' && m.game.inputTarget === true, { from, what: 'inputTarget' });
+      assert(g.game.inputActive === false && g.game.phase === 'coop', JSON.stringify(g.game));
+      p1.input('FWD', 'up');
+      mfrom = mon.mark();
+      p1.input('JUMP', 'down');
+      await noPress(mon, mfrom);
+      p1.input('JUMP', 'up');
+      // 入力先へ戻ったら、新しい押下から注入する (旧押下は戻さない)
+      mfrom = mon.mark();
+      host.child.stdin.write('target on\n');
+      await mon.waitFor((m) => m.type === 'state' && m.inject.active, { from: mfrom, what: 'target on' });
+      await noPress(mon, mfrom, 200);
+      p1.input('JUMP', 'down');
+      await injected(mon, 'SPACE', 'down', mfrom);
+      p1.input('JUMP', 'up');
+      await injected(mon, 'SPACE', 'up', mfrom);
     }, { rustOnly: true });
 
     await check('切断: coop 中の切断で paused、切断者以外の押下も全解放する', async () => {

@@ -15,6 +15,7 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use crate::config::Config;
 use crate::controls::{self, Kind, OUTPUTS};
+use crate::focus::{self, Foreground, Target};
 use crate::input::Input;
 use crate::rtc::{Peer, RtcSignal};
 
@@ -30,6 +31,7 @@ const MIN_GAP_MS: u64 = 50; // 解放も最低この時間続けてから次を�
 const MAX_QUEUE: usize = 8; // 通信が詰まって溜まった連打は 4 回分まで (それ以上は古い方を捨てる)
 const LOOK_TICK: Duration = Duration::from_millis(4);
 const RTC_TIMEOUT: Duration = Duration::from_secs(5);
+const FOCUS_CHECK: Duration = Duration::from_millis(100); // 前面のウィンドウを確認する間隔
 
 // ---------- 外部とのやり取り ----------
 
@@ -49,6 +51,8 @@ pub enum Event {
     RtcMessage { slot: usize, gen: u64, text: String },
     /// 緊急停止 (PC のホットキー / デスクトップアプリ)。全解放して注入を OFF にする
     EmergencyStop { source: &'static str },
+    /// 試験用: 前面のウィンドウが入力先かどうかを差し替える (DRY_RUN のときだけ)
+    FakeTarget(bool),
     Shutdown,
 }
 
@@ -57,6 +61,7 @@ enum Timer {
     LookTick,
     LookReport,
     Heartbeat,
+    FocusCheck,
     StateFlush,
     Pump(usize, u64),       // (出力の番号, 世代)
     RtcTimeout(usize, u64), // (スロット, 世代)
@@ -270,6 +275,11 @@ pub struct Hub {
     timer_seq: u64,
     state_pending: bool,
     hotkey: Result<(), String>, // 緊急停止ホットキーの登録結果 (ダッシュボードに表示する)
+    // 常時 ON の入力先 (前面のウィンドウが Minecraft のときだけ注入する)
+    target: Target,
+    target_fg: Option<Foreground>,
+    target_ok: bool,
+    fake_target: Option<bool>, // 試験用 (DRY_RUN のときだけ)。Some なら OS に問い合わせない
 }
 
 fn s(v: &Value, key: &str) -> Option<String> {
@@ -351,10 +361,18 @@ impl Hub {
             timer_seq: 0,
             state_pending: false,
             hotkey: Err("未登録".into()),
+            target: Target { processes: config.target.processes.clone(), title_contains: config.target.title_contains.clone() },
+            target_fg: None,
+            target_ok: false,
+            fake_target: std::env::var("RECOOPLAY_FAKE_TARGET")
+                .ok()
+                .filter(|_| std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1"))
+                .map(|v| v == "1"),
         };
         hub.schedule(now + LOOK_TICK, Timer::LookTick);
         hub.schedule(now + Duration::from_millis(100), Timer::LookReport);
         hub.schedule(now + Duration::from_secs(1), Timer::Heartbeat);
+        hub.schedule(now, Timer::FocusCheck);
         Ok(hub)
     }
 
@@ -472,6 +490,9 @@ impl Hub {
             "epoch": self.game.epoch,
             "connected": connected,
             "canStart": self.can_start(),
+            // 入力が PC に届く状態か (注入モード・入力先のウィンドウ)。スマホに「届いていない」ことを知らせる
+            "inputActive": self.can_inject(),
+            "inputTarget": self.inject == InjectMode::On && !self.target_ok,
         })
     }
 
@@ -510,7 +531,12 @@ impl Hub {
 
     fn can_inject(&self) -> bool {
         self.input.available()
-            && (self.inject == InjectMode::On || (self.inject == InjectMode::Test && self.game_focused()))
+            && match self.inject {
+                InjectMode::Off => false,
+                InjectMode::Test => self.game_focused(),
+                // 常時 ON でも、前面のウィンドウが入力先 (Minecraft) のときだけ
+                InjectMode::On => self.target_ok,
+            }
     }
 
     fn inject_snapshot(&self) -> Value {
@@ -529,6 +555,13 @@ impl Hub {
             "minHoldMs": MIN_HOLD_MS,
             "emergencyHotkey": crate::hotkey::LABEL,
             "emergencyHotkeyError": self.hotkey.as_ref().err(),
+            "target": {
+                "ok": self.target_ok,
+                "expect": self.target.describe(),
+                "process": self.target_fg.as_ref().map(|f| f.process.clone()),
+                "title": self.target_fg.as_ref().map(|f| f.title.clone()),
+                "fake": self.fake_target.is_some(),
+            },
             "minGapMs": MIN_GAP_MS,
             "outputs": outputs,
             "down": down,
@@ -816,6 +849,34 @@ impl Hub {
         self.push_state();
     }
 
+    /// 前面のウィンドウが入力先かを確認する。外れたら (常時 ON で注入中なら) 全キーを離し、PC 画面とスマホに知らせる
+    fn check_target(&mut self) {
+        let (fg, ok) = match self.fake_target {
+            Some(ok) => (None, ok),
+            None => {
+                let fg = focus::foreground();
+                let ok = fg.as_ref().is_some_and(|f| self.target.matches(f));
+                (fg, ok)
+            }
+        };
+        if ok != self.target_ok {
+            let before = self.can_inject();
+            self.target_ok = ok;
+            if before && !self.can_inject() {
+                self.release_outputs(None);
+                self.reset_look();
+            }
+            // ウィンドウのタイトル (ワールド名など) はログに残さない
+            self.log("target_focus", json!({ "ok": ok, "process": fg.as_ref().map(|f| f.process.clone()) }));
+            self.target_fg = fg;
+            self.push_game();
+            self.push_state();
+        } else if fg != self.target_fg {
+            self.target_fg = fg;
+            self.push_state_throttled();
+        }
+    }
+
     fn set_inject_mode(&mut self, mode: InjectMode) {
         let before = self.can_inject();
         self.inject = mode;
@@ -881,6 +942,10 @@ impl Hub {
                     self.look.n = 0;
                 }
                 self.schedule(at + Duration::from_millis(100), Timer::LookReport);
+            }
+            Timer::FocusCheck => {
+                self.check_target();
+                self.schedule(at + FOCUS_CHECK, Timer::FocusCheck);
             }
             Timer::Heartbeat => {
                 // Wi-Fi を切られた場合 TCP の close はすぐ来ないので、アプリ層の ping 途絶で切断を判定する
@@ -957,6 +1022,12 @@ impl Hub {
                 }
             }
             Event::EmergencyStop { source } => self.emergency_stop(source),
+            Event::FakeTarget(ok) => {
+                if self.fake_target.is_some() {
+                    self.fake_target = Some(ok);
+                    self.check_target();
+                }
+            }
             Event::Shutdown => {}
         }
     }

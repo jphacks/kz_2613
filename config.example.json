@@ -3,5 +3,12 @@
   "wifi": {
     "ssid": "ここにホットスポットのネットワーク名",
     "password": "ここにホットスポットのパスワード"
+  },
+  "target": {
+    "processes": [
+      "javaw.exe",
+      "java.exe"
+    ],
+    "titleContains": "Minecraft"
   }
 }

@@ -214,3 +214,9 @@
 - ホットキーの登録結果を起動時の表示・ログ（`hotkey`）・ダッシュボードに出す。登録できない場合はダッシュボードに警告を表示する。
 - 検証：`cargo build --release` 成功。`node scripts/sim/protocol-sim.mjs` を3回連続で **24/24合格**（coop中にP1・P3が押下中の状態で `stop` → 両方の解放、注入OFF、`paused`・`emergency stop`、その後の押下が注入されないことを追加）。`--target node` **17/17合格**。このPCで起動時にホットキーの登録に成功した（ログ `{"kind":"hotkey","ok":true}`）。
 - **未検証：** 実際に `Ctrl+Alt+F12` を押したときの動作（OS入力の自動送信は行っていない）、コンソールの×ボタンでの終了、Minecraftを前面にした状態。操作者が手動で確認する。
+
+## 2026-10-24 — #19 常時ONの入力先ウィンドウの確認（Claude Code）
+- Rust版ホスト（`src/focus.rs`）：100msごとに前面のウィンドウのプロセス名（`QueryFullProcessImageNameW`）とタイトルを確認する。`on` モードでは `javaw.exe`/`java.exe` かつタイトルに「Minecraft」を含むときだけ注入する（`config.json` の `target` で変更可、`config.example.json` に既定値を記載）。外れた瞬間に全キー・マウスボタンを解放して視点の未処理分を捨て、ダッシュボードと全スマホ（`game.inputTarget`）に知らせる。ログにはプロセス名と判定だけを残し、ウィンドウのタイトルは残さない。
+- 試験用に、`RECOOPLAY_DRY_RUN=1` と `RECOOPLAY_FAKE_TARGET` のときだけ、標準入力の `target on`/`target off` で判定を差し替えられる。
+- 検証：`cargo build --release` 成功。`cargo test --release`：判定の単体試験2件（Minecraftの一致、Javaの別アプリ・ブラウザのMinecraft Wiki・ランチャー・Re:Cooplay自身は不一致）合格。`node scripts/sim/protocol-sim.mjs` を3回連続で **25/25合格**（W押下中に入力先から外れる→Wの解放・注入停止・スマホへの通知、外れている間の押下は注入しない、戻った後は新しい押下だけ注入、を追加）。`--target node` **17/17合格**。実際の前面判定がこのPCで動く（前面 `explorer.exe` → 対象外）ことをダッシュボードの状態で確認。スマホ画面の警告表示をheadless Edgeの画面キャプチャで確認。
+- **未検証：** Minecraft実機を前面にしたときの一致（実際のプロセス名・タイトル、G1-D）、Wを押したままAlt+Tabしたときの実入力。
