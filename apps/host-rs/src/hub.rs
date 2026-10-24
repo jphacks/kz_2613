@@ -842,8 +842,14 @@ impl Hub {
         self.release_outputs(None);
         self.reset_look();
         self.inject = InjectMode::Off;
+        self.game.auto_resume_until = 0;
         if self.game.phase == Phase::Coop {
             self.set_phase(Phase::Paused, "emergency stop");
+        } else {
+            // 切断待ちのpaused中でも停止理由を上書きし、自動復帰を確実に解除する。
+            self.game.reason = Some("emergency stop".into());
+            self.advance_epoch();
+            self.push_game();
         }
         self.log("emergency_stop", json!({ "source": source }));
         self.push_state();
