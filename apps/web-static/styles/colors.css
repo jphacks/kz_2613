@@ -1,0 +1,22 @@
+/* 提供PNGの実測色と、文字のコントラストを確保する派生色。唯一の配色定義。 */
+:root {
+  --color-paper: #FFFFFF;
+  --color-cream: #FFFBEF;
+  --color-surface: #FFFCF7;
+  --color-cyan: #17C1FF;
+  --color-purple: #5F5B93;
+  --color-ice: #C5F6FF;
+  --color-lemon: #FFE8AF;
+  --color-peach: #FFD7AD;
+  --color-ink: #383553;
+  --color-muted: #625E72;
+  --color-cyan-ink: #075C86;
+  --color-error: #9A2844;
+  --color-success: #205D49;
+  --color-warning: #775218;
+  --color-pink: #FFBFB4;
+  --bg: var(--color-cream); --panel: var(--color-surface); --panel2: var(--color-ice);
+  --text: var(--color-ink); --muted: var(--color-muted); --line: var(--color-cyan);
+  --ok: var(--color-success); --ng: var(--color-error); --warn: var(--color-warning);
+  --accent: var(--color-cyan-ink); --p1: var(--color-cyan-ink); --p2: var(--color-purple); --p3: var(--color-warning);
+}

@@ -18,7 +18,7 @@ export const GAMES = [
   {
     id: 'minecraft-java',
     name: 'Minecraft Java Edition',
-    status: '未検証（Minecraft 実機での入力確認はまだ行っていません）',
+    status: '新しい準備・Ready手順は実機受入前',
     steps: [
       'Minecraft のランチャーから手動で起動し、ワールドに入っておく',
       'ホットバーに使うアイテムを並べておく（インベントリ操作はホストのリモコンでは限られます）',

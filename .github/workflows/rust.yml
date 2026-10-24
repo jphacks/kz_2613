@@ -51,6 +51,10 @@ jobs:
         run: node scripts/sim/app-view-test.mjs
       - name: 静的画面の構文
         run: node scripts/sim/check-static-pages.mjs
+      - name: UI入力のキャンセルとWebRTC形式
+        run: node scripts/sim/ui-input-test.mjs
+      - name: 画像と外部化したCSS・JSの配信
+        run: node scripts/sim/static-assets-sim.mjs
       - name: 入力プローブの安全経路（--mock、OS 入力なし）
         run: node scripts/sim/input-probe-sim.mjs
 
