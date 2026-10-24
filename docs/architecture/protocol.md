@@ -23,7 +23,7 @@
 
 | type | 経路 | 主な項目 | 意味 |
 |---|---|---|---|
-| `hello` | WS | `protocolVersion`（必須、現在は `1`）、`clientId`（端末のlocalStorageに保存、最大64文字）、`ua`、`nextIseq` | 参加・再接続する。同じ `clientId` は元の枠へ戻る。版がない・違う場合は `error` を返して4005で閉じ、枠を割り当てない |
+| `hello` | WS | `protocolVersion`（必須、現在は `1`）、`clientId`（端末のlocalStorageに保存、最大64文字）、`token`（再接続時。`welcome` で受け取った値）、`ua`、`nextIseq` | 参加・再接続する。同じ `clientId` は、`token` が一致した場合だけ元の枠へ戻る（なし・不一致は `error`（`bad_token`）を返して4006で閉じ、元の接続には影響しない）。版がない・違う場合は `error` を返して4005で閉じ、枠を割り当てない |
 | `ping` | WS | `t`、`stats`（RTTの平均・95%値・最大、`rtc`側の統計、`via`） | 1秒ごとに送る。サーバーは `pong` を返す |
 | `command` | WS | `cmd`: `START` / `PAUSE` / `RESUME` / `END` | **P1のみ有効** |
 | `input` | **WSとWebRTCの両方** | `iseq`（通し番号）、`button`（操作名）、`state`（`down`/`up`）、`t`、`burst`（通信テスト） | サーバーは番号順に、先に届いたほうで1回だけ処理する。WS版には `seq` も付く |
@@ -45,8 +45,8 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 
 | type | 主な項目 | 意味 |
 |---|---|---|
-| `welcome` | `protocolVersion`、`slot`、`role`、`isHost`、`reconnected` | 割り当てた枠 |
-| `error` | `code`（`protocol_version`）、`protocolVersion`（ホストの版） | 接続を受け付けない理由。続いて接続を閉じる |
+| `welcome` | `protocolVersion`、`token`（再接続用。サーバーが枠ごとに発行するOS乱数128bitの16進32文字。スマホはlocalStorageに保存する。ログ・PC画面には出さない）、`slot`、`role`、`isHost`、`reconnected` | 割り当てた枠 |
+| `error` | `code`（`protocol_version` / `bad_token`）、`protocolVersion`（`protocol_version` の場合、ホストの版） | 接続を受け付けない理由。続いて接続を閉じる |
 | `full` | — | 満員。続いて接続を閉じる（4004） |
 | `game` | `game`（下記） | 進行の状態が変わるたびに全員へ送る |
 | `pong` | `t` | |
@@ -56,7 +56,7 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 
 **`game` の内容：** `phase`（`lobby`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`
 
-**WebSocketの終了コード：** 4000 = 同じ端末の別タブに置き換えられた、4001 = PCでリセットした、4002 = `clientId` なし、4003 = モニターはPCのみ、4004 = 満員、4005 = 通信契約の版が違う（スマホは再接続をやめ、再読み込みを案内する）
+**WebSocketの終了コード：** 4000 = 同じ端末の別タブに置き換えられた、4001 = PCでリセットした、4002 = `clientId` なし、4003 = モニターはPCのみ、4004 = 満員、4005 = 通信契約の版が違う（スマホは再接続をやめ、再読み込みを案内する）、4006 = 再接続のトークンがない・一致しない（スマホは再接続をやめ、PCでのリセットを案内する）
 
 ## 4. PC画面（モニター）⇔ PCホスト
 

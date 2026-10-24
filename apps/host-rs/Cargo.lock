@@ -889,6 +889,7 @@ dependencies = [
  "axum",
  "chrono",
  "datachannel",
+ "getrandom",
  "if-addrs",
  "log",
  "qrcode",
