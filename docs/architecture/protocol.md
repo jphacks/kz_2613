@@ -54,7 +54,7 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | `kpong` | `t` | WebRTC経由で返す |
 | `rtc-answer` / `rtc-cand` | `sdp`、`sdpType` / `cand`、`mid` | |
 
-**`game` の内容：** `phase`（`lobby`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`、`epoch`（進行が変わるたび・リセットで1増える。初期値1）
+**`game` の内容：** `phase`（`lobby`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`、`inputActive`（入力がPCに届く状態か）、`inputTarget`（常時ONだが前面が入力先でない。スマホは「届かない」と表示する）、`epoch`（進行が変わるたび・リセットで1増える。初期値1）
 
 **WebSocketの終了コード：** 4000 = 同じ端末の別タブに置き換えられた、4001 = PCでリセットした、4002 = `clientId` なし、4003 = モニターはPCのみ、4004 = 満員、4005 = 通信契約の版が違う（スマホは再接続をやめ、再読み込みを案内する）、4006 = 再接続のトークンがない・一致しない（スマホは再接続をやめ、PCでのリセットを案内する）
 
@@ -67,7 +67,7 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | 画面 → ホスト | `focus` | 疑似ゲーム画面の選択状態（`test` モードの条件になる） |
 | 画面 → ホスト | `required` / `auto_resume` / `phase` / `reset` | 必要人数（1〜3）、自動復帰のON/OFF、進行の強制変更、全枠の解放 |
 | 画面 → ホスト | `observe` | 疑似ゲーム画面の照合結果。ログに記録する |
-| ホスト → 画面 | `state` | 全枠の状態、`game`、`inject`（モード・有効かどうか・出力一覧・押下中の出力・緊急停止キー `emergencyHotkey` とその登録エラー `emergencyHotkeyError`）。1秒ごとと変化時に送る |
+| ホスト → 画面 | `state` | 全枠の状態、`game`、`inject`（モード・有効かどうか・出力一覧・押下中の出力・緊急停止キー `emergencyHotkey` とその登録エラー `emergencyHotkeyError`、入力先 `target`（`ok`・`expect`・前面の `process`・`title`））。1秒ごとと変化時に送る |
 | ホスト → 画面 | `inject` / `look` / `log` | 注入1件ごと、視点の100msごとの集計、イベントログ |
 
 ## 5. 順序・欠落・安全の規則

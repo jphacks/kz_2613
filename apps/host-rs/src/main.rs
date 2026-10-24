@@ -5,6 +5,7 @@
 
 mod config;
 mod controls;
+mod focus;
 mod hotkey;
 mod hub;
 mod input;
@@ -142,6 +143,13 @@ async fn main() {
                         Ok("quit") | Err(_) => break,
                         Ok("stop") => {
                             let _ = tx.send(Event::EmergencyStop { source: "app" });
+                        }
+                        // 試験用 (RECOOPLAY_DRY_RUN=1 と RECOOPLAY_FAKE_TARGET のときだけ有効): 前面のウィンドウの判定を差し替える
+                        Ok("target on") => {
+                            let _ = tx.send(Event::FakeTarget(true));
+                        }
+                        Ok("target off") => {
+                            let _ = tx.send(Event::FakeTarget(false));
                         }
                         _ => {}
                     }

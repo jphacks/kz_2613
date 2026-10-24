@@ -4,6 +4,8 @@ use std::path::Path;
 
 use serde_json::Value;
 
+use crate::focus::Target;
+
 pub struct Config {
     pub port: u16,
     pub wifi: Option<(String, String)>,
@@ -13,6 +15,8 @@ pub struct Config {
     pub auto_resume_ms: u64,
     pub look_smooth_min_ms: f64,
     pub look_smooth_max_ms: f64,
+    /// 常時 ON で注入してよい前面のウィンドウ ("target": { "processes": [...], "titleContains": "..." })
+    pub target: Target,
 }
 
 impl Config {
@@ -43,6 +47,17 @@ impl Config {
             auto_resume_ms: v.get("autoResumeMs").and_then(Value::as_u64).unwrap_or(15000),
             look_smooth_min_ms: v.get("lookSmoothMinMs").and_then(Value::as_f64).unwrap_or(30.0),
             look_smooth_max_ms: v.get("lookSmoothMaxMs").and_then(Value::as_f64).unwrap_or(120.0),
+            target: {
+                let t = v.get("target");
+                let mut target = Target::default();
+                if let Some(list) = t.and_then(|t| t.get("processes")).and_then(Value::as_array) {
+                    target.processes = list.iter().filter_map(Value::as_str).map(str::to_string).collect();
+                }
+                if let Some(title) = t.and_then(|t| t.get("titleContains")).and_then(Value::as_str) {
+                    target.title_contains = title.to_string();
+                }
+                target
+            },
         }
     }
 }
