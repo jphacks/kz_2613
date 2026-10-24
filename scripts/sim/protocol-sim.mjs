@@ -558,6 +558,73 @@ async function main() {
       await injected(mon, 'SPACE', 'up', mfrom);
     }, { rustOnly: true });
 
+    await check('PCアプリ: coop 中に PC アプリへ手動で戻ると全解放して paused、P1 はリモコンに戻り役割は変わらない', async () => {
+      const app = new Client('app');
+      await app.open();
+      app.send({ type: 'monitor', page: 'app' });
+      await app.waitFor((m) => m.type === 'state', { what: 'app state' });
+      app.send({ type: 'focus', focused: false }); // START 後に Minecraft を前面にした
+      await sleep(150);
+      let mfrom = mon.mark();
+      p1.input('FWD', 'down');
+      p3.input('USE', 'down');
+      await injected(mon, 'KEY_W', 'down', mfrom);
+      await injected(mon, 'MOUSE_R', 'down', mfrom);
+      mfrom = mon.mark();
+      const from = p1.mark();
+      app.send({ type: 'focus', focused: true }); // Alt+Tab などで PC アプリへ戻った
+      const g = await phaseIs(p1, 'paused', from);
+      assert(g.game.reason === 'app focus' && g.game.autoResumeUntil === 0, JSON.stringify(g.game));
+      await injected(mon, 'KEY_W', 'up', mfrom);
+      await injected(mon, 'MOUSE_R', 'up', mfrom);
+      const st = await mon.waitFor((m) => m.type === 'state' && m.game.phase === 'paused', { from: mfrom, what: 'state paused' });
+      assert(st.slots.filter((x) => x.connected).map((x) => x.name).join() === 'P1,P2,P3', '役割が変わった');
+      p1.input('FWD', 'up');
+      p3.input('USE', 'up');
+      // P1 の矢印は PC アプリの画面へ届く
+      const afrom = app.mark();
+      p1.input('RIGHT', 'down');
+      await app.waitFor((m) => m.type === 'remote' && m.control === 'RIGHT', { from: afrom, what: 'remote' });
+      p1.input('RIGHT', 'up');
+      // 前面のまま focus を送り直しても、一時停止中は何も変えない。RESUME で協力プレイへ戻る
+      app.send({ type: 'focus', focused: false });
+      await sleep(100);
+      const rfrom = p1.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', rfrom);
+      app.close();
+    }, { rustOnly: true });
+
+    await check('PCアプリ: coop 中にゲームを変えると全解放して lobby へ戻り、参加と役割は保つ。同じゲーム・未知のゲームは無視する', async () => {
+      const app = new Client('app');
+      await app.open();
+      app.send({ type: 'monitor', page: 'app' });
+      await app.waitFor((m) => m.type === 'state', { what: 'app state' });
+      let from = p1.mark();
+      app.send({ type: 'select_game', title: 'minecraft-java' });
+      app.send({ type: 'select_game', title: 'unknown-game' });
+      await sleep(300);
+      assert(!p1.msgs.slice(from).some((m) => m.type === 'game' && m.game.phase !== 'coop'), '同じ・未知のゲームで進行が変わった');
+      let mfrom = mon.mark();
+      p1.input('FWD', 'down');
+      await injected(mon, 'KEY_W', 'down', mfrom);
+      mfrom = mon.mark();
+      from = p1.mark();
+      app.send({ type: 'select_game', title: 'pseudo-game' });
+      const g = await phaseIs(p1, 'lobby', from);
+      assert(g.game.reason === 'game change' && g.game.title === 'pseudo-game', JSON.stringify(g.game));
+      await injected(mon, 'KEY_W', 'up', mfrom);
+      p1.input('FWD', 'up');
+      assert(g.game.connected.join() === 'P1,P2,P3', '参加者が変わった');
+      // 戻して再開
+      app.send({ type: 'select_game', title: 'minecraft-java' });
+      await p1.waitFor((m) => m.type === 'game' && m.game.title === 'minecraft-java', { from, what: 'title back' });
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'START' });
+      await phaseIs(p1, 'coop', from);
+      app.close();
+    }, { rustOnly: true });
+
     await check('切断: coop 中の切断で paused、切断者以外の押下も全解放する', async () => {
       p1.input('FWD', 'up'); // 前の試験の押下が残っていれば離す (既に離れていれば何もしない)
       await sleep(150);

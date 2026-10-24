@@ -65,6 +65,9 @@ test('進行: 一時停止の理由を表示する', () => {
   assert.match(p('host pause'), /ホストが一時停止/);
   assert.match(p('P2 disconnected'), /P2 の通信が切れました/);
   assert.match(p('emergency stop'), /緊急停止/);
+  assert.match(p('app focus'), /PC アプリの画面に戻った/);
+  const lobby = phaseView({ ...game(['P1']), phase: 'lobby', reason: 'game change' }, { mode: 'on' });
+  assert.match(lobby.detail, /ゲームを変えた.*分担はそのまま/);
 });
 
 test('進行: テストモードをMinecraftへの入力中と誤表示しない', () => {
