@@ -44,7 +44,15 @@ async function check(mode) {
     const p1 = await client();
     p1.sendJson({ type: 'hello', protocolVersion: version, clientId: '終了試験用の端末' });
     await until(() => p1.messages.find(m => m.type === 'welcome'), '枠を取得できない');
-    p1.sendJson({ type: 'command', cmd: 'START' });
+    for (const name of ['P2', 'P3']) {
+      const player = await client(); player.sendJson({type:'hello',protocolVersion:version,clientId:name});
+      await until(()=>player.messages.find(m=>m.type==='welcome'), '追加端末を取得できない');
+    }
+    const current = () => p1.messages.filter(m=>m.type==='game').at(-1)?.game;
+    await until(()=>current()?.connected.length===3, '3人接続を待機');
+    p1.sendJson({type:'command',cmd:'PREPARE',epoch:current().epoch});
+    await until(()=>current()?.phase==='preparing', '準備へ移れない');
+    p1.sendJson({type:'command',cmd:'READY',epoch:current().epoch});
     const game = await until(() => p1.messages.find(m => m.type === 'game' && m.game.phase === 'coop'), '開始できない');
     p1.sendJson({ type: 'input', iseq: 1, epoch: game.game.epoch, button: 'FWD', state: 'down' });
     await until(() => mon.messages.some(m => m.type === 'inject' && m.entry.out === 'KEY_W' && m.entry.state === 'down'), 'dry-runの押下がない');

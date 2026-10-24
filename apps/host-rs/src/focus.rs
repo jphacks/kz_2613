@@ -37,20 +37,28 @@ pub fn foreground() -> Option<Foreground> {
     imp::foreground()
 }
 
+/// 許可された既存ゲームだけを前面にする。任意のパスの起動は受け付けない。
+pub fn activate(target: &Target) -> Result<(), String> {
+    imp::activate(target)
+}
+
 #[cfg(windows)]
 mod imp {
-    use windows::core::PWSTR;
-    use windows::Win32::Foundation::CloseHandle;
+    use windows::core::{PWSTR, BOOL};
+    use windows::Win32::Foundation::{CloseHandle, HWND, LPARAM};
     use windows::Win32::System::Threading::{
         OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
     };
-    use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowTextW, GetWindowThreadProcessId};
+    use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowTextW, GetWindowThreadProcessId, EnumWindows, IsWindowVisible, SetForegroundWindow, ShowWindow, SW_RESTORE};
 
     use super::Foreground;
 
     pub fn foreground() -> Option<Foreground> {
+        describe(unsafe { GetForegroundWindow() })
+    }
+
+    fn describe(hwnd: HWND) -> Option<Foreground> {
         unsafe {
-            let hwnd = GetForegroundWindow();
             if hwnd.is_invalid() {
                 return None;
             }
@@ -74,10 +82,31 @@ mod imp {
             Some(Foreground { process, title: String::from_utf16_lossy(&title[..n]) })
         }
     }
+
+    struct Search<'a> { target: &'a super::Target, found: Option<HWND> }
+    unsafe extern "system" fn visit(hwnd: HWND, param: LPARAM) -> BOOL {
+        let search = unsafe { &mut *(param.0 as *mut Search<'_>) };
+        if unsafe { IsWindowVisible(hwnd) }.as_bool() && describe(hwnd).is_some_and(|f| search.target.matches(&f)) {
+            search.found = Some(hwnd);
+            BOOL(0)
+        } else { BOOL(1) }
+    }
+
+    pub fn activate(target: &super::Target) -> Result<(), String> {
+        let mut search = Search { target, found: None };
+        unsafe { let _ = EnumWindows(Some(visit), LPARAM(&mut search as *mut _ as isize)); }
+        let hwnd = search.found.ok_or("起動済みのMinecraftが見つかりません")?;
+        // 列挙後にも対象を照合する。成功は前面化を実際に確認した場合だけ返す。
+        if !describe(hwnd).is_some_and(|f| target.matches(&f)) { return Err("入力先が変わりました".into()); }
+        unsafe { let _ = ShowWindow(hwnd, SW_RESTORE); let _ = SetForegroundWindow(hwnd); }
+        if foreground().is_some_and(|f| target.matches(&f)) { Ok(()) }
+        else { Err("Windowsが前面化を許可しませんでした".into()) }
+    }
 }
 
 #[cfg(not(windows))]
 mod imp {
+    pub fn activate(_: &super::Target) -> Result<(), String> { Err("Windows以外では前面化できません".into()) }
     pub fn foreground() -> Option<super::Foreground> {
         None
     }

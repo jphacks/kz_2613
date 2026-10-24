@@ -23,7 +23,7 @@ export const GAMES = [
       'Minecraft のランチャーから手動で起動し、ワールドに入っておく',
       'ホットバーに使うアイテムを並べておく（インベントリ操作はホストのリモコンでは限られます）',
       '③ の画面で「ゲームへの入力」を「常時ON」にする',
-      'START 後に Minecraft のウィンドウをクリックして前面にする（前面のときだけ操作が届きます）',
+      'Minecraftを開いてワールドを準備し、前面にした後にホストがReadyを押す',
     ],
   },
 ];
@@ -56,7 +56,7 @@ export function slotViews(slots) {
 export function startView(game, inject) {
   if (!game) return { canStart: false, reasons: ['PC ホストに接続していません'], notes: [] };
   const connected = game.connected || [];
-  const reasons = [];
+  const reasons = [...(game.readyReasons || [])];
   if (!connected.includes('P1')) reasons.push('ホスト（P1）が接続していません');
   const lack = (game.required || 3) - connected.length;
   if (lack > 0) reasons.push(`あと ${lack} 人の参加が必要です（${connected.length}/${game.required}人）`);
@@ -82,6 +82,7 @@ export function phaseView(game, inject) {
           : 'ゲームへの入力が OFF です（③ で「常時ON」にしてください）',
     };
   }
+  if (game.phase === 'preparing') return {phase:'preparing',title:'ゲームを準備中',detail: [game.prepareStatus, ...(game.readyReasons || []), 'ホストだけがReadyを押して開始します'].filter(Boolean).join('。')};
   if (game.phase === 'paused') {
     const reason = game.reason === 'host pause' ? 'ホストが一時停止しました' : game.reason === 'emergency stop' ? 'PC の緊急停止' : game.reason === 'app focus' ? 'PC アプリの画面に戻ったため、すべてのキーを離しました' : /disconnected$/.test(game.reason || '') ? `${game.reason.split(' ')[0]} の通信が切れました` : game.reason || '';
     return { phase: 'paused', title: '一時停止中', detail: `${reason}。ホストのスマホで RESUME すると再開します` };

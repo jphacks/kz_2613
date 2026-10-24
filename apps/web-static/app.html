@@ -119,7 +119,7 @@
     <div class="start">
       <div class="card">
         <h3>開始の条件</h3>
-        <div id="startState"></div>
+        <button id="prepareBtn">ゲームを開く・準備する</button><div id="startState"></div>
       </div>
       <div class="card">
         <h3>ゲームへの入力</h3>
@@ -173,6 +173,7 @@
     const mode = e.target.closest('[data-mode]')?.dataset.mode;
     if (mode && ws?.readyState === 1) ws.send(JSON.stringify({ type: 'inject_mode', mode }));
   });
+  $('prepareBtn').addEventListener('click', () => { if (ws?.readyState === 1) ws.send(JSON.stringify({type:'prepare'})); });
   // PC のキーボードでも同じ操作
   document.addEventListener('keydown', (e) => {
     const c = { ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', ArrowUp: 'UP', ArrowDown: 'DOWN', Enter: 'ENTER', Escape: 'ESC' }[e.key];
@@ -219,9 +220,10 @@
         <ul>${r.controls.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
       </div>`;
     }).join('');
+    $('prepareBtn').disabled = !game?.canPrepare;
     const sv = startView(game, inject);
     $('startState').innerHTML = (sv.canStart
-      ? '<div class="ok" style="font-size:17px">✓ 開始できます。ホストのスマホで START を押してください</div>'
+      ? '<div class="ok" style="font-size:17px">✓ 開始できます。ゲームの準備後、ホストのスマホでReadyを押してください</div>'
       : `<div class="ng" style="font-size:17px">まだ開始できません</div><ul>${sv.reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>`)
       + sv.notes.map((n) => `<div class="warn" style="margin-top:8px">⚠ ${esc(n)}</div>`).join('');
     document.querySelectorAll('#modeSeg button').forEach((b) => b.classList.toggle('sel', b.dataset.mode === inject?.mode));
