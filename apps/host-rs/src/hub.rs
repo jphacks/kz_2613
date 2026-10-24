@@ -873,6 +873,7 @@ impl Hub {
 
     fn remote_game_active(&self) -> bool {
         matches!(self.game.phase, Phase::Preparing | Phase::Paused) && !self.remote_app_active() && self.can_inject()
+            && (self.hotkey.is_ok() || self.fake_target.is_some())
     }
 
     fn remote_message(&mut self, idx: usize, msg: &Value) {
