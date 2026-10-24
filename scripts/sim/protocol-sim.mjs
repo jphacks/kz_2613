@@ -256,6 +256,25 @@ async function main() {
       if (target !== 'node') assert(w1.protocolVersion === PROTOCOL_VERSION, `welcome の protocolVersion=${w1.protocolVersion}`);
     });
 
+    await check('トークン: welcome で枠ごとに 128bit 以上の推測困難な値を発行する', async () => {
+      const t = [tokens.P1, tokens.P2, tokens.P3];
+      assert(t.every((x) => /^[0-9a-f]{32,}$/.test(x || '')), `トークンの形式: ${t.join(',')}`);
+      assert(new Set(t).size === 3, '枠どうしでトークンが重複した');
+    }, { rustOnly: true });
+
+    await check('トークン: clientId が同じでもトークンなし・不一致の再接続は 4006 で拒否し、元の接続を奪わない', async () => {
+      for (const token of [undefined, '0'.repeat(32), tokens.P3]) {
+        const x = new Client('hijack');
+        await x.open();
+        x.send({ type: 'hello', protocolVersion: PROTOCOL_VERSION, clientId: ids.P2, token });
+        const e = await x.waitFor((m) => m.type === 'error' || m.type === 'welcome', { what: 'bad_token' });
+        assert(e.type === 'error' && e.code === 'bad_token', `乗っ取りを許した: ${JSON.stringify(e)}`);
+        assert((await x.waitClose()) === 4006, '終了コードが 4006 でない');
+      }
+      await sleep(100);
+      assert(p2.closed === null, '元の P2 の接続が切られた');
+    }, { rustOnly: true });
+
     await check('役割: 4 台目は full で拒否し 4004 で閉じる', async () => {
       const p4 = await join('P4');
       const w = await p4.waitFor((m) => m.type === 'full', { what: 'full' });
@@ -459,6 +478,16 @@ async function main() {
       const g = await p1.waitFor((m) => m.type === 'game' && !m.game.connected.includes('P3'), { from, timeout: 6500, what: 'heartbeat timeout' });
       assert(g, '切断扱いにならない');
     });
+
+    await check('トークン: PC 画面へのメッセージとログファイルにトークンを含めない', async () => {
+      const all = JSON.stringify(mon.msgs);
+      for (const k of ['P1', 'P2', 'P3']) assert(!all.includes(tokens[k]), `${k} のトークンが PC 画面に出た`);
+      await sleep(1200); // ログは 1 秒ごとに書き出される
+      const files = fs.readdirSync(host.logDir).filter((f) => f.endsWith('.jsonl'));
+      assert(files.length > 0, 'ログファイルがない');
+      const log = files.map((f) => fs.readFileSync(path.join(host.logDir, f), 'utf8')).join('');
+      for (const k of ['P1', 'P2', 'P3']) assert(!log.includes(tokens[k]), `${k} のトークンがログに出た`);
+    }, { rustOnly: true });
 
     for (const c of [p1, p2, p3, mon]) c?.close();
     const failed = results.filter((r) => !r.ok);
