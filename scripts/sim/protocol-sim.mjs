@@ -22,7 +22,7 @@ const opt = (name, def) => {
 const target = opt('--target', 'rust');
 const PORT = Number(opt('--port', 18000 + Math.floor(Math.random() * 1000)));
 const BASE = `http://127.0.0.1:${PORT}`;
-const PROTOCOL_VERSION = 1;
+const PROTOCOL_VERSION = 3;
 
 // ---------- ホストの起動 (必ず注入なし) ----------
 function startHost() {
@@ -238,7 +238,7 @@ async function main() {
     });
 
     await check('版: protocolVersion がない・違う hello は理由を返して 4005 で閉じ、枠を割り当てない', async () => {
-      for (const extra of [{ protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }]) {
+      for (const extra of [{ protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }, { protocolVersion: 1 }, { protocolVersion: 2 }]) {
         const c = new Client('V');
         await c.open();
         c.send({ type: 'hello', clientId: 'sim-old-page', ...extra });
@@ -412,6 +412,31 @@ async function main() {
       await injected(mon, 'SPACE', 'down', from);
       p1.input('JUMP', 'up');
       await injected(mon, 'SPACE', 'up', from);
+    }, { rustOnly: true });
+
+    await check('epoch: 旧視点の欠落・遅延が新epochの累積値と順序番号へ混ざらない', async () => {
+      const old = p2.epoch;
+      // 古いepochでcx=1000まで動いた最終パケットは失われ、ホストへ届かない。
+      let from = p1.mark();
+      p1.send({ type: 'command', cmd: 'PAUSE' });
+      await phaseIs(p1, 'paused', from);
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      const resumed = await phaseIs(p1, 'coop', from);
+      await p2.waitFor(m => m.type === 'game' && m.game.epoch === resumed.game.epoch);
+      await sleep(300); // 以前の視点レポートが出終わるまで待つ
+      from = mon.mark();
+      // 旧パケットが届かないまま、新epochではseq=1、累積値10から始める。
+      p2.send({ type: 'look', lseq: 1, epoch: p2.epoch, cx: 10, cy: 0 });
+      await sleep(1000);
+      let dx = mon.msgs.slice(from).filter(m => m.type === 'look').reduce((sum, m) => sum + m.entry.dx, 0);
+      assert(Math.abs(dx - 10) <= 1, `新epochの10以外が混入した: dx=${dx}`);
+      from = mon.mark();
+      p2.send({ type: 'look', lseq: 101, epoch: old, cx: 2000, cy: 0 });
+      p2.send({ type: 'look', lseq: 2, epoch: p2.epoch, cx: 15, cy: 0 });
+      await sleep(1000);
+      dx = mon.msgs.slice(from).filter(m => m.type === 'look').reduce((sum, m) => sum + m.entry.dx, 0);
+      assert(Math.abs(dx - 5) <= 1, `遅延パケットが基準を変更した: dx=${dx}`);
     }, { rustOnly: true });
 
     await check('切断: coop 中の切断で paused、切断者以外の押下も全解放する', async () => {
