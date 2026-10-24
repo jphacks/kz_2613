@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "起動中画面 (ui/index.html) のみ。ホストの画面 (http://127.0.0.1:<port>/) には Tauri の API を開放しない",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}
