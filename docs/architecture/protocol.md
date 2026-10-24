@@ -1,5 +1,9 @@
 # 通信契約 v1（スマホ・PC画面 ⇔ PCホスト）
 
+**版：** `protocolVersion = 1`（Rust版ホスト `apps/host-rs`・スマホ画面 `apps/web-static/index.html` に実装）。
+
+**変更の規則：** 契約（メッセージの型・項目・終了コード・順序の規則）を変えるときは、同じPRで①この文書、②`scripts/sim/protocol-sim.mjs`（契約のテスト）、③必要なら `protocolVersion` を更新する。互換性のない変更では版を上げる。シミュレーションは `node scripts/sim/protocol-sim.mjs` で実行し、結果をBUILD_LOGへ記録する。Node参照実装（`apps/node-ref`）は試作品のまま比較の基準として残し、Rust版で追加した契約は対象外とする。
+
 **状況：** Node.js試作品は疑似ゲーム画面とスマホ実機で確認済み。Rust版はPC上のシミュレーションのみ実施済み。Minecraft、Tauri、Rust版の実入力・スマホ3台による実機試験は未検証。今回の文書整理で新たな実機試験は実施していない。 以下はNode.js参照実装の通信形式と、これを基準に整える製品の安全要件。現行リポジトリのPython/Reactひな形が対応済みという意味ではない。
 
 ## 1. エンドポイント
@@ -19,7 +23,7 @@
 
 | type | 経路 | 主な項目 | 意味 |
 |---|---|---|---|
-| `hello` | WS | `clientId`（端末のlocalStorageに保存、最大64文字）、`ua`、`nextIseq` | 参加・再接続する。同じ `clientId` は元の枠へ戻る |
+| `hello` | WS | `protocolVersion`（必須、現在は `1`）、`clientId`（端末のlocalStorageに保存、最大64文字）、`ua`、`nextIseq` | 参加・再接続する。同じ `clientId` は元の枠へ戻る。版がない・違う場合は `error` を返して4005で閉じ、枠を割り当てない |
 | `ping` | WS | `t`、`stats`（RTTの平均・95%値・最大、`rtc`側の統計、`via`） | 1秒ごとに送る。サーバーは `pong` を返す |
 | `command` | WS | `cmd`: `START` / `PAUSE` / `RESUME` / `END` | **P1のみ有効** |
 | `input` | **WSとWebRTCの両方** | `iseq`（通し番号）、`button`（操作名）、`state`（`down`/`up`）、`t`、`burst`（通信テスト） | サーバーは番号順に、先に届いたほうで1回だけ処理する。WS版には `seq` も付く |
@@ -41,7 +45,8 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 
 | type | 主な項目 | 意味 |
 |---|---|---|
-| `welcome` | `slot`、`role`、`isHost`、`reconnected` | 割り当てた枠 |
+| `welcome` | `protocolVersion`、`slot`、`role`、`isHost`、`reconnected` | 割り当てた枠 |
+| `error` | `code`（`protocol_version`）、`protocolVersion`（ホストの版） | 接続を受け付けない理由。続いて接続を閉じる |
 | `full` | — | 満員。続いて接続を閉じる（4004） |
 | `game` | `game`（下記） | 進行の状態が変わるたびに全員へ送る |
 | `pong` | `t` | |
@@ -51,7 +56,7 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 
 **`game` の内容：** `phase`（`lobby`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`
 
-**WebSocketの終了コード：** 4000 = 同じ端末の別タブに置き換えられた、4001 = PCでリセットした、4002 = `clientId` なし、4003 = モニターはPCのみ、4004 = 満員
+**WebSocketの終了コード：** 4000 = 同じ端末の別タブに置き換えられた、4001 = PCでリセットした、4002 = `clientId` なし、4003 = モニターはPCのみ、4004 = 満員、4005 = 通信契約の版が違う（スマホは再接続をやめ、再読み込みを案内する）
 
 ## 4. PC画面（モニター）⇔ PCホスト
 

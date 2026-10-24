@@ -155,7 +155,12 @@ class Client {
 
 // ---------- 試験 ----------
 const results = [];
-async function check(name, fn) {
+// rustOnly: 試作品の後に Rust 版へ追加した契約 (Node 参照実装は試作品のまま比較の基準として残す)
+async function check(name, fn, { rustOnly = false } = {}) {
+  if (rustOnly && target === 'node') {
+    console.log(`  skip ${name} (Rust 版で追加した契約)`);
+    return;
+  }
   const t0 = Date.now();
   try {
     await fn();
@@ -224,6 +229,19 @@ async function main() {
       assert(r.status !== 200, 'ルート外のファイルを返した');
     });
 
+    await check('版: protocolVersion がない・違う hello は理由を返して 4005 で閉じ、枠を割り当てない', async () => {
+      for (const extra of [{ protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }]) {
+        const c = new Client('V');
+        await c.open();
+        c.send({ type: 'hello', clientId: 'sim-old-page', ...extra });
+        const e = await c.waitFor((m) => m.type === 'error' || m.type === 'welcome', { what: 'error' });
+        assert(e.type === 'error' && e.code === 'protocol_version' && e.protocolVersion === PROTOCOL_VERSION, JSON.stringify(e));
+        assert((await c.waitClose()) === 4005, '終了コードが 4005 でない');
+      }
+      const g = await mon.waitFor((m) => m.type === 'state', { from: mon.mark() - 1, what: 'state' });
+      assert(g.slots.every((x) => !x.assigned), '版不一致の端末に枠を割り当てた');
+    }, { rustOnly: true });
+
     await check('役割: 接続順で P1 (ホスト) / P2 / P3 を割り当てる', async () => {
       p1 = await join('P1');
       const w1 = await welcome(p1);
@@ -235,6 +253,7 @@ async function main() {
       assert(w2.slot === 'P2' && w2.isHost === false, `P2: ${JSON.stringify(w2)}`);
       assert(w3.slot === 'P3' && w3.isHost === false, `P3: ${JSON.stringify(w3)}`);
       assert(!w1.reconnected, '初回なのに reconnected');
+      if (target !== 'node') assert(w1.protocolVersion === PROTOCOL_VERSION, `welcome の protocolVersion=${w1.protocolVersion}`);
     });
 
     await check('役割: 4 台目は full で拒否し 4004 で閉じる', async () => {

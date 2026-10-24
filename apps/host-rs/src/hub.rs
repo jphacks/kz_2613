@@ -20,6 +20,9 @@ use crate::rtc::{Peer, RtcSignal};
 
 const SLOT_NAMES: [&str; 3] = ["P1", "P2", "P3"];
 const SLOT_ROLES: [&str; 3] = ["移動・ホスト", "視点", "アクション"];
+/// 通信契約の版 (docs/architecture/protocol.md)。変えるときは protocol.md とシミュレーションも同時に更新する
+const PROTOCOL_VERSION: u64 = 1;
+const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
 const MIN_HOLD_MS: u64 = 60; // 押下は最低この時間続ける (ゲームは 50ms ごとに入力を読む)
 const MIN_GAP_MS: u64 = 50; // 解放も最低この時間続けてから次を押す (連打を 1 回ずつ認識させる)
@@ -1030,6 +1033,16 @@ impl Hub {
     }
 
     fn on_hello(&mut self, id: u64, msg: &Value) {
+        // 版が合わない画面 (古いキャッシュなど) は理由を返して閉じる。枠は割り当てない
+        let version = msg.get("protocolVersion").and_then(Value::as_u64);
+        if version != Some(PROTOCOL_VERSION) {
+            self.send(
+                Some(id),
+                &json!({ "type": "error", "code": "protocol_version", "protocolVersion": PROTOCOL_VERSION }),
+            );
+            self.log("reject_version", json!({ "got": version, "expected": PROTOCOL_VERSION }));
+            return self.close(Some(id), CLOSE_PROTOCOL_VERSION, "protocol version mismatch");
+        }
         let client_id: String = s(msg, "clientId").unwrap_or_default().chars().take(64).collect();
         if client_id.is_empty() {
             return self.close(Some(id), 4002, "no clientId");
@@ -1077,7 +1090,14 @@ impl Hub {
         self.conns.get_mut(&id).unwrap().role = Role::Player { slot: idx };
         self.send(
             Some(id),
-            &json!({ "type": "welcome", "slot": SLOT_NAMES[idx], "role": SLOT_ROLES[idx], "isHost": idx == 0, "reconnected": reconnected }),
+            &json!({
+                "type": "welcome",
+                "protocolVersion": PROTOCOL_VERSION,
+                "slot": SLOT_NAMES[idx],
+                "role": SLOT_ROLES[idx],
+                "isHost": idx == 0,
+                "reconnected": reconnected,
+            }),
         );
         self.log(
             if reconnected { "reconnect" } else { "join" },
