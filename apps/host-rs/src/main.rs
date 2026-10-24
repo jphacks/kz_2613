@@ -100,7 +100,8 @@ async fn main() {
     };
 
     println!("\nRe:Cooplay ホスト (Rust) 起動 (port {port})");
-    println!("  PC ダッシュボード : http://localhost:{port}/host");
+    println!("  PC アプリ画面     : http://localhost:{port}/app");
+    println!("  PC ダッシュボード : http://localhost:{port}/host  (診断用)");
     println!("  PC 疑似ゲーム画面 : http://localhost:{port}/game");
     let addrs = netinfo::addresses();
     for a in &addrs {
@@ -201,10 +202,11 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
         "/" => "/index.html",
         "/host" => "/host.html",
         "/game" => "/game.html",
+        "/app" => "/app.html",
         p => p,
     };
     // ダッシュボードと疑似ゲーム画面は PC 本体からのみ
-    if matches!(path, "/host.html" | "/game.html") && !is_loopback(&addr) {
+    if matches!(path, "/host.html" | "/game.html" | "/app.html") && !is_loopback(&addr) {
         return (StatusCode::FORBIDDEN, "this page is only available on the PC").into_response();
     }
     let rel = Path::new(path.trim_start_matches('/'));

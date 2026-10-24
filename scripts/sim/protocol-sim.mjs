@@ -299,6 +299,24 @@ async function main() {
       assert(w.type === 'full', `満員なのに受け付けた: ${JSON.stringify(w)}`);
     });
 
+    await check('PC画面: ロビーでは P1 のリモコン操作だけを PC 画面へ remote で知らせる', async () => {
+      const from = mon.mark();
+      p1.input('RIGHT', 'down');
+      const r = await mon.waitFor((m) => m.type === 'remote', { from, what: 'remote' });
+      assert(r.control === 'RIGHT' && r.state === 'down', JSON.stringify(r));
+      p1.input('RIGHT', 'up');
+      await mon.waitFor((m) => m.type === 'remote' && m.state === 'up', { from, what: 'remote up' });
+      const from2 = mon.mark();
+      p2.input('UP', 'down'); // P2 はリモコンを持たない
+      p3.input('ENTER', 'down');
+      p1.input('JUMP', 'down'); // リモコンの操作名ではない
+      await sleep(300);
+      assert(!mon.msgs.slice(from2).some((m) => m.type === 'remote'), 'P1 のリモコン以外を知らせた');
+      p2.input('UP', 'up');
+      p3.input('ENTER', 'up');
+      p1.input('JUMP', 'up');
+    }, { rustOnly: true });
+
     await check('進行: P1 以外の START は無視、P1 の START で coop', async () => {
       const g = await mon.waitFor((m) => m.type === 'game' && m.game.canStart, { what: 'canStart' });
       assert(g.game.phase === 'lobby', 'lobby でない');
