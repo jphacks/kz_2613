@@ -1,6 +1,6 @@
-# 通信契約 v1（スマホ・PC画面 ⇔ PCホスト）
+# 通信契約 v2（スマホ・PC画面 ⇔ PCホスト）
 
-**版：** `protocolVersion = 1`（Rust版ホスト `apps/host-rs`・スマホ画面 `apps/web-static/index.html` に実装）。
+**版：** `protocolVersion = 2`（Rust版ホスト `apps/host-rs`・スマホ画面 `apps/web-static/index.html` に実装）。v1の画面は再接続トークンを保持できないため、v2では版不一致で拒否する。
 
 **変更の規則：** 契約（メッセージの型・項目・終了コード・順序の規則）を変えるときは、同じPRで①この文書、②`scripts/sim/protocol-sim.mjs`（契約のテスト）、③必要なら `protocolVersion` を更新する。互換性のない変更では版を上げる。シミュレーションは `node scripts/sim/protocol-sim.mjs` で実行し、結果をBUILD_LOGへ記録する。Node参照実装（`apps/node-ref`）は試作品のまま比較の基準として残し、Rust版で追加した契約は対象外とする。
 
@@ -23,7 +23,7 @@
 
 | type | 経路 | 主な項目 | 意味 |
 |---|---|---|---|
-| `hello` | WS | `protocolVersion`（必須、現在は `1`）、`clientId`（端末のlocalStorageに保存、最大64文字）、`token`（再接続時。`welcome` で受け取った値）、`ua`、`nextIseq` | 参加・再接続する。同じ `clientId` は、`token` が一致した場合だけ元の枠へ戻る（なし・不一致は `error`（`bad_token`）を返して4006で閉じ、元の接続には影響しない）。版がない・違う場合は `error` を返して4005で閉じ、枠を割り当てない |
+| `hello` | WS | `protocolVersion`（必須、現在は `2`）、`clientId`（端末のlocalStorageに保存、最大64文字）、`token`（再接続時。`welcome` で受け取った値）、`ua`、`nextIseq` | 参加・再接続する。同じ `clientId` は、`token` が一致した場合だけ元の枠へ戻る（なし・不一致は `error`（`bad_token`）を返して4006で閉じ、元の接続には影響しない）。版がない・違う場合は `error` を返して4005で閉じ、枠を割り当てない |
 | `ping` | WS | `t`、`stats`（RTTの平均・95%値・最大、`rtc`側の統計、`via`） | 1秒ごとに送る。サーバーは `pong` を返す |
 | `command` | WS | `cmd`: `START` / `PAUSE` / `RESUME` / `END` | **P1のみ有効** |
 | `input` | **WSとWebRTCの両方** | `iseq`（通し番号）、`button`（操作名）、`state`（`down`/`up`）、`t`、`burst`（通信テスト） | サーバーは番号順に、先に届いたほうで1回だけ処理する。WS版には `seq` も付く |

@@ -21,7 +21,7 @@ use crate::rtc::{Peer, RtcSignal};
 const SLOT_NAMES: [&str; 3] = ["P1", "P2", "P3"];
 const SLOT_ROLES: [&str; 3] = ["移動・ホスト", "視点", "アクション"];
 /// 通信契約の版 (docs/architecture/protocol.md)。変えるときは protocol.md とシミュレーションも同時に更新する
-const PROTOCOL_VERSION: u64 = 1;
+const PROTOCOL_VERSION: u64 = 2;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
@@ -1095,6 +1095,10 @@ impl Hub {
         };
         // 同じ端末の古い接続を置き換え
         let old = self.slots[idx].as_ref().unwrap().conn.filter(|&c| c != id);
+        if old.is_some() {
+            // 別タブ等による置換も切断として全解放し、旧接続の押下を持ち越さない。
+            self.mark_disconnected(idx, "replaced");
+        }
         self.close(old, 4000, "replaced");
         let ua: String = s(msg, "ua").unwrap_or_default().chars().take(200).collect();
         let now = now_ms();
