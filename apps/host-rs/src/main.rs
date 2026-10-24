@@ -18,7 +18,7 @@ use std::sync::{Arc, Mutex};
 
 use axum::extract::ws::{CloseFrame, Message, WebSocket, WebSocketUpgrade};
 use axum::extract::{ConnectInfo, State};
-use axum::http::{header, StatusCode, Uri};
+use axum::http::{header, HeaderMap, StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;
@@ -192,7 +192,27 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
     }
 }
 
-async fn ws_upgrade(ws: WebSocketUpgrade, ConnectInfo(addr): ConnectInfo<SocketAddr>, State(app): State<App>) -> Response {
+// DNS再束縛と別Originからの管理操作を防ぐ。OriginなしはPC内の非ブラウザ検証クライアントに限る。
+fn allowed_ws_headers(headers: &HeaderMap, port: u16, loopback: bool) -> bool {
+    let Some(host) = headers.get(header::HOST).and_then(|v| v.to_str().ok()) else { return false };
+    let Ok(authority) = host.parse::<axum::http::uri::Authority>() else { return false };
+    let hostname = authority.host();
+    if authority.port_u16().unwrap_or(80) != port
+        || !(matches!(hostname, "localhost" | "127.0.0.1" | "[::1]")
+            || netinfo::addresses().iter().any(|a| a.address == hostname))
+    {
+        return false;
+    }
+    match headers.get(header::ORIGIN) {
+        None => loopback,
+        Some(value) => value.to_str().ok().is_some_and(|origin| origin == format!("http://{host}")),
+    }
+}
+
+async fn ws_upgrade(ws: WebSocketUpgrade, ConnectInfo(addr): ConnectInfo<SocketAddr>, State(app): State<App>, headers: HeaderMap) -> Response {
+    if !allowed_ws_headers(&headers, app.port, is_loopback(&addr)) {
+        return StatusCode::FORBIDDEN.into_response();
+    }
     ws.on_upgrade(move |socket| ws_session(socket, addr, app))
 }
 
@@ -229,4 +249,26 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
         }
     }
     app.send(Event::WsClosed { id, code });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn websocket_origin_and_host_must_be_trusted() {
+        let mut headers = HeaderMap::new();
+        headers.insert(header::HOST, "127.0.0.1:8080".parse().unwrap());
+        assert!(allowed_ws_headers(&headers, 8080, true));
+        assert!(!allowed_ws_headers(&headers, 8080, false));
+        headers.insert(header::ORIGIN, "http://127.0.0.1:8080".parse().unwrap());
+        assert!(allowed_ws_headers(&headers, 8080, false));
+        for origin in ["null", "http://localhost:8080", "http://127.0.0.1:8081", "https://127.0.0.1:8080"] {
+            headers.insert(header::ORIGIN, origin.parse().unwrap());
+            assert!(!allowed_ws_headers(&headers, 8080, true));
+        }
+        headers.insert(header::HOST, "example.invalid:8080".parse().unwrap());
+        headers.insert(header::ORIGIN, "http://example.invalid:8080".parse().unwrap());
+        assert!(!allowed_ws_headers(&headers, 8080, true));
+    }
 }

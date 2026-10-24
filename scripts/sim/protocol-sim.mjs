@@ -8,6 +8,7 @@
 //   node scripts/sim/protocol-sim.mjs --bin <path-to-exe>
 
 import { spawn } from 'node:child_process';
+import http from 'node:http';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -23,6 +24,22 @@ const target = opt('--target', 'rust');
 const PORT = Number(opt('--port', 18000 + Math.floor(Math.random() * 1000)));
 const BASE = `http://127.0.0.1:${PORT}`;
 const PROTOCOL_VERSION = 1;
+
+// ブラウザと同じOrigin付きのハンドシェイクを送り、アップグレード前の拒否も確認する。
+function handshake(origin, host = `127.0.0.1:${PORT}`) {
+  return new Promise((resolve, reject) => {
+    const req = http.request(`${BASE}/ws`, { headers: {
+      Host: host, Connection: 'Upgrade', Upgrade: 'websocket',
+      'Sec-WebSocket-Version': '13', 'Sec-WebSocket-Key': 'cmVjb29wbGF5LXRlc3QxMg==',
+      ...(origin === undefined ? {} : { Origin: origin }),
+    }});
+    req.on('upgrade', (res, socket) => { socket.destroy(); resolve(res.statusCode); });
+    req.on('response', res => { res.resume(); resolve(res.statusCode); });
+    req.on('error', reject);
+    req.setTimeout(2000, () => req.destroy(new Error('handshake timeout')));
+    req.end();
+  });
+}
 
 // ---------- ホストの起動 (必ず注入なし) ----------
 function startHost() {
@@ -250,6 +267,28 @@ async function main() {
       assert(g.slots.every((x) => !x.assigned), '版不一致の端末に枠を割り当てた');
     }, { rustOnly: true });
 
+    await check('認可: 同じOriginとPC内の検証接続だけを受け付け、別Origin・null・不正Hostを拒否する', async () => {
+      assert(await handshake(BASE) === 101, '同じOriginを拒否した');
+      assert(await handshake(undefined) === 101, 'PC内の非ブラウザ接続を拒否した');
+      for (const origin of ['http://localhost:19232', 'http://example.invalid', 'null']) {
+        assert(await handshake(origin) === 403, `別Originを許可した: ${origin}`);
+      }
+      assert(await handshake(`http://example.invalid:${PORT}`, `example.invalid:${PORT}`) === 403, '不正Hostを許可した');
+    });
+
+    await check('認可: 1接続のhello再送・管理接続への変更では別の枠を割り当てない', async () => {
+      for (const next of [{ type: 'hello', clientId: 'sim-duplicate-second', protocolVersion: PROTOCOL_VERSION }, { type: 'monitor', page: 'host' }]) {
+        const x = await join('duplicate', { clientId: 'sim-duplicate-first' });
+        await welcome(x);
+        x.send(next);
+        assert(await x.waitClose() === 4007, '識別済み接続の変更を拒否しない');
+        assert(x.msgs.filter(m => m.type === 'welcome').length === 1, '同一接続へ複数枠を割り当てた');
+        const from = mon.mark();
+        mon.send({ type: 'reset' });
+        await mon.waitFor(m => m.type === 'state' && m.slots.every(s => !s.assigned), { from, what: 'reset' });
+      }
+    });
+
     await check('役割: 接続順で P1 (ホスト) / P2 / P3 を割り当てる', async () => {
       p1 = await join('P1');
       const w1 = await welcome(p1);
@@ -414,6 +453,27 @@ async function main() {
       await injected(mon, 'SPACE', 'up', from);
     }, { rustOnly: true });
 
+    await check('epoch: 前の epoch の最後の視点が届かなくても、新しい epoch の移動量に混ざらない', async () => {
+      // coop の epoch で cx=5 まで動かした後、cx=105 のパケットが WebRTC で欠けた想定 (送らない)
+      p2.send({ type: 'look', lseq: 10, epoch: p2.epoch, cx: 5, cy: 0 });
+      await sleep(400);
+      let from = p1.mark();
+      p1.send({ type: 'command', cmd: 'PAUSE' });
+      await phaseIs(p1, 'paused', from);
+      from = p1.mark();
+      const from2 = p2.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', from);
+      await phaseIs(p2, 'coop', from2);
+      // スマホは新しい epoch で累積値を 0 から数え直すので、10 動かすと cx=10 を送る
+      const mfrom = mon.mark();
+      p2.send({ type: 'look', lseq: 12, epoch: p2.epoch, cx: 10, cy: 0 });
+      await sleep(800);
+      const dx = mon.msgs.slice(mfrom).filter((m) => m.type === 'look').reduce((a, m) => a + m.entry.dx, 0);
+      // 補間の端数 (1px 未満) は次へ持ち越すので ±1 を許す。修正前は前の基準 (cx=5) が引かれて 5 になる
+      assert(Math.abs(dx - 10) <= 1, `新しい epoch の移動量が 10 でない: ${dx} (前の epoch の累積値が基準に混ざった)`);
+    }, { rustOnly: true });
+
     await check('切断: coop 中の切断で paused、切断者以外の押下も全解放する', async () => {
       p1.input('FWD', 'up'); // 前の試験の押下が残っていれば離す (既に離れていれば何もしない)
       await sleep(150);
@@ -422,7 +482,7 @@ async function main() {
       p3.input('USE', 'down'); // P3 も押したまま
       await injected(mon, 'KEY_W', 'down', from);
       await injected(mon, 'MOUSE_R', 'down', from);
-      p2.send({ type: 'look', lseq: 3, epoch: p2.epoch, cx: 4000, cy: 0 }); // 未処理の視点を残す
+      p2.send({ type: 'look', lseq: 13, epoch: p2.epoch, cx: 4000, cy: 0 }); // 未処理の視点を残す
       from = mon.mark();
       const pfrom = p1.mark();
       p2.close();
