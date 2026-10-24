@@ -12,8 +12,8 @@
 ## 目的・情報の優先順位
 
 - 製品は**改造していない既存PCゲームへローカルの協力操作を追加する仕組み**。最初の対象は**Windows 11のMinecraft Java Edition**。スマホ3台で1キャラクターを操作する（P1移動、P2視点、P3アクション）。
-- 計画前に `docs/requirements/requirements-v0.3.md` を読む。試作品の検証結果を正とする判断は `docs/decisions/2026-10-24-prototype-validated.md`、技術構成は `docs/decisions/tech-stack.md`、通信契約は `docs/architecture/protocol.md` を参照する。
-- 情報の優先順位は**試作品の実機検証結果 [E] > 新しい明示的なユーザー判断 > ユーザー確定事項 > チームのアイデア議事録 > 仮の実装提案**（2026-10-24のユーザー判断）。仮案をチームの確定事項へ無断で変更しない。
+- 計画前に `docs/requirements/requirements-v0.3.md` を読む。観測事実と採用判断の区別は `docs/decisions/2026-10-24-prototype-validated.md`、技術構成は `docs/decisions/tech-stack.md`、通信契約は `docs/architecture/protocol.md` を参照する。
+- 情報の優先順位は**今後を含む新しい明示的なユーザー判断 > ユーザー確定事項 > チームのアイデア議事録 > 仮の実装提案**。[E]は試作品での観測事実を示す区分で、指示の優先順位ではない。観測記録は保持し、採用する仕様は最新のユーザー判断に従う。
 - 開発上の優先順位は**実際に動くこと・再現可能なデモ > UIの自由度 > 開発速度 > 拡張性**。
 
 ## 実装上の制約
@@ -29,11 +29,16 @@
 ## 技術構成（試作品の実機検証に基づく。詳細は `docs/decisions/tech-stack.md`）
 
 - Windows入力：Win32 `SendInput`（スキャンコードのキー、相対マウス移動、左右ボタン、ホイール）、`timeBeginPeriod(1)`。疑似ゲーム画面で検証済み、Minecraftでは**未検証**。
-- PCホスト：**Rust**（tokio＋axum、状態はhubスレッド1本、`windows` crate、WebRTCは `datachannel`＝libdatachannel）。仕様の正はNode.js参照実装で、Rust版は**未検証**。
+- PCホスト：**Rust**（tokio＋axum、状態はhubスレッド1本、`windows` crate、WebRTCは `datachannel`＝libdatachannel）。Node.js参照実装を比較対象とする。Rust版はPC上のシミュレーションのみ実施済みで、Rust実機・Minecraft・Tauriは未検証。
 - 通信：ローカルWi-Fi。**WebSocket（JSON、本体）＋WebRTC DataChannel（順序保証・再送なしの速達便）**。STUN/TURNとインターネットは使わない。Windowsモバイルホットスポットを使い、代替はローカルAP。
 - 画面：ビルド不要の静的HTML/CSS/JavaScript（スマホ、ダッシュボード、疑似ゲーム画面）、Pointer Events。React化は任意で、行う場合も通信契約を守る。PCアプリの枠はTauri（未検証）、代替はブラウザ。
 - 入力処理の定数（最低押下60ms・最低解放50ms・視点30Hz・補間4ms・切断判定4秒など）は実測に基づくため、根拠なく変えない。
 - 検証：プロトコル単位のシミュレーション（`RECOOPLAY_DRY_RUN=1`）、疑似ゲーム画面による実入力の照合、Android・iPhone・Windowsの実機試験。
+
+- MVPの画面はNode.js試作品で実機確認した静的HTML/CSS/JavaScriptを基準とする。Reactは任意。現在の `apps/web/` にはReactひな形が残っており、試作品の取り込みは後続作業。
+- 協力プレイから一時停止へ移るときは、切断者だけでなく全参加者の合成キー・マウスボタンを直ちに解放する。最低押下時間・連打キューより安全停止を優先し、待機中の入力キュー・視点の未処理分を破棄する。再開時は旧押下を復元せず、新しい押下から始める。
+- 試作品では自動復帰ONで、通信切断後15秒以内に全員が戻ると復帰する挙動を3回確認した。これは観測事実であり、Minecraft実運用での採用判断ではない。実運用の自動復帰の初期値・許可条件は未決定で、安全確認後にユーザーが判断する。ホストの明示PAUSEは設定のON/OFFによらず自動復帰しない。
+- 実ゲームの入力先ウィンドウ確認とPCの緊急停止は未実装の安全要件として保持する。
 
 ## ディレクトリ構成・実装方針
 
