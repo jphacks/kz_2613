@@ -29,3 +29,6 @@ Thumbs.db
 .idea/
 # generated desktop bundles
 *.spec
+# Re:Cooplay 試作品の実行時ファイル
+/config.json
+apps/host-rs/target/
