@@ -1,0 +1,52 @@
+name: Bootstrap checks
+permissions:
+  contents: read
+on:
+  push:
+  pull_request:
+jobs:
+  host:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/verify_overlay.py
+      - run: python -m pip install -c constraints-core.txt -e '.[dev]'
+        working-directory: apps/host
+      - run: python -m ruff check .
+        working-directory: apps/host
+      - run: python -m ruff format --check .
+        working-directory: apps/host
+      - run: python -m pytest -q
+        working-directory: apps/host
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: apps/web
+      - run: npm run check
+        working-directory: apps/web
+      - run: npm test
+        working-directory: apps/web
+      - run: npm run build
+        working-directory: apps/web
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -c constraints-core.txt -e '.[dev]'
+        working-directory: apps/host
+      - run: python -m pytest -q --require-web-build
+        working-directory: apps/host
+# NOTE: Only bootstrap/unit checks. Windows SendInput, Wi-Fi, Safari, and Minecraft must
+# be tested manually on real equipment as separate tracked Go/No-Go gates.
