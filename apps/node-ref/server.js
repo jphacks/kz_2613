@@ -596,7 +596,18 @@ function acceptLook(slotName, s, msg) {
 }
 
 // ---------- WebSocket ----------
-const wss = new WebSocketServer({ server, path: '/ws' });
+// OriginなしはPC内の非ブラウザ検証クライアントだけ許可する。
+function allowedWsRequest(req) {
+  const host = req.headers.host;
+  if (!host) return false;
+  try {
+    const url = new URL(`http://${host}`);
+    const allowed = ['localhost', '127.0.0.1', '[::1]', ...getAddresses().map(a => a.address)];
+    if (url.host !== host || !allowed.includes(url.hostname) || Number(url.port || 80) !== PORT) return false;
+    return req.headers.origin === undefined ? isLoopback(req.socket.remoteAddress) : req.headers.origin === url.origin;
+  } catch { return false; }
+}
+const wss = new WebSocketServer({ server, path: '/ws', verifyClient: ({ req }, done) => done(allowedWsRequest(req), 403) });
 
 wss.on('connection', (ws, req) => {
   const ip = req.socket.remoteAddress?.replace('::ffff:', '');
@@ -612,6 +623,7 @@ wss.on('connection', (ws, req) => {
     }
 
     if (msg.type === 'monitor') {
+      if (isMonitor || slotName) return ws.close(4007, 'already identified');
       if (!isLoopback(req.socket.remoteAddress)) return ws.close(4003, 'monitor only from PC');
       isMonitor = true;
       ws.page = msg.page === 'game' ? 'game' : 'host';
@@ -657,6 +669,7 @@ wss.on('connection', (ws, req) => {
     }
 
     if (msg.type === 'hello') {
+      if (slotName) return ws.close(4007, 'already identified');
       const clientId = String(msg.clientId || '').slice(0, 64);
       if (!clientId) return ws.close(4002, 'no clientId');
       let name = findSlotByClient(clientId);

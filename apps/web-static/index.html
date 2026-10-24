@@ -170,7 +170,7 @@
   };
   const COLORS = { P1: 'var(--p1)', P2: 'var(--p2)', P3: 'var(--p3)' };
   // 通信契約の版 (docs/architecture/protocol.md)。PC のホストと合わなければ接続できない
-  const PROTOCOL_VERSION = 1;
+  const PROTOCOL_VERSION = 3;
 
   // 端末ごとの ID。再接続時に同じスロットへ戻るために保存する
   let clientId = null;
@@ -231,6 +231,10 @@
         setStatus(msg.reconnected ? '再接続OK' : '接続OK', 'ok');
         render();
       } else if (msg.type === 'game') {
+        if (game?.epoch !== msg.game.epoch) {
+          look.seq = 0; look.cx = 0; look.cy = 0;
+          accX = accY = 0;
+        }
         game = msg.game;
         render();
       } else if (msg.type === 'pong') {
@@ -519,7 +523,7 @@
     dot.style.top = (e.clientY - r.top) + 'px';
   }
   // 溜まった移動量を 30Hz で送る。ACK は返さない。滑らかさは PC 側で補間する。
-  // 送るのは「接続してからの累積移動量」なので、WebRTC でパケットが欠けても次のパケットで取り戻せる
+  // 累積値はepochごとに0へ戻す。同じepoch内の欠落だけを次のパケットで取り戻す。
   const look = { seq: 0, cx: 0, cy: 0 };
   setInterval(() => {
     if ((accX || accY) && game?.phase === 'coop' && me === 'P2' && isOpen()) {
