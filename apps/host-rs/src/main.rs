@@ -152,6 +152,13 @@ async fn main() {
                         Ok("target off") => {
                             let _ = tx.send(Event::FakeTarget(false));
                         }
+                        // 試験用 (同上): PC アプリのウィンドウが前面になった・外れた
+                        Ok("app focus") => {
+                            let _ = tx.send(Event::FakeAppWindow(true));
+                        }
+                        Ok("app blur") => {
+                            let _ = tx.send(Event::FakeAppWindow(false));
+                        }
                         _ => {}
                     }
                 }

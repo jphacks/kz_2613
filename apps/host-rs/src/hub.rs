@@ -25,6 +25,8 @@ const SLOT_ROLES: [&str; 3] = ["移動・ホスト", "視点", "アクション"
 // PC アプリで選べるゲーム (apps/web-static/app-view.js の GAMES と同じ id)。P0 は Minecraft Java Edition のみ。
 // "pseudo-game" は診断用の疑似ゲーム画面 (/game) で、PC アプリの一覧には出さない (ゲーム変更の試験にも使う)
 const TITLES: [&str; 2] = ["minecraft-java", "pseudo-game"];
+// PC アプリ (apps/desktop) の実行ファイル名。前面になったら PC アプリへの手動復帰とみなす
+const DESKTOP_PROCESS: &str = "recooplay-desktop.exe";
 const DEFAULT_TITLE: &str = TITLES[0];
 const PROTOCOL_VERSION: u64 = 3;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
@@ -57,6 +59,8 @@ pub enum Event {
     EmergencyStop { source: &'static str },
     /// 試験用: 前面のウィンドウが入力先かどうかを差し替える (DRY_RUN のときだけ)
     FakeTarget(bool),
+    /// 試験用: PC アプリのウィンドウが前面になった・外れた (DRY_RUN のときだけ。実際は前面のプロセス名で判定する)
+    FakeAppWindow(bool),
     Shutdown,
 }
 
@@ -287,6 +291,10 @@ pub struct Hub {
     target_fg: Option<Foreground>,
     target_ok: bool,
     fake_target: Option<bool>, // 試験用 (DRY_RUN のときだけ)。Some なら OS に問い合わせない
+    app_focused: bool,           // PC アプリが前面か (手動復帰の判定に使う)
+    // PC アプリ (デスクトップアプリ) から起動されたか。そのときは前面のプロセス名で PC アプリの前面を判定し、
+    // 画面 (WebView2 は背面でも focused のまま) の知らせは使わない
+    desktop: bool,
 }
 
 fn s(v: &Value, key: &str) -> Option<String> {
@@ -376,6 +384,8 @@ impl Hub {
                 .ok()
                 .filter(|_| std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1"))
                 .map(|v| v == "1"),
+            app_focused: false,
+            desktop: std::env::var("RECOOPLAY_DESKTOP").as_deref() == Ok("1"),
         };
         hub.schedule(now + LOOK_TICK, Timer::LookTick);
         hub.schedule(now + Duration::from_millis(100), Timer::LookReport);
@@ -876,6 +886,12 @@ impl Hub {
             None => {
                 let fg = focus::foreground();
                 let ok = fg.as_ref().is_some_and(|f| self.target.matches(f));
+                // PC アプリ (デスクトップアプリ) が前面か。WebView2 の画面は背面になっても blur を受け取らないため、
+                // 手動復帰の判定は前面のプロセス名で行う
+                if self.desktop {
+                    let app = fg.as_ref().is_some_and(|f| f.process.eq_ignore_ascii_case(DESKTOP_PROCESS));
+                    self.on_app_focus(app);
+                }
                 (fg, ok)
             }
         };
@@ -914,6 +930,38 @@ impl Hub {
             self.release_outputs(None);
         }
         self.push_state();
+    }
+
+    /// PC画面へ手動復帰したら停止する。切断待ちで既にpausedの場合も自動復帰を取り消す。
+    fn pause_for_app_return(&mut self) {
+        if self.game.phase == Phase::Coop {
+            self.game.auto_resume_until = 0;
+            self.set_phase(Phase::Paused, "app focus");
+        } else if self.game.phase == Phase::Paused
+            && self.game.reason.as_deref().is_some_and(|r| r.ends_with("disconnected"))
+        {
+            self.release_outputs(None);
+            self.reset_look();
+            self.game.auto_resume_until = 0;
+            self.game.reason = Some("app focus".to_string());
+            self.advance_epoch();
+            self.push_game();
+        } else {
+            return;
+        }
+        self.push_state();
+    }
+
+    /// デスクトップの前面判定の変化。画面接続ごとのfocus通知とは別に保持する。
+    fn on_app_focus(&mut self, f: bool) {
+        if f == self.app_focused {
+            return;
+        }
+        self.app_focused = f;
+        self.record("app_focus", json!({ "focused": f }));
+        if f {
+            self.pause_for_app_return();
+        }
     }
 
     fn mark_disconnected(&mut self, idx: usize, reason: &str) {
@@ -1055,6 +1103,13 @@ impl Hub {
                     self.check_target();
                 }
             }
+            Event::FakeAppWindow(f) => {
+                // 試験では、この知らせが来たら PC アプリから起動された扱いにする
+                if self.fake_target.is_some() {
+                    self.desktop = true;
+                    self.on_app_focus(f);
+                }
+            }
             Event::Shutdown => {}
         }
     }
@@ -1149,10 +1204,10 @@ impl Hub {
                 let f = msg.get("focused").and_then(Value::as_bool).unwrap_or(false);
                 if f != focused {
                     self.conns.get_mut(&id).unwrap().role = Role::Monitor { page, focused: f };
-                    // 協力プレイ中に PC アプリへ手動で戻った: 全解放してホストのリモコンへ戻す (自動復帰しない)
-                    if f && self.game.phase == Phase::Coop {
-                        self.set_phase(Phase::Paused, "app focus");
-                        self.push_state();
+                    // ブラウザで /app を開いた場合の知らせ。PC アプリから起動されたときは前面のプロセス名で判定する
+                    if !self.desktop && f {
+                        // ブラウザは接続ごとのfalse→trueを使う。閉じた接続のfocusを新しい画面へ持ち越さない。
+                        self.pause_for_app_return();
                     }
                 }
             }
