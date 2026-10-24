@@ -33,7 +33,7 @@
 2. Visual StudioのC++ツールとCMake（「C++によるデスクトップ開発」に含まれる）
 3. Perl（OpenSSLのビルド用）：Strawberry Perlのポータブル版を展開し、`perlin` をPATHに追加する
 4. libclang（bindgen用）：LLVMを導入するか、`libclang.dll` の場所を `LIBCLANG_PATH` に設定する
-5. `cd apps\host-rs; cargo build --release`。初回はOpenSSLとlibdatachannelのビルドに時間がかかる（このPCで約10分）
+5. `cd apps\host-rs; cargo build --release --locked`。初回はOpenSSLとlibdatachannelのビルドに時間がかかる（構築記録では約10〜18分。環境による）
 6. 起動はリポジトリのルートで `.\apps\host-rs\target\release\recooplay-host.exe`。注入なしの通信契約テストは `node scripts\sim\protocol-sim.mjs`（詳細は `apps/host-rs/README.md`）
 
 **注意：** `target/` を別の場所からコピーして流用しない。libdatachannelのCMakeキャッシュが元の絶対パスを保持しているため、再ビルドが失敗する。
@@ -43,6 +43,10 @@
 Rustは公式rustupでユーザー領域に導入する。Visual Studio 2022のC++ツールを使用し、Strawberry Perlのポータブル版は `%LOCALAPPDATA%\ReCooplay\StrawberryPerl` に展開する。libclangは開発用のPython仮想環境（例：`%LOCALAPPDATA%\ReCooplay\tools-venv`）へ `python -m pip install libclang` で導入でき、製品の依存関係には含めない。LLVMを導入済みなら `C:\Program Files\LLVM\bin` を指定してもよい（GitHub Actionsはこちら）。
 
 ```powershell
+# LLVMを使わずPython版libclangを用意する場合だけ、初回に実行する
+py -3 -m venv "$env:LOCALAPPDATA\ReCooplay\tools-venv"
+& "$env:LOCALAPPDATA\ReCooplay\tools-venv\Scripts\python.exe" -m pip install libclang
+
 $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:LOCALAPPDATA\ReCooplay\StrawberryPerl\perl\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;$env:PATH"
 $env:LIBCLANG_PATH = "$env:LOCALAPPDATA\ReCooplay\tools-venv\Lib\site-packages\clang\native"
 # Documents配下へのビルド出力が拒否される場合の開発用キャッシュ
@@ -59,7 +63,7 @@ node scripts/sim/protocol-sim.mjs --bin "$env:CARGO_TARGET_DIR\release\recooplay
 ## 最初の実機通信ゲート
 
 - LANに制御エンドポイントを公開する前に、認可付き参加・セッション・入力解放を実装する。
-- 可能なら選択したWi-Fiインターフェースに限定してUvicornを公開する。`0.0.0.0` を使う場合も、信頼したネットワークへのファイアウォール制限とトークン検証を行う。
+- Rustホストは現在 `0.0.0.0` で待ち受ける。インターフェースの選択機能は未実装で、信頼したネットワークへのファイアウォール制限とトークン検証を行う。
 - WindowsホットスポットへiPhone Safariを含むスマホ3台を接続する。
 - クラウドなしで動くことを `docs/architecture/validation-gates.md` に沿って確認する。
 

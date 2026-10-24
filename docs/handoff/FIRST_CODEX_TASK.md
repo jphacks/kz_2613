@@ -1,6 +1,6 @@
 # Codex・Claude Code共通の初期構築依頼文
 
-既存の `jphacks/kz_2613` のルートで、**初期ファイル統合後**に使う。初期構築済みの場合は再構築の参考とし、現在の状態は `BUILD_LOG.md` と `ISSUE_PLAN.md` を確認する。
+これは旧Python/Reactひな形の初期構築時の依頼記録。#68でひな形を削除したため、以下のコマンドを現在の再構築手順として実行しない。現行のRust/Tauri構築は `SETUP_WINDOWS.md`、現在の状態は `BUILD_LOG.md` と `ISSUE_PLAN.md` を確認する。
 
 ---
 
