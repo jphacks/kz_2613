@@ -968,6 +968,9 @@ impl Hub {
         let kind = s(&msg, "type").unwrap_or_default();
 
         if kind == "monitor" {
+            if !matches!(conn.role, Role::Unknown) {
+                return self.close(Some(id), 4007, "already identified");
+            }
             if !conn.loopback {
                 return self.close(Some(id), 4003, "monitor only from PC");
             }
@@ -1054,6 +1057,9 @@ impl Hub {
     }
 
     fn on_hello(&mut self, id: u64, msg: &Value) {
+        if !matches!(self.conns[&id].role, Role::Unknown) {
+            return self.close(Some(id), 4007, "already identified");
+        }
         // 版が合わない画面 (古いキャッシュなど) は理由を返して閉じる。枠は割り当てない
         let version = msg.get("protocolVersion").and_then(Value::as_u64);
         if version != Some(PROTOCOL_VERSION) {
@@ -1101,6 +1107,10 @@ impl Hub {
         };
         // 同じ端末の古い接続を置き換え
         let old = self.slots[idx].as_ref().unwrap().conn.filter(|&c| c != id);
+        if old.is_some() {
+            // 別タブ等による置換も切断として全解放し、旧接続の押下を持ち越さない。
+            self.mark_disconnected(idx, "replaced");
+        }
         self.close(old, 4000, "replaced");
         let ua: String = s(msg, "ua").unwrap_or_default().chars().take(200).collect();
         let now = now_ms();
