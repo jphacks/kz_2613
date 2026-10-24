@@ -31,18 +31,19 @@
 - Windows入力：Win32 `SendInput`（スキャンコードのキー、相対マウス移動、左右ボタン、ホイール）、`timeBeginPeriod(1)`。疑似ゲーム画面で検証済み、Minecraftでは**未検証**。
 - PCホスト：**Rust**（tokio＋axum、状態はhubスレッド1本、`windows` crate、WebRTCは `datachannel`＝libdatachannel）。Node.js参照実装を比較対象とする。Rust版はPC上のシミュレーションのみ実施済みで、Rust実機・Minecraft・Tauriは未検証。
 - 通信：ローカルWi-Fi。**WebSocket（JSON、本体）＋WebRTC DataChannel（順序保証・再送なしの速達便）**。STUN/TURNとインターネットは使わない。Windowsモバイルホットスポットを使い、代替はローカルAP。
-- 画面：ビルド不要の静的HTML/CSS/JavaScript（スマホ、ダッシュボード、疑似ゲーム画面）、Pointer Events。React化は任意で、行う場合も通信契約を守る。PCアプリの枠はTauri（未検証）、代替はブラウザ。
+- 画面：ビルド不要の静的HTML/CSS/JavaScript（スマホ、参加・ゲーム選択・分担確認、診断、疑似ゲーム画面）、Pointer Events。React化は任意で、行う場合も通信契約を守る。PCアプリの枠はTauriで実装・ビルド済みだが、スマホ実機連携・Minecraft・配布は未検証。代替はブラウザ。
 - 入力処理の定数（最低押下60ms・最低解放50ms・視点30Hz・補間4ms・切断判定4秒など）は実測に基づくため、根拠なく変えない。
 - 検証：プロトコル単位のシミュレーション（`RECOOPLAY_DRY_RUN=1`）、疑似ゲーム画面による実入力の照合、Android・iPhone・Windowsの実機試験。
 
 - MVPの画面はNode.js試作品で実機確認した静的HTML/CSS/JavaScriptを基準とし、`apps/web-static/` に取り込んだ。Reactは任意。
 - 協力プレイから一時停止へ移るときは、切断者だけでなく全参加者の合成キー・マウスボタンを直ちに解放する。最低押下時間・連打キューより安全停止を優先し、待機中の入力キュー・視点の未処理分を破棄する。再開時は旧押下を復元せず、新しい押下から始める。
 - 試作品では自動復帰ONで、通信切断後15秒以内に全員が戻ると復帰する挙動を3回確認した。これは観測事実であり、Minecraft実運用での採用判断ではない。実運用の自動復帰の初期値・許可条件は未決定で、安全確認後にユーザーが判断する。ホストの明示PAUSEは設定のON/OFFによらず自動復帰しない。
-- 実ゲームの入力先ウィンドウ確認とPCの緊急停止は未実装の安全要件として保持する。
+- Rust版には入力先ウィンドウ確認とPCの緊急停止を実装し、dry-runで全解放・旧入力破棄を確認した。Minecraft実入力、実際のホットキー、Alt+Tabでの挙動は未検証の安全ゲートとして保持し、完了扱いしない。
 
 ## ディレクトリ構成・実装方針
 
 - `apps/host-rs/`：Rust版PCホスト。今後の実装先。
+- `apps/desktop/`：TauriのPCアプリ。Rustホストの子プロセスを起動・終了する。
 - `apps/web-static/`：MVPのスマホ画面・PC管理画面・疑似ゲーム画面。
 - `apps/node-ref/`：Node.js参照実装。通信・入力の比較対象。
 - `apps/desktop/`：PCアプリの枠（Tauri / WebView2）。Rust版ホストを子プロセスとして起動し、PC画面を表示する。

@@ -73,7 +73,9 @@ export function phaseView(game, inject) {
     return {
       phase: 'coop',
       title: '協力プレイ中',
-      detail: delivering
+      detail: inject?.mode === 'test'
+        ? '診断用のテストモードです。操作の送信先は疑似ゲーム画面です。Minecraft で遊ぶには③で「常時ON」に切り替えてください'
+        : delivering
         ? 'Minecraft に操作を送っています。止めるときはホストのスマホで PAUSE'
         : inject?.mode === 'on'
           ? 'Minecraft のウィンドウをクリックして前面にしてください。前面のときだけ操作が届きます'

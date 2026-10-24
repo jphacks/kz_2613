@@ -234,11 +234,13 @@
         setStatus(msg.reconnected ? '再接続OK' : '接続OK', 'ok');
         render();
       } else if (msg.type === 'game') {
-        if (game?.epoch !== msg.game.epoch) {
+        const epochChanged = game?.epoch !== msg.game.epoch;
+        game = msg.game;
+        if (epochChanged) {
+          releaseAll();
           look.seq = 0; look.cx = 0; look.cy = 0;
           accX = accY = 0;
         }
-        game = msg.game;
         render();
       } else if (msg.type === 'pong') {
         const r = performance.now() - msg.t;

@@ -219,7 +219,7 @@
 
     // フッター: 入力先・緊急停止
     const t = inject?.target;
-    $('target').textContent = !inject ? '' : inject.active ? '● Minecraft に入力中' : inject.mode === 'off' ? '○ ゲームへの入力: OFF' : `○ 入力停止中（前面: ${t?.process || '不明'}）`;
+    $('target').textContent = !inject ? '' : inject.mode === 'test' ? '○ 診断用のテストモード（疑似ゲーム画面）' : inject.active ? '● Minecraft に入力中' : inject.mode === 'off' ? '○ ゲームへの入力: OFF' : `○ 入力停止中（前面: ${t?.process || '不明'}）`;
     $('target').className = inject?.active ? 'ok' : '';
     $('hotkey').textContent = inject?.emergencyHotkey ? (inject.emergencyHotkeyError ? `⚠ 緊急停止キーを登録できません` : `緊急停止：${inject.emergencyHotkey}`) : '';
   }
