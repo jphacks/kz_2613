@@ -22,7 +22,7 @@ const opt = (name, def) => {
 const target = opt('--target', 'rust');
 const PORT = Number(opt('--port', 18000 + Math.floor(Math.random() * 1000)));
 const BASE = `http://127.0.0.1:${PORT}`;
-const PROTOCOL_VERSION = 1;
+const PROTOCOL_VERSION = 2;
 
 // ---------- ホストの起動 (必ず注入なし) ----------
 function startHost() {
@@ -230,7 +230,7 @@ async function main() {
     });
 
     await check('版: protocolVersion がない・違う hello は理由を返して 4005 で閉じ、枠を割り当てない', async () => {
-      for (const extra of [{ protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }]) {
+      for (const extra of [{ protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }, { protocolVersion: 1 }]) {
         const c = new Client('V');
         await c.open();
         c.send({ type: 'hello', clientId: 'sim-old-page', ...extra });
@@ -405,6 +405,32 @@ async function main() {
       await sleep(200);
       assert(!mon.msgs.slice(mfrom).some((m) => m.type === 'inject' && m.entry.state === 'down'), '復帰時に旧押下を復元した');
     });
+
+    await check('再接続: 正しいトークンで接続を置換すると全解放し、旧押下を持ち越さない', async () => {
+      let from = mon.mark();
+      mon.send({ type: 'auto_resume', on: false });
+      await mon.waitFor(m => m.type === 'game' && m.game.autoResume === false, { from });
+      p1.input('FWD', 'down');
+      p3.input('USE', 'down');
+      await injected(mon, 'KEY_W', 'down', from);
+      await injected(mon, 'MOUSE_R', 'down', from);
+      const old = p1;
+      from = mon.mark();
+      p1 = await join('P1');
+      const w = await welcome(p1);
+      assert(w.reconnected && w.slot === 'P1', '同じ枠へ戻らない');
+      assert(await old.waitClose() === 4000, '古い接続を閉じない');
+      await phaseIs(p1, 'paused', 0);
+      await injected(mon, 'KEY_W', 'up', from);
+      await injected(mon, 'MOUSE_R', 'up', from);
+      await sleep(200);
+      assert(!mon.msgs.slice(from).some(m => m.type === 'inject' && m.entry.state === 'down'), '置換後に旧押下を復元した');
+      p3.input('USE', 'up');
+      const pfrom = p1.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', pfrom);
+      mon.send({ type: 'auto_resume', on: true });
+    }, { rustOnly: true });
 
     await check('復帰: ホストの PAUSE は自動復帰の対象外', async () => {
       let from = p1.mark();
