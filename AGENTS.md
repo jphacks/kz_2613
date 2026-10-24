@@ -31,7 +31,7 @@
 - Windows入力：Win32 `SendInput`（スキャンコードのキー、相対マウス移動、左右ボタン、ホイール）、`timeBeginPeriod(1)`。疑似ゲーム画面で検証済み、Minecraftでは**未検証**。
 - PCホスト：**Rust**（tokio＋axum、状態はhubスレッド1本、`windows` crate、WebRTCは `datachannel`＝libdatachannel）。Node.js参照実装を比較対象とする。Rust版はPC上のシミュレーションのみ実施済みで、Rust実機・Minecraft・Tauriは未検証。
 - 通信：ローカルWi-Fi。**WebSocket（JSON、本体）＋WebRTC DataChannel（順序保証・再送なしの速達便）**。STUN/TURNとインターネットは使わない。Windowsモバイルホットスポットを使い、代替はローカルAP。
-- 画面：ビルド不要の静的HTML/CSS/JavaScript（スマホ、ダッシュボード、疑似ゲーム画面）、Pointer Events。React化は任意で、行う場合も通信契約を守る。PCアプリの枠はTauri（未検証）、代替はブラウザ。
+- 画面：ビルド不要の静的HTML/CSS/JavaScript（スマホ、参加・ゲーム選択・分担確認、診断、疑似ゲーム画面）、Pointer Events。React化は任意で、行う場合も通信契約を守る。PCアプリの枠はTauriで実装・ビルド済みだが、スマホ実機連携・Minecraft・配布は未検証。代替はブラウザ。
 - 入力処理の定数（最低押下60ms・最低解放50ms・視点30Hz・補間4ms・切断判定4秒など）は実測に基づくため、根拠なく変えない。
 - 検証：プロトコル単位のシミュレーション（`RECOOPLAY_DRY_RUN=1`）、疑似ゲーム画面による実入力の照合、Android・iPhone・Windowsの実機試験。
 
@@ -43,6 +43,7 @@
 ## ディレクトリ構成・実装方針
 
 - `apps/host-rs/`：Rust版PCホスト。今後の実装先。
+- `apps/desktop/`：TauriのPCアプリ。Rustホストの子プロセスを起動・終了する。
 - `apps/web-static/`：MVPのスマホ画面・PC管理画面・疑似ゲーム画面。
 - `apps/node-ref/`：Node.js参照実装。通信・入力の比較対象。
 - `apps/host/`：API、状態機械、Windows入力の境界、Windowsアプリの起動処理。

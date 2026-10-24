@@ -13,6 +13,7 @@
 | `GET /` | スマホのコントローラー（`index.html`） | なし |
 | `GET /host` | PCのダッシュボード（`host.html`） | **ループバックからのみ**（それ以外は403） |
 | `GET /game` | PCの疑似ゲーム画面（`game.html`） | **ループバックからのみ** |
+| `GET /app` | PCアプリの画面（`app.html`：参加・ゲーム選択・分担確認。デスクトップアプリが表示する） | **ループバックからのみ** |
 | `GET /api/info` | 参加URLの一覧とQR（SVG）、Wi-Fi接続用QR | なし |
 | `GET /ws` | WebSocket | モニター（`monitor`）はループバックからのみ |
 | WebRTC | DataChannel `fast`（`ordered:false`、`maxRetransmits:0`） | シグナリングはWebSocket経由。STUN/TURNなし |
@@ -69,6 +70,7 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | 画面 → ホスト | `observe` | 疑似ゲーム画面の照合結果。ログに記録する |
 | ホスト → 画面 | `state` | 全枠の状態、`game`、`inject`（モード・有効かどうか・出力一覧・押下中の出力・緊急停止キー `emergencyHotkey` とその登録エラー `emergencyHotkeyError`、入力先 `target`（`ok`・`expect`・前面の `process`・`title`））。1秒ごとと変化時に送る |
 | ホスト → 画面 | `inject` / `look` / `log` | 注入1件ごと、視点の100msごとの集計、イベントログ |
+| ホスト → 画面 | `remote` | `control`（`UP`/`DOWN`/`LEFT`/`RIGHT`/`ENTER`/`ESC`）、`state`。ロビー・一時停止中のP1のリモコン操作。PCアプリの画面は自分が前面（`document.hasFocus()`）のときだけ反応する。OSへの注入は前面がMinecraftのときだけなので、画面とゲームが同時に反応しない |
 
 ## 5. 順序・欠落・安全の規則
 
