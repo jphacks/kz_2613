@@ -595,6 +595,36 @@ async function main() {
       app.close();
     }, { rustOnly: true });
 
+    await check('PCアプリ: PC アプリから起動したホストは前面のウィンドウ (試験では標準入力で差し替え) で手動復帰を判定し、画面の focus を使わない', async () => {
+      host.child.stdin.write('app blur\n'); // Minecraft を前面にした
+      await sleep(150);
+      let mfrom = mon.mark();
+      p1.input('FWD', 'down');
+      await injected(mon, 'KEY_W', 'down', mfrom);
+      mfrom = mon.mark();
+      let from = p1.mark();
+      host.child.stdin.write('app focus\n'); // PC アプリのウィンドウへ戻った
+      const g = await phaseIs(p1, 'paused', from);
+      assert(g.game.reason === 'app focus', JSON.stringify(g.game));
+      await injected(mon, 'KEY_W', 'up', mfrom);
+      p1.input('FWD', 'up');
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', from);
+      // ウィンドウの知らせが来た後は、画面 (WebView2 は背面でも focused のまま) の知らせで止めない
+      const app = new Client('app');
+      await app.open();
+      app.send({ type: 'monitor', page: 'app' });
+      await app.waitFor((m) => m.type === 'state', { what: 'app state' });
+      host.child.stdin.write('app blur\n');
+      await sleep(100);
+      from = p1.mark();
+      app.send({ type: 'focus', focused: true });
+      await sleep(300);
+      assert(!p1.msgs.slice(from).some((m) => m.type === 'game' && m.game.phase === 'paused'), '画面の focus で止めた');
+      app.close();
+    }, { rustOnly: true });
+
     await check('PCアプリ: coop 中にゲームを変えると全解放して lobby へ戻り、参加と役割は保つ。同じゲーム・未知のゲームは無視する', async () => {
       const app = new Client('app');
       await app.open();

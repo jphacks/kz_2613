@@ -65,7 +65,7 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 |---|---|---|
 | 画面 → ホスト | `monitor` | `page`: `host`/`game`/`app`（PCアプリの画面） |
 | 画面 → ホスト | `inject_mode` | `mode`: `off`/`test`/`on` |
-| 画面 → ホスト | `focus` | `focused`。疑似ゲーム画面（`game`）では選択状態（`test` モードの条件になる）。PCアプリ（`app`）では前面になったこと：協力プレイ中に前面へ戻ると、ホストは全解放して `paused`（`reason: app focus`、自動復帰しない）へ移し、P1をリモコンに戻す（Rust版） |
+| 画面 → ホスト | `focus` | `focused`。疑似ゲーム画面（`game`）では選択状態（`test` モードの条件になる）。ブラウザで開いたPCアプリ（`app`）では前面になったこと：協力プレイ中に前面へ戻ると、ホストは全解放して `paused`（`reason: app focus`、自動復帰しない）へ移し、P1をリモコンに戻す（Rust版）。**デスクトップアプリから起動したホスト（`RECOOPLAY_DESKTOP=1`）はこの知らせを使わず、前面のプロセス名（`recooplay-desktop.exe`）で判定する**（WebView2の画面は背面になっても `blur` を受け取らないため） |
 | 画面 → ホスト | `select_game` | `title`（`minecraft-java`、診断用の `pseudo-game`）。選んだゲームはホストが保持し `game.title` で配る。ロビー以外で別のゲームに変えると、全解放して `lobby`（`reason: game change`）へ戻す。参加者・役割は保つ。同じ・未知の値は無視する（Rust版） |
 | 画面 → ホスト | `required` / `auto_resume` / `phase` / `reset` | 必要人数（1〜3）、自動復帰のON/OFF、進行の強制変更、全枠の解放 |
 | 画面 → ホスト | `observe` | 疑似ゲーム画面の照合結果。ログに記録する |

@@ -70,6 +70,8 @@ fn spawn_host(root: &Path, exe: &Path, port: u16) -> std::io::Result<Child> {
         .env("RECOOPLAY_ROOT", root)
         .env("PORT", port.to_string())
         .env("RECOOPLAY_STDIN_CONTROL", "1")
+        // PC アプリから起動したことを知らせる (ホストは前面のプロセス名で PC アプリへの手動復帰を判定する)
+        .env("RECOOPLAY_DESKTOP", "1")
         .stdin(Stdio::piped())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
