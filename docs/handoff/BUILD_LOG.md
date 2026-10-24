@@ -220,3 +220,13 @@
 - 試験用に、`RECOOPLAY_DRY_RUN=1` と `RECOOPLAY_FAKE_TARGET` のときだけ、標準入力の `target on`/`target off` で判定を差し替えられる。
 - 検証：`cargo build --release` 成功。`cargo test --release`：判定の単体試験2件（Minecraftの一致、Javaの別アプリ・ブラウザのMinecraft Wiki・ランチャー・Re:Cooplay自身は不一致）合格。`node scripts/sim/protocol-sim.mjs` を3回連続で **25/25合格**（W押下中に入力先から外れる→Wの解放・注入停止・スマホへの通知、外れている間の押下は注入しない、戻った後は新しい押下だけ注入、を追加）。`--target node` **17/17合格**。実際の前面判定がこのPCで動く（前面 `explorer.exe` → 対象外）ことをダッシュボードの状態で確認。スマホ画面の警告表示をheadless Edgeの画面キャプチャで確認。
 - **未検証：** Minecraft実機を前面にしたときの一致（実際のプロセス名・タイトル、G1-D）、Wを押したままAlt+Tabしたときの実入力。
+
+## 2026-10-24 — #32〜#34 PCアプリの画面（参加・ゲーム選択・分担確認）（Claude Code）
+- `apps/web-static/app.html`（`/app`、ループバック限定）と表示ロジック `app-view.js` を追加した。デスクトップアプリは `/app` を表示する。`/host` は診断画面として残す。
+- Rust版ホスト：ロビー・一時停止中のP1のリモコン操作を、PC画面へ `remote` メッセージで知らせる（OSへの注入とは別）。画面は自分が前面のときだけ反応する。
+- 検証：
+  - `node scripts/sim/app-view-test.mjs` **10/10合格**（枠の表示、開始可否がサーバーの `canStart` と一致、理由・注意、進行の案内、リモコンでの画面移動、参加URL）。
+  - `node scripts/sim/protocol-sim.mjs` を3回連続で **26/26合格**（P1のリモコンだけが `remote` で届き、P2・P3・リモコン以外の操作名は届かない、を追加）。`--target node` **17/17合格**。
+  - `node scripts/sim/check-static-pages.mjs`：4画面とも構文OK（モジュールのスクリプトに対応）。
+  - デスクトップアプリ（`RECOOPLAY_DRY_RUN=1`）に模擬スマホ2台を接続し、①に「2/3人・P1 iPhone・P2 Android」が表示され、P1のリモコン（RIGHT→ENTER）で①→②→③へ移動することを画面キャプチャで確認した。終了時のホストのログに匿名化された `join`（`slot`・`device`）と `shutdown` が残った。
+- **未検証：** スマホ実機からのQR読み取りと参加、Minecraftとの切り替えを含む一連の流れ（#35）、他の画面解像度。

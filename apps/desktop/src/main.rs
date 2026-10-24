@@ -160,7 +160,7 @@ fn main() {
                     return show_error(&handle, &e);
                 }
                 // ダッシュボードは PC 本体 (ループバック) からのみ開ける
-                let url: tauri::Url = format!("http://127.0.0.1:{port}/host").parse().expect("host url");
+                let url: tauri::Url = format!("http://127.0.0.1:{port}/app").parse().expect("app url");
                 if let Some(w) = handle.get_webview_window("main") {
                     let _ = w.navigate(url);
                 }

@@ -746,6 +746,11 @@ impl Hub {
     }
 
     fn handle_control(&mut self, slot: usize, control: &str, state: &str) {
+        // ロビー・一時停止中のホストのリモコン (矢印・Enter・Esc) は PC アプリの画面にも知らせる。
+        // 画面側は自分が前面のときだけ反応する (前面が Minecraft のときは OS 入力として届き、画面は反応しない)
+        if slot == 0 && self.game.phase != Phase::Coop && controls::remote_control(control).is_some() {
+            self.broadcast_monitors(&json!({ "type": "remote", "control": control, "state": state }));
+        }
         let Some(idx) = self.resolve_control(slot, control) else { return };
         let down = state == "down";
         let o = &OUTPUTS[idx];
