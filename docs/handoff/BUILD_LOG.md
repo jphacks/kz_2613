@@ -356,6 +356,17 @@
 - 検証：`cargo build --release --locked`（host-rs・desktop）成功。`package.ps1` で5.7MBのzipを作成した。`%TEMP%` に展開し、リポジトリの外から `RECOOPLAY_DRY_RUN=1`・`PORT=18600` で `recooplay-desktop.exe` を起動した。展開先の `recooplay-host.exe` が起動し、`/`・`/app`・`/api/info` が200を返した。展開先の `logs/` にログ（`hotkey ok`・`server_start`・`shutdown`）が残った。ウィンドウを閉じると両方のプロセスが終了した。`allow-firewall.ps1` の構文をPowerShell 5.1のパーサーで確認した（実行はしていない）。
 - **未検証：** 開発環境のないWindows 11での起動、ファイアウォールの許可手順の実施、スマホ3台の参加、SmartScreenの警告（署名なし）。
 
+## 2026-10-25 — #5 明示操作でのみ実行するWindows入力プローブ（Claude Code）
+- `apps/host-rs/src/bin/recooplay-input-probe.rs` を追加した。ホストとは別の実行ファイル `recooplay-input-probe.exe` で、`focus.rs`・`input.rs` を共有する。キー（W・Space・Shift・Ctrl+W）、クリック・長押し・ホイール、相対マウスを順に送る（#6〜#8 の実機確認用）。
+  - 手動のarming：標準入力に `ARM` を入れるまで送らない（PowerShellのパイプが付けるBOMは無視する）。
+  - 入力先の確認：送る直前に毎回、前面がMinecraftか確かめる。外れたら全解放して待ち、30秒で中止する。
+  - 独立した緊急停止：`Ctrl+Alt+F12`（`GetAsyncKeyState` を10msごとに確認）、`Ctrl+C`・ウィンドウを閉じる（`SetConsoleCtrlHandler` の中で全解放）。
+  - finallyの全解放：完走・中止・停止・panicのどれでも、押しているものを離してから終わる。
+  - `--mock`：OSに送らない（`RECOOPLAY_DRY_RUN` と同じ）。前面の判定と停止を標準入力で差し替える。
+- `windows` crate に `Win32_System_Console` を追加した（Cargo.lock は変わらない）。CIに `input-probe-sim` を追加した。
+- 検証：`cargo build --release --locked` 成功。`node scripts/sim/input-probe-sim.mjs` を3回連続で **4/4合格**（ARM以外・入力が閉じたときは送らない、完走で押下が残らない、W押下中に入力先から外れる→全解放・外れている間は送らない・戻ると再開、長押し中のstop→全解放・終了コード2・停止後は送らない）。実モード（`--mock` なし、Minecraftは起動していない）で `ARM` を入れると、送信0件のまま入力先を30秒待ち、終了コード3で中止した。
+- **未検証：** Minecraft実機での各手順（#6〜#8）、実際の `Ctrl+Alt+F12`・`Ctrl+C`・ウィンドウを閉じたときの全解放（OS入力の自動送信は行っていない）。
+
 ## 2026-10-25 — PR #82の利用条件資料のレビュー（Codex）
 - 公式Usage GuidelinesとEULAを再取得した。ガイドラインの連絡先要件に対しGitHub Issueで充足とする記載を修正し、公開可能な責任者・直接連絡先は未決定として残した。
 - 自作動画・無料公開だけを理由に利用可能と断定せず、汎用製品の宣伝・会場投影・実際の発表素材の個別確認を残した。大会運営の判断で権利者の条件を上書きできないことも明記した。
@@ -367,3 +378,10 @@
 - 既存出力の拒否とzipハッシュの不変、範囲外出力の拒否を確認。梱包内容はexe2本・静的5ファイル・設定例・許可スクリプト・LICENSE・説明のみ。実設定・ログ・トークンを含まない。
 - 展開したホストを`RECOOPLAY_DRY_RUN=1`・`RECOOPLAY_NO_CONFIG=1`・`RECOOPLAY_STDIN_CONTROL=1`で起動し、`/`・`/app`・`/api/info`が200、`quit`でshutdown記録と終了コード0を確認した。ファイアウォール設定は変更していない。
 - PR #82の免責表示はブラウザでゲーム選択画面を描画して確認した。Tauri実機やMinecraftの確認には読み替えない。Issue #41はクリーンなWindows 11とスマホ3台の条件が残るため閉じない。
+
+## 2026-10-25 — PR #84の入力プローブの安全経路レビュー（Codex）
+- 押下の記録と送信が別だったため、コンソール停止の全解放後に遅れたdownを送る余地があった。記録・送信・全解放を同じmutexで直列化し、対象待機から戻った直後も停止と対象を再確認する。
+- OS入力失敗は終了コード4で中止する。解放失敗時は記録を削除せず再試行し、解放を確認できなければ表示する。停止ハンドラー登録の失敗も無視しない。ARM後の標準入力切断で停止し、不明な引数はarming前に拒否する。
+- panic hookで送信mutexを取り直す処理を廃止し、unwind時のGuardで解放する。標準出力の切断をpanicにしない。mock専用の失敗注入により、押下中のpanicでもデッドロックせず全解放して終了することを確認した。
+- `cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml`成功。`node scripts/sim/input-probe-sim.mjs --bin <CARGO_TARGET_DIR>/release/recooplay-input-probe.exe`は**12/12成功**。ARM前、完走、対象喪失、停止、待機中停止、ARM後EOF、panic、不正引数、down/up/ホイール/視点の失敗を確認した。OS入力は全て無効。
+- 実際のMinecraft・Ctrl+Alt+F12・Ctrl+C・コンソール終了時の実入力解放は未検証。Issue #5は未確認の安全条件を保持し、#6〜#8・#21・#37・#39・#69を完了扱いにしない。
