@@ -21,7 +21,7 @@ use crate::rtc::{Peer, RtcSignal};
 const SLOT_NAMES: [&str; 3] = ["P1", "P2", "P3"];
 const SLOT_ROLES: [&str; 3] = ["移動・ホスト", "視点", "アクション"];
 /// 通信契約の版 (docs/architecture/protocol.md)。変えるときは protocol.md とシミュレーションも同時に更新する
-const PROTOCOL_VERSION: u64 = 2;
+const PROTOCOL_VERSION: u64 = 3;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
@@ -195,6 +195,8 @@ struct Game {
     auto_resume: bool,
     auto_resume_ms: u64,
     auto_resume_until: u64,
+    // 進行が変わるたびに増やす番号。入力・視点に付けて送らせ、古い状態のときに送られたものを新しい状態で処理しない
+    epoch: u64,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -310,6 +312,7 @@ impl Hub {
                 auto_resume: config.auto_resume,
                 auto_resume_ms: config.auto_resume_ms,
                 auto_resume_until: 0,
+                epoch: 1,
             },
             inject: InjectMode::parse(&config.inject_mode).unwrap_or(InjectMode::Off),
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
@@ -449,6 +452,7 @@ impl Hub {
             "autoResume": self.game.auto_resume,
             "autoResumeMs": self.game.auto_resume_ms,
             "autoResumeUntil": self.game.auto_resume_until,
+            "epoch": self.game.epoch,
             "connected": connected,
             "canStart": self.can_start(),
         })
@@ -548,7 +552,8 @@ impl Hub {
         self.reset_look();
         self.game.phase = phase;
         self.game.reason = Some(reason.to_string());
-        self.log("phase", json!({ "phase": phase.name(), "reason": reason }));
+        self.advance_epoch();
+        self.log("phase", json!({ "phase": phase.name(), "reason": reason, "epoch": self.game.epoch }));
         self.push_game();
     }
 
@@ -1042,6 +1047,7 @@ impl Hub {
                     }
                 }
                 self.game.phase = Phase::Lobby;
+                self.advance_epoch();
                 self.log("reset", json!({}));
                 self.push_game();
                 self.push_state();
@@ -1246,6 +1252,19 @@ impl Hub {
         let button = s(&msg, "button").unwrap_or_default();
         let state = s(&msg, "state").unwrap_or_default();
         let burst = msg.get("burst").and_then(Value::as_bool).unwrap_or(false);
+        let epoch = msg.get("epoch").and_then(Value::as_u64);
+        if epoch != Some(self.game.epoch) {
+            // 前の進行状態で押された入力 (PAUSE / RESUME の直前に送られて遅れて届いたもの)。
+            // 状態の変更時に全出力を解放済みなので、押下も解放も新しい状態では処理しない。番号は消費して ACK だけ返す
+            let conn = self.slots[idx].as_ref().unwrap().conn;
+            self.send(conn, &json!({ "type": "ack", "iseq": msg.get("iseq"), "t": msg.get("t"), "via": via.name(), "stale": true }));
+            let current = self.game.epoch;
+            self.record(
+                "stale_input",
+                json!({ "slot": SLOT_NAMES[idx], "button": button, "state": state, "epoch": epoch, "current": current }),
+            );
+            return;
+        }
         let slot = self.slots[idx].as_mut().unwrap();
         slot.events += 1;
         match via {
@@ -1272,6 +1291,10 @@ impl Hub {
 
     /// 視点は累積値で届くので、欠けたパケットの分も次のパケットで取り戻せる。古いパケットは捨てる
     fn accept_look(&mut self, idx: usize, msg: &Value) {
+        // 別epochの累積値は現在の基準にも混ぜない。
+        if msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
+            return;
+        }
         let Some(lseq) = num(msg, "lseq").map(|n| n as i64) else { return };
         let slot = self.slots[idx].as_mut().unwrap();
         if lseq <= slot.look_seq {
@@ -1288,5 +1311,15 @@ impl Hub {
         slot.look_cy = cy;
         slot.events += 1;
         self.handle_look(idx, dx, dy);
+    }
+
+    fn advance_epoch(&mut self) {
+        self.game.epoch += 1;
+        // 送信側と同じくepochごとに累積値と順序番号を0から始める。
+        for slot in self.slots.iter_mut().flatten() {
+            slot.look_seq = 0;
+            slot.look_cx = 0.0;
+            slot.look_cy = 0.0;
+        }
     }
 }
