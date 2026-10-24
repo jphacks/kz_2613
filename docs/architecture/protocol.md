@@ -1,6 +1,6 @@
-# 通信契約 v2（スマホ・PC画面 ⇔ PCホスト）
+# 通信契約 v3（スマホ・PC画面 ⇔ PCホスト）
 
-**版：** `protocolVersion = 2`（Rust版ホスト `apps/host-rs`・スマホ画面 `apps/web-static/index.html` に実装）。v1の画面は再接続トークンを保持できないため、v2では版不一致で拒否する。
+**版：** `protocolVersion = 3`（Rust版ホスト `apps/host-rs`・スマホ画面 `apps/web-static/index.html` に実装）。v2の再接続トークンに続き、v3ではepoch必須と視点のepoch単位の累積値を導入する。古い画面は版不一致で拒否する。
 
 **変更の規則：** 契約（メッセージの型・項目・終了コード・順序の規則）を変えるときは、同じPRで①この文書、②`scripts/sim/protocol-sim.mjs`（契約のテスト）、③必要なら `protocolVersion` を更新する。互換性のない変更では版を上げる。シミュレーションは `node scripts/sim/protocol-sim.mjs` で実行し、結果をBUILD_LOGへ記録する。Node参照実装（`apps/node-ref`）は試作品のまま比較の基準として残し、Rust版で追加した契約は対象外とする。
 
@@ -23,11 +23,11 @@
 
 | type | 経路 | 主な項目 | 意味 |
 |---|---|---|---|
-| `hello` | WS | `protocolVersion`（必須、現在は `2`）、`clientId`（端末のlocalStorageに保存、最大64文字）、`token`（再接続時。`welcome` で受け取った値）、`ua`、`nextIseq` | 参加・再接続する。同じ `clientId` は、`token` が一致した場合だけ元の枠へ戻る（なし・不一致は `error`（`bad_token`）を返して4006で閉じ、元の接続には影響しない）。版がない・違う場合は `error` を返して4005で閉じ、枠を割り当てない |
+| `hello` | WS | `protocolVersion`（必須、現在は `3`）、`clientId`（端末のlocalStorageに保存、最大64文字）、`token`（再接続時。`welcome` で受け取った値）、`ua`、`nextIseq` | 参加・再接続する。同じ `clientId` は、`token` が一致した場合だけ元の枠へ戻る（なし・不一致は `error`（`bad_token`）を返して4006で閉じ、元の接続には影響しない）。版がない・違う場合は `error` を返して4005で閉じ、枠を割り当てない |
 | `ping` | WS | `t`、`stats`（RTTの平均・95%値・最大、`rtc`側の統計、`via`） | 1秒ごとに送る。サーバーは `pong` を返す |
 | `command` | WS | `cmd`: `START` / `PAUSE` / `RESUME` / `END` | **P1のみ有効** |
-| `input` | **WSとWebRTCの両方** | `iseq`（通し番号）、`button`（操作名）、`state`（`down`/`up`）、`t`、`burst`（通信テスト） | サーバーは番号順に、先に届いたほうで1回だけ処理する。WS版には `seq` も付く |
-| `look` | WebRTC（つながらなければWS） | `lseq`、`cx`、`cy`（接続してからの累積移動量） | 30Hz、ACKなし。欠けても次の値で取り戻せる。P2・協力プレイ中のみ有効 |
+| `input` | **WSとWebRTCの両方** | `iseq`（通し番号）、`epoch`（押した時点の `game.epoch`）、`button`（操作名）、`state`（`down`/`up`）、`t`、`burst`（通信テスト） | サーバーは番号順に、先に届いたほうで1回だけ処理する。`epoch` が現在と違う（なしを含む）入力は番号だけ消費し、押下・解放とも処理しない。WS版には `seq` も付く |
+| `look` | WebRTC（つながらなければWS） | `lseq`、`epoch`、`cx`、`cy`（同じepoch内の累積移動量） | 30Hz、ACKなし。同じepoch内の欠落だけを次の値で取り戻す。P2・協力プレイ中、かつ `epoch` が現在と同じときだけ有効。別epochは順序番号・累積値の基準にも反映しない。スマホとホストはepoch変更時に `lseq`・`cx`・`cy` を0に戻し、スマホの未送信移動量も破棄する |
 | `ka` | WebRTC | `t` | 協力プレイ中に50msごとに送る。サーバーは `kpong` を返す |
 | `rtc-offer` / `rtc-cand` | WS | `sdp` / `cand`、`mid` | WebRTCのシグナリング。offerはスマホ側から送る |
 
@@ -50,11 +50,11 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | `full` | — | 満員。続いて接続を閉じる（4004） |
 | `game` | `game`（下記） | 進行の状態が変わるたびに全員へ送る |
 | `pong` | `t` | |
-| `ack` | `iseq`、`t`、`via`（`ws`/`rtc`） | 入力を処理した。`via` は先に届いた経路 |
+| `ack` | `iseq`、`t`、`via`（`ws`/`rtc`）、`stale`（古い `epoch` で処理しなかった場合 `true`） | 入力を受け取った。`via` は先に届いた経路 |
 | `kpong` | `t` | WebRTC経由で返す |
 | `rtc-answer` / `rtc-cand` | `sdp`、`sdpType` / `cand`、`mid` | |
 
-**`game` の内容：** `phase`（`lobby`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`
+**`game` の内容：** `phase`（`lobby`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`、`epoch`（進行が変わるたび・リセットで1増える。初期値1）
 
 **WebSocketの終了コード：** 4000 = 同じ端末の別タブに置き換えられた、4001 = PCでリセットした、4002 = `clientId` なし、4003 = モニターはPCのみ、4004 = 満員、4005 = 通信契約の版が違う（スマホは再接続をやめ、再読み込みを案内する）、4006 = 再接続のトークンがない・一致しない（スマホは再接続をやめ、PCでのリセットを案内する）
 

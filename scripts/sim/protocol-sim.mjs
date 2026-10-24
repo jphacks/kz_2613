@@ -23,7 +23,7 @@ const opt = (name, def) => {
 const target = opt('--target', 'rust');
 const PORT = Number(opt('--port', 18000 + Math.floor(Math.random() * 1000)));
 const BASE = `http://127.0.0.1:${PORT}`;
-const PROTOCOL_VERSION = 2;
+const PROTOCOL_VERSION = 3;
 
 // ブラウザと同じOrigin付きのハンドシェイクを送り、アップグレード前の拒否も確認する。
 function handshake(origin, host = `127.0.0.1:${PORT}`) {
@@ -93,6 +93,7 @@ class Client {
       this.ws.onerror = () => reject(new Error(`${this.name}: 接続できない`));
       this.ws.onmessage = (ev) => {
         const m = JSON.parse(ev.data);
+        if (m.type === 'game') this.epoch = m.game.epoch; // スマホ同様、最新の進行状態の番号を入力に付ける
         this.msgs.push(m);
         this.wake();
       };
@@ -161,7 +162,7 @@ class Client {
   input(button, state, extra = {}) {
     this.iseq++;
     this.seq++;
-    this.send({ type: 'input', iseq: this.iseq, seq: this.seq, button, state, t: Date.now(), ...extra });
+    this.send({ type: 'input', iseq: this.iseq, seq: this.seq, epoch: this.epoch, button, state, t: Date.now(), ...extra });
     return this.iseq;
   }
   close() {
@@ -221,6 +222,13 @@ async function noInject(mon, from, ms = 300) {
   assert(!hit, `注入されてはいけない: ${hit && JSON.stringify(hit.entry)}`);
 }
 
+// 押下の注入がないこと (状態変更に伴う全解放の up は許す)
+async function noPress(mon, from, ms = 300) {
+  await sleep(ms);
+  const hit = mon.msgs.slice(from).find((m) => m.type === 'inject' && m.entry.state === 'down');
+  assert(!hit, `押下を注入してはいけない: ${hit && JSON.stringify(hit.entry)}`);
+}
+
 const phaseIs = (c, phase, from, timeout = 2000) =>
   c.waitFor((m) => m.type === 'game' && m.game.phase === phase, { from, timeout, what: `phase ${phase}` });
 
@@ -247,7 +255,7 @@ async function main() {
     });
 
     await check('版: protocolVersion がない・違う hello は理由を返して 4005 で閉じ、枠を割り当てない', async () => {
-      for (const extra of [{ protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }, { protocolVersion: 1 }]) {
+      for (const extra of [{ protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }, { protocolVersion: 1 }, { protocolVersion: 2 }]) {
         const c = new Client('V');
         await c.open();
         c.send({ type: 'hello', clientId: 'sim-old-page', ...extra });
@@ -371,12 +379,12 @@ async function main() {
       const from = p3.mark();
       const n = p3.iseq + 1;
       // n+1 (解放) が先、n (押下) が後に届いても押下→解放の順で処理する
-      p3.send({ type: 'input', iseq: n + 1, button: 'USE', state: 'up', t: 0 });
+      p3.send({ type: 'input', iseq: n + 1, epoch: p3.epoch, button: 'USE', state: 'up', t: 0 });
       await sleep(100);
       assert(!p3.msgs.slice(from).some((m) => m.type === 'ack' && m.iseq === n + 1), '欠番を待たずに処理した');
       const mfrom = mon.mark();
-      p3.send({ type: 'input', iseq: n, button: 'USE', state: 'down', t: 0 });
-      p3.send({ type: 'input', iseq: n, button: 'USE', state: 'down', t: 0 });
+      p3.send({ type: 'input', iseq: n, epoch: p3.epoch, button: 'USE', state: 'down', t: 0 });
+      p3.send({ type: 'input', iseq: n, epoch: p3.epoch, button: 'USE', state: 'down', t: 0 });
       p3.iseq = n + 1;
       await p3.waitFor((m) => m.type === 'ack' && m.iseq === n + 1, { from, what: 'ack' });
       await sleep(200);
@@ -398,24 +406,87 @@ async function main() {
 
     await check('視点: P2 の look だけを相対移動にする', async () => {
       const from = mon.mark();
-      p3.send({ type: 'look', lseq: 1, cx: 500, cy: 0 }); // P3 は無視
+      p3.send({ type: 'look', lseq: 1, epoch: p3.epoch, cx: 500, cy: 0 }); // P3 は無視
       await sleep(300);
       assert(!mon.msgs.slice(from).some((m) => m.type === 'look'), 'P3 の look を反映した');
-      p2.send({ type: 'look', lseq: 1, cx: 40, cy: -20 });
+      p2.send({ type: 'look', lseq: 1, epoch: p2.epoch, cx: 40, cy: -20 });
       const l = await mon.waitFor((m) => m.type === 'look', { from, what: 'look' });
       assert(l.entry.slot === 'P2', 'P2 以外');
     });
 
-    await check('切断: coop 中の切断で paused、切断者以外の押下も全解放する', async () => {
+    await check('epoch: 進行が変わるたびに増え、PAUSE・RESUME の直前に送られた入力と視点を新しい状態で処理しない', async () => {
+      // coop で押した LEFT (= A キー) が PAUSE の後に届いても、paused のリモコン (← キー) として扱わない
+      const e0 = p1.epoch;
+      assert(Number.isInteger(e0), `game に epoch がない: ${e0}`);
       let from = mon.mark();
-      p1.input('FWD', 'up');
-      await injected(mon, 'KEY_W', 'up', from);
+      let pfrom = p1.mark();
+      p1.send({ type: 'command', cmd: 'PAUSE' });
+      p1.input('LEFT', 'down', { epoch: e0 });
+      const g1 = await phaseIs(p1, 'paused', pfrom);
+      assert(g1.game.epoch > e0, `PAUSE で epoch が増えない: ${e0} → ${g1.game.epoch}`);
+      const ack = await p1.waitFor((m) => m.type === 'ack' && m.iseq === p1.iseq, { from: pfrom, what: 'ack' });
+      assert(ack.stale === true, '古い入力に stale が付かない');
+      await noPress(mon, from);
+      p1.input('LEFT', 'up', { epoch: e0 });
+      // paused で押した LEFT (= ← キー) が RESUME の後に届いても、coop の A キーとして扱わない
+      const e1 = p1.epoch;
       from = mon.mark();
+      pfrom = p1.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      p1.input('LEFT', 'down', { epoch: e1 });
+      const g2 = await phaseIs(p1, 'coop', pfrom);
+      assert(g2.game.epoch > e1, 'RESUME で epoch が増えない');
+      p2.send({ type: 'look', lseq: 2, epoch: e1, cx: 900, cy: 0 }); // paused のときの視点が coop で届いた
+      await noPress(mon, from);
+      assert(!mon.msgs.slice(from).some((m) => m.type === 'look'), 'RESUME 後に古い epoch の視点を反映した');
+      p1.input('LEFT', 'up', { epoch: e1 });
+      // epoch のない入力も処理しない
+      from = mon.mark();
+      p1.input('JUMP', 'down', { epoch: undefined });
+      await noPress(mon, from);
+      p1.input('JUMP', 'up', { epoch: undefined });
+      // 現在の epoch なら処理する
+      from = mon.mark();
+      p1.input('JUMP', 'down');
+      await injected(mon, 'SPACE', 'down', from);
+      p1.input('JUMP', 'up');
+      await injected(mon, 'SPACE', 'up', from);
+    }, { rustOnly: true });
+
+    await check('epoch: 旧視点の欠落・遅延が新epochの累積値と順序番号へ混ざらない', async () => {
+      const old = p2.epoch;
+      // 古いepochでcx=1000まで動いた最終パケットは失われ、ホストへ届かない。
+      let from = p1.mark();
+      p1.send({ type: 'command', cmd: 'PAUSE' });
+      await phaseIs(p1, 'paused', from);
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      const resumed = await phaseIs(p1, 'coop', from);
+      await p2.waitFor(m => m.type === 'game' && m.game.epoch === resumed.game.epoch);
+      await sleep(300); // 以前の視点レポートが出終わるまで待つ
+      from = mon.mark();
+      // 旧パケットが届かないまま、新epochではseq=1、累積値10から始める。
+      p2.send({ type: 'look', lseq: 1, epoch: p2.epoch, cx: 10, cy: 0 });
+      await sleep(1000);
+      let dx = mon.msgs.slice(from).filter(m => m.type === 'look').reduce((sum, m) => sum + m.entry.dx, 0);
+      assert(Math.abs(dx - 10) <= 1, `新epochの10以外が混入した: dx=${dx}`);
+      from = mon.mark();
+      p2.send({ type: 'look', lseq: 101, epoch: old, cx: 2000, cy: 0 });
+      p2.send({ type: 'look', lseq: 2, epoch: p2.epoch, cx: 15, cy: 0 });
+      await sleep(1000);
+      dx = mon.msgs.slice(from).filter(m => m.type === 'look').reduce((sum, m) => sum + m.entry.dx, 0);
+      assert(Math.abs(dx - 5) <= 1, `遅延パケットが基準を変更した: dx=${dx}`);
+    }, { rustOnly: true });
+
+    await check('切断: coop 中の切断で paused、切断者以外の押下も全解放する', async () => {
+      p1.input('FWD', 'up'); // 前の試験の押下が残っていれば離す (既に離れていれば何もしない)
+      await sleep(150);
+      let from = mon.mark();
       p1.input('FWD', 'down'); // P1 が押したまま
       p3.input('USE', 'down'); // P3 も押したまま
       await injected(mon, 'KEY_W', 'down', from);
       await injected(mon, 'MOUSE_R', 'down', from);
-      p2.send({ type: 'look', lseq: 2, cx: 4000, cy: 0 }); // 未処理の視点を残す
+      p2.send({ type: 'look', lseq: 3, epoch: p2.epoch, cx: 4000, cy: 0 }); // 未処理の視点を残す
       from = mon.mark();
       const pfrom = p1.mark();
       p2.close();
