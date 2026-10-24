@@ -169,3 +169,10 @@
 - `node scripts/sim/protocol-sim.mjs --target node`（`apps/node-ref` で `npm ci` 後）：**17/17合格**。
 - WebRTC経路と、15秒の期限切れ後の自動復帰はこのシミュレーションでは扱っていない。
 - **未検証：** Rust版の実際のSendInput、スマホ実機3台、Minecraft、Tauri。
+
+## 2026-10-24 — #11 通信契約の版番号（Claude Code）
+- Rust版ホスト：`hello` の `protocolVersion` が `1` でない（欠落・別の値・文字列）場合、`{type:"error", code:"protocol_version", protocolVersion:1}` を返して4005で閉じ、枠を割り当てない。`welcome` に `protocolVersion` を追加。
+- スマホ画面：`hello` に `protocolVersion: 1` を付ける。`error`/4005を受けたら再接続をやめ、再読み込みを案内する。
+- protocol.mdに版と変更規則（文書・シミュレーション・版を同じPRで更新）を追記した。
+- 検証：`cargo build --release` 成功（警告は既存の2件のみ）。`node scripts/sim/protocol-sim.mjs` **18/18合格**（版不一致3パターンを追加）。`--target node` は試作品のまま **17/17合格**（Rust版で追加した契約は対象外）。`node scripts/sim/check-static-pages.mjs` で3画面のスクリプトの構文を確認。
+- スマホ実機での表示確認は未実施。
