@@ -22,6 +22,10 @@ use crate::rtc::{Peer, RtcSignal};
 const SLOT_NAMES: [&str; 3] = ["P1", "P2", "P3"];
 const SLOT_ROLES: [&str; 3] = ["移動・ホスト", "視点", "アクション"];
 /// 通信契約の版 (docs/architecture/protocol.md)。変えるときは protocol.md とシミュレーションも同時に更新する
+// PC アプリで選べるゲーム (apps/web-static/app-view.js の GAMES と同じ id)。P0 は Minecraft Java Edition のみ。
+// "pseudo-game" は診断用の疑似ゲーム画面 (/game) で、PC アプリの一覧には出さない (ゲーム変更の試験にも使う)
+const TITLES: [&str; 2] = ["minecraft-java", "pseudo-game"];
+const DEFAULT_TITLE: &str = TITLES[0];
 const PROTOCOL_VERSION: u64 = 3;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
@@ -77,6 +81,7 @@ fn now_ms() -> u64 {
 enum Page {
     Host,
     Game,
+    App, // PC アプリの画面 (/app)。前面になったことを focus で知らせる
 }
 
 enum Role {
@@ -204,6 +209,8 @@ struct Game {
     auto_resume_until: u64,
     // 進行が変わるたびに増やす番号。入力・視点に付けて送らせ、古い状態のときに送られたものを新しい状態で処理しない
     epoch: u64,
+    // PC アプリで選んだゲーム (表示先)。入力の許可 (進行・注入モード・入力先) とは別に持つ
+    title: String,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -339,6 +346,7 @@ impl Hub {
                 auto_resume_ms: config.auto_resume_ms,
                 auto_resume_until: 0,
                 epoch: 1,
+                title: DEFAULT_TITLE.to_string(),
             },
             inject: InjectMode::parse(&config.inject_mode).unwrap_or(InjectMode::Off),
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
@@ -488,6 +496,7 @@ impl Hub {
             "autoResumeMs": self.game.auto_resume_ms,
             "autoResumeUntil": self.game.auto_resume_until,
             "epoch": self.game.epoch,
+            "title": self.game.title,
             "connected": connected,
             "canStart": self.can_start(),
             // 入力が PC に届く状態か (注入モード・入力先のウィンドウ)。スマホに「届いていない」ことを知らせる
@@ -1100,7 +1109,11 @@ impl Hub {
             if !conn.loopback {
                 return self.close(Some(id), 4003, "monitor only from PC");
             }
-            let page = if s(&msg, "page").as_deref() == Some("game") { Page::Game } else { Page::Host };
+            let page = match s(&msg, "page").as_deref() {
+                Some("game") => Page::Game,
+                Some("app") => Page::App,
+                _ => Page::Host,
+            };
             self.conns.get_mut(&id).unwrap().role = Role::Monitor { page, focused: false };
             return self.push_state();
         }
@@ -1130,6 +1143,31 @@ impl Hub {
                     self.conns.get_mut(&id).unwrap().role = Role::Monitor { page, focused: f };
                     self.record("game_focus", json!({ "focused": f }));
                     self.on_focus_change();
+                }
+            }
+            "focus" if page == Page::App => {
+                let f = msg.get("focused").and_then(Value::as_bool).unwrap_or(false);
+                if f != focused {
+                    self.conns.get_mut(&id).unwrap().role = Role::Monitor { page, focused: f };
+                    // 協力プレイ中に PC アプリへ手動で戻った: 全解放してホストのリモコンへ戻す (自動復帰しない)
+                    if f && self.game.phase == Phase::Coop {
+                        self.set_phase(Phase::Paused, "app focus");
+                        self.push_state();
+                    }
+                }
+            }
+            "select_game" => {
+                let Some(t) = s(msg, "title").filter(|t| TITLES.contains(&t.as_str())) else { return };
+                if t == self.game.title {
+                    return;
+                }
+                self.game.title = t;
+                self.log("select_game", json!({ "title": self.game.title }));
+                // ゲームを変えたら全解放してロビー (ホストのリモコン) へ戻る。参加者と役割はそのまま
+                if self.game.phase != Phase::Lobby {
+                    self.set_phase(Phase::Lobby, "game change");
+                } else {
+                    self.push_game();
                 }
             }
             "observe" => {

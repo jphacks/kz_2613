@@ -1,4 +1,4 @@
-# Re:Cooplay 通信テスト用: Windows Defender Firewall で受信を許可する
+﻿# Re:Cooplay 通信テスト用: Windows Defender Firewall で受信を許可する
 # 管理者 PowerShell で実行:  powershell -ExecutionPolicy Bypass -File scripts\windows\allow-firewall.ps1 [-Program <ホストの exe>]
 #   Rust 版は -Program apps\host-rs\target\release\recooplay-host.exe (省略時は Node 参照実装の node.exe)
 # 削除:                       Remove-NetFirewallRule -DisplayName "Re:Cooplay test*"

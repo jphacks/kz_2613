@@ -573,7 +573,7 @@
     $('waitRole').textContent = `あなたの担当: ${ROLE_TEXT[me]}`;
     $('burst').style.display = phase === 'coop' ? 'none' : '';
   }
-  function reasonText(r) { return r === 'host pause' ? 'ホストが停止' : r.endsWith('disconnected') ? r.split(' ')[0] + ' が切断' : r; }
+  function reasonText(r) { return r === 'host pause' ? 'ホストが停止' : r === 'app focus' ? 'PCアプリの画面に戻った' : r === 'emergency stop' ? 'PCの緊急停止' : r.endsWith('disconnected') ? r.split(' ')[0] + ' が切断' : r; }
 
   // ---- 通信テスト: 20Hz で 10 秒送る (注入はされない) ----
   $('burst').addEventListener('click', () => {
