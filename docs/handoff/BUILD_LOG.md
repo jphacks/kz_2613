@@ -254,3 +254,10 @@
 - ランナーでは `LIBCLANG_PATH=C:\Program Files\LLVM\bin` とし、OpenSSLのビルドのためStrawberry PerlをGit付属のPerlより優先する。
 - 既存の `checks.yml`（Python/Reactひな形）は残した。ひな形の削除は #68 の残りとして、ユーザーの確認後に行う。
 - ローカルでは `--locked` で両方のビルドが通ることを確認した。GitHub Actionsでの結果はPRに記録する。
+
+## 2026-10-24 — #68 旧Python/Reactひな形の削除（Claude Code、ユーザー承認済み）
+- ユーザーの許可を受け、`apps/host`（Python/FastAPI）と `apps/web`（React/Vite）を削除した。`checks.yml` はリポジトリ構造の確認（`verify_overlay.py`）だけにし、ビルド・試験は `rust.yml` に集約した。
+- `verify_overlay.py` の必須ファイルを新しい構成（`apps/host-rs`・`apps/desktop`・`apps/web-static`・`apps/node-ref`・`scripts/sim`・両workflow）に変更した。
+- `AGENTS.md`（構成・コマンド）、`DEVELOPMENT_WORKFLOW.md`、`SETUP_WINDOWS.md`、`tech-stack.md`、`apps/host-rs/README.md` を更新した。libclangの例は `apps/host/.venv` から開発用の別の仮想環境（`%LOCALAPPDATA%\ReCooplay\tools-venv`）に変えた。過去の記録（BUILD_LOG・判断記録・初期構築の依頼文）は当時のまま残す。
+- 削除前に、`rust.yml` がGitHub Actionsで成功していることを確認した（#80：`host-rs` 7分57秒・12分53秒、`desktop` 3分23秒・3分44秒、既存の `host`・`web` も成功）。
+- 検証：`python scripts/verify_overlay.py`（26件）PASS。

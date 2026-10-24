@@ -12,8 +12,6 @@ dist/
 build/
 # JS / Vite
 node_modules/
-apps/web/dist/
-apps/web/.vite/
 coverage/
 # local state & logs
 .env
