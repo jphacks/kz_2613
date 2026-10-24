@@ -75,6 +75,8 @@ Viteのdist生成後、FastAPIを再起動して `http://127.0.0.1:8000/` を開
 
 共通運用と全バックログは、同じディレクトリの `DEVELOPMENT_WORKFLOW.md` と `ISSUE_PLAN.md` を参照する。
 
+> **現在の範囲：** ここまでのPython/Reactはリポジトリ内の既存ひな形の確認手順。MVP画面は実機確認した静的HTML/CSS/JavaScriptを基準とし、Reactは任意。Rust・静的画面の取り込みは後続Issue。以下のRust手順はリポジトリ外で記録されたビルド環境の案内であり、現時点のルートでそのままビルドできるという意味ではない。
+
 ## Rust版ホストのビルド環境（PCホスト）
 
 技術構成の変更（`docs/decisions/tech-stack.md`）に伴い、PCホストはRustでビルドする。WebRTC（libdatachannel）とOpenSSLをソースからビルドするため、次が必要になる。
