@@ -1,21 +1,21 @@
-# Build & validation log
+# 構築・検証ログ
 
-Do not fabricate PASS. Append findings when executed on a real environment.
+成功したという結果を捏造しない。実際の環境で実行した観測結果を追記する。
 
-## 2026-10-24 — bootstrap package authored
-- Repository reviewed: `jphacks/kz_2613` main contained only `README.md` and `LICENSE` when the package was prepared.
-- Source: user conversations and shared requirements v0.2; team meeting minutes linked in requirements.
-- Added documentation, placeholder host/web build, typed domain vocabulary, and tests.
-- No push or repo mutation performed by creating this ZIP.
-- **Hardware gates not run.** Windows hotspot/Minecraft relative mouse look/iPhone/Android session unsupported until implementation + real-device tests.
-- Add executed setup/test evidence below after merging the overlay.
+## 2026-10-24 — 初期構築パッケージの作成
+- パッケージ作成時に確認した `jphacks/kz_2613` のmainには、`README.md` と `LICENSE` だけが存在した。
+- 根拠はユーザーとの会話、共有要件v0.2、要件書から参照するチーム議事録。
+- 文書、ホスト・Webのひな形、型付きのドメイン用語、テストを追加した。
+- ZIP作成自体ではリポジトリ変更やpushを行っていない。
+- **実機ゲートは未実施。** Windowsホットスポット・Minecraft相対視点・iPhone/Androidのセッションは、実装と実機試験が終わるまで対応済みとしない。
+- 初期ファイルの統合後、実施した環境構築・検証の証拠を下に追記する。
 
-## Bootstrap authoring environment self-check (not Windows target)
-- `python scripts/verify_overlay.py`: PASS (9 required paths).
-- `python -m compileall` host package: PASS.
-- `python -m pytest apps/host/tests`: PASS (3 tests).
-- Frontend `npm install --package-lock-only`: TIMED OUT (registry unavailable here); no lockfile was generated. **No frontend build/test was run**. Requires Codex/developer resolution on target machine.
-- This was not a Windows 11 / Minecraft / Android / iPhone test.
+## パッケージ作成環境での確認（Windows実機ではない）
+- `python scripts/verify_overlay.py`：成功、必須9パスを確認。
+- ホストの `python -m compileall`：成功。
+- `python -m pytest apps/host/tests`：成功、3件。
+- フロントの `npm install --package-lock-only`：レジストリへ到達できずタイムアウト。lockは未生成で、**フロントのビルド・テストは未実施**。対象PCでCodex・開発者が解消する必要がある。
+- Windows 11・Minecraft・Android・iPhoneの実機試験ではない。
 
 ## 2026-10-24 — Windows初期構築・Issue運用開始
 
@@ -40,12 +40,12 @@ Do not fabricate PASS. Append findings when executed on a real environment.
 | root | `python scripts/verify_overlay.py` | PASS（最終17パス） |
 | apps/host | `python -m pip install -e ".[dev]"` | PASS。解決結果をconstraintsへ固定 |
 | apps/host | `python -m pip check` | PASS、依存不整合なし |
-| apps/host | `python -m pytest -q --require-web-build` | PASS、4 tests |
-| apps/host | `python -m ruff check .` | PASS |
-| apps/host | `python -m ruff format --check .` | PASS、10 files |
+| apps/host | `python -m pytest -q --require-web-build` | 成功、4件 |
+| apps/host | `python -m ruff check .` | 成功 |
+| apps/host | `python -m ruff format --check .` | 成功、10ファイル |
 | apps/web | `npm install --no-audit --no-fund` | PASS、lock生成 |
 | apps/web | `npm ci --no-audit --no-fund` | PASS、lockから再インストール |
-| apps/web | `npm run check` | PASS、TypeScript strict |
+| apps/web | `npm run check` | 成功、TypeScriptの厳格な型検査 |
 | apps/web | `npm test` | PASS、最終2 tests（PC/スマホの未実装表示） |
 | apps/web | `npm run build` | PASS、Vite 7.3.7、apps/web/distへローカルHTML/CSS/JS生成 |
 | apps/host | `python -m uvicorn recoop_host.app:app --host 127.0.0.1 --port 8000` | PASS、起動ログ確認 |
@@ -73,3 +73,11 @@ Do not fabricate PASS. Append findings when executed on a real environment.
 - Pythonの専用型チェッカーは提供構成にない。Pythonはruffとpytest、TypeScriptはtsc strictで検証。
 - Minecraft/SendInput/3台同時プレイ/ホットスポット/Android/iPhone/WebView2/配布物の実機ゲートは全て未実施。OS入力は送信していない。
 - 次に推奨: [#5](https://github.com/jphacks/kz_2613/issues/5) 明示開始・非常停止付き入力プローブの用意。続く#6〜#8でMinecraftへのキー・クリック・相対視点の成立性を最優先で確かめる。今回この実装には着手しない。
+
+## 2026-10-24 — 資料・開発時の使用言語を日本語へ統一
+
+- ユーザーの新しい明示指示に従い、Markdown資料、コミットの件名・本文、PRのタイトル・本文を日本語で記述するルールを `AGENTS.md` に追加した。
+- CodexとClaude Codeが同じルールを参照するよう、`CLAUDE.md`、共通運用、PRテンプレートを更新した。
+- 英語だった共通ルール、ホスト・Web向けルール、設計・技術判断・実機ゲート・Windows構築手順・初期依頼文・統合確認・作成時ログを日本語化した。READMEの画像説明と要件書の参考資料見出しも日本語へ変更した。
+- コマンド・API名・識別子・ファイル名・URLは原表記を保持した。コードと依存は変更していない。
+- 検証：`python scripts/verify_overlay.py` は必須17パスを確認して成功。追跡中のMarkdown全20件のUTF-8、コードブロックの対応、空文書がないこと、変更前のURL保持を確認した。`git diff --check` も成功。
