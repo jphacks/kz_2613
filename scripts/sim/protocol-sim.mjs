@@ -23,7 +23,7 @@ const opt = (name, def) => {
 const target = opt('--target', 'rust');
 const PORT = Number(opt('--port', 18000 + Math.floor(Math.random() * 1000)));
 const BASE = `http://127.0.0.1:${PORT}`;
-const PROTOCOL_VERSION = 1;
+const PROTOCOL_VERSION = 2;
 
 // ブラウザと同じOrigin付きのハンドシェイクを送り、アップグレード前の拒否も確認する。
 function handshake(origin, host = `127.0.0.1:${PORT}`) {
@@ -247,7 +247,7 @@ async function main() {
     });
 
     await check('版: protocolVersion がない・違う hello は理由を返して 4005 で閉じ、枠を割り当てない', async () => {
-      for (const extra of [{ protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }]) {
+      for (const extra of [{ protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }, { protocolVersion: 1 }]) {
         const c = new Client('V');
         await c.open();
         c.send({ type: 'hello', clientId: 'sim-old-page', ...extra });
@@ -294,6 +294,25 @@ async function main() {
       assert(!w1.reconnected, '初回なのに reconnected');
       if (target !== 'node') assert(w1.protocolVersion === PROTOCOL_VERSION, `welcome の protocolVersion=${w1.protocolVersion}`);
     });
+
+    await check('トークン: welcome で枠ごとに 128bit 以上の推測困難な値を発行する', async () => {
+      const t = [tokens.P1, tokens.P2, tokens.P3];
+      assert(t.every((x) => /^[0-9a-f]{32,}$/.test(x || '')), `トークンの形式: ${t.join(',')}`);
+      assert(new Set(t).size === 3, '枠どうしでトークンが重複した');
+    }, { rustOnly: true });
+
+    await check('トークン: clientId が同じでもトークンなし・不一致の再接続は 4006 で拒否し、元の接続を奪わない', async () => {
+      for (const token of [undefined, '0'.repeat(32), tokens.P3]) {
+        const x = new Client('hijack');
+        await x.open();
+        x.send({ type: 'hello', protocolVersion: PROTOCOL_VERSION, clientId: ids.P2, token });
+        const e = await x.waitFor((m) => m.type === 'error' || m.type === 'welcome', { what: 'bad_token' });
+        assert(e.type === 'error' && e.code === 'bad_token', `乗っ取りを許した: ${JSON.stringify(e)}`);
+        assert((await x.waitClose()) === 4006, '終了コードが 4006 でない');
+      }
+      await sleep(100);
+      assert(p2.closed === null, '元の P2 の接続が切られた');
+    }, { rustOnly: true });
 
     await check('役割: 4 台目は full で拒否し 4004 で閉じる', async () => {
       const p4 = await join('P4');
@@ -426,6 +445,32 @@ async function main() {
       assert(!mon.msgs.slice(mfrom).some((m) => m.type === 'inject' && m.entry.state === 'down'), '復帰時に旧押下を復元した');
     });
 
+    await check('再接続: 正しいトークンで接続を置換すると全解放し、旧押下を持ち越さない', async () => {
+      let from = mon.mark();
+      mon.send({ type: 'auto_resume', on: false });
+      await mon.waitFor(m => m.type === 'game' && m.game.autoResume === false, { from });
+      p1.input('FWD', 'down');
+      p3.input('USE', 'down');
+      await injected(mon, 'KEY_W', 'down', from);
+      await injected(mon, 'MOUSE_R', 'down', from);
+      const old = p1;
+      from = mon.mark();
+      p1 = await join('P1');
+      const w = await welcome(p1);
+      assert(w.reconnected && w.slot === 'P1', '同じ枠へ戻らない');
+      assert(await old.waitClose() === 4000, '古い接続を閉じない');
+      await phaseIs(p1, 'paused', 0);
+      await injected(mon, 'KEY_W', 'up', from);
+      await injected(mon, 'MOUSE_R', 'up', from);
+      await sleep(200);
+      assert(!mon.msgs.slice(from).some(m => m.type === 'inject' && m.entry.state === 'down'), '置換後に旧押下を復元した');
+      p3.input('USE', 'up');
+      const pfrom = p1.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', pfrom);
+      mon.send({ type: 'auto_resume', on: true });
+    }, { rustOnly: true });
+
     await check('復帰: ホストの PAUSE は自動復帰の対象外', async () => {
       let from = p1.mark();
       p1.send({ type: 'command', cmd: 'PAUSE' });
@@ -498,6 +543,16 @@ async function main() {
       const g = await p1.waitFor((m) => m.type === 'game' && !m.game.connected.includes('P3'), { from, timeout: 6500, what: 'heartbeat timeout' });
       assert(g, '切断扱いにならない');
     });
+
+    await check('トークン: PC 画面へのメッセージとログファイルにトークンを含めない', async () => {
+      const all = JSON.stringify(mon.msgs);
+      for (const k of ['P1', 'P2', 'P3']) assert(!all.includes(tokens[k]), `${k} のトークンが PC 画面に出た`);
+      await sleep(1200); // ログは 1 秒ごとに書き出される
+      const files = fs.readdirSync(host.logDir).filter((f) => f.endsWith('.jsonl'));
+      assert(files.length > 0, 'ログファイルがない');
+      const log = files.map((f) => fs.readFileSync(path.join(host.logDir, f), 'utf8')).join('');
+      for (const k of ['P1', 'P2', 'P3']) assert(!log.includes(tokens[k]), `${k} のトークンがログに出た`);
+    }, { rustOnly: true });
 
     for (const c of [p1, p2, p3, mon]) c?.close();
     const failed = results.filter((r) => !r.ok);

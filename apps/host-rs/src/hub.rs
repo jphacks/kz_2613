@@ -21,8 +21,9 @@ use crate::rtc::{Peer, RtcSignal};
 const SLOT_NAMES: [&str; 3] = ["P1", "P2", "P3"];
 const SLOT_ROLES: [&str; 3] = ["移動・ホスト", "視点", "アクション"];
 /// 通信契約の版 (docs/architecture/protocol.md)。変えるときは protocol.md とシミュレーションも同時に更新する
-const PROTOCOL_VERSION: u64 = 1;
+const PROTOCOL_VERSION: u64 = 2;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
+const CLOSE_BAD_TOKEN: u16 = 4006;
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
 const MIN_HOLD_MS: u64 = 60; // 押下は最低この時間続ける (ゲームは 50ms ごとに入力を読む)
 const MIN_GAP_MS: u64 = 50; // 解放も最低この時間続けてから次を押す (連打を 1 回ずつ認識させる)
@@ -101,6 +102,7 @@ impl Via {
 
 struct Slot {
     client_id: String,
+    token: String, // 再接続用。サーバーが発行する 128bit の乱数 (ログ・PC 画面には出さない)
     conn: Option<u64>,
     connected: bool,
     ip: Option<String>,
@@ -128,9 +130,10 @@ struct Slot {
 }
 
 impl Slot {
-    fn new(client_id: String) -> Self {
+    fn new(client_id: String, token: String) -> Self {
         Slot {
             client_id,
+            token,
             conn: None,
             connected: false,
             ip: None,
@@ -266,6 +269,18 @@ pub struct Hub {
 
 fn s(v: &Value, key: &str) -> Option<String> {
     v.get(key).and_then(Value::as_str).map(str::to_string)
+}
+
+/// 再接続用トークン: OS の乱数 128bit を 16 進 32 文字にする
+fn new_token() -> Option<String> {
+    let mut buf = [0u8; 16];
+    getrandom::fill(&mut buf).ok()?;
+    Some(buf.iter().map(|b| format!("{b:02x}")).collect())
+}
+
+/// 比較にかかる時間から一致した長さを推測されないよう、全体を比べてから判定する
+fn token_eq(a: &str, b: &str) -> bool {
+    a.len() == b.len() && a.bytes().zip(b.bytes()).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
 }
 
 fn num(v: &Value, key: &str) -> Option<f64> {
@@ -1055,12 +1070,26 @@ impl Hub {
         }
         let ip = self.conns[&id].ip.clone();
         let existing = (0..3).find(|&i| self.slots[i].as_ref().is_some_and(|s| s.client_id == client_id));
+        if let Some(i) = existing {
+            // 再接続はサーバーが発行したトークンで照合する。clientId だけ知っている別の端末には枠を渡さない
+            let token = s(msg, "token").unwrap_or_default();
+            if !token_eq(&token, &self.slots[i].as_ref().unwrap().token) {
+                self.send(Some(id), &json!({ "type": "error", "code": "bad_token" }));
+                self.log("reject_token", json!({ "slot": SLOT_NAMES[i] }));
+                return self.close(Some(id), CLOSE_BAD_TOKEN, "bad token");
+            }
+        }
         let reconnected = existing.is_some();
         let idx = match existing {
             Some(i) => i,
             None => match (0..3).find(|&i| self.slots[i].is_none()) {
                 Some(i) => {
-                    self.slots[i] = Some(Slot::new(client_id.clone()));
+                    let Some(token) = new_token() else {
+                        // 乱数を得られなければ推測できるトークンを発行せず、参加を断る
+                        self.log("token_error", json!({}));
+                        return self.close(Some(id), 1011, "token unavailable");
+                    };
+                    self.slots[i] = Some(Slot::new(client_id.clone(), token));
                     i
                 }
                 None => {
@@ -1072,6 +1101,10 @@ impl Hub {
         };
         // 同じ端末の古い接続を置き換え
         let old = self.slots[idx].as_ref().unwrap().conn.filter(|&c| c != id);
+        if old.is_some() {
+            // 別タブ等による置換も切断として全解放し、旧接続の押下を持ち越さない。
+            self.mark_disconnected(idx, "replaced");
+        }
         self.close(old, 4000, "replaced");
         let ua: String = s(msg, "ua").unwrap_or_default().chars().take(200).collect();
         let now = now_ms();
@@ -1093,12 +1126,14 @@ impl Hub {
         slot.ibuf.clear();
         slot.rtc = None;
         slot.rtc_state = "none";
+        let token = slot.token.clone();
         self.conns.get_mut(&id).unwrap().role = Role::Player { slot: idx };
         self.send(
             Some(id),
             &json!({
                 "type": "welcome",
                 "protocolVersion": PROTOCOL_VERSION,
+                "token": token,
                 "slot": SLOT_NAMES[idx],
                 "role": SLOT_ROLES[idx],
                 "isHost": idx == 0,

@@ -170,7 +170,7 @@
   };
   const COLORS = { P1: 'var(--p1)', P2: 'var(--p2)', P3: 'var(--p3)' };
   // 通信契約の版 (docs/architecture/protocol.md)。PC のホストと合わなければ接続できない
-  const PROTOCOL_VERSION = 1;
+  const PROTOCOL_VERSION = 2;
 
   // 端末ごとの ID。再接続時に同じスロットへ戻るために保存する
   let clientId = null;
@@ -179,6 +179,10 @@
     clientId = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
     try { localStorage.setItem('recooplay.clientId', clientId); } catch {}
   }
+
+  // 再接続用トークン。PC のホストが発行し、同じ枠へ戻るときに提示する (clientId だけでは枠を取り戻せない)
+  let token = null;
+  try { token = localStorage.getItem('recooplay.token'); } catch {}
 
   let ws = null, seq = 0, retry = 0, stopped = false, pingTimer = null;
   let me = null, isHost = false, game = null;
@@ -201,7 +205,7 @@
       seq = 0;
       pending.clear();
       lastServerMsg = performance.now();
-      sock.send(JSON.stringify({ type: 'hello', protocolVersion: PROTOCOL_VERSION, clientId, ua: navigator.userAgent, nextIseq: iseq + 1 }));
+      sock.send(JSON.stringify({ type: 'hello', protocolVersion: PROTOCOL_VERSION, clientId, token, ua: navigator.userAgent, nextIseq: iseq + 1 }));
       clearInterval(pingTimer);
       pingTimer = setInterval(sendPing, 1000);
     };
@@ -213,6 +217,10 @@
       const msg = JSON.parse(ev.data);
       if (msg.type === 'rtc-answer' || msg.type === 'rtc-cand') { onRtcSignal(msg); return; }
       if (msg.type === 'welcome') {
+        if (msg.token && msg.token !== token) {
+          token = msg.token;
+          try { localStorage.setItem('recooplay.token', token); } catch {}
+        }
         look.seq = 0; look.cx = 0; look.cy = 0;
         startRtc();
         me = msg.slot;
@@ -244,6 +252,8 @@
         $('full').style.display = 'flex';
       } else if (msg.type === 'error' && msg.code === 'protocol_version') {
         showVersionMismatch();
+      } else if (msg.type === 'error' && msg.code === 'bad_token') {
+        showBadToken();
       }
     };
   }
@@ -256,12 +266,21 @@
     $('full').style.display = 'flex';
   }
 
+  // 同じ clientId の枠があるのにトークンが合わない (保存したトークンが消えた等)。PC でリセットするまで参加できない
+  function showBadToken() {
+    stopped = true;
+    setStatus('参加できません', 'ng');
+    $('full').textContent = 'この端末の参加情報をPCで確認できませんでした。PC側でリセットしてから再読み込みしてください。';
+    $('full').style.display = 'flex';
+  }
+
   function onDisconnected(code) {
     clearInterval(pingTimer);
     releaseAll();
     closeRtc();
     if (code === 4000) { stopped = true; setStatus('別タブで接続中', 'ng'); return; }
     if (code === 4005) { showVersionMismatch(); return; }
+    if (code === 4006) { showBadToken(); return; }
     setStatus('切断 — 再接続待ち', 'ng');
     setTimeout(connect, Math.min(5000, 250 * 2 ** retry++));
   }
