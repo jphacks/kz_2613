@@ -891,6 +891,7 @@ impl Hub {
             self.release_outputs(None);
         }
         self.log("inject_mode", json!({ "mode": mode.name() }));
+        self.push_game();
         self.push_state();
     }
 

@@ -493,6 +493,12 @@ async function main() {
       assert(st.inject.mode === 'on' && !st.inject.active, '入力先でないのに注入が有効');
       const g = await p1.waitFor((m) => m.type === 'game' && m.game.inputTarget === true, { from, what: 'inputTarget' });
       assert(g.game.inputActive === false && g.game.phase === 'coop', JSON.stringify(g.game));
+      let notifyFrom = p1.mark();
+      mon.send({ type: 'inject_mode', mode: 'off' });
+      await p1.waitFor(m => m.type === 'game' && !m.game.inputActive && !m.game.inputTarget, { from: notifyFrom });
+      notifyFrom = p1.mark();
+      mon.send({ type: 'inject_mode', mode: 'on' });
+      await p1.waitFor(m => m.type === 'game' && !m.game.inputActive && m.game.inputTarget, { from: notifyFrom });
       p1.input('FWD', 'up');
       mfrom = mon.mark();
       p1.input('JUMP', 'down');
