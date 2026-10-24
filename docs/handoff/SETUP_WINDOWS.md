@@ -75,7 +75,7 @@ Viteのdist生成後、FastAPIを再起動して `http://127.0.0.1:8000/` を開
 
 共通運用と全バックログは、同じディレクトリの `DEVELOPMENT_WORKFLOW.md` と `ISSUE_PLAN.md` を参照する。
 
-> **現在の範囲：** ここまでのPython/Reactはリポジトリ内の既存ひな形の確認手順。MVP画面は実機確認した静的HTML/CSS/JavaScriptを基準とし、Reactは任意。Rust・静的画面の取り込みは後続Issue。以下のRust手順はリポジトリ外で記録されたビルド環境の案内であり、現時点のルートでそのままビルドできるという意味ではない。
+> **現在の範囲：** ここまでのPython/Reactはリポジトリ内の既存ひな形の確認手順（#68で整理予定）。MVP画面は実機確認した静的HTML/CSS/JavaScriptを基準とし、Reactは任意。#67でRust版ホストを `apps/host-rs/`、静的画面を `apps/web-static/`、Node参照実装を `apps/node-ref/` へ取り込んだ。
 
 ## Rust版ホストのビルド環境（PCホスト）
 
@@ -85,9 +85,28 @@ Viteのdist生成後、FastAPIを再起動して `http://127.0.0.1:8000/` を開
 2. Visual StudioのC++ツールとCMake（「C++によるデスクトップ開発」に含まれる）
 3. Perl（OpenSSLのビルド用）：Strawberry Perlのポータブル版を展開し、`perlin` をPATHに追加する
 4. libclang（bindgen用）：LLVMを導入するか、`libclang.dll` の場所を `LIBCLANG_PATH` に設定する
-5. `cargo build --release`。初回はOpenSSLとlibdatachannelのビルドに時間がかかる
+5. `cd apps\host-rs; cargo build --release`。初回はOpenSSLとlibdatachannelのビルドに時間がかかる（このPCで約10分）
+6. 起動はリポジトリのルートで `.\apps\host-rs\target\release\recooplay-host.exe`。注入なしの通信契約テストは `node scripts\sim\protocol-sim.mjs`（詳細は `apps/host-rs/README.md`）
 
-ファイアウォールでは、ローカルサブネットからのTCP 8080と、ホストの実行ファイルのUDP（WebRTC）を許可する。
+**注意：** `target/` を別の場所からコピーして流用しない。libdatachannelのCMakeキャッシュが元の絶対パスを保持しているため、再ビルドが失敗する。
+
+### このPCでのRust環境
+
+Rustは公式rustupでユーザー領域に導入する。Visual Studio 2022のC++ツールを使用し、Strawberry Perlのポータブル版は `%LOCALAPPDATA%\ReCooplay\StrawberryPerl` に展開する。libclangは開発用のPython仮想環境へ `python -m pip install libclang` で導入でき、製品の依存関係には含めない。
+
+```powershell
+$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:LOCALAPPDATA\ReCooplay\StrawberryPerl\perl\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;$env:PATH"
+$env:LIBCLANG_PATH = "$PWD\apps\host\.venv\Lib\site-packages\clang\native"
+# Documents配下へのビルド出力が拒否される場合の開発用キャッシュ
+$env:CARGO_TARGET_DIR = "$env:LOCALAPPDATA\ReCooplay\cargo-target"
+cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml
+cargo test --release --locked --manifest-path apps/host-rs/Cargo.toml
+node scripts/sim/protocol-sim.mjs --bin "$env:CARGO_TARGET_DIR\release\recooplay-host.exe"
+```
+
+環境変数の設定はそのPowerShellだけに有効。rustup導入直後にcargoが見つからない場合は、新しいターミナルを開くか上記PATHを設定する。シミュレーションはホストを必ず `RECOOPLAY_DRY_RUN=1` で起動し、OS入力を送らない。
+
+ファイアウォールでは、ローカルサブネットからのTCP 8080と、ホストの実行ファイルのUDP（WebRTC）を許可する。管理者PowerShellで `powershell -ExecutionPolicy Bypass -File scripts\windows\allow-firewall.ps1 -Program apps\host-rs\target\release\recooplay-host.exe` を実行する（`-Program` を省略するとNode参照実装の `node.exe` を許可する）。
 
 ## 最初の実機通信ゲート
 
