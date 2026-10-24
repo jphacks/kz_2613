@@ -18,17 +18,37 @@ $ErrorActionPreference = "Stop"
 $root = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $desktop = Join-Path $root "apps\desktop\target\release\recooplay-desktop.exe"
 $host_ = Join-Path $root "apps\host-rs\target\release\recooplay-host.exe"
+if ($env:CARGO_TARGET_DIR) {
+  $targetDir = [IO.Path]::GetFullPath($env:CARGO_TARGET_DIR)
+  $desktop = Join-Path $targetDir "release\recooplay-desktop.exe"
+  $host_ = Join-Path $targetDir "release\recooplay-host.exe"
+}
 foreach ($f in @($desktop, $host_)) {
   if (-not (Test-Path $f)) { throw "$f がありません。先に cargo build --release を実行してください" }
+  # zip名のx64と実際の実行ファイルを照合する。誤ったアーキテクチャを配らない。
+  $bytes = [IO.File]::ReadAllBytes($f)
+  if ($bytes.Length -lt 64 -or $bytes[0] -ne 0x4d -or $bytes[1] -ne 0x5a) { throw "$f はPE実行ファイルではありません" }
+  $pe = [BitConverter]::ToInt32($bytes, 0x3c)
+  if ($pe -lt 0 -or $pe + 6 -gt $bytes.Length -or [BitConverter]::ToUInt32($bytes, $pe) -ne 0x4550 -or [BitConverter]::ToUInt16($bytes, $pe + 4) -ne 0x8664) {
+    throw "$f はWindows x64用ではありません"
+  }
 }
 
 $version = (Get-Content (Join-Path $root "apps\desktop\tauri.conf.json") -Raw | ConvertFrom-Json).version
+if ($version -notmatch '^[0-9A-Za-z.+-]+$') { throw "配布名に使えない版です: $version" }
 $commit = (git -C $root rev-parse --short HEAD)
 $dirty = if (git -C $root status --porcelain) { "-dirty" } else { "" }
 $name = "ReCooplay-$version-windows-x64"
-$outDir = Join-Path $root $Out
+$outDir = [IO.Path]::GetFullPath((Join-Path $root $Out))
+$rootPrefix = $root.Path.TrimEnd('\') + '\'
+if (-not $outDir.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) { throw "出力先はリポジトリ内の専用フォルダにしてください" }
+# 既存の出力やリンク先の内容を削除・上書きしない。
+for ($ancestor = [IO.DirectoryInfo]$outDir; $null -ne $ancestor; $ancestor = $ancestor.Parent) {
+  if ($ancestor.Exists -and ($ancestor.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw "リンクされた出力先には書き込めません: $ancestor" }
+}
 $stage = Join-Path $outDir $name
-if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
+$zip = Join-Path $outDir "$name.zip"
+if ((Test-Path -LiteralPath $stage) -or (Test-Path -LiteralPath $zip)) { throw "配布物が既にあります。-Outで新しい出力先を指定してください: $outDir" }
 New-Item -ItemType Directory -Force (Join-Path $stage "apps") | Out-Null
 
 Copy-Item $desktop, $host_ $stage
@@ -66,10 +86,9 @@ Minecraft の公式製品ではありません。Mojang・Microsoft の承認・
 ■ 検証状況
   Minecraft・スマホ実機との組み合わせ、開発環境のない PC での起動は検証中。詳しくは
   https://github.com/jphacks/kz_2613 の Issue を参照。
+  発表素材の利用条件・公開する責任者と直接連絡先は確認中。公開配布の適合確認は未完了。
 "@ | Set-Content -Encoding utf8 (Join-Path $stage "README.txt")
 
-$zip = Join-Path $outDir "$name.zip"
-if (Test-Path $zip) { Remove-Item -Force $zip }
 Compress-Archive -Path $stage -DestinationPath $zip
 $size = [math]::Round((Get-Item $zip).Length / 1MB, 1)
 Write-Host "作成しました: $zip ($size MB, commit $commit$dirty)"
