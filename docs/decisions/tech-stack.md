@@ -22,7 +22,7 @@
 | WebRTCライブラリ | **libdatachannel**（Rustでは `datachannel` crate、Nodeでは `node-datachannel`） | 検証済み（Node）／Rust版は未検証 | iPhone Safariとの接続を確認済みのエンジンを維持する。Rust版はOpenSSLを同梱した静的リンク（`vendored`） |
 | ネットワーク | Windowsモバイルホットスポット（`192.168.137.1`） | **検証済み**（上流回線あり）／上流なしは未検証 | Android 2台＋iPhone 1台が同時に接続できた |
 | スマホ・PC画面 | **ビルド不要の静的HTML/CSS/JavaScript**（`index.html` スマホ、`host.html` ダッシュボード、`game.html` 疑似ゲーム画面）、Pointer Events | **検証済み** | 外部CDNは使わない。React化は任意で、行う場合も同じメッセージ契約を守る |
-| PCアプリの枠 | Tauri（WebView2）。代替は通常のブラウザ | 採用（未検証） | 同じHTMLをそのまま表示する |
+| PCアプリの枠 | Tauri 2（WebView2）。代替は通常のブラウザ | 採用（このPCでビルド・起動・終了を確認。スマホ実機・配布は未検証） | `apps/desktop`。Rust版ホストを子プロセスとして起動し、同じHTMLをそのまま表示する。終了・異常終了時はホストが全解放してから終了する |
 | QR | 参加URLのQRとWi-Fi接続用のQR（`WIFI:T:WPA;S:..;P:..;;`）をSVGで生成する | **検証済み**（URL QR） | オフラインで生成する。Wi-Fi接続用QRは `config.json` に記載した場合だけ表示する |
 | 設定 | `config.json`（port、wifi、requiredPlayers、injectMode、autoResume、lookSmoothMin/MaxMs） | **検証済み** | Node・Rustで共通の項目 |
 | ログ | セッションごとのJSONL（`logs/session-*.jsonl`） | **検証済み** | 入力・注入・照合結果・接続を記録し、事後分析に使う。Rust版はIP・User-Agent・clientId・再接続トークンを記録せず、枠名と端末の種類（iOS/Android/Windows/other）だけを残す（#22、PC上のシミュレーションで確認）。Node参照実装は試作品のまま記録する |

@@ -195,3 +195,14 @@
 - Rust版ホスト：`join`・`reconnect`・`reject_full` のログから `ip`・`ua`・`clientId` を除き、枠名と端末の種類（User-Agentから判定した `iOS`/`Android`/`Windows`/`other`）だけを記録する。PC画面向けの状態スナップショットからも `clientId` を除いた。ダッシュボードの端末・IP表示はループバック限定のまま維持する（ログには書かない）。
 - 検証：`cargo build --release` 成功。`node scripts/sim/protocol-sim.mjs` **23/23合格**（JSONLログに `clientId`・IP・User-Agent・項目名 `ip`/`ua`/`clientId` が含まれず、`join` に `slot`・`device` があることを追加）。`--target node` **17/17合格**。
 - 実機のログ（スマホ3台）での確認は未実施。
+
+## 2026-10-24 — #36 PCアプリの枠（Tauri / WebView2）（Claude Code）
+- `apps/desktop/`：Tauri 2のアプリ。PCホスト（`recooplay-host.exe`）を子プロセス（コンソール非表示）として起動し、待ち受けを確認してからウィンドウに `http://127.0.0.1:<port>/host` を表示する。起動できない場合（exeなし・ポート使用中・15秒以内に起動しない）は案内を表示する。ホストの画面にはTauriのAPIを開放しない。
+- Rust版ホスト：`RECOOPLAY_STDIN_CONTROL=1` のとき、標準入力の `quit` または入力の終了（親の異常終了）で、全出力を解放してから終了する。コンソール版の動作は変えていない。
+- ビルド：`cd apps/desktop && cargo build --release` 成功（初回2分24秒、警告なし）。ホストは `cargo build --release` 成功・`protocol-sim` 23/23合格。
+- 起動試験（このPC、`RECOOPLAY_DRY_RUN=1`・注入OFFでOS入力なし、試験用ポート）：
+  - アプリ起動 → ホストがアプリの子プロセスとして起動し、WebView2（`msedgewebview2`）がポートへ接続。ウィンドウにダッシュボードが表示され「サーバー接続OK」（画面キャプチャで確認）。
+  - ウィンドウを閉じる → アプリ・ホストとも終了し、ホストのログに `shutdown`（全解放後に記録）が残った。
+  - アプリを強制終了（`Stop-Process -Force`）→ 3秒以内にホストも `shutdown` を記録して終了した。
+  - 同じポートでコンソール版ホストが起動済み → 「ポート 18557 は別のプログラムが使用中です」と表示（画面キャプチャで確認）。
+- **未検証：** スマホ実機を接続した状態でのアプリ利用、実入力（注入ON）での終了時の解放、配布パッケージ（#41）、他のPCでのWebView2。
