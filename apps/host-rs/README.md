@@ -21,9 +21,10 @@ Node 参照実装（`apps/node-ref/server.js`）と同じ仕様・同じメッ�
 必要なもの: Rust（MSVC）、Visual Studio の C++ ツールと CMake、Perl（OpenSSL のビルド用。Strawberry Perl のポータブル版で可）。
 
 ```powershell
-$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:LOCALAPPDATA\strawberry-perl\perl\bin;C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;$env:PATH"
+$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:LOCALAPPDATA\ReCooplay\StrawberryPerl\perl\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;$env:PATH"
+$env:LIBCLANG_PATH = "$PWD\apps\host\.venv\Lib\site-packages\clang\native"
 cd apps\host-rs
-cargo build --release
+cargo build --release --locked
 ```
 
 ## 起動
@@ -46,3 +47,9 @@ node scripts\sim\protocol-sim.mjs --target node   # Node 参照実装（apps\nod
 ```
 
 ホストを `RECOOPLAY_DRY_RUN=1` で起動し、スマホ 3 台と PC 画面を模した WebSocket で役割・認可・進行・入力の先着 1 回処理・切断時の全解放・復帰設定を照合する。OS へ入力を送らないため、ゲームや実機の合格の代わりにはならない。
+
+## 接続の認可
+
+WebSocketのHostはlocalhost・ループバックIP・PCのIPv4アドレスと待受ポートに限定する。ブラウザのOriginは接続先のHTTP Originと完全に一致する必要があり、別ポート・別サイト・`null`は403で拒否する。Originなしはループバックからの非ブラウザ検証クライアントだけ許可する。PC管理権限には引き続きループバック接続が必要で、スマホへは渡さない。
+
+1本の接続の識別は1回だけ行う。割当済みの接続でhelloを再送したり、管理接続へ切り替えたりすると4007で閉じる。再接続には新しいWebSocketを使う。Node参照実装にもこの認可修正だけを適用し、通信・入力の比較対象として保持する。
