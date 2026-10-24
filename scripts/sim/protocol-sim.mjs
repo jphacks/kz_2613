@@ -625,6 +625,20 @@ async function main() {
       for (const k of ['P1', 'P2', 'P3']) assert(!log.includes(tokens[k]), `${k} のトークンがログに出た`);
     }, { rustOnly: true });
 
+    await check('ログ: IP・User-Agent・clientId を記録せず、枠名と端末の種類だけを残す', async () => {
+      await sleep(1200); // ログは 1 秒ごとに書き出される
+      const log = fs
+        .readdirSync(host.logDir)
+        .filter((f) => f.endsWith('.jsonl'))
+        .map((f) => fs.readFileSync(path.join(host.logDir, f), 'utf8'))
+        .join('');
+      for (const bad of ['sim-client-', 'sim-intruder', 'sim-old-page', '127.0.0.1', '::1', 'protocol-sim', '"clientId"', '"ip"', '"ua"']) {
+        assert(!log.includes(bad), `ログに ${bad} が含まれる`);
+      }
+      const joins = log.split(/\r?\n/).filter(Boolean).map((l) => JSON.parse(l)).filter((e) => e.kind === 'join');
+      assert(joins.length >= 3 && joins.every((e) => e.slot && e.device), `join の記録: ${JSON.stringify(joins[0])}`);
+    }, { rustOnly: true });
+
     for (const c of [p1, p2, p3, mon]) c?.close();
     const failed = results.filter((r) => !r.ok);
     console.log(`\n${results.length - failed.length}/${results.length} 合格 (target=${target})`);

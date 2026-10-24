@@ -273,6 +273,19 @@ fn s(v: &Value, key: &str) -> Option<String> {
     v.get(key).and_then(Value::as_str).map(str::to_string)
 }
 
+/// ログに残す端末の種類。IP・User-Agent・clientId はログに書かない (ダッシュボードの表示は PC 本体のみ)
+fn device_kind(ua: &str) -> &'static str {
+    if ua.contains("iPhone") || ua.contains("iPad") {
+        "iOS"
+    } else if ua.contains("Android") {
+        "Android"
+    } else if ua.contains("Windows") {
+        "Windows"
+    } else {
+        "other"
+    }
+}
+
 /// 再接続用トークン: OS の乱数 128bit を 16 進 32 文字にする
 fn new_token() -> Option<String> {
     let mut buf = [0u8; 16];
@@ -467,7 +480,6 @@ impl Hub {
                         "name": SLOT_NAMES[i],
                         "role": SLOT_ROLES[i],
                         "assigned": true,
-                        "clientId": s.client_id,
                         "connected": s.connected,
                         "ip": s.ip,
                         "ua": s.ua,
@@ -1100,7 +1112,8 @@ impl Hub {
                 }
                 None => {
                     self.send(Some(id), &json!({ "type": "full" }));
-                    self.log("reject_full", json!({ "ip": ip, "clientId": client_id }));
+                    let device = device_kind(&s(msg, "ua").unwrap_or_default());
+                    self.log("reject_full", json!({ "device": device }));
                     return self.close(Some(id), 4004, "room full");
                 }
             },
@@ -1148,7 +1161,7 @@ impl Hub {
         );
         self.log(
             if reconnected { "reconnect" } else { "join" },
-            json!({ "slot": SLOT_NAMES[idx], "ip": ip, "clientId": client_id, "ua": ua }),
+            json!({ "slot": SLOT_NAMES[idx], "device": device_kind(&ua) }),
         );
         self.push_game();
         self.push_state();
