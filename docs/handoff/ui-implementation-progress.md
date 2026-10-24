@@ -8,7 +8,7 @@
 | 1 | preparing、P1の明示Ready、旧STARTの迂回防止、サーバー認可、検証、機能PR | 完了：PR #90・CI成功 |
 | 2 | P1タッチパッド、PCとゲームの排他的操作、安全停止、検証、機能PR | 完了：PR #91 |
 | 3 | 素材採色、共通パレット・トークン、ローカル素材配信 | 完了 |
-| 4 | PC・スマホ同時刷新、縦画面の可変幅・高さ、表示・性能確認、UI PR | 実装・検証完了、PR提出準備 |
+| 4 | PC・スマホ同時刷新、縦画面の可変幅・高さ、表示・性能確認、UI PR | 完了：PR #92 |
 
 ## 最新の採用判断
 
@@ -23,3 +23,11 @@
 ## 残る実機受入
 
 工程5は今回実施しない。Android・iPhone計3台、Minecraft Java Edition、Tauriについて、Ready前のメニュー操作、開始後の3人操作、押下中のAlt+Tab、切断・再接続、実ホットキー停止、端末回転・画面非表示、Raw Inputと感度を記録して受入する。以前の基本操作試験は、新UIの実機検証に読み替えない。
+
+## 提出したPR
+
+- https://github.com/jphacks/kz_2613/pull/90 ：base main。準備と明示Ready。
+- https://github.com/jphacks/kz_2613/pull/91 ：base codex/88-two-stage-ready。ホスト操作。
+- https://github.com/jphacks/kz_2613/pull/92 ：base codex/46-host-touchpad。PC・スマホ同時UI。
+
+工程0〜4のコード・機械試験・PR作成を完了。レビュー順序は #90 → #91 → #92。マージ・auto-merge・mainへのpush・Issueクローズは行っていない。詳細は docs/design/ui-validation.md と BUILD_LOG.md を参照する。
