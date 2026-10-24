@@ -83,13 +83,15 @@ export function phaseView(game, inject) {
     };
   }
   if (game.phase === 'paused') {
-    const reason = game.reason === 'host pause' ? 'ホストが一時停止しました' : game.reason === 'emergency stop' ? 'PC の緊急停止' : /disconnected$/.test(game.reason || '') ? `${game.reason.split(' ')[0]} の通信が切れました` : game.reason || '';
+    const reason = game.reason === 'host pause' ? 'ホストが一時停止しました' : game.reason === 'emergency stop' ? 'PC の緊急停止' : game.reason === 'app focus' ? 'PC アプリの画面に戻ったため、すべてのキーを離しました' : /disconnected$/.test(game.reason || '') ? `${game.reason.split(' ')[0]} の通信が切れました` : game.reason || '';
     return { phase: 'paused', title: '一時停止中', detail: `${reason}。ホストのスマホで RESUME すると再開します` };
   }
+  if (game.reason === 'game change') return { phase: 'lobby', title: '準備中', detail: 'ゲームを変えたため、協力プレイを終えて準備中に戻りました。参加者と分担はそのままです' };
   return { phase: 'lobby', title: '準備中', detail: 'ホストのスマホの矢印・Enter・Esc でもこの画面を操作できます' };
 }
 
-/** ホストのリモコン (矢印・Enter・Esc) による画面の移動。ui = { screen, game } */
+/** ホストのリモコン (矢印・Enter・Esc) による画面の移動。ui = { screen, game }。
+ *  選んだゲーム (game) はホストが保持する。変わったら画面から select_game で知らせる */
 export function navigate(ui, control) {
   const i = SCREENS.indexOf(ui.screen);
   if (control === 'RIGHT' || control === 'ENTER') return { ...ui, screen: SCREENS[Math.min(i + 1, SCREENS.length - 1)], game: ui.game || GAMES[0].id };
