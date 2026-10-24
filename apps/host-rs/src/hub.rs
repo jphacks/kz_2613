@@ -921,7 +921,12 @@ impl Hub {
         let paused_by_disconnect = self.game.phase == Phase::Paused
             && self.game.reason.as_deref().is_some_and(|r| r.ends_with("disconnected"));
         if self.game.phase == Phase::Coop || paused_by_disconnect {
-            self.game.auto_resume_until = now_ms() + self.game.auto_resume_ms;
+            // 期限は協力プレイから止まった時に始め、期限内に別の人が切れたときだけ延ばす。
+            // 期限を過ぎた後の切断や、再接続による接続の置き換え (replaced) では延ばさない (期限後は明示の RESUME まで再開しない)
+            let now = now_ms();
+            if self.game.phase == Phase::Coop || (reason != "replaced" && now <= self.game.auto_resume_until) {
+                self.game.auto_resume_until = now + self.game.auto_resume_ms;
+            }
             if self.game.phase == Phase::Coop {
                 self.set_phase(Phase::Paused, &format!("{} disconnected", SLOT_NAMES[idx]));
             } else {

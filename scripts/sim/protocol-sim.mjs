@@ -652,6 +652,30 @@ async function main() {
       assert(!p1.msgs.slice(from).some((m) => m.type === 'game' && m.game.phase === 'coop'), 'OFF なのに自動復帰した');
     });
 
+    await check('復帰: 期限 (15秒) を過ぎた後の再接続・接続の置き換えで自動復帰の期限を延ばさず、再開しない', async () => {
+      mon.send({ type: 'auto_resume', on: true });
+      await mon.waitFor((m) => m.type === 'game' && m.game.autoResume === true, { what: 'autoResume on' });
+      let from = p1.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', from);
+      from = p1.mark();
+      p3.close();
+      const g = await phaseIs(p1, 'paused', from);
+      await sleep(Math.max(0, g.game.autoResumeUntil - Date.now()) + 500);
+      from = p1.mark();
+      p3 = await join('P3'); // 期限後に戻る
+      await welcome(p3);
+      const p3b = await join('P3'); // 同じ端末の別の接続が置き換える (実機で観測: iPhone の再接続)
+      await welcome(p3b);
+      p3 = p3b;
+      await sleep(500);
+      assert(!p1.msgs.slice(from).some((m) => m.type === 'game' && m.game.phase === 'coop'), '期限後に自動復帰した');
+      const last = p1.msgs.slice(from).filter((m) => m.type === 'game').pop();
+      assert(!last || last.game.autoResumeUntil < Date.now(), `期限が延びた: ${last && last.game.autoResumeUntil}`);
+      mon.send({ type: 'auto_resume', on: false });
+      await mon.waitFor((m) => m.type === 'game' && m.game.autoResume === false, { what: 'autoResume off' });
+    });
+
     await check('リモコン: paused では P1 の矢印・Enter・Esc のみ注入する', async () => {
       let from = mon.mark();
       p1.input('FWD', 'down');
