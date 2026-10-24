@@ -37,6 +37,7 @@ powershell -ExecutionPolicy Bypass -File scripts\windows\package.ps1
 ```
 
 - 中身：`recooplay-desktop.exe`・`recooplay-host.exe`・`apps/web-static/`・`config.example.json`・`allow-firewall.ps1`・`LICENSE`・`README.txt`（起動・ファイアウォール・緊急停止・免責表示）。インストーラーは使わず、展開したフォルダから起動する。
+- `CARGO_TARGET_DIR` を設定してビルドした場合は、同じ環境変数を設定したまま実行する。両exeがWindows x64用か確認してから梱包する。既存の配布物は上書きせず停止するため、作り直す場合は `-Out dist/review-2` など新しい出力先を指定する。出力先はリポジトリ内の専用フォルダを使い、ディレクトリリンクは使用しない。
 - アプリは自分のフォルダから画面とホストを探すので、開発環境やリポジトリは不要。ログは展開先の `logs/` に書くため、書き込みできる場所に展開する。
 - WebView2 ランタイムが必要（Windows 11 は標準）。Minecraft のファイル・素材は含めない。
 - **検証状況：** このPCで、リポジトリの外に展開して起動・終了できることを確認した。開発環境のないPC・スマホ3台の参加は未検証。
