@@ -1,0 +1,69 @@
+name: Rust host and protocol simulation
+# Rust 版ホスト・PC アプリのビルドと、通信契約のシミュレーション (注入なし)。
+# OS 入力は送らない (RECOOPLAY_DRY_RUN=1)。ゲームや実機の合格の代わりにはならない。
+permissions:
+  contents: read
+on:
+  push:
+  pull_request:
+env:
+  CARGO_TERM_COLOR: never
+  RECOOPLAY_DRY_RUN: '1'
+jobs:
+  host-rs:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      # bindgen (datachannel-sys) と OpenSSL のビルドに使う。Git 付属の Perl では OpenSSL をビルドできない
+      LIBCLANG_PATH: C:\Program Files\LLVM\bin
+    steps:
+      - uses: actions/checkout@v4
+      - name: Strawberry Perl を優先する
+        shell: pwsh
+        run: echo "C:\Strawberry\perl\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/node-ref/package-lock.json
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/host-rs/target
+          key: host-rs-${{ runner.os }}-${{ hashFiles('apps/host-rs/Cargo.lock') }}
+          restore-keys: host-rs-${{ runner.os }}-
+      - run: cargo build --release --locked
+        working-directory: apps/host-rs
+      - run: cargo test --release --locked
+        working-directory: apps/host-rs
+      - name: 通信契約のシミュレーション（Rust 版）
+        run: node scripts/sim/protocol-sim.mjs
+      - name: 終了通知と親プロセス消失時の全解放
+        run: node scripts/sim/shutdown-sim.mjs
+      - name: 比較用の Node 参照実装を準備
+        run: npm ci --no-audit --no-fund
+        working-directory: apps/node-ref
+      - name: 通信契約のシミュレーション（Node 参照実装）
+        run: node scripts/sim/protocol-sim.mjs --target node
+      - name: PC 画面の表示ロジック
+        run: node scripts/sim/app-view-test.mjs
+      - name: 静的画面の構文
+        run: node scripts/sim/check-static-pages.mjs
+
+  desktop:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/target
+          key: desktop-${{ runner.os }}-${{ hashFiles('apps/desktop/Cargo.lock') }}
+          restore-keys: desktop-${{ runner.os }}-
+      - run: cargo build --release --locked
+        working-directory: apps/desktop
