@@ -230,3 +230,9 @@
   - `node scripts/sim/check-static-pages.mjs`：4画面とも構文OK（モジュールのスクリプトに対応）。
   - デスクトップアプリ（`RECOOPLAY_DRY_RUN=1`）に模擬スマホ2台を接続し、①に「2/3人・P1 iPhone・P2 Android」が表示され、P1のリモコン（RIGHT→ENTER）で①→②→③へ移動することを画面キャプチャで確認した。終了時のホストのログに匿名化された `join`（`slot`・`device`）と `shutdown` が残った。
 - **未検証：** スマホ実機からのQR読み取りと参加、Minecraftとの切り替えを含む一連の流れ（#35）、他の画面解像度。
+
+## 2026-10-24 — #68（一部）Rust版とシミュレーションのCI（Claude Code）
+- `.github/workflows/rust.yml` を追加した（windows-latest）。`host-rs` ジョブ：`cargo build/test --release --locked`、`protocol-sim`（Rust・Node）、`app-view-test`、`check-static-pages`。`desktop` ジョブ：Tauriアプリの `cargo build --release --locked`。OS入力は送らない（`RECOOPLAY_DRY_RUN=1`）。
+- ランナーでは `LIBCLANG_PATH=C:\Program Files\LLVM\bin` とし、OpenSSLのビルドのためStrawberry PerlをGit付属のPerlより優先する。
+- 既存の `checks.yml`（Python/Reactひな形）は残した。ひな形の削除は #68 の残りとして、ユーザーの確認後に行う。
+- ローカルでは `--locked` で両方のビルドが通ることを確認した。GitHub Actionsでの結果はPRに記録する。
