@@ -453,6 +453,27 @@ async function main() {
       await injected(mon, 'SPACE', 'up', from);
     }, { rustOnly: true });
 
+    await check('epoch: 前の epoch の最後の視点が届かなくても、新しい epoch の移動量に混ざらない', async () => {
+      // coop の epoch で cx=5 まで動かした後、cx=105 のパケットが WebRTC で欠けた想定 (送らない)
+      p2.send({ type: 'look', lseq: 10, epoch: p2.epoch, cx: 5, cy: 0 });
+      await sleep(400);
+      let from = p1.mark();
+      p1.send({ type: 'command', cmd: 'PAUSE' });
+      await phaseIs(p1, 'paused', from);
+      from = p1.mark();
+      const from2 = p2.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', from);
+      await phaseIs(p2, 'coop', from2);
+      // スマホは新しい epoch で累積値を 0 から数え直すので、10 動かすと cx=10 を送る
+      const mfrom = mon.mark();
+      p2.send({ type: 'look', lseq: 12, epoch: p2.epoch, cx: 10, cy: 0 });
+      await sleep(800);
+      const dx = mon.msgs.slice(mfrom).filter((m) => m.type === 'look').reduce((a, m) => a + m.entry.dx, 0);
+      // 補間の端数 (1px 未満) は次へ持ち越すので ±1 を許す。修正前は前の基準 (cx=5) が引かれて 5 になる
+      assert(Math.abs(dx - 10) <= 1, `新しい epoch の移動量が 10 でない: ${dx} (前の epoch の累積値が基準に混ざった)`);
+    }, { rustOnly: true });
+
     await check('切断: coop 中の切断で paused、切断者以外の押下も全解放する', async () => {
       p1.input('FWD', 'up'); // 前の試験の押下が残っていれば離す (既に離れていれば何もしない)
       await sleep(150);
@@ -461,7 +482,7 @@ async function main() {
       p3.input('USE', 'down'); // P3 も押したまま
       await injected(mon, 'KEY_W', 'down', from);
       await injected(mon, 'MOUSE_R', 'down', from);
-      p2.send({ type: 'look', lseq: 3, epoch: p2.epoch, cx: 4000, cy: 0 }); // 未処理の視点を残す
+      p2.send({ type: 'look', lseq: 13, epoch: p2.epoch, cx: 4000, cy: 0 }); // 未処理の視点を残す
       from = mon.mark();
       const pfrom = p1.mark();
       p2.close();

@@ -202,3 +202,9 @@
 - 検証：`cargo build --release` 成功（既存の警告2件のみ）。`node scripts/sim/protocol-sim.mjs` を3回連続で **22/22合格**。追加した試験：PAUSE直前（coop）に押した `LEFT` がpaused後に届いても ← キーにならない、RESUME直前（paused）に押した `LEFT` がcoop後に届いても A キーにならない、pausedのときの `look` をcoopで反映しない、`epoch` なしの入力を処理しない、現在の `epoch` は処理する。`--target node` **17/17合格**。
 - 試験の途中で、前の試験で押したままのWが一時停止で解放される（正しい挙動）のを誤検出したため、試験側を「押下の注入がないこと」の確認に直した。
 - スマホ実機での確認は未実施。
+
+## 2026-10-24 — #74 レビュー指摘：epochの境界で視点の累積値を分離（Claude Code）
+- 指摘：旧epochの最後の `look` がWebRTCで欠けると、新epochの累積値との差分に旧移動が混ざる。
+- 修正：視点の累積値をepochごとに分けた。スマホは `game.epoch` が変わると `cx/cy` を0から数え直す。ホストは枠ごとに累積値のepochを持ち、新しいepochの最初のパケットは0を基準にする。違うepochのパケットは移動量・基準とも使わない。
+- 回帰試験（`protocol-sim`）：coopでcx=5まで動かした後、cx=105のパケットが欠けた想定でPAUSE→RESUMEし、新epochでcx=10を送る → 注入量10±1（補間の端数）。修正前のホストでは5（旧基準が混ざる）となり失敗することを確認した。
+- 検証：#73・#74をmain（#71・#72のスカッシュマージ後、Codexの認可修正を含む）へ載せ直した。`cargo build/test --release --locked` 成功、`protocol-sim` を5回連続で **25/25合格**、`--target node` **19/19合格**。
