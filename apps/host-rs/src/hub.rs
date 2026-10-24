@@ -945,6 +945,9 @@ impl Hub {
         let kind = s(&msg, "type").unwrap_or_default();
 
         if kind == "monitor" {
+            if !matches!(conn.role, Role::Unknown) {
+                return self.close(Some(id), 4007, "already identified");
+            }
             if !conn.loopback {
                 return self.close(Some(id), 4003, "monitor only from PC");
             }
@@ -1030,6 +1033,9 @@ impl Hub {
     }
 
     fn on_hello(&mut self, id: u64, msg: &Value) {
+        if !matches!(self.conns[&id].role, Role::Unknown) {
+            return self.close(Some(id), 4007, "already identified");
+        }
         let client_id: String = s(msg, "clientId").unwrap_or_default().chars().take(64).collect();
         if client_id.is_empty() {
             return self.close(Some(id), 4002, "no clientId");
