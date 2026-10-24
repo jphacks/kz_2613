@@ -121,7 +121,6 @@
   - 自動復帰（ホストのPAUSE中は自動復帰しない）
 - 実際のSendInputでの注入、実機3台での試験は未実施。
 
-
 ## PR #65の整合性整理
 
 - 今回のユーザー明示指示を優先し、[E]を観測事実の区分へ統一した。将来のユーザー判断より優先する規則と、採用判断を捏造する表現を削除した。
@@ -195,6 +194,46 @@
 - Rust版ホスト：`join`・`reconnect`・`reject_full` のログから `ip`・`ua`・`clientId` を除き、枠名と端末の種類（User-Agentから判定した `iOS`/`Android`/`Windows`/`other`）だけを記録する。PC画面向けの状態スナップショットからも `clientId` を除いた。ダッシュボードの端末・IP表示はループバック限定のまま維持する（ログには書かない）。
 - 検証：`cargo build --release` 成功。`node scripts/sim/protocol-sim.mjs` **23/23合格**（JSONLログに `clientId`・IP・User-Agent・項目名 `ip`/`ua`/`clientId` が含まれず、`join` に `slot`・`device` があることを追加）。`--target node` **17/17合格**。
 - 実機のログ（スマホ3台）での確認は未実施。
+
+## 2026-10-24 — PR #74の視点累積値をepochごとに分離（Codex）
+
+- 旧epochの視点が失われた後、新epochの累積値に混入する問題を修正。スマホ・ホスト双方で視点の累積値と順序番号を0へ戻し、スマホの未送信移動量を破棄する。別epochのパケットは順序番号・累積値の基準にも反映しない。
+- 旧パケットの欠落と、再開後に高い順序番号の旧パケットが遅れて届く場合を追加試験する。epoch必須・累積値の意味変更に合わせ、ホスト・画面・資料・試験を通信契約v3へ更新した。
+- 静的3画面とシミュレーションの構文検査に成功。Rustのビルドと追加試験は先行PRを統合した後に実施する。実機試験は行っていない。
+
+## 2026-10-24 — PR #73の互換性と接続置換を修正（Codex）
+
+- 再接続トークンを保持できないv1の画面を拒否するため、ホスト・スマホ・通信契約・試験をv2へ更新した。
+- 正しいトークンで旧接続を置換する場合も切断処理を通し、全参加者の出力を解放して旧押下を持ち越さない。回帰試験を追加した。
+- 静的3画面とシミュレーションの構文検査に成功。Rustのビルド・対象試験はmainの認可修正を統合した後に実施する。実機検証は行っていない。
+
+## 2026-10-24 — PR #71の接続認可を修正（Codex）
+
+- WebSocketのHostを待受ポートとPCのアドレスに制限し、別Origin・`null`を403で拒否する。Originなしはループバックの非ブラウザ検証接続だけ許可する。識別済み接続でのhello再送と管理接続への変更は4007で拒否し、1接続が複数枠を取得する問題を修正した。Rust版とNode参照実装へ同じ認可修正を適用した。
+- `node scripts/sim/protocol-sim.mjs --target node`：追加した認可2項目を含め **19/19合格**。すべて `RECOOPLAY_DRY_RUN=1` で実施し、OS入力は送っていない。
+- Rust stable 1.99.1（MSVC）を導入。既存Visual Studio 2022、Strawberry Perl 5.42.3、開発用Python環境のlibclang 18.1.1を使用する。`cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml` は成功（初回18分）。Documents配下のtarget生成はアクセス拒否となったため、開発用の `CARGO_TARGET_DIR` をLOCALAPPDATAへ指定した。Git付属PerlではOpenSSL構築に必要なモジュールが不足したため、Strawberry Perlを使う。
+- Rust版も `node scripts/sim/protocol-sim.mjs --bin <CARGO_TARGET_DIR>/release/recooplay-host.exe` で **19/19合格**。`cargo test --release --locked --manifest-path apps/host-rs/Cargo.toml` はOrigin・Hostの単体試験 **1/1合格**。構造確認・JavaScriptの構文検査も成功。取り込み後の構成に合わせてAGENTS.mdと技術資料の状況説明を更新した。既存の未使用関数とOpenSSLのデバッグ用PDB不足の警告は残るが、ビルドは成功している。
+- Rustの実入力・Minecraft・スマホ実機・Tauriは未検証のまま。実運用の自動復帰の初期値・許可条件は変更していない。
+
+## 2026-10-24 — PR #72をmainへ追従して再検証（Codex）
+
+- #71のOrigin・Host確認と1接続1枠の認可を取り込み、版番号の確認と併用するよう競合を解消した。
+- `cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml` 成功。Rustの通信シミュレーション **20/20合格**、Node参照実装 **19/19合格**。`check-static-pages.mjs` は3画面の構文検査に成功。OS入力はdry-runで無効化した。実機試験は実施していない。
+
+### PR #73の統合後の検証結果
+
+- mainの認可修正を統合した後、`cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml` 成功。Rustの通信シミュレーション **24/24合格**。旧v1の拒否、トークン不一致時の元接続維持、正しいトークンでの接続置換と全解放、ログへのトークン非出力を確認した。OS入力はdry-runで無効化した。
+
+### PR #74の統合後の検証結果
+
+- mainへ追従し、`cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml` 成功。Rustの通信シミュレーション **26/26合格**。旧epochのパケットが欠落した後は新epochの10だけが反映され、その後に旧epochの高い順序番号が届いても新たな5だけが反映されることを確認した。v1/v2の画面は版不一致で拒否する。OS入力はdry-runで無効化した。
+
+## 2026-10-24 — PR #75の最終統合検証（Codex）
+
+- #71〜#74の認可、接続置換時の全解放、通信契約v3、epoch境界での視点分離を取り込み、mainへ追従した。ログ匿名化の差分を再確認した。
+- `cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml` 成功。Rust通信シミュレーション **27/27合格**、Node参照実装 **19/19合格**、静的3画面の構文検査成功。Rust版のJSONLにIP・User-Agent・clientId・再接続トークンが残らず、枠名と端末の種類が残ることを確認した。OS入力はすべてdry-runで無効化した。
+- Rustの実入力、スマホ3台、Minecraft、Tauri、WebRTC経路の実通信、15秒期限切れ後の復帰は今回も未検証。実ゲームの入力先確認と緊急停止、実運用の自動復帰判断は後続の安全確認事項として保持する。既存CIはPython/Reactであり、Rust CI整備は #68 のまま。
+- 組み込みブラウザでもdry-runのRustホストへ接続し、P1・接続OK・ロビー・参加待ち（1/3）・START無効・WebRTC+WSの表示を確認した。画面は描画され、操作入力は送っていない。これはPC内の1接続の確認であり、スマホ実機やゲーム入力経路の合格を意味しない。
 
 ## 2026-10-24 — #36 PCアプリの枠（Tauri / WebView2）（Claude Code）
 - `apps/desktop/`：Tauri 2のアプリ。PCホスト（`recooplay-host.exe`）を子プロセス（コンソール非表示）として起動し、待ち受けを確認してからウィンドウに `http://127.0.0.1:<port>/host` を表示する。起動できない場合（exeなし・ポート使用中・15秒以内に起動しない）は案内を表示する。ホストの画面にはTauriのAPIを開放しない。
