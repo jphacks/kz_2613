@@ -48,6 +48,28 @@ node scripts\sim\protocol-sim.mjs --target node   # Node 参照実装（apps\nod
 
 ホストを `RECOOPLAY_DRY_RUN=1` で起動し、スマホ 3 台と PC 画面を模した WebSocket で役割・認可・進行・入力の先着 1 回処理・切断時の全解放・復帰設定を照合する。OS へ入力を送らないため、ゲームや実機の合格の代わりにはならない。
 
+## 入力プローブ（Minecraft 実機での入力確認、#5〜#8）
+
+`cargo build --release` で `target\release\recooplay-input-probe.exe` もできる。ホスト・スマホを使わずに、SendInput のキー（W・Space・Shift・Ctrl+W）、クリック・長押し・ホイール、相対マウス（視点）を順に送り、Minecraft が受け付けるかを目で確かめる。
+
+```powershell
+apps\host-rs\target\release\recooplay-input-probe.exe                 # 全手順（keys, mouse, look）
+apps\host-rs\target\release\recooplay-input-probe.exe --steps keys    # キーだけ (#6)。mouse (#7)、look (#8)
+apps\host-rs\target\release\recooplay-input-probe.exe --mock          # OS に送らず、送る内容だけ表示する
+node scripts\sim\input-probe-sim.mjs                                    # --mock で安全経路を試験する
+```
+
+安全のための約束：
+
+- 起動しただけでは何も送らない。`ARM` と入力して Enter を押すと、5 秒後から送り始める。その間に Minecraft のウィンドウをクリックして前面にする。
+- 送る直前に毎回、前面が Minecraft（`javaw.exe`/`java.exe`、タイトルに「Minecraft」）かを確かめる。外れたら押しているキー・ボタンをすべて離し、戻るまで待つ。30 秒戻らなければ中止する（終了コード 3）。
+- 緊急停止：`Ctrl+Alt+F12`（10ms ごとにキーの状態を見る。ホストのホットキー登録とは独立）、`Ctrl+C`、コンソールのウィンドウを閉じる。終了コードは 2。
+- どの終わり方でも、押しているキー・ボタンをすべて離してから終わる（完走・中止・停止・panic）。
+- 停止ハンドラーの登録失敗やOS入力の失敗は成功扱いせず中止する（終了コード4）。解放に失敗した押下は記録を残して再試行し、解放を確認できなければその旨を表示する。強制終了・OS停止まで解放を保証するものではない。
+- ARM後も標準入力が閉じたら停止する。`--mock`の綴り間違いなど不明な引数は開始前に拒否する。送信・押下記録・全解放は同じmutexで直列化し、停止後に遅れた押下を残さない。
+
+実機での手順（#6〜#8）：Minecraft Java Edition でテスト用のワールドに入り、ゲーム内の一時停止メニューを閉じておく。コンソールでプローブを起動して `ARM` を入力し、5 秒以内に Minecraft をクリックする。各 `STEP` の表示どおりにキャラクターが動くか（前進・ジャンプ・スニーク・ダッシュ、採掘・設置・持ち物の切り替え、視点の左右）を記録する。出力（`SEND`/`RELEASE`/`WAIT`/`STOP`/`DONE` の行）を BUILD_LOG に残す。
+
 ## 接続の認可
 
 WebSocketのHostはlocalhost・ループバックIP・PCのIPv4アドレスと待受ポートに限定する。ブラウザのOriginは接続先のHTTP Originと完全に一致する必要があり、別ポート・別サイト・`null`は403で拒否する。Originなしはループバックからの非ブラウザ検証クライアントだけ許可する。PC管理権限には引き続きループバック接続が必要で、スマホへは渡さない。
