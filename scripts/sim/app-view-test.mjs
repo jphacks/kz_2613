@@ -1,0 +1,96 @@
+// PC アプリ画面の表示ロジック (apps/web-static/app-view.js) の試験。
+// 参加状態・開始可否の表示が、ホストから届く状態 (state.slots / game.canStart) と一致することを確かめる。
+//   node scripts/sim/app-view-test.mjs
+
+import assert from 'node:assert/strict';
+import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device } from '../../apps/web-static/app-view.js';
+
+const results = [];
+function test(name, fn) {
+  try {
+    fn();
+    results.push(true);
+    console.log(`  ok   ${name}`);
+  } catch (e) {
+    results.push(false);
+    console.log(`  FAIL ${name}: ${e.message}`);
+  }
+}
+
+const slot = (name, connected, ua = '') => ({ name, assigned: true, connected, ua });
+const game = (connected, extra = {}) => ({ phase: 'lobby', required: 3, connected, canStart: connected.includes('P1') && connected.length >= 3, ...extra });
+
+test('枠: 空き・接続中・切断中をサーバーの slots どおりに表示する', () => {
+  const v = slotViews([slot('P1', true, 'iPhone'), slot('P2', false), { name: 'P3', assigned: false }]);
+  assert.deepEqual(v.map((s) => s.state), ['connected', 'lost', 'empty']);
+  assert.equal(v[0].host, true);
+  assert.equal(v[0].device, 'iPhone');
+  assert.equal(v[1].device, '', '切断中の端末の種類は出さない');
+});
+
+test('枠: 状態が届く前は全員空き', () => {
+  assert.deepEqual(slotViews(undefined).map((s) => s.state), ['empty', 'empty', 'empty']);
+});
+
+test('開始: canStart はサーバーの値をそのまま表示する (画面で判定し直さない)', () => {
+  for (const connected of [[], ['P1'], ['P1', 'P2'], ['P2', 'P3'], ['P1', 'P2', 'P3']]) {
+    const g = game(connected);
+    assert.equal(startView(g, { mode: 'on' }).canStart, g.canStart, connected.join(','));
+  }
+  // 必要人数を 1 にした試験設定でもサーバーに従う
+  assert.equal(startView({ ...game(['P1']), required: 1, canStart: true }, { mode: 'on' }).canStart, true);
+  assert.equal(startView({ ...game(['P1', 'P2', 'P3']), canStart: false }, { mode: 'on' }).canStart, false);
+});
+
+test('開始: できない理由を示す (ホスト不在・人数不足)', () => {
+  assert.match(startView(game(['P2', 'P3']), { mode: 'on' }).reasons.join(), /ホスト（P1）/);
+  assert.match(startView(game(['P1']), { mode: 'on' }).reasons.join(), /あと 2 人/);
+  assert.deepEqual(startView(game(['P1', 'P2', 'P3']), { mode: 'on' }).reasons, []);
+});
+
+test('開始: 入力が常時ONでなければ注意を出す', () => {
+  assert.equal(startView(game(['P1', 'P2', 'P3']), { mode: 'off' }).notes.length, 1);
+  assert.equal(startView(game(['P1', 'P2', 'P3']), { mode: 'on' }).notes.length, 0);
+});
+
+test('進行: 協力プレイ中は入力先の状態に応じて案内する', () => {
+  const coop = { ...game(['P1', 'P2', 'P3']), phase: 'coop' };
+  assert.match(phaseView(coop, { mode: 'on', active: true }).detail, /送っています/);
+  assert.match(phaseView(coop, { mode: 'on', active: false }).detail, /前面/);
+  assert.match(phaseView(coop, { mode: 'off', active: false }).detail, /OFF/);
+});
+
+test('進行: 一時停止の理由を表示する', () => {
+  const p = (reason) => phaseView({ ...game(['P1']), phase: 'paused', reason }, { mode: 'on' }).detail;
+  assert.match(p('host pause'), /ホストが一時停止/);
+  assert.match(p('P2 disconnected'), /P2 の通信が切れました/);
+  assert.match(p('emergency stop'), /緊急停止/);
+});
+
+test('リモコン: 右・Enter で次、左・Esc で前の画面へ。端で止まる', () => {
+  let ui = { screen: 'join', game: null };
+  ui = navigate(ui, 'RIGHT');
+  assert.equal(ui.screen, 'game');
+  assert.ok(ui.game, '次へ進むとゲームが選ばれる');
+  ui = navigate(ui, 'ENTER');
+  assert.equal(ui.screen, 'roles');
+  assert.equal(navigate(ui, 'ENTER').screen, 'roles');
+  assert.equal(navigate(navigate(ui, 'ESC'), 'LEFT').screen, 'join');
+  assert.equal(navigate({ screen: 'join' }, 'ESC').screen, 'join');
+  assert.deepEqual(SCREENS, ['join', 'game', 'roles']);
+});
+
+test('参加 URL: ホットスポットを優先する', () => {
+  const info = { urls: [{ url: 'http://10.0.0.2:8080/', hotspot: false }, { url: 'http://192.168.137.1:8080/', hotspot: true }] };
+  assert.equal(joinUrl(info).url, 'http://192.168.137.1:8080/');
+  assert.equal(joinUrl({ urls: [] }), null);
+});
+
+test('端末の種類', () => {
+  assert.equal(device('Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X)'), 'iPhone');
+  assert.equal(device('Mozilla/5.0 (Linux; Android 10; K)'), 'Android');
+});
+
+const failed = results.filter((r) => !r).length;
+console.log(`\n${results.length - failed}/${results.length} 合格 (app-view)`);
+process.exit(failed ? 1 : 0);
