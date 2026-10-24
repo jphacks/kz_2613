@@ -354,3 +354,10 @@
 - 公式Usage GuidelinesとEULAを再取得した。ガイドラインの連絡先要件に対しGitHub Issueで充足とする記載を修正し、公開可能な責任者・直接連絡先は未決定として残した。
 - 自作動画・無料公開だけを理由に利用可能と断定せず、汎用製品の宣伝・会場投影・実際の発表素材の個別確認を残した。大会運営の判断で権利者の条件を上書きできないことも明記した。
 - `node scripts/sim/check-static-pages.mjs` は4画面の構文確認に成功。Issue #42は発表素材・連絡先・EULA全体と大会規約の照合が残るため閉じない。
+
+## 2026-10-25 — PR #83の配布スクリプトのレビュー（Codex）
+- 既存の配布フォルダを無条件に再帰削除する処理を廃止し、既存出力は拒否して保持する。出力をリポジトリ内に限定し、ディレクトリリンクも拒否する。`CARGO_TARGET_DIR`に対応し、両exeのPEヘッダーでWindows x64を確認する。
+- host-rs・desktopの`cargo build --release --locked --manifest-path ...`が成功。`CARGO_TARGET_DIR`をLOCALAPPDATAの開発用出力先に設定し、Windows PowerShell 5.1で`package.ps1 -Out dist/review83-20261025`を実行して5.7MBのzipを生成した。
+- 既存出力の拒否とzipハッシュの不変、範囲外出力の拒否を確認。梱包内容はexe2本・静的5ファイル・設定例・許可スクリプト・LICENSE・説明のみ。実設定・ログ・トークンを含まない。
+- 展開したホストを`RECOOPLAY_DRY_RUN=1`・`RECOOPLAY_NO_CONFIG=1`・`RECOOPLAY_STDIN_CONTROL=1`で起動し、`/`・`/app`・`/api/info`が200、`quit`でshutdown記録と終了コード0を確認した。ファイアウォール設定は変更していない。
+- PR #82の免責表示はブラウザでゲーム選択画面を描画して確認した。Tauri実機やMinecraftの確認には読み替えない。Issue #41はクリーンなWindows 11とスマホ3台の条件が残るため閉じない。
