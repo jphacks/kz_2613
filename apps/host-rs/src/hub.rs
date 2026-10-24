@@ -932,16 +932,35 @@ impl Hub {
         self.push_state();
     }
 
-    /// PC アプリが前面になった・外れた。協力プレイ中に前面へ戻ったら (手動復帰)、全解放してホストのリモコンへ戻す (自動復帰しない)
+    /// PC画面へ手動復帰したら停止する。切断待ちで既にpausedの場合も自動復帰を取り消す。
+    fn pause_for_app_return(&mut self) {
+        if self.game.phase == Phase::Coop {
+            self.game.auto_resume_until = 0;
+            self.set_phase(Phase::Paused, "app focus");
+        } else if self.game.phase == Phase::Paused
+            && self.game.reason.as_deref().is_some_and(|r| r.ends_with("disconnected"))
+        {
+            self.release_outputs(None);
+            self.reset_look();
+            self.game.auto_resume_until = 0;
+            self.game.reason = Some("app focus".to_string());
+            self.advance_epoch();
+            self.push_game();
+        } else {
+            return;
+        }
+        self.push_state();
+    }
+
+    /// デスクトップの前面判定の変化。画面接続ごとのfocus通知とは別に保持する。
     fn on_app_focus(&mut self, f: bool) {
         if f == self.app_focused {
             return;
         }
         self.app_focused = f;
         self.record("app_focus", json!({ "focused": f }));
-        if f && self.game.phase == Phase::Coop {
-            self.set_phase(Phase::Paused, "app focus");
-            self.push_state();
+        if f {
+            self.pause_for_app_return();
         }
     }
 
@@ -1186,8 +1205,9 @@ impl Hub {
                 if f != focused {
                     self.conns.get_mut(&id).unwrap().role = Role::Monitor { page, focused: f };
                     // ブラウザで /app を開いた場合の知らせ。PC アプリから起動されたときは前面のプロセス名で判定する
-                    if !self.desktop {
-                        self.on_app_focus(f);
+                    if !self.desktop && f {
+                        // ブラウザは接続ごとのfalse→trueを使う。閉じた接続のfocusを新しい画面へ持ち越さない。
+                        self.pause_for_app_return();
                     }
                 }
             }

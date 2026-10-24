@@ -400,3 +400,11 @@
   - 試験環境の注意：このシェルの子として起動したプロセスはCtrl+Cを無視する設定を引き継ぐため、Ctrl+Cの試験はWMIで起動した。
 - **不具合と修正：** デスクトップアプリ（Tauri / WebView2）の画面は、背面になっても `blur` を受け取らず、`document.hasFocus()` もtrueのままだった。そのため #35 の「PCアプリへ戻ったら一時停止」が実際のアプリでは働かなかった（ブラウザでのシミュレーションでは合格していた）。デスクトップアプリがホストに `RECOOPLAY_DESKTOP=1` を渡し、ホストは前面のプロセス名（`recooplay-desktop.exe`）で判定するようにした。ログに `app_focus` を記録する。
 - 検証：`cargo build --release --locked`（host-rs・desktop）成功。`protocol-sim.mjs` を3回連続で **36/36合格**（前面のウィンドウによる判定と、その後は画面の `focus` を使わないことを追加）。実際のデスクトップアプリ（ドライラン）で、協力プレイ中にPCアプリを前面にすると `paused`（`app focus`）になった。ウィンドウを閉じると `shutdown` を記録し、アプリとホストが終了した。
+
+## 2026-10-25 — PR #87の復帰時停止と自動復帰のレビュー（Codex）
+
+- 元のPRの前面プロセス判定・デスクトップ起動フラグ・dry-run限定の模擬経路を確認した。今回のレビューはOS入力を送らずに実施し、作者のダミーE2Eの報告とMinecraftの実機合格を区別する。
+- 回帰試験を2件追加し、修正前のPRコードでそれぞれ失敗を確認した。ブラウザのPC画面を閉じて新しい接続で戻った際に、全体共有のfocusが残り停止を取りこぼす問題と、切断待ちのpaused中にPC画面へ戻っても自動復帰が取り消されない問題である。これらの失敗に伴い後続試験も連鎖して失敗した。
+- ブラウザは接続ごとのfocus変化で判定し、デスクトップの前面状態と分離した。PC画面への手動復帰では切断待ちのpaused中も全解放・旧入力破棄・epoch更新を行い、自動復帰期限を0へ戻して、明示RESUMEまで再開しないよう修正した。
+- host-rs・desktopの `cargo build --release --locked --manifest-path ...` が成功。修正後の `node scripts/sim/protocol-sim.mjs --bin <CARGO_TARGET_DIR>/release/recooplay-host.exe` は **38/38成功**。`app-view-test.mjs` は11/11、`check-static-pages.mjs` は4画面構文、`verify_overlay.py` は30ファイル確認に成功した。
+- Minecraftでの押下保持中のフォーカス切替や復帰は今回追試していない。Issue #19・#30・#37等の未完了条件を保つため、PRの `Closes #35` は `Refs #35` へ変更し、自動クローズを避ける。先のユーザー操作による基本動作の未コミット記録は別のローカル変更として保持する。

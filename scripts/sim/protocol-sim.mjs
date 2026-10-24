@@ -595,6 +595,32 @@ async function main() {
       app.close();
     }, { rustOnly: true });
 
+    await check('PCアプリ: 前面のブラウザ接続を閉じた後も、新しいPC画面への復帰で一時停止する', async () => {
+      const app = new Client('app-before-close');
+      await app.open();
+      app.send({ type: 'monitor', page: 'app' });
+      await app.waitFor(m => m.type === 'state', { what: 'app state' });
+      let from = p1.mark();
+      app.send({ type: 'focus', focused: true });
+      await phaseIs(p1, 'paused', from);
+      app.close(); // 閉じた画面からはblurを受け取れないことがある
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', from);
+      const reopened = new Client('app-reopened');
+      await reopened.open();
+      reopened.send({ type: 'monitor', page: 'app' });
+      await reopened.waitFor(m => m.type === 'state', { what: 'reopened app state' });
+      from = p1.mark();
+      reopened.send({ type: 'focus', focused: true });
+      const paused = await phaseIs(p1, 'paused', from);
+      assert(paused.game.reason === 'app focus', '新しいPC画面への復帰で止まらない');
+      reopened.close();
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', from);
+    }, { rustOnly: true });
+
     await check('PCアプリ: PC アプリから起動したホストは前面のウィンドウ (試験では標準入力で差し替え) で手動復帰を判定し、画面の focus を使わない', async () => {
       host.child.stdin.write('app blur\n'); // Minecraft を前面にした
       await sleep(150);
@@ -623,6 +649,29 @@ async function main() {
       await sleep(300);
       assert(!p1.msgs.slice(from).some((m) => m.type === 'game' && m.game.phase === 'paused'), '画面の focus で止めた');
       app.close();
+    }, { rustOnly: true });
+
+    await check('PCアプリ: 通信切断待ちにPC画面へ戻ったら自動復帰を解除し、全員戻っても明示RESUMEまで再開しない', async () => {
+      mon.send({ type: 'auto_resume', on: true });
+      await mon.waitFor(m => m.type === 'game' && m.game.autoResume, { what: 'autoResume on' });
+      let from = p1.mark();
+      p3.close();
+      const disconnected = await phaseIs(p1, 'paused', from);
+      assert(disconnected.game.autoResumeUntil > Date.now(), '自動復帰待機になっていない');
+      from = p1.mark();
+      host.child.stdin.write('app focus\n');
+      await p1.waitFor(m => m.type === 'game' && m.game.reason === 'app focus' && m.game.autoResumeUntil === 0, { from, what: 'manual app return cancels auto resume' });
+      from = p1.mark();
+      p3 = await join('P3');
+      await welcome(p3);
+      await sleep(400);
+      assert(!p1.msgs.slice(from).some(m => m.type === 'game' && m.game.phase === 'coop'), 'PC画面へ戻ったのに自動復帰した');
+      mon.send({ type: 'auto_resume', on: false });
+      await mon.waitFor(m => m.type === 'game' && !m.game.autoResume, { what: 'autoResume off' });
+      host.child.stdin.write('app blur\n');
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', from);
     }, { rustOnly: true });
 
     await check('PCアプリ: coop 中にゲームを変えると全解放して lobby へ戻り、参加と役割は保つ。同じゲーム・未知のゲームは無視する', async () => {
