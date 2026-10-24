@@ -22,6 +22,10 @@ const QUIT_TIMEOUT: Duration = Duration::from_secs(3);
 /// 起動したホストのプロセス
 struct Host(Mutex<Option<Child>>);
 
+/// 起動失敗が画面の読込より先に届いても、案内を失わない。
+#[derive(Default)]
+struct StartupError(Mutex<Option<String>>);
+
 /// リポジトリのルート (apps/web-static/ と config.json のある場所)。RECOOPLAY_ROOT で指定も可
 fn find_root() -> Option<PathBuf> {
     if let Ok(r) = std::env::var("RECOOPLAY_ROOT") {
@@ -126,6 +130,7 @@ fn stop_host(host: &Mutex<Option<Child>>) {
 }
 
 fn show_error(app: &tauri::AppHandle, text: &str) {
+    *app.state::<StartupError>().0.lock().unwrap() = Some(text.to_string());
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.eval(&format!("window.showError({})", serde_json::Value::from(text)));
     }
@@ -134,11 +139,20 @@ fn show_error(app: &tauri::AppHandle, text: &str) {
 fn main() {
     let app = tauri::Builder::default()
         .manage(Host(Mutex::new(None)))
+        .manage(StartupError::default())
         .setup(|app| {
             WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
                 .title("Re:Cooplay")
                 .inner_size(1280.0, 820.0)
                 .min_inner_size(800.0, 560.0)
+                .on_page_load(|window, payload| {
+                    if payload.event() == tauri::webview::PageLoadEvent::Finished {
+                        let error = window.state::<StartupError>().0.lock().unwrap().clone();
+                        if let Some(text) = error {
+                            let _ = window.eval(&format!("window.showError({})", serde_json::Value::from(text)));
+                        }
+                    }
+                })
                 .build()?;
 
             let handle = app.handle().clone();
