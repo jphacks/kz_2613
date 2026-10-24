@@ -98,6 +98,12 @@
         <button class="key" data-ctl="ESC">戻る<small>Esc</small></button>
       </div>
     </div>
+    <div id="remotePad" role="application" aria-label="ホストのタッチパッド" style="min-height:120px;flex:1;border:2px dashed currentColor;border-radius:20px;touch-action:none;display:grid;place-items:center">指でPCのカーソルを動かす</div>
+    <div class="remoteButtons" style="display:flex;gap:8px">
+      <button class="key" data-ctl="REMOTE_LEFT">左クリック</button><button class="key" data-ctl="REMOTE_RIGHT">右クリック</button><button class="key" data-ctl="REMOTE_E">持ち物 E</button>
+      <button class="key" data-ctl="REMOTE_WHEEL_UP">上へ</button><button class="key" data-ctl="REMOTE_WHEEL_DOWN">下へ</button>
+    </div>
+    <div id="remoteRoute" class="note"></div>
     <button class="cmd" id="startBtn">START</button>
     <button class="cmd sub" id="endBtn" style="display:none">ロビーに戻る（協力プレイ終了）</button>
     <div class="note" id="remoteNote">ゲームを開いてワールドを準備した後、ホストだけがReadyを押します。</div>
@@ -163,7 +169,8 @@
 
 <div id="full">部屋が満員です（3人まで）。<br>PC側でリセットしてから再読み込みしてください。</div>
 
-<script>
+<script type="module">
+import { bindTouchpad } from './scripts/touchpad.js';
 (() => {
   const $ = (id) => document.getElementById(id);
   const ROLE_TEXT = {
@@ -408,6 +415,11 @@
     sendInput({ button: ctl, state: 'up' });
   }
 
+  const touchpad = bindTouchpad($('remotePad'), {
+    enabled: () => me === 'P1' && game?.phase !== 'coop' && game?.remoteRoute !== 'none' && !document.hidden,
+    send: (message) => { if (isOpen()) ws.send(JSON.stringify({...message, type:'remote', epoch:game?.epoch})); },
+    tap: () => { ctlDown('REMOTE_LEFT'); ctlUp('REMOTE_LEFT'); },
+  });
   const held = new Map(); // pointerId -> button element
   function releasePointer(pointerId) {
     const el = held.get(pointerId);
@@ -417,6 +429,7 @@
     ctlUp(el.dataset.ctl);
   }
   function releaseAll() {
+    touchpad.reset(); accX = accY = 0; padId = null; pad.classList.remove('active'); dot.style.display = 'none';
     for (const id of [...held.keys()]) releasePointer(id);
     stickRelease();
     for (const c of [...sentDown]) ctlUp(c);
@@ -442,8 +455,13 @@
   function command(cmd) { if (isOpen()) ws.send(JSON.stringify({ type: 'command', cmd, epoch: game?.epoch })); }
 
   document.addEventListener('contextmenu', (e) => e.preventDefault());
+  function stopRemote() { releaseAll(); if (isOpen()) ws.send(JSON.stringify({type:'release_inputs',epoch:game?.epoch})); }
+  document.addEventListener('pointercancel', stopRemote);
+  window.addEventListener('orientationchange', stopRemote);
+  window.addEventListener('pagehide', stopRemote);
+  window.addEventListener('blur', stopRemote);
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) releaseAll();
+    if (document.hidden) stopRemote();
     else if (!ws || ws.readyState > 1) { retry = 0; connect(); }
   });
 
@@ -547,7 +565,7 @@
   function render() {
     if (!me || !game) return;
     const phase = game.phase;
-    const label = { lobby: 'ロビー', coop: '協力プレイ中', paused: '一時停止中' }[phase];
+    const label = { lobby: '参加受付', preparing: 'ゲーム準備', coop: '協力プレイ中', paused: '一時停止中' }[phase];
     $('phase').textContent = label;
     $('phase').className = 'pill ' + phase;
     $('inputWarn').style.display = game.inputTarget ? 'block' : 'none';
@@ -560,6 +578,7 @@
     const players = ['P1', 'P2', 'P3'].map((p) => `<span class="${game.connected.includes(p) ? 'on' : ''}">${p}${p === me ? '（自分）' : ''}</span>`).join('');
     $('players1').innerHTML = players;
     $('players2').innerHTML = players;
+    $('remoteRoute').textContent = {app:'操作先：PCアプリ（仮想カーソル）',game:'操作先：Minecraftのメニュー',none:'操作停止中：PCアプリまたは対象ゲームを前面にしてください'}[game.remoteRoute] || '';
     const startBtn = $('startBtn');
     startBtn.textContent = phase === 'paused' ? '再開する' : phase === 'preparing' ? 'Ready・3人で操作を始める' : 'ゲームを開く・準備する';
     startBtn.disabled = !(phase === 'paused' ? game.canResume : phase === 'preparing' ? game.canReady : game.canPrepare);
