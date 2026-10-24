@@ -45,7 +45,7 @@ function handshake(origin, host = `127.0.0.1:${PORT}`) {
 function startHost() {
   const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-sim-'));
   // config.json の影響を受けないよう、画面だけを持つ一時ルートを使う
-  const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1' };
+  const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1' };
   let cmd;
   let cmdArgs;
   if (target === 'node') {
@@ -56,7 +56,8 @@ function startHost() {
     cmd = opt('--bin', path.join(ROOT, 'apps', 'host-rs', 'target', 'release', exe));
     cmdArgs = [];
   }
-  const child = spawn(cmd, cmdArgs, { env, stdio: ['ignore', 'pipe', 'pipe'] });
+  // 標準入力: Rust 版は "stop" で緊急停止 (ホットキーと同じ処理) を受け付ける
+  const child = spawn(cmd, cmdArgs, { env, stdio: ['pipe', 'pipe', 'pipe'] });
   let out = '';
   child.stdout.on('data', (d) => (out += d));
   child.stderr.on('data', (d) => (out += d));
@@ -600,6 +601,57 @@ async function main() {
       p1.input('ESC', 'up');
       mon.send({ type: 'inject_mode', mode: 'on' });
     });
+
+    await check('緊急停止: 全員の押下を即座に解放し、注入を OFF にして一時停止する (自動復帰しない)', async () => {
+      let from = p1.mark();
+      const from3 = p3.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', from);
+      await phaseIs(p3, 'coop', from3); // P3 も新しい epoch を受け取ってから押す
+      let mfrom = mon.mark();
+      p1.input('FWD', 'down');
+      p3.input('ATTACK', 'down');
+      await injected(mon, 'KEY_W', 'down', mfrom);
+      await injected(mon, 'MOUSE_L', 'down', mfrom);
+      mfrom = mon.mark();
+      from = p1.mark();
+      host.child.stdin.write('stop\n');
+      await injected(mon, 'KEY_W', 'up', mfrom);
+      await injected(mon, 'MOUSE_L', 'up', mfrom);
+      const g = await phaseIs(p1, 'paused', from);
+      assert(g.game.reason === 'emergency stop', `reason=${g.game.reason}`);
+      const st = await mon.waitFor((m) => m.type === 'state' && m.inject.mode === 'off', { from: mfrom, what: 'inject off' });
+      assert(!st.inject.active, '注入が有効のまま');
+      assert(st.inject.emergencyHotkey, 'ホットキーの表示がない');
+      p1.input('FWD', 'up');
+      p3.input('ATTACK', 'up');
+      // 押し直しても注入しない (OFF のまま)
+      mfrom = mon.mark();
+      p1.input('UP', 'down');
+      await noInject(mon, mfrom);
+      p1.input('UP', 'up');
+      mon.send({ type: 'inject_mode', mode: 'on' });
+      await mon.waitFor((m) => m.type === 'state' && m.inject.mode === 'on', { what: 'inject on' });
+    }, { rustOnly: true });
+
+    await check('緊急停止: 切断待ちのpaused中でも自動復帰を解除し、全員戻っても再開しない', async () => {
+      let from = p1.mark();
+      mon.send({ type: 'auto_resume', on: true });
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', from);
+      from = p1.mark();
+      p2.close();
+      await p1.waitFor(m => m.type === 'game' && m.game.phase === 'paused' && /disconnected$/.test(m.game.reason || ''), { from });
+      from = p1.mark();
+      host.child.stdin.write('stop\n');
+      const stopped = await p1.waitFor(m => m.type === 'game' && m.game.reason === 'emergency stop', { from });
+      assert(stopped.game.autoResumeUntil === 0, '自動復帰の期限が残っている');
+      from = p1.mark();
+      p2 = await join('P2');
+      await welcome(p2);
+      await sleep(350);
+      assert(!p1.msgs.slice(from).some(m => m.type === 'game' && m.game.phase === 'coop'), '緊急停止後に自動復帰した');
+    }, { rustOnly: true });
 
     await check('進行: P1 の END で lobby', async () => {
       const from = p1.mark();

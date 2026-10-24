@@ -47,6 +47,8 @@ pub enum Event {
     RtcCandidate { slot: usize, gen: u64, cand: String, mid: String },
     RtcState { slot: usize, gen: u64, state: RtcSignal },
     RtcMessage { slot: usize, gen: u64, text: String },
+    /// 緊急停止 (PC のホットキー / デスクトップアプリ)。全解放して注入を OFF にする
+    EmergencyStop { source: &'static str },
     Shutdown,
 }
 
@@ -267,6 +269,7 @@ pub struct Hub {
     timers: BinaryHeap<Reverse<(Instant, u64, Timer)>>,
     timer_seq: u64,
     state_pending: bool,
+    hotkey: Result<(), String>, // 緊急停止ホットキーの登録結果 (ダッシュボードに表示する)
 }
 
 fn s(v: &Value, key: &str) -> Option<String> {
@@ -347,6 +350,7 @@ impl Hub {
             timers: BinaryHeap::new(),
             timer_seq: 0,
             state_pending: false,
+            hotkey: Err("未登録".into()),
         };
         hub.schedule(now + LOOK_TICK, Timer::LookTick);
         hub.schedule(now + Duration::from_millis(100), Timer::LookReport);
@@ -523,6 +527,8 @@ impl Hub {
             "available": self.input.available(),
             "error": self.input.error(),
             "minHoldMs": MIN_HOLD_MS,
+            "emergencyHotkey": crate::hotkey::LABEL,
+            "emergencyHotkeyError": self.hotkey.as_ref().err(),
             "minGapMs": MIN_GAP_MS,
             "outputs": outputs,
             "down": down,
@@ -792,6 +798,30 @@ impl Hub {
         }
     }
 
+    pub fn set_hotkey_status(&mut self, status: Result<(), String>) {
+        self.record("hotkey", json!({ "key": crate::hotkey::LABEL, "ok": status.is_ok(), "error": status.as_ref().err() }));
+        self.hotkey = status;
+    }
+
+    /// 緊急停止: 最低押下時間・連打キューより優先して全キー・マウスボタンを離し、視点の未処理分を捨て、注入を OFF にする。
+    /// 協力プレイ中なら一時停止へ移す (停止理由は切断ではないので自動復帰しない)
+    fn emergency_stop(&mut self, source: &str) {
+        self.release_outputs(None);
+        self.reset_look();
+        self.inject = InjectMode::Off;
+        self.game.auto_resume_until = 0;
+        if self.game.phase == Phase::Coop {
+            self.set_phase(Phase::Paused, "emergency stop");
+        } else {
+            // 切断待ちのpaused中でも停止理由を上書きし、自動復帰を確実に解除する。
+            self.game.reason = Some("emergency stop".into());
+            self.advance_epoch();
+            self.push_game();
+        }
+        self.log("emergency_stop", json!({ "source": source }));
+        self.push_state();
+    }
+
     fn set_inject_mode(&mut self, mode: InjectMode) {
         let before = self.can_inject();
         self.inject = mode;
@@ -932,6 +962,7 @@ impl Hub {
                     }
                 }
             }
+            Event::EmergencyStop { source } => self.emergency_stop(source),
             Event::Shutdown => {}
         }
     }

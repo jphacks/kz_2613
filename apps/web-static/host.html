@@ -114,6 +114,7 @@
         </div>
         <span class="pill" id="injState">-</span>
       </div>
+      <div style="font-size:12px; color:var(--muted); margin-top:8px" id="hotkeyInfo"></div>
     </div>
     <div class="slots" id="slots"></div>
     <div class="panel">
@@ -231,6 +232,13 @@
       $('injState').textContent = !inj.available ? `注入不可: ${inj.error}` : inj.active ? '注入: 有効' : inj.mode === 'off' ? '注入: OFF' : '注入: 停止中（疑似ゲーム画面が非選択）';
       $('injState').className = 'pill ' + (inj.active ? 'ok' : inj.mode === 'off' ? '' : 'warn');
       document.querySelectorAll('#modeSeg button').forEach((el) => el.classList.toggle('sel', el.dataset.mode === inj.mode));
+      // 緊急停止: スマホやこの画面が応答しなくても、PC のキー操作だけで全キーを離して注入を OFF にできる
+      if (inj.emergencyHotkey) {
+        $('hotkeyInfo').textContent = inj.emergencyHotkeyError
+          ? `⚠ 緊急停止 ${inj.emergencyHotkey} を登録できません（${inj.emergencyHotkeyError}）`
+          : `緊急停止：${inj.emergencyHotkey}（どの画面からでも全キーを離して注入をOFF）`;
+        $('hotkeyInfo').style.color = inj.emergencyHotkeyError ? 'var(--ng)' : 'var(--muted)';
+      }
     }
   }
   document.querySelectorAll('#phaseSeg button').forEach((el) => el.addEventListener('click', () => ws?.send(JSON.stringify({ type: 'phase', phase: el.dataset.phase }))));
