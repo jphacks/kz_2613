@@ -1,6 +1,6 @@
 
   import { createVirtualCursor } from './virtual-cursor.js';
-  import { SCREENS, SCREEN_TITLES, ROLES, GAMES, slotViews, startView, phaseView, navigate, joinUrl } from '../app-view.js';
+  import { SCREENS, SCREEN_TITLES, ROLES, GAMES, slotViews, startView, phaseView, navigate, joinUrl, screenOnGameUpdate } from '../app-view.js';
 
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -124,9 +124,10 @@
     ws.onclose = () => { $('conn').textContent = 'ホストとの接続が切れました'; $('conn').className = 'pill ng'; setTimeout(connect, 1000); };
     ws.onmessage = (ev) => {
       const m = JSON.parse(ev.data);
+      const previousPhase = game?.phase;
       if (m.type === 'state') { state = m; game = m.game; inject = m.inject; }
       else if (m.type === 'game') game = m.game;
-      if (m.type === 'state' || m.type === 'game') { if (game?.title) ui.game = game.title; if (game?.phase !== 'lobby') ui.screen = 'roles'; render(); }
+      if (m.type === 'state' || m.type === 'game') { ui = screenOnGameUpdate(ui, previousPhase, game); render(); }
       // この画面が前面のときだけ反応する (Minecraft が前面ならキー入力として Minecraft へ届いている)
       else if (m.type === 'remote' && m.route === 'app' && m.epoch === game?.epoch) {
         if (!cursor.handle(m) && m.state === 'down') setUi(navigate(ui, m.control));

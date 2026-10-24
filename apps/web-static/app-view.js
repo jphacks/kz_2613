@@ -6,6 +6,12 @@ export const SCREENS = ['join', 'game', 'roles'];
 
 export const SCREEN_TITLES = { join: '① 参加', game: '② ゲーム選択', roles: '③ 操作分担の確認' };
 
+// 定期スナップショットでは手動ナビゲーションを戻さない。進行の切替時だけ分担・準備へ案内する。
+export function screenOnGameUpdate(ui, previousPhase, game) {
+  return {...ui, game:game?.title || ui.game,
+    screen:game?.phase && game.phase !== previousPhase && game.phase !== 'lobby' ? 'roles' : ui.screen};
+}
+
 // Minecraft v0.1 の固定分担 (docs/requirements/requirements-v0.3.md 3.2)。役割の編集・交換は P0 の対象外
 export const ROLES = [
   { slot: 'P1', title: '移動・ホスト', controls: ['移動スティック（W/A/S/D）', 'ジャンプ（Space）', 'スニーク（Shift）', 'ダッシュ（Ctrl）'], host: true },
