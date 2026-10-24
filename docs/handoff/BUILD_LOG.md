@@ -385,3 +385,11 @@
 - panic hookで送信mutexを取り直す処理を廃止し、unwind時のGuardで解放する。標準出力の切断をpanicにしない。mock専用の失敗注入により、押下中のpanicでもデッドロックせず全解放して終了することを確認した。
 - `cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml`成功。`node scripts/sim/input-probe-sim.mjs --bin <CARGO_TARGET_DIR>/release/recooplay-input-probe.exe`は**12/12成功**。ARM前、完走、対象喪失、停止、待機中停止、ARM後EOF、panic、不正引数、down/up/ホイール/視点の失敗を確認した。OS入力は全て無効。
 - 実際のMinecraft・Ctrl+Alt+F12・Ctrl+C・コンソール終了時の実入力解放は未検証。Issue #5は未確認の安全条件を保持し、#6〜#8・#21・#37・#39・#69を完了扱いにしない。
+
+## 2026-10-25 — PR #85の期限外復帰と関連Issueのレビュー（Codex）
+- 最新mainのセッション維持・入力プローブの変更を取り込んだ。Rust/Nodeの期限更新処理を確認し、通信契約に期限内の別参加者切断と接続置換・期限後の扱いを追記した。実運用の初期値・許可条件は決定していない。
+- 既存の期限後再接続・接続置換に加え、期限後に別参加者が新たに切断・復帰しても期限が元の値のままで再開しないことを追加した。Node版は置換時に切断処理を呼ばないため、別参加者切断でも回帰を検出する必要がある。
+- locked releaseビルド成功。`node scripts/sim/protocol-sim.mjs --bin <CARGO_TARGET_DIR>/release/recooplay-host.exe` **35/35成功**、`node scripts/sim/protocol-sim.mjs --target node` **20/20成功**。いずれもOS入力無効。修正後の実機再試験は未実施。
+- Issue #27・#29の作者による2026-10-25の実機観測記録を個別確認した。Rust版PCアプリ・Android2台/iPhone1台・WebRTC・Minecraft前面のonモードで、P1の斜めを含む移動・ジャンプ・スニーク・ダッシュ、P3の攻撃・使う・ホイール・インベントリ・捨てるが動いたとの報告がある。本レビュー担当者が新たに実機試験したものではない。
+- 機能の取り込みはPR #71（#67）、認可・順序・全解放と通信はPR #72〜#78および上記シミュレーション、各操作の実機動作はIssue #27・#29の報告を証拠として扱う。両Issueの「取り込み・関連動作のシミュレーションと実機の再確認・結果と共通資料の記録」を照合した。
+- Minecraft版・設定の記録、Raw Input設定比較、W保持中の切替、実ホットキー、異常終了、上流なし接続、回転・ロック・キャンセルの網羅、Nodeとの疑似ゲーム実機比較は不足している。#6〜#8・#10・#18・#19・#21・#23・#26・#30・#31・#35・#37〜#42・#69は未完了条件を維持する。SendInput成功件数だけでゲーム内動作の合格としない。

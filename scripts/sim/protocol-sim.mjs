@@ -739,6 +739,16 @@ async function main() {
       assert(!p1.msgs.slice(from).some((m) => m.type === 'game' && m.game.phase === 'coop'), '期限後に自動復帰した');
       const last = p1.msgs.slice(from).filter((m) => m.type === 'game').pop();
       assert(!last || last.game.autoResumeUntil < Date.now(), `期限が延びた: ${last && last.game.autoResumeUntil}`);
+      // Node参照実装は置き換えで切断処理を呼ばない。別参加者の新しい切断も期限を復活させないことを確かめる。
+      from = p1.mark();
+      p2.close();
+      await sleep(200);
+      p2 = await join('P2');
+      await welcome(p2);
+      await sleep(300);
+      assert(!p1.msgs.slice(from).some((m) => m.type === 'game' && m.game.phase === 'coop'), '期限後の別参加者の切断・復帰で再開した');
+      const after = p1.msgs.slice(from).filter((m) => m.type === 'game').pop();
+      assert(after && after.game.autoResumeUntil === g.game.autoResumeUntil, '期限後の切断で期限が変わった');
       mon.send({ type: 'auto_resume', on: false });
       await mon.waitFor((m) => m.type === 'game' && m.game.autoResume === false, { what: 'autoResume off' });
     });
