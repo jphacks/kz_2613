@@ -431,7 +431,7 @@ PAUSED_REMOTE --ホストがゲーム切替--> HOST_REMOTE
 
 ### 参考（仕様の根拠ではなく技術上の注意点）
 
-- Minecraft Java Edition 26.3 release notes: https://www.minecraft.net/en-us/article/minecraft-java-edition-26-3
+- Minecraft Java Edition 26.3のリリースノート: https://www.minecraft.net/en-us/article/minecraft-java-edition-26-3
 - Microsoft Win32 `SendInput`: https://learn.microsoft.com/ja-jp/windows/win32/api/winuser/nf-winuser-sendinput
 - Microsoft Windows Mobile Hotspot: https://support.microsoft.com/ja-jp/windows/experience/connectivity-networking/use-your-windows-device-as-a-mobile-hotspot
 - MDN Pointer Events: https://developer.mozilla.org/ja/docs/Web/API/Pointer_events

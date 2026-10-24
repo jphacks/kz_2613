@@ -3,6 +3,10 @@
 CodexとClaude Codeは同じ `docs/requirements/requirements-v0.2.md` と
 `docs/decisions/` を参照する。後の明示的なユーザー判断を優先し、提案を確定扱いしない。
 
+使用言語は `AGENTS.md` に従う。Markdown資料、コミットの件名・本文、
+PRのタイトル・本文は日本語で記述する。識別子・コマンド・URLは原表記を維持する。
+コミット件名の例は「資料と開発ルールを日本語に統一する」。
+
 1. `ISSUE_PLAN.md` とGitHubから作業可能なP0 Issueを1件選ぶ。前提Issueの完了を確認する。
 2. `git status` とリモートを確認し、`codex/<issue番号>-<短い説明>` 等の専用ブランチを作成する。
 3. 完了条件に沿う最小変更を行う。同じファイルを両エージェントで同時編集しない。

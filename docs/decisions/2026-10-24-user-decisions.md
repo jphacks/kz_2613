@@ -1,42 +1,48 @@
-# User-confirmed requirements and UI decisions (2026-10-24)
+# ユーザーが確定した要件・UI判断（2026-10-24）
 
-**Status:** design choices expressed by the user. Team-wide sign-off and hardware validation are separate.
-**Precedence:** newer explicit user decisions supersede earlier ideas or proposals. The complete baseline is `../requirements/requirements-v0.2.md`.
+**位置づけ：** ユーザーが明示した設計判断。チーム全体の合意や実機検証の完了とは別に扱う。
+**優先順位：** 新しい明示的なユーザー判断を過去の案より優先する。全体の基準は `../requirements/requirements-v0.2.md`。
 
-## Product / environment
-- Existing unmodified solo PC game becomes a shared cooperative experience: "ひとりのゲームを、みんなの冒険に。"
-- Product working name: **Re:Cooplay** (リコプレ).
-- MVP: **Minecraft Java Edition on Windows 11**, 3 phones controlling 1 game character. Aim for 2–4 in a later version.
-- Android first for debugging, iPhone + Android web-browser support by design.
-- Phones never receive streamed gameplay video. Everyone sees the actual PC display.
-- In-game input must remain on local network and must not route via cloud or internet.
-- Game launcher discovery (Steam/Minecraft) desirable but **not core**. Manual registration or manually launching Minecraft is sufficient for P0.
+## 製品・動作環境
 
-## P1/P2/P3 fixed Minecraft v0.1 mapping
-| Slot | Participant | Inputs |
+- 改造していない既存の一人用PCゲームを協力体験へ変える。「ひとりのゲームを、みんなの冒険に。」
+- 仮の製品名は **Re:Cooplay（リコプレ）**。
+- MVPは**Windows 11のMinecraft Java Edition**。スマホ3台で1キャラクターを共同操作する。2〜4人対応は将来の目標。
+- Androidで先にデバッグし、iPhoneとAndroidのWebブラウザ両対応を目指す。
+- スマホへゲーム映像を配信しない。全員が実際のPC画面を見る。
+- ゲーム入力はローカルネットワーク内で完結させ、クラウドやインターネットで中継しない。
+- SteamやMinecraftのランチャー検出は希望機能で、必須ではない。P0は手動登録やMinecraftの手動起動で成立させてよい。
+
+## Minecraft v0.1の固定分担
+
+| 枠 | 参加者 | 入力 |
 |---|---|---|
-| P1 | first connected = host | WASD movement, Ctrl sprint |
-| P2 | second connected | Mouse look (relative camera movement) |
-| P3 | third connected | Space jump, Shift crouch, left/right mouse, hotbar 1–9 |
+| P1 | 最初の接続者＝ホスト | WASD移動、Ctrlダッシュ |
+| P2 | 2番目の接続者 | 相対マウス移動による視点操作 |
+| P3 | 3番目の接続者 | Spaceジャンプ、Shiftしゃがみ、左右クリック、ホットバー1〜9 |
 
-Role load, not button count, is the optimization target. Fixed slots for P0; role changes and balancing are improvements.
+最適化の対象はボタン数より操作負荷。P0では固定枠とし、役割交換や負荷調整は改善項目とする。
 
-## Screen and interaction
-- PC has **three proposed main screens**: (1) QR / number of participants, (2) game selection, (3) input-role confirmation. Review outcome: adequate as major screens, but precise transitions and states are **still proposed**, not independently user-signed-off.
-- Host uses phone as PC **remote control**, looking at the PC screen; do not create a separate mobile game library flow.
-- Host remote **minimum**: four arrows, Enter, Esc. Ideally also trackpad, left/right clicks and extra keys when feasible.
-- In HOST_REMOTE (before Start or after Pause), host holds regular PC remote input privileges.
-- All three must be connected before host can Start. Start takes ordinary remote input away from host and enables split player inputs; host keeps management privileges.
-- Re:Cooplay Pause **stops Re:Cooplay injected input**, not necessarily Minecraft time. It releases all held keys and buttons and returns host remote control; host resumes explicitly.
-- Any participant disconnect during cooperative play forces a safe stop. Host disconnect never automatically transfers host privileges. Reconnect returns original slot, never reorders first-joined roles.
-- For inventory, Pause restores host control, but full inventory interaction needs mouse/E-key extras (P1); preconfigure hotbar for minimum demo.
-- On game exit/reselection, keep session, participants and role assignments.
-- MVP movement UI minimum D-pad (desired analog-looking thumbstick); look minimum directional buttons (desired swipe area).
+## 画面と操作
 
-## Open hardware-dependent questions; not blockers for repository initialization
-- Exact Minecraft Java version and default keybinds; Minecraft must accept synthetic relative mouse and keyboard input.
-- Host-PC Wi-Fi NIC, whether Windows 11 Mobile Hotspot works without upstream internet, and firewall settings.
-- Actual 3 handsets and browsers for validation; latency observations.
-- Actual observed keyboard-only coverage of each chosen PC/Minecraft menu.
+- PCの主要画面は、①QR・参加人数、②ゲーム選択、③操作分担確認の3画面を提案している。主要画面としては妥当だが、詳細な遷移や状態は**提案段階**であり、個別のユーザー確定事項ではない。
+- ホストはPC画面を見ながらスマホをリモコンとして使う。スマホ独自のゲーム一覧導線を作らない。
+- ホストリモコンの最低限の操作は上下左右・Enter・Esc。可能ならタッチパッド・左右クリック・追加キーを用意する。
+- `HOST_REMOTE`（Start前・Pause後）では、ホストがPCの単独リモコン操作権を持つ。
+- Startには3人全員の接続が必要。Start後は通常の単独リモコン入力権を外して役割別操作へ切り替え、ホストは管理権を保持する。
+- Re:CooplayのPauseは**合成入力の停止**。Minecraft内の時間停止を保証しない。保持キー・ボタンを全解放してホストリモコンへ戻り、再開には明示操作が必要。
+- 共同操作中に誰かが切断したら安全停止する。ホスト権は自動移譲しない。再接続は元の枠へ戻し、接続順の役割を振り直さない。
+- Pause後はホスト操作に戻るが、完全なインベントリ操作にはマウスやEキー等の追加機能（優先度P1）が必要。最小デモではホットバーを事前準備する。
+- ゲーム終了・再選択後もセッション・参加者・役割を保持する。
+- 移動UIの最低限は十字キー、理想は仮想スティック。視点UIの最低限は方向ボタン、理想はスワイプ領域。
 
-Do not silently convert future ideas from minutes into P0 features.
+## 実機に依存する未確認事項
+
+以下はリポジトリ初期構築を止める条件ではない。
+
+- Minecraft Javaの正確なバージョンとキー設定、合成した相対マウス・キー入力の受理可否。
+- PCの無線NIC、上流インターネットなしでのWindows 11モバイルホットスポットの動作、ファイアウォール設定。
+- 検証に使う実際のスマホ3台とブラウザ、遅延の観測結果。
+- 対象のPC・Minecraftメニューでキーボードだけで操作できる範囲。
+
+議事録の将来案を無断でP0へ引き上げない。

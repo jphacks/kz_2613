@@ -1,8 +1,8 @@
-# Host implementation notes
+# ホスト側の実装ルール
 
-- Inherit root `AGENTS.md` and `docs/requirements`.
-- One in-memory authoritative session (MVP). Single worker; avoid separate process workers that would diverge role/key state.
-- Separate `domain/` session state machine, WebSocket routing, and `platform/` OS input injection.
-- Provide an explicit fail-closed release-all on every mode/epoch/focus/disconnect/shutdown transition. Never acknowledge a noop input driver as ready.
-- Do not expose unauthenticated OS input or host-management endpoints to the local Wi-Fi network.
-- Real Minecraft tests are manual hardware gates; mocked tests do not satisfy them.
+- ルートの `AGENTS.md` と `docs/requirements` を継承する。
+- MVPではメモリー内の単一セッションをサーバーが管理する。役割や保持キーの状態がプロセスごとに分かれるため、複数ワーカーにしない。
+- `domain/` の状態機械、WebSocketのルーティング、`platform/` のOS入力を分離する。
+- モード・epoch・フォーカス・接続・終了の変化では、明示的に全入力を解放する。安全性が不明なら入力を許可しない。何もしないドライバーを準備完了扱いしない。
+- 認証のないOS入力やホスト管理のエンドポイントをローカルWi-Fiへ公開しない。
+- Minecraftの実機試験は手動の検証ゲートとして扱う。モックのテストでは代替できない。

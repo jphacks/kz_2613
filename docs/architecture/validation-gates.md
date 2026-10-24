@@ -1,36 +1,38 @@
-# Real-device validation gates (not yet run)
+# 実機検証ゲート（未実施）
 
-Each gate must record **PC OS / Minecraft exact version / smartphone OS & browser / network arrangement / operator / date / observed behavior / pass or fail**. Unit tests cannot replace these.
+各ゲートには**PCのOS・Minecraftの正確な版・スマホのOSとブラウザ・ネットワーク構成・操作者・実施日・観測結果・合否**を記録する。単体テストでは代替できない。
 
-| Gate | Requirement | Procedure | Passing condition | Fallback |
+| ゲート | 検証対象 | 手順 | 合格条件 | 不成立時の代替 |
 |---|---|---|---|---|
-| G1-A | Minecraft synthetic keyboard | On Windows 11, game focused, send W DOWN, delayed UP; Space/Shift/Ctrl; hotbar | Real character moves and STOPS on UP | Revisit input scan-code / target focus / game version |
-| G1-B | Mouse buttons | Send left/right DOWN/UP, mine/place | Both press and release work | Revisit API/permission |
-| **G1-C** | **Relative mouse look** | Test `MOUSEEVENTF_MOVE` without ABSOLUTE with dx/dy | Camera rotates without unwanted cursor jump | Different target version/input design |
-| G1-D | Focus and safety | Hold W, minimize/switch windows and release | Never types into unrelated PC app, no stuck key | Fail closed, add explicit arm/focus guard |
-| G2-A | Windows Wi-Fi AP | Disconnect upstream internet, start hotspot, join phones | PC reachable on isolated LAN | Dedicated local AP/Legacy AP |
-| G2-B | 3 browsers | Android Chrome and iPhone Safari plus third phone HTTP & WS | All three connected, no cloud needed | Adjust network/firewall/client browser |
-| G3-A | Roles/session | Join order, Start with 2/3 and 3/3; Pause/Resume | Host only, initial role fixed, button state reset | Fix session state machine |
-| G3-B | Failure safety | Hold W/left-click, break Wi-Fi, background tab, host loss | Synthesized keys released by server | Watchdog/timeout/epoch changes |
-| G4-A | Desktop shell | pywebview main thread + API background | PC UI responsive, three devices still connected | localhost desktop in browser |
-| G4-B | Packaging | Build onedir on Windows11 without Python pre-installed | Launches local assets and API; WebView2 verified | Python venv runtime for demo |
-| G5 | Demo | 3 people perform move+look+jump+place and Pause/Resume | Repeatable live demo in chosen Minecraft version | Simplify UI, preconfigure world |
+| G1-A | Minecraftの合成キー入力 | Windows 11でゲームを前面にし、W押下後に時間を置いて解放。Space/Shift/Ctrl・ホットバーも試す | キャラクターが動き、解放時に止まる | スキャンコード・対象フォーカス・ゲーム版を再検討 |
+| G1-B | マウスボタン | 左右の押下・解放で採掘・設置する | 押下と解放の両方が働く | API・権限を見直す |
+| **G1-C** | **相対マウスによる視点** | ABSOLUTEを使わずdx/dy付きの `MOUSEEVENTF_MOVE` を試す | 不要なカーソル移動なしに視点が回る | 対象バージョン・入力設計を変更 |
+| G1-D | フォーカスと安全性 | W保持中に最小化・ウィンドウ切替を行い解放する | 他アプリへ誤入力せず、キーが残留しない | 不明時は入力禁止、明示開始とフォーカス保護を追加 |
+| G2-A | WindowsのWi-Fi親機 | 上流インターネットを外してホットスポットを起動し、スマホを参加させる | 独立LAN内でPCへ到達する | 専用ローカルAP・Legacy AP |
+| G2-B | 3台のブラウザ | Android Chrome、iPhone Safari、3台目でHTTPとWebSocketを試す | クラウド不要で全台接続する | ネットワーク・ファイアウォール・ブラウザを調整 |
+| G3-A | 役割とセッション | 接続順、2/3人・3/3人でのStart、Pause/Resumeを試す | ホスト限定、初期役割固定、保持状態リセット | 状態機械を修正 |
+| G3-B | 障害時の安全性 | W・左クリック保持中にWi-Fi断、タブ非表示、ホスト断を試す | サーバーから合成キーを解放する | 監視・タイムアウト・epoch切替を修正 |
+| G4-A | PC画面の実行環境 | pywebviewをメイン、APIをバックグラウンドで動かす | PC画面が応答し、3端末の接続も維持する | localhostのブラウザ画面 |
+| G4-B | 配布 | Python未導入Windows 11でonedirを動かす | 同梱資産とAPIが起動し、WebView2も確認できる | デモはPythonのvenvで実行 |
+| G5 | デモ | 3人で移動・視点・ジャンプ・設置とPause/Resumeを試す | 選定Minecraft版で再現可能な実演になる | UIを絞り、ワールドを事前準備 |
 
-## Recommended execution order
-1. **G1-A/B/C first:** a five-minute Windows-only proof can invalidate the entire plan. Document exact version; do not assume 26.3 is installed.
-2. **G2-A/B:** test real network before UI polish. Local HTTP may fail on "no internet" phones; check Wi-Fi retention and firewall.
-3. Build session handshake + safe input state (G3); do not allow arbitrary LAN OS control.
-4. Integrate PC shell and package (G4), then repeat demo (G5).
+## 推奨する実施順
 
-### Evidence template
-```
-Gate ID:
-Test date / operator:
-Windows version / Wi-Fi adapter:
-Minecraft Java version, game settings and keybinds:
-Phone models, OS/browser versions:
-Steps actually performed:
-Observed result (not expected result):
-Pass / fail / conditional:
-Issue / mitigation / link to commit or video:
+1. **G1-A/B/Cを最優先にする。** 短いWindows単体の検証で全体方針が覆る可能性がある。正確な版を記録し、26.3が導入済みと仮定しない。
+2. **G2-A/B**で、UIを磨く前に実ネットワークを確認する。「インターネットなし」のスマホでHTTPが使えない場合があるため、Wi-Fi維持とファイアウォールを確認する。
+3. セッションの接続処理と安全な入力状態管理（G3）を構築する。LANからの任意OS操作を許可しない。
+4. PC画面と配布（G4）を統合し、デモ（G5）を繰り返す。
+
+### 検証記録のテンプレート
+
+```text
+ゲートID：
+実施日・操作者：
+Windowsの版・Wi-Fiアダプター：
+Minecraft Javaの版・ゲーム設定・キー割当：
+スマホの機種・OS・ブラウザの版：
+実際に行った手順：
+観測した結果（期待値と区別する）：
+合格・不合格・条件付き：
+Issue・対処・コミットや動画へのリンク：
 ```

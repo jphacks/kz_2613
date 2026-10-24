@@ -1,7 +1,7 @@
-# Web implementation notes
+# Web側の実装ルール
 
-- Inherit root `AGENTS.md`/product decisions. Build one React project with a mobile controller view and desktop view; do not introduce separate native mobile applications.
-- P0: D-pad for P1, directional-look buttons for P2, action buttons for P3; richer thumbstick/swipe after the basic workflow works.
-- `pointerdown/up/cancel`, `touch-action: none`, visibility/page lifecycle, and multi-touch must release controls safely.
-- Never treat client-provided role, host, or mode as trusted; backend is authoritative.
-- Show clearly when not connected. The current starter is deliberately a **nonfunctional placeholder**.
+- ルートの `AGENTS.md` と製品の判断を継承する。スマホ操作画面とPC画面を同一Reactプロジェクトで構築し、別のネイティブモバイルアプリを導入しない。
+- P0はP1の十字キー、P2の方向ボタン、P3のアクションボタンを実装する。仮想スティックやスワイプは基本動作の成立後に扱う。
+- `pointerdown/up/cancel`、`touch-action: none`、ページの表示状態とライフサイクル、複数指操作に対応し、安全に入力を解放する。
+- クライアントが申告する役割・ホスト権・モードを信用しない。サーバーの状態を正とする。
+- 未接続を明確に表示する。現在の画面は**操作機能のないひな形**。

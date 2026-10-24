@@ -1,12 +1,12 @@
-# Desktop UI: three major screens + game window (proposal)
+# PC画面：主要3画面とゲームウィンドウ（提案）
 
-Reference mockup `../design/pc-wireframe-draft.png` shows three empty regions named "QRコード、人数表示", "選択画面", "操作項目分担". It is a wireframe, not final UI. The user has **not separately ratified** detailed transitions yet.
+参考画像 `../design/pc-wireframe-draft.png` は「QRコード、人数表示」「選択画面」「操作項目分担」の3領域を示すワイヤーフレーム。最終UIではなく、詳細な画面遷移はユーザーによる個別の確定前。
 
-1. **Connection lobby** — SSID/network state, session join URL & QR, first-joined host indicator, 0–3 attendees, P1/P2/P3, reconnect instructions. Android/iOS may require Wi-Fi joining before scanning an app URL QR.
-2. **Game selection** — chosen game profile, manual game launching is allowed in P0; auto launcher crawling/detection and launching are P2. Keyboard focus/arrow/Enter/Esc navigation mandatory if this screen is used via host phone.
-3. **Role review** — fixed Minecraft mapping P1 move/Ctrl, P2 look, P3 action; readiness/focus guard; Start by host from phone. Role editor not P0.
-4. **Actual Minecraft foreground** — NOT another Re:Cooplay desktop UI screen. Host phone still has Pause/Resume; after Pause the host remote mode can operate game menu, but Re:Cooplay Pause does not automatically pause Minecraft itself.
+1. **接続ロビー**：SSID・ネットワーク状態、参加URLとQR、最初の接続者がホストである表示、0〜3人の人数、P1/P2/P3、再接続の案内。Android/iOSではアプリ用QRを読む前にWi-Fi参加が必要な場合がある。
+2. **ゲーム選択**：対象プロファイルを表示する。P0はゲームの手動起動を許容し、ランチャーの自動検出・起動はP2。ホストスマホからこの画面を使う場合、キーボードのフォーカスと方向・Enter・Escによる操作が必要。
+3. **分担確認**：Minecraft固定分担（P1移動・Ctrl、P2視点、P3アクション）、準備状態・フォーカス保護を表示し、ホストがスマホからStartする。役割編集はP0対象外。
+4. **前面のMinecraft**：Re:Cooplayの追加画面ではなく、実際のゲームウィンドウ。ホストスマホはPause/Resumeを保持する。Pause後はリモコンでゲームメニューを操作できるが、Re:CooplayのPause自体はMinecraftを自動停止しない。
 
-Cross-screen status strips/alerts must show connectivity, target game/focus, mode, errors and emergency stop. Don't create separate complex settings/error pages just because the flow suggests them. Game exit/return to selection should preserve joined phone roles and session.
+各画面共通の状態表示・通知で、接続、対象ゲーム・フォーカス、モード、エラー、緊急停止を示す。導線に登場するというだけで複雑な設定・エラー専用画面を増やさない。ゲーム終了・選択へ戻る際も参加端末の役割とセッションを保持する。
 
-**Critical nuance:** permission state and desktop visible screen are different things. Start requires 3 participants plus valid target readiness; the UI must not trigger unchecked OS injection. If Windows focus isn't safely established, block Start and provide manual focus instructions.
+**権限の状態とPCに表示中の画面を分けて扱う。** Startには3人の参加と対象の準備完了が必要で、UIから未確認のOS入力を開始してはならない。Windowsのフォーカスを安全に確認できなければStartを止め、手動操作を案内する。

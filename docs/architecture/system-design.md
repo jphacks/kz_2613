@@ -1,72 +1,79 @@
-# System design: Re:Cooplay MVP (proposed)
+# Re:Cooplay MVPのシステム設計（提案）
 
-This is an engineering design proposal, **not** a claim of implementation or hardware verification. Product requirements are in `../requirements/requirements-v0.2.md`.
+この文書は実装設計の提案であり、実装済み・実機検証済みという意味ではない。製品要件は `../requirements/requirements-v0.2.md` を参照する。
 
 ```mermaid
 flowchart LR
-  P1[Phone browser P1 Host] -->|WS input & admin| API[FastAPI WS]
-  P2[Phone browser P2 camera] -->|WS camera| API
-  P3[Phone browser P3 actions] -->|WS actions| API
-  PC[PC React window / pywebview] -->|loopback admin/status| API
-  API --> S[Authoritative session & command authorization]
-  S --> I[Input state aggregator & watchdog]
-  I --> W[Windows input adapter]
-  W -->|SendInput proposed| MC[Minecraft Java Edition]
+  P1[スマホブラウザ P1・ホスト] -->|WS入力・管理| API[FastAPI WS]
+  P2[スマホブラウザ P2・視点] -->|WS視点入力| API
+  P3[スマホブラウザ P3・アクション] -->|WSアクション入力| API
+  PC[PCのReact画面・pywebview] -->|ループバックの管理・状態確認| API
+  API --> S[サーバーが管理するセッション・操作認可]
+  S --> I[入力状態の集約・監視]
+  I --> W[Windows入力アダプター]
+  W -->|SendInputの利用案| MC[Minecraft Java Edition]
 ```
 
-## Boundaries
-1. `web` handles Pointer Events and displays the server-confirmed role/session mode. It never emits raw Windows keycodes as trusted authority.
-2. WebSocket validates a session token and connection identity, translates semantic actions to server commands, and rate/size-limits messages.
-3. Session domain alone owns roles, host authorization, mode, `epoch`, and participant connectivity; don't mutate from pywebview UI thread.
-4. Input engine stores pressed keys and mouse buttons **per owner** (and maintains reference counts/owner set where keys overlap in future). Translates virtual stick/D-pad and directional-look into game-specific mappings.
-5. Windows adapter is behind an interface and implements key scan-code events, mouse left/right DOWN/UP, relative mouse dx/dy. Fail closed when no trusted game window focus.
-6. WebView/PC administration never directly injects arbitrary OS input from unauthenticated LAN clients.
+## モジュール境界
 
-## Session modes (proposal)
-| State | Host remote injection | P1 move | P2 look | P3 act | Control transition |
-|---|---:|---:|---:|---:|---|
-| WAITING | only when host present | no | no | no | first join -> HOST_REMOTE |
-| HOST_REMOTE | yes | no | no | no | 3 connected + target ready -> Start |
-| COOP_PLAY | no (management Pause only) | yes | yes | yes | Pause -> PAUSED_REMOTE; disconnect -> WAITING_RECONNECT/HOST_LOST |
-| PAUSED_REMOTE | yes | no | no | no | 3 connected + host Resume -> COOP_PLAY |
-| WAITING_RECONNECT | host may navigate (subject to target focus) | no | no | no | original token returns; explicit Resume |
-| HOST_LOST | no | no | no | no | host's original token returns; explicit Resume |
+1. Web画面はPointer Eventsを扱い、サーバーが確定した役割・モードを表示する。生のWindowsキーコードを権限の根拠として送らない。
+2. WebSocket層はセッショントークンと接続者を検証し、意味的なアクションをサーバーの操作へ変換する。送信頻度・サイズを制限する。
+3. セッション層だけが役割・ホスト権・モード・`epoch`・接続状態を管理する。pywebviewのUIスレッドから直接変更しない。
+4. 入力エンジンはキー・マウスボタンの押下状態を**所有者ごと**に保持する。将来の重複キーには参照数や所有者集合で対応する。仮想スティック・十字キー・視点ボタンをゲーム固有の入力へ変換する。
+5. Windowsアダプターをインターフェースの背後に分離し、スキャンコード、左右ボタンの押下・解放、相対マウスdx/dyを実装する。信頼したゲームのフォーカスが確認できない場合は入力を許可しない。
+6. WebViewやPC管理画面から、未認証のLANクライアントによる任意OS入力を直接実行しない。
 
-**P0 invariants**
-- Every mode transition increments `epoch`, invalidates stale messages and immediately releases ALL previously synthesized key/mouse states.
-- Zero or invalid participants -> cannot Start/Resume. Only designated host may Start/Pause/Resume.
-- A disconnect or watchdog timeout always closes the input gate; reconnect does not automatically restart gameplay.
-- On focus loss / unexpected target process / exceptions, input stops, all states are released, and the host is notified. `SendInput` return count alone is **not** confirmation that Minecraft accepted an event.
-- Unimplemented input driver returns an explicit failure, never a success-shaped no-op.
+## セッションモード（提案）
 
-## Relative look (highest risk)
-- P2 directional buttons create bounded recurring `(dx,dy)` **relative** mouse events while pressed, with a fixed tick/cap; swipes later send coalesced deltas.
-- Do not use Screact's `MOUSEEVENTF_ABSOLUTE` pointer path for in-game Minecraft look.
-- Verify that Minecraft Java's **installed version** accepts injected relative mouse events before implementing full UI.
-- Remote PC menus may need *absolute* pointer + clicks, which is a separate mode/driver method (P1). Arrow/Enter/Esc alone are minimum.
+| 状態 | ホストリモコン入力 | P1移動 | P2視点 | P3アクション | 遷移条件 |
+|---|---|---|---|---|---|
+| WAITING | ホストがいる場合のみ | 不可 | 不可 | 不可 | 最初の参加でHOST_REMOTEへ |
+| HOST_REMOTE | 可 | 不可 | 不可 | 不可 | 3人接続・対象準備完了でStart |
+| COOP_PLAY | 不可、管理のPauseのみ | 可 | 可 | 可 | PauseでPAUSED_REMOTE、切断でWAITING_RECONNECT/HOST_LOST |
+| PAUSED_REMOTE | 可 | 不可 | 不可 | 不可 | 3人接続・ホストのResumeでCOOP_PLAY |
+| WAITING_RECONNECT | 対象フォーカス条件を満たせばホスト操作可 | 不可 | 不可 | 不可 | 元のトークンで復帰後、明示的にResume |
+| HOST_LOST | 不可 | 不可 | 不可 | 不可 | 元のホストトークンで復帰後、明示的にResume |
 
-## WebSocket contract idea, unimplemented
-All WS messages should include `protocolVersion`, `sessionId`, `seq`, `epoch`, `type` (plus role-scoped `action` and `down` or bounded deltas); server resolves authenticated `participantId` from connection, **not client claims**.
+### P0で常に守る条件
 
-- `hello` join/resume using per-device token (first host/P1; then P2; then P3).
-- `welcome` server-confirmed role and mode.
-- `control` input DOWN/UP (e.g. `move.forward`), or `look` delta.
-- `manage` host-only Start/Pause/Resume.
-- `state` authoritative participants/mode, all clients.
-- `error` clear reason, never echo credentials.
-- heartbeat/pong with watchdog, background lifecycle `release` hint (server still owns safety).
+- 全モード遷移で `epoch` を増やし、古いメッセージを無効化し、既存の合成キー・ボタンを直ちに全解放する。
+- 参加者がいない・参加条件が不正な場合はStart/Resume不可。管理操作は指定ホストだけに許可する。
+- 切断や監視タイムアウトでは必ず入力ゲートを閉じる。再接続のみで自動再開しない。
+- フォーカス喪失・想定外の対象プロセス・例外では停止し、全解放してホストへ通知する。`SendInput` の返却件数だけではMinecraftが受理した証拠にならない。
+- 未実装ドライバーは明確に失敗を返す。何もしない処理を成功扱いしない。
 
-Avoid relying only on release hints because browsers cannot guarantee network delivery when backgrounded or disconnected. `seq` should prevent stale/out-of-order updates; `epoch` rejects controls from before Pause/Resume; input states should be snapshot-reconciled or timeout-cleared so a dropped `up` never leaves a key stuck.
+## 相対視点操作（最大の技術リスク）
 
-## Focus + host PC GUI
-- Two different dimensions: **what the PC displays** (Re:Cooplay or Minecraft), and **who has permission to inject** (host remote / split roles). They are not one state variable.
-- When game window owns focus, target-check and SendInput; when Re:Cooplay has focus, prefer direct React focus/key handling for PC UI.
-- Windows doesn't guarantee `SetForegroundWindow` success; allow manual game focus fallback at MVP.
-- Minecraft "pause" is not equal to Re:Cooplay input pause; changing app state doesn't freeze the world.
+- P2の方向ボタン押下中は、固定周期・上限付きの `(dx,dy)` 相対マウス入力を繰り返す。将来のスワイプでは差分をまとめて送る。
+- Minecraftの視点操作にScreactの `MOUSEEVENTF_ABSOLUTE` による座標指定処理を流用しない。
+- 完成UIを作る前に、**実際にインストールされているMinecraft Javaの版**で合成相対マウスが受理されるか検証する。
+- PCメニュー用には絶対座標とクリックが必要な場合がある。これは別モード・別メソッドで扱う優先度P1の機能。最低限は方向キー・Enter・Esc。
 
-## Packaging lifecycle
-- Python runtime/WS + React dist on same PC; LAN clients open HTTP path via QR.
-- Start Uvicorn background thread; pywebview window on main thread; no dual worker state.
-- pywebview unavailable -> `http://127.0.0.1:<port>/?view=desktop` in normal browser.
-- No external font/CDN/resources. Docker not required for Windows SendInput validation.
-- Window loss/crash/service stop invokes best-effort release; Windows host can retain a local emergency stop hotkey independent of phone connection (implementation to be specified).
+## WebSocket契約案（未実装）
+
+全メッセージに `protocolVersion`、`sessionId`、`seq`、`epoch`、`type` を含める。操作に応じて役割内の `action`、`down`、上限付き差分を付ける。認証済み `participantId` はクライアントの申告ではなく接続から解決する。
+
+- `hello`：端末ごとのトークンで参加・復帰。最初がホスト兼P1、次がP2、次がP3。
+- `welcome`：サーバーで確定した役割・モード。
+- `control`：押下・解放（例：`move.forward`）、または `look` の差分。
+- `manage`：ホスト専用のStart/Pause/Resume。
+- `state`：サーバーが管理する参加者・モードを全端末へ送信。
+- `error`：理由を明示し、認証情報は返さない。
+- 心拍・応答を監視し、ページ非表示時等の `release` 通知も利用する。ただし安全性の責任はサーバーが持つ。
+
+ブラウザは非表示・切断時の通信成功を保証できないため、解放通知だけに依存しない。`seq` で古い・順序逆転した入力を防ぎ、`epoch` でPause/Resume前の入力を拒否する。状態全体の照合やタイムアウト解放により、`up` 欠落で押しっぱなしにならないようにする。
+
+## フォーカスとPC画面
+
+- **PCが何を表示しているか**（Re:Cooplay/Minecraft）と、**誰が入力権を持つか**（ホスト/役割分担）は別の状態として管理する。
+- ゲームが前面なら対象確認後にSendInputを使う。Re:Cooplayが前面なら、PC画面はReactのフォーカス・キー処理で直接操作する方法を優先する。
+- Windowsは `SetForegroundWindow` の成功を保証しない。MVPでは手動フォーカスを代替として許容する。
+- Re:Cooplayの入力PauseはMinecraftの時間停止とは異なる。アプリ状態の変更だけでワールドは止まらない。
+
+## 配布・起動・終了
+
+- Python実行環境・WebSocketとReactのdistを同じPCへ配置し、LAN端末はQRからHTTPで参加する。
+- Uvicornはバックグラウンドスレッド、pywebviewはメインスレッドで起動する。複数ワーカーへ状態を分けない。
+- pywebviewが利用できない場合は通常ブラウザで `http://127.0.0.1:<port>/?view=desktop` を開く。
+- 外部フォント・CDN・資産を必須にしない。WindowsのSendInput検証にDockerは不要。
+- ウィンドウ消失・異常終了・サービス停止でも可能な限り全解放する。スマホ回線に依存しないPCの緊急停止キーも用意する案とし、詳細は後で定める。

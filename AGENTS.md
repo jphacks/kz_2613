@@ -1,45 +1,59 @@
-# Re:Cooplay — instructions for coding agents
+# Re:Cooplay — 開発エージェント向け共通ルール
 
-## Objective / source precedence
-- The product is a **local, cooperative controller layer for an existing unmodified PC game**. First target: **Minecraft Java Edition on Windows 11**, one game character, three phones (P1 movement, P2 camera, P3 actions).
-- Read `docs/requirements/requirements-v0.2.md` before planning changes. Read `docs/decisions/2026-10-24-user-decisions.md` for later explicit decisions and `docs/decisions/tech-stack-provisional.md` for the tentative stack.
-- Priorities: **new explicit user decision > user-confirmed decisions > team idea minutes > provisional implementation proposal**. Never silently promote a tentative idea to a settled team decision.
-- Priority order: **actually works / reliable demo > UI flexibility > development speed > expansion**.
+## 使用言語
 
-## Engineering boundaries
-- Do **not** replace the JPHACKS `README.md` or `LICENSE`; preserve existing content and extend README carefully when instructed.
-- Never write to GitHub, share-drive documents, Slack, or submit anything unless the user explicitly requests that action. Local changes and tests are fine when tasked.
-- Do not claim hardware or Minecraft interoperability passed without actual device/game testing and evidence.
-- The attached setup is an **initialization scaffold**, not a functioning game controller. Unimplemented behavior must fail loudly; never report a no-op input driver as success.
-- Server authorizes connections and commands. A phone may not assign itself host or another role. First connected client is host and P1 in the MVP.
-- On pause, disconnect, target focus loss, session/epoch change, or shutdown: stop injecting input and release all synthesized keys and mouse buttons. Fail closed when unsure.
-- No external cloud relay, account, telemetry, internet CDN, Minecraft mods, or privileged driver in P0. No game video streaming to phones.
+- ユーザーへの回答、Markdown資料の見出し・本文・表・図の説明は日本語で記述する。
+- コミットメッセージの件名・本文、PRのタイトル・本文・レビュー説明はすべて日本語で記述する。
+- コミットメッセージの例：`開発環境を初期構築する`、`参加者の再接続処理を修正する`。
+- 製品名、API名、コード識別子、ファイル名・パス、URL、要件ID、実行コマンドは正確な原表記を維持する。
+- `Closes #123` など、GitHubが解釈する構文はそのまま使用してよい。
+- CodexとClaude Codeの両方に適用する。詳細な運用は `docs/handoff/DEVELOPMENT_WORKFLOW.md` を参照する。
 
-## Provisional stack (change only with evidence)
-- Windows 11 native input: `SendInput` via Python `ctypes` (scan-code keys, relative mouse movement). Minecraft acceptance **unverified**.
-- Host: Python 3.12, FastAPI, Uvicorn (single process/worker), in-memory session state, local JSON profiles, pywebview/WebView2 optional desktop shell.
-- Browser: React, TypeScript, Vite, Tailwind CSS + custom CSS, Pointer Events. Build locally; Python serves the static assets.
-- Transport: local Wi-Fi, HTTP/WebSocket JSON; Windows Mobile Hotspot provisional, local AP fallback. Never require internet for phone-to-PC game inputs.
-- Tests: pytest, Vitest, TypeScript check + Android/iPhone/Windows device gates; `PyInstaller onedir` is later packaging.
+## 目的・情報の優先順位
 
-## Repository structure and coding style
-- `apps/host/` — API, state machine, Windows input port, Windows app wrapper.
-- `apps/web/` — phone and PC web user interfaces with shared components.
-- `docs/` — stable requirements, decisions, architecture and test evidence.
-- `scripts/` — repeatable developer commands.
-- Use explicit typed messages and document contract versions. Keep OS input separated from HTTP/WebSocket handlers.
-- Do not add functionality just because an unimplemented placeholder suggests it; develop P0 first.
+- 製品は**改造していない既存PCゲームへローカルの協力操作を追加する仕組み**。最初の対象は**Windows 11のMinecraft Java Edition**。スマホ3台で1キャラクターを操作する（P1移動、P2視点、P3アクション）。
+- 計画前に `docs/requirements/requirements-v0.2.md` を読む。後から明示された判断は `docs/decisions/2026-10-24-user-decisions.md`、仮の技術構成は `docs/decisions/tech-stack-provisional.md` を参照する。
+- 情報の優先順位は**新しい明示的なユーザー判断 > ユーザー確定事項 > チームのアイデア議事録 > 仮の実装提案**。仮案をチームの確定事項へ無断で変更しない。
+- 開発上の優先順位は**実際に動くこと・再現可能なデモ > UIの自由度 > 開発速度 > 拡張性**。
 
-## Required work discipline
-1. Inspect repo and existing changes; do not discard other people's work.
-2. Write a short plan for nontrivial work and name unverified assumptions.
-3. Implement the smallest vertical slice; add focused tests.
-4. Run tests and record commands/results in `docs/handoff/BUILD_LOG.md`. If unable, say so.
-5. Record technical decisions with rationale; update requirements only when the user confirms a change.
+## 実装上の制約
 
-## Suggested commands (after bootstrap)
-- Host: create a Python 3.12 venv, then `cd apps/host && python -m pip install -c constraints-core.txt -e ".[dev]" && python -m pytest`
-- Host health: `cd apps/host && python -m uvicorn recoop_host.app:app --reload --host 127.0.0.1 --port 8000`
-- Web: `cd apps/web && npm ci && npm run check && npm test && npm run build`
-- Follow `docs/handoff/SETUP_WINDOWS.md` for complete Windows setup.
-- Follow `docs/handoff/DEVELOPMENT_WORKFLOW.md` for shared Issue/branch/PR workflow.
+- JPHACKSの `README.md` と `LICENSE` は置き換えない。既存内容を保持し、指示がある場合にREADMEを慎重に追記する。
+- ユーザーから明示的な依頼がない限り、GitHub・共有ドライブ・Slackへの書き込みや外部への提出は行わない。依頼されたローカル編集・テストは実施してよい。
+- 実機試験と証拠なしに、ハードウェアやMinecraftとの互換性を検証済みと報告しない。
+- 現在の構成は**初期環境のひな形**。動作するゲームコントローラーではない。未実装処理は明確に失敗させ、何もしない入力ドライバーを成功扱いしない。
+- 接続と操作の認可はサーバーで行う。スマホ自身がホストや役割を指定できるようにしない。MVPでは最初の接続端末がホスト兼P1。
+- Pause・切断・対象フォーカス喪失・セッションやepochの変更・終了時は、入力送信を停止して合成した全キーとマウスボタンを解放する。安全性が不明なら入力を許可しない。
+- P0では外部クラウド中継・アカウント・テレメトリー・インターネットCDN・MinecraftのMOD・特権ドライバーを導入しない。スマホへのゲーム映像配信も行わない。
+
+## 仮の技術構成（変更には根拠が必要）
+
+- Windows入力：Python `ctypes` から `SendInput` を使用する案。キーのスキャンコードと相対マウス移動を想定。Minecraftでの受理は**未検証**。
+- ホスト：Python 3.12、FastAPI、Uvicorn（単一プロセス・単一ワーカー）、メモリー内セッション、ローカルJSONプロファイル。pywebview/WebView2のデスクトップ画面は任意。
+- ブラウザ：React、TypeScript、Vite、Tailwind CSSと独自CSS、Pointer Events。ローカルでビルドし、Pythonから静的ファイルを配信する。
+- 通信：ローカルWi-Fi、HTTP/WebSocketのJSON。Windowsモバイルホットスポットを仮採用し、代替はローカルAP。スマホからPCへのゲーム操作にインターネットを必須としない。
+- 検証：pytest、Vitest、TypeScript型検査とAndroid/iPhone/Windowsの実機試験。`PyInstaller onedir` による配布は後続作業。
+
+## ディレクトリ構成・実装方針
+
+- `apps/host/`：API、状態機械、Windows入力の境界、Windowsアプリの起動処理。
+- `apps/web/`：スマホ・PCのWeb画面と共通コンポーネント。
+- `docs/`：共有要件、判断、設計、検証の証拠。
+- `scripts/`：再実行可能な開発用コマンド。
+- メッセージの型と契約バージョンを明示する。OS入力をHTTP/WebSocketハンドラーから分離する。
+- 未実装のひな形があるという理由だけで機能を追加しない。P0を先に進める。
+
+## 作業手順
+
+1. リポジトリと既存の変更を確認する。他の人の作業を破棄しない。
+2. 複雑な変更では短い計画と未検証の前提を示す。
+3. 最小限の一連の処理を実装し、対象を絞ったテストを追加する。
+4. テストを実行し、コマンドと結果を `docs/handoff/BUILD_LOG.md` に記録する。実行できなければ理由を明示する。
+5. 技術判断と根拠を記録する。要件の変更はユーザーが確認した場合だけ行う。
+
+## 初期構築後のコマンド
+
+- ホスト：Python 3.12の仮想環境を作成後、`cd apps/host && python -m pip install -c constraints-core.txt -e ".[dev]" && python -m pytest`
+- ヘルスチェック用の起動：`cd apps/host && python -m uvicorn recoop_host.app:app --reload --host 127.0.0.1 --port 8000`
+- Web：`cd apps/web && npm ci && npm run check && npm test && npm run build`
+- Windowsの構築手順は `docs/handoff/SETUP_WINDOWS.md`、Issue・ブランチ・PRの共通運用は `docs/handoff/DEVELOPMENT_WORKFLOW.md` に従う。

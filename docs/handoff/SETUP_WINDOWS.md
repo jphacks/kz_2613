@@ -1,20 +1,24 @@
-# Windows 11 setup — scaffold only
+# Windows 11の構築手順 — 初期ひな形
 
-## Prerequisites
-- Windows 11 and existing `jphacks/kz_2613` clone.
-- Python **3.12 x64** (`py -3.12 --version`), Node.js **22 LTS** (`node --version`), npm, Git.
-- Minecraft Java Edition for **later manual validation**. It is not installed or launched by this scaffold.
-- Permission to run local firewall changes when testing with phones. Never disable all firewall profiles globally.
+## 前提条件
 
-## Apply the ZIP safely
-1. Unzip the package. Keep your original repository's `README.md` and `LICENSE`.
-2. Copy **the contents of `repo_overlay/`** into the existing repo root. Not the surrounding package directory.
-3. Inspect with `git status` before commit; do not overwrite uncommitted work.
-4. Read `AGENTS.md`, `CLAUDE.md`, `docs/requirements/requirements-v0.2.md`, `docs/decisions/tech-stack-provisional.md`.
-5. `py -3 scripts/verify_overlay.py` (any Python 3.10+ can perform only this check).
+- Windows 11と既存の `jphacks/kz_2613` のクローン。
+- Python **3.12 x64**（`py -3.12 --version`）、Node.js **22 LTS**（`node --version`）、npm、Git。
+- Minecraft Java Editionは**後続の手動検証用**。このひな形でインストール・起動は行わない。
+- スマホ試験で必要なファイアウォール変更の権限。全プロファイルを一括で無効化しない。
 
-## Host setup
-PowerShell terminal 1:
+## ZIPを安全に統合する
+
+1. パッケージを展開し、既存の `README.md` と `LICENSE` を保持する。
+2. `repo_overlay/` の**中身だけ**を既存リポジトリのルートへコピーする。外側のディレクトリを入れない。
+3. コミット前に `git status` を確認し、未コミットの他者変更を上書きしない。
+4. `AGENTS.md`、`CLAUDE.md`、`docs/requirements/requirements-v0.2.md`、`docs/decisions/tech-stack-provisional.md` を読む。
+5. `py -3 scripts/verify_overlay.py` を実行する。この構造確認だけならPython 3.10以上を利用できる。
+
+## バックエンドの構築
+
+PowerShellのターミナル1で実行する。
+
 ```powershell
 cd apps/host
 py -3.12 -m venv .venv
@@ -25,10 +29,13 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe -m uvicorn recoop_host.app:app --host 127.0.0.1 --port 8000
 ```
-Then visit `http://127.0.0.1:8000/api/health`; expected `game_input_ready:false`, not a playable game. `localhost` is **not** reachable from phones.
 
-## Frontend setup
-PowerShell terminal 2:
+`http://127.0.0.1:8000/api/health` を開き、`game_input_ready:false` を確認する。ゲーム操作が可能という意味ではない。`localhost` はスマホから到達できない。
+
+## フロントエンドの構築
+
+PowerShellのターミナル2で実行する。
+
 ```powershell
 cd apps/web
 npm ci
@@ -37,43 +44,46 @@ npm test
 npm run build
 npm run dev
 ```
-Then visit `http://127.0.0.1:5173/?view=desktop` or `/` for placeholder phone page. The Vite dev server deliberately binds **localhost only**; this starter does not yet accept phone inputs.
 
-## After building web static assets
-With Vite dist built, restart FastAPI and open `http://127.0.0.1:8000/`; the host serves the built placeholder page. Don't conclude WebSocket or Minecraft input works.
+`http://127.0.0.1:5173/?view=desktop` でPC用、`/` でスマホ用のひな形を確認する。Vite開発サーバーはlocalhostだけに公開する。この段階ではスマホの操作入力を受け付けない。
 
-Run the integrated test from `apps/host` after building:
+## Web資産をビルドした後の確認
+
+Viteのdist生成後、FastAPIを再起動して `http://127.0.0.1:8000/` を開く。ビルドしたひな形が配信されることを確認する。WebSocketやMinecraft入力の成立とは区別する。
+
+`apps/host` で統合テストを実行する。
+
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q --require-web-build
 ```
-This requires the real `apps/web/dist` files and checks HTML, JavaScript/CSS asset
-responses and health. Restart the host after the first build because static routes
-are registered on process startup. `/` shows the phone scaffold;
-`/?view=desktop` shows the PC scaffold. Both clearly mark unimplemented controls.
 
-`constraints-core.txt` pins the versions resolved on Windows during bootstrap,
-including transitive dependencies. Constraints do not force Windows-only packages
-onto Linux. Platform-specific dependencies not present on Windows (such as uvloop)
-are resolved by pip on their platform. Update constraints deliberately and rerun CI.
-`package-lock.json` is committed; use `npm install` only when changing dependencies.
-Development requires package registries for installation; built runtime assets do
-not require an external CDN. The packaged desktop GUI is a later Issue.
+このテストは実際の `apps/web/dist` を必須とし、HTML・JavaScript・CSSの応答とヘルスチェックを確認する。静的配信のルートは起動時に登録されるため、初回ビルド後はホストを再起動する。`/` はスマホ用、`/?view=desktop` はPC用。どちらも操作機能が未実装であることを表示する。
 
-If `py -3.12` is unavailable, install standard Python 3.12 x64, or use an existing
-3.12 interpreter explicitly: `& 'C:\path\to\python.exe' -m venv .venv`.
-Do not create the venv with a different Python minor version. The bootstrap was
-verified with Python 3.12.14, Node 22.15.0 and npm 11.16.0.
+### 依存の固定と開発環境
 
-For development operations and the complete backlog, see
-`DEVELOPMENT_WORKFLOW.md` and `ISSUE_PLAN.md` in this directory.
+`constraints-core.txt` はWindows初期構築時に解決した間接依存を含むバージョンを固定する。Windows専用パッケージをLinuxへ強制導入するものではない。uvloop等のWindowsにない環境固有依存は対象環境のpipが解決する。更新時は意図的に固定値を変更し、CIを再実行する。
 
-## First real connectivity gate (Codex task)
-- Implement authorized join/session and input release logic **before** exposing control endpoints on LAN.
-- Switch Uvicorn bind to the selected Wi-Fi interface only if possible, or to 0.0.0.0 with firewall limited to trusted network and token checks.
-- Run Windows hotspot and connect 3 phones, including iPhone Safari.
-- Confirm this works without cloud; follow `docs/architecture/validation-gates.md`.
+`package-lock.json` はコミット済み。`npm install` は依存を変更する場合だけ使う。開発時の導入にはパッケージレジストリが必要だが、ビルド済み実行資産に外部CDNは不要。デスクトップGUIの配布は後続Issueで扱う。
 
-## First real game-input gate
-- Implement isolated **Windows-only probe** that explicitly asks user to put Minecraft in focus and checks key/relative mouse behavior.
-- Do not send synthetic keys on process startup. Provide clear local emergency stop/release.
-- Do not claim the probe passed until tested and recorded on the actual PC.
+`py -3.12` がない場合は標準のPython 3.12 x64を導入するか、既存の3.12実行ファイルを明示する。
+
+```powershell
+& 'C:\path\to\python.exe' -m venv .venv
+```
+
+別のマイナーバージョンで仮想環境を作らない。初期構築の検証環境はPython 3.12.14、Node.js 22.15.0、npm 11.16.0。
+
+共通運用と全バックログは、同じディレクトリの `DEVELOPMENT_WORKFLOW.md` と `ISSUE_PLAN.md` を参照する。
+
+## 最初の実機通信ゲート
+
+- LANに制御エンドポイントを公開する前に、認可付き参加・セッション・入力解放を実装する。
+- 可能なら選択したWi-Fiインターフェースに限定してUvicornを公開する。`0.0.0.0` を使う場合も、信頼したネットワークへのファイアウォール制限とトークン検証を行う。
+- WindowsホットスポットへiPhone Safariを含むスマホ3台を接続する。
+- クラウドなしで動くことを `docs/architecture/validation-gates.md` に沿って確認する。
+
+## 最初の実機ゲーム入力ゲート
+
+- Minecraftを前面にする明示手順を備えた、独立したWindows専用プローブでキーと相対マウスの挙動を確認する。
+- プロセス起動時に合成キーを送らない。PCからの明確な緊急停止・全解放を用意する。
+- 実PCで試験し記録するまで、プローブを検証済みと報告しない。
