@@ -22,7 +22,7 @@ Node 参照実装（`apps/node-ref/server.js`）と同じ仕様・同じメッ�
 
 ```powershell
 $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:LOCALAPPDATA\ReCooplay\StrawberryPerl\perl\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;$env:PATH"
-$env:LIBCLANG_PATH = "$PWD\apps\host\.venv\Lib\site-packages\clang\native"
+$env:LIBCLANG_PATH = "$env:LOCALAPPDATA\ReCooplay\tools-venv\Lib\site-packages\clang\native"  # libclang.dll の場所 (LLVM なら C:\Program Files\LLVM\bin)
 cd apps\host-rs
 cargo build --release --locked
 ```

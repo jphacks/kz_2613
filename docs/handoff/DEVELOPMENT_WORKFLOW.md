@@ -10,7 +10,7 @@ PRのタイトル・本文は日本語で記述する。識別子・コマンド
 1. `ISSUE_PLAN.md` とGitHubから作業可能なP0 Issueを1件選ぶ。前提Issueの完了を確認する。
 2. `git status` とリモートを確認し、`codex/<issue番号>-<短い説明>` 等の専用ブランチを作成する。
 3. 完了条件に沿う最小変更を行う。同じファイルを両エージェントで同時編集しない。
-4. 対象のpytest/ruff、TypeScript/Vitest/buildを実行。UI変更時は画面も確認する。
+4. 対象の `cargo build`/`cargo test`、`scripts/sim/` のシミュレーション・画面の試験を実行（コマンドは `AGENTS.md`）。UI変更時は画面も確認する。
 5. コマンド、結果、既知の問題を `BUILD_LOG.md` に追記し、判断の理由は `docs/decisions/` に日付付きで残す。
 6. PRからIssueを参照し、レビュー・マージ後に完了条件を満たしたIssueを閉じる。
 
