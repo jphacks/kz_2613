@@ -23,7 +23,7 @@ const opt = (name, def) => {
 const target = opt('--target', 'rust');
 const PORT = Number(opt('--port', 18000 + Math.floor(Math.random() * 1000)));
 const BASE = `http://127.0.0.1:${PORT}`;
-const PROTOCOL_VERSION = 1;
+const PROTOCOL_VERSION = 3;
 
 // ブラウザと同じOrigin付きのハンドシェイクを送り、アップグレード前の拒否も確認する。
 function handshake(origin, host = `127.0.0.1:${PORT}`) {
@@ -255,7 +255,7 @@ async function main() {
     });
 
     await check('版: protocolVersion がない・違う hello は理由を返して 4005 で閉じ、枠を割り当てない', async () => {
-      for (const extra of [{ protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }]) {
+      for (const extra of [{ protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }, { protocolVersion: 1 }, { protocolVersion: 2 }]) {
         const c = new Client('V');
         await c.open();
         c.send({ type: 'hello', clientId: 'sim-old-page', ...extra });
@@ -453,25 +453,29 @@ async function main() {
       await injected(mon, 'SPACE', 'up', from);
     }, { rustOnly: true });
 
-    await check('epoch: 前の epoch の最後の視点が届かなくても、新しい epoch の移動量に混ざらない', async () => {
-      // coop の epoch で cx=5 まで動かした後、cx=105 のパケットが WebRTC で欠けた想定 (送らない)
-      p2.send({ type: 'look', lseq: 10, epoch: p2.epoch, cx: 5, cy: 0 });
-      await sleep(400);
+    await check('epoch: 旧視点の欠落・遅延が新epochの累積値と順序番号へ混ざらない', async () => {
+      const old = p2.epoch;
+      // 古いepochでcx=1000まで動いた最終パケットは失われ、ホストへ届かない。
       let from = p1.mark();
       p1.send({ type: 'command', cmd: 'PAUSE' });
       await phaseIs(p1, 'paused', from);
       from = p1.mark();
-      const from2 = p2.mark();
       p1.send({ type: 'command', cmd: 'RESUME' });
-      await phaseIs(p1, 'coop', from);
-      await phaseIs(p2, 'coop', from2);
-      // スマホは新しい epoch で累積値を 0 から数え直すので、10 動かすと cx=10 を送る
-      const mfrom = mon.mark();
-      p2.send({ type: 'look', lseq: 12, epoch: p2.epoch, cx: 10, cy: 0 });
-      await sleep(800);
-      const dx = mon.msgs.slice(mfrom).filter((m) => m.type === 'look').reduce((a, m) => a + m.entry.dx, 0);
-      // 補間の端数 (1px 未満) は次へ持ち越すので ±1 を許す。修正前は前の基準 (cx=5) が引かれて 5 になる
-      assert(Math.abs(dx - 10) <= 1, `新しい epoch の移動量が 10 でない: ${dx} (前の epoch の累積値が基準に混ざった)`);
+      const resumed = await phaseIs(p1, 'coop', from);
+      await p2.waitFor(m => m.type === 'game' && m.game.epoch === resumed.game.epoch);
+      await sleep(300); // 以前の視点レポートが出終わるまで待つ
+      from = mon.mark();
+      // 旧パケットが届かないまま、新epochではseq=1、累積値10から始める。
+      p2.send({ type: 'look', lseq: 1, epoch: p2.epoch, cx: 10, cy: 0 });
+      await sleep(1000);
+      let dx = mon.msgs.slice(from).filter(m => m.type === 'look').reduce((sum, m) => sum + m.entry.dx, 0);
+      assert(Math.abs(dx - 10) <= 1, `新epochの10以外が混入した: dx=${dx}`);
+      from = mon.mark();
+      p2.send({ type: 'look', lseq: 101, epoch: old, cx: 2000, cy: 0 });
+      p2.send({ type: 'look', lseq: 2, epoch: p2.epoch, cx: 15, cy: 0 });
+      await sleep(1000);
+      dx = mon.msgs.slice(from).filter(m => m.type === 'look').reduce((sum, m) => sum + m.entry.dx, 0);
+      assert(Math.abs(dx - 5) <= 1, `遅延パケットが基準を変更した: dx=${dx}`);
     }, { rustOnly: true });
 
     await check('切断: coop 中の切断で paused、切断者以外の押下も全解放する', async () => {
@@ -482,7 +486,7 @@ async function main() {
       p3.input('USE', 'down'); // P3 も押したまま
       await injected(mon, 'KEY_W', 'down', from);
       await injected(mon, 'MOUSE_R', 'down', from);
-      p2.send({ type: 'look', lseq: 13, epoch: p2.epoch, cx: 4000, cy: 0 }); // 未処理の視点を残す
+      p2.send({ type: 'look', lseq: 3, epoch: p2.epoch, cx: 4000, cy: 0 }); // 未処理の視点を残す
       from = mon.mark();
       const pfrom = p1.mark();
       p2.close();
@@ -511,6 +515,32 @@ async function main() {
       await sleep(200);
       assert(!mon.msgs.slice(mfrom).some((m) => m.type === 'inject' && m.entry.state === 'down'), '復帰時に旧押下を復元した');
     });
+
+    await check('再接続: 正しいトークンで接続を置換すると全解放し、旧押下を持ち越さない', async () => {
+      let from = mon.mark();
+      mon.send({ type: 'auto_resume', on: false });
+      await mon.waitFor(m => m.type === 'game' && m.game.autoResume === false, { from });
+      p1.input('FWD', 'down');
+      p3.input('USE', 'down');
+      await injected(mon, 'KEY_W', 'down', from);
+      await injected(mon, 'MOUSE_R', 'down', from);
+      const old = p1;
+      from = mon.mark();
+      p1 = await join('P1');
+      const w = await welcome(p1);
+      assert(w.reconnected && w.slot === 'P1', '同じ枠へ戻らない');
+      assert(await old.waitClose() === 4000, '古い接続を閉じない');
+      await phaseIs(p1, 'paused', 0);
+      await injected(mon, 'KEY_W', 'up', from);
+      await injected(mon, 'MOUSE_R', 'up', from);
+      await sleep(200);
+      assert(!mon.msgs.slice(from).some(m => m.type === 'inject' && m.entry.state === 'down'), '置換後に旧押下を復元した');
+      p3.input('USE', 'up');
+      const pfrom = p1.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', pfrom);
+      mon.send({ type: 'auto_resume', on: true });
+    }, { rustOnly: true });
 
     await check('復帰: ホストの PAUSE は自動復帰の対象外', async () => {
       let from = p1.mark();
