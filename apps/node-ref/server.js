@@ -13,9 +13,10 @@ import { inputAvailable, inputError, sendKey, sendMouseButton, sendMouseMove, se
 import { OUTPUTS, REMOTE_CONTROLS, ROLE_CONTROLS } from './controls.js';
 import { createPeer } from './rtc.js';
 
-const ROOT = path.dirname(fileURLToPath(import.meta.url));
-const PUBLIC_DIR = path.join(ROOT, 'public');
-const LOG_DIR = path.join(ROOT, 'logs');
+// リポジトリのルート (config.json と logs/ の置き場所)。画面は apps/web-static/ を Rust 版と共通で配信する
+const ROOT = process.env.RECOOPLAY_ROOT || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const PUBLIC_DIR = path.join(ROOT, 'apps', 'web-static');
+const LOG_DIR = process.env.RECOOPLAY_LOG_DIR || path.join(ROOT, 'logs');
 
 const config = loadConfig();
 const PORT = Number(process.env.PORT || config.port || 8080);
@@ -27,6 +28,7 @@ const MIN_GAP_MS = 50; // 解放も最低この時間続けてから次を押す
 const MAX_QUEUE = 8; // 通信が詰まって溜まった連打は 4 回分まで (それ以上は古い方を捨て、遅延が積み上がるのを防ぐ)
 
 function loadConfig() {
+  if (process.env.RECOOPLAY_NO_CONFIG === '1') return {};
   try {
     return JSON.parse(fs.readFileSync(path.join(ROOT, 'config.json'), 'utf8'));
   } catch {

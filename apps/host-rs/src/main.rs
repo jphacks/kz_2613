@@ -26,6 +26,8 @@ use axum::Router;
 use crate::config::Config;
 use crate::hub::{Event, Hub, Out};
 
+const WEB_DIR: &str = "apps/web-static";
+
 #[derive(Clone)]
 struct App {
     hub: Arc<Mutex<Sender<Event>>>,
@@ -43,17 +45,17 @@ impl App {
     }
 }
 
-/// public/ のある場所 (= Node 版と同じプロジェクトのルート) を探す。RECOOPLAY_ROOT で指定も可
+/// 画面 (apps/web-static/) のある場所 (= リポジトリのルート) を探す。RECOOPLAY_ROOT で指定も可
 fn find_root() -> PathBuf {
     if let Ok(r) = std::env::var("RECOOPLAY_ROOT") {
         return PathBuf::from(r);
     }
     let cwd = std::env::current_dir().unwrap_or_default();
-    let mut candidates = vec![cwd.clone(), cwd.join("..")];
+    let mut candidates = vec![cwd.clone(), cwd.join(".."), cwd.join("../..")];
     if let Ok(exe) = std::env::current_exe() {
         candidates.extend(exe.ancestors().skip(1).take(4).map(Path::to_path_buf));
     }
-    candidates.into_iter().find(|p| p.join("public").join("index.html").is_file()).unwrap_or(cwd)
+    candidates.into_iter().find(|p| p.join(WEB_DIR).join("index.html").is_file()).unwrap_or(cwd)
 }
 
 fn is_loopback(addr: &SocketAddr) -> bool {
@@ -78,7 +80,8 @@ async fn main() {
     let input = input::Input::new();
 
     let (tx, rx) = std::sync::mpsc::channel::<Event>();
-    let hub = match Hub::new(tx.clone(), &config, input, &root.join("logs")) {
+    let log_dir = std::env::var("RECOOPLAY_LOG_DIR").map(PathBuf::from).unwrap_or_else(|_| root.join("logs"));
+    let hub = match Hub::new(tx.clone(), &config, input, &log_dir) {
         Ok(h) => h,
         Err(e) => {
             eprintln!("ログを作成できません: {e}");
@@ -113,7 +116,7 @@ async fn main() {
     let app = App {
         hub: Arc::new(Mutex::new(tx.clone())),
         next_id: Arc::new(AtomicU64::new(1)),
-        public_dir: Arc::new(root.join("public")),
+        public_dir: Arc::new(root.join(WEB_DIR)),
         port,
         wifi: Arc::new(config.wifi.clone()),
     };

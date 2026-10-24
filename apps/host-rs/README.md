@@ -1,6 +1,8 @@
 # Re:Cooplay ホスト（Rust 版）
 
-Node 版 `server.js` と同じ仕様・同じメッセージ形式の PC 側サーバー。スマホ / PC の画面は親フォルダの `public/` をそのまま配信する。
+Node 参照実装（`apps/node-ref/server.js`）と同じ仕様・同じメッセージ形式の PC 側サーバー。スマホ / PC の画面は `apps/web-static/` を配信する。通信契約は `docs/architecture/protocol.md`。
+
+**検証状況：** PC 上のシミュレーション（注入なし）のみ。Rust 版の実入力・スマホ実機・Minecraft・Tauri は未検証。
 
 ## 構成
 
@@ -20,17 +22,27 @@ Node 版 `server.js` と同じ仕様・同じメッセージ形式の PC 側サ�
 
 ```powershell
 $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:LOCALAPPDATA\strawberry-perl\perl\bin;C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;$env:PATH"
-cd host-rs
+cd apps\host-rs
 cargo build --release
 ```
 
 ## 起動
 
-プロジェクトのルート（`public/` がある場所）で実行する。
+リポジトリのルートで実行する（`apps/web-static/` のある場所を自動で探す。`RECOOPLAY_ROOT` で指定も可）。`config.json` はルートに置く（任意。`config.example.json` を参照）。
 
 ```powershell
-.\host-rs\target\release\recooplay-host.exe
+.\apps\host-rs\target\release\recooplay-host.exe
 ```
 
 - `PORT=18081` などでポート変更、`RECOOPLAY_DRY_RUN=1` で実際には注入しない（自動テスト用）
+- `RECOOPLAY_LOG_DIR` でログの出力先を変更、`RECOOPLAY_NO_CONFIG=1` で `config.json` を読まない（シミュレーション用）
 - Ctrl+C で終了すると、押下中のキー / マウスボタンをすべて離してから終了する
+
+## シミュレーション（通信契約のテスト）
+
+```powershell
+node scripts\sim\protocol-sim.mjs                 # Rust 版（release ビルドを使う）
+node scripts\sim\protocol-sim.mjs --target node   # Node 参照実装（apps\node-ref で npm ci が必要）
+```
+
+ホストを `RECOOPLAY_DRY_RUN=1` で起動し、スマホ 3 台と PC 画面を模した WebSocket で役割・認可・進行・入力の先着 1 回処理・切断時の全解放・復帰設定を照合する。OS へ入力を送らないため、ゲームや実機の合格の代わりにはならない。
