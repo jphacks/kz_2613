@@ -336,3 +336,15 @@
 - `protocol.md` に `page: app`・`focus`（app）・`select_game`・`game.title` を追記した。
 - 検証：`cargo build --release --locked`・`cargo test --release --locked`（3件）成功。`node scripts/sim/protocol-sim.mjs` を3回連続で **34/34合格**（PCアプリへの手動復帰→全解放・paused・リモコンがPC画面へ届く・役割維持・RESUME、協力プレイ中のゲーム変更→全解放・lobby・参加者維持、同じゲーム・未知のゲームは無視、を追加）。`--target node` **19/19合格**。`app-view-test` **11/11合格**。`check-static-pages` 構文OK。
 - **未検証：** WebView2のウィンドウでの `focus` の届き方、Minecraftとの実際の切り替え（#37）。
+
+## 2026-10-25 — #42 Minecraftの名称・画面・デモ素材の利用条件（Claude Code）
+- 公式のMinecraft Usage Guidelines（<https://www.minecraft.net/en-us/usage-guidelines>、2026-10-25に取得）を読み、要点と本プロジェクトへの当てはめを `docs/decisions/2026-10-25-minecraft-usage-terms.md` に記録した（[E]は公式の記述、[P]は当てはめ）。
+- 要点：名称は副題・説明でだけ使う。ロゴ・ブランドを使わない。「NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT」に類する免責表示を関連資料すべてに入れる。自分のプレイ動画・スクリーンショットは無料で見られる形なら共有できる。ゲームファイルを再配布しない。
+- PCアプリの②ゲーム選択の画面に免責表示を加えた。リポジトリ内の画像（アイコン・ワイヤーフレーム）にMinecraftの素材がないことを確認した。
+- 検証：`node scripts/sim/check-static-pages.mjs` 構文OK。
+- **未確認：** 発表資料・デモ動画（未作成。作成後に記録の表で個別確認する）、EULA本文の精読、JPHacksの規約との照合、READMEへの免責表示（READMEの変更はユーザーの指示を待つ）。
+
+## 2026-10-25 — PR #82の利用条件資料のレビュー（Codex）
+- 公式Usage GuidelinesとEULAを再取得した。ガイドラインの連絡先要件に対しGitHub Issueで充足とする記載を修正し、公開可能な責任者・直接連絡先は未決定として残した。
+- 自作動画・無料公開だけを理由に利用可能と断定せず、汎用製品の宣伝・会場投影・実際の発表素材の個別確認を残した。大会運営の判断で権利者の条件を上書きできないことも明記した。
+- `node scripts/sim/check-static-pages.mjs` は4画面の構文確認に成功。Issue #42は発表素材・連絡先・EULA全体と大会規約の照合が残るため閉じない。
