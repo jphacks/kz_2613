@@ -17,8 +17,11 @@ pub struct Config {
 
 impl Config {
     pub fn load(root: &Path) -> Config {
-        let v: Value = std::fs::read_to_string(root.join("config.json"))
-            .ok()
+        // RECOOPLAY_NO_CONFIG=1 なら config.json を読まない (シミュレーションを手元の設定に左右させない)
+        let skip = std::env::var("RECOOPLAY_NO_CONFIG").as_deref() == Ok("1");
+        let v: Value = (!skip)
+            .then(|| std::fs::read_to_string(root.join("config.json")).ok())
+            .flatten()
             .and_then(|t| serde_json::from_str(&t).ok())
             .unwrap_or(Value::Null);
         let port = std::env::var("PORT")
