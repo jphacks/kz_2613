@@ -527,6 +527,31 @@ async function main() {
       await injected(mon, 'SPACE', 'up', mfrom);
     }, { rustOnly: true });
 
+    await check('入力先: フォーカス喪失前と対象外の間に届いた欠番待ち入力を、復帰後へ持ち越さない', async () => {
+      const old = p1.epoch;
+      const n = p1.iseq + 1;
+      p1.send({ type: 'input', iseq: n + 1, epoch: old, button: 'JUMP', state: 'down' });
+      let from = p1.mark();
+      host.child.stdin.write('target off\n');
+      const off = await p1.waitFor(m => m.type === 'game' && m.game.inputTarget === true, { from });
+      assert(off.game.epoch > old, '入力先から外れてもepochが変わらない');
+      p1.send({ type: 'input', iseq: n + 2, epoch: off.game.epoch, button: 'FWD', state: 'down' });
+      from = p1.mark();
+      host.child.stdin.write('target on\n');
+      const on = await p1.waitFor(m => m.type === 'game' && m.game.inputActive, { from });
+      assert(on.game.epoch > off.game.epoch, '入力先へ戻ってもepochが変わらない');
+      const mfrom = mon.mark();
+      p1.send({ type: 'input', iseq: n, epoch: old, button: 'JUMP', state: 'up' });
+      p1.iseq = n + 2;
+      const ack = await p1.waitFor(m => m.type === 'ack' && m.iseq === n + 2);
+      assert(ack.stale, '対象外の入力を復帰後に処理した');
+      await noPress(mon, mfrom);
+      p1.input('JUMP', 'down');
+      await injected(mon, 'SPACE', 'down', mfrom);
+      p1.input('JUMP', 'up');
+      await injected(mon, 'SPACE', 'up', mfrom);
+    }, { rustOnly: true });
+
     await check('切断: coop 中の切断で paused、切断者以外の押下も全解放する', async () => {
       p1.input('FWD', 'up'); // 前の試験の押下が残っていれば離す (既に離れていれば何もしない)
       await sleep(150);
@@ -680,6 +705,25 @@ async function main() {
       p1.input('UP', 'up');
       mon.send({ type: 'inject_mode', mode: 'on' });
       await mon.waitFor((m) => m.type === 'state' && m.inject.mode === 'on', { what: 'inject on' });
+    }, { rustOnly: true });
+
+    await check('緊急停止: 切断待ちのpaused中でも自動復帰を解除し、全員戻っても再開しない', async () => {
+      let from = p1.mark();
+      mon.send({ type: 'auto_resume', on: true });
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', from);
+      from = p1.mark();
+      p2.close();
+      await p1.waitFor(m => m.type === 'game' && m.game.phase === 'paused' && /disconnected$/.test(m.game.reason || ''), { from });
+      from = p1.mark();
+      host.child.stdin.write('stop\n');
+      const stopped = await p1.waitFor(m => m.type === 'game' && m.game.reason === 'emergency stop', { from });
+      assert(stopped.game.autoResumeUntil === 0, '自動復帰の期限が残っている');
+      from = p1.mark();
+      p2 = await join('P2');
+      await welcome(p2);
+      await sleep(350);
+      assert(!p1.msgs.slice(from).some(m => m.type === 'game' && m.game.phase === 'coop'), '緊急停止後に自動復帰した');
     }, { rustOnly: true });
 
     await check('進行: P1 の END で lobby', async () => {
