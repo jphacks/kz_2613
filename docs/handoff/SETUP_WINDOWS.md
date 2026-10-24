@@ -12,7 +12,7 @@
 1. パッケージを展開し、既存の `README.md` と `LICENSE` を保持する。
 2. `repo_overlay/` の**中身だけ**を既存リポジトリのルートへコピーする。外側のディレクトリを入れない。
 3. コミット前に `git status` を確認し、未コミットの他者変更を上書きしない。
-4. `AGENTS.md`、`CLAUDE.md`、`docs/requirements/requirements-v0.2.md`、`docs/decisions/tech-stack-provisional.md` を読む。
+4. `AGENTS.md`、`CLAUDE.md`、`docs/requirements/requirements-v0.3.md`、`docs/decisions/tech-stack.md` を読む。
 5. `py -3 scripts/verify_overlay.py` を実行する。この構造確認だけならPython 3.10以上を利用できる。
 
 ## バックエンドの構築
@@ -74,6 +74,18 @@ Viteのdist生成後、FastAPIを再起動して `http://127.0.0.1:8000/` を開
 別のマイナーバージョンで仮想環境を作らない。初期構築の検証環境はPython 3.12.14、Node.js 22.15.0、npm 11.16.0。
 
 共通運用と全バックログは、同じディレクトリの `DEVELOPMENT_WORKFLOW.md` と `ISSUE_PLAN.md` を参照する。
+
+## Rust版ホストのビルド環境（PCホスト）
+
+技術構成の変更（`docs/decisions/tech-stack.md`）に伴い、PCホストはRustでビルドする。WebRTC（libdatachannel）とOpenSSLをソースからビルドするため、次が必要になる。
+
+1. Rust（MSVC）：`rustup-init.exe -y --profile minimal --default-toolchain stable`
+2. Visual StudioのC++ツールとCMake（「C++によるデスクトップ開発」に含まれる）
+3. Perl（OpenSSLのビルド用）：Strawberry Perlのポータブル版を展開し、`perlin` をPATHに追加する
+4. libclang（bindgen用）：LLVMを導入するか、`libclang.dll` の場所を `LIBCLANG_PATH` に設定する
+5. `cargo build --release`。初回はOpenSSLとlibdatachannelのビルドに時間がかかる
+
+ファイアウォールでは、ローカルサブネットからのTCP 8080と、ホストの実行ファイルのUDP（WebRTC）を許可する。
 
 ## 最初の実機通信ゲート
 
