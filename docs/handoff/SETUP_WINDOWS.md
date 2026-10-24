@@ -90,6 +90,22 @@ Viteのdist生成後、FastAPIを再起動して `http://127.0.0.1:8000/` を開
 
 **注意：** `target/` を別の場所からコピーして流用しない。libdatachannelのCMakeキャッシュが元の絶対パスを保持しているため、再ビルドが失敗する。
 
+### このPCでのRust環境
+
+Rustは公式rustupでユーザー領域に導入する。Visual Studio 2022のC++ツールを使用し、Strawberry Perlのポータブル版は `%LOCALAPPDATA%\ReCooplay\StrawberryPerl` に展開する。libclangは開発用のPython仮想環境へ `python -m pip install libclang` で導入でき、製品の依存関係には含めない。
+
+```powershell
+$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:LOCALAPPDATA\ReCooplay\StrawberryPerl\perl\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;$env:PATH"
+$env:LIBCLANG_PATH = "$PWD\apps\host\.venv\Lib\site-packages\clang\native"
+# Documents配下へのビルド出力が拒否される場合の開発用キャッシュ
+$env:CARGO_TARGET_DIR = "$env:LOCALAPPDATA\ReCooplay\cargo-target"
+cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml
+cargo test --release --locked --manifest-path apps/host-rs/Cargo.toml
+node scripts/sim/protocol-sim.mjs --bin "$env:CARGO_TARGET_DIR\release\recooplay-host.exe"
+```
+
+環境変数の設定はそのPowerShellだけに有効。rustup導入直後にcargoが見つからない場合は、新しいターミナルを開くか上記PATHを設定する。シミュレーションはホストを必ず `RECOOPLAY_DRY_RUN=1` で起動し、OS入力を送らない。
+
 ファイアウォールでは、ローカルサブネットからのTCP 8080と、ホストの実行ファイルのUDP（WebRTC）を許可する。管理者PowerShellで `powershell -ExecutionPolicy Bypass -File scripts\windows\allow-firewall.ps1 -Program apps\host-rs\target\release\recooplay-host.exe` を実行する（`-Program` を省略するとNode参照実装の `node.exe` を許可する）。
 
 ## 最初の実機通信ゲート
