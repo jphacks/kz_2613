@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls } from '../../apps/web-static/app-view.js';
+import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, roleView } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -76,6 +76,20 @@ test('キー表示: ホストの keys (ゲームのキー設定) に合わせ、
   assert.ok(roleControls('P1', keys).includes('ダッシュ（Q）'));
   assert.ok(roleControls('P3', keys).includes('捨てる（R）'));
   assert.ok(roleControls('P1').includes('移動スティック（W/A/S/D）'));
+});
+
+test('分担の確認: 操作定義があれば分担の案 (協力プレイ中は決まった分担) を、グループと実際のキーで出す', () => {
+  const profile = { id: 'test-pseudo', groups: [{ id: 'movement', label: '移動' }, { id: 'gameplay', label: 'アクション' }],
+    actions: [{ id: 'left', label: '左', group: 'movement', type: 'button' }, { id: 'aim', label: '狙い', group: 'gameplay', type: 'mouseDelta' }, { id: 'zoom', label: 'ズーム', group: 'gameplay', type: 'wheel' }],
+    assignment: { P1: ['left'], P2: ['aim', 'zoom'], P3: [] } };
+  const keys = { actions: { left: { label: 'A' } } };
+  const v = roleView({ profile, keys }, 'P1');
+  assert.equal(v.title, '移動');
+  assert.deepEqual(v.lines, ['移動：左（A）']);
+  assert.deepEqual(roleView({ profile, keys }, 'P2').lines, ['アクション：狙い（マウス移動）、ズーム（ホイール）']);
+  assert.equal(roleView({ profile, keys }, 'P3').title, '担当なし');
+  assert.deepEqual(roleView({ profile, keys, assigned: { P1: ['aim'] } }, 'P1').lines, ['アクション：狙い（マウス移動）']);
+  assert.ok(roleView({ profile: { id: 'minecraft-java' }, keys: null }, 'P1').lines.includes('ダッシュ（Ctrl）'));
 });
 
 test('進行: 一時停止の理由を表示する', () => {

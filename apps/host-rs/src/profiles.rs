@@ -290,3 +290,81 @@ pub fn snapshot(p: &Profile, players: usize) -> Value {
         "assignments": by_players,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn minimal(extra_actions: &str, groups: &str) -> Value {
+        serde_json::from_str(&format!(
+            r#"{{"schema":1,"id":"t","name":"T","match":{{"ids":[],"steamAppIds":[42]}},"groups":[{groups}],"actions":[{extra_actions}]}}"#
+        ))
+        .unwrap()
+    }
+
+    #[test]
+    fn bundled_profiles_are_valid() {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("game-profiles");
+        let (list, errors) = load_dir(&dir);
+        assert!(errors.is_empty(), "{errors:?}");
+        assert!(list.len() >= 500, "{}", list.len());
+        assert!(list.iter().any(|p| p.id == "minecraft-java" && p.status == "device"));
+    }
+
+    #[test]
+    fn invalid_definitions_are_rejected_with_reason() {
+        let g = r#"{"id":"m","role":"P1"}"#;
+        assert!(parse(&minimal(r#"{"id":"a","group":"x","type":"button"}"#, g)).unwrap_err().contains("group x"));
+        assert!(parse(&minimal(r#"{"id":"a","group":"m","type":"button","default":"KEY_NOPE"}"#, g)).unwrap_err().contains("送れません"));
+        assert!(parse(&minimal(r#"{"id":"a","group":"m","type":"jump"}"#, g)).unwrap_err().contains("type"));
+        assert!(parse(&minimal(r#"{"id":"a","group":"m"}"#, r#"{"id":"m","role":"P9"}"#)).unwrap_err().contains("role"));
+        assert!(parse(&minimal(r#"{"id":"a","group":"m"},{"id":"a","group":"m"}"#, g)).unwrap_err().contains("重複"));
+        assert!(parse(&minimal(r#"{"id":"a","group":"m"}"#, r#"{"id":"m","role":"P1","split":[{"id":"s","actions":["zz"]}]}"#)).unwrap_err().contains("zz"));
+        let mut v = minimal(r#"{"id":"a","group":"m"}"#, g);
+        v["schema"] = json!(2);
+        assert!(parse(&v).is_err());
+    }
+
+    #[test]
+    fn find_by_id_and_steam_appid() {
+        let p = parse(&minimal(r#"{"id":"a","group":"m","default":"KEY_W"}"#, r#"{"id":"m","role":"P1"}"#)).unwrap();
+        let list = vec![p, builtin_minecraft()];
+        assert_eq!(find(&list, "steam:42").map(|p| p.id.as_str()), Some("t"));
+        assert_eq!(find(&list, "minecraft-java").map(|p| p.id.as_str()), Some("minecraft-java"));
+        assert!(find(&list, "steam:43").is_none());
+    }
+
+    #[test]
+    fn minecraft_assignment_by_players() {
+        let p = builtin_minecraft();
+        let a = |n| assignment_for(&p, n);
+        assert_eq!(a(1).len(), 1);
+        assert_eq!(a(1)[0].len(), 13);
+        assert_eq!(a(2)[1], ["look", "attack", "use", "inventory", "drop", "hotbar"]);
+        assert_eq!(a(3)[0], ["forward", "back", "left", "right", "jump", "sneak", "sprint"]);
+        assert_eq!(a(3)[1], ["look"]);
+        assert_eq!(a(3)[2], ["attack", "use", "inventory", "drop", "hotbar"]);
+        assert_eq!(a(4)[3], ["inventory", "drop", "hotbar"]);
+        assert_eq!(a(0).len(), 1); // 人数は 1〜4 に収める
+        assert_eq!(a(9).len(), 4);
+    }
+
+    #[test]
+    fn movement_only_game_is_split_and_unsplittable_groups_are_halved() {
+        // 移動だけのゲーム: 3 人なら左・右・ジャンプに分ける
+        let p = parse(&minimal(
+            r#"{"id":"l","group":"m","default":"KEY_A"},{"id":"r","group":"m","default":"KEY_D"},{"id":"j","group":"m","default":"SPACE"}"#,
+            r#"{"id":"m","role":"P1","split":[{"id":"a","actions":["l"]},{"id":"b","actions":["r"]},{"id":"c","actions":["j"]}]}"#,
+        ))
+        .unwrap();
+        assert_eq!(assignment_for(&p, 3), vec![vec!["l"], vec!["r"], vec!["j"]]);
+        assert_eq!(assignment_for(&p, 1), vec![vec!["l", "r", "j"]]);
+        // 分けられる部分がないグループは半分にする (全員に担当が付く)
+        let q = parse(&minimal(r#"{"id":"x","group":"m"},{"id":"y","group":"m"},{"id":"z","group":"m"},{"id":"w","group":"m"}"#, r#"{"id":"m","role":"P1"}"#)).unwrap();
+        let a = assignment_for(&q, 2);
+        assert_eq!(a, vec![vec!["x", "y"], vec!["z", "w"]]);
+        // メニュー (host) と会話 (none) は分担しない
+        let h = parse(&minimal(r#"{"id":"x","group":"m"},{"id":"esc","group":"h"},{"id":"t","group":"c"}"#, r#"{"id":"m","role":"P1"},{"id":"h","role":"host"},{"id":"c","role":"none"}"#)).unwrap();
+        assert_eq!(assignment_for(&h, 3).concat(), vec!["x"]);
+    }
+}

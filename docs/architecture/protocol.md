@@ -59,7 +59,7 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | `kpong` | `t` | WebRTC経由で返す |
 | `rtc-answer` / `rtc-cand` | `sdp`、`sdpType` / `cand`、`mid` | |
 
-**`game` の内容：** `phase`（`lobby`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`、`inputActive`（入力がPCに届く状態か）、`inputTarget`（常時ONだが前面が入力先でない。スマホは「届かない」と表示する）、`epoch`（進行が変わるたび・リセットで1増える。初期値1）、`title`（PCアプリで選んだゲーム。Rust版）、`assigned`（Rust版、#105：協力プレイの分担。枠名→操作IDの一覧）、`profile`（選んだゲームの操作定義の要約。`assignment`＝今の参加人数での案、`assignments`＝1〜4人の案）、`keys`（Rust版、#101：`source`＝`options`（Minecraftの `options.txt` を読んだ）/`default`/`unreadable`、`controls`＝操作名→実際に送るキー `{out, label}`、`actions`＝定義の操作ID→実際に送るキー。`null` は送らない（送れないキー・未設定）、`warnings`＝ずれ・重複・読めない場合の説明）
+**`game` の内容：** `phase`（`lobby`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`、`inputActive`（入力がPCに届く状態か）、`inputTarget`（常時ONだが前面が入力先でない。スマホは「届かない」と表示する）、`epoch`（進行が変わるたび・リセットで1増える。初期値1）、`title`（PCアプリで選んだゲーム。Rust版）、`assigned`（Rust版、#105：協力プレイの分担。枠名→操作IDの一覧）、`profile`（選んだゲームの操作定義の要約。`assignment`＝今の参加人数での案、`assignments`＝1〜4人の案）、`keys`（Rust版、#101：`source`＝`user`（ゲームの設定ファイルを読んだ）/`default`/`unreadable`、`controls`＝操作名→実際に送るキー `{out, label}`、`actions`＝定義の操作ID→実際に送るキー。`null` は送らない（送れないキー・未設定）、`warnings`＝ずれ・重複・読めない場合の説明）
 
 **WebSocketの終了コード：** 4000 = 同じ端末の別タブに置き換えられた、4001 = PCでリセットした、4002 = `clientId` なし、4003 = モニターはPCのみ、4004 = 満員、4005 = 通信契約の版が違う（スマホは再接続をやめ、再読み込みを案内する）、4006 = 再接続のトークンがない・一致しない（スマホは再接続をやめ、PCでのリセットを案内する）
 

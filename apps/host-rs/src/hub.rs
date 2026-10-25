@@ -266,6 +266,7 @@ struct OutputState {
 /// 視点 (P2) の補間。届いた量を「未消化分」に積み、4ms ごとに一定割合ずつ流す。
 /// 流す速さ (時定数) は直近 2 秒の到着の途切れに合わせて自動調整する。
 struct Look {
+    slot: &'static str, // 視点を動かしている枠 (分担で変わる、#105)
     px: f64,
     py: f64,
     fx: f64,
@@ -378,6 +379,7 @@ impl Hub {
             inject: InjectMode::parse(&config.inject_mode).unwrap_or(InjectMode::Off),
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
             look: Look {
+                slot: "P2",
                 px: 0.0,
                 py: 0.0,
                 fx: 0.0,
@@ -768,6 +770,10 @@ impl Hub {
             // 操作定義から生成した操作画面 (#60): 分担で割り当てた操作だけ、ゲームのキー設定に合わせて送る
             self.action_output(slot, control)
         } else if self.game.phase == Phase::Coop {
+            // 操作定義の画面を使うゲームでは、Minecraft 用の固定の操作は送らない (別のゲームで別の操作が動くため)
+            if self.uses_generated_controls() && self.keybinds.output_for(control).is_none() {
+                return None;
+            }
             // 担当の確認は固定の表で行い、送るキーはゲームのキー設定に合わせる (送れないキーは送らない)
             let default = controls::role_control(SLOT_NAMES[slot], control)?;
             self.keybinds.output_for(control).unwrap_or(Some(default))
@@ -829,6 +835,11 @@ impl Hub {
     fn assigned_snapshot(&self) -> Value {
         let m: Map<String, Value> = self.assigned.iter().enumerate().map(|(i, a)| (format!("P{}", i + 1), json!(a))).collect();
         Value::Object(m)
+    }
+
+    /// 操作定義から作った画面を使うゲームか (Minecraft 以外で、分担が決まっている)
+    fn uses_generated_controls(&self) -> bool {
+        self.profile.as_ref().is_some_and(|p| p.id != "minecraft-java") && !self.assigned.is_empty()
     }
 
     /// この枠に割り当てた操作か
@@ -1026,6 +1037,7 @@ impl Hub {
         }
         let now = Instant::now();
         let look = &mut self.look;
+        look.slot = SLOT_NAMES[slot];
         if let Some(prev) = look.last_arrive {
             let gap = now.duration_since(prev).as_secs_f64() * 1000.0;
             if gap < 1000.0 {
@@ -1241,7 +1253,7 @@ impl Hub {
                 if self.look.n > 0 {
                     let entry = self.record(
                         "inject_look",
-                        json!({ "slot": "P2", "dx": self.look.sum_x, "dy": self.look.sum_y, "n": self.look.n, "smoothMs": self.look.tau.round() }),
+                        json!({ "slot": self.look.slot, "dx": self.look.sum_x, "dy": self.look.sum_y, "n": self.look.n, "smoothMs": self.look.tau.round() }),
                     );
                     self.broadcast_monitors(&json!({ "type": "look", "entry": entry }));
                     self.look.sum_x = 0;
