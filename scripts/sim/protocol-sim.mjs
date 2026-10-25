@@ -431,10 +431,17 @@ async function main() {
       if (target === 'rust') {
         p1.send({type:'command',cmd:'READY'});
         await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from});
+        // 入力の初期値は on (#114)。手動で ON にしなくても、準備の後に Ready できる
+        const initial=[...mon.msgs].reverse().find(m=>m.type==='state');
+        assert(initial.inject.mode==='on', `入力の初期値=${initial.inject.mode}`);
         await confirmLineup(mon, p1); p1.send({type:'command',cmd:'START'});
         const prepared = await phaseIs(p1,'preparing',from);
-        assert(!prepared.game.canReady && !prepared.game.hostReady, 'OFFなのにReadyが許可された');
+        assert(prepared.game.canReady && !prepared.game.hostReady, '入力の初期値でReadyできない');
+        // 入力を止めると (緊急停止・診断) Ready できず、PC 画面で再開すると Ready できる
         from = p1.mark();
+        mon.send({type:'inject_mode',mode:'off'});
+        const off = await p1.waitFor(m=>m.type==='game' && !m.game.canReady,{from});
+        assert(off.game.readyReasons.some(r=>r.includes('入力を再開する')), JSON.stringify(off.game.readyReasons));
         p1.send({type:'command',cmd:'READY'});
         await p1.waitFor(m=>m.type==='command_result' && m.cmd==='READY' && !m.accepted,{from});
         mon.send({type:'inject_mode',mode:'on'});

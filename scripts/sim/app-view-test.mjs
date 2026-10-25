@@ -272,7 +272,7 @@ test('本番の安全案内: 切断・緊急停止・入力OFF・前面喪失と
   const g={phase:'coop',connected:['P1','P2','P3']};
   assert.match(desktopWarning(g,{mode:'on',active:false,target:{process:'secret.exe'}}),/Minecraftを前面/);
   assert.doesNotMatch(desktopWarning(g,{mode:'on',active:false,target:{process:'secret.exe'}}),/secret\.exe/);
-  assert.match(desktopWarning(g,{mode:'off'}),/OFF/);
+  assert.match(desktopWarning(g,{mode:'off'}),/入力が止まっています.*入力を再開する/);
   assert.match(desktopWarning(g,{mode:'test'}),/確認用/);
   assert.match(desktopWarning(g,{mode:'on'},false),/接続が切れ/);
   assert.match(desktopWarning({...g,reason:'emergency stop'},{mode:'off'}),/緊急停止/);

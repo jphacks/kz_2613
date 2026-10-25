@@ -615,7 +615,9 @@ impl Hub {
         }
         if !self.input.available() { reasons.push("入力ドライバーが利用できません".into()); }
         if self.hotkey.is_err() && self.fake_target.is_none() { reasons.push("PCの緊急停止キーを登録してください".into()); }
-        if !self.can_inject() { reasons.push("入力を有効にし、対象ゲームを前面にしてください".into()); }
+        // 入力が OFF なのは緊急停止の後か、診断で切り替えたとき。PC の前で確かめてから再開させる (#114)
+        if self.inject == InjectMode::Off { reasons.push("入力が止まっています（緊急停止など）。PCの画面で「入力を再開する」を押してください".into()); }
+        else if !self.can_inject() { reasons.push("対象のゲームを前面にしてください".into()); }
         reasons
     }
 
