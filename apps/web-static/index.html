@@ -23,8 +23,8 @@
   </div>
   <button class="phone-settings" id="phoneSettingsBtn" aria-label="接続・診断を確認">⋯</button>
 </header>
-<!-- PC の入力先 (Minecraft) が前面にないとき: 押しても PC に届かない -->
-<div id="inputWarn">PCの画面がMinecraftになっていません。ホストがMinecraftを前面に戻すまで操作は届きません。</div>
+<!-- PC の入力先 (選んだゲーム) が前面にないとき: 押しても PC に届かない -->
+<div id="inputWarn">PCの画面が選んだゲームになっていません。ホストがゲームを前面に戻すまで操作は届きません。</div>
 <!-- ホストが担当を入れ替えたとき (#47): 本人が確認するまで Ready・再開できない -->
 <div id="roleNotice" class="role-notice" role="alert" hidden><p id="roleNoticeText"></p><button id="roleOkBtn">新しい担当を確認しました</button></div>
 
@@ -53,9 +53,9 @@
     </div>
     <div id="remoteRoute" class="note"></div>
     <button class="cmd" id="startBtn">START</button>
-    <button class="cmd sub" id="openGameBtn" data-cmd="OPEN_GAME" hidden>Minecraftを前面にする</button>
+    <button class="cmd sub" id="openGameBtn" data-cmd="OPEN_GAME" hidden>ゲームを前面にする</button>
     <button class="cmd sub" id="endBtn" style="display:none">ロビーに戻る（協力プレイ終了）</button>
-    <div class="note" id="remoteNote">ゲームを開いてワールドを準備した後、ホストだけがReadyを押します。</div>
+    <div class="note" id="remoteNote">ゲームをプレイ中の画面まで進めた後、ホストだけがReadyを押します。</div>
   </section>
 
   <!-- ロビー / 一時停止: ホスト以外 -->
