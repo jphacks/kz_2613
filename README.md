@@ -201,18 +201,6 @@ Re:Cooplayは、**ゲームや参加人数に合わせて、もっと自然に�
 - **[通信仕様書](docs/protocol-specification.md)** — HTTP・WebSocket・WebRTC、メッセージ形式、接続認可、順序制御
 - **[ゲーム操作定義仕様書](docs/game-profile-specification.md)** — ゲーム検出、キー設定の読取り、人数別の分担、操作画面の生成
 
-## 利用ガイド
-
-- **[導入・接続](docs/getting-started.md)** — 必要な環境、配布状況、PCアプリの起動、QRコードでの参加
-- **[使い方](docs/usage.md)** — ゲーム選択、分担、準備、Ready、一時停止・再開・終了
-- **[困ったとき](docs/troubleshooting.md)** — 起動・接続・通信・入力の症状別の確認と対処
-
-## ギャラリー・関連資料
-
-- **[ギャラリー](docs/gallery.md)** — 実プレイ動画・写真、参加方法、PCとスマホの操作画面
-- **[動作確認の範囲](docs/verification.md)** — 実機記録、自動試験、ゲーム対応の区別、未確認の条件
-- **[開発資料](docs/develop/README.md)** — ビルド・テスト手順、要件、設計判断、開発履歴
-
 ---
 
 ## 開発技術
