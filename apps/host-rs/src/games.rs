@@ -18,11 +18,17 @@ pub struct Entry {
     pub install_dir: PathBuf,
     /// 起動に使う URL (ランチャーのプロトコル)。値は検出時に確かめたものだけ
     pub launch_uri: String,
+    /// 一覧のタイルに出す画像 (#121)。ランチャーがユーザーの PC に保存している画像の場所で、PC 画面にだけ配る。
+    /// 場所は画面へ送らず、項目 ID で引く (/api/game-image)
+    pub image: Option<PathBuf>,
 }
+
+/// 項目 ID → 画像の場所。ホスト (検出) が書き、HTTP の /api/game-image が読む
+pub type Images = std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, PathBuf>>>;
 
 impl Entry {
     pub fn snapshot(&self) -> Value {
-        json!({ "id": self.id, "name": self.name, "source": self.source, "verified": false, "launchable": true })
+        json!({ "id": self.id, "name": self.name, "source": self.source, "verified": false, "launchable": true, "image": self.image.is_some() })
     }
 }
 
@@ -91,14 +97,41 @@ fn detect_steam(steam: &Path) -> Vec<Entry> {
                 continue;
             }
             let Some(acf) = std::fs::read_to_string(f.path()).ok().and_then(|t| parse_vdf(&t)) else { continue };
-            if let Some(e) = steam_entry(&acf, &lib) {
+            if let Some(mut e) = steam_entry(&acf, &lib) {
                 if e.install_dir.is_dir() {
+                    e.image = steam_image(steam, e.id.trim_start_matches("steam:"));
                     list.push(e);
                 }
             }
         }
     }
     list
+}
+
+/// Steam がライブラリの表示用に保存している画像 (`appcache\librarycache\<appid>\`)。縦長
+/// (`library_600x900.jpg`、新しい Steam は `library_capsule.jpg`。タイルを中央で正方形に切り抜く) を優先し、
+/// なければ横長 (`header.jpg`・`library_header.jpg`)。新しい Steam は 1 段下のフォルダに置くので、そこも見る。
+/// appid は数字だけ (steam_entry で確認済み)
+fn steam_image(steam: &Path, appid: &str) -> Option<PathBuf> {
+    let dir = steam.join("appcache").join("librarycache").join(appid);
+    let sub: Vec<PathBuf> = std::fs::read_dir(&dir).ok()?.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
+    let dirs: Vec<PathBuf> = std::iter::once(dir).chain(sub).collect();
+    ["library_600x900", "library_capsule", "header", "library_header"].iter().find_map(|stem| {
+        // 決まった名前がなければ、Steam の表示言語に合わせた名前 (`<名前>_<言語>.jpg`、例: header_japanese.jpg) を使う (#128)
+        dirs.iter().find_map(|d| Some(d.join(format!("{stem}.jpg"))).filter(|p| p.is_file()))
+            .or_else(|| dirs.iter().find_map(|d| localized(d, stem)))
+    })
+}
+
+/// `<stem>_<言語>.jpg` (言語は英小文字だけ) の画像
+fn localized(dir: &Path, stem: &str) -> Option<PathBuf> {
+    let prefix = format!("{stem}_");
+    let mut found: Vec<PathBuf> = std::fs::read_dir(dir).ok()?.flatten().map(|e| e.path()).filter(|p| {
+        p.is_file() && p.file_name().and_then(|n| n.to_str()).and_then(|n| n.strip_prefix(&prefix)).and_then(|n| n.strip_suffix(".jpg"))
+            .is_some_and(|lang| !lang.is_empty() && lang.chars().all(|c| c.is_ascii_lowercase()))
+    }).collect();
+    found.sort();
+    found.into_iter().next()
 }
 
 fn library_paths(vdf: &Vdf) -> Vec<PathBuf> {
@@ -139,6 +172,7 @@ fn steam_entry(acf: &Vdf, library: &Path) -> Option<Entry> {
         source: "steam",
         install_dir,
         launch_uri: format!("steam://rungameid/{appid}"),
+        image: None,
     })
 }
 
@@ -190,6 +224,8 @@ fn epic_entry(v: &Value) -> Option<Entry> {
         source: "epic",
         install_dir,
         launch_uri: format!("com.epicgames.launcher://apps/{target}?action=launch&silent=true"),
+        // Epic の画像の場所は未調査 (#121)。画面は頭文字で代わりに表示する
+        image: None,
     })
 }
 
@@ -444,6 +480,21 @@ mod tests {
     }
 
     #[test]
+    fn steam_image_uses_localized_names() {
+        // 東方風神録のように、Steam の表示言語に合わせた名前だけがある場合 (#128)
+        let dir = std::env::temp_dir().join(format!("recooplay-images-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let cache = dir.join(r"appcache\librarycache\9");
+        std::fs::create_dir_all(&cache).unwrap();
+        for name in ["header_japanese.jpg", "library_600x900_japanese.jpg", "library_hero_japanese.jpg", "library_600x900_x1.jpg"] {
+            std::fs::write(cache.join(name), b"x").unwrap();
+        }
+        let image = steam_image(&dir, "9").map(|p| p.file_name().unwrap().to_string_lossy().to_string());
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(image.as_deref(), Some("library_600x900_japanese.jpg"), "縦長を優先し、言語名は英小文字だけ");
+    }
+
+    #[test]
     fn detect_reads_fixture_folders() {
         let dir = std::env::temp_dir().join(format!("recooplay-games-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
@@ -462,8 +513,24 @@ mod tests {
         std::fs::write(lib2.join(r"steamapps\appmanifest_4.acf"), "壊れたファイル {").unwrap();
         let gamma = dir.join(r"epic-install\Gamma");
         std::fs::write(dir.join(r"epic\g.item"), json!({ "AppName": "Gamma", "DisplayName": "gamma", "InstallLocation": gamma }).to_string()).unwrap();
-        let ids: Vec<String> = detect(&Roots::fake(&dir)).into_iter().map(|e| e.id).collect();
+        // 画像 (#121): 縦長を優先し、なければ横長。1 段下のフォルダも見る。ない項目は None
+        std::fs::create_dir_all(steam.join(r"appcache\librarycache\1")).unwrap();
+        std::fs::write(steam.join(r"appcache\librarycache\1\header.jpg"), b"h").unwrap();
+        std::fs::write(steam.join(r"appcache\librarycache\1\library_600x900.jpg"), b"l").unwrap();
+        // 新しい Steam: 1 段下のフォルダに library_header.jpg・library_capsule.jpg
+        std::fs::create_dir_all(steam.join(r"appcache\librarycache\2\abc")).unwrap();
+        std::fs::create_dir_all(steam.join(r"appcache\librarycache\2\def")).unwrap();
+        std::fs::write(steam.join(r"appcache\librarycache\2\abc\library_header.jpg"), b"h").unwrap();
+        std::fs::write(steam.join(r"appcache\librarycache\2\def\library_capsule.jpg"), b"c").unwrap();
+        let found = detect(&Roots::fake(&dir));
         let _ = std::fs::remove_dir_all(&dir);
+        let ids: Vec<&str> = found.iter().map(|e| e.id.as_str()).collect();
         assert_eq!(ids, vec!["steam:1", "steam:2", "epic:Gamma"]);
+        let image = |i: usize| found[i].image.as_ref().map(|p| p.file_name().unwrap().to_string_lossy().to_string());
+        assert_eq!(image(0).as_deref(), Some("library_600x900.jpg"));
+        assert_eq!(image(1).as_deref(), Some("library_capsule.jpg"), "新しい Steam の縦長を横長より優先");
+        assert_eq!(image(2), None);
+        assert_eq!(found[0].snapshot()["image"], json!(true));
+        assert_eq!(found[2].snapshot()["image"], json!(false));
     }
 }

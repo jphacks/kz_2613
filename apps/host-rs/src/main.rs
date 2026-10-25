@@ -22,7 +22,7 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 
 use axum::extract::ws::{CloseFrame, Message, WebSocket, WebSocketUpgrade};
-use axum::extract::{ConnectInfo, State};
+use axum::extract::{ConnectInfo, Query, State};
 use axum::http::{header, HeaderMap, StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
@@ -40,6 +40,7 @@ struct App {
     public_dir: Arc<PathBuf>,
     port: u16,
     wifi: Arc<Option<(String, String)>>,
+    images: games::Images,
 }
 
 impl App {
@@ -124,6 +125,7 @@ async fn main() {
     println!();
     hub.set_hotkey_status(hotkey);
 
+    let images = hub.images();
     // セッションの中枢は専用スレッド (視点の 4ms 刻みなどを非同期ランタイムに左右されずに回す)
     std::thread::Builder::new().name("hub".into()).spawn(move || hub.run(rx, port)).expect("hub thread");
 
@@ -133,6 +135,7 @@ async fn main() {
         public_dir: Arc::new(root.join(WEB_DIR)),
         port,
         wifi: Arc::new(config.wifi.clone()),
+        images,
     };
 
     // デスクトップアプリ (apps/desktop) から起動された場合: 標準入力の "quit" か、親が終了して入力が閉じたら
@@ -193,6 +196,7 @@ async fn main() {
 
     let router = Router::new()
         .route("/api/info", get(api_info))
+        .route("/api/game-image", get(game_image))
         .route("/ws", get(ws_upgrade))
         .fallback(get(static_file))
         .with_state(app);
@@ -205,6 +209,24 @@ async fn api_info(State(app): State<App>) -> Response {
     let wifi = app.wifi.as_ref().as_ref().map(|(s, p)| (s.as_str(), p.as_str()));
     let body = netinfo::info(app.port, wifi);
     ([(header::CONTENT_TYPE, "application/json"), (header::CACHE_CONTROL, "no-store")], body.to_string()).into_response()
+}
+
+/// 一覧のタイルの画像 (#121)。PC 本体からだけ、検出した項目の ID で引く (場所は受け取らない)。
+/// 画像はユーザーの PC にランチャーが保存しているもので、リポジトリ・ログには残さない
+async fn game_image(State(app): State<App>, ConnectInfo(addr): ConnectInfo<SocketAddr>, Query(q): Query<std::collections::HashMap<String, String>>) -> Response {
+    if !is_loopback(&addr) {
+        return (StatusCode::FORBIDDEN, "this image is only available on the PC").into_response();
+    }
+    let path = q.get("id").and_then(|id| app.images.lock().ok().and_then(|m| m.get(id).cloned()));
+    let Some(path) = path else { return StatusCode::NOT_FOUND.into_response() };
+    let mime = match path.extension().and_then(|e| e.to_str()) {
+        Some("png") => "image/png",
+        _ => "image/jpeg",
+    };
+    match tokio::fs::read(&path).await {
+        Ok(data) => ([(header::CONTENT_TYPE, mime), (header::CACHE_CONTROL, "private, max-age=600")], data).into_response(),
+        Err(_) => StatusCode::NOT_FOUND.into_response(),
+    }
 }
 
 async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<SocketAddr>, uri: Uri) -> Response {

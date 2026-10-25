@@ -106,7 +106,9 @@ test('リモコン: 右・Enter で次、左・Esc で前の画面へ。端で�
   ui = navigate(ui, 'ENTER');
   assert.equal(ui.screen, 'roles');
   assert.equal(navigate(ui, 'ENTER').screen, 'roles');
-  assert.equal(navigate(navigate(ui, 'ESC'), 'LEFT').screen, 'join');
+  // 選択画面では左右がタイルの移動になるので、戻るのは Esc (#121)
+  assert.equal(navigate(navigate(ui, 'ESC'), 'ESC').screen, 'join');
+  assert.equal(navigate(navigate(ui, 'LEFT'), 'LEFT', gameList([])).screen, 'game', '選択画面の左は画面を戻らない');
   assert.equal(navigate({ screen: 'join' }, 'ESC').screen, 'join');
   assert.deepEqual(SCREENS, ['join', 'game', 'roles']);
 });
@@ -126,6 +128,11 @@ test('ゲーム一覧: 固定のMinecraftの後に検出したゲームを並べ
   assert.deepEqual(card.badges, ['Steam', '未検証']);
   assert.equal(card.selected, true);
   assert.equal(gameCard(list[0], 'steam:413150', null).badges.includes('未検証'), false);
+  // タイルの画像はホストが項目 ID で返す。ない項目は頭文字 (#121)
+  const withImage = gameCard(gameList([{ id: 'steam:1', name: 'Terraria', source: 'steam', launchable: true, image: true }])[1], null, null);
+  assert.equal(withImage.image, '/api/game-image?id=steam%3A1');
+  assert.equal(card.image, null); assert.equal(card.initial, 'S');
+  assert.equal(gameCard({ id: 'x', name: '「ゼルダ」', source: 'steam' }, null, null).initial, 'ゼ', '記号は飛ばす');
 });
 
 test('ゲーム一覧: 起動の状態は選んだ項目への要求だけを表示する', () => {
@@ -187,15 +194,19 @@ test('役割の入れ替え: 固定の分担は担当 (roleOf) で表示し、�
   assert.match(rolesAction({ phase: 'paused', roleAck: [] }, gameList([])).note, /再開/);
 });
 
-test('リモコン: 選択画面の上下で検出したゲームを含む一覧を巡回する', () => {
-  const list = gameList(detected);
-  let ui = { screen: 'game', game: 'minecraft-java' };
-  ui = navigate(ui, 'DOWN', list); assert.equal(ui.game, 'steam:413150');
-  ui = navigate(ui, 'DOWN', list); assert.equal(ui.game, 'epic:Gamma');
-  ui = navigate(ui, 'DOWN', list); assert.equal(ui.game, 'minecraft-java');
-  ui = navigate(ui, 'UP', list); assert.equal(ui.game, 'epic:Gamma');
-  assert.equal(navigate({ screen: 'game', game: 'gone' }, 'DOWN', list).game, 'minecraft-java');
-  assert.equal(navigate({ screen: 'game', game: 'gone' }, 'UP', list).game, 'epic:Gamma');
+test('リモコン: 選択画面は横3列のタイルを、左右で隣・上下で1行動き、端で止まる (#121)', () => {
+  const games = Array.from({ length: 7 }, (_, i) => ({ id: `steam:${i + 1}`, name: `G${i + 1}`, source: 'steam', launchable: true }));
+  const list = gameList(games); // Minecraft + 7 本 = 8 件 (3・3・2 の 3 行)
+  const at = (id, c) => navigate({ screen: 'game', game: id }, c, list).game;
+  assert.equal(at('minecraft-java', 'RIGHT'), 'steam:1');
+  assert.equal(at('minecraft-java', 'LEFT'), 'minecraft-java', '左端で止まる');
+  assert.equal(at('minecraft-java', 'DOWN'), 'steam:3', '1 行下 (3 つ先)');
+  assert.equal(at('steam:3', 'UP'), 'minecraft-java');
+  assert.equal(at('minecraft-java', 'UP'), 'minecraft-java', '上端で止まる');
+  assert.equal(at('steam:5', 'DOWN'), 'steam:7', '下の行が短いときは最後の項目へ');
+  assert.equal(at('steam:7', 'DOWN'), 'steam:7', '最後の行で止まる');
+  assert.equal(at('steam:7', 'RIGHT'), 'steam:7', '最後で止まる');
+  assert.equal(navigate({ screen: 'game', game: 'gone' }, 'DOWN', list).game, 'minecraft-java', '選択が一覧にないときは先頭へ');
   assert.equal(navigate({ screen: 'join', game: 'minecraft-java' }, 'DOWN', list).game, 'minecraft-java', '選択画面以外では変えない');
 });
 
