@@ -559,6 +559,9 @@ impl Hub {
         let mut reasons = Vec::new();
         if self.connected_slots().len() != 3 { reasons.push("3人全員の接続が必要です"); }
         if !self.title_known(&self.game.title) { reasons.push("ゲームを選択してください"); }
+        if self.profile.as_ref().is_some_and(|p| !profiles::controller_supported(p)) {
+            reasons.push("この操作定義に対応するスマホ画面は未実装です。協力操作は開始できません");
+        }
         if !self.input.available() { reasons.push("入力ドライバーが利用できません"); }
         if self.hotkey.is_err() && self.fake_target.is_none() { reasons.push("PCの緊急停止キーを登録してください"); }
         if !self.can_inject() { reasons.push("入力を有効にし、対象ゲームを前面にしてください"); }
@@ -823,6 +826,9 @@ impl Hub {
             }
             None => Keybinds::none(),
         };
+        if self.profile.as_ref().is_some_and(|p| !profiles::controller_supported(p)) {
+            self.keybinds.warnings.push("操作定義と分担は参考情報です。この定義に対応するスマホ画面は未実装のため、Readyできません".into());
+        }
         // ファイルの場所 (ユーザー名を含む) はログに残さない
         self.log("keybinds", json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings }));
     }
@@ -1618,20 +1624,11 @@ impl Hub {
             "prepare" => { if self.can_prepare() { self.command(0, "PREPARE"); } }
             "open_game" => { if self.connected_slots().contains(&0) { self.command(0, "OPEN_GAME"); } }
             "select_game" => {
-                let Some(t) = s(msg, "title").filter(|t| TITLES.contains(&t.as_str())) else { return };
-                if t == self.game.title {
-                    return;
-                }
-                self.game.title = t;
-                self.game.host_ready = false;
-                self.reload_keybinds();
-                self.log("select_game", json!({ "title": self.game.title }));
-                // ゲームを変えたら全解放してロビー (ホストのリモコン) へ戻る。参加者と役割はそのまま
-                if self.game.phase != Phase::Lobby {
-                    self.set_phase(Phase::Lobby, "game change");
-                } else {
-                    self.push_game();
-                }
+                let Some(t) = s(msg, "title").filter(|t| self.title_known(t)) else { return };
+                self.select_title(t);
+            }
+            "launch_game" => {
+                if let Some(id) = s(msg, "id") { self.launch_game(&id); }
             }
             "refresh_games" => self.scan_games(),
             "observe" => {

@@ -297,21 +297,28 @@ fn ue_input_ini(text: &str) -> HashMap<String, Key> {
 fn source_cfg(text: &str) -> HashMap<String, Key> {
     let mut map = HashMap::new();
     let mut bound: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
-    for line in text.lines() {
-        // 引用符内の空白を保持し、コメントは命令として扱わない。
-        let mut parts = Vec::new();
-        let mut token = String::new();
-        let mut quoted = false;
-        for c in line.chars() {
-            if c == '"' { quoted = !quoted; }
-            else if c.is_whitespace() && !quoted {
-                if !token.is_empty() { parts.push(std::mem::take(&mut token)); }
-            } else { token.push(c); }
+    // 引用符の外のセミコロンと改行だけが命令の区切り。
+    let mut commands = Vec::new(); let mut parts = Vec::new();
+    let mut token = String::new(); let mut quoted = false; let mut started = false;
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '/' && chars.peek() == Some(&'/') && !quoted {
+            for c in chars.by_ref() { if c == '\n' { break; } }
+            if started { parts.push(std::mem::take(&mut token)); started=false; }
+            commands.push(std::mem::take(&mut parts)); continue;
         }
-        if !token.is_empty() { parts.push(token); }
+        if c == '"' { quoted = !quoted; started=true; }
+        else if !quoted && (c.is_whitespace() || c == ';') {
+            if started { parts.push(std::mem::take(&mut token)); started=false; }
+            if matches!(c,';'|'\n') { commands.push(std::mem::take(&mut parts)); }
+        } else { token.push(c); started=true; }
+    }
+    if started { parts.push(token); } commands.push(parts);
+    for parts in commands {
         match parts.first().map(String::as_str) {
             Some("bind") if parts.len() >= 3 => {
                 let command = parts[2].clone();
+                if command.is_empty() { bound.remove(&parts[1].to_ascii_lowercase()); continue; }
                 map.insert(command.clone(), Key::Unbound);
                 bound.insert(parts[1].to_ascii_lowercase(), command);
             }
@@ -539,6 +546,8 @@ mod tests {
         assert_eq!(map["+attack"], Key::Output("MOUSE_L"));
         assert_eq!(source_cfg(&(rows.to_owned() + "unbind w\n"))["+jump"], Key::Unbound);
         assert!(source_cfg(&(rows.to_owned() + "unbindall\n")).values().all(|k| *k == Key::Unbound));
+        let map=source_cfg("bind w +forward; bind w +jump; // unbindall\nbind w \"\"");
+        assert_eq!(map["+forward"],Key::Unbound); assert_eq!(map["+jump"],Key::Unbound);
     }
 
     #[test]
