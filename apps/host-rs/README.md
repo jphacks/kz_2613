@@ -36,6 +36,7 @@ cargo build --release --locked
 ```
 
 - `PORT=18081` などでポート変更、`RECOOPLAY_DRY_RUN=1` で実際には注入しない（自動テスト用）
+- Minecraftのキー設定：ゲームの準備・Ready・再開のたびに `%APPDATA%\.minecraft\options.txt` を読み、ユーザーが変えたキーに合わせて送る（#101、読むだけで書き換えない）。ランチャー（CurseForge・Prism等）で別のフォルダを使う場合は `config.json` の `minecraftOptions` に `options.txt` の場所を書く（`RECOOPLAY_MINECRAFT_OPTIONS` でも指定可）。送れないキー（マウスの中ボタン等）・未設定の操作は送らず、PC画面とスマホに表示する
 - `RECOOPLAY_LOG_DIR` でログの出力先を変更、`RECOOPLAY_NO_CONFIG=1` で `config.json` を読まない（シミュレーション用）
 - Ctrl+C で終了すると、押下中のキー / マウスボタンをすべて離してから終了する
 

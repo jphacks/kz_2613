@@ -35,11 +35,32 @@ export function screenOnGameUpdate(ui, previousPhase, game) {
     screen:game?.phase && game.phase !== previousPhase && game.phase !== 'lobby' ? 'roles' : ui.screen};
 }
 
-// Minecraft v0.1 の固定分担 (docs/requirements/requirements-v0.3.md 3.2)。役割の編集・交換は P0 の対象外
+// 操作ごとの初期のキー表示。ホストの game.keys (ゲームのキー設定に合わせた実際のキー) が来るまで使う (#101)
+const KEY_DEFAULTS = { FWD: 'W', LEFT: 'A', BACK: 'S', RIGHT: 'D', JUMP: 'Space', SNEAK: 'Shift', SPRINT: 'Ctrl', ATTACK: '左クリック', USE: '右クリック', INV: 'E', DROP: 'Q' };
+
+/** 操作に実際に割り当たっているキーの表示。送れないキー・未設定は「送らない」 */
+export function keyLabel(keys, control) {
+  if (!keys?.controls || !(control in keys.controls)) return KEY_DEFAULTS[control] || '';
+  return keys.controls[control]?.label ?? '送らない';
+}
+
+// Minecraft v0.1 の固定分担 (docs/requirements/requirements-v0.3.md 3.2)。役割の編集・交換は P0 の対象外。
+// キーの表示はゲームのキー設定に合わせる (items: [表示名, 操作名の一覧 | null])
+const ROLE_ITEMS = {
+  P1: [['移動スティック', ['FWD', 'LEFT', 'BACK', 'RIGHT']], ['ジャンプ', ['JUMP']], ['スニーク', ['SNEAK']], ['ダッシュ', ['SPRINT']]],
+  P2: [['ドラッグで視点を回す（マウス移動）', null], ['感度はスマホで調整', null]],
+  P3: [['攻撃・採掘', ['ATTACK']], ['使う・置く', ['USE']], ['持ち物 ◀▶（ホイール）', null], ['インベントリ', ['INV']], ['捨てる', ['DROP']]],
+};
+
+/** 担当の操作の一覧 (実際のキー付き) */
+export function roleControls(slot, keys) {
+  return (ROLE_ITEMS[slot] || []).map(([text, ids]) => ids ? `${text}（${ids.map((c) => keyLabel(keys, c)).join('/')}）` : text);
+}
+
 export const ROLES = [
-  { slot: 'P1', title: '移動・ホスト', controls: ['移動スティック（W/A/S/D）', 'ジャンプ（Space）', 'スニーク（Shift）', 'ダッシュ（Ctrl）'], host: true },
-  { slot: 'P2', title: '視点', controls: ['ドラッグで視点を回す（マウス移動）', '感度はスマホで調整'] },
-  { slot: 'P3', title: 'アクション', controls: ['攻撃・採掘（左クリック）', '使う・置く（右クリック）', '持ち物 ◀▶（ホイール）', 'インベントリ（E）', '捨てる（Q）'] },
+  { slot: 'P1', title: '移動・ホスト', controls: roleControls('P1'), host: true },
+  { slot: 'P2', title: '視点', controls: roleControls('P2') },
+  { slot: 'P3', title: 'アクション', controls: roleControls('P3') },
 ];
 
 // P0 はゲームの手動起動を前提にする。自動検出・自動起動は P2

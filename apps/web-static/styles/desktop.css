@@ -532,6 +532,14 @@ body {
   gap: 60px;
 }
 
+.role-keys {
+  position: absolute;
+  left: 108px;
+  top: 974px;
+  min-height: 48px;
+  font-size: 22px;
+}
+
 .role-column {
   border-radius: 22px;
   background: var(--color-character);

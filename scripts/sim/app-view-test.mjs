@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning } from '../../apps/web-static/app-view.js';
+import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -66,6 +66,16 @@ test('進行: 協力プレイ中は入力先の状態に応じて案内する', 
   assert.match(phaseView(coop, { mode: 'on', active: true }).detail, /送っています/);
   assert.match(phaseView(coop, { mode: 'on', active: false }).detail, /前面/);
   assert.match(phaseView(coop, { mode: 'off', active: false }).detail, /OFF/);
+});
+
+test('キー表示: ホストの keys (ゲームのキー設定) に合わせ、来るまでは初期のキーを出す', () => {
+  assert.equal(keyLabel(null, 'SPRINT'), 'Ctrl');
+  const keys = { source: 'options', warnings: [], controls: { SPRINT: { out: 'KEY_Q', label: 'Q' }, DROP: { out: 'KEY_R', label: 'R' }, USE: null } };
+  assert.equal(keyLabel(keys, 'SPRINT'), 'Q');
+  assert.equal(keyLabel(keys, 'USE'), '送らない');
+  assert.ok(roleControls('P1', keys).includes('ダッシュ（Q）'));
+  assert.ok(roleControls('P3', keys).includes('捨てる（R）'));
+  assert.ok(roleControls('P1').includes('移動スティック（W/A/S/D）'));
 });
 
 test('進行: 一時停止の理由を表示する', () => {
