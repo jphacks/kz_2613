@@ -436,3 +436,91 @@ mod review_tests {
         assert!(!controller_supported(&p));
     }
 }
+
+/// 代表的な型の分担 (#105)。主要500タイトルの定義 (docs/data/top500-games.json の template) から各型 1 本を選び、
+/// 1〜4人の分担が規則どおりで、負担 (重みの合計) が偏らないことを確かめる。
+/// 表は `cargo test --release representative_assignment_table -- --ignored --nocapture` で出力する
+#[cfg(test)]
+mod representative_tests {
+    use super::*;
+
+    const REPRESENTATIVES: [(&str, &str); 5] = [
+        ("FPS", "steam-1172470"),
+        ("3Dアクション", "steam-2767030"),
+        ("プラットフォーマー", "steam-268910"),
+        ("見下ろし型", "steam-250900"),
+        ("レース", "steam-2483190"),
+    ];
+
+    fn load(id: &str) -> Profile {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../game-profiles").join(format!("{id}.json"));
+        parse(&serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()).unwrap()
+    }
+
+    fn load_of(p: &Profile, ids: &[String]) -> f64 {
+        ids.iter().filter_map(|i| p.actions.iter().find(|a| &a.id == i)).map(|a| a.weight).sum()
+    }
+
+    /// 分けられない単位: 分け方 (split) のあるグループは各部分と残り、ないグループは全体
+    fn parts(p: &Profile) -> Vec<Vec<String>> {
+        p.groups.iter().filter(|g| g.role.starts_with('P')).flat_map(|g| {
+            let ids: Vec<String> = p.actions.iter().filter(|a| a.group == g.id).map(|a| a.id.clone()).collect();
+            if g.split.is_empty() { return vec![ids]; }
+            let mut v: Vec<Vec<String>> = g.split.iter().map(|s| s.actions.clone()).collect();
+            let rest: Vec<String> = ids.into_iter().filter(|i| !v.iter().any(|s| s.contains(i))).collect();
+            if !rest.is_empty() { v.push(rest); }
+            v
+        }).collect()
+    }
+
+    #[test]
+    fn representative_types_follow_rules_and_stay_balanced() {
+        for (kind, id) in REPRESENTATIVES {
+            let p = load(id);
+            let playable: Vec<String> = parts(&p).concat();
+            let first = &parts(&p)[0];
+            for n in 1..=4 {
+                let a = assignment_for(&p, n);
+                let name = format!("{kind} {id} {n}人");
+                assert_eq!(a.len(), n, "{name}: 人数分の担当");
+                // 重複・漏れなし。メニュー (host) などは配らない
+                let mut flat = a.concat();
+                flat.sort();
+                let mut want = playable.clone();
+                want.sort();
+                assert_eq!(flat, want, "{name}: 操作の重複・漏れ");
+                if playable.len() >= n { assert!(a.iter().all(|x| !x.is_empty()), "{name}: 担当のない人"); }
+                // 優先度: 最初の単位 (移動など) は P1 (ホスト) から配る
+                assert!(a[0].iter().any(|x| first.contains(x)), "{name}: P1 に最初の単位がない");
+                // 偏り: 最も重い人が分けられない単位 1 つだけを持つなら、それ以上は軽くできない。
+                // そうでなければ、平均の 1.5 倍を超えない
+                let loads: Vec<f64> = a.iter().map(|x| load_of(&p, x)).collect();
+                let avg = loads.iter().sum::<f64>() / n as f64;
+                let (heavy, max) = loads.iter().enumerate().max_by(|x, y| x.1.total_cmp(y.1)).map(|(i, l)| (i, *l)).unwrap();
+                let single = parts(&p).iter().any(|part| a[heavy].iter().all(|x| part.contains(x)));
+                assert!(single || max <= avg * 1.5, "{name}: 負担の偏り {loads:?}");
+            }
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn representative_assignment_table() {
+        for (kind, id) in REPRESENTATIVES {
+            let p = load(id);
+            println!("\n### {kind}：{}（{id}）", p.name);
+            println!("| 人数 | 担当（操作の数／重み） |\n|---|---|");
+            for n in 1..=4 {
+                let cells: Vec<String> = assignment_for(&p, n)
+                    .iter()
+                    .enumerate()
+                    .map(|(i, a)| {
+                        let labels: Vec<&str> = a.iter().filter_map(|x| p.actions.iter().find(|y| &y.id == x)).map(|y| y.label.as_str()).collect();
+                        format!("P{}：{}（{}／{}）", i + 1, labels.join("・"), a.len(), load_of(&p, a))
+                    })
+                    .collect();
+                println!("| {n} | {} |", cells.join("<br>"));
+            }
+        }
+    }
+}
