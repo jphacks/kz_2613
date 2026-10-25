@@ -115,9 +115,23 @@ fn detect_steam(steam: &Path) -> Vec<Entry> {
 fn steam_image(steam: &Path, appid: &str) -> Option<PathBuf> {
     let dir = steam.join("appcache").join("librarycache").join(appid);
     let sub: Vec<PathBuf> = std::fs::read_dir(&dir).ok()?.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
-    ["library_600x900.jpg", "library_capsule.jpg", "header.jpg", "library_header.jpg"].iter().find_map(|name| {
-        std::iter::once(dir.join(name)).chain(sub.iter().map(|d| d.join(name))).find(|p| p.is_file())
+    let dirs: Vec<PathBuf> = std::iter::once(dir).chain(sub).collect();
+    ["library_600x900", "library_capsule", "header", "library_header"].iter().find_map(|stem| {
+        // 決まった名前がなければ、Steam の表示言語に合わせた名前 (`<名前>_<言語>.jpg`、例: header_japanese.jpg) を使う (#128)
+        dirs.iter().find_map(|d| Some(d.join(format!("{stem}.jpg"))).filter(|p| p.is_file()))
+            .or_else(|| dirs.iter().find_map(|d| localized(d, stem)))
     })
+}
+
+/// `<stem>_<言語>.jpg` (言語は英小文字だけ) の画像
+fn localized(dir: &Path, stem: &str) -> Option<PathBuf> {
+    let prefix = format!("{stem}_");
+    let mut found: Vec<PathBuf> = std::fs::read_dir(dir).ok()?.flatten().map(|e| e.path()).filter(|p| {
+        p.is_file() && p.file_name().and_then(|n| n.to_str()).and_then(|n| n.strip_prefix(&prefix)).and_then(|n| n.strip_suffix(".jpg"))
+            .is_some_and(|lang| !lang.is_empty() && lang.chars().all(|c| c.is_ascii_lowercase()))
+    }).collect();
+    found.sort();
+    found.into_iter().next()
 }
 
 fn library_paths(vdf: &Vdf) -> Vec<PathBuf> {
@@ -463,6 +477,21 @@ mod tests {
         assert!(base(json!({ "InstallLocation": "relative" })).is_none());
         // 名前空間が不正なら AppName だけで起動する
         assert_eq!(base(json!({ "CatalogNamespace": "x?y", "CatalogItemId": "1" })).unwrap().launch_uri, "com.epicgames.launcher://apps/Game?action=launch&silent=true");
+    }
+
+    #[test]
+    fn steam_image_uses_localized_names() {
+        // 東方風神録のように、Steam の表示言語に合わせた名前だけがある場合 (#128)
+        let dir = std::env::temp_dir().join(format!("recooplay-images-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let cache = dir.join(r"appcache\librarycache\9");
+        std::fs::create_dir_all(&cache).unwrap();
+        for name in ["header_japanese.jpg", "library_600x900_japanese.jpg", "library_hero_japanese.jpg", "library_600x900_x1.jpg"] {
+            std::fs::write(cache.join(name), b"x").unwrap();
+        }
+        let image = steam_image(&dir, "9").map(|p| p.file_name().unwrap().to_string_lossy().to_string());
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(image.as_deref(), Some("library_600x900_japanese.jpg"), "縦長を優先し、言語名は英小文字だけ");
     }
 
     #[test]
