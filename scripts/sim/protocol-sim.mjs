@@ -1139,23 +1139,29 @@ async function main() {
       await phaseIs(p1, 'preparing', from);
       const hasCatalogProfile=fs.existsSync(path.join(ROOT,'apps/game-profiles/steam-413150.json'));
       if (hasCatalogProfile) {
+        // 未検証の定義でも、認識できたゲームなら開始できる (#123)。画面には未検証と表示し続ける
         const current=await p1.waitFor(m=>m.type==='game' && m.game.phase==='preparing' && m.game.profile?.id==='steam-413150',{from,what:'未検証の定義'});
-        assert(current.game.profile.status==='unverified' && current.game.profile.controllerSupported===false && !current.game.canReady,'仮定義でReadyできた');
-        const refused=p1.mark(), noInput=mon.mark();
-        p1.send({type:'command',cmd:'READY'});
-        await p1.waitFor(m=>m.type==='command_result' && m.cmd==='READY' && !m.accepted,{from:refused,what:'未対応定義のReady拒否'});
-        p1.input('FWD','down'); await noPress(mon,noInput,100); p1.input('FWD','up');
-        // 既存の対象消失試験はカタログに定義のない模擬Epicゲームで継続する。
+        assert(current.game.profile.status==='unverified' && current.game.profile.controllerSupported===true && current.game.canReady,'未検証の定義でReadyできない');
+        // 既存の対象消失試験は、定義のない模擬Epicゲームで続ける
         from=p1.mark(); app.send({type:'select_game',title:'epic:Gamma'});
         await p1.waitFor(m=>m.type==='game' && m.game.title==='epic:Gamma' && m.game.phase==='lobby',{from});
         from=p1.mark(); await confirmLineup(mon, p1); p1.send({type:'command',cmd:'PREPARE'}); await phaseIs(p1,'preparing',from);
       }
+      // 定義のないゲームには汎用の定義を当て、Minecraft の固定の表は使わない (#123)
+      const generic = await p1.waitFor(m=>m.type==='game' && m.game.phase==='preparing' && m.game.profile,{from,what:'汎用の定義'});
+      assert(!hasCatalogProfile || (generic.game.profile.id==='generic' && generic.game.profile.status==='template' && generic.game.fixedControls===false), JSON.stringify(generic.game.profile?.id));
       p1.send({ type: 'command', cmd: 'READY' });
       await phaseIs(p1, 'coop', from);
       await p3.waitFor(m => m.type === 'game' && m.game.phase === 'coop' && m.game.epoch === p1.epoch, { from: p3from, what: 'P3 current game epoch' });
+      // Minecraft の操作名 (FWD・USE) は送らない
       let mfrom = mon.mark();
-      p1.input('FWD', 'down');
-      p3.input('USE', 'down');
+      p1.input('FWD', 'down'); p3.input('USE', 'down');
+      await noPress(mon, mfrom, 150);
+      p1.input('FWD', 'up'); p3.input('USE', 'up');
+      // 汎用の定義の操作 (P1 前進＝W、P3 構える＝右クリック) を押したまま、対象を消す
+      mfrom = mon.mark();
+      p1.input('act:forward', 'down');
+      p3.input('act:aim', 'down');
       await injected(mon, 'KEY_W', 'down', mfrom);
       await injected(mon, 'MOUSE_R', 'down', mfrom);
       const manifest = hasCatalogProfile
@@ -1170,10 +1176,12 @@ async function main() {
       await injected(mon, 'KEY_W', 'up', mfrom);
       await injected(mon, 'MOUSE_R', 'up', mfrom);
       const stopped = mon.mark();
-      p1.input('FWD', 'down');
+      p1.input('act:forward', 'up'); p3.input('act:aim', 'up');
+      p1.input('act:forward', 'down');
       p1.send({ type: 'command', cmd: 'RESUME' });
       await sleep(150);
       assert(!mon.msgs.slice(stopped).some(m => m.type === 'inject' && m.entry.state === 'down'), '消えた対象への入力を別ゲームへ送った');
+      p1.input('act:forward', 'up');
       fs.renameSync(manifest + '.disabled', manifest);
       afrom = app.mark();
       app.send({ type: 'refresh_games' });

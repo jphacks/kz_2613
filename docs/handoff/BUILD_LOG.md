@@ -747,3 +747,11 @@
 - #116：`command: START`（PREPAREの別名）と`game.canStart`を削除し、ホストの関数名を`can_ready`にした。`protocol-sim.mjs`の`START`は`PREPARE`に置き換えた。PC画面から使われていない`startView`・`phaseView`とその試験6件を削除し、操作設定の手順を今の開始手順に合わせた。通信契約の版はv4のまま（使っていた画面がないため）。
 - #117：構造チェックは残し、説明と必須ファイル（操作定義・一覧・操作定義の文書を追加）を今の構成に合わせた。`ISSUE_PLAN.md`は現役の文書のため必須のまま。判断は[試作品の名残の整理](../decisions/2026-10-25-prototype-cleanup.md)。
 - `cargo build`・`cargo test --release --locked`（ホスト32件＋表の出力1件は手動、プローブ3件）成功。`protocol-sim.mjs`（Rust dry-run）46/46、`shutdown-sim.mjs`、`app-view-test.mjs` 21/21、`ui-input-test.mjs` 8/8、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`、`verify-ui-evidence.mjs`、`profile-extract-test.mjs`、`profile-catalog-test.mjs`、`input-probe-sim.mjs` 12/12、`python scripts/verify_overlay.py`（32件）が成功した。
+
+## 2026-10-26 — 認識できたゲームなら未検証の定義でも開始できるようにする（Claude Code、#123）
+
+- ユーザー判断「どのゲームでも認識できていればおそらく問題ない」に基づき、Readyを確認の状態（reviewed・device）で制限するのをやめた（[決定](../decisions/2026-10-26-start-any-game.md)）。同梱502本のうち開始できたのはMinecraftだけだった。分担できる操作がない定義（マウス操作だけの`pointer`型）は、理由を表示して開始させない。
+- 定義のない検出したゲームに、3Dアクション型と同じ操作の汎用の定義（`profiles::generic`、id `generic`、template）を当てる。以前は定義のないゲームを3人で遊ぶとMinecraftの固定のキーの表で送っており、通信の試験（ゲーム一覧の試験の模擬Epicゲーム）もその経路で通っていた。固定の表はMinecraftの3人と診断用の疑似ゲームだけで使う。
+- PC画面・スマホの案内を「未検証。操作が届くか確かめながら遊んでください」「操作定義がないため、一般的な操作（WASD・マウス）で試します」「マウス操作が中心のため、スマホで分担できる操作がありません」に分けた。
+- `cargo test --release --locked`はホスト34件（汎用の定義・マウス操作だけの定義の試験を追加）＋プローブ3件成功。`protocol-sim.mjs`（Rust dry-run）46/46：ゲーム一覧の試験を、未検証の定義でReadyできること、定義のないゲームが汎用の定義になりMinecraftの操作名（FWD・USE）は送らず汎用の操作（`act:forward`→W、`act:aim`→右クリック）だけを送ること、に書き換えた。`app-view-test.mjs` 21/21、`phone-view-test.mjs`、`ui-input-test.mjs` 8/8、`controller-diagnostics-test.mjs`、`shutdown-sim.mjs`、`check-static-pages.mjs`、`profile-catalog-test.mjs`が成功した。
+- 実際のゲームでの入力の到達は未確認（#61）。
