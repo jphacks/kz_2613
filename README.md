@@ -101,8 +101,6 @@ Re:Cooplay（リコープレイ）は、既存のPCゲームに新しい協力�
 
 スマートフォンへの専用アプリのインストールは不要。1つのPCゲーム画面を共有しながら、複数人で協力プレイを楽しめます。PC側のセットアップについては[Windows構築・起動手順](docs/handoff/SETUP_WINDOWS.md)をご覧ください。
 
-<sub>Re:Cooplayは独立した非公式ツールであり、Minecraftのゲーム本体・素材を同梱していません。Minecraftの公式製品ではなく、Mojang Studios・Microsoftの承認・提携を受けていません。NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. [Minecraftの利用条件に関する確認記録](docs/decisions/2026-10-25-minecraft-usage-terms.md)</sub>
-
 ---
 
 ### 特長
@@ -162,11 +160,12 @@ PC画面に表示されたQRコードをスマートフォンで読み取れば�
 
 ### 今後の展望
 
-Re:Cooplayが目指すのは、**既存ゲームの数だけ、みんなで遊ぶ新しい可能性を広げること**です。
+Re:Cooplayは、**ゲームや参加人数に合わせて、もっと自然に共同操作を楽しめること**を目指しています。
 
-- **より多くのゲーム・ジャンルへ：** Minecraftやホラーゲームで得られた楽しさを、アクションや探索ゲームなどにも広げ、タイトルごとの操作や遊び方に合わせた共同操作を楽しめるようにする。
-- **自分たちらしい共同操作へ：** 操作の割り当てやボタン配置をさらに自由にカスタマイズし、同じゲームでも自分たちだけのルールで遊べるようにする。
-- **離れていても一緒に：** 同じネットワーク・同じ画面で楽しむ共同操作を、離れた友達とも共有できるようにする。
+- **操作しやすいボタン配置に：** スマホの操作画面でボタンの配置を編集し、自分の手や担当する操作に合わせたコントローラーを作れるようにする。
+- **操作の負担を考えた、自動的な役割分担に：** ボタンの数だけで分けるのではなく、操作の頻度や量、同時に操作する場面などから負担を推定し、参加人数に応じた、より適切な分担を提案できるようにする。
+- **より多くのゲームのキー設定を読み取れるように：** ゲームごとに異なるキー設定の保存方法に対応し、自動でキーバインドを取得できるタイトルを増やす。読み取りが難しいゲームでも操作を設定しやすい方法を整える。
+- **離れた友達とも一緒に：** 同じ場所に集まらなくても、1つのキャラクターを協力して操作できるようにする。
 
 ---
 
@@ -185,40 +184,43 @@ Re:Cooplayが目指すのは、**既存ゲームの数だけ、みんなで遊�
 
 #### API・データ
 
-* **Windows API `SendInput`：** 既存ゲームへキーボード・マウス入力を送る。
-* **WebSocket / WebRTC DataChannel：** スマホからの操作入力と、PC・スマホ間の状態を送受信する。
-* **ゲーム別の操作定義：** 担当する操作・キー割り当てをデータとして管理する。Minecraftの`options.txt`などの設定も利用する。
+| 技術 | 用途 |
+|:--|:--|
+| ![Windows API](https://img.shields.io/badge/Windows%20API-SendInput-blue) | 既存のPCゲームへキーボード・マウス入力を送る |
+| ![WebSocket](https://img.shields.io/badge/WebSocket-通信-blue) ![WebRTC](https://img.shields.io/badge/WebRTC-DataChannel-green) | スマホの操作入力や参加・プレイ状態をリアルタイムに送受信 |
+| ![JSON](https://img.shields.io/badge/JSON-操作定義-orange) | ゲームごとに異なるボタン・操作分担・入力の対応関係を管理 |
+| ![Minecraft](https://img.shields.io/badge/Minecraft-options.txt-green) | Minecraftのキー設定を読み取り、操作定義に反映 |
 
 #### フレームワーク・ライブラリ・モジュール
 
-* **Rust / Tokio / axum：** PCホスト、参加・通信・入力管理。
-* **Tauri 2 / WebView2：** Windows向けのPCアプリ。
-* **HTML / CSS / JavaScript：** PC画面とスマートフォン用の操作画面。
-* **Node.js：** 通信シミュレーションや画面検証などの開発・テスト用。
+| カテゴリ | 技術スタック |
+|:--|:--|
+| **PCホスト** | ![Rust](https://img.shields.io/badge/Rust-言語-orange) ![Tokio](https://img.shields.io/badge/Tokio-非同期-blue) ![axum](https://img.shields.io/badge/axum-Web-purple) Rust、Tokio、axum |
+| **PCアプリ** | ![Tauri](https://img.shields.io/badge/Tauri-2-blue) ![WebView2](https://img.shields.io/badge/WebView2-Windows-green) Tauri 2、WebView2 |
+| **スマホ・PC画面** | ![HTML](https://img.shields.io/badge/HTML-5-orange) ![CSS](https://img.shields.io/badge/CSS-3-blue) ![JavaScript](https://img.shields.io/badge/JavaScript-Web-yellow) HTML、CSS、JavaScript |
+| **開発・検証** | ![Node.js](https://img.shields.io/badge/Node.js-テスト-green) Node.jsによる通信シミュレーション・UI検証、Rustのテスト |
 
 #### デバイス
 
-* **Windows PC：** ゲームの実行、通信と操作入力の統合。
-* **Androidスマートフォン / iPhone：** ブラウザから参加し、担当別のコントローラーとして操作。
-* **ローカルWi-Fiネットワーク：** PCと参加者のスマホを接続。基本的な共同操作に外部クラウドサーバーは不要。
+| デバイス | 説明 |
+|:--|:--|
+| ![Windows](https://img.shields.io/badge/Windows-11-blue) | PCゲームの実行、複数人の操作入力の統合 |
+| ![Android](https://img.shields.io/badge/Android-スマートフォン-green) ![iPhone](https://img.shields.io/badge/iPhone-Safari-lightgrey) | 2〜4人が各自のスマホからブラウザで参加・操作 |
+| ![Wi-Fi](https://img.shields.io/badge/Wi--Fi-ローカル接続-yellow) | PCとスマホを同じネットワークに接続。通常の共同操作に外部クラウドサーバーは不要 |
 
 ### 独自技術
 
 #### ハッカソンで開発した独自機能・技術
 
-Hack Day（2026年10月24〜25日）に、複数台のスマートフォンで1つのPCゲームを動かすためのシステムを開発しました。[開発開始前のコミット](https://github.com/jphacks/kz_2613/tree/5acb0049e6)と[実装の差分](https://github.com/jphacks/kz_2613/compare/5acb0049e6...main)、[Hack Day開発ログ](docs/handoff/BUILD_LOG.md)で実装の根拠を確認できます。
+Hack Day（2026年10月24〜25日）に、複数人で1つのキャラクターを動かす仕組みを開発しました。技術ごとの実装・検証記録は以下から確認できます。
 
-* **複数人の入力統合と役割分担：** スマホから届いた操作を参加者の担当に応じて受け付け、1つのキャラクターへの入力に統合します。2〜4人に応じた分担と、プレイ開始前・一時停止中の役割交換にも対応しています。  
-  [入力・セッション統合](apps/host-rs/src/hub.rs) ／ [操作の対応](apps/host-rs/src/controls.rs) ／ [Windows入力](apps/host-rs/src/input.rs) ／ [人数別の分担設計](docs/decisions/2026-10-25-variable-players.md)
-
-* **リアルタイム通信と入力の整合性：** WebSocketとWebRTC DataChannelの両方を扱い、操作の重複や古い入力を防ぎます。視点の連続操作や短い連打、長押しにも対応しました。  
-  [WebRTC通信](apps/host-rs/src/rtc.rs) ／ [通信プロトコル](docs/architecture/protocol.md) ／ [通信回帰試験](scripts/sim/protocol-sim.mjs)
-
-* **ゲーム別の操作定義と役割別UI：** ゲームごとのキー設定・操作種類を扱い、Minecraftの設定の読み取りやSteam・Epic Gamesのタイトル検出、担当に応じたスマホ画面の生成を実装しました。操作定義の登録だけで、すべてのゲームでの動作を保証するものではありません。  
-  [操作定義](docs/architecture/game-profiles.md) ／ [ゲーム検出](apps/host-rs/src/games.rs) ／ [キー設定](apps/host-rs/src/keybinds.rs) ／ [担当別の画面生成](apps/web-static/scripts/generated-controls.js)
-
-* **安全な開始・停止と入力先の制御：** 参加・ゲーム選択・役割決定・準備の後にホストがReadyを押す方式を採用。対象ゲーム以外への誤入力を防ぎ、切断・一時停止・緊急停止の際にはキーやマウスボタンの入力を解放します。  
-  [入力先の確認](apps/host-rs/src/focus.rs) ／ [役割交換](docs/decisions/2026-10-25-role-swap.md) ／ [開始手順](docs/decisions/2026-10-25-launch-after-roles.md)
+| 技術 | 概要 | 実装・記録 |
+|:--|:--|:--|
+| **複数人の入力統合と役割分担** | スマホから受け取った操作を担当者ごとに判定し、1つのゲーム入力へ統合。2〜4人の操作分担や役割交換に対応 | [入力統合](apps/host-rs/src/hub.rs)、[入力変換](apps/host-rs/src/controls.rs)、[OS入力](apps/host-rs/src/input.rs) |
+| **リアルタイム通信と入力の整合性** | WebSocketとWebRTC DataChannelを併用し、重複・古い入力を排除。視点操作、長押しや連打も処理 | [通信実装](apps/host-rs/src/rtc.rs)、[通信仕様](docs/architecture/protocol.md)、[通信検証](scripts/sim/protocol-sim.mjs) |
+| **ゲーム別の操作定義・役割別UI** | ゲームのキー設定や操作種類に合わせて入力を変換し、担当に適したスマホ画面を生成。インストール済みゲームの検出にも対応 | [操作定義](docs/architecture/game-profiles.md)、[ゲーム検出](apps/host-rs/src/games.rs)、[操作画面](apps/web-static/scripts/generated-controls.js) |
+| **安全な開始・停止と入力先の制御** | ホストのReadyによる開始、対象ゲームのウィンドウ確認、切断・一時停止・緊急停止時の入力解放 | [入力先の確認](apps/host-rs/src/focus.rs)、[セッション管理](apps/host-rs/src/hub.rs)、[開始手順](docs/decisions/2026-10-25-launch-after-roles.md) |
+| **参加からプレイまでの画面** | QRコード参加、ゲーム選択、操作分担の確認、スマホをリモコンから役割別コントローラーへ切り替えるUI | [PC・スマホUI](apps/web-static/)、[表示検証](artifacts/improved-ui/README.md) |
 
 操作入力は次の構成でPCゲームに伝わります。
 
@@ -231,14 +233,10 @@ flowchart LR
     I --> G["既存のPCゲーム"]
 ```
 
-| 構成要素 | 主な技術 | 役割 |
-|:--|:--|:--|
-| スマホ操作画面 | HTML / CSS / JavaScript | 参加、PC画面のリモコン、担当別のコントローラー |
-| PCアプリ | Tauri / WebView2 | ゲーム選択、参加・分担の確認、開始準備 |
-| PCホスト | Rust / Tokio / axum | 通信、参加状況、役割、ゲーム入力の統合 |
-| リアルタイム通信 | WebSocket / WebRTC DataChannel | スマホからの操作と状態の送受信 |
-| OS入力 | Windows API `SendInput` | ゲームへのキーボード・マウス入力 |
+[開発開始前のコミット](https://github.com/jphacks/kz_2613/tree/5acb0049e6) ／ [GitHub上の変更差分](https://github.com/jphacks/kz_2613/compare/5acb0049e6...main) ／ [Hack Day開発ログ](docs/handoff/BUILD_LOG.md) ／ [システム設計](docs/architecture/system-design.md)
 
-詳しくは[システム設計](docs/architecture/system-design.md)と[通信仕様](docs/architecture/protocol.md)を参照してください。
+<sub>比較リンクにはREADMEの編集も含まれます。実装内容はコミット履歴と開発ログを参照してください。ゲームの検出・操作定義の登録は、すべてのゲームでの動作を保証するものではありません。</sub>
 
-Hack Dayのライブデモと懇親会では、Minecraftをスマートフォン3台で共同操作しました。2人によるホラーゲームのチーム内試遊も行っています。対応ゲームの範囲や検証条件は[動作確認の詳細](docs/verification.md)にまとめています。
+---
+
+<sub>Re:Cooplayは独立した非公式ツールであり、Minecraftのゲーム本体・素材を同梱していません。Minecraftの公式製品ではなく、Mojang Studios・Microsoftの承認・提携を受けていません。NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. [Minecraftの利用条件に関する確認記録](docs/decisions/2026-10-25-minecraft-usage-terms.md)</sub>
