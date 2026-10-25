@@ -755,3 +755,11 @@
 - PC画面・スマホの案内を「未検証。操作が届くか確かめながら遊んでください」「操作定義がないため、一般的な操作（WASD・マウス）で試します」「マウス操作が中心のため、スマホで分担できる操作がありません」に分けた。
 - `cargo test --release --locked`はホスト34件（汎用の定義・マウス操作だけの定義の試験を追加）＋プローブ3件成功。`protocol-sim.mjs`（Rust dry-run）46/46：ゲーム一覧の試験を、未検証の定義でReadyできること、定義のないゲームが汎用の定義になりMinecraftの操作名（FWD・USE）は送らず汎用の操作（`act:forward`→W、`act:aim`→右クリック）だけを送ること、に書き換えた。`app-view-test.mjs` 21/21、`phone-view-test.mjs`、`ui-input-test.mjs` 8/8、`controller-diagnostics-test.mjs`、`shutdown-sim.mjs`、`check-static-pages.mjs`、`profile-catalog-test.mjs`が成功した。
 - 実際のゲームでの入力の到達は未確認（#61）。
+
+## 2026-10-26 — ゲーム一覧を横3列の正方形のタイルにする（Claude Code、#121）
+
+- PR #124（#123）の上に積んだ。ゲーム一覧を、画像を大きく・下に小さくタイトルの横3列の正方形のタイルにした（[決定](../decisions/2026-10-26-game-tiles.md)）。画像はSteamのライブラリの画像のキャッシュから、縦長（`library_600x900.jpg`・`library_capsule.jpg`）を優先し、なければ横長（`header.jpg`・`library_header.jpg`）。1段下のフォルダも見る。ない項目は頭文字。
+- ホストは検出時に画像の場所を表に持ち、`GET /api/game-image?id=<項目ID>`でPC本体からの要求にだけ返す（場所は受け取らない）。`state.games`に`image`の有無を足した。選択画面では左右で隣・上下で1行動くようにし、画面の前後はEnter・Escにした。
+- #109（PR #111）で起動案内のCSSを消したとき、「安全案内の表示中は一覧の枠の下を空ける」指定も誤って消していたので戻した。最初の撮影では、タイルに`overflow: hidden`を付けたことで行が枠の高さに詰め込まれ、画像が細い帯になったため、行の高さを中身に合わせた（`grid-auto-rows: max-content`）。新しいSteamのファイル名（`library_capsule.jpg`・`library_header.jpg`）に対応して、画像の出る項目が12本中8本から11本になった。
+- `cargo test --release --locked`はホスト34件（画像の検出の試験を拡張）＋プローブ3件成功。`protocol-sim.mjs`（Rust dry-run）46/46：一覧の`image`の有無、`/api/game-image`が一覧の項目IDで画像を返し、画像のない項目・知らないID・パスを含むIDは404を返すことを足した。`app-view-test.mjs` 21/21（3列の移動、画像のURL・頭文字の試験に書き換え）、`ui-input-test.mjs` 8/8、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`shutdown-sim.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`、`verify-ui-evidence.mjs`、`verify_overlay.py`が成功した。
+- dry-runのホスト（実際のSteamを検出）とヘッドレスChromeで、1920×1080と1280×720の一覧を撮影した。13タイル（Minecraft＋Steam 12本）中11本に画像、右・下キーで1行下の項目へ動き、安全案内と重ならず、はみ出しもないことを確認した。PCアプリ（WebView2）・スマホのリモコンでは未確認。

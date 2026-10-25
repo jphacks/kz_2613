@@ -46,6 +46,9 @@ function fakeGames(dir) {
   fs.mkdirSync(path.join(steam, 'common', 'Stardew Valley'), { recursive: true });
   fs.mkdirSync(path.join(steam, 'common', 'Steamworks Shared'), { recursive: true });
   fs.writeFileSync(path.join(steam, 'appmanifest_413150.acf'), '"AppState" { "appid" "413150" "name" "Stardew Valley" "StateFlags" "4" "installdir" "Stardew Valley" }');
+  // 一覧のタイルの画像 (#121)。Steam のライブラリの画像のキャッシュを模す
+  fs.mkdirSync(path.join(root, 'steam', 'appcache', 'librarycache', '413150'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'steam', 'appcache', 'librarycache', '413150', 'library_600x900.jpg'), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
   fs.writeFileSync(path.join(steam, 'appmanifest_228980.acf'), '"AppState" { "appid" "228980" "name" "Steamworks Common Redistributables" "StateFlags" "4" "installdir" "Steamworks Shared" }');
   const gamma = path.join(root, 'epic-install', 'Gamma');
   fs.mkdirSync(gamma, { recursive: true });
@@ -1072,6 +1075,14 @@ async function main() {
       assert(st.games.map((g) => g.id).join() === 'epic:Gamma,steam:413150', JSON.stringify(st.games));
       assert(st.games.every((g) => g.verified === false && !('installDir' in g)), '未検証の表示・インストール先の非公開');
       assert(!p1.msgs.some((m) => JSON.stringify(m).includes('Stardew')), 'スマホに一覧が送られた');
+      // タイルの画像は項目 ID で返し、場所は受け取らない (#121)
+      assert(st.games.find((g) => g.id === 'steam:413150').image === true && st.games.find((g) => g.id === 'epic:Gamma').image === false, JSON.stringify(st.games));
+      const img = await fetch(`${BASE}/api/game-image?id=${encodeURIComponent('steam:413150')}`);
+      assert(img.status === 200 && img.headers.get('content-type') === 'image/jpeg' && (await img.arrayBuffer()).byteLength === 4, `画像 ${img.status}`);
+      for (const id of ['epic:Gamma', 'steam:999', '..\..\config.json', 'C:\Windows\win.ini']) {
+        const r = await fetch(`${BASE}/api/game-image?id=${encodeURIComponent(id)}`);
+        assert(r.status === 404, `${id}: ${r.status}`);
+      }
       // 協力プレイ中・一覧にない値 (パスや URL を含む) では起動も選択もしない
       let afrom = app.mark();
       app.send({ type: 'launch_game', id: 'steam:413150' });
