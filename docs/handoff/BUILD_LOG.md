@@ -763,3 +763,9 @@
 - #109（PR #111）で起動案内のCSSを消したとき、「安全案内の表示中は一覧の枠の下を空ける」指定も誤って消していたので戻した。最初の撮影では、タイルに`overflow: hidden`を付けたことで行が枠の高さに詰め込まれ、画像が細い帯になったため、行の高さを中身に合わせた（`grid-auto-rows: max-content`）。新しいSteamのファイル名（`library_capsule.jpg`・`library_header.jpg`）に対応して、画像の出る項目が12本中8本から11本になった。
 - `cargo test --release --locked`はホスト34件（画像の検出の試験を拡張）＋プローブ3件成功。`protocol-sim.mjs`（Rust dry-run）46/46：一覧の`image`の有無、`/api/game-image`が一覧の項目IDで画像を返し、画像のない項目・知らないID・パスを含むIDは404を返すことを足した。`app-view-test.mjs` 21/21（3列の移動、画像のURL・頭文字の試験に書き換え）、`ui-input-test.mjs` 8/8、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`shutdown-sim.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`、`verify-ui-evidence.mjs`、`verify_overlay.py`が成功した。
 - dry-runのホスト（実際のSteamを検出）とヘッドレスChromeで、1920×1080と1280×720の一覧を撮影した。13タイル（Minecraft＋Steam 12本）中11本に画像、右・下キーで1行下の項目へ動き、安全案内と重ならず、はみ出しもないことを確認した。PCアプリ（WebView2）・スマホのリモコンでは未確認。
+
+## 2026-10-26 — PCアプリを必ず参加画面から始める（Claude Code、#126）
+
+- ユーザーの指摘：PCアプリを起動すると、人数対応より前の「3人で操作を分担」の古いUIが出る。原因は、`desktop.js`が最後に開いた画面を`localStorage`（`recooplay.app`）に保存して起動時に復元していたことと、誰もつながっていない分担の画面がMinecraftの基本の3人分担を見せる作り（#110）だったこと。
+- 起動時は保存した画面を使わず参加画面（QR）から始め、以前の版が保存した値は消す。誰もつながっていないときは分担の画面に列を出さず「参加者を待っています」と表示し、HTMLの見出しの既定の文言からも「3人で」を消した。
+- `app-view-test.mjs` 21/21、`ui-input-test.mjs` 8/8、`phone-view-test.mjs`、`check-static-pages.mjs`が成功。起動中のホスト（作業中のファイルを配信）をヘッドレスChromeで開き、`recooplay.app`に`{screen:'roles'}`を保存してから読み直すと参加画面（`data-view=join`）から始まり保存値が消えること、誰もいない分担の画面の見出しが「参加者を待っています」で列が0であることを確認した。

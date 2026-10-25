@@ -4,7 +4,8 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // swap: 一時停止中に担当を入れ替える画面を開いているか (#47)
 let ui={screen:'join',game:GAMES[0].id,swap:false},swapPick=null;
-try{const saved=JSON.parse(localStorage.getItem('recooplay.app')||'{}');if(SCREENS.includes(saved.screen))ui.screen=saved.screen;}catch{}
+// 起動したら必ず参加画面 (QR) から始める。前回の画面は覚えない (#126)。以前の版が保存した値は消す
+try{localStorage.removeItem('recooplay.app');}catch{}
 let state=null,game=null,inject=null,ws=null,online=false,gamesHtml='',shownGame='';
 // 選択画面の一覧。インストール済みのゲームはPC画面にだけ届く (state.games)
 const games=()=>gameList(state?.games);
@@ -14,7 +15,6 @@ function setUi(next){
   // 分担の画面から戻ったら決定を取り消す (戻った後の古い決定で起動・準備しない、#109)
   if(ui.screen==='roles'&&next.screen!=='roles'&&game?.lineupOk&&game.phase==='lobby')send({type:'unconfirm_lineup'});
   ui={...next,game:game?.title||next.game};
-  try{localStorage.setItem('recooplay.app',JSON.stringify({screen:ui.screen}));}catch{}
   render();
 }
 // WebViewのフォーカス通知、epoch照合、OS入力との排他は従来どおりサーバーが判定する。
@@ -110,7 +110,7 @@ function render(){
   });
   const roleSlots=shownSlots(game);
   $('roles').style.setProperty('--role-count',String(roleSlots.length));
-  $('roleHeading').textContent=game?.lineupOk?`${roleSlots.length}人で決定！`:`${roleSlots.length}人で、操作を分担！`;
+  $('roleHeading').textContent=!roleSlots.length?'参加者を待っています':game?.lineupOk?`${roleSlots.length}人で決定！`:`${roleSlots.length}人で、操作を分担！`;
   if(swapPick&&!roleSlots.includes(swapPick))swapPick=null;
   const pendingAck=game?.roleAck||[];
   $('roles').innerHTML=roleSlots.map(slot=>{
