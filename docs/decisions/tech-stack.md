@@ -24,7 +24,7 @@
 | スマホ・PC画面 | **ビルド不要の静的HTML/CSS/JavaScript**（`index.html` スマホ、`host.html` ダッシュボード、`game.html` 疑似ゲーム画面）、Pointer Events | **検証済み** | 外部CDNは使わない。React化は任意で、行う場合も同じメッセージ契約を守る |
 | PCアプリの枠 | Tauri 2（WebView2）。代替は通常のブラウザ | 採用（このPCでビルド・起動・終了を確認。スマホ実機・配布は未検証） | `apps/desktop`。Rust版ホストを子プロセスとして起動し、同じHTMLをそのまま表示する。終了・異常終了時はホストが全解放してから終了する |
 | QR | 参加URLのQRとWi-Fi接続用のQR（`WIFI:T:WPA;S:..;P:..;;`）をSVGで生成する | **検証済み**（URL QR） | オフラインで生成する。Wi-Fi接続用QRは `config.json` に記載した場合だけ表示する |
-| 設定 | `config.json`（port、wifi、requiredPlayers、injectMode、autoResume、lookSmoothMin/MaxMs） | **検証済み** | Node・Rustで共通の項目 |
+| 設定 | `config.json`（port、wifi、injectMode、autoResume、lookSmoothMin/MaxMs。requiredPlayers は #115 で廃止） | **検証済み** | Node・Rustで共通の項目 |
 | ログ | セッションごとのJSONL（`logs/session-*.jsonl`） | **検証済み** | 入力・注入・照合結果・接続を記録し、事後分析に使う。Rust版はIP・User-Agent・clientId・再接続トークンを記録せず、枠名と端末の種類（iOS/Android/Windows/other）だけを残す（#22、PC上のシミュレーションで確認）。Node参照実装は試作品のまま記録する |
 | 検証方法 | ①プロトコル単位のシミュレーション（注入なしの `RECOOPLAY_DRY_RUN=1` で動作）②疑似ゲーム画面による実入力の照合 ③実機3台 | **検証済み** | シミュレーションは言語に依存しないため、Rust版の合格判定にもそのまま使う |
 | 配布 | Tauriのバンドル、または単一exe | 未検証 | |
