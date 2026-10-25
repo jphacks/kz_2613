@@ -58,9 +58,12 @@ function remoteControl(c){
   else setUi(navigate(ui,c,games()));
 }
 $('subBtn').addEventListener('click',()=>rolesRun(desktopView(ui,game)==='paused'?{kind:'swap'}:rolesAction(game,games()).alt));
+// 緊急停止などで入力が止まっているときの「入力を再開する」(#114)。PC の前で確かめてから再開させる鍵
+const inputStopped=view=>['preparing','ready','paused'].includes(view)&&inject?.mode==='off';
 $('nextBtn').addEventListener('click',()=>{
   const view=desktopView(ui,game);
-  if(view==='join')setUi({...ui,screen:'game'});
+  if(inputStopped(view))send({type:'inject_mode',mode:'on'});
+  else if(view==='join')setUi({...ui,screen:'game'});
   else if(view==='game')gameMain();
   else if(view==='roles')rolesRun(rolesAction(game,games()));
 });
@@ -122,21 +125,23 @@ function render(){
   $('stateBanner').hidden=['game','roles'].includes(view);
   $('stateTitle').textContent={join:`${count}人参加中！`,preparing:'ゲームを準備中！',ready:'全員接続・準備OK！',coop:'みんなでプレイ中！',paused:'一時停止中'}[view]||'';
   $('stateSubtitle').textContent={join:count>=MIN_PLAYERS?`みんながそろったら、OKボタンを押そう！（${MIN_PLAYERS}〜${MAX_PLAYERS}人）`:`参加者を待っています……（${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べます）`,preparing:'ホストがゲームを準備しています……',ready:'ホストのスマホでReadyを押してください！',coop:'止めるときはホストのスマホでPAUSE',paused:'ホストのスマホで再開できます'}[view]||'';
-  if(view==='paused'&&!game?.canResume)$('stateSubtitle').textContent='再開前に、接続と操作設定を確認してください';
+  if(view==='paused'&&!game?.canResume)$('stateSubtitle').textContent=inject?.mode==='off'?'安全を確かめてから「入力を再開する」を押してください':'再開前に、接続とゲームの画面を確認してください';
   $('leftRule').hidden=!['game','roles'].includes(view);
   $('explanation').innerHTML=view==='join'?`${MIN_PLAYERS}〜${MAX_PLAYERS}人がそろったら、<br>OKボタンを押そう！！`:view==='game'?'右側にあるゲーム一覧から<br>遊びたいゲームを<br>選択してください！':view==='roles'?(game?.lineupOk?'メンバーと分担を<br>決定しました！':'操作をそれぞれの<br>スマホに分けよう！'):'';
   $('secondary').innerHTML=view==='game'?'Steam・Epicで見つけたゲームは<br>分担を決めた後に起動できます。<br>「未検証」は操作が届くか未確認です。':view==='roles'?(game?.lineupOk?'ゲームを起動・準備して<br>スマホでReady！':'メンバーと分担を確認して<br>決定しよう！'):'';
-  $('nextBtn').hidden=!['join','game','roles'].includes(view);
+  const stopped=inputStopped(view);
+  $('nextBtn').hidden=!stopped&&!['join','game','roles'].includes(view);
+  $('nextBtn').classList.toggle('resume-input',stopped);
   const action=gameAction(ui,game,games()),roleAction=rolesAction(game,games());
-  $('nextBtn').textContent={join:'OK',game:action.label,roles:roleAction.label}[view]||'';
-  $('nextBtn').disabled=(view==='roles'&&!!roleAction.disabled)||(view==='game'&&action.kind==='none');
+  $('nextBtn').textContent=stopped?'入力を再開する':{join:'OK',game:action.label,roles:roleAction.label}[view]||'';
+  $('nextBtn').disabled=!stopped&&((view==='roles'&&!!roleAction.disabled)||(view==='game'&&action.kind==='none'));
   // 補助ボタン: 分担の画面では失敗時の手動準備、一時停止中は担当の入れ替え (#47)
   const swapEntry=view==='paused'&&game?.canSwap;
   $('subBtn').hidden=!(swapEntry||(view==='roles'&&roleAction.alt));
   $('subBtn').textContent=swapEntry?'担当を入れ替える':roleAction.alt?.label||'';
   $('subBtn').disabled=!swapEntry&&!!roleAction.alt?.disabled;
   renderGames();
-  $('blockedStart').hidden=view!=='preparing';$('readyInstruction').hidden=view!=='ready';
+  $('blockedStart').hidden=view!=='preparing'||stopped;$('readyInstruction').hidden=view!=='ready'||stopped;
   $('joinGuide').hidden=view!=='join';$('gameStage').hidden=view!=='game';$('roleStage').hidden=view!=='roles';
   $('playerStage').hidden=['game','roles'].includes(view);
   $('openGameBtn').hidden=!['preparing','ready','paused'].includes(view);

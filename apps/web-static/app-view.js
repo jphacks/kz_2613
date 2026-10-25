@@ -51,9 +51,9 @@ export function desktopView(ui, game) {
 export function desktopWarning(game, inject, connected = true) {
   if (!connected) return 'PCホストとの接続が切れました。再接続を待っています。';
   if (inject?.emergencyHotkeyError) return '緊急停止キーを登録できません。操作設定で入力をOFFにしてください。';
-  if (game?.reason === 'emergency stop') return '緊急停止しました。入力はOFFです。再開前に操作設定を確認してください。';
+  if (game?.reason === 'emergency stop') return '緊急停止しました。入力は止まっています。安全を確かめてから「入力を再開する」を押してください。';
   if (['preparing','coop','paused'].includes(game?.phase)) {
-    if (inject?.mode === 'off') return '入力がOFFです。操作設定で入力をONにしてください。';
+    if (inject?.mode === 'off') return '入力が止まっています。「入力を再開する」を押すと再開できます。';
     if (inject?.mode === 'test') return '確認用の入力先です。実ゲームで遊ぶ前に操作設定を確認してください。';
     const missing = (game?.participants || []).filter((p) => !game.connected?.includes(p));
     if (missing.length) return `${missing.join('・')}の再接続を待っています。`;
@@ -139,8 +139,7 @@ export const GAMES = [
     steps: [
       'Minecraft のランチャーから手動で起動し、ワールドに入っておく',
       'ホットバーに使うアイテムを並べておく（インベントリ操作はホストのリモコンでは限られます）',
-      'PCの「操作設定」でゲームへの入力をONにする',
-      'Minecraftを開いてワールドを準備し、前面にした後にホストがReadyを押す',
+          'Minecraftを開いてワールドを準備し、前面にした後にホストがReadyを押す',
     ],
   },
 ];

@@ -211,6 +211,15 @@ body {
   font-size: 20px;
 }
 
+/* 緊急停止などで入力が止まっているときの「入力を再開する」(#114)。開始ボタンの位置に出す */
+.main-cta.resume-input {
+  left: 95px;
+  top: 590px;
+  width: 370px;
+  height: 80px;
+  font-size: 28px;
+}
+
 .disabled-start,.start-instruction {
   left: 139px;
   top: 578px;

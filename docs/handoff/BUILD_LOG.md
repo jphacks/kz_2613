@@ -725,3 +725,11 @@
 - `profiles::representative_tests`を追加した。規則（人数分の担当、重複・漏れなし、メニューを配らない、操作が人数以上なら全員に担当、最初の単位がP1）と、偏り（最も重い人が分けられない単位1つだけを持つか、平均の1.5倍以下）を5本×1〜4人で確かめる。表は`cargo test --release --locked representative_assignment_table -- --ignored --nocapture`で出力し、`docs/architecture/game-profiles.md`に載せた。
 - `cargo test --release --locked`はホスト32件成功（表の出力1件は手動実行のため除外）＋プローブ3件成功。5本×1〜4人のすべてで規則と偏りの判定を満たした。分担の算出（`assignment_for`）は変えていない。
 - 観察：4人のプラットフォーマーでは定義が1つの部分とした「ジャンプ・上下」が、FPS・3Dアクションの3〜4人では分け方のない移動が最も重い。移動を分けるかは実機の負担を見て決める（#58）。分担の案の確認であり、操作の互換性の検証ではない。
+
+## 2026-10-25 — 入力の初期値をONにし、手動でONにする手順をなくす（Claude Code、#114）
+
+- `config.json`の`injectMode`の省略時の初期値を`off`から`on`にした（`on`の送信条件＝協力プレイ中で対象のゲームが前面、は変えない）。準備の理由は「入力が止まっています（緊急停止など）。PCの画面で『入力を再開する』を押してください」と「対象のゲームを前面にしてください」に分けた（[入力の初期値](../decisions/2026-10-25-input-default-on.md)）。
+- PC画面：準備・Ready・一時停止の画面で入力がOFFのときだけ「入力を再開する」を開始ボタンの位置に出す。操作設定のOFF/ONは「入力の一時停止（診断・緊急用）」の中へ移し、手順の文言から「入力をONにする」を外した。
+- `cargo build --release --locked`成功。`protocol-sim.mjs`（Rust dry-run）46/46：「進行」の試験を、初期値がONで手動のONなしに準備後のReadyができること、OFFにするとReadyできず理由が「入力を再開する」を案内し、ONに戻すとReadyできることに書き換えた。`--target node` 20/20、`app-view-test.mjs` 27/27、`ui-input-test.mjs` 8/8、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`shutdown-sim.mjs`、`static-assets-sim.mjs`、`verify-ui-evidence.mjs`、`check-static-pages.mjs`が成功した。
+- 撮影用のスクリプトからdry-runホストを起動し、模擬スマホ3台で協力プレイにして標準入力から緊急停止を送った。PC画面が一時停止になり「入力を再開する」と案内が出て、押すと`canResume`が真になりボタンが消えることを、ヘッドレスChromeで確認した。マージ後のmainでは`confirm_lineup`に`epoch`が必要（6e2ba09）で、付けずに送った最初の撮影は決定が受け付けられなかった（ホストの挙動は正しい）。
+- PCアプリ・Minecraftでの実機確認は未実施。
