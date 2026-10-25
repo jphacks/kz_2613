@@ -168,7 +168,9 @@ function renderGames(){
   const list=games(),scanning=!!state?.gamesScanning;
   const html=list.map(g=>{
     const c=gameCard(g,ui.game,game?.launch);
-    return `<button class="game-choice${c.selected?' selected':''}${c.unverified?' unverified':''}" data-game="${esc(c.id)}" aria-pressed="${c.selected}" aria-label="${esc(c.name)}を選択${c.unverified?'（未検証）':''}"><h2>${esc(c.name)}</h2><span class="game-badges">${c.badges.map(b=>`<span class="badge${b==='未検証'?' badge-unverified':''}">${esc(b)}</span>`).join('')}</span>${c.launch?`<span class="game-launch" data-state="${c.launch.state}">${esc(c.launch.title)}</span>`:''}<span class="selection">選択中</span></button>`;
+    // 正方形の画像 (なければ頭文字) と、その下に小さくタイトル・出所・未検証の印 (#121)
+    const art=c.image?`<img src="${esc(c.image)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'tile-initial',textContent:this.dataset.initial}))" data-initial="${esc(c.initial)}">`:`<span class="tile-initial">${esc(c.initial)}</span>`;
+    return `<button class="game-choice${c.selected?' selected':''}${c.unverified?' unverified':''}" data-game="${esc(c.id)}" aria-pressed="${c.selected}" aria-label="${esc(c.name)}を選択${c.unverified?'（未検証）':''}"><span class="tile-art" aria-hidden="true">${art}</span><span class="tile-name">${esc(c.name)}</span><span class="game-badges">${c.badges.map(b=>`<span class="badge${b==='未検証'?' badge-unverified':''}">${esc(b)}</span>`).join('')}</span>${c.launch?`<span class="game-launch" data-state="${c.launch.state}">${esc(c.launch.title)}</span>`:''}</button>`;
   }).join('');
   // 1秒ごとの状態更新で一覧を作り直すとフォーカスが外れるため、変わったときだけ描き直す
   if(html!==gamesHtml){$('gameList').innerHTML=html;gamesHtml=html;}

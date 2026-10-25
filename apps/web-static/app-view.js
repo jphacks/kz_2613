@@ -159,7 +159,7 @@ const LAUNCH_TITLES = { launching: '起動中…', started: '起動しました'
 export function gameList(games) {
   const fixed = { id: GAMES[0].id, name: GAMES[0].name, source: 'manual', verified: true, launchable: false };
   const detected = (games || []).filter((g) => g?.id && g.id !== fixed.id)
-    .map((g) => ({ id: g.id, name: g.name || g.id, source: g.source, verified: g.verified === true, launchable: !!g.launchable }));
+    .map((g) => ({ id: g.id, name: g.name || g.id, source: g.source, verified: g.verified === true, launchable: !!g.launchable, image: g.image === true }));
   return [fixed, ...detected];
 }
 
@@ -173,8 +173,14 @@ export function launchView(launch, id) {
 export function gameCard(entry, selectedId, launch) {
   const badges = [SOURCE_LABELS[entry.source] || entry.source];
   if (!entry.verified) badges.push('未検証');
-  return { id: entry.id, name: entry.name, badges, unverified: !entry.verified, selected: entry.id === selectedId, launch: launchView(launch, entry.id) };
+  // 画像はホストが項目 ID で返す (PC 画面だけ、#121)。ない項目は頭文字で代わりに表示する
+  const image = entry.image ? `/api/game-image?id=${encodeURIComponent(entry.id)}` : null;
+  const initial = [...String(entry.name || '?').replace(/^[^\p{L}\p{N}]+/u, '')][0]?.toUpperCase() || '?';
+  return { id: entry.id, name: entry.name, badges, unverified: !entry.verified, selected: entry.id === selectedId, launch: launchView(launch, entry.id), image, initial };
 }
+
+/** ゲーム一覧の列の数 (横 3 列のタイル、#121) */
+export const GAME_COLUMNS = 3;
 
 /**
  * 選択画面の主ボタン (クリック・Enter) の動作。選ぶだけで起動せず、メンバー・分担の画面へ進む (#109)
@@ -241,15 +247,20 @@ export function slotViews(slots) {
 
 /** ホストのリモコン (矢印・Enter・Esc) による画面の移動。ui = { screen, game }。
  *  選んだゲーム (game) はホストが保持する。変わったら画面から select_game で知らせる。
- *  list は選択画面の一覧 (gameList)。上下で一覧を巡回する */
+ *  list は選択画面の一覧 (gameList)。選択画面では横 3 列のタイルの中を、左右で隣、上下で 1 行動く (#121)。
+ *  選択画面の行き来は Enter (次へ)・Esc (戻る) で行う */
 export function navigate(ui, control, list = GAMES) {
   const i = SCREENS.indexOf(ui.screen);
+  if (ui.screen === 'game' && ['UP', 'DOWN', 'LEFT', 'RIGHT'].includes(control) && list.length) {
+    const j = list.findIndex((g) => g.id === ui.game);
+    if (j < 0) return { ...ui, game: list[0].id };
+    const step = { LEFT: -1, RIGHT: 1, UP: -GAME_COLUMNS, DOWN: GAME_COLUMNS }[control];
+    // 端では止まる。下の行が短いときは最後の項目へ
+    const k = control === 'DOWN' && j + step >= list.length && Math.floor(j / GAME_COLUMNS) < Math.floor((list.length - 1) / GAME_COLUMNS)
+      ? list.length - 1 : j + step;
+    return k < 0 || k >= list.length ? ui : { ...ui, game: list[k].id };
+  }
   if (control === 'RIGHT' || control === 'ENTER') return { ...ui, screen: SCREENS[Math.min(i + 1, SCREENS.length - 1)], game: ui.game || list[0].id };
   if (control === 'LEFT' || control === 'ESC') return { ...ui, screen: SCREENS[Math.max(i - 1, 0)] };
-  if ((control === 'UP' || control === 'DOWN') && ui.screen === 'game' && list.length) {
-    const j = list.findIndex((g) => g.id === ui.game);
-    const k = j < 0 ? (control === 'DOWN' ? 0 : list.length - 1) : (j + (control === 'DOWN' ? 1 : list.length - 1)) % list.length;
-    return { ...ui, game: list[k].id };
-  }
   return ui;
 }
