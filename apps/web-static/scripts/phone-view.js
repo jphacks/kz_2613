@@ -1,26 +1,47 @@
+import { myActions, generatedKey, buildGenerated } from './generated-controls.js';
+
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
-import {profileNotice} from '../app-view.js';
-export function createPhoneView({releaseAll,roleText}) {
+import {profileNotice,roleView} from '../app-view.js';
+export function createPhoneView({releaseAll,roleText,bindControl}) {
   const $ = id => document.getElementById(id);
-  let lastView = null;
+  let lastView = null, lastGen = '';
+  // 視点のパッドと感度は、操作定義の画面で視点を担当するときだけそちらへ移す
+  const lookParts = [$('pad'), document.querySelector('#v-P2 .sens')].filter(Boolean);
+  const lookHome = $('v-P2');
   function render({me,isHost,game}) {
     if (!me || !game) return;
+    const role=roleView(game,me), heading=document.createElement('b');
+    heading.textContent=role.title+(isHost?'（ホスト）':'');
+    const generic=game.profile && game.profile.id!=='minecraft-java';
+    $('role').replaceChildren(heading,document.createTextNode(generic?(game.phase==='coop'?'確定した分担の操作だけを送信します':game.phase==='paused'?'確定した分担（再開時に確認）':'分担案（Readyで確定）'):roleText[me]));
     const phase = game.phase;
     const label = { lobby: '参加受付', preparing: 'ゲーム準備', coop: '協力プレイ中', paused: '一時停止中' }[phase];
     $('phase').textContent = label;
     $('connecting').hidden = true;
     $('phase').className = 'pill ' + phase;
     $('inputWarn').style.display = game.inputTarget ? 'block' : 'none';
-    const view = phase === 'coop' ? 'v-' + me : isHost ? 'v-remote' : 'v-wait';
-    if (view !== lastView) {
+    const generated = phase === 'coop' && myActions(game, me);
+    const view = phase === 'coop' ? (generated ? 'v-gen' : 'v-' + me) : isHost ? 'v-remote' : 'v-wait';
+    const genKey = generated ? generatedKey(game, me) : '';
+    if (view !== lastView || genKey !== lastGen) {
       releaseAll(); // 画面が変わる時は押しっぱなしを解除
+      if (generated) {
+        $('genTitle').textContent = `${game.profile.name}（${me}${isHost ? '・ホスト' : ''}）`;
+        $('genPause').hidden = !isHost;
+        buildGenerated($('genControls'), game, me, { bindControl, lookParts });
+      } else if (lookParts[0] && lookParts[0].parentElement !== lookHome) {
+        lookHome.append(...lookParts);
+      }
       document.querySelectorAll('.view').forEach((el) => el.classList.toggle('show', el.id === view));
       lastView = view;
+      lastGen = genKey;
     }
     const players = ['P1', 'P2', 'P3'].map((p) => `<span class="${game.connected.includes(p) ? 'on' : ''}">${p}${p === me ? '（自分）' : ''}</span>`).join('');
     $('players1').innerHTML = players;
     $('players2').innerHTML = players;
-    $('remoteRoute').textContent = {app:'操作先：PCアプリ（仮想カーソル）',game:'操作先：Minecraftのメニュー',none:'操作停止中：PCアプリまたは対象ゲームを前面にしてください'}[game.remoteRoute] || '';
+    $('remoteRoute').textContent = {app:'操作先：PCアプリ（仮想カーソル）',game:generic?'操作先：選択したゲームのメニュー':'操作先：Minecraftのメニュー',none:'操作停止中：PCアプリまたは対象ゲームを前面にしてください'}[game.remoteRoute] || '';
+    $('openGameBtn').textContent=generic?'選んだゲームを前面にする':'Minecraftを前面にする';
+    $('inputWarn').textContent=generic?'対象ゲームが前面ではありません。ホストが対象ゲームを前面に戻すまで操作は届きません。':'PCの画面がMinecraftになっていません。ホストがMinecraftを前面に戻すまで操作は届きません。';
     const startBtn = $('startBtn');
     $('openGameBtn').hidden = !['preparing','paused'].includes(phase);
     startBtn.textContent = phase === 'paused' ? '再開する' : phase === 'preparing' ? 'Ready・3人で操作を始める' : 'ゲームを開く・準備する';

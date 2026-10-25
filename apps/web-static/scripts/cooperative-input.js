@@ -1,5 +1,5 @@
 // 移動スティックと30Hzの協力視点。画面の再描画・通信の再生成から独立させる。
-export function bindCooperativeInput({getGame,getRole,isOpen,ctlDown,ctlUp,sendLook,onCancel=()=>{}}) {
+export function bindCooperativeInput({getGame,getRole,canLook=()=>getRole()==='P2',isOpen,ctlDown,ctlUp,sendLook,onCancel=()=>{}}) {
   const $ = id => document.getElementById(id);
   // ---- P1: 移動スティック (8 方向 → W/A/S/D の組み合わせ) ----
   const stick = $('stick');
@@ -94,7 +94,7 @@ export function bindCooperativeInput({getGame,getRole,isOpen,ctlDown,ctlUp,sendL
   // 累積値はepochごとに0へ戻す。同じepoch内の欠落だけを次のパケットで取り戻す。
   const look = { seq: 0, cx: 0, cy: 0 };
   setInterval(() => {
-    if ((accX || accY) && getGame()?.phase === 'coop' && getRole() === 'P2' && isOpen()) {
+    if ((accX || accY) && getGame()?.phase === 'coop' && canLook() && isOpen()) {
       look.cx += accX;
       look.cy += accY;
       const msg = { type: 'look', lseq: ++look.seq, epoch: getGame().epoch, cx: Math.round(look.cx * 100) / 100, cy: Math.round(look.cy * 100) / 100 };

@@ -4,6 +4,7 @@ import { createFastChannel } from './transport.js';
 import { recordInputMetric, inputMetrics } from './ui-metrics.js';
 
 import { bindTouchpad } from './touchpad.js';
+import { myActions } from './generated-controls.js';
 (() => {
   const $ = (id) => document.getElementById(id);
   const ROLE_TEXT = {
@@ -239,7 +240,10 @@ import { bindTouchpad } from './touchpad.js';
     sentDown.clear();
   }
 
-  document.querySelectorAll('[data-ctl]').forEach((el) => {
+  // 操作ボタンに押下・解放を付ける (操作定義から作ったボタンにも後から付ける、#60)
+  function bindControl(el) {
+    if (el.dataset.bound) return;
+    el.dataset.bound = '1';
     el.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       el.setPointerCapture?.(e.pointerId);
@@ -251,7 +255,8 @@ import { bindTouchpad } from './touchpad.js';
     el.addEventListener('pointerup', (e) => releasePointer(e.pointerId));
     el.addEventListener('pointercancel', (e) => releasePointer(e.pointerId));
     el.addEventListener('lostpointercapture', (e) => { if (held.has(e.pointerId)) stopRemote(); });
-  });
+  }
+  document.querySelectorAll('[data-ctl]').forEach(bindControl);
   document.querySelectorAll('[data-cmd]').forEach((el) => el.addEventListener('click', () => command(el.dataset.cmd)));
   $('startBtn').addEventListener('click', () => command(game?.phase === 'paused' ? 'RESUME' : game?.phase === 'preparing' ? 'READY' : 'PREPARE'));
   $('endBtn').addEventListener('click', () => { if (confirm('協力プレイを終了してロビーに戻りますか？')) command('END'); });
@@ -272,6 +277,8 @@ import { bindTouchpad } from './touchpad.js';
   let previousLookSent = null;
   const roleInput = bindCooperativeInput({
     getGame: () => game, getRole: () => me, isOpen: () => isOpen() && controlsVisible(), ctlDown, ctlUp, onCancel: stopRemote,
+    // 視点の担当: 操作定義の分担があればそれに従い、なければ P2 (#105)
+    canLook: () => { const acts = myActions(game, me); return acts ? acts.some((a) => a.type === 'mouseDelta') : me === 'P2'; },
     sendLook: (msg, at) => {
       if (!fast.send(msg)) sendWs(msg);
       sent++;
@@ -283,7 +290,7 @@ import { bindTouchpad } from './touchpad.js';
   });
 
   // ---- 画面の切り替え ----
-  const phoneView = createPhoneView({releaseAll,roleText:ROLE_TEXT});
+  const phoneView = createPhoneView({releaseAll,roleText:ROLE_TEXT,bindControl});
   function render() { phoneView({me,isHost,game}); }
 
   // ---- 通信テスト: 20Hz で 10 秒送る (注入はされない) ----

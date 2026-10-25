@@ -1,0 +1,182 @@
+[
+  {
+    "buttons": [
+      {
+        "height": 53.66666793823242,
+        "text": "右D",
+        "within": true
+      }
+    ],
+    "height": 568,
+    "overflow": false,
+    "pauseHidden": true,
+    "slot": "P2",
+    "view": "v-gen",
+    "width": 320
+  },
+  {
+    "buttons": [
+      {
+        "height": 54.33333587646485,
+        "text": "右D",
+        "within": true
+      }
+    ],
+    "height": 640,
+    "overflow": false,
+    "pauseHidden": true,
+    "slot": "P2",
+    "view": "v-gen",
+    "width": 360
+  },
+  {
+    "buttons": [
+      {
+        "height": 54.33333587646485,
+        "text": "右D",
+        "within": true
+      }
+    ],
+    "height": 780,
+    "overflow": false,
+    "pauseHidden": true,
+    "slot": "P2",
+    "view": "v-gen",
+    "width": 360
+  },
+  {
+    "buttons": [
+      {
+        "height": 55.66666793823242,
+        "text": "右D",
+        "within": true
+      }
+    ],
+    "height": 844,
+    "overflow": false,
+    "pauseHidden": true,
+    "slot": "P2",
+    "view": "v-gen",
+    "width": 390
+  },
+  {
+    "buttons": [
+      {
+        "height": 56.33333587646485,
+        "text": "右D",
+        "within": true
+      }
+    ],
+    "height": 874,
+    "overflow": false,
+    "pauseHidden": true,
+    "slot": "P2",
+    "view": "v-gen",
+    "width": 402
+  },
+  {
+    "buttons": [
+      {
+        "height": 57.66666793823242,
+        "text": "右D",
+        "within": true
+      }
+    ],
+    "height": 932,
+    "overflow": false,
+    "pauseHidden": true,
+    "slot": "P2",
+    "view": "v-gen",
+    "width": 430
+  },
+  {
+    "buttons": [
+      {
+        "height": 53.66666793823242,
+        "text": "ジャンプSpace",
+        "within": true
+      }
+    ],
+    "height": 568,
+    "overflow": false,
+    "pauseHidden": true,
+    "slot": "P3",
+    "view": "v-gen",
+    "width": 320
+  },
+  {
+    "buttons": [
+      {
+        "height": 54.33333587646485,
+        "text": "ジャンプSpace",
+        "within": true
+      }
+    ],
+    "height": 640,
+    "overflow": false,
+    "pauseHidden": true,
+    "slot": "P3",
+    "view": "v-gen",
+    "width": 360
+  },
+  {
+    "buttons": [
+      {
+        "height": 54.33333587646485,
+        "text": "ジャンプSpace",
+        "within": true
+      }
+    ],
+    "height": 780,
+    "overflow": false,
+    "pauseHidden": true,
+    "slot": "P3",
+    "view": "v-gen",
+    "width": 360
+  },
+  {
+    "buttons": [
+      {
+        "height": 55.66666793823242,
+        "text": "ジャンプSpace",
+        "within": true
+      }
+    ],
+    "height": 844,
+    "overflow": false,
+    "pauseHidden": true,
+    "slot": "P3",
+    "view": "v-gen",
+    "width": 390
+  },
+  {
+    "buttons": [
+      {
+        "height": 56.33333587646485,
+        "text": "ジャンプSpace",
+        "within": true
+      }
+    ],
+    "height": 874,
+    "overflow": false,
+    "pauseHidden": true,
+    "slot": "P3",
+    "view": "v-gen",
+    "width": 402
+  },
+  {
+    "buttons": [
+      {
+        "height": 57.66666793823242,
+        "text": "ジャンプSpace",
+        "within": true
+      }
+    ],
+    "height": 932,
+    "overflow": false,
+    "pauseHidden": true,
+    "slot": "P3",
+    "view": "v-gen",
+    "width": 430
+  }
+]

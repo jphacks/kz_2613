@@ -73,3 +73,14 @@ footer button { min-height: 24px; padding: 0 8px; font-size: 9px; border-width: 
 @media (max-height: 600px) and (orientation: portrait) { header .brand { display: none; } .host-card h1 { font-size: 17px; } #remotePad { min-height: 64px; font-size: 12px; } #remoteNote { max-height: 34px; } .move .key { min-height: 50px; } .wait-scene .mascot { width: 64px; height: 64px; font-size: 36px; } }
 @media (max-width: 340px) { body { padding-left: 8px; padding-right: 8px; } #role { font-size: 9px; } #role b { font-size: 11px; } .remoteButtons .key { font-size: 9px; } }
 @media (orientation: landscape) { #rotatePrompt { display: flex; } main { visibility: hidden; } }
+/* 操作定義から作る画面 (#60) */
+#v-gen { display: none; flex-direction: column; gap: 10px; }
+#v-gen.show { display: flex; }
+.gen-title { font-weight: 700; color: var(--color-purple); text-align: center; }
+#genControls { display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+.gen-group { display: flex; flex-direction: column; gap: 6px; }
+.gen-label { font-size: 12px; color: var(--muted); }
+.gen-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.gen-dpad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(56px, auto)); gap: 6px; max-width: 320px; margin: 0 auto; width: 100%; }
+.gen-dpad .up { grid-area: 1 / 2; } .gen-dpad .left { grid-area: 2 / 1; } .gen-dpad .right { grid-area: 2 / 3; } .gen-dpad .down { grid-area: 3 / 2; }
+.gen-empty { text-align: center; color: var(--muted); }

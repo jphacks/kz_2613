@@ -543,6 +543,31 @@ mod tests {
     }
 
     #[test]
+    fn reload_when_settings_file_changes() {
+        let dir = std::env::temp_dir().join(format!("recooplay-kb-change-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let f = dir.join("options.txt");
+        std::fs::write(&f, "key_key.sprint:key.keyboard.q
+").unwrap();
+        let kb = Keybinds::build(&profiles::builtin_minecraft(), Some(&f));
+        assert!(!kb.changed());
+        std::thread::sleep(std::time::Duration::from_millis(1100));
+        std::fs::write(&f, "key_key.sprint:key.keyboard.z
+").unwrap();
+        assert!(kb.changed());
+        let again = Keybinds::build(&profiles::builtin_minecraft(), Some(&f));
+        assert_eq!(out(&again, "SPRINT"), Some("KEY_Z"));
+    }
+
+    #[test]
+    fn expands_known_folders() {
+        let p = expand("%APPDATA%/.minecraft/options.txt").unwrap();
+        assert!(p.to_string_lossy().starts_with(&std::env::var("APPDATA").unwrap()));
+        assert!(expand("%LOCALLOW%/x").unwrap().to_string_lossy().contains("LocalLow"));
+        assert!(expand("%DOCUMENTS%/My Games").is_some());
+    }
+
+    #[test]
     fn missing_file_uses_defaults() {
         let kb = Keybinds::build(&profiles::builtin_minecraft(), Some(Path::new("Z:/no/such/options.txt")));
         assert_eq!(kb.source, "default");

@@ -61,10 +61,13 @@ function startHost() {
   const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-sim-'));
   const optionsFile = path.join(logDir, 'options.txt');
   fs.copyFileSync(path.join(ROOT, 'scripts', 'sim', 'fixtures', 'minecraft-options.txt'), optionsFile);
+  const profilesDir=path.join(logDir,'profiles');
+  fs.cpSync(path.join(ROOT,'apps/game-profiles'),profilesDir,{recursive:true});
+  fs.copyFileSync(path.join(ROOT,'scripts/sim/fixtures/profiles/test-pseudo.json'),path.join(profilesDir,'test-pseudo.json'));
   // config.json の影響を受けないよう、画面だけを持つ一時ルートを使う
   const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_FAKE_GAMES: fakeGames(logDir),
     // Minecraft のキー設定の試験用 (ダッシュ = Q、捨てる = R に変えた options.txt)。#101
-    RECOOPLAY_MINECRAFT_OPTIONS: optionsFile };
+    RECOOPLAY_MINECRAFT_OPTIONS: optionsFile, RECOOPLAY_PROFILES_DIR: profilesDir };
   let cmd;
   let cmdArgs;
   if (target === 'node') {
@@ -833,6 +836,58 @@ async function main() {
       p1.send({ type: 'command', cmd: 'START' });
       if (target === 'rust') { await phaseIs(p1, 'preparing', from); p1.send({type:'command',cmd:'READY'}); }
       await phaseIs(p1, 'coop', from);
+      app.close();
+    }, { rustOnly: true });
+
+    await check('操作定義: 人数に応じた分担 (移動を左・右・ジャンプに分ける) と、生成画面の入力 (割り当てた操作だけ) を通す', async () => {
+      const app = new Client('app');
+      await app.open();
+      app.send({ type: 'monitor', page: 'app' });
+      await app.waitFor((m) => m.type === 'state', { what: 'app state' });
+      let from = p1.mark();
+      app.send({ type: 'select_game', title: 'pseudo-game' });
+      const lobby = await phaseIs(p1, 'lobby', from);
+      const pr = lobby.game.profile;
+      assert(pr?.id === 'test-pseudo', `profile=${pr?.id}`);
+      // 3 人: 単位は「移動・アクション」の 2 つ → 移動を左・右・ジャンプに分け、アクションは最も軽い人 (P1) へ
+      const a3 = pr.assignments['3'];
+      assert(a3.P1.join() === 'left,action,zoom,aim' && a3.P2.join() === 'right' && a3.P3.join() === 'jump', JSON.stringify(a3));
+      assert(pr.assignments['1'].P1.length === 6 && Object.keys(pr.assignments['2']).length === 2 && Object.keys(pr.assignments['4']).length === 4, JSON.stringify(pr.assignments));
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'PREPARE' });
+      await phaseIs(p1, 'preparing', from);
+      p1.send({ type: 'command', cmd: 'READY' });
+      const coop = await phaseIs(p1, 'coop', from);
+      const st = await mon.waitFor((m) => m.type === 'state' && m.game.phase === 'coop' && m.game.assigned?.P1, { from: mon.mark() - 1, what: 'assigned' });
+      assert(st.game.assigned.P2.join() === 'right', JSON.stringify(st.game.assigned));
+      // 割り当てた操作は、定義のキーで送る
+      let mf = mon.mark();
+      p2.input('act:right', 'down'); await injected(mon, 'KEY_D', 'down', mf); p2.input('act:right', 'up'); await injected(mon, 'KEY_D', 'up', mf);
+      p3.input('act:jump', 'down'); await injected(mon, 'SPACE', 'down', mf); p3.input('act:jump', 'up'); await injected(mon, 'SPACE', 'up', mf);
+      p1.input('act:action', 'down'); await injected(mon, 'KEY_X', 'down', mf); p1.input('act:action', 'up'); await injected(mon, 'KEY_X', 'up', mf);
+      p1.input('act:zoom:up', 'down'); await injected(mon, 'WHEEL_UP', 'down', mf); p1.input('act:zoom:up', 'up');
+      // 割り当てていない操作・未知の操作・Minecraft 用の固定の操作は送らない
+      mf = mon.mark();
+      p2.input('act:action', 'down'); p3.input('act:left', 'down'); p1.input('act:nothing', 'down'); p1.input('FWD', 'down'); p1.input('RIGHT', 'down'); p1.input('act:pause', 'down');
+      await noPress(mon, mf);
+      p2.input('act:action', 'up'); p3.input('act:left', 'up'); p1.input('act:nothing', 'up'); p1.input('FWD', 'up'); p1.input('RIGHT', 'up'); p1.input('act:pause', 'up');
+      // 視点は、視点 (aim) を割り当てた P1 だけ
+      const lf = mon.mark();
+      p2.send({ type: 'look', lseq: 1, epoch: p2.epoch, cx: 300, cy: 0 });
+      await sleep(250);
+      assert(!mon.msgs.slice(lf).some((m) => m.type === 'look'), 'P2 の look を反映した');
+      p1.send({ type: 'look', lseq: 1, epoch: p1.epoch, cx: 40, cy: 0 });
+      const l = await mon.waitFor((m) => m.type === 'look', { from: lf, what: 'look' });
+      assert(l.entry.slot === 'P1', `slot=${l.entry.slot}`);
+      // Minecraft に戻して協力プレイを再開する
+      from = p1.mark();
+      app.send({ type: 'select_game', title: 'minecraft-java' });
+      await phaseIs(p1, 'lobby', from);
+      p1.send({ type: 'command', cmd: 'PREPARE' });
+      await phaseIs(p1, 'preparing', from);
+      p1.send({ type: 'command', cmd: 'READY' });
+      await phaseIs(p1, 'coop', from);
+      assert(coop.game.title === 'pseudo-game', 'title');
       app.close();
     }, { rustOnly: true });
 
