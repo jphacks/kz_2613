@@ -61,6 +61,24 @@ jobs:
         run: node scripts/sim/static-assets-sim.mjs
       - name: 入力プローブの安全経路（--mock、OS 入力なし）
         run: node scripts/sim/input-probe-sim.mjs
+      - uses: actions/cache@v4
+        with:
+          path: apps/desktop/target
+          key: package-desktop-${{ runner.os }}-${{ hashFiles('apps/desktop/Cargo.lock') }}
+      - name: 同じソースから配布用PCアプリをビルド
+        run: cargo build --release --locked --manifest-path apps/desktop/Cargo.toml
+      - name: Windows配布zipを作成
+        shell: powershell
+        run: ./scripts/windows/package.ps1
+      - name: 配布zipの同梱物・展開後の起動を確認（OS入力なし）
+        run: node scripts/sim/package-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ReCooplay-windows-x64
+          path: |
+            dist/*.zip
+            dist/*.zip.sha256
+          if-no-files-found: error
 
   desktop:
     runs-on: windows-latest
