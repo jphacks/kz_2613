@@ -862,3 +862,9 @@
 - `app-view-test.mjs`25/25、`phone-view-test.mjs`（前面ボタンと拒否案内を追加）、`ui-input-test.mjs`11/11、`controller-diagnostics-test.mjs`、`verify-ui-evidence.mjs`、`profile-catalog-test.mjs`、`static-assets-sim.mjs`（34ファイル）、`check-static-pages.mjs`、`git diff --check` が成功。前面化の成功・拒否をOS操作なしに差し替える通信試験を追加した。Rustの再ビルド・単体・通信試験は続けて実施し、結果を追記する。
 - Windowsの実ウィンドウとスマホでのReady・再開・前面化拒否は未検証で、#138は実機受入まで未完了とする。無線・ファイアウォール設定は変更していない。
 - ClaudeのPR #142〜#144は差分・入力解放・サーバー認可をレビューし、各headのRust・構造CI成功を確認して順にmainへマージした（61ce70b、bf14a63、9902c4a）。実機未検証の条件は引き継ぐ。
+
+## 2026-10-26 — Windows配布zipの自動検証（Codex、#145）
+
+- 配布物に版・commit・未コミット変更の有無と全ファイルのSHA-256を記録し、zipの照合値を出力する。Windows CIで同じチェックアウトから両exeをビルドし、梱包・検証後に成果物として保存する。利用者向けの安全案内も選択したゲームに合わせた。
+- `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/package.ps1 -Out dist/issue145-local` が成功（10.3MB）。`node scripts/sim/package-smoke.mjs dist/issue145-local/ReCooplay-0.1.0-windows-x64.zip` は、全同梱物・画面・操作定義・ハッシュ照合、欠落と改変の拒否、リポジトリ外の展開先ホストによる全静的ファイルの配信と正常終了・終了ログ確認が成功した。既存のローカルexeを使用し、OS入力はdry-runで無効にした。
+- 開発環境のないPC・Tauri実画面・スマホ3台の受入は未実施（#41）。PCの無線・ファイアウォール設定は変更していない。通信設定を変更・復元するインストーラーは #132 に残す。

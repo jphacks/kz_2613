@@ -36,7 +36,8 @@ foreach ($f in @($desktop, $host_)) {
 
 $version = (Get-Content (Join-Path $root "apps\desktop\tauri.conf.json") -Raw | ConvertFrom-Json).version
 if ($version -notmatch '^[0-9A-Za-z.+-]+$') { throw "配布名に使えない版です: $version" }
-$commit = (git -C $root rev-parse --short HEAD)
+$commit = (git -C $root rev-parse HEAD)
+if ($LASTEXITCODE -ne 0) { throw "ソースのcommitを取得できません" }
 $dirty = if (git -C $root status --porcelain) { "-dirty" } else { "" }
 $name = "ReCooplay-$version-windows-x64"
 $outDir = [IO.Path]::GetFullPath((Join-Path $root $Out))
@@ -75,14 +76,14 @@ Minecraft の公式製品ではありません。Mojang・Microsoft の承認・
 
 ■ 安全
   - 緊急停止: Ctrl+Alt+F12 (すべてのキー・マウスボタンを離し、ゲームへの入力を OFF にする)
-  - ゲームへの入力は「常時ON」かつ Minecraft のウィンドウが前面のときだけ送る
+  - ゲームへの入力は協力プレイ中、入力が有効で、選択したゲームが前面のときだけ送る
   - ウィンドウを閉じると、押しっぱなしのキーを離してから終了する
 
 ■ 設定
   ポートなどを変えるときは config.example.json を config.json にコピーして編集する。
 
 ■ 必要なもの
-  Windows 11 (WebView2 ランタイム)。Minecraft Java Edition は各自で用意して手動で起動する。
+  Windows 11 x64 (WebView2 ランタイム)。遊ぶゲームは各自で用意する。
 
 ■ 検証状況
   Minecraft・スマホ実機との組み合わせ、開発環境のない PC での起動は検証中。詳しくは
@@ -90,6 +91,24 @@ Minecraft の公式製品ではありません。Mojang・Microsoft の承認・
   発表素材の利用条件・公開する責任者と直接連絡先は確認中。公開配布の適合確認は未完了。
 "@ | Set-Content -Encoding utf8 (Join-Path $stage "README.txt")
 
+# manifest自体を除くすべての同梱物を照合できるようにする。exeの版とソースの一致は、
+# 同一チェックアウトから先に両exeをビルドすることで保証する (CIでも同じ順に実行)。
+$files = @(Get-ChildItem -LiteralPath $stage -Recurse -File | Sort-Object FullName | ForEach-Object {
+  [ordered]@{
+    path = $_.FullName.Substring($stage.Length + 1).Replace('\', '/')
+    sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+  }
+})
+[ordered]@{
+  formatVersion = 1
+  version = $version
+  commit = $commit
+  dirty = [bool]$dirty
+  platform = "windows-x64"
+  files = $files
+} | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 (Join-Path $stage "package-manifest.json")
 Compress-Archive -Path $stage -DestinationPath $zip
+$zipHash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+"$zipHash  $name.zip" | Set-Content -Encoding ascii "$zip.sha256"
 $size = [math]::Round((Get-Item $zip).Length / 1MB, 1)
 Write-Host "作成しました: $zip ($size MB, commit $commit$dirty)"
