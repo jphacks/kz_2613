@@ -99,3 +99,11 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 ホスト操作の追加項目・認可は [ホストのタッチパッド](host-remote.md) に記載する。remoteはP1・非coop・現在epochだけを認可し、サーバーがPC画面か対象ゲームかを排他的に判定する。release_inputsは認証済み参加者の現在epochだけを受け付け、合成入力と保留分を即時破棄する。
 
 v4ではOPEN_GAME（現在epoch必須）とPC画面のopen_gameを追加する。進行を変えず、許可された既存ゲームの前面化だけを試みる。必要人数は固定3人とし、requiredによる人数削減は受け付けない。
+
+## 操作定義の追加情報（#97・#99）
+
+`game.profile`は選択中の操作定義の要約（id、name、suitability、status、verifiedDate、gameVersion、groups、actions、assignment、controllerSupported）。定義がなければnull。assignmentは分担の案であり、固定のスマホ画面・サーバーの担当認可を置き換えない。
+
+`game.keys.source`はMinecraft読込成功時の`options`を維持し、他形式の成功を`user`、初期値を`default`、読込不可を`unreadable`、定義なしを`none`とする。設定ファイルの変更は協力中以外に検知し、全入力解放・視点破棄・epoch更新後に新設定を通知する。
+
+未検証（template／extracted／unverified）の定義、または現在のスマホ画面に結び付かない定義ではReadyを拒否する。ゲーム検出・起動と操作互換性を区別し、対応画面と認可を実装して検証するまでは分担の案だけで操作を開始させない。
