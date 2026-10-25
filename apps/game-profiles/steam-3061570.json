@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-3061570",
+  "name": "Persona5: The Phantom X",
+  "match": {
+    "ids": [
+      "steam:3061570"
+    ],
+    "steamAppIds": [
+      3061570
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: RPG, JRPG, Anime, Free to Play, Party-Based RPG, Turn-Based Combat"
+    ]
+  },
+  "catalog": {
+    "rank": 458,
+    "template": "pointer",
+    "tags": [
+      "RPG",
+      "JRPG",
+      "Anime",
+      "Free to Play",
+      "Party-Based RPG",
+      "Turn-Based Combat",
+      "Adventure",
+      "Story Rich",
+      "Singleplayer",
+      "Modern"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#426",
+      "globaltopsellers#509"
+    ]
+  }
+}

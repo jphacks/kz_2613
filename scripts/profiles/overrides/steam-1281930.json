@@ -1,0 +1,267 @@
+{
+  "id": "steam-1281930",
+  "template": "override",
+  "suitability": "good",
+  "userBindings": {
+    "reader": "terraria-input-profiles",
+    "path": "%DOCUMENTS%/My Games/Terraria/tModLoader/input profiles.json"
+  },
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1"
+    },
+    {
+      "id": "look",
+      "label": "カーソル",
+      "role": "P2"
+    },
+    {
+      "id": "gameplay",
+      "label": "攻撃・使う",
+      "role": "P3"
+    },
+    {
+      "id": "inventory",
+      "label": "持ち物",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "up",
+      "label": "上",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_W",
+      "bind": "Up"
+    },
+    {
+      "id": "down",
+      "label": "下",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_S",
+      "bind": "Down"
+    },
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_A",
+      "bind": "Left"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_D",
+      "bind": "Right"
+    },
+    {
+      "id": "jump",
+      "label": "ジャンプ",
+      "group": "movement",
+      "type": "button",
+      "default": "SPACE",
+      "bind": "Jump"
+    },
+    {
+      "id": "aim",
+      "label": "カーソル",
+      "group": "look",
+      "type": "mouseDelta"
+    },
+    {
+      "id": "use",
+      "label": "使う・攻撃",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_L",
+      "bind": "MouseLeft"
+    },
+    {
+      "id": "interact",
+      "label": "調べる・開く",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_R",
+      "bind": "MouseRight"
+    },
+    {
+      "id": "grapple",
+      "label": "フック",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_E",
+      "bind": "Grapple"
+    },
+    {
+      "id": "smart_select",
+      "label": "スマート選択",
+      "group": "gameplay",
+      "type": "button",
+      "default": "LSHIFT",
+      "bind": "SmartSelect"
+    },
+    {
+      "id": "smart_cursor",
+      "label": "スマートカーソル",
+      "group": "gameplay",
+      "type": "button",
+      "default": "LCTRL",
+      "bind": "SmartCursor"
+    },
+    {
+      "id": "inventory",
+      "label": "インベントリ",
+      "group": "inventory",
+      "type": "button",
+      "default": "ESC",
+      "bind": "Inventory"
+    },
+    {
+      "id": "quick_heal",
+      "label": "クイック回復",
+      "group": "inventory",
+      "type": "button",
+      "default": "KEY_H",
+      "bind": "QuickHeal"
+    },
+    {
+      "id": "quick_mana",
+      "label": "クイックマナ",
+      "group": "inventory",
+      "type": "button",
+      "default": "KEY_J",
+      "bind": "QuickMana"
+    },
+    {
+      "id": "quick_buff",
+      "label": "クイックバフ",
+      "group": "inventory",
+      "type": "button",
+      "default": "KEY_B",
+      "bind": "QuickBuff"
+    },
+    {
+      "id": "quick_mount",
+      "label": "クイック騎乗",
+      "group": "inventory",
+      "type": "button",
+      "default": "KEY_R",
+      "bind": "QuickMount"
+    },
+    {
+      "id": "hotbar1",
+      "label": "ホットバー1",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_1",
+      "bind": "Hotbar1"
+    },
+    {
+      "id": "hotbar2",
+      "label": "ホットバー2",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_2",
+      "bind": "Hotbar2"
+    },
+    {
+      "id": "hotbar3",
+      "label": "ホットバー3",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_3",
+      "bind": "Hotbar3"
+    },
+    {
+      "id": "hotbar4",
+      "label": "ホットバー4",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_4",
+      "bind": "Hotbar4"
+    },
+    {
+      "id": "hotbar5",
+      "label": "ホットバー5",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_5",
+      "bind": "Hotbar5"
+    },
+    {
+      "id": "hotbar6",
+      "label": "ホットバー6",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_6",
+      "bind": "Hotbar6"
+    },
+    {
+      "id": "hotbar7",
+      "label": "ホットバー7",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_7",
+      "bind": "Hotbar7"
+    },
+    {
+      "id": "hotbar8",
+      "label": "ホットバー8",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_8",
+      "bind": "Hotbar8"
+    },
+    {
+      "id": "hotbar9",
+      "label": "ホットバー9",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_9",
+      "bind": "Hotbar9"
+    },
+    {
+      "id": "hotbar10",
+      "label": "ホットバー10",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_0",
+      "bind": "Hotbar10"
+    },
+    {
+      "id": "map",
+      "label": "マップ",
+      "group": "menu",
+      "type": "button",
+      "default": "KEY_M",
+      "bind": "MapFull"
+    },
+    {
+      "id": "map_style",
+      "label": "マップの表示",
+      "group": "menu",
+      "type": "button",
+      "default": "TAB",
+      "bind": "MapStyle"
+    }
+  ],
+  "verification": {
+    "status": "extracted",
+    "date": "2026-10-25",
+    "sources": [
+      "このPCの input profiles.json の既定プロファイル（Redigit's Pick）"
+    ]
+  }
+}

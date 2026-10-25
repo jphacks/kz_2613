@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "id": "steam-289070",
+  "name": "Sid Meier’s Civilization® VI",
+  "match": {
+    "ids": [
+      "steam:289070"
+    ],
+    "steamAppIds": [
+      289070
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Strategy, Turn-Based Strategy, Multiplayer, Historical, Grand Strategy, Singleplayer"
+    ]
+  },
+  "catalog": {
+    "rank": 99,
+    "template": "pointer",
+    "tags": [
+      "Strategy",
+      "Turn-Based Strategy",
+      "Multiplayer",
+      "Historical",
+      "Grand Strategy",
+      "Singleplayer",
+      "Turn-Based",
+      "4X",
+      "City Builder",
+      "War"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#265",
+      "globaltopsellers#222",
+      "mostplayed#65"
+    ]
+  }
+}

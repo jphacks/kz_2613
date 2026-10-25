@@ -1,0 +1,198 @@
+{
+  "schema": 1,
+  "id": "steam-4435490",
+  "name": "Call of Duty®: Modern Warfare® 4",
+  "match": {
+    "ids": [
+      "steam:4435490"
+    ],
+    "steamAppIds": [
+      4435490
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "good",
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1"
+    },
+    {
+      "id": "look",
+      "label": "視点",
+      "role": "P2"
+    },
+    {
+      "id": "gameplay",
+      "label": "攻撃・使う",
+      "role": "P3"
+    },
+    {
+      "id": "inventory",
+      "label": "持ち物",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "forward",
+      "label": "前進",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_W"
+    },
+    {
+      "id": "back",
+      "label": "後退",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_S"
+    },
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_A"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_D"
+    },
+    {
+      "id": "jump",
+      "label": "ジャンプ",
+      "group": "movement",
+      "type": "button",
+      "default": "SPACE"
+    },
+    {
+      "id": "crouch",
+      "label": "しゃがむ",
+      "group": "movement",
+      "type": "button",
+      "default": "LCTRL"
+    },
+    {
+      "id": "sprint",
+      "label": "走る",
+      "group": "movement",
+      "type": "button",
+      "default": "LSHIFT"
+    },
+    {
+      "id": "look",
+      "label": "視点",
+      "group": "look",
+      "type": "mouseDelta"
+    },
+    {
+      "id": "fire",
+      "label": "撃つ",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "aim",
+      "label": "構える",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "reload",
+      "label": "リロード",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_R"
+    },
+    {
+      "id": "interact",
+      "label": "使う・拾う",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_E"
+    },
+    {
+      "id": "weapon1",
+      "label": "武器1",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_1"
+    },
+    {
+      "id": "weapon2",
+      "label": "武器2",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_2"
+    },
+    {
+      "id": "weapon3",
+      "label": "武器3",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_3"
+    },
+    {
+      "id": "switch",
+      "label": "武器の切り替え",
+      "group": "inventory",
+      "type": "wheel"
+    },
+    {
+      "id": "scoreboard",
+      "label": "スコア",
+      "group": "menu",
+      "type": "button",
+      "default": "TAB"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（fps）",
+      "Steamのタグ: Shooter, Action, FPS, Multiplayer, Singleplayer, First-Person"
+    ]
+  },
+  "catalog": {
+    "rank": 69,
+    "template": "fps",
+    "tags": [
+      "Shooter",
+      "Action",
+      "FPS",
+      "Multiplayer",
+      "Singleplayer",
+      "First-Person",
+      "Cinematic",
+      "Story Rich",
+      "PvP",
+      "Gun Customization"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#1",
+      "globaltopsellers#1"
+    ]
+  }
+}

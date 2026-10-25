@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "id": "steam-1086940",
+  "name": "Baldur's Gate 3",
+  "match": {
+    "ids": [
+      "steam:1086940"
+    ],
+    "steamAppIds": [
+      1086940
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: RPG, Character Customization, Choices Matter, Turn-Based Combat, Story Rich, Sexual Content"
+    ]
+  },
+  "catalog": {
+    "rank": 34,
+    "template": "pointer",
+    "tags": [
+      "RPG",
+      "Character Customization",
+      "Choices Matter",
+      "Turn-Based Combat",
+      "Story Rich",
+      "Sexual Content",
+      "CRPG",
+      "Fantasy",
+      "Adventure",
+      "Romance"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#50",
+      "globaltopsellers#62",
+      "mostplayed#47"
+    ]
+  }
+}

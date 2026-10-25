@@ -1,0 +1,220 @@
+{
+  "schema": 1,
+  "id": "steam-413150",
+  "name": "Stardew Valley",
+  "match": {
+    "ids": [
+      "steam:413150"
+    ],
+    "steamAppIds": [
+      413150
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "good",
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1",
+      "split": [
+        {
+          "id": "horizontal",
+          "label": "左右",
+          "actions": [
+            "left",
+            "right"
+          ]
+        },
+        {
+          "id": "vertical",
+          "label": "上下",
+          "actions": [
+            "forward",
+            "back"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gameplay",
+      "label": "道具・調べる",
+      "role": "P3"
+    },
+    {
+      "id": "inventory",
+      "label": "持ち物",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "forward",
+      "label": "前進",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_W"
+    },
+    {
+      "id": "back",
+      "label": "後退",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_S"
+    },
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_A"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_D"
+    },
+    {
+      "id": "use_tool",
+      "label": "道具を使う",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "check",
+      "label": "調べる・話す",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "toolbar1",
+      "label": "ツールバー1",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_1"
+    },
+    {
+      "id": "toolbar2",
+      "label": "ツールバー2",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_2"
+    },
+    {
+      "id": "toolbar3",
+      "label": "ツールバー3",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_3"
+    },
+    {
+      "id": "toolbar4",
+      "label": "ツールバー4",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_4"
+    },
+    {
+      "id": "toolbar5",
+      "label": "ツールバー5",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_5"
+    },
+    {
+      "id": "toolbar6",
+      "label": "ツールバー6",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_6"
+    },
+    {
+      "id": "toolbar7",
+      "label": "ツールバー7",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_7"
+    },
+    {
+      "id": "toolbar8",
+      "label": "ツールバー8",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_8"
+    },
+    {
+      "id": "toolbar9",
+      "label": "ツールバー9",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_9"
+    },
+    {
+      "id": "toolbar10",
+      "label": "ツールバー10",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_0"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー・持ち物",
+      "group": "menu",
+      "type": "button",
+      "default": "KEY_E"
+    },
+    {
+      "id": "journal",
+      "label": "日誌",
+      "group": "menu",
+      "type": "button",
+      "default": "KEY_F"
+    },
+    {
+      "id": "map",
+      "label": "マップ",
+      "group": "menu",
+      "type": "button",
+      "default": "KEY_M"
+    }
+  ],
+  "verification": {
+    "status": "unverified",
+    "date": "2026-10-25",
+    "sources": [
+      "広く知られた初期設定（未検証・実機未確認）"
+    ]
+  },
+  "catalog": {
+    "rank": 26,
+    "template": "override",
+    "tags": [
+      "Farming Sim",
+      "Pixel Graphics",
+      "Multiplayer",
+      "Life Sim",
+      "RPG",
+      "Relaxing",
+      "Simulation",
+      "Agriculture",
+      "Sandbox",
+      "Crafting"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#123",
+      "globaltopsellers#96",
+      "mostplayed#24"
+    ]
+  }
+}

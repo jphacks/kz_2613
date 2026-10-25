@@ -6,6 +6,12 @@ export const SCREENS = ['join', 'game', 'roles'];
 
 export const SCREEN_TITLES = { join: '① 参加', game: '② ゲーム選択', roles: '③ 操作分担の確認' };
 
+export function profileNotice(profile) {
+  if (!profile || (profile.id === 'minecraft-java' && profile.status === 'device' && profile.controllerSupported)) return '';
+  const status = {template:'仮の定義（未検証）',extracted:'自動抽出（実機未検証）',unverified:'未検証',reviewed:'人による確認（実機未検証）',device:'過去の実機記録'}[profile.status] || '未検証';
+  return `${profile.name || '選択中のゲーム'}：${status}。` + (profile.controllerSupported ? '今回の端末での動作は別途確認してください。' : '分担案の参照用です。対応画面と検証が揃うまでReadyできません。');
+}
+
 // 移動可能な3ページと、サーバーで切り替わる準備・協力・停止の視覚状態を分ける。
 // canReady以外のローカル条件からReady可を推測しない。
 export function desktopView(ui, game) {

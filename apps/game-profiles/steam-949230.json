@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-949230",
+  "name": "Cities: Skylines II",
+  "match": {
+    "ids": [
+      "steam:949230"
+    ],
+    "steamAppIds": [
+      949230
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: City Builder, Simulation, Building, Sandbox, Management, Singleplayer"
+    ]
+  },
+  "catalog": {
+    "rank": 151,
+    "template": "pointer",
+    "tags": [
+      "City Builder",
+      "Simulation",
+      "Building",
+      "Sandbox",
+      "Management",
+      "Singleplayer",
+      "Economy",
+      "Strategy",
+      "Realistic",
+      "Moddable"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#137",
+      "globaltopsellers#123"
+    ]
+  }
+}

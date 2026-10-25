@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "id": "steam-2333000",
+  "name": "Silver Pines",
+  "match": {
+    "ids": [
+      "steam:2333000"
+    ],
+    "steamAppIds": [
+      2333000
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "limited",
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1",
+      "split": [
+        {
+          "id": "left",
+          "label": "左",
+          "actions": [
+            "left"
+          ]
+        },
+        {
+          "id": "right",
+          "label": "右",
+          "actions": [
+            "right"
+          ]
+        },
+        {
+          "id": "vertical",
+          "label": "ジャンプ・上下",
+          "actions": [
+            "jump",
+            "up",
+            "down"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gameplay",
+      "label": "アクション",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_LEFT"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_RIGHT"
+    },
+    {
+      "id": "up",
+      "label": "上",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_UP"
+    },
+    {
+      "id": "down",
+      "label": "下",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_DOWN"
+    },
+    {
+      "id": "jump",
+      "label": "ジャンプ",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_Z"
+    },
+    {
+      "id": "action",
+      "label": "アクション",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_X"
+    },
+    {
+      "id": "special",
+      "label": "特殊",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_C"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（platformer）",
+      "Steamのタグ: Exploration, Horror, 2.5D, Survival Horror, Metroidvania, Side Scroller"
+    ]
+  },
+  "catalog": {
+    "rank": 187,
+    "template": "platformer",
+    "tags": [
+      "Exploration",
+      "Horror",
+      "2.5D",
+      "Survival Horror",
+      "Metroidvania",
+      "Side Scroller",
+      "Action-Adventure",
+      "Inventory Management",
+      "1990's",
+      "Noir"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#166",
+      "globaltopsellers#172"
+    ]
+  }
+}

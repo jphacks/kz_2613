@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-1984270",
+  "name": "Digimon Story Time Stranger",
+  "match": {
+    "ids": [
+      "steam:1984270"
+    ],
+    "steamAppIds": [
+      1984270
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: RPG, JRPG, Creature Collector, Anime, Party-Based RPG, 3D"
+    ]
+  },
+  "catalog": {
+    "rank": 230,
+    "template": "pointer",
+    "tags": [
+      "RPG",
+      "JRPG",
+      "Creature Collector",
+      "Anime",
+      "Party-Based RPG",
+      "3D",
+      "Collectathon",
+      "Cute",
+      "Time Travel",
+      "Fantasy"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#202",
+      "globaltopsellers#226"
+    ]
+  }
+}

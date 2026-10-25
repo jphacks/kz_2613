@@ -1,5 +1,5 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,ROLES,GAMES,slotViews,navigate,joinUrl,screenOnGameUpdate,desktopView,desktopWarning,roleControls} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,ROLES,GAMES,slotViews,navigate,joinUrl,screenOnGameUpdate,desktopView,desktopWarning,roleControls,profileNotice} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let ui={screen:'join',game:GAMES[0].id};
@@ -77,7 +77,8 @@ function render(){
   $('actionNote').textContent=notes[view]||'';
   const keyWarnings=game?.keys?.warnings||[];
   const warning=desktopWarning(game,inject,online||!state)||(keyWarnings.length?'キー設定に注意が必要です。「操作設定」で実際に送るキーを確認してください。':'');
-  $('warning').hidden=!warning;$('warning').textContent=warning;
+  const notices=[warning,profileNotice(game?.profile)].filter(Boolean).join(' ');
+  $('warning').hidden=!notices;$('warning').textContent=notices;
   $('steps').hidden=!['join','game','roles'].includes(view);
   document.querySelectorAll('#steps button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===ui.screen?'page':'false'));
   $('players').innerHTML=slots.map((s,i)=>`<article class="player ${s.state}${view==='preparing'&&s.host&&s.state==='connected'?' pending':''}" data-slot="${s.slot}"><div class="player-badge">${s.state==='empty'?'参加待ち':s.state==='lost'?'切断中':view==='ready'?'条件OK':view==='preparing'?(s.host?'準備中！':'接続済み'):'接続完了！'}</div><div class="player-info"><p>プレイヤー${i+1}</p><p>${esc(s.title)}</p><p class="player-device">機種：${esc(s.device||'未接続')}</p></div><svg class="player-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg><div class="character"><b>${esc(shortRoles[i])}</b><span>${s.slot}</span></div></article>`).join('');

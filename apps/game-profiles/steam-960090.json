@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "id": "steam-960090",
+  "name": "Bloons TD 6",
+  "match": {
+    "ids": [
+      "steam:960090"
+    ],
+    "steamAppIds": [
+      960090
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Tower Defense, Strategy, Multiplayer, Singleplayer, Online Co-Op, Co-op"
+    ]
+  },
+  "catalog": {
+    "rank": 152,
+    "template": "pointer",
+    "tags": [
+      "Tower Defense",
+      "Strategy",
+      "Multiplayer",
+      "Singleplayer",
+      "Online Co-Op",
+      "Co-op",
+      "Family Friendly",
+      "Casual",
+      "3D",
+      "Cartoony"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#158",
+      "globaltopsellers#214",
+      "mostplayed#90"
+    ]
+  }
+}

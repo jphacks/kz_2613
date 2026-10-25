@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-880940",
+  "name": "Pummel Party",
+  "match": {
+    "ids": [
+      "steam:880940"
+    ],
+    "steamAppIds": [
+      880940
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Multiplayer, Funny, 4 Player Local, Online Co-Op, Party Game, Board Game"
+    ]
+  },
+  "catalog": {
+    "rank": 364,
+    "template": "pointer",
+    "tags": [
+      "Multiplayer",
+      "Funny",
+      "4 Player Local",
+      "Online Co-Op",
+      "Party Game",
+      "Board Game",
+      "Minigames",
+      "Local Multiplayer",
+      "Co-op",
+      "Casual"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#461",
+      "globaltopsellers#285"
+    ]
+  }
+}

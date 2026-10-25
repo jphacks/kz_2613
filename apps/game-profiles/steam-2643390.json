@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-2643390",
+  "name": "Star Trek: Voyager - Across the Unknown",
+  "match": {
+    "ids": [
+      "steam:2643390"
+    ],
+    "steamAppIds": [
+      2643390
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Strategy, Space Sim, Interactive Fiction, Management, Roguelike, Choose Your Own Adventure"
+    ]
+  },
+  "catalog": {
+    "rank": 427,
+    "template": "pointer",
+    "tags": [
+      "Strategy",
+      "Space Sim",
+      "Interactive Fiction",
+      "Management",
+      "Roguelike",
+      "Choose Your Own Adventure",
+      "Sci-fi",
+      "Aliens",
+      "Space",
+      "3D"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#414",
+      "globaltopsellers#453"
+    ]
+  }
+}

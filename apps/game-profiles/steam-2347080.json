@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-2347080",
+  "name": "Frosthaven",
+  "match": {
+    "ids": [
+      "steam:2347080"
+    ],
+    "steamAppIds": [
+      2347080
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Co-op, Tactical RPG, Turn-Based Tactics, Board Game, Turn-Based Combat, Dark Fantasy"
+    ]
+  },
+  "catalog": {
+    "rank": 313,
+    "template": "pointer",
+    "tags": [
+      "Co-op",
+      "Tactical RPG",
+      "Turn-Based Tactics",
+      "Board Game",
+      "Turn-Based Combat",
+      "Dark Fantasy",
+      "Early Access",
+      "Singleplayer",
+      "Online Co-Op",
+      "Multiplayer"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#313",
+      "globaltopsellers#340"
+    ]
+  }
+}

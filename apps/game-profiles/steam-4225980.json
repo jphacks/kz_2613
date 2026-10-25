@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-4225980",
+  "name": "Trails in the Sky 2nd Chapter",
+  "match": {
+    "ids": [
+      "steam:4225980"
+    ],
+    "steamAppIds": [
+      4225980
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: RPG, JRPG, Story Rich, Turn-Based Tactics, Female Protagonist, Adventure"
+    ]
+  },
+  "catalog": {
+    "rank": 490,
+    "template": "pointer",
+    "tags": [
+      "RPG",
+      "JRPG",
+      "Story Rich",
+      "Turn-Based Tactics",
+      "Female Protagonist",
+      "Adventure",
+      "Party-Based RPG",
+      "Action RPG",
+      "Anime",
+      "Romance"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#612",
+      "globaltopsellers#393"
+    ]
+  }
+}

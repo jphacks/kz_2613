@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-3274580",
+  "name": "Anno 117: Pax Romana",
+  "match": {
+    "ids": [
+      "steam:3274580"
+    ],
+    "steamAppIds": [
+      3274580
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Strategy, City Builder, Simulation, Sandbox, RTS, Economy"
+    ]
+  },
+  "catalog": {
+    "rank": 481,
+    "template": "pointer",
+    "tags": [
+      "Strategy",
+      "City Builder",
+      "Simulation",
+      "Sandbox",
+      "RTS",
+      "Economy",
+      "Building",
+      "Historical",
+      "Exploration",
+      "Choose Your Own Adventure"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#605",
+      "globaltopsellers#380"
+    ]
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "id": "steam-2104890",
+  "name": "RoadCraft",
+  "match": {
+    "ids": [
+      "steam:2104890"
+    ],
+    "steamAppIds": [
+      2104890
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "good",
+  "groups": [
+    {
+      "id": "steering",
+      "label": "ハンドル",
+      "role": "P1",
+      "split": [
+        {
+          "id": "left",
+          "label": "左",
+          "actions": [
+            "steer_left"
+          ]
+        },
+        {
+          "id": "right",
+          "label": "右",
+          "actions": [
+            "steer_right"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "throttle",
+      "label": "アクセル・ブレーキ",
+      "role": "P2"
+    },
+    {
+      "id": "gameplay",
+      "label": "サイドブレーキ・ブースト",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "steer_left",
+      "label": "左",
+      "group": "steering",
+      "type": "button",
+      "default": "KEY_A"
+    },
+    {
+      "id": "steer_right",
+      "label": "右",
+      "group": "steering",
+      "type": "button",
+      "default": "KEY_D"
+    },
+    {
+      "id": "accelerate",
+      "label": "アクセル",
+      "group": "throttle",
+      "type": "button",
+      "default": "KEY_W"
+    },
+    {
+      "id": "brake",
+      "label": "ブレーキ",
+      "group": "throttle",
+      "type": "button",
+      "default": "KEY_S"
+    },
+    {
+      "id": "handbrake",
+      "label": "サイドブレーキ",
+      "group": "gameplay",
+      "type": "button",
+      "default": "SPACE"
+    },
+    {
+      "id": "boost",
+      "label": "ブースト",
+      "group": "gameplay",
+      "type": "button",
+      "default": "LSHIFT"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（racing）",
+      "Steamのタグ: Simulation, Building, Driving, Physics, Online Co-Op, Adventure"
+    ]
+  },
+  "catalog": {
+    "rank": 456,
+    "template": "racing",
+    "tags": [
+      "Simulation",
+      "Building",
+      "Driving",
+      "Physics",
+      "Online Co-Op",
+      "Adventure",
+      "Automobile Sim",
+      "Multiplayer",
+      "Automation",
+      "Nature"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#572",
+      "globaltopsellers#354"
+    ]
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-2852190",
+  "name": "Monster Hunter Stories 3: Twisted Reflection",
+  "match": {
+    "ids": [
+      "steam:2852190"
+    ],
+    "steamAppIds": [
+      2852190
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: RPG, Creature Collector, JRPG, Turn-Based Combat, Exploration, Adventure"
+    ]
+  },
+  "catalog": {
+    "rank": 325,
+    "template": "pointer",
+    "tags": [
+      "RPG",
+      "Creature Collector",
+      "JRPG",
+      "Turn-Based Combat",
+      "Exploration",
+      "Adventure",
+      "Cartoony",
+      "Dragons",
+      "Character Customization",
+      "Singleplayer"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#360",
+      "globaltopsellers#319"
+    ]
+  }
+}

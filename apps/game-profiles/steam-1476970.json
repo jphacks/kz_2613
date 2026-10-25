@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-1476970",
+  "name": "IdleOn - The Incremental MMO",
+  "match": {
+    "ids": [
+      "steam:1476970"
+    ],
+    "steamAppIds": [
+      1476970
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Idler, Free to Play, Incremental, MMORPG, Multiplayer, Pixel Graphics"
+    ]
+  },
+  "catalog": {
+    "rank": 128,
+    "template": "pointer",
+    "tags": [
+      "Idler",
+      "Free to Play",
+      "Incremental",
+      "MMORPG",
+      "Multiplayer",
+      "Pixel Graphics",
+      "RPG",
+      "Management",
+      "Crafting",
+      "Resource Management"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#105",
+      "globaltopsellers#114"
+    ]
+  }
+}

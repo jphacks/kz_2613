@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "id": "steam-1289670",
+  "name": "EA Play",
+  "match": {
+    "ids": [
+      "steam:1289670"
+    ],
+    "steamAppIds": [
+      1289670
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "limited",
+  "groups": [
+    {
+      "id": "steering",
+      "label": "ハンドル",
+      "role": "P1",
+      "split": [
+        {
+          "id": "left",
+          "label": "左",
+          "actions": [
+            "steer_left"
+          ]
+        },
+        {
+          "id": "right",
+          "label": "右",
+          "actions": [
+            "steer_right"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "throttle",
+      "label": "アクセル・ブレーキ",
+      "role": "P2"
+    },
+    {
+      "id": "gameplay",
+      "label": "サイドブレーキ・ブースト",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "steer_left",
+      "label": "左",
+      "group": "steering",
+      "type": "button",
+      "default": "KEY_A"
+    },
+    {
+      "id": "steer_right",
+      "label": "右",
+      "group": "steering",
+      "type": "button",
+      "default": "KEY_D"
+    },
+    {
+      "id": "accelerate",
+      "label": "アクセル",
+      "group": "throttle",
+      "type": "button",
+      "default": "KEY_W"
+    },
+    {
+      "id": "brake",
+      "label": "ブレーキ",
+      "group": "throttle",
+      "type": "button",
+      "default": "KEY_S"
+    },
+    {
+      "id": "handbrake",
+      "label": "サイドブレーキ",
+      "group": "gameplay",
+      "type": "button",
+      "default": "SPACE"
+    },
+    {
+      "id": "boost",
+      "label": "ブースト",
+      "group": "gameplay",
+      "type": "button",
+      "default": "LSHIFT"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（racing）",
+      "Steamのタグ: Sports, Shooter, Multiplayer, Racing, RTS, Simulation"
+    ]
+  },
+  "catalog": {
+    "rank": 212,
+    "template": "racing",
+    "tags": [
+      "Sports",
+      "Shooter",
+      "Multiplayer",
+      "Racing",
+      "RTS",
+      "Simulation",
+      "Puzzle",
+      "Adventure",
+      "Strategy",
+      "Action-Adventure"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#206",
+      "globaltopsellers#198"
+    ]
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "schema": 1,
+  "id": "steam-244210",
+  "name": "Assetto Corsa",
+  "match": {
+    "ids": [
+      "steam:244210"
+    ],
+    "steamAppIds": [
+      244210
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "limited",
+  "groups": [
+    {
+      "id": "steering",
+      "label": "ハンドル",
+      "role": "P1",
+      "split": [
+        {
+          "id": "left",
+          "label": "左",
+          "actions": [
+            "steer_left"
+          ]
+        },
+        {
+          "id": "right",
+          "label": "右",
+          "actions": [
+            "steer_right"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "throttle",
+      "label": "アクセル・ブレーキ",
+      "role": "P2"
+    },
+    {
+      "id": "gameplay",
+      "label": "サイドブレーキ・ブースト",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "steer_left",
+      "label": "左",
+      "group": "steering",
+      "type": "button",
+      "default": "KEY_A"
+    },
+    {
+      "id": "steer_right",
+      "label": "右",
+      "group": "steering",
+      "type": "button",
+      "default": "KEY_D"
+    },
+    {
+      "id": "accelerate",
+      "label": "アクセル",
+      "group": "throttle",
+      "type": "button",
+      "default": "KEY_W"
+    },
+    {
+      "id": "brake",
+      "label": "ブレーキ",
+      "group": "throttle",
+      "type": "button",
+      "default": "KEY_S"
+    },
+    {
+      "id": "handbrake",
+      "label": "サイドブレーキ",
+      "group": "gameplay",
+      "type": "button",
+      "default": "SPACE"
+    },
+    {
+      "id": "boost",
+      "label": "ブースト",
+      "group": "gameplay",
+      "type": "button",
+      "default": "LSHIFT"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（racing）",
+      "Steamのタグ: Racing, Automobile Sim, Simulation, Multiplayer, Driving, VR"
+    ]
+  },
+  "catalog": {
+    "rank": 167,
+    "template": "racing",
+    "tags": [
+      "Racing",
+      "Automobile Sim",
+      "Simulation",
+      "Multiplayer",
+      "Driving",
+      "VR",
+      "Realistic",
+      "Sports",
+      "Open World",
+      "Moddable"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#278",
+      "globaltopsellers#268",
+      "mostplayed#76"
+    ]
+  }
+}

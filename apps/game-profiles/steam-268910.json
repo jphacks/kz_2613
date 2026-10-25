@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "id": "steam-268910",
+  "name": "Cuphead",
+  "match": {
+    "ids": [
+      "steam:268910"
+    ],
+    "steamAppIds": [
+      268910
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "good",
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1",
+      "split": [
+        {
+          "id": "left",
+          "label": "左",
+          "actions": [
+            "left"
+          ]
+        },
+        {
+          "id": "right",
+          "label": "右",
+          "actions": [
+            "right"
+          ]
+        },
+        {
+          "id": "vertical",
+          "label": "ジャンプ・上下",
+          "actions": [
+            "jump",
+            "up",
+            "down"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gameplay",
+      "label": "アクション",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_LEFT"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_RIGHT"
+    },
+    {
+      "id": "up",
+      "label": "上",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_UP"
+    },
+    {
+      "id": "down",
+      "label": "下",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_DOWN"
+    },
+    {
+      "id": "jump",
+      "label": "ジャンプ",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_Z"
+    },
+    {
+      "id": "action",
+      "label": "アクション",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_X"
+    },
+    {
+      "id": "special",
+      "label": "特殊",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_C"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（platformer）",
+      "Steamのタグ: Difficult, Co-op, Cartoon, Platformer, Local Co-Op, Great Soundtrack"
+    ]
+  },
+  "catalog": {
+    "rank": 398,
+    "template": "platformer",
+    "tags": [
+      "Difficult",
+      "Co-op",
+      "Cartoon",
+      "Platformer",
+      "Local Co-Op",
+      "Great Soundtrack",
+      "2D",
+      "Multiplayer",
+      "Indie",
+      "Hand-drawn"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#470",
+      "globaltopsellers#345"
+    ]
+  }
+}

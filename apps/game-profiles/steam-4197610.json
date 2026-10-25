@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-4197610",
+  "name": "Librarian: Tidy Up the Arcane Library!",
+  "match": {
+    "ids": [
+      "steam:4197610"
+    ],
+    "steamAppIds": [
+      4197610
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Relaxing, Organizing, Collectathon, Artificial Intelligence, Singleplayer, Casual"
+    ]
+  },
+  "catalog": {
+    "rank": 414,
+    "template": "pointer",
+    "tags": [
+      "Relaxing",
+      "Organizing",
+      "Collectathon",
+      "Artificial Intelligence",
+      "Singleplayer",
+      "Casual",
+      "Puzzle",
+      "Hidden Object",
+      "Simulation",
+      "Magic"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#413",
+      "globaltopsellers#438"
+    ]
+  }
+}

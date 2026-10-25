@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-703080",
+  "name": "Planet Zoo",
+  "match": {
+    "ids": [
+      "steam:703080"
+    ],
+    "steamAppIds": [
+      703080
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Management, Zoo, Simulation, Building, Sandbox, Nature"
+    ]
+  },
+  "catalog": {
+    "rank": 436,
+    "template": "pointer",
+    "tags": [
+      "Management",
+      "Zoo",
+      "Simulation",
+      "Building",
+      "Sandbox",
+      "Nature",
+      "City Builder",
+      "Economy",
+      "Singleplayer",
+      "Realistic"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#401",
+      "globaltopsellers#481"
+    ]
+  }
+}

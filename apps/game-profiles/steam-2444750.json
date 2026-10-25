@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-2444750",
+  "name": "Shape of Dreams",
+  "match": {
+    "ids": [
+      "steam:2444750"
+    ],
+    "steamAppIds": [
+      2444750
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Action Roguelike, Co-op, PvE, Hack and Slash, Roguelite, Top-Down"
+    ]
+  },
+  "catalog": {
+    "rank": 493,
+    "template": "pointer",
+    "tags": [
+      "Action Roguelike",
+      "Co-op",
+      "PvE",
+      "Hack and Slash",
+      "Roguelite",
+      "Top-Down",
+      "Action",
+      "MOBA",
+      "Dungeon Crawler",
+      "3D"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#506",
+      "globaltopsellers#506"
+    ]
+  }
+}

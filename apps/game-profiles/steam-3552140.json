@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-3552140",
+  "name": "Retro Rewind - Video Store Simulator",
+  "match": {
+    "ids": [
+      "steam:3552140"
+    ],
+    "steamAppIds": [
+      3552140
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Simulation, Shop Keeper, Management, Relaxing, Casual, Singleplayer"
+    ]
+  },
+  "catalog": {
+    "rank": 471,
+    "template": "pointer",
+    "tags": [
+      "Simulation",
+      "Shop Keeper",
+      "Management",
+      "Relaxing",
+      "Casual",
+      "Singleplayer",
+      "Resource Management",
+      "Immersive Sim",
+      "Inventory Management",
+      "Economy"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#433",
+      "globaltopsellers#533"
+    ]
+  }
+}

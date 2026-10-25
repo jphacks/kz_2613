@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "id": "steam-3259780",
+  "name": "FINAL FANTASY RESONANCE",
+  "match": {
+    "ids": [
+      "steam:3259780"
+    ],
+    "steamAppIds": [
+      3259780
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: RPG, Pixel Graphics, JRPG, Turn-Based Combat, 2.5D, Singleplayer"
+    ]
+  },
+  "catalog": {
+    "rank": 64,
+    "template": "pointer",
+    "tags": [
+      "RPG",
+      "Pixel Graphics",
+      "JRPG",
+      "Turn-Based Combat",
+      "2.5D",
+      "Singleplayer",
+      "Story Rich",
+      "Fantasy",
+      "Adventure",
+      "Exploration"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#3",
+      "globaltopsellers#6",
+      "mostplayed#91"
+    ]
+  }
+}

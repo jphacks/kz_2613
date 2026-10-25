@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-3271280",
+  "name": "Shroom and Gloom",
+  "match": {
+    "ids": [
+      "steam:3271280"
+    ],
+    "steamAppIds": [
+      3271280
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Deckbuilding, Card Game, Hand-drawn, Turn-Based Combat, Roguelike, Atmospheric"
+    ]
+  },
+  "catalog": {
+    "rank": 415,
+    "template": "pointer",
+    "tags": [
+      "Deckbuilding",
+      "Card Game",
+      "Hand-drawn",
+      "Turn-Based Combat",
+      "Roguelike",
+      "Atmospheric",
+      "Stylized",
+      "Dungeon Crawler",
+      "Surreal",
+      "Psychedelic"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#368",
+      "globaltopsellers#484"
+    ]
+  }
+}

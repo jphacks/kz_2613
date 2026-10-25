@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-646570",
+  "name": "Slay the Spire",
+  "match": {
+    "ids": [
+      "steam:646570"
+    ],
+    "steamAppIds": [
+      646570
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Roguelike Deckbuilder, Card Game, Card Battler, Roguelike, Deckbuilding, Turn-Based"
+    ]
+  },
+  "catalog": {
+    "rank": 371,
+    "template": "pointer",
+    "tags": [
+      "Roguelike Deckbuilder",
+      "Card Game",
+      "Card Battler",
+      "Roguelike",
+      "Deckbuilding",
+      "Turn-Based",
+      "Strategy",
+      "Singleplayer",
+      "Roguelite",
+      "Replay Value"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#443",
+      "globaltopsellers#316"
+    ]
+  }
+}

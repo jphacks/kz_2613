@@ -484,6 +484,19 @@
 - **未検証：** 実際のMinecraftでの動作（このPCの設定でダッシュ＝Q・捨てる＝Rが効くか）、スマホのボタン表示の見た目。
 ## 2026-10-25 #54・#93：Steam・Epicの検出と一覧からの起動（ホスト側）
 
+## 2026-10-25 — #97・#99・#100 ゲームの操作定義とユーザーのキー設定（Claude Code、テストは後で）
+- **#97：** 操作定義JSONの形式を `docs/architecture/game-profiles.md` に決めた。`apps/game-profiles/minecraft-java.json` を最初の1件にした（実機で確認済み）。ホスト（`src/profiles.rs`）は起動時にフォルダ内の定義を読み、形式を検証し、不正なものは理由をログに残す。Minecraftの定義はホストにも同梱した。分担の案（`assignment`）は、同じ系統の操作をグループごと1人に割り当てる。担当が3人分に足りないときは、`split` のあるグループ（移動の左・右・ジャンプ等）を分けて配る。`game.profile` で画面に配る。配布用zipに定義のフォルダを同梱した。
+- **#99：** `src/keybinds.rs` を定義駆動にした。読み方は `minecraft-options`・`terraria-input-profiles`・`es3-keybindings`（R.E.P.O.）・`unity-inputsystem-json`・`ue-input-ini`・`source-cfg`。キー名の表記ゆれ（XNA・Unreal・Source・Unity）をまとめて送れるキーへ対応させる。`%DOCUMENTS%`（OneDriveへ移したドキュメントを含む）などの場所を展開する。協力プレイ中以外は、設定ファイルの更新日時が変わったら読み直す。
+- **#100：** `scripts/profiles/extract.mjs`（読み取りのみ、ゲームのコードは実行しない）。Steamの `appinfo.vdf` の分類から向き不向きを付け、Unity Input Systemの埋め込み定義・.NETの列挙型・Minecraftの `Options.class`・設定ファイルから、下書き（状態は「自動抽出」）を作る。このPCで一度だけ動かし、Minecraft（40件）・Terraria・tModLoader（各31件）・R.E.P.O.（33件）・Goose Goose Duck（97件）が取れることを確かめた。
+- 検証：`cargo build --release --locked` 成功。**ユーザーの指示により、単体試験・シミュレーションの実行と追加は後で行う**（keybindsの既存の単体試験は新しい形へ書き直したが、まだ実行していない）。
+
+## 2026-10-25 — #98 主要500タイトルの選定と操作定義（Claude Code、テストは後で）
+- `scripts/profiles/build-catalog.mjs` を追加した。Steamの公開データ（ストアの売上上位1000・全期間の売上上位1000、`GetMostPlayedGames` の100、`GetTopReleasesPages`）の順位を合算し、ゲームだけを上位から498本選んだ。個別の定義があるのに上位に入らなかった2本と、Steam外の2本（Minecraft Java・Fortnite）を加えた計502本。一覧は `docs/data/top500-games.md`・`.json`（生成物）。取得した公開データはリポジトリ外のキャッシュに置く。
+- 定義：個別の定義（`scripts/profiles/overrides/`）が13本。このPCのデータから抽出した4本（Terraria・tModLoader・R.E.P.O.・Goose Goose Duck）と、広く知られた初期設定で書いた9本（Counter-Strike 2・Team Fortress 2・Left 4 Dead 2・Portal 2・Garry's Mod・Valheim・Stardew Valley・Lethal Company・Among Us、未検証）。残りは、Steamのタグ（重みの上位）からジャンルの型（fps・action3d・platformer・topdown・racing・fighting・pointer）を当てた**仮の定義（template）**。移動だけになりやすい型（platformer・topdown・racing・fighting）は、移動を左・右などに分けられるようにした。
+- 状態：device 1／extracted 4／unverified 9／template 488。向き：good 215／limited 180／unsuitable 107（マウス中心・ターン制等）。
+- 検証：ドライランのホストで、502件すべてが形式の検証を通り読み込まれた（エラー0）。**単体試験・シミュレーションはユーザーの指示で後回し。** 型の当てはめは上位70本を目で確認し、MOBA・ストラテジーの誤分類を直した。
+- **未確認：** templateの定義の正確さ（ゲームごとに実機または自動抽出で確かめる必要がある）。
+
 - `apps/host-rs/src/games.rs` を追加。Steam（レジストリの `SteamPath`、`libraryfolders.vdf`、`appmanifest_*.acf`）とEpic（`ProgramData\Epic\...\Manifests\*.item`）を読み、PC画面へ `state.games`（`verified: false`）を送る。スマホには送らない。ログは検出の件数と、選択・起動のIDだけ。再頒布パッケージ・Proton・未完了のインストール・DLC・ツールは除外する。
 - PC画面の `launch_game {id}` で、検出時に確かめた値だけから起動URLを組み立てて起動する（`ShellExecuteW`）。協力プレイ中・一覧にない値（パス・URL・Minecraft）は起動しない。起動前に全解放・epoch更新し、ウィンドウが現れたら前面化する。90秒で現れなければ手動起動を案内する。進行は変えず、P1の準備・Readyで開始する。
 - 一覧で選んだゲームの入力先は、前面の実行ファイルがインストール先フォルダ内にあることで判定する（`Target::install_dir`）。Minecraftの判定は従来どおり。
@@ -578,3 +591,13 @@
 - `shutdown-sim.mjs`はquit・EOF両方成功。`static-assets-sim.mjs`は26ファイル成功。`package.ps1 -Out .venv/pr103-package`で約9.7MBのZIP作成成功、同梱Minecraft定義をソースとバイト照合した。
 - 本変更経路のMinecraft・スマホ実機は未検証。5タイトルの自動抽出の再照合、設定階層・動的alias等は受入未完了として#97・#99・#100を自動クローズしない。過去の作者の実機観測と今回のfixture/dry-runを区別する。
 - 追加の境界検証で、全解除だけのSource/Unreal設定が初期キーへ戻る問題を修正。全解除・置換・未記載操作のキー解除を重ねる際も解除を保持し、再bindした有効操作だけを復元する。並列単体試験のfixture名も一意化。追加後のRust単体はホスト24件＋プローブ3件、計27件成功。
+
+## 2026-10-25 PR #104の修正・統合レビュー
+
+- マージ済み#103と他担当のREADME更新・PR #104への追加コミットを統合。Minecraftの既存`options`契約を維持し、他形式の`user`と区別する。
+- 仮・自動抽出・未検証・過去の実機記録をPCとスマホで区別し、未対応定義のReady不可を明示。Rust側の拒否は#103で導入済み。カタログを操作成立済みの一覧として扱わない。
+- `cargo build --release --locked`成功、単体はホスト24件＋プローブ3件成功。Rustの形式検証で全502定義の読込エラー0。`profile-catalog-test.mjs`は一覧・識別条件・状態・出典を照合し、template488／extracted4／unverified9／device1を確認。CIにも追加した。
+- `protocol-sim.mjs --bin .venv/final-runtime/recooplay-host.exe`は43/43成功。未検証のStardew定義ではReadyと協力入力を拒否し、その後の模擬Epic対象消失では全解放・一時停止を確認した。
+- 画面17/17、UI入力5/5、静的構文と差分空白検査成功。終了時全解放はquit・EOF両方成功。素材配信26ファイル・2,548,146 bytesを確認。配布ZIPへ全502定義を同梱する。
+- Rust dry-runでPC2解像度・スマホ縦6サイズを撮影し、PC警告の画面内表示・スマホ横はみ出し0・操作ボタンの画面外配置0を確認。証拠は`docs/design/evidence/catalog-review/`。PC1920の初回寸法不一致は採用せず再撮影した。
+- 実ゲーム502本の互換性・スマホ実タッチは未検証。#98は開いたままとする。新しい本番依存は追加していない。
