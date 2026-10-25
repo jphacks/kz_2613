@@ -195,6 +195,15 @@ Re:Cooplayは、**ゲームや参加人数に合わせて、もっと自然に�
 
 ## 開発技術
 
+**システム構成**
+
+参加者のスマートフォンから送られる操作をPC上のRustホストで受け取り、担当する操作に応じてキーボード・マウス入力に変換し、Windows API（SendInput）からゲームへ伝えます。参加・状態管理にはWebSocketを使い、操作入力にはWebRTC DataChannelも併用します。
+
+<div align="center">
+  <a href="assets/images/recooplay-system-architecture.webp"><img src="assets/images/recooplay-system-architecture.webp" width="960" alt="3人のスマホからRustホストへ操作を送り、Windows API SendInputで既存PCゲームへ入力する構成。TauriのPCアプリと参加・準備状況やゲーム選択・開始・停止をやり取りする"></a>
+  <p><sub>3人構成を例にした概略図。参加・状態管理はWebSocket、入力の速達にはWebRTC DataChannelも併用します。画像を開くと拡大できます。</sub></p>
+</div>
+
 ### 活用した技術
 
 #### API・データ
@@ -227,22 +236,27 @@ Re:Cooplayは、**ゲームや参加人数に合わせて、もっと自然に�
 
 #### ハッカソンで開発した独自機能・技術
 
-Hack Day（2026年10月24〜25日）に、複数人で1つのキャラクターを動かす仕組みを開発しました。技術ごとの実装・検証記録は以下から確認できます。
+Hack Day中に共同操作の基盤を開発し、その後も対応人数やゲーム別の操作画面などを拡張しました。以下は、現在の実装に基づく主な機能・技術です。
 
-| 技術 | 概要 | 実装・記録 |
-|:--|:--|:--|
-| **複数人の入力統合と役割分担** | スマホから受け取った操作を担当者ごとに判定し、1つのゲーム入力へ統合。2〜4人の操作分担や役割交換に対応 | [入力統合](apps/host-rs/src/hub.rs)、[入力変換](apps/host-rs/src/controls.rs)、[OS入力](apps/host-rs/src/input.rs) |
-| **リアルタイム通信と入力の整合性** | WebSocketとWebRTC DataChannelを併用し、重複・古い入力を排除。視点操作、長押しや連打も処理 | [通信実装](apps/host-rs/src/rtc.rs)、[通信仕様](docs/architecture/protocol.md)、[通信検証](scripts/sim/protocol-sim.mjs) |
-| **ゲーム別の操作定義・役割別UI** | ゲームのキー設定や操作種類に合わせて入力を変換し、担当に適したスマホ画面を生成。インストール済みゲームの検出にも対応 | [操作定義](docs/architecture/game-profiles.md)、[ゲーム検出](apps/host-rs/src/games.rs)、[操作画面](apps/web-static/scripts/generated-controls.js) |
-| **安全な開始・停止と入力先の制御** | ホストのReadyによる開始、対象ゲームのウィンドウ確認、切断・一時停止・緊急停止時の入力解放 | [入力先の確認](apps/host-rs/src/focus.rs)、[セッション管理](apps/host-rs/src/hub.rs)、[開始手順](docs/decisions/2026-10-25-launch-after-roles.md) |
-| **参加からプレイまでの画面** | QRコード参加、ゲーム選択、操作分担の確認、スマホをリモコンから役割別コントローラーへ切り替えるUI | [PC・スマホUI](apps/web-static/)、[表示検証](artifacts/improved-ui/README.md) |
+- **複数人の入力統合と役割分担**  
+  スマートフォンから届く操作を各プレイヤーの担当と照合し、1つのPCゲームに対する入力へ統合します。参加人数に応じた2〜4人の操作分担と、開始前・一時停止中の担当交換に対応しています。  
+  [入力統合](apps/host-rs/src/hub.rs) ／ [入力変換](apps/host-rs/src/controls.rs) ／ [Windows入力](apps/host-rs/src/input.rs)
 
-操作入力は次の構成でPCゲームに伝わります。
+- **リアルタイム通信と入力の整合性**  
+  WebSocketで参加・状態管理を行い、操作入力にはWebRTC DataChannelも併用します。ボタン入力の重複処理や古い状態の入力を防ぎ、視点移動や長押し・連打を扱う仕組みを実装しています。  
+  [WebRTC実装](apps/host-rs/src/rtc.rs) ／ [通信仕様](docs/architecture/protocol.md) ／ [通信の自動試験](scripts/sim/protocol-sim.mjs)
 
-<div align="center">
-  <a href="assets/images/recooplay-system-architecture.webp"><img src="assets/images/recooplay-system-architecture.webp" width="960" alt="3人のスマホからRustホストへ操作を送り、Windows API SendInputで既存PCゲームへ入力する構成。TauriのPCアプリと参加・準備状況やゲーム選択・開始・停止をやり取りする"></a>
-  <p><sub>3人構成を例にした概略図。参加・状態管理はWebSocket、入力の速達にはWebRTC DataChannelも併用します。画像を開くと拡大できます。</sub></p>
-</div>
+- **ゲーム別の操作定義と役割別コントローラー**  
+  ゲームごとの操作定義や、対応する形式のキー設定を参照して入力を変換し、担当者に必要な操作だけをスマートフォンに表示します。Steam・Epicのインストール済みゲームの検出と、実行ファイルの手動登録にも対応しています。  
+  [操作定義](docs/architecture/game-profiles.md) ／ [ゲーム検出・手動登録](apps/host-rs/src/games.rs) ／ [操作画面の生成](apps/web-static/scripts/generated-controls.js)
+
+- **開始・停止と入力先の制御**  
+  ホストの明示的なReady操作で共同操作を開始し、対象ゲームのウィンドウが前面にあるかを確認して入力を送ります。一時停止・切断・緊急停止時には、押下中のキーやマウスボタンを解放する処理を備えています。  
+  [入力先の判定](apps/host-rs/src/focus.rs) ／ [セッション・停止処理](apps/host-rs/src/hub.rs) ／ [起動から開始までの設計](docs/decisions/2026-10-25-launch-after-roles.md)
+
+- **QRコード参加から共同操作までのUI**  
+  スマートフォンでQRコードを読み取り、ホストのスマホからゲーム選択などの準備を進められます。Ready後は、参加者それぞれに割り当てられた操作画面へ切り替わります。  
+  [PC・スマホUI](apps/web-static/) ／ [表示検証記録](artifacts/improved-ui/README.md)
 
 [開発開始前のコミット](https://github.com/jphacks/kz_2613/tree/5acb0049e6) ／ [GitHub上の変更差分](https://github.com/jphacks/kz_2613/compare/5acb0049e6...main) ／ [Hack Day開発ログ](docs/handoff/BUILD_LOG.md) ／ [システム設計](docs/architecture/system-design.md)
 
