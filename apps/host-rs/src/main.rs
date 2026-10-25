@@ -204,6 +204,7 @@ async fn main() {
 
     let router = Router::new()
         .route("/api/info", get(api_info))
+        .route("/api/hotspot", axum::routing::post(api_hotspot))
         .route("/api/game-image", get(game_image))
         .route("/ws", get(ws_upgrade))
         .fallback(get(static_file))
@@ -213,9 +214,15 @@ async fn main() {
     }
 }
 
-async fn api_info(State(app): State<App>) -> Response {
-    let wifi = app.wifi.as_ref().as_ref().map(|(s, p)| (s.as_str(), p.as_str()));
-    let body = netinfo::info(app.port, wifi);
+async fn api_info(State(app): State<App>, ConnectInfo(addr): ConnectInfo<SocketAddr>) -> Response {
+    // ホットスポットの設定の読み取りは時間がかかることがあるので、待ち受けのスレッドを止めない
+    let loopback = is_loopback(&addr);
+    let body = tokio::task::spawn_blocking(move || {
+        let wifi = app.wifi.as_ref().as_ref().map(|(s, p)| (s.as_str(), p.as_str()));
+        netinfo::info(app.port, wifi, loopback)
+    })
+    .await
+    .unwrap_or_default();
     ([(header::CONTENT_TYPE, "application/json"), (header::CACHE_CONTROL, "no-store")], body.to_string()).into_response()
 }
 
@@ -236,6 +243,20 @@ async fn game_image(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Socke
         Ok(data) => ([(header::CONTENT_TYPE, mime), (header::CACHE_CONTROL, "no-store")], data).into_response(),
         Err(_) => StatusCode::NOT_FOUND.into_response(),
     }
+}
+
+/// PC 画面の「ホットスポットを ON にする」(#133)。PC 本体の画面からだけ受け付ける
+/// (ほかの Web ページからの要求を防ぐため、WebSocket と同じ Origin の確認をする)
+async fn api_hotspot(State(app): State<App>, ConnectInfo(addr): ConnectInfo<SocketAddr>, headers: HeaderMap) -> Response {
+    if !is_loopback(&addr) || !allowed_ws_headers(&headers, app.port, true) || headers.get(header::ORIGIN).is_none() {
+        return (StatusCode::FORBIDDEN, "only from the PC app").into_response();
+    }
+    let result = tokio::task::spawn_blocking(netinfo::start_hotspot).await.unwrap_or_else(|_| Err("失敗しました".into()));
+    let body = match result {
+        Ok(()) => serde_json::json!({ "ok": true }),
+        Err(e) => serde_json::json!({ "ok": false, "error": e }),
+    };
+    ([(header::CONTENT_TYPE, "application/json"), (header::CACHE_CONTROL, "no-store")], body.to_string()).into_response()
 }
 
 async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<SocketAddr>, uri: Uri) -> Response {

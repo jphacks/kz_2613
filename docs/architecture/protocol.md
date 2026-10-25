@@ -85,6 +85,8 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | ホスト → 画面 | `inject` / `look` / `log` | 注入1件ごと、視点の100msごとの集計、イベントログ |
 | ホスト → 画面 | `remote` | `control`（`UP`/`DOWN`/`LEFT`/`RIGHT`/`ENTER`/`ESC`）、`state`。ロビー・一時停止中のP1のリモコン操作。PCアプリの画面は自分が前面（`document.hasFocus()`）のときだけ反応する。OSへの注入は前面がMinecraftのときだけなので、画面とゲームが同時に反応しない |
 
+**参加の案内（#133、Rust版）：** `GET /api/info` は参加用のURL・QR（`urls`）を返す。Wi-Fiの接続QR（`wifi`：`ssid`・パスフレーズを含む `qr`）とホットスポットの状態（`hotspot`：`on`）は**PC本体（ループバック）からの要求にだけ**含め、LANの端末には `null` を返す。Wi-Fiはモバイルホットスポットの設定（Windowsの `NetworkOperatorTetheringManager`）を優先し、読めなければ `config.json` の `wifi` を使う。`POST /api/hotspot` はホットスポットをONにする（PC画面のボタンを押したときだけ）。PC本体からで、Origin がPCの画面と一致する要求だけを受け付ける（Origin なし・別の Origin は403）。SSID・パスフレーズはログに残さない。
+
 **ゲーム一覧の画像（#121、Rust版）：** `GET /api/game-image?id=<項目ID>` は、検出した項目の画像（Steamがユーザーの PC に保存しているライブラリの画像）を返す。PC本体（ループバック）からの要求だけに応じ、項目IDだけを受け取ってホストの表から場所を引く。場所・パスは受け取らない。一覧にない・画像のない項目は404。`id=minecraft-java` はMinecraftのランチャーの画像。画像は保存させない（`no-store`）。
 
 ## 5. 順序・欠落・安全の規則
