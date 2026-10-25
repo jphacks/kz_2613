@@ -1,0 +1,9 @@
+:root {
+  --font-ui: "Yu Gothic UI", "Hiragino Kaku Gothic ProN", Meiryo, system-ui, sans-serif;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px;
+  --radius-sm: 12px; --radius-card: 24px; --radius-pill: 999px;
+  --outline: 3px; --touch-min: 44px;
+  --shadow-card: 0 5px 0 color-mix(in srgb, var(--color-purple) 25%, transparent);
+  --shadow-focus: 0 0 0 4px color-mix(in srgb, var(--color-cyan) 28%, transparent);
+  --z-cursor: 30; --z-dialog: 40;
+}

@@ -18,3 +18,5 @@ WebView2のdocument.hasFocusだけでは操作先を選ばない。ゲーム経�
 - タッチパッド移動を最大30Hzで送る。既存の協力視点30Hz、補間4ms、最低押下60ms・解放50msは変更しない。
 
 実際のPCアプリ・MinecraftメニューとAndroid/iPhoneのタッチ操作、Windowsの前面化制限は工程5の実機受入で確認する。dry-runによる経路差替えを実機検証と呼ばない。
+
+OPEN_GAMEはP1またはローカルPC画面から既存の対象ゲームを前面に戻す要求。preparing／pausedでだけ受け付け、Ready・再開・入力ONを代行しない。Minecraftへのメニュー入力にも緊急停止登録を必須とする（明示的なdry-run差替え試験を除く）。

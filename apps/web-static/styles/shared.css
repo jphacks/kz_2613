@@ -1,0 +1,24 @@
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { margin: 0; color: var(--text); font-family: var(--font-ui); }
+button, input { font: inherit; }
+button { min-height: var(--touch-min); cursor: pointer; border: var(--outline) solid var(--color-cyan); background: var(--color-paper); color: var(--color-cyan-ink); border-radius: var(--radius-pill); padding: 9px 20px; font-weight: 800; box-shadow: var(--shadow-card); }
+button:disabled { cursor: default; border-color: var(--color-ice); color: var(--muted); box-shadow: none; }
+button:not(:disabled):active, button.down { transform: translateY(2px); background: var(--color-ice); box-shadow: none; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid var(--color-purple); outline-offset: 3px; }
+a { color: var(--color-cyan-ink); }
+.brand { font-weight: 950; letter-spacing: -.045em; color: var(--color-purple); text-decoration: none; }
+.brand em { font-style: normal; color: var(--color-cyan-ink); }
+.eyebrow { font-size: 12px; letter-spacing: .16em; font-weight: 800; color: var(--color-purple); }
+.muted, .note { color: var(--muted); }
+.ok { color: var(--ok); } .ng { color: var(--ng); } .warn { color: var(--warn); }
+.pill { display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-pill); background: var(--color-paper); padding: 5px 12px; border: 1px solid var(--color-ice); font-size: 12px; font-weight: 800; }
+.pill.ok::before { content: '●'; margin-right: 5px; }
+.pill.ng::before { content: '!'; margin-right: 5px; }
+.card { border: var(--outline) solid var(--color-cyan); background: color-mix(in srgb, var(--color-surface) 96%, transparent); border-radius: var(--radius-card); padding: var(--space-5); box-shadow: var(--shadow-card); }
+.dotted { border-bottom: 6px dotted var(--color-ice); padding-bottom: var(--space-3); }
+.mascot { display: grid; place-items: center; position: relative; margin: 12px auto; width: 104px; height: 104px; background: var(--color-cream); border: 3px solid var(--color-cyan); border-radius: 38% 42% 35% 42%; color: var(--color-purple); font-size: 52px; font-weight: 900; transform: rotate(-5deg); }
+.mascot::before { content: '✦'; position: absolute; right: -15px; top: -20px; color: var(--color-cyan-ink); font-size: 28px; }
+.mascot span { transform: rotate(5deg); }
+[data-slot="P2"] .mascot { border-color: var(--color-purple); }
+[data-slot="P3"] .mascot { border-color: var(--color-peach); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }

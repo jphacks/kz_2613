@@ -3,7 +3,7 @@ export function createVirtualCursor() {
   const marker = document.createElement('div');
   marker.setAttribute('aria-hidden', 'true');
   marker.id = 'virtualCursor';
-  marker.style.cssText = 'position:fixed;left:0;top:0;width:18px;height:18px;border:3px solid #075c86;border-radius:50%;background:#fff9;pointer-events:none;z-index:9999;display:none;box-shadow:0 0 0 3px #fff';
+  marker.style.cssText = 'position:fixed;left:0;top:0;width:18px;height:18px;border:3px solid var(--color-cyan-ink);border-radius:50%;background:var(--color-paper);pointer-events:none;z-index:var(--z-cursor);display:none;box-shadow:0 0 0 3px var(--color-paper)';
   document.body.append(marker);
   let x = innerWidth / 2, y = innerHeight / 2;
   const hit = () => document.elementFromPoint(x, y);

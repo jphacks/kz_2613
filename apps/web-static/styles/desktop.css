@@ -1,0 +1,66 @@
+html, body { min-height: 100%; }
+body { background: var(--color-peach) url('../assets/pc-stars.png') center / cover fixed; }
+.desktop-shell { min-height: 100dvh; display: grid; grid-template-columns: minmax(300px, 29.2%) minmax(0, 1fr); }
+.sidebar { background: var(--color-paper) url('../assets/pc-sidebar.png') center bottom / 100% auto no-repeat; padding: clamp(24px, 2.5vw, 48px); display: flex; flex-direction: column; gap: 24px; border-right: 1px solid var(--color-cream); }
+.brand { font-size: clamp(25px, 2.5vw, 43px); white-space: nowrap; }
+.sidebar p { margin: 0; line-height: 1.7; font-size: 13px; }
+.steps { display: grid; gap: 10px; }
+.steps button { text-align: left; font-size: 15px; padding: 10px 16px; border-width: 2px; background: var(--color-paper); color: var(--color-purple); }
+.steps button.sel { background: var(--color-ice); border-color: var(--color-cyan-ink); }
+.join-guide { margin: auto 0; }
+.join-guide h2 { font-size: 18px; margin: 0 0 12px; }
+.qr { max-width: 250px; width: 100%; margin: 0 auto 14px; background: var(--color-paper); border: 2px solid var(--color-ice); border-radius: var(--radius-card); padding: 12px; aspect-ratio: 1; display: grid; place-items: center; }
+.qr svg { width: 100%; height: 100%; }
+.url { font: 12px ui-monospace, monospace; word-break: break-all; text-align: center; }
+#urlNote { margin-top: 8px; font-size: 11px; }
+.participant-count { margin: 14px 0; display: flex; align-items: baseline; justify-content: center; gap: 8px; }
+.count { font-size: clamp(42px, 4vw, 68px); line-height: 1; font-weight: 950; color: var(--color-cyan-ink); }
+.sidebar-tip { padding: 10px 0; border-top: 5px dotted var(--color-ice); }
+.workspace { min-width: 0; padding: clamp(24px, 2.5vw, 48px); display: flex; flex-direction: column; gap: 24px; }
+.workspace header { display: flex; align-items: center; gap: 16px; justify-content: space-between; }
+.workspace header h1 { font-size: clamp(27px, 2.6vw, 46px); margin: 6px 0 0; letter-spacing: -.02em; }
+.status-pills { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+main { flex: 1; min-width: 0; }
+.screen { display: none; } .screen.show { display: block; }
+.intro { font-size: 15px; line-height: 1.9; margin: 0 0 24px; max-width: 65ch; }
+.slots, .roles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(12px, 1.5vw, 28px); }
+.slot { position: relative; border: 3px solid var(--color-cyan); border-radius: var(--radius-card); padding: 20px 12px; background: color-mix(in srgb, var(--color-surface) 96%, transparent); box-shadow: var(--shadow-card); text-align: center; min-width: 0; }
+.slot[data-slot="P2"] { border-color: var(--color-purple); }
+.slot[data-slot="P3"] { border-color: var(--color-peach); }
+.slot .name { font-size: clamp(24px, 2vw, 36px); color: var(--color-purple); font-weight: 950; }
+.slot .state { margin: 12px 0; font-size: 13px; font-weight: 700; }
+.slot h3 { font-size: 18px; margin: 10px 0; }
+.slot .host { display: block; font-size: 11px; color: var(--color-cyan-ink); margin: 4px 0; }
+.slot.empty { border-style: dashed; }
+.slot.lost { border-color: var(--color-warning); }
+.slot ul { font-size: 13px; text-align: left; padding-left: 18px; margin: 12px 0 0; line-height: 1.85; }
+.roles .mascot { width: 78px; height: 78px; font-size: 36px; }
+.role-title { display: block; font-size: 18px; font-weight: 800; }
+.actions { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+.actions .primary { min-width: 230px; }
+.game { position: relative; padding: clamp(24px, 4vw, 64px); border-radius: 32px; border: 3px solid var(--color-cyan); background: var(--color-surface); display: flex; align-items: center; gap: 32px; cursor: pointer; }
+.game h3 { font-size: clamp(22px, 2vw, 32px); margin: 0 0 12px; }
+.game ol { padding-left: 20px; font-size: 14px; line-height: 1.9; }
+.game .badge { display: block; width: fit-content; font-size: 11px; border: 1px solid var(--color-peach); padding: 5px 10px; margin: 12px 0; border-radius: 20px; color: var(--color-warning); }
+.game-symbol { display: grid; place-items: center; width: 130px; height: 130px; flex-shrink: 0; border-radius: 28px; background: var(--color-ice); font-size: 64px; color: var(--color-purple); }
+.legal { font-size: 10px; line-height: 1.6; margin-top: 20px; color: var(--muted); }
+.start { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+.start h3 { font-size: 16px; margin: 0 0 12px; }
+.start .card { padding: 20px; }
+#startState { font-size: 13px; line-height: 1.7; margin-top: 12px; }
+#startState ul { padding-left: 18px; margin: 8px 0; }
+#startState .ready-message { font-size: 16px; font-weight: 800; }
+.seg { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg button { border-width: 2px; font-size: 12px; padding: 8px 12px; }
+.seg button.sel { background: var(--color-ice); border-color: var(--color-cyan-ink); }
+#modeNote { font-size: 12px; line-height: 1.6; margin-top: 12px; }
+#phaseBanner { display: none; border: 2px solid var(--color-cyan); background: var(--color-surface); padding: 16px 20px; border-radius: 20px; line-height: 1.6; }
+#phaseBanner b { display: block; font-size: 20px; margin-bottom: 4px; }
+#phaseBanner span { font-size: 13px; }
+#phaseBanner.preparing, #phaseBanner.paused, #phaseBanner.coop { display: block; }
+#phaseBanner.paused { border-color: var(--color-warning); }
+footer { margin-top: 16px; font-size: 12px; display: flex; gap: 16px; flex-wrap: wrap; line-height: 1.8; }
+footer a { margin-left: auto; }
+@media (max-width: 1300px) { .workspace { gap: 16px; } .sidebar { gap: 16px; } .roles .mascot { width: 58px; height: 58px; font-size: 30px; } .roles .slot { padding: 16px 10px; } }
+@media (max-height: 800px) { .sidebar { padding: 24px; gap: 12px; } .sidebar .qr { width: min(100%, 23vh); margin-bottom: 8px; } .join-guide h2 { font-size: 14px; margin-bottom: 8px; } .sidebar-tip { font-size: 11px !important; } .participant-count { margin: 10px 0; } .sidebar .count { font-size: 40px; } }
+@media (max-width: 900px) { .desktop-shell { grid-template-columns: 260px minmax(0,1fr); } .sidebar { padding: 20px; } .slots, .roles { grid-template-columns: 1fr; } .game { flex-direction: column; align-items: flex-start; } }

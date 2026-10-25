@@ -2,76 +2,16 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Re:Cooplay コントローラー</title>
-<style>
-  :root { --bg:#111418; --panel:#1c2128; --line:#30363d; --text:#e8ecf1; --muted:#8b95a3; --ok:#3fb950; --ng:#f85149; --warn:#d29922; --accent:#4c8dff;
-    --p1:#4c8dff; --p2:#3fb950; --p3:#f0883e; --me:var(--accent); }
-  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font-family:system-ui, sans-serif;
-    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; overscroll-behavior:none; overflow:hidden; }
-  body { display:flex; flex-direction:column; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); gap:10px; }
-  header { display:flex; align-items:center; gap:10px; }
-  #slot { font-size:30px; font-weight:800; color:var(--me); min-width:56px; }
-  #role { font-size:13px; color:var(--muted); line-height:1.3; }
-  #role b { color:var(--text); font-size:14px; display:block; }
-  .right { margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
-  .pill { font-size:12px; padding:3px 10px; border-radius:999px; background:var(--panel); }
-  .pill.ok { color:var(--ok); } .pill.ng { color:var(--ng); } .pill.warn { color:var(--warn); }
-  #phase.coop { color:var(--ok); } #phase.paused { color:var(--warn); }
-  main { flex:1; min-height:0; display:flex; flex-direction:column; gap:10px; }
-  .view { display:none; flex:1; min-height:0; flex-direction:column; gap:10px; }
-  .view.show { display:flex; }
-  button { font-family:inherit; }
-  .key { touch-action:none; border:none; border-radius:14px; background:var(--panel); color:var(--text); font-size:18px; font-weight:700; min-height:56px; }
-  .key small { display:block; font-size:11px; font-weight:400; color:var(--muted); margin-top:2px; }
-  .key.down { background:var(--me); } .key.down small { color:var(--text); }
-  .cmd { border:none; border-radius:14px; padding:16px; font-size:18px; font-weight:800; color:#fff; background:var(--ok); }
-  .cmd:disabled { background:var(--panel); color:var(--muted); }
-  .cmd.pause { background:var(--warn); padding:10px; font-size:15px; }
-  .cmd.sub { background:transparent; border:1px solid var(--line); color:var(--muted); font-size:13px; padding:8px; font-weight:600; }
-  .note { font-size:12px; color:var(--muted); line-height:1.5; }
-  .players { display:flex; gap:6px; }
-  .players span { flex:1; text-align:center; font-size:12px; padding:6px 0; border-radius:8px; background:var(--panel); color:var(--muted); }
-  .players span.on { color:var(--text); outline:1px solid var(--ok); }
-
-  /* リモコン */
-  .remote { flex:1; display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:center; }
-  .dpad { display:grid; grid-template-columns:repeat(3, 1fr); grid-template-rows:repeat(3, 1fr); gap:6px; aspect-ratio:1; }
-  .dpad .u { grid-column:2; grid-row:1; } .dpad .l { grid-column:1; grid-row:2; } .dpad .r { grid-column:3; grid-row:2; } .dpad .d { grid-column:2; grid-row:3; }
-  .col { display:flex; flex-direction:column; gap:10px; }
-  .col .key { min-height:72px; }
-
-  /* P1 移動 */
-  .move { flex:1; display:grid; grid-template-columns:1.2fr 1fr; gap:14px; align-items:center; min-height:0; }
-  #stick { touch-action:none; position:relative; aspect-ratio:1; width:100%; max-height:100%; border-radius:50%; background:var(--panel); border:2px solid var(--line); }
-  #stick .knob { position:absolute; left:50%; top:50%; width:38%; height:38%; margin:-19% 0 0 -19%; border-radius:50%; background:#2d333b; border:2px solid var(--muted); pointer-events:none; }
-  #stick.active .knob { background:var(--me); border-color:var(--me); }
-  #stick .dir { position:absolute; font-size:13px; color:var(--muted); font-weight:700; pointer-events:none; }
-  #stick .dir.on { color:var(--text); }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .big { min-height:96px !important; font-size:22px; }
-
-  /* P2 視点 */
-  #pad { touch-action:none; flex:1; min-height:0; border-radius:16px; background:var(--panel); border:2px dashed var(--line); position:relative; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:14px; overflow:hidden; }
-  #pad.active { border-color:var(--me); }
-  #pad .dot { position:absolute; width:44px; height:44px; margin:-22px 0 0 -22px; border-radius:50%; background:var(--me); opacity:.6; display:none; pointer-events:none; }
-  .sens { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--muted); }
-  .sens input { flex:1; }
-
-  /* P3 アクション */
-  .act { flex:1; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:2fr 1fr 1fr; gap:10px; min-height:0; }
-  .act .key { min-height:0; }
-  .act .attack { font-size:24px; }
-
-  footer { display:flex; gap:8px; align-items:center; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
-  footer button { margin-left:auto; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--muted); font-size:11px; }
-  #inputWarn { display:none; margin:0 12px; padding:8px 12px; border-radius:10px; background:rgba(210,153,34,0.15); color:var(--warn); font-size:13px; text-align:center; }
-  #full { display:none; position:fixed; inset:0; background:var(--bg); align-items:center; justify-content:center; text-align:center; padding:24px; font-size:18px; z-index:10; }
-</style>
+<link rel="stylesheet" href="/styles/colors.css">
+<link rel="stylesheet" href="/styles/tokens.css">
+<link rel="stylesheet" href="/styles/shared.css">
+<link rel="stylesheet" href="/styles/mobile.css">
 </head>
 <body>
 <header>
+  <span class="brand"><em>Re:</em>Cooplay</span>
   <div id="slot">--</div>
   <div id="role"><b>接続中…</b></div>
   <div class="right">
@@ -83,8 +23,10 @@
 <div id="inputWarn">PCの画面がMinecraftになっていません。ホストがMinecraftを前面に戻すまで操作は届きません。</div>
 
 <main>
+  <div class="connecting" id="connecting"><span class="mascot" aria-hidden="true">✦</span>PCホストへ接続しています…</div>
   <!-- ロビー / 一時停止: ホストのリモコン -->
   <section class="view" id="v-remote">
+    <div class="host-card"><h1>あなたがホストです！</h1><p>タッチパッドでPCを操作。準備の後にReady！</p></div>
     <div class="players" id="players1"></div>
     <div class="remote">
       <div class="dpad">
@@ -98,13 +40,14 @@
         <button class="key" data-ctl="ESC">戻る<small>Esc</small></button>
       </div>
     </div>
-    <div id="remotePad" role="application" aria-label="ホストのタッチパッド" style="min-height:120px;flex:1;border:2px dashed currentColor;border-radius:20px;touch-action:none;display:grid;place-items:center">指でPCのカーソルを動かす</div>
-    <div class="remoteButtons" style="display:flex;gap:8px">
+    <div id="remotePad" role="application" aria-label="ホストのタッチパッド">指でPCのカーソルを動かす</div>
+    <div class="remoteButtons">
       <button class="key" data-ctl="REMOTE_LEFT">左クリック</button><button class="key" data-ctl="REMOTE_RIGHT">右クリック</button><button class="key" data-ctl="REMOTE_E">持ち物 E</button>
       <button class="key" data-ctl="REMOTE_WHEEL_UP">上へ</button><button class="key" data-ctl="REMOTE_WHEEL_DOWN">下へ</button>
     </div>
     <div id="remoteRoute" class="note"></div>
     <button class="cmd" id="startBtn">START</button>
+    <button class="cmd sub" id="openGameBtn" data-cmd="OPEN_GAME" hidden>Minecraftを前面にする</button>
     <button class="cmd sub" id="endBtn" style="display:none">ロビーに戻る（協力プレイ終了）</button>
     <div class="note" id="remoteNote">ゲームを開いてワールドを準備した後、ホストだけがReadyを押します。</div>
   </section>
@@ -112,9 +55,9 @@
   <!-- ロビー / 一時停止: ホスト以外 -->
   <section class="view" id="v-wait">
     <div class="players" id="players2"></div>
-    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center">
-      <div style="font-size:20px; font-weight:700" id="waitTitle">ホストの開始を待っています</div>
-      <div class="note" id="waitRole"></div>
+    <div class="wait-scene">
+      <div class="mascot" aria-hidden="true"><span>✦</span></div>
+      <div class="card wait-card"><h1 class="dotted">接続完了!!</h1><div class="role-label">あなたの担当</div><div id="waitRole"></div><div id="waitTitle">ホストの準備を待っています</div></div>
     </div>
   </section>
 
@@ -136,7 +79,7 @@
         </div>
       </div>
     </div>
-    <button class="cmd pause" data-cmd="PAUSE">PAUSE</button>
+    <button class="cmd pause" data-cmd="PAUSE">一時停止・ホスト操作へ</button>
   </section>
 
   <!-- P2 視点 -->
@@ -165,457 +108,12 @@
   <span>未ACK <b id="unacked">0</b></span>
   <span>経路 <b id="path">-</b></span>
   <button id="burst">通信テスト</button>
+  <output id="inputMetrics" hidden aria-hidden="true"></output>
 </footer>
 
-<div id="full">部屋が満員です（3人まで）。<br>PC側でリセットしてから再読み込みしてください。</div>
+<div id="rotatePrompt" role="status"><b>スマホを縦にしてください</b><p>操作を停止し、押していたキーを離しました。<br>縦向きに戻して、新しい押下から再開します。</p></div>
+<div id="full" role="alert">部屋が満員です（3人まで）。<br>PC側でリセットしてから再読み込みしてください。</div>
 
-<script type="module">
-import { bindTouchpad } from './scripts/touchpad.js';
-(() => {
-  const $ = (id) => document.getElementById(id);
-  const ROLE_TEXT = {
-    P1: '移動（WASD・ジャンプ・スニーク・ダッシュ）とホスト操作',
-    P2: '視点（画面をドラッグしてカメラを動かす）',
-    P3: 'アクション（攻撃・使う・持ち物の切り替え）',
-  };
-  const COLORS = { P1: 'var(--p1)', P2: 'var(--p2)', P3: 'var(--p3)' };
-  // 通信契約の版 (docs/architecture/protocol.md)。PC のホストと合わなければ接続できない
-  const PROTOCOL_VERSION = 4;
-
-  // 端末ごとの ID。再接続時に同じスロットへ戻るために保存する
-  let clientId = null;
-  try { clientId = localStorage.getItem('recooplay.clientId'); } catch {}
-  if (!clientId) {
-    clientId = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
-    try { localStorage.setItem('recooplay.clientId', clientId); } catch {}
-  }
-
-  // 再接続用トークン。PC のホストが発行し、同じ枠へ戻るときに提示する (clientId だけでは枠を取り戻せない)
-  let token = null;
-  try { token = localStorage.getItem('recooplay.token'); } catch {}
-
-  let ws = null, seq = 0, retry = 0, stopped = false, pingTimer = null;
-  let me = null, isHost = false, game = null;
-  let iseq = 0;            // 入力の通し番号 (WebSocket / WebRTC の両方に同じ番号で送り、PC 側で先着 1 回だけ処理)
-  let lastServerMsg = 0;   // 最後にサーバーから何か届いた時刻 (無応答検知用)
-  const pending = new Map(); // iseq -> 送信時刻
-  const rtts = [];
-  let sent = 0;
-
-  const isOpen = () => ws?.readyState === 1;
-  function setStatus(text, cls) { const el = $('status'); el.textContent = text; el.className = 'pill ' + cls; }
-
-  function connect() {
-    if (stopped) return;
-    setStatus('接続中', 'warn');
-    const sock = new WebSocket(`ws://${location.host}/ws`);
-    ws = sock;
-    sock.onopen = () => {
-      retry = 0;
-      seq = 0;
-      pending.clear();
-      lastServerMsg = performance.now();
-      sock.send(JSON.stringify({ type: 'hello', protocolVersion: PROTOCOL_VERSION, clientId, token, ua: navigator.userAgent, nextIseq: iseq + 1 }));
-      clearInterval(pingTimer);
-      pingTimer = setInterval(sendPing, 1000);
-    };
-    sock.onclose = (ev) => { if (ws === sock) onDisconnected(ev.code); };
-    sock.onerror = () => {};
-    sock.onmessage = (ev) => {
-      if (ws !== sock) return;
-      lastServerMsg = performance.now();
-      const msg = JSON.parse(ev.data);
-      if (msg.type === 'rtc-answer' || msg.type === 'rtc-cand') { onRtcSignal(msg); return; }
-      if (msg.type === 'welcome') {
-        if (msg.token && msg.token !== token) {
-          token = msg.token;
-          try { localStorage.setItem('recooplay.token', token); } catch {}
-        }
-        look.seq = 0; look.cx = 0; look.cy = 0;
-        startRtc();
-        me = msg.slot;
-        isHost = msg.isHost;
-        document.documentElement.style.setProperty('--me', COLORS[me]);
-        $('slot').textContent = me;
-        $('role').innerHTML = `<b>${msg.role}${isHost ? '（ホスト）' : ''}</b>${ROLE_TEXT[me]}`;
-        setStatus(msg.reconnected ? '再接続OK' : '接続OK', 'ok');
-        render();
-      } else if (msg.type === 'game') {
-        const epochChanged = game?.epoch !== msg.game.epoch;
-        game = msg.game;
-        if (epochChanged) {
-          releaseAll();
-          look.seq = 0; look.cx = 0; look.cy = 0;
-          accX = accY = 0;
-        }
-        render();
-      } else if (msg.type === 'pong') {
-        const r = performance.now() - msg.t;
-        $('rtt').textContent = Math.round(r) + 'ms';
-        rtts.push(r); // 視点担当は ACK 付きの入力が少ないので ping の往復も統計に入れる
-        if (rtts.length > 500) rtts.shift();
-      } else if (msg.type === 'ack') {
-        const t0 = pending.get(msg.iseq);
-        if (t0 != null) {
-          pending.delete(msg.iseq);
-          via[msg.via] = (via[msg.via] || 0) + 1;
-          rtts.push(performance.now() - t0);
-          if (rtts.length > 500) rtts.shift();
-        }
-        renderStats();
-      } else if (msg.type === 'full') {
-        stopped = true;
-        $('full').style.display = 'flex';
-      } else if (msg.type === 'error' && msg.code === 'protocol_version') {
-        showVersionMismatch();
-      } else if (msg.type === 'error' && msg.code === 'bad_token') {
-        showBadToken();
-      }
-    };
-  }
-
-  // 古い画面がキャッシュされているなど、PC のホストと通信契約の版が違う。再接続しても直らないので止める
-  function showVersionMismatch() {
-    stopped = true;
-    setStatus('版が不一致', 'ng');
-    $('full').textContent = 'PCのアプリと画面の版が合いません。ページを再読み込みしてください。';
-    $('full').style.display = 'flex';
-  }
-
-  // 同じ clientId の枠があるのにトークンが合わない (保存したトークンが消えた等)。PC でリセットするまで参加できない
-  function showBadToken() {
-    stopped = true;
-    setStatus('参加できません', 'ng');
-    $('full').textContent = 'この端末の参加情報をPCで確認できませんでした。PC側でリセットしてから再読み込みしてください。';
-    $('full').style.display = 'flex';
-  }
-
-  function onDisconnected(code) {
-    clearInterval(pingTimer);
-    releaseAll();
-    closeRtc();
-    if (code === 4000) { stopped = true; setStatus('別タブで接続中', 'ng'); return; }
-    if (code === 4005) { showVersionMismatch(); return; }
-    if (code === 4006) { showBadToken(); return; }
-    setStatus('切断 — 再接続待ち', 'ng');
-    setTimeout(connect, Math.min(5000, 250 * 2 ** retry++));
-  }
-
-  // サーバーから 3 秒何も届かなければ、OS が切断に気づくのを待たずに張り直す (Wi-Fi が一瞬止まった時の復帰を早める)
-  setInterval(() => {
-    if (!isOpen() || performance.now() - lastServerMsg < 3000) return;
-    const old = ws;
-    ws = null;
-    try { old.close(); } catch {}
-    onDisconnected(1006);
-  }, 500);
-
-  // ---- WebRTC (速達便) ----
-  // 順序保証・再送なしのデータチャネル。1 つ欠けても後続が待たされない。つながらなければ WebSocket だけで動く
-  let pc = null, dc = null;
-  const rtcRtts = [];
-  const via = { ws: 0, rtc: 0 };
-  const rtcOpen = () => dc?.readyState === 'open';
-  async function startRtc() {
-    closeRtc();
-    if (!window.RTCPeerConnection) return;
-    try {
-      const myPc = new RTCPeerConnection({ iceServers: [] });
-      pc = myPc;
-      const ch = myPc.createDataChannel('fast', { ordered: false, maxRetransmits: 0 });
-      dc = ch;
-      ch.onopen = renderPath;
-      ch.onclose = renderPath;
-      ch.onmessage = (ev) => {
-        const m = JSON.parse(ev.data);
-        if (m.type === 'kpong') { rtcRtts.push(performance.now() - m.t); if (rtcRtts.length > 300) rtcRtts.shift(); }
-      };
-      myPc.onicecandidate = (e) => {
-        if (e.candidate && isOpen()) ws.send(JSON.stringify({ type: 'rtc-cand', cand: e.candidate.candidate, mid: e.candidate.sdpMid }));
-      };
-      myPc.onconnectionstatechange = renderPath;
-      await myPc.setLocalDescription(await myPc.createOffer());
-      if (pc === myPc && isOpen()) ws.send(JSON.stringify({ type: 'rtc-offer', sdp: myPc.localDescription.sdp }));
-    } catch (e) {
-      closeRtc();
-    }
-    renderPath();
-  }
-  async function onRtcSignal(msg) {
-    if (!pc) return;
-    try {
-      if (msg.type === 'rtc-answer') await pc.setRemoteDescription({ type: 'answer', sdp: msg.sdp });
-      else if (msg.cand) await pc.addIceCandidate({ candidate: msg.cand, sdpMid: msg.mid || '0' });
-    } catch {}
-  }
-  function closeRtc() {
-    try { dc?.close(); } catch {}
-    try { pc?.close(); } catch {}
-    pc = dc = null;
-    renderPath();
-  }
-  function renderPath() {
-    $('path').textContent = rtcOpen() ? 'WebRTC+WS' : pc ? 'WS（RTC接続中）' : 'WSのみ';
-  }
-  // 協力プレイ中は 50ms ごとに生存確認を送る: WebRTC の遅延を測りつつ、スマホの無線が省電力で眠るのを防ぐ
-  setInterval(() => {
-    if (rtcOpen() && game?.phase === 'coop') dc.send(JSON.stringify({ type: 'ka', t: performance.now() }));
-  }, 50);
-
-  function summarize(arr) {
-    if (!arr.length) return null;
-    const sorted = [...arr].sort((a, b) => a - b);
-    return {
-      avg: Math.round(arr.reduce((a, b) => a + b, 0) / arr.length),
-      p95: Math.round(sorted[Math.floor(sorted.length * 0.95)]),
-      max: Math.round(sorted[sorted.length - 1]),
-    };
-  }
-  function stats() {
-    const s = summarize(rtts);
-    if (!s) return null;
-    return { ...s, n: rtts.length, unacked: pending.size, sent, rtc: summarize(rtcRtts), path: rtcOpen() ? 'rtc' : 'ws', via };
-  }
-  function renderStats() {
-    const s = stats();
-    $('sent').textContent = sent;
-    $('unacked').textContent = pending.size;
-    if (s) $('rttAvg').textContent = `${s.avg}/${s.max}ms`;
-  }
-  function sendPing() { if (isOpen()) ws.send(JSON.stringify({ type: 'ping', t: performance.now(), stats: stats() })); }
-
-  function sendWs(obj) {
-    if (!isOpen()) return false;
-    ws.send(JSON.stringify({ ...obj, seq: ++seq }));
-    return true;
-  }
-  // 入力 (押下/解放): WebSocket (確実) と WebRTC (速い) の両方に同じ番号で送る
-  function sendInput(obj) {
-    if (!isOpen()) return false;
-    // epoch: 押した時点の進行状態。PC は状態が変わった後に届いた古い入力を処理しない
-    const msg = { type: 'input', ...obj, iseq: ++iseq, epoch: game?.epoch, t: performance.now() };
-    pending.set(msg.iseq, msg.t);
-    sent++;
-    if (rtcOpen()) { try { dc.send(JSON.stringify(msg)); } catch {} }
-    sendWs(msg);
-    renderStats();
-    return true;
-  }
-
-  // ---- 操作の押下 / 解放 ----
-  // サーバーに down を送れたものだけ記録し、up はそれに対してだけ送る（再接続中の押下で片割れの up を送らない）
-  const sentDown = new Set();
-  function ctlDown(ctl) {
-    if (sentDown.has(ctl)) return;
-    if (sendInput({ button: ctl, state: 'down' })) sentDown.add(ctl);
-    if (navigator.vibrate) navigator.vibrate(8);
-  }
-  function ctlUp(ctl) {
-    if (!sentDown.delete(ctl)) return;
-    sendInput({ button: ctl, state: 'up' });
-  }
-
-  const touchpad = bindTouchpad($('remotePad'), {
-    enabled: () => me === 'P1' && game?.phase !== 'coop' && game?.remoteRoute !== 'none' && !document.hidden,
-    send: (message) => { if (isOpen()) ws.send(JSON.stringify({...message, type:'remote', epoch:game?.epoch})); },
-    tap: () => { ctlDown('REMOTE_LEFT'); ctlUp('REMOTE_LEFT'); },
-  });
-  const held = new Map(); // pointerId -> button element
-  function releasePointer(pointerId) {
-    const el = held.get(pointerId);
-    if (!el) return;
-    held.delete(pointerId);
-    el.classList.remove('down');
-    ctlUp(el.dataset.ctl);
-  }
-  function releaseAll() {
-    touchpad.reset(); accX = accY = 0; padId = null; pad.classList.remove('active'); dot.style.display = 'none';
-    for (const id of [...held.keys()]) releasePointer(id);
-    stickRelease();
-    for (const c of [...sentDown]) ctlUp(c);
-    sentDown.clear();
-  }
-
-  document.querySelectorAll('[data-ctl]').forEach((el) => {
-    el.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      el.setPointerCapture?.(e.pointerId);
-      if (held.has(e.pointerId)) return;
-      held.set(e.pointerId, el);
-      el.classList.add('down');
-      ctlDown(el.dataset.ctl);
-    });
-    el.addEventListener('pointerup', (e) => releasePointer(e.pointerId));
-    el.addEventListener('pointercancel', (e) => releasePointer(e.pointerId));
-    el.addEventListener('lostpointercapture', (e) => releasePointer(e.pointerId));
-  });
-  document.querySelectorAll('[data-cmd]').forEach((el) => el.addEventListener('click', () => command(el.dataset.cmd)));
-  $('startBtn').addEventListener('click', () => command(game?.phase === 'paused' ? 'RESUME' : game?.phase === 'preparing' ? 'READY' : 'PREPARE'));
-  $('endBtn').addEventListener('click', () => { if (confirm('協力プレイを終了してロビーに戻りますか？')) command('END'); });
-  function command(cmd) { if (isOpen()) ws.send(JSON.stringify({ type: 'command', cmd, epoch: game?.epoch })); }
-
-  document.addEventListener('contextmenu', (e) => e.preventDefault());
-  function stopRemote() { releaseAll(); if (isOpen()) ws.send(JSON.stringify({type:'release_inputs',epoch:game?.epoch})); }
-  document.addEventListener('pointercancel', stopRemote);
-  window.addEventListener('orientationchange', stopRemote);
-  window.addEventListener('pagehide', stopRemote);
-  window.addEventListener('blur', stopRemote);
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) stopRemote();
-    else if (!ws || ws.readyState > 1) { retry = 0; connect(); }
-  });
-
-  // ---- P1: 移動スティック (8 方向 → W/A/S/D の組み合わせ) ----
-  const stick = $('stick');
-  const knob = stick.querySelector('.knob');
-  let stickId = null;
-  const stickOn = new Set();
-  function stickUpdate(e) {
-    const r = stick.getBoundingClientRect();
-    let x = (e.clientX - r.left) / r.width * 2 - 1;
-    let y = (e.clientY - r.top) / r.height * 2 - 1;
-    const len = Math.hypot(x, y);
-    if (len > 1) { x /= len; y /= len; }
-    knob.style.transform = `translate(${x * 62}%, ${y * 62}%)`;
-    const want = new Set();
-    if (Math.hypot(x, y) > 0.3) {
-      const a = Math.atan2(y, x) * 180 / Math.PI; // 右 0°, 下 90°
-      if (a > -157.5 && a < -22.5) want.add('FWD');
-      if (a > 22.5 && a < 157.5) want.add('BACK');
-      if (a > 112.5 || a < -112.5) want.add('LEFT');
-      if (a > -67.5 && a < 67.5) want.add('RIGHT');
-    }
-    for (const d of [...stickOn]) if (!want.has(d)) { stickOn.delete(d); ctlUp(d); }
-    for (const d of want) if (!stickOn.has(d)) { stickOn.add(d); ctlDown(d); }
-    stick.querySelectorAll('.dir').forEach((el) => el.classList.toggle('on', stickOn.has(el.dataset.d)));
-  }
-  function stickRelease() {
-    stickId = null;
-    stick.classList.remove('active');
-    knob.style.transform = '';
-    for (const d of [...stickOn]) { stickOn.delete(d); ctlUp(d); }
-    stick.querySelectorAll('.dir').forEach((el) => el.classList.remove('on'));
-  }
-  stick.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    if (stickId != null) return;
-    stickId = e.pointerId;
-    stick.setPointerCapture?.(e.pointerId);
-    stick.classList.add('active');
-    stickUpdate(e);
-  });
-  stick.addEventListener('pointermove', (e) => { if (e.pointerId === stickId) stickUpdate(e); });
-  for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) stick.addEventListener(t, (e) => { if (e.pointerId === stickId) stickRelease(); });
-
-  // ---- P2: 視点パッド (ドラッグ量をマウス相対移動として送る) ----
-  const pad = $('pad');
-  const dot = pad.querySelector('.dot');
-  let padId = null, lastX = 0, lastY = 0, accX = 0, accY = 0;
-  const sens = () => Number($('sens').value);
-  $('sens').addEventListener('input', () => {
-    $('sensVal').textContent = sens().toFixed(1);
-    try { localStorage.setItem('recooplay.sens', $('sens').value); } catch {}
-  });
-  try { const v = localStorage.getItem('recooplay.sens'); if (v) { $('sens').value = v; $('sensVal').textContent = Number(v).toFixed(1); } } catch {}
-  pad.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    if (padId != null) return;
-    padId = e.pointerId;
-    pad.setPointerCapture?.(e.pointerId);
-    lastX = e.clientX; lastY = e.clientY;
-    pad.classList.add('active');
-    moveDot(e);
-  });
-  pad.addEventListener('pointermove', (e) => {
-    if (e.pointerId !== padId) return;
-    accX += (e.clientX - lastX) * sens();
-    accY += (e.clientY - lastY) * sens();
-    lastX = e.clientX; lastY = e.clientY;
-    moveDot(e);
-  });
-  for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) pad.addEventListener(t, (e) => {
-    if (e.pointerId !== padId) return;
-    padId = null;
-    pad.classList.remove('active');
-    dot.style.display = 'none';
-  });
-  function moveDot(e) {
-    const r = pad.getBoundingClientRect();
-    dot.style.display = 'block';
-    dot.style.left = (e.clientX - r.left) + 'px';
-    dot.style.top = (e.clientY - r.top) + 'px';
-  }
-  // 溜まった移動量を 30Hz で送る。ACK は返さない。滑らかさは PC 側で補間する。
-  // 累積値はepochごとに0へ戻す。同じepoch内の欠落だけを次のパケットで取り戻す。
-  const look = { seq: 0, cx: 0, cy: 0 };
-  setInterval(() => {
-    if ((accX || accY) && game?.phase === 'coop' && me === 'P2' && isOpen()) {
-      look.cx += accX;
-      look.cy += accY;
-      const msg = { type: 'look', lseq: ++look.seq, epoch: game.epoch, cx: Math.round(look.cx * 100) / 100, cy: Math.round(look.cy * 100) / 100 };
-      if (rtcOpen()) dc.send(JSON.stringify(msg));
-      else sendWs(msg);
-      sent++;
-    }
-    accX = accY = 0;
-  }, 33);
-
-  // ---- 画面の切り替え ----
-  let lastView = null;
-  function render() {
-    if (!me || !game) return;
-    const phase = game.phase;
-    const label = { lobby: '参加受付', preparing: 'ゲーム準備', coop: '協力プレイ中', paused: '一時停止中' }[phase];
-    $('phase').textContent = label;
-    $('phase').className = 'pill ' + phase;
-    $('inputWarn').style.display = game.inputTarget ? 'block' : 'none';
-    const view = phase === 'coop' ? 'v-' + me : isHost ? 'v-remote' : 'v-wait';
-    if (view !== lastView) {
-      releaseAll(); // 画面が変わる時は押しっぱなしを解除
-      document.querySelectorAll('.view').forEach((el) => el.classList.toggle('show', el.id === view));
-      lastView = view;
-    }
-    const players = ['P1', 'P2', 'P3'].map((p) => `<span class="${game.connected.includes(p) ? 'on' : ''}">${p}${p === me ? '（自分）' : ''}</span>`).join('');
-    $('players1').innerHTML = players;
-    $('players2').innerHTML = players;
-    $('remoteRoute').textContent = {app:'操作先：PCアプリ（仮想カーソル）',game:'操作先：Minecraftのメニュー',none:'操作停止中：PCアプリまたは対象ゲームを前面にしてください'}[game.remoteRoute] || '';
-    const startBtn = $('startBtn');
-    startBtn.textContent = phase === 'paused' ? '再開する' : phase === 'preparing' ? 'Ready・3人で操作を始める' : 'ゲームを開く・準備する';
-    startBtn.disabled = !(phase === 'paused' ? game.canResume : phase === 'preparing' ? game.canReady : game.canPrepare);
-    $('endBtn').style.display = phase === 'paused' ? 'block' : 'none';
-    $('remoteNote').textContent = game.canReady
-      ? (phase === 'paused' ? `一時停止中${game.reason ? '（' + reasonText(game.reason) + '）' : ''}。リモコンで操作でき、RESUME で協力プレイに戻ります。` : 'ゲームを開いてワールドを準備した後、ホストだけがReadyを押します。')
-      : `参加者を待っています（${game.connected.length}/${game.required}人）`;
-    const autoWait = phase === 'paused' && game.autoResume && game.reason?.endsWith('disconnected');
-    $('waitTitle').textContent = phase === 'paused' ? (autoWait ? `${reasonText(game.reason)}。戻ると自動で再開します` : '一時停止中') : 'ホストの開始を待っています';
-    if (phase === 'preparing') $('remoteNote').textContent = [game.prepareStatus, ...(game.readyReasons || []), '準備ができたらホストが明示Ready'].filter(Boolean).join('。');
-    if (autoWait && isHost) $('remoteNote').textContent = `${reasonText(game.reason)}。戻ると自動で再開します（RESUME で手動再開も可）。`;
-    $('waitRole').textContent = `あなたの担当: ${ROLE_TEXT[me]}`;
-    $('burst').style.display = phase === 'coop' ? 'none' : '';
-  }
-  function reasonText(r) { return r === 'host pause' ? 'ホストが停止' : r === 'app focus' ? 'PCアプリの画面に戻った' : r === 'emergency stop' ? 'PCの緊急停止' : r.endsWith('disconnected') ? r.split(' ')[0] + ' が切断' : r; }
-
-  // ---- 通信テスト: 20Hz で 10 秒送る (注入はされない) ----
-  $('burst').addEventListener('click', () => {
-    const btn = $('burst');
-    btn.disabled = true;
-    const startSent = sent;
-    let i = 0;
-    const timer = setInterval(() => {
-      sendInput({ button: 'BURST', state: i % 2 ? 'up' : 'down', burst: true });
-      if (++i >= 200) {
-        clearInterval(timer);
-        setTimeout(() => {
-          const s = stats();
-          alert(`通信テスト: ${sent - startSent}件 / 未ACK ${pending.size}\nRTT 平均${s?.avg}ms p95 ${s?.p95}ms 最大${s?.max}ms\n先着: WebRTC ${via.rtc} / WS ${via.ws}`);
-          btn.disabled = false;
-        }, 1000);
-      }
-    }, 50);
-  });
-
-  connect();
-})();
-</script>
+<script type="module" src="/scripts/controller.js"></script>
 </body>
 </html>
