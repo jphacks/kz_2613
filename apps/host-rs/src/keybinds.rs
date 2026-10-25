@@ -129,7 +129,7 @@ fn minecraft_key(value: &str) -> Key {
             0 => Key::Unbound,
             -100 => Key::Output("MOUSE_L"),
             -99 => Key::Output("MOUSE_R"),
-            n if n > 0 => {
+            n if (1..=255).contains(&n) => {
                 let (scan, ext) = if n >= 0x80 { ((n - 0x80) as u16, true) } else { (n as u16, false) };
                 controls::output_by_scan(scan, ext).map_or(Key::Unsupported(value.to_string()), |o| Key::Output(o.id))
             }
@@ -265,5 +265,13 @@ mod tests {
         assert_eq!(out(&kb, "JUMP"), Some("KEY_Z"));
         assert_eq!(out(&kb, "DROP"), Some("DIGIT_7"));
         assert_eq!(out(&kb, "INV"), Some("F5"));
+    }
+
+    #[test]
+    fn invalid_legacy_codes_do_not_wrap_into_real_keys() {
+        let kb = Keybinds::from_minecraft_options("key_key.sprint:65693\nkey_key.drop:2147483647\n");
+        assert_eq!(out(&kb, "SPRINT"), None);
+        assert_eq!(out(&kb, "DROP"), None);
+        assert_eq!(kb.warnings.len(), 2);
     }
 }

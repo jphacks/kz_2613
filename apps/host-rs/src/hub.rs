@@ -801,6 +801,7 @@ impl Hub {
 
     /// ゲームのキー設定を読み直す。Minecraft のときだけ options.txt を読み、ほかは初期のキー
     fn reload_keybinds(&mut self) {
+        // 呼出元が遷移とepoch更新を完了してから通知する。途中の状態を公開しない。
         self.keybinds = if self.game.title == "minecraft-java" {
             Keybinds::load_minecraft(self.minecraft_options.as_deref())
         } else {
@@ -808,7 +809,6 @@ impl Hub {
         };
         // ファイルの場所 (ユーザー名を含む) はログに残さない
         self.log("keybinds", json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings }));
-        self.push_game();
     }
 
     fn keys_snapshot(&self) -> Value {

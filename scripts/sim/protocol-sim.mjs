@@ -882,7 +882,7 @@ async function main() {
       // Minecraftへ戻して再開する。
       from = p1.mark();
       app.send({ type: 'select_game', title: 'minecraft-java' });
-      await p1.waitFor((m) => m.type === 'game' && m.game.title === 'minecraft-java' && !m.game.launch, { from, what: 'title back' });
+      await p1.waitFor((m) => m.type === 'game' && m.game.title === 'minecraft-java' && m.game.phase === 'lobby' && !m.game.launch, { from, what: 'title back' });
       from = p1.mark();
       p1.send({ type: 'command', cmd: 'START' });
       await phaseIs(p1, 'preparing', from);
