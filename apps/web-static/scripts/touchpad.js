@@ -17,7 +17,7 @@ export function bindTouchpad(element, { enabled, send, tap }) {
   });
   element.addEventListener('pointerup', e => {
     if (e.pointerId !== pointer) return;
-    if (enabled() && distance < 8) tap();
+    if (enabled() && distance < 8) tap(e.timeStamp);
     reset();
   });
   for (const name of ['pointercancel', 'lostpointercapture']) element.addEventListener(name, e => {

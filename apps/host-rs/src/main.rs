@@ -226,6 +226,11 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
         Some("js") => "text/javascript; charset=utf-8",
         Some("css") => "text/css; charset=utf-8",
         Some("svg") => "image/svg+xml",
+        Some("png") => "image/png",
+        Some("jpg" | "jpeg") => "image/jpeg",
+        Some("webp") => "image/webp",
+        Some("woff2") => "font/woff2",
+        Some("woff") => "font/woff",
         Some("json") => "application/json",
         _ => "application/octet-stream",
     };
