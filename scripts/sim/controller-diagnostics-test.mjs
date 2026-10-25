@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {createPhoneView} from '../../apps/web-static/scripts/phone-view.js';
+import {phoneAdvice} from '../../apps/web-static/app-view.js';
 
 class Element {
   constructor(id='') {
@@ -39,7 +40,7 @@ try {
     matchMedia:()=>portrait,WebSocket:Socket,
     setInterval:(fn,ms)=>{const timer={fn,ms};intervals.push(timer);return timer;},clearInterval(){},
     setTimeout(){},alert(){},confirm:()=>true,
-    createPhoneView,bindTouchpad:()=>({reset(){}}),
+    createPhoneView,phoneAdvice,bindTouchpad:()=>({reset(){}}),
     bindCooperativeInput:options=>{cooperative=options;return {release(){},resetEpoch(){}};},
     myActions:()=>null,recordInputMetric(){},inputMetrics:{summary:()=>({})},
     createFastChannel:()=>({isOpen:()=>false,start(){},close(){},signal(){},send:()=>false}),

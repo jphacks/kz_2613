@@ -60,8 +60,46 @@ export function networkNotice(network, slots) {
   const notes = [];
   if (network?.bluetoothAudio) notes.push('BluetoothでPCの音を出していると、スマホとの通信が途切れやすくなります。有線のイヤホンかPCのスピーカーを使ってください。');
   const unstable = (slots || []).filter((s) => s.connected && (s.net?.stalls || 0) >= 3).map((s) => s.name);
-  if (unstable.length) notes.push(`${unstable.join('・')}の通信が途切れがちです。Wi-Fiの電波やBluetoothを確認してください。`);
+  if (unstable.length) notes.push(`${unstable.join('・')}の通信が途切れがちです。「操作設定」の「通信の診断」で対処を確認してください。`);
   return notes.join(' ');
+}
+
+// 通信の診断 (#70) の対処の案内。設定は変えず、利用者が自分で確かめる手順だけを示す
+const HINTS = {
+  stalls: '通信が周期的に止まっています。PC・スマホのBluetoothイヤホンなどを外すか、スマホをPCのホットスポット（5GHz）につないでください',
+  slow: '応答が遅れています。スマホとPC（またはWi-Fiルーター）を近づけ、間に壁や金属がないようにしてください',
+  path: '速い経路（WebRTC）が使えていません。スマホでページを読み込み直してください',
+  reconnect: '何度もつなぎ直しています。スマホの省電力（Androidのバッテリーセーバー、iPhoneの低電力モード）を切り、画面を消さないでください',
+  stuck: '送った入力の返事が溜まっています。スマホのBluetooth機器を外し、Wi-Fiの電波の強い場所で使ってください',
+};
+
+/**
+ * スマホ 1 台の通信の診断 (#70)。slot = state.slots の 1 件。経路・往復時間・受信の途切れ (#131)・再接続の回数から、
+ * 状態 (ok / warn / bad) と対処の案内を作る。往復時間はスマホが送る統計 (最近の ping・入力の往復) を使う
+ */
+export function slotDiagnosis(slot) {
+  const st = slot?.clientStats || {};
+  const stalls = slot?.net?.stalls || 0, reconnects = slot?.reconnects || 0;
+  const rtt = Number.isFinite(st.avg) ? st.avg : null, p95 = Number.isFinite(st.p95) ? st.p95 : null;
+  const fast = slot?.rtcState === 'open';
+  let level = 'ok';
+  const hints = [];
+  const note = (l, key) => { hints.push(HINTS[key]); if (l === 'bad' || level === 'ok') level = l; };
+  if (stalls >= 3) note('bad', 'stalls');
+  if ((rtt ?? 0) > 100 || (p95 ?? 0) > 300) note('warn', 'slow');
+  if (!fast) note('warn', 'path');
+  if (reconnects >= 3) note('warn', 'reconnect');
+  return { name: slot?.name, level, path: fast ? 'WebRTC' : 'WebSocket', rtt, p95, stalls, reconnects, hints };
+}
+
+/** スマホ自身の接続・診断の画面に出す案内 (#70)。stats = スマホの往復時間の統計 (avg・p95・unacked・path) */
+export function phoneAdvice(stats) {
+  if (!stats) return '';
+  const hints = [];
+  if (stats.avg > 100 || stats.p95 > 300) hints.push(HINTS.slow);
+  if (stats.unacked > 5) hints.push(HINTS.stuck);
+  if (stats.path !== 'rtc') hints.push(HINTS.path);
+  return hints.join(' ');
 }
 
 export function desktopWarning(game, inject, connected = true) {
