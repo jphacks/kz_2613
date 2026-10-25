@@ -2,7 +2,7 @@ import { myActions, generatedKey, buildGenerated } from './generated-controls.js
 
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
 import {profileNotice,roleView,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS} from '../app-view.js';
-export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleText,bindControl}) {
+export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleText,bindControl,onRoleOk=()=>{}}) {
   const $ = id => document.getElementById(id);
   let lastView = null, lastGen = '';
   // 視点のパッドと感度は、操作定義の画面で視点を担当するときだけそちらへ移す
@@ -14,12 +14,17 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleTex
     $('phoneDiagnostics').showModal();
   });
   $('closePhoneDiagnostics').addEventListener('click',()=>$('phoneDiagnostics').close());
+  $('roleOkBtn')?.addEventListener('click',()=>onRoleOk());
   function render({me,isHost,game}) {
     if (!me || !game) return;
+    // 担当 (入れ替え後の席、#47)。Minecraft の固定の画面はこの担当の画面を出す
+    const roleKey=game.roleOf?.[me]||me;
     const role=roleView(game,me), heading=document.createElement('b');
     heading.textContent=role.title+(isHost?'（ホスト）':'');
     const generic=game.profile && game.profile.id!=='minecraft-java';
-    $('role').replaceChildren(heading,document.createTextNode(generic?(game.phase==='coop'?'確定した分担の操作だけを送信します':game.phase==='paused'?'確定した分担（再開時に確認）':'分担案（Readyで確定）'):roleText[me]));
+    $('role').replaceChildren(heading,document.createTextNode(generic?(game.phase==='coop'?'確定した分担の操作だけを送信します':game.phase==='paused'?'確定した分担（再開時に確認）':'分担案（Readyで確定）'):roleText[roleKey]));
+    const ackPending=(game.roleAck||[]).includes(me);
+    if($('roleNotice')){$('roleNotice').hidden=!ackPending;$('roleNoticeText').textContent=ackPending?`ホストが担当を入れ替えました。あなたの担当は「${role.title}」です。`:'';}
     const phase = game.phase;
     const label = { lobby: '参加受付', preparing: 'ゲーム準備', coop: '協力プレイ中', paused: '一時停止中' }[phase];
     $('phase').textContent = label;
@@ -30,7 +35,8 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleTex
     // Ready の後に来た人は今回の協力プレイに参加しない (次の Ready から参加する、#57)
     const joined = !game.participants?.length || game.participants.includes(me);
     const generated = phase === 'coop' && joined && myActions(game, me);
-    const view = phase === 'coop' && joined ? (generated ? 'v-gen' : 'v-' + me) : isHost ? 'v-remote' : 'v-wait';
+    $('fixedPause').hidden = phase !== 'coop' || !joined || !isHost || !!generated;
+    const view = phase === 'coop' && joined ? (generated ? 'v-gen' : 'v-' + roleKey) : isHost ? 'v-remote' : 'v-wait';
     document.body.dataset.view=view;
     const characterName={P1:'blue',P2:'green',P3:'purple',P4:'red'}[me];
     $('waitCharacter').src=`/assets/characters/${characterName}.png`;

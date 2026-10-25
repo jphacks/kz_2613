@@ -41,6 +41,8 @@ export function profileNotice(profile) {
 export function desktopView(ui, game) {
   // 準備中に参加者が変わったら、分担の画面で決定し直す (#109)
   if (game?.phase === 'preparing') return game.lineupOk === false ? 'roles' : game.canReady ? 'ready' : 'preparing';
+  // 一時停止中の「担当を入れ替える」(#47) では分担の画面を開く
+  if (game?.phase === 'paused' && ui.swap) return 'roles';
   if (game?.phase === 'coop' || game?.phase === 'paused') return game.phase;
   return SCREENS.includes(ui.screen) ? ui.screen : 'join';
 }
@@ -97,8 +99,10 @@ export function roleControls(slot, keys) {
 export function roleView(game, slot) {
   const p = game?.profile;
   if (usesFixedRoles(game)) {
-    const r = ROLES.find((x) => x.slot === slot);
-    return { title: r?.title || '', lines: roleControls(slot, game?.keys) };
+    // 固定の分担は担当 (入れ替え後の席、#47) で引く
+    const key = game?.roleOf?.[slot] || slot;
+    const r = ROLES.find((x) => x.slot === key);
+    return { title: r?.title || '', lines: roleControls(key, game?.keys) };
   }
   const assigned = ['coop','paused'].includes(game.phase) && game.assigned && Object.keys(game.assigned).length ? game.assigned : p.assignment || {};
   const ids = assigned[slot] || [];
@@ -183,6 +187,10 @@ export function gameAction(ui, game, list) {
  */
 export function rolesAction(game, list) {
   if (!game) return { kind: 'none', label: 'PCホストに接続中…', disabled: true };
+  const pending = game.roleAck || [];
+  // 一時停止中の入れ替え (#47)。再開はホストのスマホで、入れ替えた人の確認の後
+  if (game.phase === 'paused') return { kind: 'back', label: '入れ替えを終える',
+    note: pending.length ? `${pending.join('・')}のスマホで新しい担当を確認してください` : '終えたら、ホストのスマホで再開してください' };
   const connected = game.connected || [];
   if (!game.lineupOk) {
     const ready = connected.includes('P1') && connected.length >= MIN_PLAYERS;

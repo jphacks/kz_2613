@@ -683,6 +683,15 @@
 - dry-runホスト・模擬スマホ2台・偽のSteamゲームに対し、ヘッドレスChromeでPC画面を操作した。Terrariaを選ぶ（起動しない）→ 分担の画面でEnterにより決定（「2人で決定！」）→ 選択画面へ戻ると取り消し → 決定し直して起動（「起動中…」で押せない）→「起動しました」の案内と「ゲームを準備する」→ 準備中、の順に進み、ホストのログで決定・取り消し・起動1回・準備を確認した。
 - 起動の失敗・タイムアウト時の補助ボタン、起動済みのゲームを前面にする経路、実機（PCアプリ・実際のSteam/Epic・スマホのリモコン）は未確認。
 
+## 2026-10-25 — 役割の入れ替え（開始前・一時停止中・終了後）（Claude Code、#47・#62）
+
+- PR #111（#109）の上に積んだ。枠ごとの席順を持ち、分担の束を席順に配る方式で、ホストが2人の担当を入れ替えられるようにした（[役割の入れ替え](../decisions/2026-10-25-role-swap.md)、設計案[H]）。Minecraftの3人の専用画面も担当（席順）で引き、ホスト権はP1のまま。
+- 開始前（接続中の人）と一時停止中（参加者）だけ受け付け、協力プレイ中は無視する。入れ替えると全解放・視点の破棄・epoch更新を行い、2人がスマホで確認するまでReady・再開できない。ロビーでは分担の決定もやり直し。席順は終了しても保ち（#62）、リセットで戻す。
+- PC画面：分担の画面で2人の列を順に押すと入れ替える。確認待ちの人に「スマホで確認待ち」を表示。一時停止中は「担当を入れ替える」で分担の画面を開く。スマホ：担当が変わった本人に通知と「新しい担当を確認しました」ボタン（`role_ok`）。
+- `cargo test --release --locked`はホスト31件＋プローブ3件成功。`protocol-sim.mjs`（Rust dry-run）46/46：協力プレイ中の入れ替え拒否、一時停止中の入れ替え（epoch更新・確認待ち・確認前の再開拒否・本人以外の確認を数えない）、再開後に入れ替えた先の操作・視点だけを送る、再接続しても担当を保つ、終了後も保ちロビーで戻すと決定と確認をやり直す、の試験を追加した。`--target node` 20/20、`app-view-test.mjs` 27/27、`ui-input-test.mjs` 7/7、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`verify-ui-evidence.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`、`shutdown-sim.mjs`が成功した。
+- dry-runホストに、ヘッドレスChromeのスマホ画面（P2、402×874）と模擬スマホ2台、PC画面（1920×1080）をつなぎ、PCで P2→P3 の列を押して入れ替えた。PCの列が「アクション（確認待ち）／視点（確認待ち）」になり、P2のスマホに通知と確認ボタンが出て、押すと消えてPCの確認待ちがP3だけになることを確認した。
+- 実機（スマホ・PCアプリ・P1のタッチパッドでの操作）は未確認。
+
 ## 2026-10-25 — README先頭の画像を指定サムネイルへ差し替え
 
 - ユーザー指定のPNGを assets/images/recooplay-thumbnail.png に無加工で追加し、README先頭の画像参照と代替テキスト・表示幅を更新した。
@@ -693,3 +702,10 @@
 - 最新main `4bb5134`を取り込み、BUILD_LOGの両方の記録を保持して競合を解消した。既存の未コミット記録はstashへ保持している。
 - 起動済みのゲームを前面化する経路が、全解放・視点破棄・epoch更新より先にreturnしていたため、両方の起動経路に共通する位置へ安全停止を移した。決定要求`confirm_lineup`には現在のepochを必須とし、古いepoch・epochなしの要求を拒否する通信試験を追加した。
 - `node scripts/sim/app-view-test.mjs`26/26、`node scripts/sim/ui-input-test.mjs`7/7、`node scripts/sim/phone-view-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`git diff --check`が成功。Rustのビルド・単体・通信・終了試験は修正後のCIで確認する。新規の実機試験は実施していない。
+
+## 2026-10-25 — PR #112のレビュー修正（Codex）
+
+- 修正済みの先行PR #111を取り込み、BUILD_LOGの両方の記録を保持して競合を解消した。
+- Minecraftの固定画面でP1を視点・アクションへ交換するとPAUSEボタンが消えるため、ホストの停止ボタンを担当のsectionから独立させた。移動担当になった非ホストには表示しない。P1の仮想カーソルがarticleの交換列をクリックできなかったため、`data-swap`をクリック対象へ追加し、PCキーボードのEnter・Spaceも列の交換として処理した。
+- 担当確認`role_ok`に現在のepochを必須とし、古い担当の確認を流用して再開できないようにした。古いepoch・epochなしの確認拒否、交換後のP1のPAUSE表示、非ホストへの非表示、仮想カーソルから交換列へのクリックの回帰試験を追加した。
+- `node scripts/sim/app-view-test.mjs`27/27、`node scripts/sim/ui-input-test.mjs`8/8、`node scripts/sim/phone-view-test.mjs`、`node scripts/sim/controller-diagnostics-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`node scripts/sim/verify-ui-evidence.mjs`、`node scripts/sim/static-assets-sim.mjs`（33ファイル）、`git diff --check`が成功。Rustのビルド・単体・通信・終了試験は修正後のCIで確認する。新しい実機・ブラウザーの受入は実施していない。

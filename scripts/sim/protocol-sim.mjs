@@ -131,7 +131,7 @@ class Client {
     for (const w of [...this.waiters]) w();
   }
   send(m) {
-    if (target === 'rust' && m.type === 'command' && !('epoch' in m)) m = {...m, epoch: this.epoch};
+    if (target === 'rust' && (m.type === 'command' || m.type === 'role_ok') && !('epoch' in m)) m = {...m, epoch: this.epoch};
     this.ws.send(JSON.stringify(m));
   }
   // スマホ同様 1 秒ごとに ping (4 秒の切断判定に掛からないように)
@@ -1004,6 +1004,84 @@ async function main() {
       p1.send({ type: 'command', cmd: 'READY' });
       const back = await phaseIs(p1, 'coop', from);
       assert(back.game.fixedControls === true && back.game.participants.join() === 'P1,P2,P3', '3人の固定の画面に戻らない');
+    }, { rustOnly: true });
+
+    await check('役割の入れ替え: 開始前・一時停止中だけ 2 人の担当を交換し、本人の確認まで再開しない。再接続・終了後も保つ (#47・#62)', async () => {
+      // 前提: Minecraft の協力プレイ中 (P1〜P3、固定の画面)
+      const lastGame = () => [...p1.msgs].reverse().find((m) => m.type === 'game').game;
+      let from = p1.mark();
+      mon.send({ type: 'swap_roles', a: 'P2', b: 'P3' });
+      await sleep(200);
+      assert(lastGame().roleOf.P2 === 'P2' && !p1.msgs.slice(from).some((m) => m.type === 'game' && m.game.roleOf?.P2 === 'P3'), '協力プレイ中に入れ替えた');
+      // 一時停止中に P2 と P3 を入れ替える: 全解放・epoch 更新、2 人の確認まで再開できない
+      p1.send({ type: 'command', cmd: 'PAUSE' });
+      await phaseIs(p1, 'paused', from);
+      const e0 = lastGame().epoch;
+      from = p1.mark();
+      mon.send({ type: 'swap_roles', a: 'P2', b: 'P3' });
+      const sw = await p1.waitFor((m) => m.type === 'game' && m.game.roleOf?.P2 === 'P3', { from, what: 'swap' });
+      assert(sw.game.epoch > e0 && sw.game.roleOf.P3 === 'P2' && sw.game.roleOf.P1 === 'P1' && sw.game.roleAck.join() === 'P2,P3', JSON.stringify(sw.game.roleOf) + sw.game.roleAck);
+      assert(!sw.game.canResume && sw.game.readyReasons.some((r) => r.includes('確認')), JSON.stringify(sw.game.readyReasons));
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await p1.waitFor((m) => m.type === 'command_result' && m.cmd === 'RESUME' && !m.accepted, { from, what: '確認前の再開を拒否' });
+      // 担当の変わっていない P1 の確認では進まない。本人 (P2・P3) が確認すると再開できる
+      const staleFrom = p1.mark();
+      p2.send({ type: 'role_ok', epoch: e0 });
+      p3.send({ type: 'role_ok', epoch: null });
+      await sleep(150);
+      assert(lastGame().roleAck.join() === 'P2,P3' && !p1.msgs.slice(staleFrom).some((m) => m.type === 'game' && m.game.canResume), '古い担当またはepochなしの確認を数えた');
+      await p2.waitFor((m) => m.type === 'game' && m.game.epoch === sw.game.epoch, { what: 'P2の新しい担当' });
+      await p3.waitFor((m) => m.type === 'game' && m.game.epoch === sw.game.epoch, { what: 'P3の新しい担当' });
+      p1.send({ type: 'role_ok' });
+      p2.send({ type: 'role_ok' });
+      await p1.waitFor((m) => m.type === 'game' && m.game.roleAck.join() === 'P3', { from, what: 'P2 確認' });
+      p3.send({ type: 'role_ok' });
+      await p1.waitFor((m) => m.type === 'game' && m.game.roleAck.length === 0 && m.game.canResume, { from, what: '全員確認' });
+      const f2 = p2.mark(), f3 = p3.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', from);
+      await phaseIs(p2, 'coop', f2); await phaseIs(p3, 'coop', f3);
+      // 再開後: P2 がアクション、P3 が視点。元の担当の操作は送らない
+      let mf = mon.mark();
+      p2.input('ATTACK', 'down'); await injected(mon, 'MOUSE_L', 'down', mf); p2.input('ATTACK', 'up'); await injected(mon, 'MOUSE_L', 'up', mf);
+      mf = mon.mark();
+      p3.input('ATTACK', 'down');
+      await noPress(mon, mf);
+      p3.input('ATTACK', 'up');
+      const lf = mon.mark();
+      p2.send({ type: 'look', lseq: 1, epoch: p2.epoch, cx: 300, cy: 0 });
+      await sleep(250);
+      assert(!mon.msgs.slice(lf).some((m) => m.type === 'look'), '入れ替えた後の P2 の look を反映した');
+      p3.send({ type: 'look', lseq: 1, epoch: p3.epoch, cx: 40, cy: 0 });
+      const l = await mon.waitFor((m) => m.type === 'look', { from: lf, what: 'look' });
+      assert(l.entry.slot === 'P3', `slot=${l.entry.slot}`);
+      // 再接続しても担当は変わらない
+      from = p1.mark();
+      p3.close();
+      await p1.waitFor((m) => m.type === 'game' && m.game.phase === 'paused', { from, what: 'P3 切断' });
+      p3 = await join('P3'); await welcome(p3);
+      const back = await p1.waitFor((m) => m.type === 'game' && m.game.connected.length === 3, { from, what: 'P3 復帰' });
+      assert(back.game.roleOf.P3 === 'P2' && back.game.roleAck.length === 0, JSON.stringify(back.game.roleOf));
+      // 終了してもリセットまで保ち、そのまま再挑戦できる (#62)。ロビーで元に戻すと決定と確認をやり直す
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'END' });
+      const lobby = await phaseIs(p1, 'lobby', from);
+      assert(lobby.game.roleOf.P2 === 'P3', '終了で入れ替えが消えた');
+      await confirmLineup(mon, p1);
+      from = p1.mark();
+      mon.send({ type: 'swap_roles', a: 'P3', b: 'P2' });
+      const undone = await p1.waitFor((m) => m.type === 'game' && m.game.roleOf?.P2 === 'P2', { from, what: '元に戻す' });
+      assert(!undone.game.lineupOk && !undone.game.canPrepare && undone.game.roleAck.join() === 'P3,P2', JSON.stringify(undone.game));
+      await p2.waitFor((m) => m.type === 'game' && m.game.epoch === undone.game.epoch, { what: 'P2の復元後の担当' });
+      await p3.waitFor((m) => m.type === 'game' && m.game.epoch === undone.game.epoch, { what: 'P3の復元後の担当' });
+      p2.send({ type: 'role_ok' }); p3.send({ type: 'role_ok' });
+      await p1.waitFor((m) => m.type === 'game' && m.game.roleAck.length === 0, { from, what: '確認' });
+      await confirmLineup(mon, p1);
+      p1.send({ type: 'command', cmd: 'PREPARE' });
+      await phaseIs(p1, 'preparing', from);
+      p1.send({ type: 'command', cmd: 'READY' });
+      const again = await phaseIs(p1, 'coop', from);
+      assert(again.game.roleOf.P2 === 'P2' && again.game.roleOf.P3 === 'P3', JSON.stringify(again.game.roleOf));
     }, { rustOnly: true });
 
     await check('ゲーム一覧: Steam・Epic を検出して PC 画面にだけ送り、選ぶと全解放して起動を見届ける。一覧にない id・協力プレイ中は起動しない', async () => {
