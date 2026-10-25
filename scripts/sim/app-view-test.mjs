@@ -97,7 +97,8 @@ test('分担の確認: 操作定義があれば分担の案 (協力プレイ中�
   assert.deepEqual(v.lines, ['移動：左（A）']);
   assert.deepEqual(roleView({ profile, keys }, 'P2').lines, ['アクション：狙い（マウス移動）、ズーム（ホイール）']);
   assert.equal(roleView({ profile, keys }, 'P3').title, '担当なし');
-  assert.deepEqual(roleView({ profile, keys, assigned: { P1: ['aim'] } }, 'P1').lines, ['アクション：狙い（マウス移動）']);
+  assert.deepEqual(roleView({ phase:'coop', profile, keys, assigned: { P1: ['aim'] } }, 'P1').lines, ['アクション：狙い（マウス移動）']);
+  assert.deepEqual(roleView({phase:'lobby',profile,keys,assigned:{P1:['aim']}},'P1').lines,['移動：左（A）']);
   assert.ok(roleView({ profile: { id: 'minecraft-java' }, keys: null }, 'P1').lines.includes('ダッシュ（Ctrl）'));
 });
 

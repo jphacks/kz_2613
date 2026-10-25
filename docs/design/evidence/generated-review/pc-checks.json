@@ -1,0 +1,14 @@
+[
+  {
+    "height": 720,
+    "overflow": false,
+    "roles": "P1\n移動・アクション\n\n移動：左（A）\n\nP2\n移動\n\n移動：右（D）\n\nP3\n移動\n\n移動：ジャンプ（Space）",
+    "width": 1280
+  },
+  {
+    "height": 1080,
+    "overflow": false,
+    "roles": "P1\n移動・アクション\n\n移動：左（A）\n\nP2\n移動\n\n移動：右（D）\n\nP3\n移動\n\n移動：ジャンプ（Space）",
+    "width": 1920
+  }
+]

@@ -59,7 +59,6 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | `kpong` | `t` | WebRTC経由で返す |
 | `rtc-answer` / `rtc-cand` | `sdp`、`sdpType` / `cand`、`mid` | |
 
-**`game` の内容：** `phase`（`lobby`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`、`inputActive`（入力がPCに届く状態か）、`inputTarget`（常時ONだが前面が入力先でない。スマホは「届かない」と表示する）、`epoch`（進行が変わるたび・リセットで1増える。初期値1）、`title`（PCアプリで選んだゲーム。Rust版）、`assigned`（Rust版、#105：協力プレイの分担。枠名→操作IDの一覧）、`profile`（選んだゲームの操作定義の要約。`assignment`＝今の参加人数での案、`assignments`＝1〜4人の案）、`keys`（Rust版、#101：`source`＝`user`（ゲームの設定ファイルを読んだ）/`default`/`unreadable`、`controls`＝操作名→実際に送るキー `{out, label}`、`actions`＝定義の操作ID→実際に送るキー。`null` は送らない（送れないキー・未設定）、`warnings`＝ずれ・重複・読めない場合の説明）
 
 **`game` の内容：** `phase`（`lobby`/`preparing`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`、`inputActive`（入力がPCに届く状態か）、`inputTarget`（常時ONだが前面が入力先でない。スマホは「届かない」と表示する）、`epoch`（進行が変わるたび・リセットで1増える。初期値1）、`title`（PCアプリで選んだゲーム。Rust版）、`keys`（Rust版、#101：`source`＝`options`（Minecraftの `options.txt` を読んだ）/`default`/`unreadable`、`controls`＝操作名→実際に送るキー `{out, label}`。`null` は送らない（送れないキー・未設定）、`warnings`＝ずれ・重複・読めない場合の説明）
 
@@ -109,3 +108,11 @@ v4ではOPEN_GAME（現在epoch必須）とPC画面のopen_gameを追加する�
 `game.keys.source`はMinecraft読込成功時の`options`を維持し、他形式の成功を`user`、初期値を`default`、読込不可を`unreadable`、定義なしを`none`とする。設定ファイルの変更は協力中以外に検知し、全入力解放・視点破棄・epoch更新後に新設定を通知する。
 
 未検証（template／extracted／unverified）の定義、または現在のスマホ画面に結び付かない定義ではReadyを拒否する。ゲーム検出・起動と操作互換性を区別し、対応画面と認可を実装して検証するまでは分担の案だけで操作を開始させない。
+
+## 生成操作画面の入力（#60・#105）
+
+- `game.profile.assignment`は現在人数での案、`assignments`は1〜4人の案。実セッションの枠数とReady条件は3人のまま。1・2・4人の操作開始を意味しない。
+- `game.assigned`はReady・明示再開で確定した枠→操作ID。協力中は固定し、ゲーム変更・lobbyへの終了で破棄する。
+- Minecraftは従来の操作名と専用画面を維持する。生成画面では`act:<ID>`、ホイールは`act:<ID>:up|down`を送り、現在epoch・coop・確定した割当・操作種類・実キーをサーバーで照合する。固定操作名による迂回を拒否する。
+- `game.keys.actions`は操作ID→実出力の`{out,label}`またはnull。視点は確定分担に含む枠だけを許可する。
+- 未検証の定義ではReadyを許可しない。reviewed/deviceの定義でも、生成画面が扱えないaxis2d・textを担当に含む場合は拒否する。対応済みの定義はbutton・wheel・mouseDeltaを生成する。実機互換性は別の受入条件。

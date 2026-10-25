@@ -8,6 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {WebSocketServer} from '../../apps/node-ref/node_modules/ws/wrapper.mjs';
 const root=fileURLToPath(new URL('../../apps/web-static/',import.meta.url));
 const port=Number(process.env.UI_PREVIEW_PORT || 18082);
+const generatedFixture=JSON.parse(await fs.readFile(new URL('./fixtures/profiles/test-pseudo.json',import.meta.url),'utf8'));
 const sizes=['320×568','360×640','360×780','390×844','402×874','430×932','874×402','1280×720','1920×1080'];
 const shell=`<!doctype html><html lang="ja"><meta charset="utf-8"><title>Re:Cooplay 表示検証</title>
 <style>body{margin:16px;font-family:system-ui}label{margin-right:16px}iframe{display:block;border:1px solid;margin-top:16px}p{max-width:80ch}</style>
@@ -54,7 +55,7 @@ wss.on('connection',(ws,req)=>{
   const active=()=>mode==='on'&&!['blocked','target'].includes(scenario);
   const canReady=()=>phase==='preparing'&&active()&&count===3;
   const send=m=>{if(ws.readyState===1)ws.send(JSON.stringify(m));};
-  const game=()=>({phase,epoch,required:3,connected,title:'minecraft-java',hostReady:phase==='coop'||phase==='paused',canPrepare:phase==='lobby'&&count>0,canReady:canReady(),canStart:canReady(),canResume:phase==='paused'&&active()&&count===3,readyReasons:count<3?['3人全員の接続を待っています']:!active()?['入力を有効にし、対象ゲームを前面にしてください']:[],reason:scenario==='emergency'?'emergency stop':scenario==='lost'?'P3 disconnected':phase==='paused'?'host pause':'',autoResume:false,inputActive:active(),inputTarget:false,remoteRoute:phase==='coop'?'none':'app',prepareStatus:'表示検証：実ゲームは開いていません'});
+  const game=()=>({...(scenario.startsWith('generated')?{title:'pseudo-game',profile:{...generatedFixture,status:'reviewed',controllerSupported:true,actions:generatedFixture.actions.map(a=>({...a,type:a.type})),assignment:{P1:['left','action','zoom','aim'],P2:['right'],P3:['jump']}},assigned:{P1:['left','action','zoom','aim'],P2:['right'],P3:['jump']},keys:{actions:Object.fromEntries(generatedFixture.actions.map(a=>[a.id,{label:{KEY_A:'A',KEY_D:'D',SPACE:'Space',KEY_X:'X'}[a.default]||a.default}]))}}:{}),phase,epoch,required:3,connected,title:scenario.startsWith('generated')?'pseudo-game':'minecraft-java',hostReady:phase==='coop'||phase==='paused',canPrepare:phase==='lobby'&&count>0,canReady:canReady(),canStart:canReady(),canResume:phase==='paused'&&active()&&count===3,readyReasons:count<3?['3人全員の接続を待っています']:!active()?['入力を有効にし、対象ゲームを前面にしてください']:[],reason:scenario==='emergency'?'emergency stop':scenario==='lost'?'P3 disconnected':phase==='paused'?'host pause':'',autoResume:false,inputActive:active(),inputTarget:false,remoteRoute:phase==='coop'?'none':'app',prepareStatus:'表示検証：実ゲームは開いていません'});
   const state=()=>({type:'state',game:game(),slots:['P1','P2','P3'].map((name,i)=>({name,assigned:i<count||scenario==='lost',connected:i<count,ua:name==='P2'?'iPhone':'Android'})),inject:{mode,active:active(),available:true,emergencyHotkey:'Ctrl+Alt+F12',target:{ok:active()}}});
   // PCはstate、スマホはgameを描画する。表示検証でも両方の契約を送る。
   const push=()=>{send(state());send({type:'game',game:game()});};

@@ -21,7 +21,6 @@ $('steps').innerHTML=SCREENS.map(s=>`<button data-go="${s}" aria-label="${SCREEN
 $('games').innerHTML=`<button class="game-choice" data-game="minecraft-java" aria-label="Minecraft Java Editionを選択"><h2>Minecraft<br>Java Edition</h2><p>3人で、ひとつの冒険へ。</p><span class="selection">選択中</span></button>`;
 $('gameSteps').innerHTML=GAMES[0].steps.map(s=>`<li>${esc(s)}</li>`).join('');
 const shortRoles=['移動・ホスト','視点','アクション'];
-$('roles').innerHTML=ROLES.map((r,i)=>`<article class="role-column"><b>${r.slot}</b><h3>${esc(shortRoles[i])}</h3><p>${['歩く・跳ぶ','カメラを動かす','攻撃・使う'][i]}</p></article>`).join('');
 function openDialog(dialog){document.querySelectorAll('dialog[open]').forEach(d=>d.close());dialog.showModal();}
 $('settingsBtn').addEventListener('click',()=>openDialog($('settings')));
 $('keyBindingsBtn').addEventListener('click',()=>{$('keyDetails').open=true;openDialog($('settings'));});
@@ -61,6 +60,12 @@ document.addEventListener('keydown',e=>{
 function render(){
   const view=desktopView(ui,game),slots=slotViews(state?.slots),count=slots.filter(s=>s.state==='connected').length;
   document.body.dataset.view=view;document.body.dataset.phase=game?.phase||'lobby';
+  const generated=game?.profile && game.profile.id!=='minecraft-java';
+  document.querySelector('.key-samples').hidden=!!generated;
+  $('roles').innerHTML=ROLES.map((r,i)=>{
+    const role=roleView(game,r.slot);
+    return `<article class="role-column"><b>${r.slot}</b><h3>${esc(generated?role.title:shortRoles[i])}</h3><p>${generated?esc(role.lines[0]||'担当する操作なし'):esc(['歩く・跳ぶ','カメラを動かす','攻撃・使う'][i])}</p></article>`;
+  }).join('');
   const titles={join:`${count}人<br>参加中！`,game:'ゲーム選択を<br>しよう！',roles:'分担しよう！',preparing:'準備中<span class="ellipsis">...</span>',ready:'準備完了！',coop:'協力プレイ中',paused:'一時停止中'};
   $('screenTitle').innerHTML=titles[view];
   $('leftRule').hidden=!['game','roles'].includes(view);
@@ -74,15 +79,17 @@ function render(){
   $('playerStage').hidden=['game','roles'].includes(view);
   $('openGameBtn').hidden=!['preparing','ready','paused'].includes(view);
   const notes={preparing:'Minecraftでワールドを準備してください。',coop:'止めるときはホストのスマホでPAUSE。',paused:'ホストのスマホで再開できます。'};
-  $('actionNote').textContent=notes[view]||'';
+  $('actionNote').textContent=view==='preparing'&&generated?'選んだゲームで準備してください。':notes[view]||'';
+  $('openGameBtn').textContent=generated?'選んだゲームを前面にする':'Minecraftを前面にする';
+  $('inputSafety').textContent=(generated?'選択したゲーム':'Minecraft')+'が前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。';
   const keyWarnings=game?.keys?.warnings||[];
   const warning=desktopWarning(game,inject,online||!state)||(keyWarnings.length?'キー設定に注意が必要です。「操作設定」で実際に送るキーを確認してください。':'');
   const notices=[warning,profileNotice(game?.profile)].filter(Boolean).join(' ');
   $('warning').hidden=!notices;$('warning').textContent=notices;
   $('steps').hidden=!['join','game','roles'].includes(view);
   document.querySelectorAll('#steps button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===ui.screen?'page':'false'));
-  $('players').innerHTML=slots.map((s,i)=>`<article class="player ${s.state}${view==='preparing'&&s.host&&s.state==='connected'?' pending':''}" data-slot="${s.slot}"><div class="player-badge">${s.state==='empty'?'参加待ち':s.state==='lost'?'切断中':view==='ready'?'条件OK':view==='preparing'?(s.host?'準備中！':'接続済み'):'接続完了！'}</div><div class="player-info"><p>プレイヤー${i+1}</p><p>${esc(s.title)}</p><p class="player-device">機種：${esc(s.device||'未接続')}</p></div><svg class="player-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg><div class="character"><b>${esc(shortRoles[i])}</b><span>${s.slot}</span></div></article>`).join('');
-  $('inputState').textContent=inject?.mode==='off'?'ゲームへの入力はOFFです':inject?.mode==='test'?'診断用の入力先です':inject?.active?'ゲームへの入力はONです（Minecraftが前面のときだけ）':'ゲームへの入力を停止しています';
+  $('players').innerHTML=slots.map((s,i)=>`<article class="player ${s.state}${view==='preparing'&&s.host&&s.state==='connected'?' pending':''}" data-slot="${s.slot}"><div class="player-badge">${s.state==='empty'?'参加待ち':s.state==='lost'?'切断中':view==='ready'?'条件OK':view==='preparing'?(s.host?'準備中！':'接続済み'):'接続完了！'}</div><div class="player-info"><p>プレイヤー${i+1}</p><p>${esc(generated?roleView(game,s.slot).title:s.title)}</p><p class="player-device">機種：${esc(s.device||'未接続')}</p></div><svg class="player-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg><div class="character"><b>${esc(generated?roleView(game,s.slot).title:shortRoles[i])}</b><span>${s.slot}</span></div></article>`).join('');
+  $('inputState').textContent=inject?.mode==='off'?'ゲームへの入力はOFFです':inject?.mode==='test'?'診断用の入力先です':inject?.active?'ゲームへの入力はONです（'+(generated?'選択したゲーム':'Minecraft')+'が前面のときだけ）':'ゲームへの入力を停止しています';
   $('keyWarnings').textContent=keyWarnings.join('。');
   $('keyBindings').innerHTML=ROLES.map(r=>`<h3>${esc(r.slot)}：${esc(roleView(game,r.slot).title)}</h3><ul>${roleView(game,r.slot).lines.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`).join('');
   $('gameStatus').textContent=game?.prepareStatus||'';
