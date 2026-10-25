@@ -42,6 +42,18 @@ powershell -ExecutionPolicy Bypass -File scripts\windows\package.ps1
 - WebView2 ランタイムが必要（Windows 11 は標準）。Minecraft のファイル・素材は含めない。
 - **検証状況：** このPCで、リポジトリの外に展開して起動・終了できることを確認した。開発環境のないPC・スマホ3台の参加は未検証。
 
+### 配布物の照合と自動検証（#145）
+
+同じチェックアウトから両exeをビルドしてから梱包する。`package-manifest.json` に版・commit・未コミット変更の有無と全同梱物のSHA-256を記録し、zipの隣にも `.zip.sha256` を出力する。commitは梱包時のソースを示すため、古いexeを再利用しないこと。署名の代わりにはならない。
+
+```powershell
+node scripts/sim/package-smoke.mjs dist/ReCooplay-0.1.0-windows-x64.zip
+```
+
+この試験はzipをリポジトリ外の一時フォルダへ展開し、全画面・操作定義・ハッシュを照合する。欠落・改変の検出後、展開先のホストをdry-runで起動し、静的画面の配信と正常終了・ログ保存を確認する。OS入力やファイアウォール・Wi-Fi設定の変更は行わない。Node.js 22以上が必要で、利用者向けzipにはNode.jsを同梱しない。
+
+Windows CIでも同じチェックアウトから両exeをビルドし、梱包・検証が成功したzipと照合値を `ReCooplay-windows-x64` 成果物として保存する。PCアプリの実画面、WebView2が不足したPC、開発環境のないPC・スマホ3台の受入は #41 に残る。通信設定を変更・復元するインストーラーは #132 で扱う。
+
 ## 終了と安全停止
 
 - ウィンドウを閉じると、ホストに `quit` を送り、押しっぱなしのキー・マウスボタンを離してから終了させる。3 秒以内に終わらなければ強制終了する。
