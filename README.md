@@ -275,10 +275,6 @@ Re:Cooplayでは、複数人で1つのキャラクターを共同操作するた
   QRコードで参加したスマホのうち、ホスト端末はPC画面を操作するリモコンとしても使えます。ゲーム選択や分担確認などの準備操作と、開始後の担当別コントローラーへの切り替えをプレイ状態に連動させ、準備中と共同操作中で使える操作を切り分けています。  
   [PC画面の状態・操作](apps/web-static/app-view.js) ／ [ホスト側の操作切替](apps/host-rs/src/hub.rs) ／ [UI検証記録](artifacts/improved-ui/README.md)
 
-[開発開始前のコミット](https://github.com/jphacks/kz_2613/tree/5acb0049e6) ／ [GitHub上の変更差分](https://github.com/jphacks/kz_2613/compare/5acb0049e6...main) ／ [Hack Day開発ログ](docs/develop/handoff/BUILD_LOG.md) ／ [システム設計](docs/README.md)
-
-<sub>ゲームの検出・操作定義の登録は、すべてのゲームでの動作を保証するものではありません。</sub>
-
 ---
 
 <sub>Re:Cooplayは独立した非公式ツールであり、Minecraftのゲーム本体・素材を同梱していません。Minecraftの公式製品ではなく、Mojang Studios・Microsoftの承認・提携を受けていません。NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. [Minecraftの利用条件に関する確認記録](docs/develop/decisions/2026-10-25-minecraft-usage-terms.md)</sub>
