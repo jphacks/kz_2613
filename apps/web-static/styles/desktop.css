@@ -106,11 +106,13 @@ body {
   width: 438px;
   top: 386px;
   border: 0;
-  border-top: 1px solid var(--color-black);
+  height: 1px;
+  background: var(--color-black);
 }
 
 [data-view=roles] .left-rule {
   top: 396px;
+  left: 59px;
 }
 
 .explanation,.secondary {
@@ -126,6 +128,9 @@ body {
 .explanation {
   top: 444px;
   font-size: 32px;
+}
+[data-view=game] .explanation {
+  left: 72px;
 }
 
 .secondary {
@@ -321,7 +326,7 @@ body {
   --player-color: var(--color-cyan);
 }
 
-.player.empty,.player.lost {
+.player.empty,.player.lost,.player.pending {
   --player-color: var(--color-stage-purple);
 }
 
