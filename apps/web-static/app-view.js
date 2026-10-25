@@ -39,7 +39,8 @@ export function profileNotice(profile) {
 // 移動可能な3ページと、サーバーで切り替わる準備・協力・停止の視覚状態を分ける。
 // canReady以外のローカル条件からReady可を推測しない。
 export function desktopView(ui, game) {
-  if (game?.phase === 'preparing') return game.canReady ? 'ready' : 'preparing';
+  // 準備中に参加者が変わったら、分担の画面で決定し直す (#109)
+  if (game?.phase === 'preparing') return game.lineupOk === false ? 'roles' : game.canReady ? 'ready' : 'preparing';
   if (game?.phase === 'coop' || game?.phase === 'paused') return game.phase;
   return SCREENS.includes(ui.screen) ? ui.screen : 'join';
 }
@@ -168,17 +169,38 @@ export function gameCard(entry, selectedId, launch) {
 }
 
 /**
- * 選択画面の主ボタン (クリック・Enter) の動作。検出したゲームは項目 ID で起動を要求し、
- * 要求後は (起動中・失敗でも) 次へ進める。自動起動できない Minecraft は手動起動の前提で次へ進む
+ * 選択画面の主ボタン (クリック・Enter) の動作。選ぶだけで起動せず、メンバー・分担の画面へ進む (#109)
  */
 export function gameAction(ui, game, list) {
   const entry = list.find((g) => g.id === ui.game);
   if (!entry) return { kind: 'none', label: 'ゲームを選んでください' };
-  if (!entry.launchable) return { kind: 'next', label: 'このゲームで遊ぶ' };
-  const launch = launchView(game?.launch, entry.id);
-  if (!launch) return { kind: 'launch', label: 'このゲームを起動する', id: entry.id };
-  if (launch.state === 'failed' || launch.state === 'timeout') return { kind: 'next', label: '手動で起動して次へ', retry: true, id: entry.id };
-  return { kind: 'next', label: '次へ進む' };
+  return { kind: 'next', label: 'このゲームで遊ぶ' };
+}
+
+/**
+ * 分担の画面の主ボタンと補助ボタン (#109)。メンバーと分担を決定 → (一覧のゲームは) 起動 → 準備 の順。
+ * 決定・起動・準備の可否はホストが判定する (lineupOk・canPrepare)。画面は順番を案内するだけ
+ */
+export function rolesAction(game, list) {
+  if (!game) return { kind: 'none', label: 'PCホストに接続中…', disabled: true };
+  const connected = game.connected || [];
+  if (!game.lineupOk) {
+    const ready = connected.includes('P1') && connected.length >= MIN_PLAYERS;
+    return { kind: 'confirm', label: 'この分担で決定', disabled: !ready,
+      note: ready ? '' : `ホスト（P1）を含む${MIN_PLAYERS}人以上の参加が必要です` };
+  }
+  if (game.phase !== 'lobby') return { kind: 'none', label: '準備中', disabled: true };
+  const entry = list.find((g) => g.id === game.title);
+  const prepare = { kind: 'prepare', label: 'ゲームを準備する', disabled: !game.canPrepare };
+  if (!entry?.launchable) return { ...prepare, note: `${entry?.name || 'ゲーム'}は自動で起動できません。手動で起動してから準備してください` };
+  const launch = launchView(game.launch, entry.id);
+  if (!launch) return { kind: 'launch', label: 'ゲームを起動する', id: entry.id, disabled: !game.canLaunch };
+  if (launch.state === 'launching') return { kind: 'wait', label: '起動中…', disabled: true, note: launch.message };
+  if (launch.state === 'failed' || launch.state === 'timeout') {
+    return { kind: 'launch', label: 'もう一度起動する', id: entry.id, disabled: !game.canLaunch, note: `${launch.title}。${launch.message}`,
+      alt: { ...prepare, label: '手動で起動して準備へ' } };
+  }
+  return { ...prepare, note: launch.message };
 }
 
 export function device(ua) {
