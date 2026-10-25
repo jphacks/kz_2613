@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-1062090",
+  "name": "Timberborn",
+  "match": {
+    "ids": [
+      "steam:1062090"
+    ],
+    "steamAppIds": [
+      1062090
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: City Builder, Colony Sim, Voxel, Sandbox, Automation, Building"
+    ]
+  },
+  "catalog": {
+    "rank": 242,
+    "template": "pointer",
+    "tags": [
+      "City Builder",
+      "Colony Sim",
+      "Voxel",
+      "Sandbox",
+      "Automation",
+      "Building",
+      "Nature",
+      "Management",
+      "Base Building",
+      "Survival"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#238",
+      "globaltopsellers#221"
+    ]
+  }
+}

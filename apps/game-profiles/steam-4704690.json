@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-4704690",
+  "name": "MECCHA CHAMELEON",
+  "match": {
+    "ids": [
+      "steam:4704690"
+    ],
+    "steamAppIds": [
+      4704690
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Multiplayer, Casual, Party Game, Funny, Hidden Object, Online Co-Op"
+    ]
+  },
+  "catalog": {
+    "rank": 193,
+    "template": "pointer",
+    "tags": [
+      "Multiplayer",
+      "Casual",
+      "Party Game",
+      "Funny",
+      "Hidden Object",
+      "Online Co-Op",
+      "Hand-drawn",
+      "Comedy",
+      "Stealth",
+      "Colorful"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#186",
+      "globaltopsellers#160"
+    ]
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-3845070",
+  "name": "Dupery: A Game of Solo Deduction",
+  "match": {
+    "ids": [
+      "steam:3845070"
+    ],
+    "steamAppIds": [
+      3845070
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Roguelike, Social Deduction, Investigation, Strategy, Detective, Crime"
+    ]
+  },
+  "catalog": {
+    "rank": 289,
+    "template": "pointer",
+    "tags": [
+      "Roguelike",
+      "Social Deduction",
+      "Investigation",
+      "Strategy",
+      "Detective",
+      "Crime",
+      "Puzzle",
+      "Turn-Based Tactics",
+      "Tabletop",
+      "Noir"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#312",
+      "globaltopsellers#282"
+    ]
+  }
+}

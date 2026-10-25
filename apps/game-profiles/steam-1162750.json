@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-1162750",
+  "name": "Songs of Syx",
+  "match": {
+    "ids": [
+      "steam:1162750"
+    ],
+    "steamAppIds": [
+      1162750
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: City Builder, Colony Sim, Strategy, Sandbox, Grand Strategy, Base Building"
+    ]
+  },
+  "catalog": {
+    "rank": 464,
+    "template": "pointer",
+    "tags": [
+      "City Builder",
+      "Colony Sim",
+      "Strategy",
+      "Sandbox",
+      "Grand Strategy",
+      "Base Building",
+      "4X",
+      "Building",
+      "Singleplayer",
+      "Top-Down"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#442",
+      "globaltopsellers#502"
+    ]
+  }
+}

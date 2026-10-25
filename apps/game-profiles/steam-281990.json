@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-281990",
+  "name": "Stellaris",
+  "match": {
+    "ids": [
+      "steam:281990"
+    ],
+    "steamAppIds": [
+      281990
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Space, Strategy, Grand Strategy, Sci-fi, 4X, Exploration"
+    ]
+  },
+  "catalog": {
+    "rank": 163,
+    "template": "pointer",
+    "tags": [
+      "Space",
+      "Strategy",
+      "Grand Strategy",
+      "Sci-fi",
+      "4X",
+      "Exploration",
+      "Sandbox",
+      "Simulation",
+      "Multiplayer",
+      "Real-Time with Pause"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#135",
+      "globaltopsellers#152"
+    ]
+  }
+}

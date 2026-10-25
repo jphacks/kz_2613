@@ -1,0 +1,146 @@
+{
+  "schema": 1,
+  "id": "steam-322170",
+  "name": "Geometry Dash",
+  "match": {
+    "ids": [
+      "steam:322170"
+    ],
+    "steamAppIds": [
+      322170
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "limited",
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1",
+      "split": [
+        {
+          "id": "left",
+          "label": "左",
+          "actions": [
+            "left"
+          ]
+        },
+        {
+          "id": "right",
+          "label": "右",
+          "actions": [
+            "right"
+          ]
+        },
+        {
+          "id": "vertical",
+          "label": "ジャンプ・上下",
+          "actions": [
+            "jump",
+            "up",
+            "down"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gameplay",
+      "label": "アクション",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_LEFT"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_RIGHT"
+    },
+    {
+      "id": "up",
+      "label": "上",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_UP"
+    },
+    {
+      "id": "down",
+      "label": "下",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_DOWN"
+    },
+    {
+      "id": "jump",
+      "label": "ジャンプ",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_Z"
+    },
+    {
+      "id": "action",
+      "label": "アクション",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_X"
+    },
+    {
+      "id": "special",
+      "label": "特殊",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_C"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（platformer）",
+      "Steamのタグ: Difficult, Music, Level Editor, Great Soundtrack, 2D, Rhythm"
+    ]
+  },
+  "catalog": {
+    "rank": 44,
+    "template": "platformer",
+    "tags": [
+      "Difficult",
+      "Music",
+      "Level Editor",
+      "Great Soundtrack",
+      "2D",
+      "Rhythm",
+      "Precision Platformer",
+      "Singleplayer",
+      "Platformer",
+      "Colorful"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#308",
+      "globaltopsellers#290",
+      "mostplayed#13"
+    ]
+  }
+}

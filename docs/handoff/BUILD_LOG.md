@@ -488,3 +488,10 @@
 - **#99：** `src/keybinds.rs` を定義駆動にした。読み方は `minecraft-options`・`terraria-input-profiles`・`es3-keybindings`（R.E.P.O.）・`unity-inputsystem-json`・`ue-input-ini`・`source-cfg`。キー名の表記ゆれ（XNA・Unreal・Source・Unity）をまとめて送れるキーへ対応させる。`%DOCUMENTS%`（OneDriveへ移したドキュメントを含む）などの場所を展開する。協力プレイ中以外は、設定ファイルの更新日時が変わったら読み直す。
 - **#100：** `scripts/profiles/extract.mjs`（読み取りのみ、ゲームのコードは実行しない）。Steamの `appinfo.vdf` の分類から向き不向きを付け、Unity Input Systemの埋め込み定義・.NETの列挙型・Minecraftの `Options.class`・設定ファイルから、下書き（状態は「自動抽出」）を作る。このPCで一度だけ動かし、Minecraft（40件）・Terraria・tModLoader（各31件）・R.E.P.O.（33件）・Goose Goose Duck（97件）が取れることを確かめた。
 - 検証：`cargo build --release --locked` 成功。**ユーザーの指示により、単体試験・シミュレーションの実行と追加は後で行う**（keybindsの既存の単体試験は新しい形へ書き直したが、まだ実行していない）。
+
+## 2026-10-25 — #98 主要500タイトルの選定と操作定義（Claude Code、テストは後で）
+- `scripts/profiles/build-catalog.mjs` を追加した。Steamの公開データ（ストアの売上上位1000・全期間の売上上位1000、`GetMostPlayedGames` の100、`GetTopReleasesPages`）の順位を合算し、ゲームだけを上位から498本選んだ。個別の定義があるのに上位に入らなかった2本と、Steam外の2本（Minecraft Java・Fortnite）を加えた計502本。一覧は `docs/data/top500-games.md`・`.json`（生成物）。取得した公開データはリポジトリ外のキャッシュに置く。
+- 定義：個別の定義（`scripts/profiles/overrides/`）が13本。このPCのデータから抽出した4本（Terraria・tModLoader・R.E.P.O.・Goose Goose Duck）と、広く知られた初期設定で書いた9本（Counter-Strike 2・Team Fortress 2・Left 4 Dead 2・Portal 2・Garry's Mod・Valheim・Stardew Valley・Lethal Company・Among Us、未検証）。残りは、Steamのタグ（重みの上位）からジャンルの型（fps・action3d・platformer・topdown・racing・fighting・pointer）を当てた**仮の定義（template）**。移動だけになりやすい型（platformer・topdown・racing・fighting）は、移動を左・右などに分けられるようにした。
+- 状態：device 1／extracted 4／unverified 9／template 488。向き：good 215／limited 180／unsuitable 107（マウス中心・ターン制等）。
+- 検証：ドライランのホストで、502件すべてが形式の検証を通り読み込まれた（エラー0）。**単体試験・シミュレーションはユーザーの指示で後回し。** 型の当てはめは上位70本を目で確認し、MOBA・ストラテジーの誤分類を直した。
+- **未確認：** templateの定義の正確さ（ゲームごとに実機または自動抽出で確かめる必要がある）。

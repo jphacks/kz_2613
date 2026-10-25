@@ -1,0 +1,194 @@
+{
+  "id": "steam-892970",
+  "template": "override",
+  "suitability": "good",
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1"
+    },
+    {
+      "id": "look",
+      "label": "視点",
+      "role": "P2"
+    },
+    {
+      "id": "gameplay",
+      "label": "攻撃・使う",
+      "role": "P3"
+    },
+    {
+      "id": "inventory",
+      "label": "持ち物",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "verification": {
+    "status": "unverified",
+    "date": "2026-10-25",
+    "sources": [
+      "広く知られた初期設定（未検証・実機未確認）"
+    ]
+  },
+  "actions": [
+    {
+      "id": "forward",
+      "label": "前進",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_W"
+    },
+    {
+      "id": "back",
+      "label": "後退",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_S"
+    },
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_A"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_D"
+    },
+    {
+      "id": "jump",
+      "label": "ジャンプ",
+      "group": "movement",
+      "type": "button",
+      "default": "SPACE"
+    },
+    {
+      "id": "run",
+      "label": "走る",
+      "group": "movement",
+      "type": "button",
+      "default": "LSHIFT"
+    },
+    {
+      "id": "sneak",
+      "label": "しゃがむ",
+      "group": "movement",
+      "type": "button",
+      "default": "LCTRL"
+    },
+    {
+      "id": "look",
+      "label": "視点",
+      "group": "look",
+      "type": "mouseDelta"
+    },
+    {
+      "id": "attack",
+      "label": "攻撃",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "block",
+      "label": "防御",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "use",
+      "label": "使う",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_E"
+    },
+    {
+      "id": "hotbar1",
+      "label": "ホットバー1",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_1"
+    },
+    {
+      "id": "hotbar2",
+      "label": "ホットバー2",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_2"
+    },
+    {
+      "id": "hotbar3",
+      "label": "ホットバー3",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_3"
+    },
+    {
+      "id": "hotbar4",
+      "label": "ホットバー4",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_4"
+    },
+    {
+      "id": "hotbar5",
+      "label": "ホットバー5",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_5"
+    },
+    {
+      "id": "hotbar6",
+      "label": "ホットバー6",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_6"
+    },
+    {
+      "id": "hotbar7",
+      "label": "ホットバー7",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_7"
+    },
+    {
+      "id": "hotbar8",
+      "label": "ホットバー8",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_8"
+    },
+    {
+      "id": "inventory",
+      "label": "インベントリ",
+      "group": "inventory",
+      "type": "button",
+      "default": "TAB"
+    },
+    {
+      "id": "map",
+      "label": "マップ",
+      "group": "menu",
+      "type": "button",
+      "default": "KEY_M"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ]
+}

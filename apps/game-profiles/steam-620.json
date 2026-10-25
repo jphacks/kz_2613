@@ -1,0 +1,144 @@
+{
+  "schema": 1,
+  "id": "steam-620",
+  "name": "Portal 2",
+  "match": {
+    "ids": [
+      "steam:620"
+    ],
+    "steamAppIds": [
+      620
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "good",
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1"
+    },
+    {
+      "id": "look",
+      "label": "視点",
+      "role": "P2"
+    },
+    {
+      "id": "gameplay",
+      "label": "攻撃・使う",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "forward",
+      "label": "前進",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_W"
+    },
+    {
+      "id": "back",
+      "label": "後退",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_S"
+    },
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_A"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_D"
+    },
+    {
+      "id": "jump",
+      "label": "ジャンプ",
+      "group": "movement",
+      "type": "button",
+      "default": "SPACE"
+    },
+    {
+      "id": "crouch",
+      "label": "しゃがむ",
+      "group": "movement",
+      "type": "button",
+      "default": "LCTRL"
+    },
+    {
+      "id": "look",
+      "label": "視点",
+      "group": "look",
+      "type": "mouseDelta"
+    },
+    {
+      "id": "portal_blue",
+      "label": "青ポータル",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "portal_orange",
+      "label": "オレンジポータル",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "use",
+      "label": "使う・持つ",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_E"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "unverified",
+    "date": "2026-10-25",
+    "sources": [
+      "広く知られた初期設定（未検証・実機未確認）"
+    ]
+  },
+  "catalog": {
+    "rank": 486,
+    "template": "override",
+    "tags": [
+      "Singleplayer",
+      "Platformer",
+      "Puzzle",
+      "First-Person",
+      "Dark Humor",
+      "Story Rich",
+      "Puzzle Platformer",
+      "Funny",
+      "Female Protagonist",
+      "3D Platformer"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#473",
+      "globaltopsellers#521"
+    ]
+  }
+}

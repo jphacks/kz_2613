@@ -1,0 +1,206 @@
+{
+  "id": "steam-3241660",
+  "template": "override",
+  "suitability": "good",
+  "userBindings": {
+    "reader": "es3-keybindings",
+    "path": "%LOCALLOW%/semiwork/Repo/CurrentKeyBindings.es3"
+  },
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1"
+    },
+    {
+      "id": "look",
+      "label": "視点",
+      "role": "P2"
+    },
+    {
+      "id": "gameplay",
+      "label": "攻撃・使う",
+      "role": "P3"
+    },
+    {
+      "id": "inventory",
+      "label": "持ち物",
+      "role": "P3"
+    },
+    {
+      "id": "communication",
+      "label": "会話",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "forward",
+      "label": "前進",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_W",
+      "bind": "0/up"
+    },
+    {
+      "id": "back",
+      "label": "後退",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_S",
+      "bind": "0/down"
+    },
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_A",
+      "bind": "0/left"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_D",
+      "bind": "0/right"
+    },
+    {
+      "id": "jump",
+      "label": "ジャンプ",
+      "group": "movement",
+      "type": "button",
+      "default": "SPACE",
+      "bind": "1"
+    },
+    {
+      "id": "crouch",
+      "label": "しゃがむ",
+      "group": "movement",
+      "type": "button",
+      "default": "LCTRL",
+      "bind": "12"
+    },
+    {
+      "id": "sprint",
+      "label": "走る",
+      "group": "movement",
+      "type": "button",
+      "default": "LSHIFT",
+      "bind": "15"
+    },
+    {
+      "id": "tumble",
+      "label": "転がる",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_Q",
+      "bind": "14"
+    },
+    {
+      "id": "look",
+      "label": "視点",
+      "group": "look",
+      "type": "mouseDelta"
+    },
+    {
+      "id": "grab",
+      "label": "つかむ",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_L",
+      "bind": "10"
+    },
+    {
+      "id": "rotate",
+      "label": "回す",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_R",
+      "bind": "11"
+    },
+    {
+      "id": "interact",
+      "label": "使う",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_E",
+      "bind": "2"
+    },
+    {
+      "id": "push_pull",
+      "label": "押す・引く",
+      "group": "gameplay",
+      "type": "wheel"
+    },
+    {
+      "id": "inventory1",
+      "label": "持ち物1",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_1",
+      "bind": "19"
+    },
+    {
+      "id": "inventory2",
+      "label": "持ち物2",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_2",
+      "bind": "20"
+    },
+    {
+      "id": "inventory3",
+      "label": "持ち物3",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_3",
+      "bind": "21"
+    },
+    {
+      "id": "chat",
+      "label": "チャット",
+      "group": "communication",
+      "type": "button",
+      "default": "KEY_T",
+      "bind": "7"
+    },
+    {
+      "id": "push_to_talk",
+      "label": "ボイス",
+      "group": "communication",
+      "type": "button",
+      "default": "KEY_V",
+      "bind": "25"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC",
+      "bind": "6"
+    },
+    {
+      "id": "map",
+      "label": "マップ",
+      "group": "menu",
+      "type": "button",
+      "default": "TAB",
+      "bind": "8"
+    }
+  ],
+  "verification": {
+    "status": "extracted",
+    "date": "2026-10-25",
+    "sources": [
+      "ゲーム本体の InputKey 列挙型と DefaultKeyBindings.es3（このPC）"
+    ]
+  }
+}

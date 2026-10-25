@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-3558600",
+  "name": "Leafy Corner",
+  "match": {
+    "ids": [
+      "steam:3558600"
+    ],
+    "steamAppIds": [
+      3558600
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Cozy, Casual, Management, Simulation, Relaxing, Nature"
+    ]
+  },
+  "catalog": {
+    "rank": 418,
+    "template": "pointer",
+    "tags": [
+      "Cozy",
+      "Casual",
+      "Management",
+      "Simulation",
+      "Relaxing",
+      "Nature",
+      "Decorating",
+      "Colorful",
+      "Cute",
+      "Stylized"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#399",
+      "globaltopsellers#457"
+    ]
+  }
+}

@@ -1,0 +1,220 @@
+{
+  "schema": 1,
+  "id": "steam-730",
+  "name": "Counter-Strike 2",
+  "match": {
+    "ids": [
+      "steam:730"
+    ],
+    "steamAppIds": [
+      730
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "good",
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1"
+    },
+    {
+      "id": "look",
+      "label": "視点",
+      "role": "P2"
+    },
+    {
+      "id": "gameplay",
+      "label": "攻撃・使う",
+      "role": "P3"
+    },
+    {
+      "id": "inventory",
+      "label": "持ち物",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "forward",
+      "label": "前進",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_W"
+    },
+    {
+      "id": "back",
+      "label": "後退",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_S"
+    },
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_A"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_D"
+    },
+    {
+      "id": "jump",
+      "label": "ジャンプ",
+      "group": "movement",
+      "type": "button",
+      "default": "SPACE"
+    },
+    {
+      "id": "crouch",
+      "label": "しゃがむ",
+      "group": "movement",
+      "type": "button",
+      "default": "LCTRL"
+    },
+    {
+      "id": "walk",
+      "label": "歩く",
+      "group": "movement",
+      "type": "button",
+      "default": "LSHIFT"
+    },
+    {
+      "id": "look",
+      "label": "視点",
+      "group": "look",
+      "type": "mouseDelta"
+    },
+    {
+      "id": "fire",
+      "label": "撃つ",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "secondary",
+      "label": "サブ攻撃",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "reload",
+      "label": "リロード",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_R"
+    },
+    {
+      "id": "use",
+      "label": "使う",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_E"
+    },
+    {
+      "id": "slot1",
+      "label": "武器1",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_1"
+    },
+    {
+      "id": "slot2",
+      "label": "武器2",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_2"
+    },
+    {
+      "id": "slot3",
+      "label": "武器3",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_3"
+    },
+    {
+      "id": "slot4",
+      "label": "武器4",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_4"
+    },
+    {
+      "id": "slot5",
+      "label": "武器5",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_5"
+    },
+    {
+      "id": "drop",
+      "label": "捨てる",
+      "group": "inventory",
+      "type": "button",
+      "default": "KEY_G"
+    },
+    {
+      "id": "buy",
+      "label": "購入",
+      "group": "inventory",
+      "type": "button",
+      "default": "KEY_B"
+    },
+    {
+      "id": "scoreboard",
+      "label": "スコア",
+      "group": "menu",
+      "type": "button",
+      "default": "TAB"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "unverified",
+    "date": "2026-10-25",
+    "sources": [
+      "広く知られた初期設定（未検証・実機未確認）"
+    ]
+  },
+  "catalog": {
+    "rank": 1,
+    "template": "override",
+    "tags": [
+      "FPS",
+      "Shooter",
+      "Multiplayer",
+      "Competitive",
+      "Action",
+      "Team-Based",
+      "eSports",
+      "Tactical",
+      "First-Person",
+      "PvP"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#4",
+      "globaltopsellers#3",
+      "mostplayed#1"
+    ]
+  }
+}
