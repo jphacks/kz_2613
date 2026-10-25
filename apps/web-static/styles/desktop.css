@@ -36,10 +36,10 @@ body {
 
 .brand {
   position: absolute;
-  top: 52px;
+  top: 4px;
   left: 60px;
   width: 438px;
-  height: 44px;
+  height: 112px;
   text-align: center;
   color: var(--color-logo);
   font-size: 28px;
