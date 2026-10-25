@@ -834,3 +834,9 @@
 
 - head `00a5a96`のCIで、Rustのビルド・単体試験と手動登録の追加チェックは成功したが、通信試験は48/49だった。追加したゲーム選択がlobbyへ戻したため、後続のEND試験がpausedを前提として待ち続けたことが原因だった（ジョブ121239895095）。入力先制限の製品コードの失敗ではない。
 - END試験を手動登録試験の前へ移し、緊急停止後のpausedから実際にENDでlobbyへ移る試験として保持した。手動登録を選択した後の入力先・パス非公開チェックも保持し、49件の確認範囲は減らしていない。最新headのCIで再確認する。
+
+## 2026-10-26 — Minecraft専用の文言を選んだゲームの名前に（Claude Code、#140）
+
+- 実機テスト（Outlast）で、Minecraft以外のゲームでも「Minecraftを前面に」「ワールドを準備」と出ていた。PC画面の注意・準備中の案内・前面化ボタン・入力の説明、スマホのリモコンの案内・前面化ボタン・前面でないときの注意・Readyの説明、ホストの準備の案内を、選んだゲームの名前（`game.titleName`、なければ「ゲーム」）で出すようにした。「ワールドを準備」は「プレイ中の画面まで進める」にした。
+- Minecraftを選んだときは名前が「Minecraft」になり、意味は変わらない。権利表記、一覧のMinecraftの項目と手動起動の手順、試験用の`game.html`は残した。
+- `app-view-test.mjs` 25/25（Outlastの準備中・協力プレイ中の注意）、`phone-view-test.mjs`（Outlastを選んだときにスマホの案内へ「Minecraft」「ワールド」が出ないこと）、`controller-diagnostics-test.mjs`・`ui-input-test.mjs` 10/10・`check-static-pages.mjs`・`static-assets-sim.mjs`・`verify-ui-evidence.mjs`、`protocol-sim.mjs`（Rust dry-run）49/49が成功した。実機での表示は未確認。

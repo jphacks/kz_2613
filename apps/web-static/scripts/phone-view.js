@@ -1,7 +1,7 @@
 import { myActions, generatedKey, buildGenerated } from './generated-controls.js';
 
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
-import {profileNotice,roleView,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS} from '../app-view.js';
+import {profileNotice,roleView,gameLabel,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS} from '../app-view.js';
 export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleText,bindControl,onRoleOk=()=>{}}) {
   const $ = id => document.getElementById(id);
   let lastView = null, lastGen = '';
@@ -58,9 +58,11 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleTex
     const players = SLOT_NAMES.map((p) => `<span class="${game.connected.includes(p) ? 'on' : ''}">${p}${p === me ? '（自分）' : ''}</span>`).join('');
     $('players1').innerHTML = players;
     $('players2').innerHTML = players;
-    $('remoteRoute').textContent = {app:'PCアプリを操作中',game:generic?'選んだゲームのメニューを操作中':'Minecraftのメニューを操作中',none:'PCアプリまたは対象ゲームを前面にしてください'}[game.remoteRoute] || '';
-    $('openGameBtn').textContent=generic?'選んだゲームを前面にする':'Minecraftを前面にする';
-    $('inputWarn').textContent=generic?'対象ゲームが前面ではありません。ホストが対象ゲームを前面に戻すまで操作は届きません。':'PCの画面がMinecraftになっていません。ホストがMinecraftを前面に戻すまで操作は届きません。';
+    // 案内は選んだゲームの名前で出す (#140)
+    const name=gameLabel(game);
+    $('remoteRoute').textContent = {app:'PCアプリを操作中',game:`${name}のメニューを操作中`,none:`PCアプリまたは${name}を前面にしてください`}[game.remoteRoute] || '';
+    $('openGameBtn').textContent=`${name}を前面にする`;
+    $('inputWarn').textContent=`PCの画面が${name}になっていません。ホストが${name}を前面に戻すまで操作は届きません。`;
     $('inputWarn').textContent=[game.inputTarget?$('inputWarn').textContent:'',notice].filter(Boolean).join(' ');
     const startBtn = $('startBtn');
     $('openGameBtn').hidden = !['preparing','paused'].includes(phase);
@@ -68,7 +70,7 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleTex
     startBtn.disabled = !(phase === 'paused' ? game.canResume : phase === 'preparing' ? game.canReady : game.canPrepare);
     $('endBtn').style.display = phase === 'paused' ? 'block' : 'none';
     $('remoteNote').textContent = game.canReady
-      ? (phase === 'paused' ? `一時停止中${game.reason ? '（' + reasonText(game.reason) + '）' : ''}。リモコンで操作でき、RESUME で協力プレイに戻ります。` : 'ゲームを開いてワールドを準備した後、ホストだけがReadyを押します。')
+      ? (phase === 'paused' ? `一時停止中${game.reason ? '（' + reasonText(game.reason) + '）' : ''}。リモコンで操作でき、RESUME で協力プレイに戻ります。` : `${name}をプレイ中の画面まで進めた後、ホストだけがReadyを押します。`)
       : phase === 'lobby' ? (game.lineupOk
         ? `メンバーと分担を決定しました（${game.connected.length}人）。PCの画面でゲームを起動してから準備へ進めます。`
         : `PCの画面でゲームを選び、メンバーと分担を決定してください（${game.connected.length}人接続、${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べます）。`)
