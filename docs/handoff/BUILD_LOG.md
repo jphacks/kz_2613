@@ -577,3 +577,4 @@
 - `app-view-test.mjs`16/16、`ui-input-test.mjs`5/5、静的構文、構造30ファイル、差分空白検査成功。`profile-extract-test.mjs`は個人のゲームを読まない埋め込みJSON fixtureで静的抽出・下書き状態・未対応キーを確認し、CIにも追加。
 - `shutdown-sim.mjs`はquit・EOF両方成功。`static-assets-sim.mjs`は26ファイル成功。`package.ps1 -Out .venv/pr103-package`で約9.7MBのZIP作成成功、同梱Minecraft定義をソースとバイト照合した。
 - 本変更経路のMinecraft・スマホ実機は未検証。5タイトルの自動抽出の再照合、設定階層・動的alias等は受入未完了として#97・#99・#100を自動クローズしない。過去の作者の実機観測と今回のfixture/dry-runを区別する。
+- 追加の境界検証で、全解除だけのSource/Unreal設定が初期キーへ戻る問題を修正。全解除・置換・未記載操作のキー解除を重ねる際も解除を保持し、再bindした有効操作だけを復元する。並列単体試験のfixture名も一意化。追加後のRust単体はホスト24件＋プローブ3件、計27件成功。

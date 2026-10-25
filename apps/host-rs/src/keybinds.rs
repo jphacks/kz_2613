@@ -70,7 +70,11 @@ impl Keybinds {
                                 if a.kind != "button" {
                                     continue; // 視点・ホイールは固定の出力
                                 }
-                                let Some(key) = a.bind.as_ref().and_then(|b| map.get(b)) else { continue };
+                                let Some(key) = a.bind.as_ref().and_then(|b| map.get(b).or_else(|| match ub.reader.as_str() {
+                                    "source-cfg" => map.get("*").or_else(|| a.default.and_then(|d| map.get(&format!("key:{d}")))),
+                                    "ue-input-ini" => map.get(if b.contains('/') { "AxisMappings/*" } else { "ActionMappings/*" }),
+                                    _ => None,
+                                })) else { continue };
                                 kb.actions[i].1 = match key {
                                     Key::Output(id) => Some(*id),
                                     Key::Unbound => {
@@ -258,6 +262,7 @@ fn ue_input_ini(text: &str) -> HashMap<String, Key> {
         if !matches!(array, "ActionMappings" | "AxisMappings") { continue; }
         if op == '!' {
             active.retain(|(a, _, _, _)| a != array);
+            map.insert(format!("{array}/*"), Key::Unbound);
             continue;
         }
         let Some(key) = field(l, "Key") else { continue };
@@ -279,7 +284,10 @@ fn ue_input_ini(text: &str) -> HashMap<String, Key> {
                 active.retain(|(a, r, _, _)| a != array || r != row);
                 continue;
             }
-            if !matches!(op, '+' | '.') { active.retain(|(a, _, _, _)| a != array); }
+            if !matches!(op, '+' | '.') {
+                active.retain(|(a, _, _, _)| a != array);
+                map.insert(format!("{array}/*"), Key::Unbound);
+            }
             let modified = ["bShift", "bCtrl", "bAlt", "bCmd"].iter().any(|f| field(l, f).is_some_and(|v| v.eq_ignore_ascii_case("true")));
             let output = if modified { Key::Unsupported(format!("修飾キー付きの{key}")) } else { name_key(&key) };
             if op != '+' || !active.iter().any(|(a, r, _, _)| a == array && r == row) {
@@ -318,12 +326,16 @@ fn source_cfg(text: &str) -> HashMap<String, Key> {
         match parts.first().map(String::as_str) {
             Some("bind") if parts.len() >= 3 => {
                 let command = parts[2].clone();
+                if let Key::Output(key)=name_key(&parts[1]) { map.insert(format!("key:{key}"),Key::Unbound); }
                 if command.is_empty() { bound.remove(&parts[1].to_ascii_lowercase()); continue; }
                 map.insert(command.clone(), Key::Unbound);
                 bound.insert(parts[1].to_ascii_lowercase(), command);
             }
-            Some("unbind") if parts.len() >= 2 => { bound.remove(&parts[1].to_ascii_lowercase()); }
-            Some("unbindall") => bound.clear(),
+            Some("unbind") if parts.len() >= 2 => {
+                bound.remove(&parts[1].to_ascii_lowercase());
+                if let Key::Output(key)=name_key(&parts[1]) { map.insert(format!("key:{key}"),Key::Unbound); }
+            }
+            Some("unbindall") => { bound.clear(); map.insert("*".into(),Key::Unbound); }
             _ => {},
         }
     }
@@ -478,11 +490,32 @@ mod tests {
     }
 
     fn with_file(text: &str) -> Keybinds {
+        with_profile(&profiles::builtin_minecraft(), text)
+    }
+
+    fn with_profile(p: &Profile, text: &str) -> Keybinds {
+        static SEQ: std::sync::atomic::AtomicUsize=std::sync::atomic::AtomicUsize::new(0);
         let dir = std::env::temp_dir().join(format!("recooplay-kb-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        let f = dir.join(format!("options-{}.txt", text.len()));
+        let f = dir.join(format!("options-{}.txt", SEQ.fetch_add(1,std::sync::atomic::Ordering::Relaxed)));
         std::fs::write(&f, text).unwrap();
-        Keybinds::build(&profiles::builtin_minecraft(), Some(&f))
+        Keybinds::build(p, Some(&f))
+    }
+
+    #[test]
+    fn clear_only_configs_do_not_restore_profile_defaults() {
+        let mut p=profiles::builtin_minecraft();
+        p.user_bindings.as_mut().unwrap().reader="source-cfg".into();
+        for a in &mut p.actions { a.bind=match a.control.as_deref() {Some("FWD")=>Some("+forward".into()),Some("JUMP")=>Some("+jump".into()),_=>None}; }
+        for text in ["unbindall", "unbind w", "bind w +jump", "bind w \"\""] {
+            let kb=with_profile(&p,text); assert_eq!(out(&kb,"FWD"),None,"{text}");
+        }
+        let kb=with_profile(&p,"unbindall\nbind w +jump");
+        assert_eq!(out(&kb,"JUMP"),Some("KEY_W")); assert_eq!(out(&kb,"FWD"),None);
+        p.user_bindings.as_mut().unwrap().reader="ue-input-ini".into();
+        p.actions.iter_mut().find(|a|a.control.as_deref()==Some("JUMP")).unwrap().bind=Some("Jump".into());
+        assert_eq!(out(&with_profile(&p,"!ActionMappings=ClearArray"),"JUMP"),None);
+        assert_eq!(out(&with_profile(&p,"ActionMappings=(ActionName=\"Use\",Key=E)"),"JUMP"),None);
     }
 
     #[test]
