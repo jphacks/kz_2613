@@ -337,6 +337,8 @@ pub struct Hub {
     target: Target,
     base_target: Target,
     games: Vec<Entry>,
+    // 一覧のタイルの画像 (項目 ID → 場所)。HTTP の /api/game-image と共有する (#121)
+    images: games::Images,
     games_scanning: bool,
     launch: Option<Launch>,
     launch_gen: u64,
@@ -453,6 +455,7 @@ impl Hub {
             target: config.target.clone(),
             base_target: config.target.clone(),
             games: Vec::new(),
+            images: games::Images::default(),
             games_scanning: false,
             launch: None,
             launch_gen: 0,
@@ -490,6 +493,11 @@ impl Hub {
     }
 
     /// イベントループ。次のタイマーまでイベントを待ち、期限が来たタイマーを処理する
+    /// 一覧のタイルの画像の表 (HTTP の /api/game-image と共有する)
+    pub fn images(&self) -> games::Images {
+        self.images.clone()
+    }
+
     pub fn run(mut self, rx: Receiver<Event>, port: u16) {
         self.log("server_start", json!({ "port": port }));
         loop {
@@ -1456,6 +1464,9 @@ impl Hub {
         // ゲーム名・インストール先はログに残さない (件数だけ)
         let count = |src: &str| list.iter().filter(|g| g.source == src).count();
         self.log("games_detected", json!({ "steam": count("steam"), "epic": count("epic") }));
+        if let Ok(mut images) = self.images.lock() {
+            *images = list.iter().filter_map(|g| g.image.clone().map(|p| (g.id.clone(), p))).collect();
+        }
         let previous = self.games.iter().find(|g| g.id == self.game.title).map(|g| g.install_dir.clone());
         let next = list.iter().find(|g| g.id == self.game.title).map(|g| g.install_dir.clone());
         self.games = list;
