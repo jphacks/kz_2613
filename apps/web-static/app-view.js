@@ -9,18 +9,6 @@ export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 4;
 export const SLOT_NAMES = ['P1', 'P2', 'P3', 'P4'];
 
-/**
- * Minecraft の固定の分担 (P1 移動・P2 視点・P3 アクション) を使うか。実機で確かめた 3人のときだけで、
- * 2人・4人は操作定義から作った分担を使う。判定はホストの game.fixedControls に従う
- */
-export function usesFixedRoles(game) {
-  const p = game?.profile;
-  if (!p) return true;
-  // 誰も接続していないときは、基本の3人の分担を見せる (shownSlots と同じ)
-  const nobody = !game.connected?.length && !game.participants?.length;
-  return p.id === 'minecraft-java' && (game.fixedControls !== false || nobody);
-}
-
 /** 担当を表示する枠: 協力プレイの参加者、なければ接続中の枠。誰もいなければ空 (3人分の固定の表示は出さない、#126) */
 export function shownSlots(game) {
   if (game?.participants?.length) return game.participants;
@@ -128,39 +116,13 @@ export function screenOnGameUpdate(ui, previousPhase, game) {
 }
 
 // 操作ごとの初期のキー表示。ホストの game.keys (ゲームのキー設定に合わせた実際のキー) が来るまで使う (#101)
-const KEY_DEFAULTS = { FWD: 'W', LEFT: 'A', BACK: 'S', RIGHT: 'D', JUMP: 'Space', SNEAK: 'Shift', SPRINT: 'Ctrl', ATTACK: '左クリック', USE: '右クリック', INV: 'E', DROP: 'Q' };
-
-/** 操作に実際に割り当たっているキーの表示。送れないキー・未設定は「送らない」 */
-export function keyLabel(keys, control) {
-  if (!keys?.controls || !(control in keys.controls)) return KEY_DEFAULTS[control] || '';
-  return keys.controls[control]?.label ?? '送らない';
-}
-
-// Minecraft v0.1 の固定分担 (docs/requirements/requirements-v0.3.md 3.2)。役割の編集・交換は P0 の対象外。
-// キーの表示はゲームのキー設定に合わせる (items: [表示名, 操作名の一覧 | null])
-const ROLE_ITEMS = {
-  P1: [['移動スティック', ['FWD', 'LEFT', 'BACK', 'RIGHT']], ['ジャンプ', ['JUMP']], ['スニーク', ['SNEAK']], ['ダッシュ', ['SPRINT']]],
-  P2: [['ドラッグで視点を回す（マウス移動）', null], ['感度はスマホで調整', null]],
-  P3: [['攻撃・採掘', ['ATTACK']], ['使う・置く', ['USE']], ['持ち物 ◀▶（ホイール）', null], ['インベントリ', ['INV']], ['捨てる', ['DROP']]],
-};
-
-/** 担当の操作の一覧 (実際のキー付き) */
-export function roleControls(slot, keys) {
-  return (ROLE_ITEMS[slot] || []).map(([text, ids]) => ids ? `${text}（${ids.map((c) => keyLabel(keys, c)).join('/')}）` : text);
-}
-
 /**
- * 分担の確認画面に出す担当の内容。Minecraft 以外で操作定義があれば、定義と分担 (#105) から作る。
+ * 分担の確認画面に出す担当の内容。どのゲームも操作定義と分担 (#105・#141) から作る。
  * 協力プレイ中は決まった分担 (game.assigned)、それ以外は今の参加人数での案 (game.profile.assignment)
  */
 export function roleView(game, slot) {
   const p = game?.profile;
-  if (usesFixedRoles(game)) {
-    // 固定の分担は担当 (入れ替え後の席、#47) で引く
-    const key = game?.roleOf?.[slot] || slot;
-    const r = ROLES.find((x) => x.slot === key);
-    return { title: r?.title || '', lines: roleControls(key, game?.keys) };
-  }
+  if (!p) return { title: '', lines: [] };
   const assigned = ['coop','paused'].includes(game.phase) && game.assigned && Object.keys(game.assigned).length ? game.assigned : p.assignment || {};
   const ids = assigned[slot] || [];
   const byGroup = new Map();
@@ -179,12 +141,12 @@ export function roleView(game, slot) {
   };
 }
 
+// 枠の呼び名。操作の分担はゲームの操作定義から決める (#141)
 export const ROLES = [
-  { slot: 'P1', title: '移動・ホスト', controls: roleControls('P1'), host: true },
-  { slot: 'P2', title: '視点', controls: roleControls('P2') },
-  { slot: 'P3', title: 'アクション', controls: roleControls('P3') },
-  // 4人目は固定の分担を持たない (操作定義の分担で担当が決まる)
-  { slot: 'P4', title: '参加者', controls: [] },
+  { slot: 'P1', title: 'ホスト', host: true },
+  { slot: 'P2', title: '参加者' },
+  { slot: 'P3', title: '参加者' },
+  { slot: 'P4', title: '参加者' },
 ];
 
 // Minecraft は公式ランチャーで「プレイ」を押す必要があるため手動起動 (#55)。Steam・Epic の検出・起動はホストの state.games (#54・#93)

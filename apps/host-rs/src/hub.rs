@@ -27,7 +27,8 @@ const MAX_SLOTS: usize = 4;
 const MIN_PLAYERS: usize = 2;
 const SLOT_NAMES: [&str; MAX_SLOTS] = ["P1", "P2", "P3", "P4"];
 // 枠の既定の表示 (Minecraft を 3〜4人で遊ぶときの担当)。実際の担当は分担 (game.assigned) で決まる
-const SLOT_ROLES: [&str; MAX_SLOTS] = ["移動・ホスト", "視点", "アクション", "持ち物"];
+// 枠の呼び名。操作の分担は操作定義から決める (#141。Minecraft の固定の分担はやめた)
+const SLOT_ROLES: [&str; MAX_SLOTS] = ["ホスト", "参加者", "参加者", "参加者"];
 /// 通信契約の版 (docs/architecture/protocol.md)。変えるときは protocol.md とシミュレーションも同時に更新する
 // PC アプリで選べるゲーム (apps/web-static/app-view.js の GAMES と同じ id)。P0 は Minecraft Java Edition のみ。
 // "pseudo-game" は診断用の疑似ゲーム画面 (/game) で、PC アプリの一覧には出さない (ゲーム変更の試験にも使う)
@@ -688,8 +689,8 @@ impl Hub {
         } else {
             if !connected.contains(&0) { reasons.push("ホスト（P1）の接続が必要です".into()); }
             if connected.len() < MIN_PLAYERS { reasons.push(format!("{}人以上の接続が必要です", MIN_PLAYERS)); }
-            if self.profile.is_none() && !self.fixed_controls(&connected) {
-                reasons.push("この人数に対応する操作定義がありません。3人（P1〜P3）で遊んでください".into());
+            if self.profile.is_none() {
+                reasons.push("このゲームの操作定義がありません".into());
             }
         }
         let unacked: Vec<&str> = self.role_ack.iter().filter(|i| self.role_slots().contains(i)).map(|&i| SLOT_NAMES[i]).collect();
@@ -763,16 +764,14 @@ impl Hub {
             "maxPlayers": MAX_SLOTS,
             // Ready で決めた参加者 (ロビー・準備中は空)
             "participants": self.participants.iter().map(|&i| SLOT_NAMES[i]).collect::<Vec<_>>(),
-            // Minecraft の固定の画面 (P1 移動・P2 視点・P3 アクション) を使うか。使わなければ分担から作った画面
             // PC 画面で決定したメンバーと分担 (#109)。lineupOk は今の選択・接続と一致しているか
             "lineup": self.lineup.as_ref().map(|l| json!({ "title": l.title, "members": l.members.iter().map(|&i| SLOT_NAMES[i]).collect::<Vec<_>>() })),
             "lineupOk": self.lineup_ok(),
-            // 枠 → 担当 (席順の番号を P1〜 で表す。Minecraft の固定の画面はこの担当の画面を出す、#47)
+            // 枠 → 席順 (P1〜 で表す。入れ替えた人は入れ替えた先の席、#47。分担は席順で配る)
             "roleOf": self.role_slots().iter().filter_map(|&i| self.role_rank(i).map(|k| (SLOT_NAMES[i].to_string(), json!(SLOT_NAMES[k])))).collect::<Map<String, Value>>(),
             "roleAck": self.role_ack.iter().map(|&i| SLOT_NAMES[i]).collect::<Vec<_>>(),
             "canSwap": matches!(self.game.phase, Phase::Lobby | Phase::Preparing) || (self.game.phase == Phase::Paused && !self.participants.is_empty()),
             "canLaunch": self.can_launch(),
-            "fixedControls": self.fixed_controls(if self.participants.is_empty() { &connected_idx } else { &self.participants }),
             "reason": self.game.reason,
             "autoResume": self.game.auto_resume,
             "autoResumeMs": self.game.auto_resume_ms,
@@ -1006,20 +1005,11 @@ impl Hub {
 
     /// その操作を今このスロットが使えるか → 出力の番号
     fn resolve_control(&self, slot: usize, control: &str) -> Option<usize> {
-        let id = if self.game.phase == Phase::Coop && control.starts_with("act:") {
-            if !self.uses_generated_controls() { return None; }
-            // 操作定義から生成した操作画面 (#60): 分担で割り当てた操作だけ、ゲームのキー設定に合わせて送る
+        let id = if self.game.phase == Phase::Coop {
+            // どのゲームも操作定義から作った画面で操作する (#60・#141)。分担で割り当てた操作 (act:<ID>) だけを、
+            // ゲームのキー設定に合わせて送る。Minecraft の固定の操作名 (FWD など) は受け付けない
+            if !control.starts_with("act:") || !self.uses_generated_controls() { return None; }
             self.action_output(slot, control)
-        } else if self.game.phase == Phase::Coop {
-            // 操作定義の画面を使うゲームでは、Minecraft 用の固定の操作は送らない (別のゲームで別の操作が動くため)
-            if self.uses_generated_controls() {
-                return None;
-            }
-            // 担当の確認は固定の表で行い、送るキーはゲームのキー設定に合わせる (送れないキーは送らない)
-            if !self.participants.contains(&slot) { return None; }
-            // 固定の表は担当 (席順) で引く。入れ替えた人は入れ替えた先の操作を送る
-            let default = controls::role_control(SLOT_NAMES[self.role_rank(slot)?], control)?;
-            self.keybinds.output_for(control).unwrap_or(Some(default))
         } else if slot == 0 && self.remote_game_active() {
             let default = controls::remote_control(control)?;
             // メニューでの「持ち物」はインベントリのキー (Minecraft の設定に合わせる)
@@ -1030,12 +1020,13 @@ impl Hub {
         OUTPUTS.iter().position(|o| o.id == id)
     }
 
-    /// 選んだゲームの操作定義を引き、ユーザーのキー設定を読み直して重ねる (#97・#99)。定義がなければ固定の表を使う
+    /// 選んだゲームの操作定義を引き、ユーザーのキー設定を読み直して重ねる (#97・#99)
     fn reload_keybinds(&mut self) {
         // 定義のない検出したゲームには汎用の定義を当てる (#123)。Minecraft の固定の表を別のゲームへ送らない
+        // 診断用の疑似ゲーム画面は Minecraft と同じ操作の定義を使う (#141)
         self.profile = profiles::find(&self.profiles, &self.game.title).cloned().or_else(|| {
             self.games.iter().find(|g| g.id == self.game.title).map(|g| profiles::generic(&g.id, &g.name))
-        });
+        }).or_else(|| (self.game.title == "pseudo-game").then(profiles::builtin_pseudo));
         self.keybinds = match &self.profile {
             Some(p) => {
                 let over = if p.id == "minecraft-java" { self.minecraft_options.as_deref() } else { None };
@@ -1152,20 +1143,9 @@ impl Hub {
         self.slot_map(&self.assigned)
     }
 
-    /// Minecraft の固定の画面と表を使うか。実機で確かめた 3人 (P1〜P3) のときだけ使い、
-    /// 2人・4人や枠が飛んでいる場合は操作定義の分担から作った画面にする (#57・#105)
-    fn fixed_controls(&self, players: &[usize]) -> bool {
-        let three = players == [0, 1, 2];
-        match &self.profile {
-            // 定義がないのは診断用の疑似ゲーム画面だけ (検出したゲームには汎用の定義を当てる)
-            None => three && self.game.title == "pseudo-game",
-            Some(p) => p.id == "minecraft-java" && three,
-        }
-    }
-
-    /// 操作定義から作った画面を使うか (分担が決まっていて、固定の画面を使わない)
+    /// 操作定義から作った画面で操作できるか (分担が決まっている)。Minecraft の 3人用の固定の画面はやめた (#141)
     fn uses_generated_controls(&self) -> bool {
-        !self.assigned.is_empty() && !self.fixed_controls(&self.participants)
+        !self.assigned.is_empty()
     }
 
     /// この枠に割り当てた操作か
@@ -1173,12 +1153,9 @@ impl Hub {
         self.assigned.get(slot).is_some_and(|a| a.iter().any(|x| x == action))
     }
 
-    /// この枠が視点 (マウス移動) を担当しているか。分担がなければ従来どおり P2
+    /// この枠が視点 (マウス移動) を担当しているか。分担で視点を割り当てた人だけ (#141)
     fn owns_look(&self, slot: usize) -> bool {
-        match (&self.profile, self.assigned.is_empty()) {
-            (Some(p), false) => p.actions.iter().any(|a| a.kind == "mouseDelta" && self.is_assigned(slot, &a.id)),
-            _ => self.role_rank(slot) == Some(1),
-        }
+        self.profile.as_ref().is_some_and(|p| p.actions.iter().any(|a| a.kind == "mouseDelta" && self.is_assigned(slot, &a.id)))
     }
 
     /// 生成した操作画面の入力 "act:<操作ID>" (ホイールは "act:<操作ID>:up|down") → 出力の ID。割り当てた操作だけ通す

@@ -681,47 +681,9 @@ body[data-two-qr] .qr-arrow { display: none; }
   font-weight: 700;
 }
 
-.key-samples {
-  position: absolute;
-  right: 45px;
-  top: 11px;
-  width: 470px;
-  height: 221px;
-  border-left: 0;
-  padding-left: 46px;
-  display: grid;
-  gap: 7px;
-  grid-template-rows: 67px 74px 66px;
-}
 
-.key-samples span {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 28px 0 65px;
-  background: var(--color-key);
-  border-radius: 21px;
-  color: var(--color-logo);
-  font-size: 46px;
-  font-weight: 900;
-}
 
-.key-samples span:nth-child(2) {
-  margin: 0 -32px 0 -24px;
-  border: 3px solid var(--color-key-focus);
-  background: var(--color-key-selected);
-  color: var(--color-black);
-  margin-right: -32px;
-}
 
-.key-samples kbd {
-  background: var(--color-key-ink);
-  color: var(--color-paper);
-  border-radius: 12px;
-  padding: 0 9px;
-  font-family: Arial,sans-serif;
-  font-size: 44px;
-}
 
 .role-columns {
   position: absolute;
@@ -944,36 +906,7 @@ dialog summary {
   height: 100%;
 }
 
-.key-samples::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 3px;
-  height: 200px;
-  background: var(--color-paper);
-}
 
-.key-up,.key-down {
-  position: absolute;
-  left: 253px;
-  width: 36px;
-  height: 30px;
-  overflow: visible;
-  filter: drop-shadow(1px 3px var(--color-shadow));
-}
 
-.key-up {
-  top: 49px;
-}
 
-.key-down {
-  top: 146px;
-}
 
-.key-up path,.key-down path {
-  fill: var(--color-paper);
-  stroke: var(--color-key-arrow);
-  stroke-width: 3;
-  stroke-linejoin: round;
-}
