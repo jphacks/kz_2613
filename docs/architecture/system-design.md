@@ -41,11 +41,11 @@ flowchart LR
 
 | 状態 | ホストのリモコン（矢印・Enter・Esc） | P1移動 | P2視点 | P3アクション | 遷移 |
 |---|---|---|---|---|---|
-| `lobby` | 可 | 不可 | 不可 | 不可 | P1が `START`（`canStart` が真）で `coop` |
+| `lobby` | 可 | 不可 | 不可 | 不可 | P1の `PREPARE`（`canPrepare`）で `preparing`、P1の `READY`（`canReady`）で `coop` |
 | `coop` | 不可（`PAUSE` のみ） | 可 | 可 | 可 | `PAUSE` で `paused`（`host pause`）、誰かが切断すると `paused`（`Px disconnected`） |
-| `paused` | 可 | 不可 | 不可 | 不可 | `RESUME`（`canStart`）で `coop`、`END` で `lobby`。試作品では切断理由・ON設定で15秒以内の自動復帰を観測。実ゲームの初期値・使用条件は未決定。ホストPAUSE・OFF・期限外は明示RESUME |
+| `paused` | 可 | 不可 | 不可 | 不可 | `RESUME`（`canResume`）で `coop`、`END` で `lobby`。試作品では切断理由・ON設定で15秒以内の自動復帰を観測。実ゲームの初期値・使用条件は未決定。ホストPAUSE・OFF・期限外は明示RESUME |
 
-- `canStart` は、P1が接続していて、接続人数が `required`（Rust版は2。2〜4人で遊び、Readyの時点の接続者を参加者として固定する。#57）以上であること。再開には参加者全員の接続が必要。
+- `canReady` は、P1が接続していて、接続人数が `required`（最低人数。Rust版は2。2〜4人で遊び、Readyの時点の接続者を参加者として固定する。#57）以上であること。再開には参加者全員の接続が必要。
 - 状態が変わるたびに、全出力を解放し、視点の未処理分を捨てる。
 - ホストの自動交代はしない。再接続した端末は、同じ `clientId` で元の枠へ戻る。
 - 進行が変わるたびに `epoch` を増やし、`game` で通知する。スマホは `input`・`look` に押した時点の `epoch` を付け、hubは現在と違うものを処理しない（要件SM-05、Rust版で実装・PC上のシミュレーションで確認。Node参照実装は未対応）。状態変更時の全解放・接続ごとの `nextIseq` と併用する。

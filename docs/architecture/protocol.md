@@ -8,7 +8,7 @@
 
 ## v4の開始契約
 
-2026-10-25の最新判断は [二段階開始](../decisions/2026-10-25-two-stage-ready.md) に記載する。以下の旧START説明より優先する。PREPARE/旧STARTはlobbyからpreparingへ移るだけ。P1のREADYのみcoopへ移す。開始・再開の要求には現在のepochが必要。canPrepare/canReady/canResumeを区別し、拒否時はcommand_result（accepted:false、reasons）を返す。監視接続によるcoop強制は禁止。Node参照実装はv3を維持する。
+2026-10-25の最新判断は [二段階開始](../decisions/2026-10-25-two-stage-ready.md) に記載する。PREPAREはlobbyからpreparingへ移るだけ（旧STARTの別名は #116 で削除した）。P1のREADYのみcoopへ移す。開始・再開の要求には現在のepochが必要。canPrepare/canReady/canResumeを区別し、拒否時はcommand_result（accepted:false、reasons）を返す。監視接続によるcoop強制は禁止。Node参照実装はv3を維持する。
 
 ## 1. エンドポイント
 
@@ -30,7 +30,7 @@
 |---|---|---|---|
 | `hello` | WS | `protocolVersion`（必須、現在は `4`）、`clientId`（端末のlocalStorageに保存、最大64文字）、`token`（再接続時。`welcome` で受け取った値）、`ua`、`nextIseq` | 参加・再接続する。同じ `clientId` は、`token` が一致した場合だけ元の枠へ戻る（なし・不一致は `error`（`bad_token`）を返して4006で閉じ、元の接続には影響しない）。版がない・違う場合は `error` を返して4005で閉じ、枠を割り当てない |
 | `ping` | WS | `t`、`stats`（RTTの平均・95%値・最大、`rtc`側の統計、`via`） | 1秒ごとに送る。サーバーは `pong` を返す |
-| `command` | WS | `cmd`: `PREPARE` / `READY` / `START` / `PAUSE` / `RESUME` / `END`、`epoch` | **P1のみ有効** |
+| `command` | WS | `cmd`: `PREPARE` / `READY` / `PAUSE` / `RESUME` / `END` / `OPEN_GAME`、`epoch` | **P1のみ有効** |
 | `input` | **WSとWebRTCの両方** | `iseq`（通し番号）、`epoch`（押した時点の `game.epoch`）、`button`（操作名。操作定義から作った画面では `act:<操作ID>`、ホイールは `act:<操作ID>:up|down`、#60）、`state`（`down`/`up`）、`t`、`burst`（通信テスト） | サーバーは番号順に、先に届いたほうで1回だけ処理する。`epoch` が現在と違う（なしを含む）入力は番号だけ消費し、押下・解放とも処理しない。WS版には `seq` も付く |
 | `look` | WebRTC（つながらなければWS） | `lseq`、`epoch`、`cx`、`cy`（同じepoch内の累積移動量） | 30Hz、ACKなし。同じepoch内の欠落だけを次の値で取り戻す。P2・協力プレイ中、かつ `epoch` が現在と同じときだけ有効。別epochは順序番号・累積値の基準にも反映しない。スマホとホストはepoch変更時に `lseq`・`cx`・`cy` を0に戻し、スマホの未送信移動量も破棄する |
 | `ka` | WebRTC | `t` | 協力プレイ中に50msごとに送る。サーバーは `kpong` を返す |
@@ -60,7 +60,7 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | `rtc-answer` / `rtc-cand` | `sdp`、`sdpType` / `cand`、`mid` | |
 
 
-**`game` の内容：** `phase`（`lobby`/`preparing`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`、`inputActive`（入力がPCに届く状態か）、`inputTarget`（常時ONだが前面が入力先でない。スマホは「届かない」と表示する）、`epoch`（進行が変わるたび・リセットで1増える。初期値1）、`title`（PCアプリで選んだゲーム。Rust版）、`keys`（Rust版、#101：`source`＝`options`（Minecraftの `options.txt` を読んだ）/`default`/`unreadable`、`controls`＝操作名→実際に送るキー `{out, label}`。`null` は送らない（送れないキー・未設定）、`warnings`＝ずれ・重複・読めない場合の説明）
+**`game` の内容：** `phase`（`lobby`/`preparing`/`coop`/`paused`）、`reason`、`required`（最低人数。Rust版は2）、`connected`（接続中の枠）、`canPrepare`・`canReady`・`canResume`（準備・Ready・再開できるか。旧 `canStart` は #116 で削除）、`autoResume`、`autoResumeMs`、`autoResumeUntil`、`inputActive`（入力がPCに届く状態か）、`inputTarget`（常時ONだが前面が入力先でない。スマホは「届かない」と表示する）、`epoch`（進行が変わるたび・リセットで1増える。初期値1）、`title`（PCアプリで選んだゲーム。Rust版）、`keys`（Rust版、#101：`source`＝`options`（Minecraftの `options.txt` を読んだ）/`default`/`unreadable`、`controls`＝操作名→実際に送るキー `{out, label}`。`null` は送らない（送れないキー・未設定）、`warnings`＝ずれ・重複・読めない場合の説明）
 
 追加のゲーム選択情報：`titleName`（選択したゲームの表示名）、`launch`（最後の起動要求：`id`・`state`＝`launching`/`started`/`failed`/`timeout`・`message`。要求がなければ `null`）。起動だけで進行は変えず、P1の準備・Readyで開始する。
 
@@ -79,7 +79,7 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | 画面 → ホスト | `unconfirm_lineup` | 分担の画面から戻ったときに、ロビーでの決定を取り消す（Rust版） |
 | 画面 → ホスト | `swap_roles` | `a`・`b`（枠名）。開始前（接続中の人）と一時停止中（参加者）に、2人の担当（席順）を入れ替える。全解放・epoch更新の後、2人の確認待ち（`game.roleAck`）にする。協力プレイ中は無視する（#47、Rust版） |
 | 画面 → ホスト | `refresh_games` | インストール済みのゲームを探し直す（Rust版） |
-| 画面 → ホスト | `required` / `auto_resume` / `phase` / `reset` | 必要人数（Rust版は最低人数2のみ受け付け、人数は接続人数で決まる）、自動復帰のON/OFF、進行の強制変更、全枠の解放 |
+| 画面 → ホスト | `auto_resume` / `phase` / `reset` | 自動復帰のON/OFF、進行の変更（`lobby`＝終了、`paused`＝一時停止のみ）、全枠の解放。人数は接続人数で決まり、`required` メッセージは #115 で廃止した |
 | 画面 → ホスト | `observe` | 疑似ゲーム画面の照合結果。ログに記録する |
 | ホスト → 画面 | `state` | 全枠の状態、`game`、`inject`（モード・有効かどうか・出力一覧・押下中の出力・緊急停止キー `emergencyHotkey` とその登録エラー `emergencyHotkeyError`、入力先 `target`（`ok`・`expect`・前面の `process`・`title`））、`games`（検出したゲーム：`id`・`name`・`source`（`steam`/`epic`）・`verified`（常に `false`）・`launchable`。インストール先は送らない）、`gamesScanning`。1秒ごとと変化時に送る。`games` はPC画面にだけ送り、スマホには送らない（Rust版） |
 | ホスト → 画面 | `inject` / `look` / `log` | 注入1件ごと、視点の100msごとの集計、イベントログ |

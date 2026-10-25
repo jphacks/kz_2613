@@ -100,10 +100,9 @@
         <span style="font-size:12px; color:var(--muted)">進行</span>
         <span class="pill" id="phaseState">-</span>
         <div class="seg" id="phaseSeg">
-          <button data-phase="lobby">ロビー</button><button data-phase="coop">協力プレイ</button><button data-phase="paused">一時停止</button>
+          <button data-phase="lobby">ロビー</button><button data-phase="paused">一時停止</button>
         </div>
-        <span style="font-size:12px; color:var(--muted)">START に必要な人数</span>
-        <div class="seg" id="reqSeg"><button data-req="1">1</button><button data-req="2">2</button><button data-req="3">3</button></div>
+        <span style="font-size:12px; color:var(--muted)">参加人数：2〜4人（Readyの時点の接続人数）</span>
         <label style="font-size:12px; color:var(--muted); display:flex; gap:4px; align-items:center"><input type="checkbox" id="autoResume"> 切断から戻ったら自動で再開</label>
       </div>
       <div class="kbbar" style="margin-bottom:0">
@@ -226,7 +225,6 @@
       $('phaseState').textContent = label + (game.reason ? '（' + game.reason + '）' : '') + ` / 接続 ${game.connected.length}人`;
       $('phaseState').className = 'pill ' + (game.phase === 'coop' ? 'ok' : game.phase === 'paused' ? 'warn' : '');
       document.querySelectorAll('#phaseSeg button').forEach((el) => el.classList.toggle('sel', el.dataset.phase === game.phase));
-      document.querySelectorAll('#reqSeg button').forEach((el) => el.classList.toggle('sel', Number(el.dataset.req) === game.required));
       $('autoResume').checked = !!game.autoResume;
     }
     if (inj) {
@@ -248,7 +246,6 @@
     }
   }
   document.querySelectorAll('#phaseSeg button').forEach((el) => el.addEventListener('click', () => ws?.send(JSON.stringify({ type: 'phase', phase: el.dataset.phase }))));
-  document.querySelectorAll('#reqSeg button').forEach((el) => el.addEventListener('click', () => ws?.send(JSON.stringify({ type: 'required', required: Number(el.dataset.req) }))));
   $('autoResume').addEventListener('change', (e) => ws?.send(JSON.stringify({ type: 'auto_resume', on: e.target.checked })));
   document.querySelectorAll('#modeSeg button').forEach((el) => el.addEventListener('click', () => {
     if (el.dataset.mode === 'on' && !confirm('常時ONにすると、スマホの入力が「今選択されているウィンドウ」に送られます。よろしいですか？')) return;
