@@ -10,7 +10,8 @@ import { fileURLToPath } from 'node:url';
 import net from 'node:net';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const zip = path.resolve(process.argv[2] || 'dist/ReCooplay-0.1.0-windows-x64.zip');
+const version = JSON.parse(fs.readFileSync(path.join(root, 'apps/desktop/tauri.conf.json'), 'utf8')).version;
+const zip = path.resolve(process.argv[2] || `dist/ReCooplay-${version}-windows-x64.zip`);
 assert.equal(process.platform, 'win32', 'Windowsで実行してください');
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const readJson = file => JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, ''));

@@ -85,23 +85,28 @@ fn spawn_host(root: &Path, exe: &Path, port: u16) -> std::io::Result<Child> {
 }
 
 /// ホストが待ち受けを始めるまで待つ。先に終了した (ポート使用中など) なら Err
+fn host_exit_message(status: std::process::ExitStatus, port: u16) -> String {
+    if status.code().map(|code| code as u32) == Some(0xc0000135) {
+        return "PCホストに必要なDLLが見つかりません（0xC0000135）。\nMicrosoft Visual C++ v14 Redistributable（x64）を確認してください。\n公式の案内: https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist\n導入済みなら、配布フォルダの不足・破損も確認してください。".into();
+    }
+    format!("PCホストが終了しました（{status}）。\nポート {port} を別のプログラム（起動済みのホストなど）が使っていないか確認してください。")
+}
+
 fn wait_ready(host: &Mutex<Option<Child>>, port: u16) -> Result<(), String> {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let started = Instant::now();
     loop {
         if let Some(child) = host.lock().unwrap().as_mut() {
             if let Ok(Some(status)) = child.try_wait() {
-                return Err(format!(
-                    "PCホストが終了しました（{status}）。\nポート {port} を別のプログラム（起動済みのホストなど）が使っていないか確認してください。"
-                ));
+                return Err(host_exit_message(status, port));
             }
         }
         if TcpStream::connect_timeout(&addr, Duration::from_millis(300)).is_ok() {
             // 既に別のホストが同じポートで動いていると、こちらの起動失敗より先につながることがある
             std::thread::sleep(Duration::from_millis(300));
             if let Some(child) = host.lock().unwrap().as_mut() {
-                if let Ok(Some(_)) = child.try_wait() {
-                    return Err(format!("ポート {port} は別のプログラムが使用中です。起動済みのホストを終了してから開き直してください。"));
+                if let Ok(Some(status)) = child.try_wait() {
+                    return Err(host_exit_message(status, port));
                 }
             }
             return Ok(());
@@ -191,4 +196,19 @@ fn main() {
             stop_host(&handle.state::<Host>().0);
         }
     });
+}
+
+#[cfg(all(test, windows))]
+mod tests {
+    use super::*;
+    use std::os::windows::process::ExitStatusExt;
+
+    #[test]
+    fn missing_dll_is_distinguished_from_other_startup_failures() {
+        let missing = host_exit_message(std::process::ExitStatus::from_raw(0xc0000135), 8080);
+        assert!(missing.contains("Visual C++") && missing.contains("x64") && missing.contains("不足・破損"));
+        assert!(!missing.contains("ポート"));
+        let other = host_exit_message(std::process::ExitStatus::from_raw(1), 18600);
+        assert!(other.contains("18600") && !other.contains("Visual C++"));
+    }
 }
