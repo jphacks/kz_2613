@@ -238,6 +238,13 @@ impl Phase {
     }
 }
 
+/// 決定したメンバーと分担 (#109)。分担はゲームと参加者から決まるので、この 2 つを照合すれば古い決定を使わない
+#[derive(Clone, PartialEq)]
+struct Lineup {
+    title: String,
+    members: Vec<usize>,
+}
+
 struct Game {
     host_ready: bool,
     prepare_status: String,
@@ -346,6 +353,8 @@ pub struct Hub {
     assigned: Vec<Vec<String>>,
     // Ready の時点で接続していた枠 (協力プレイの参加者)。後から来た人は次の Ready から参加する
     participants: Vec<usize>,
+    // PC 画面でホストが決定したメンバーと分担 (#109)。今の選択・接続と一致するときだけ起動・準備・Ready を受け付ける
+    lineup: Option<Lineup>,
     app_focused: bool,           // PC アプリが前面か (手動復帰の判定に使う)
     // PC アプリ (デスクトップアプリ) から起動されたか。そのときは前面のプロセス名で PC アプリの前面を判定し、
     // 画面 (WebView2 は背面でも focused のまま) の知らせは使わない
@@ -449,6 +458,7 @@ impl Hub {
             profile: None,
             assigned: Vec::new(),
             participants: Vec::new(),
+            lineup: None,
             fake_target: std::env::var("RECOOPLAY_FAKE_TARGET")
                 .ok()
                 .filter(|_| std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1"))
@@ -584,6 +594,9 @@ impl Hub {
                 reasons.push("この人数に対応する操作定義がありません。3人（P1〜P3）で遊んでください".into());
             }
         }
+        if self.game.phase != Phase::Paused && !self.lineup_ok() {
+            reasons.push("PCの画面でメンバーと分担を決定してください（参加者やゲームが変わった場合は決定し直してください）".into());
+        }
         if !self.title_known(&self.game.title) { reasons.push("ゲームを選択してください".into()); }
         if self.profile.as_ref().is_some_and(|p| !profiles::controller_supported(p)) {
             reasons.push("この操作定義に対応するスマホ画面は未実装です。協力操作は開始できません".into());
@@ -595,7 +608,37 @@ impl Hub {
     }
 
     fn can_prepare(&self) -> bool {
-        self.game.phase == Phase::Lobby && self.connected_slots().contains(&0)
+        self.game.phase == Phase::Lobby && self.connected_slots().contains(&0) && self.lineup_ok()
+    }
+
+    /// 決定したメンバーと分担が、今の選択と接続者に一致しているか
+    fn lineup_ok(&self) -> bool {
+        self.lineup.as_ref().is_some_and(|l| l.title == self.game.title && l.members == self.connected_slots())
+    }
+
+    /// PC 画面の「この分担で決定」。画面が見ていたゲーム・メンバーが今と一致するときだけ受け付ける
+    fn confirm_lineup(&mut self, title: Option<String>, members: Vec<String>) {
+        let connected = self.connected_slots();
+        let names: Vec<&str> = connected.iter().map(|&i| SLOT_NAMES[i]).collect();
+        let accepted = matches!(self.game.phase, Phase::Lobby | Phase::Preparing)
+            && title.as_deref() == Some(self.game.title.as_str())
+            && self.title_known(&self.game.title)
+            && members == names
+            && connected.contains(&0)
+            && connected.len() >= MIN_PLAYERS;
+        self.log("lineup", json!({ "accepted": accepted, "title": self.game.title, "members": names }));
+        if accepted {
+            self.lineup = Some(Lineup { title: self.game.title.clone(), members: connected });
+        }
+        self.push_game();
+    }
+
+    /// 起動を要求できるか (決定済み・ロビーか準備中・一覧の項目・起動中でない)
+    fn can_launch(&self) -> bool {
+        matches!(self.game.phase, Phase::Lobby | Phase::Preparing)
+            && self.lineup_ok()
+            && self.games.iter().any(|g| g.id == self.game.title)
+            && !self.launch.as_ref().is_some_and(|l| l.id == self.game.title && l.state == "launching")
     }
 
     fn can_start(&self) -> bool {
@@ -616,6 +659,10 @@ impl Hub {
             // Ready で決めた参加者 (ロビー・準備中は空)
             "participants": self.participants.iter().map(|&i| SLOT_NAMES[i]).collect::<Vec<_>>(),
             // Minecraft の固定の画面 (P1 移動・P2 視点・P3 アクション) を使うか。使わなければ分担から作った画面
+            // PC 画面で決定したメンバーと分担 (#109)。lineupOk は今の選択・接続と一致しているか
+            "lineup": self.lineup.as_ref().map(|l| json!({ "title": l.title, "members": l.members.iter().map(|&i| SLOT_NAMES[i]).collect::<Vec<_>>() })),
+            "lineupOk": self.lineup_ok(),
+            "canLaunch": self.can_launch(),
             "fixedControls": self.fixed_controls(if self.participants.is_empty() { &connected_idx } else { &self.participants }),
             "reason": self.game.reason,
             "autoResume": self.game.auto_resume,
@@ -760,7 +807,7 @@ impl Hub {
         self.release_outputs(None);
         self.reset_look();
         self.game.phase = phase;
-        if phase == Phase::Lobby { self.assigned.clear(); self.participants.clear(); }
+        if phase == Phase::Lobby { self.assigned.clear(); self.participants.clear(); self.lineup = None; }
         self.game.reason = Some(reason.to_string());
         self.advance_epoch();
         self.log("phase", json!({ "phase": phase.name(), "reason": reason, "epoch": self.game.epoch }));
@@ -1288,6 +1335,8 @@ impl Hub {
         self.launch = None;
         self.assigned.clear();
         self.participants.clear();
+        // 選び直したら決定をやり直す (元のゲームに戻しても古い決定で起動しない、#109)
+        self.lineup = None;
         self.reload_keybinds();
         self.log("select_game", json!({ "title": self.game.title }));
         self.apply_target();
@@ -1355,6 +1404,7 @@ impl Hub {
     }
 
     /// 一覧の項目を起動する。画面からは id だけを受け取り、起動方法は検出時に確かめた値から組み立てる
+    /// 起動はゲームの選択 → メンバー・分担の決定の後だけ (#109)。選んでいるゲームと違う id・決定前の要求は起動しない
     fn launch_game(&mut self, id: &str) {
         let Some(entry) = self.games.iter().find(|g| g.id == id).cloned() else {
             // Minecraft など、一覧のランチャー起動に対応していない項目や未知の id は起動しない
@@ -1362,11 +1412,30 @@ impl Hub {
             self.finish_launch(id, id, "failed", message.into());
             return;
         };
-        if self.game.phase == Phase::Coop {
-            self.finish_launch(&entry.id, &entry.name, "failed", "協力プレイ中は起動できません。一時停止してから選んでください".into());
+        if !matches!(self.game.phase, Phase::Lobby | Phase::Preparing) {
+            self.finish_launch(&entry.id, &entry.name, "failed", "協力プレイ中・一時停止中は起動できません。終了してから起動してください".into());
             return;
         }
-        self.select_title(entry.id.clone());
+        if entry.id != self.game.title || !self.lineup_ok() {
+            self.log("launch_reject", json!({ "id": entry.id, "selected": entry.id == self.game.title }));
+            self.finish_launch(&entry.id, &entry.name, "failed", "ゲームを選び、メンバーと分担を決定してから起動してください".into());
+            return;
+        }
+        // 起動中の重複要求 (連打) は無視する
+        if self.launch.as_ref().is_some_and(|l| l.id == entry.id && l.state == "launching") {
+            self.log("launch_duplicate", json!({ "id": entry.id }));
+            return;
+        }
+        // すでに起動している (ウィンドウがある) ときは、起動し直さず前面にする
+        if !dry_run() && (self.target_ok || focus::exists(&self.target)) {
+            let message = match focus::activate(&self.target) {
+                Ok(()) => format!("{}はすでに起動しています。前面にしました。準備してReadyを押すと開始します", entry.name),
+                Err(reason) => format!("{}はすでに起動しています（{}）。手動で前面にしてください", entry.name, reason),
+            };
+            self.log("launch_result", json!({ "id": entry.id, "state": "started", "running": true }));
+            self.finish_launch(&entry.id, &entry.name, "started", message);
+            return;
+        }
         // 起動の前に全解放し、旧状態の入力・視点を持ち越さない (要件 11 章 6 項)
         self.release_outputs(None);
         self.reset_look();
@@ -1773,6 +1842,17 @@ impl Hub {
             "launch_game" => {
                 if let Some(id) = s(msg, "id") { self.launch_game(&id); }
             }
+            "confirm_lineup" => {
+                let members = msg.get("members").and_then(Value::as_array).map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect()).unwrap_or_default();
+                self.confirm_lineup(s(msg, "title"), members);
+            }
+            // 分担の画面から戻ったら、決定を取り消す (戻った後の古い決定で起動・準備しない)
+            "unconfirm_lineup" => {
+                if self.game.phase == Phase::Lobby && self.lineup.take().is_some() {
+                    self.log("lineup", json!({ "cancelled": true }));
+                    self.push_game();
+                }
+            }
             "refresh_games" => self.scan_games(),
             "observe" => {
                 // 疑似ゲーム画面が実際に受け取った入力 (注入との照合結果)
@@ -1817,6 +1897,7 @@ impl Hub {
                 }
                 self.game.phase = Phase::Lobby;
                 self.game.host_ready = false;
+                self.lineup = None;
                 self.advance_epoch();
                 self.log("reset", json!({}));
                 self.push_game();
