@@ -199,7 +199,19 @@ export const GAMES = [
   },
 ];
 
-const SOURCE_LABELS = { steam: 'Steam', epic: 'Epic Games', manual: '手動で起動' };
+const SOURCE_LABELS = { steam: 'Steam', epic: 'Epic Games', manual: '手動で起動', registered: '手動登録' };
+
+/** 手動で登録したゲーム (#49・#56)。名前の変更・登録の解除ができる */
+export const isRegistered = (id) => typeof id === 'string' && id.startsWith('manual:');
+
+/** 一覧の見出しの件数 (Steam・Epic と手動登録を分けて数える) */
+export function gamesCountText(list, scanning) {
+  if (scanning) return 'インストール済みのゲームを探しています…';
+  const found = list.filter((g) => g.source === 'steam' || g.source === 'epic').length;
+  const registered = list.filter((g) => g.source === 'registered').length;
+  if (!found) return registered ? `手動登録 ${registered} 件（Steam・Epicは見つかりませんでした）` : 'Steam・Epicのゲームは見つかりませんでした';
+  return registered ? `Steam・Epic ${found} 件・手動登録 ${registered} 件` : `Steam・Epicで ${found} 件見つかりました`;
+}
 const LAUNCH_TITLES = { launching: '起動中…', started: '起動しました', failed: '起動できませんでした', timeout: '起動を確認できませんでした' };
 
 /**

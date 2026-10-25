@@ -6,7 +6,7 @@ use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, VecDeque};
 use std::fs::File;
 use std::io::{BufWriter, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -71,6 +71,8 @@ pub enum Event {
     FakeTarget(bool),
     /// 既定の音の出力先が Bluetooth か (#131)。実機では定期的に調べ、試験では標準入力の "bt on/off" で差し替える
     BluetoothAudio(bool),
+    /// ファイル選択の画面で選ばれた実行ファイル (#49。キャンセルなら None)
+    ManualPicked(Option<PathBuf>),
     /// 試験用: PC アプリのウィンドウが前面になった・外れた (DRY_RUN のときだけ。実際は前面のプロセス名で判定する)
     FakeAppWindow(bool),
     /// インストール済みのゲームを探し終えた (別スレッドから)
@@ -349,6 +351,9 @@ pub struct Hub {
     // Minecraft のランチャーを見つけたか (Some(画像があるか))。見つからなければ None (#128)
     minecraft: Option<bool>,
     // 通信の途切れへの対策 (#131): 協力プレイ中の Wi-Fi のメディアストリーミングモード、Bluetooth の音の出力
+    // 手動登録のファイル選択の画面を出している途中か・探し直しを待っているか (#49)
+    picking: bool,
+    rescan_pending: bool,
     streaming: crate::netwatch::StreamingMode,
     low_latency: bool,
     bluetooth_audio: bool,
@@ -470,6 +475,8 @@ impl Hub {
             base_target: config.target.clone(),
             games: Vec::new(),
             images: games::Images::default(),
+            picking: false,
+            rescan_pending: false,
             streaming: crate::netwatch::StreamingMode::new(),
             low_latency: false,
             bluetooth_audio: false,
@@ -1526,14 +1533,20 @@ impl Hub {
 
     /// インストール済みのゲームを別スレッドで探す (ディスクの読み取りで視点の刻みを止めない)。
     /// 試験 (dry-run) では RECOOPLAY_FAKE_GAMES のフォルダを Steam・Epic の代わりに読む
-    fn scan_games(&mut self) {
-        if self.games_scanning {
-            return;
-        }
-        let roots = match std::env::var_os("RECOOPLAY_FAKE_GAMES") {
+    fn roots() -> games::Roots {
+        match std::env::var_os("RECOOPLAY_FAKE_GAMES") {
             Some(dir) if dry_run() => games::Roots::fake(Path::new(&dir)),
             _ => games::Roots::system(),
-        };
+        }
+    }
+
+    fn scan_games(&mut self) {
+        if self.games_scanning {
+            // 探している途中で登録が変わったら、終わった後にもう一度探す
+            self.rescan_pending = true;
+            return;
+        }
+        let roots = Self::roots();
         let tx = self.tx.clone();
         let spawned = std::thread::Builder::new().name("games".into()).spawn(move || {
             let _ = tx.send(Event::GamesDetected(games::detect(&roots)));
@@ -1542,14 +1555,96 @@ impl Hub {
         self.push_state();
     }
 
+    // ---------- 手動で登録したアプリ (#49・#56) ----------
+
+    /// PC 画面の「＋ 追加」。PC の前の人が Windows のファイル選択の画面で .exe を選ぶ (場所を画面から受け取らない)。
+    /// 試験 (dry-run) では画面を出さず、RECOOPLAY_FAKE_PICK のファイルに書いた場所を選んだことにする (空ならキャンセル)
+    fn pick_manual_game(&mut self) {
+        if self.picking {
+            return;
+        }
+        self.picking = true;
+        let tx = self.tx.clone();
+        let fake = if dry_run() { std::env::var_os("RECOOPLAY_FAKE_PICK").map(PathBuf::from) } else { None };
+        let spawned = std::thread::Builder::new().name("pick".into()).spawn(move || {
+            let picked = if dry_run() {
+                fake.and_then(|f| std::fs::read_to_string(f).ok()).map(|t| t.trim().to_string()).filter(|t| !t.is_empty()).map(PathBuf::from)
+            } else {
+                games::pick_exe()
+            };
+            let _ = tx.send(Event::ManualPicked(picked));
+        });
+        if spawned.is_err() {
+            self.picking = false;
+        }
+    }
+
+    fn manual_result(&self, ok: bool, message: &str) {
+        self.broadcast_monitors(&json!({ "type": "manual_result", "ok": ok, "message": message }));
+    }
+
+    fn on_manual_picked(&mut self, picked: Option<PathBuf>) {
+        self.picking = false;
+        let Some(exe) = picked else { return };
+        let Some(file) = Self::roots().manual else { return self.manual_result(false, "登録先のフォルダが見つかりません") };
+        if let Err(e) = games::manual_exe_ok(&exe) {
+            return self.manual_result(false, e);
+        }
+        let mut list = games::load_manual(&file);
+        let id = games::manual_id(&exe);
+        if list.iter().any(|g| g.id == id) {
+            return self.manual_result(false, "このゲームは登録済みです");
+        }
+        let name = exe.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "ゲーム".into());
+        list.push(games::ManualGame { id: id.clone(), name, exe });
+        match games::save_manual(&file, &list) {
+            Ok(()) => {
+                // ゲーム名・場所はログに残さない (ID だけ)
+                self.log("manual_game", json!({ "action": "add", "id": format!("manual:{id}") }));
+                self.manual_result(true, "登録しました。一覧に「手動登録」として並びます");
+                self.scan_games();
+            }
+            Err(_) => self.manual_result(false, "登録を保存できませんでした"),
+        }
+    }
+
+    /// 名前の変更・登録の解除 (PC 画面から)。name が None なら解除
+    fn edit_manual_game(&mut self, id: &str, name: Option<String>) {
+        let Some(key) = id.strip_prefix("manual:") else { return };
+        let Some(file) = Self::roots().manual else { return };
+        let mut list = games::load_manual(&file);
+        let Some(i) = list.iter().position(|g| g.id == key) else { return };
+        let action = match name {
+            Some(n) => {
+                let n: String = n.chars().filter(|c| !c.is_control()).collect::<String>().trim().chars().take(60).collect();
+                if n.is_empty() {
+                    return;
+                }
+                list[i].name = n;
+                "rename"
+            }
+            None => {
+                list.remove(i);
+                "remove"
+            }
+        };
+        if games::save_manual(&file, &list).is_ok() {
+            self.log("manual_game", json!({ "action": action, "id": id }));
+            self.scan_games();
+        }
+    }
+
     fn on_games_detected(&mut self, detected: games::Detected) {
         let list = detected.games;
         // Minecraft のランチャー (#128)。一覧には混ぜず、画面の固定の項目に画像を付けるためだけに使う
         self.minecraft = detected.minecraft.as_ref().map(|m| m.image.is_some());
         self.games_scanning = false;
+        if std::mem::take(&mut self.rescan_pending) {
+            self.scan_games();
+        }
         // ゲーム名・インストール先はログに残さない (件数だけ)
         let count = |src: &str| list.iter().filter(|g| g.source == src).count();
-        self.log("games_detected", json!({ "steam": count("steam"), "epic": count("epic") }));
+        self.log("games_detected", json!({ "steam": count("steam"), "epic": count("epic"), "registered": count(games::MANUAL_SOURCE) }));
         if let Ok(mut images) = self.images.lock() {
             *images = list.iter().filter_map(|g| g.image.clone().map(|p| (g.id.clone(), p))).collect();
             if let Some(p) = detected.minecraft.and_then(|m| m.image) {
@@ -1894,6 +1989,7 @@ impl Hub {
                 }
             }
             Event::EmergencyStop { source } => self.emergency_stop(source),
+            Event::ManualPicked(picked) => self.on_manual_picked(picked),
             Event::BluetoothAudio(on) => {
                 if self.bluetooth_audio != on {
                     self.bluetooth_audio = on;
@@ -2043,6 +2139,14 @@ impl Hub {
                 }
             }
             "refresh_games" => self.scan_games(),
+            // 手動で登録したアプリ (#49・#56)。PC 画面 (PC 本体の接続) からだけ
+            "add_game" => self.pick_manual_game(),
+            "rename_game" => {
+                if let (Some(id), Some(name)) = (s(msg, "id"), s(msg, "name")) { self.edit_manual_game(&id, Some(name)); }
+            }
+            "remove_game" => {
+                if let Some(id) = s(msg, "id") { self.edit_manual_game(&id, None); }
+            }
             "observe" => {
                 // 疑似ゲーム画面が実際に受け取った入力 (注入との照合結果)
                 let events = match msg.get("events") {

@@ -519,7 +519,7 @@ body[data-two-qr] .qr-arrow { display: none; }
 .game-list-head {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
 }
 
 .game-list-head h2 {
@@ -536,7 +536,8 @@ body[data-two-qr] .qr-arrow { display: none; }
 
 .game-list-head button {
   min-height: 52px;
-  padding: 0 24px;
+  padding: 0 20px;
+  white-space: nowrap;
   border: 0;
   border-radius: 26px;
   background: var(--color-utility-surface);
@@ -852,6 +853,9 @@ dialog::backdrop {
 dialog h2 {
   margin-top: 0;
 }
+
+#renameInput { width: 100%; box-sizing: border-box; font-size: 22px; padding: 8px 12px; }
+#renameForm button { margin-right: 12px; font-size: 18px; }
 
 .net-row { margin: 8px 0; padding: 8px 12px; border-left: 6px solid var(--color-success); background: var(--color-surface); border-radius: 8px; }
 .net-row[data-level=warn] { border-left-color: var(--color-warning); }

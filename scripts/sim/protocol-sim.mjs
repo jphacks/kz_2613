@@ -72,6 +72,8 @@ function startHost() {
   const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_FAKE_GAMES: fakeGames(logDir),
     // 模擬のホットスポット (#133。dry-run では本物を読まない)
     RECOOPLAY_FAKE_HOTSPOT: 'SimSpot|sim-pass-1|on',
+    // 手動登録のファイル選択 (#49。中身に書いた場所を選んだことにする)
+    RECOOPLAY_FAKE_PICK: path.join(logDir, 'pick.txt'),
     // Minecraft のキー設定の試験用 (ダッシュ = Q、捨てる = R に変えた options.txt)。#101
     RECOOPLAY_MINECRAFT_OPTIONS: optionsFile, RECOOPLAY_PROFILES_DIR: profilesDir };
   const exe = process.platform === 'win32' ? 'recooplay-host.exe' : 'recooplay-host';
@@ -1471,6 +1473,65 @@ async function main() {
       await welcome(p2);
       await sleep(350);
       assert(!p1.msgs.slice(from).some(m => m.type === 'game' && m.game.phase === 'coop'), '緊急停止後に自動復帰した');
+    });
+
+    await check('手動登録: PC 画面で選んだ .exe だけを登録し、名前の変更・解除ができ、スマホからは登録できない (#49・#56)', async () => {
+      const pick = path.join(host.logDir, 'pick.txt');
+      const dir = path.join(host.logDir, 'manual', 'Sim Manual Game');
+      fs.mkdirSync(dir, { recursive: true });
+      const exe = path.join(dir, 'SimGame.exe'), bat = path.join(dir, 'run.bat');
+      fs.writeFileSync(exe, ''); fs.writeFileSync(bat, '');
+      const app = new Client('app');
+      await app.open();
+      app.send({ type: 'monitor', page: 'app' });
+      await app.waitFor((m) => m.type === 'state', { what: 'app state' });
+      const registered = (m) => (m.games || []).filter((g) => g.source === 'registered');
+      // スマホ (P1) から送っても登録しない
+      fs.writeFileSync(pick, exe);
+      p1.send({ type: 'add_game' });
+      await sleep(400);
+      assert(!fs.existsSync(path.join(host.logDir, 'games', 'manual-games.json')), 'スマホからの要求で登録した');
+      // .bat は受け付けない
+      fs.writeFileSync(pick, bat);
+      let from = app.mark();
+      app.send({ type: 'add_game' });
+      const rejected = await app.waitFor((m) => m.type === 'manual_result', { from, what: 'reject bat' });
+      assert(!rejected.ok && /\.exe/.test(rejected.message), JSON.stringify(rejected));
+      // キャンセル (空) は何もしない
+      fs.writeFileSync(pick, '');
+      from = app.mark();
+      app.send({ type: 'add_game' });
+      await sleep(300);
+      assert(!app.msgs.slice(from).some((m) => m.type === 'manual_result'), 'キャンセルで結果を出した');
+      // .exe を登録すると、一覧に未検証・手動登録として並ぶ
+      fs.writeFileSync(pick, exe);
+      from = app.mark();
+      app.send({ type: 'add_game' });
+      const added = await app.waitFor((m) => m.type === 'manual_result', { from, what: 'add exe' });
+      assert(added.ok, JSON.stringify(added));
+      const listed = await app.waitFor((m) => m.type === 'state' && !m.gamesScanning && registered(m).length === 1, { from, what: 'listed' });
+      const g = registered(listed)[0];
+      assert(g.name === 'SimGame' && g.verified === false && g.id.startsWith('manual:') && !('exe' in g) && !JSON.stringify(listed).includes(dir), JSON.stringify(g));
+      // 同じものは二重に登録しない
+      from = app.mark();
+      app.send({ type: 'add_game' });
+      const dup = await app.waitFor((m) => m.type === 'manual_result', { from, what: 'duplicate' });
+      assert(!dup.ok, '二重に登録した');
+      // 名前の変更 (制御文字は除く)・解除
+      from = app.mark();
+      app.send({ type: 'rename_game', id: g.id, name: '  シム\u0007ゲーム ' });
+      await app.waitFor((m) => m.type === 'state' && registered(m)[0]?.name === 'シムゲーム', { from, what: 'renamed' });
+      p1.send({ type: 'remove_game', id: g.id });
+      await sleep(300);
+      assert(fs.readFileSync(path.join(host.logDir, 'games', 'manual-games.json'), 'utf8').includes('SimGame.exe'), 'スマホからの要求で解除した');
+      from = app.mark();
+      app.send({ type: 'remove_game', id: g.id });
+      await app.waitFor((m) => m.type === 'state' && !m.gamesScanning && registered(m).length === 0 && m.games?.length === 2, { from, what: 'removed' });
+      // ログにゲームの名前・場所を残さない
+      await sleep(1200);
+      const log = fs.readdirSync(host.logDir).filter((f) => f.endsWith('.jsonl')).map((f) => fs.readFileSync(path.join(host.logDir, f), 'utf8')).join('');
+      assert(log.includes('"manual_game"') && !log.includes('SimGame') && !log.includes('シムゲーム') && !log.includes('Sim Manual Game'), 'ログに名前・場所が出た');
+      app.close();
     });
 
     await check('進行: P1 の END で lobby', async () => {

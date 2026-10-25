@@ -814,3 +814,10 @@
 - 開発PCで実際のホストを別のポートで起動し、PC本体からはホットスポットのSSIDとWi-FiのQRが取れ（OFF）、LANのアドレスからは`wifi`・`hotspot`が`null`、別のOriginからのON要求が403になることを確認した（パスフレーズは表示していない。ONにする操作はしていない）。
 - `protocol-sim.mjs`（Rust dry-run）48/48：PC本体へのWi-Fiの情報、LANのアドレスからの取得・ON要求の拒否、Originなし・別Originの拒否、PCの画面からのON要求の受け付けを追加した。`app-view-test.mjs` 24/24（案内の形）、`ui-input-test.mjs` 10/10、`check-static-pages.mjs`が成功した。模擬のホットスポットのON・OFFで参加画面を撮影し、ボタンの文字の折り返しと、押した結果が毎秒の再描画で消える問題を直した。
 - スマホが①→②で参加できるかは、スマホ実機で未確認。
+
+## 2026-10-26 — ゲームの手動登録（Claude Code、#49・#56）
+
+- PC画面のゲーム一覧に「＋ 追加」「名前を変更」「登録を解除」を加えた。「＋ 追加」はホストがWindowsのファイル選択の画面を出し、PCの前の人が`.exe`を選ぶ（[決定](../decisions/2026-10-26-manual-game-registration.md)）。存在する絶対パスの`.exe`だけを受け付け、引数なしで起動する。登録は`%LOCALAPPDATA%\Re-Cooplay\manual-games.json`に保存し、一覧には「手動登録」「未検証」と出す。
+- 登録・変更・解除はPC本体の画面からだけ。dry-runではファイル選択の画面を出さず、`RECOOPLAY_FAKE_PICK`のファイルに書いた場所を選んだことにする。
+- `cargo test` 41件成功（登録の保存・読み込み、`.bat`・相対パス・存在しない場所の拒否を追加）。`protocol-sim.mjs`（Rust dry-run）49/49：スマホからの登録・解除の無視、`.bat`の拒否、キャンセル、登録と一覧への表示（実行ファイルの場所を画面へ渡さない）、二重登録の拒否、名前の変更（制御文字の除去）、解除、ログに名前・場所を残さないことを追加した。`app-view-test.mjs` 25/25、`ui-input-test.mjs` 10/10、`check-static-pages.mjs`・`static-assets-sim.mjs`・`verify-ui-evidence.mjs`が成功した。
+- メモ帳を登録した模擬の一覧を撮影し、画像（実行ファイルのアイコン）・印・ボタン・名前の変更の画面を確認した。実際のファイル選択の画面と、登録したゲームの起動・入力は未確認。

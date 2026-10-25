@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, slotDiagnosis, phoneAdvice, usesFixedRoles, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
+import { SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, usesFixedRoles, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -83,6 +83,16 @@ test('参加の案内: ホットスポット・Wi-Fiの情報があれば ①Wi-
   const off = joinGuideView({ hotspot: { on: false }, wifi: { ssid: 'PC-1', qr: '<svg/>' } });
   assert.deepEqual([off.two, off.wifiQr, off.button], [true, null, true], 'OFFならONにするボタン'); assert.match(off.note, /②だけで/);
   assert.equal(joinGuideView({ hotspot: null, wifi: { ssid: 'X', qr: '<svg/>' } }).wifiQr, '<svg/>', 'config.json のWi-Fi');
+});
+
+test('手動登録: 一覧に「手動登録」「未検証」と出し、件数を Steam・Epic と分けて数える (#49・#56)', () => {
+  const list = gameList([{ id: 'steam:1', name: 'A', source: 'steam', launchable: true }, { id: 'manual:ab', name: 'B', source: 'registered', verified: false, launchable: true }], null);
+  const card = gameCard(list[2], null, null);
+  assert.deepEqual(card.badges, ['手動登録', '未検証']);
+  assert.deepEqual([isRegistered('manual:ab'), isRegistered('steam:1'), isRegistered(null)], [true, false, false]);
+  assert.equal(gamesCountText(list, false), 'Steam・Epic 1 件・手動登録 1 件');
+  assert.equal(gamesCountText(list.slice(0, 1), false), 'Steam・Epicのゲームは見つかりませんでした');
+  assert.match(gamesCountText(list, true), /探しています/);
 });
 
 test('人数: Minecraftは3人（P1〜P3）だけ固定の分担、2人・4人は操作定義の分担を表示する', () => {
