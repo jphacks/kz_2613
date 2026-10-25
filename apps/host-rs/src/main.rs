@@ -6,6 +6,7 @@
 mod config;
 mod controls;
 mod focus;
+mod games;
 mod hotkey;
 mod hub;
 mod input;
