@@ -164,7 +164,8 @@ function render(){
   $('blockedStart').hidden=view!=='preparing'||stopped;$('readyInstruction').hidden=view!=='ready'||stopped;
   $('joinGuide').hidden=view!=='join';$('gameStage').hidden=view!=='game';$('roleStage').hidden=view!=='roles';
   $('playerStage').hidden=['game','roles'].includes(view);
-  $('openGameBtn').hidden=!['preparing','ready','paused'].includes(view);
+  // 前面にするボタンは、ゲームが前面でないときだけ (協力プレイに入るときはホストが自動で前面にする、#138)
+  $('openGameBtn').hidden=!['preparing','ready','paused'].includes(view)||!game?.inputTarget;
   const name=gameLabel(game);
   const swapHint=game?.canSwap?(swapPick?`${swapPick}と入れ替える人の列を押してください`:'担当を入れ替えるときは、2人の列を順に押してください'):'';
   $('actionNote').textContent=view==='roles'?(swapPick?swapHint:roleAction.note||swapHint):view==='preparing'?`${name}をプレイ中の画面まで進めてください。`:'';

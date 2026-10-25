@@ -159,6 +159,12 @@ async fn main() {
                         Ok("target off") => {
                             let _ = tx.send(Event::FakeTarget(false));
                         }
+                        Ok("activate on") => {
+                            let _ = tx.send(Event::FakeActivate(true));
+                        }
+                        Ok("activate off") => {
+                            let _ = tx.send(Event::FakeActivate(false));
+                        }
                         // 試験用 (同上): PC アプリのウィンドウが前面になった・外れた
                         Ok("app focus") => {
                             let _ = tx.send(Event::FakeAppWindow(true));

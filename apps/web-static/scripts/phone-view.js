@@ -62,7 +62,8 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
     $('inputWarn').textContent=`PCの画面が${name}になっていません。ホストが${name}を前面に戻すまで操作は届きません。`;
     $('inputWarn').textContent=[game.inputTarget?$('inputWarn').textContent:'',notice].filter(Boolean).join(' ');
     const startBtn = $('startBtn');
-    $('openGameBtn').hidden = !['preparing','paused'].includes(phase);
+    // 前面にするボタンは、ゲームが前面でないときだけ (協力プレイに入るときはホストが自動で前面にする、#138)
+    $('openGameBtn').hidden = !['preparing','paused'].includes(phase) || !game.inputTarget;
     startBtn.textContent = phase === 'paused' ? '再開する' : phase === 'preparing' ? `Ready・${game.connected.length}人で操作を始める` : 'ゲームを開く・準備する';
     startBtn.disabled = !(phase === 'paused' ? game.canResume : phase === 'preparing' ? game.canReady : game.canPrepare);
     $('endBtn').style.display = phase === 'paused' ? 'block' : 'none';
@@ -78,6 +79,7 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
     $('waitTitle').textContent = !joined ? '次の開始から参加します' : phase === 'paused' ? (autoWait ? `${reasonText(game.reason)}。戻ると自動で再開します` : '一時停止中') : 'ホストの開始を待っています';
     if (phase === 'preparing') $('remoteNote').textContent = [game.prepareStatus, ...(game.readyReasons || []), '準備ができたらホストが明示Ready'].filter(Boolean).join('。');
     if (autoWait && isHost) $('remoteNote').textContent = `${reasonText(game.reason)}。戻ると自動で再開します（RESUME で手動再開も可）。`;
+    if (phase === 'paused' && game.inputTarget && game.prepareStatus) $('remoteNote').textContent += `。${game.prepareStatus}`;
     $('waitRole').textContent = role.title;
     $('burst').style.display = phase === 'coop' ? 'none' : '';
     // ボタンのキー表示を、ゲームのキー設定に合わせた実際のキーにする (#101)
