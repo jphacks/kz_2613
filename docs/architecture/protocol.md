@@ -59,7 +59,9 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | `kpong` | `t` | WebRTC経由で返す |
 | `rtc-answer` / `rtc-cand` | `sdp`、`sdpType` / `cand`、`mid` | |
 
-**`game` の内容：** `phase`（`lobby`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`、`inputActive`（入力がPCに届く状態か）、`inputTarget`（常時ONだが前面が入力先でない。スマホは「届かない」と表示する）、`epoch`（進行が変わるたび・リセットで1増える。初期値1）、`title`（PCアプリで選んだゲーム。Rust版）、`keys`（Rust版、#101：`source`＝`options`（Minecraftの `options.txt` を読んだ）/`default`/`unreadable`、`controls`＝操作名→実際に送るキー `{out, label}`。`null` は送らない（送れないキー・未設定）、`warnings`＝ずれ・重複・読めない場合の説明）
+**`game` の内容：** `phase`（`lobby`/`preparing`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`、`inputActive`（入力がPCに届く状態か）、`inputTarget`（常時ONだが前面が入力先でない。スマホは「届かない」と表示する）、`epoch`（進行が変わるたび・リセットで1増える。初期値1）、`title`（PCアプリで選んだゲーム。Rust版）、`keys`（Rust版、#101：`source`＝`options`（Minecraftの `options.txt` を読んだ）/`default`/`unreadable`、`controls`＝操作名→実際に送るキー `{out, label}`。`null` は送らない（送れないキー・未設定）、`warnings`＝ずれ・重複・読めない場合の説明）
+
+追加のゲーム選択情報：`titleName`（選択したゲームの表示名）、`launch`（最後の起動要求：`id`・`state`＝`launching`/`started`/`failed`/`timeout`・`message`。要求がなければ `null`）。起動だけで進行は変えず、P1の準備・Readyで開始する。
 
 **WebSocketの終了コード：** 4000 = 同じ端末の別タブに置き換えられた、4001 = PCでリセットした、4002 = `clientId` なし、4003 = モニターはPCのみ、4004 = 満員、4005 = 通信契約の版が違う（スマホは再接続をやめ、再読み込みを案内する）、4006 = 再接続のトークンがない・一致しない（スマホは再接続をやめ、PCでのリセットを案内する）
 
@@ -70,10 +72,12 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | 画面 → ホスト | `monitor` | `page`: `host`/`game`/`app`（PCアプリの画面） |
 | 画面 → ホスト | `inject_mode` | `mode`: `off`/`test`/`on` |
 | 画面 → ホスト | `focus` | `focused`。疑似ゲーム画面（`game`）では選択状態（`test` モードの条件になる）。ブラウザで開いたPCアプリ（`app`）では前面になったこと：協力プレイ中に前面へ戻ると、ホストは全解放して `paused`（`reason: app focus`、自動復帰しない）へ移し、P1をリモコンに戻す（Rust版）。**デスクトップアプリから起動したホスト（`RECOOPLAY_DESKTOP=1`）はこの知らせを使わず、前面のプロセス名（`recooplay-desktop.exe`）で判定する**（WebView2の画面は背面になっても `blur` を受け取らないため） |
-| 画面 → ホスト | `select_game` | `title`（`minecraft-java`、診断用の `pseudo-game`）。選んだゲームはホストが保持し `game.title` で配る。ロビー以外で別のゲームに変えると、全解放して `lobby`（`reason: game change`）へ戻す。参加者・役割は保つ。同じ・未知の値は無視する（Rust版） |
+| 画面 → ホスト | `select_game` | `title`（`minecraft-java`、診断用の `pseudo-game`、検出したゲームの `id`）。選んだゲームはホストが保持し `game.title` で配る。ロビー以外で別のゲームに変えると、全解放して `lobby`（`reason: game change`）へ戻す。参加者・役割は保つ。同じ・未知の値は無視する（Rust版） |
+| 画面 → ホスト | `launch_game` | `id`（`state.games` の項目）。ホストは手元の一覧から起動方法を引き、検出時に確かめた値だけで起動する（Steam：`steam://rungameid/<appid>`、Epic：`com.epicgames.launcher://apps/...`）。パス・URLは受け取らない。そのゲームを選び（別のゲームからなら `game change`）、全解放・epoch更新の後に起動し、ウィンドウが現れたら前面にする。協力プレイ中・一覧にない値は起動せず `game.launch.state: failed` を返す。dry-runでは起動しない（Rust版） |
+| 画面 → ホスト | `refresh_games` | インストール済みのゲームを探し直す（Rust版） |
 | 画面 → ホスト | `required` / `auto_resume` / `phase` / `reset` | 必要人数（1〜3）、自動復帰のON/OFF、進行の強制変更、全枠の解放 |
 | 画面 → ホスト | `observe` | 疑似ゲーム画面の照合結果。ログに記録する |
-| ホスト → 画面 | `state` | 全枠の状態、`game`、`inject`（モード・有効かどうか・出力一覧・押下中の出力・緊急停止キー `emergencyHotkey` とその登録エラー `emergencyHotkeyError`、入力先 `target`（`ok`・`expect`・前面の `process`・`title`））。1秒ごとと変化時に送る |
+| ホスト → 画面 | `state` | 全枠の状態、`game`、`inject`（モード・有効かどうか・出力一覧・押下中の出力・緊急停止キー `emergencyHotkey` とその登録エラー `emergencyHotkeyError`、入力先 `target`（`ok`・`expect`・前面の `process`・`title`））、`games`（検出したゲーム：`id`・`name`・`source`（`steam`/`epic`）・`verified`（常に `false`）・`launchable`。インストール先は送らない）、`gamesScanning`。1秒ごとと変化時に送る。`games` はPC画面にだけ送り、スマホには送らない（Rust版） |
 | ホスト → 画面 | `inject` / `look` / `log` | 注入1件ごと、視点の100msごとの集計、イベントログ |
 | ホスト → 画面 | `remote` | `control`（`UP`/`DOWN`/`LEFT`/`RIGHT`/`ENTER`/`ESC`）、`state`。ロビー・一時停止中のP1のリモコン操作。PCアプリの画面は自分が前面（`document.hasFocus()`）のときだけ反応する。OSへの注入は前面がMinecraftのときだけなので、画面とゲームが同時に反応しない |
 
@@ -95,3 +99,11 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 ホスト操作の追加項目・認可は [ホストのタッチパッド](host-remote.md) に記載する。remoteはP1・非coop・現在epochだけを認可し、サーバーがPC画面か対象ゲームかを排他的に判定する。release_inputsは認証済み参加者の現在epochだけを受け付け、合成入力と保留分を即時破棄する。
 
 v4ではOPEN_GAME（現在epoch必須）とPC画面のopen_gameを追加する。進行を変えず、許可された既存ゲームの前面化だけを試みる。必要人数は固定3人とし、requiredによる人数削減は受け付けない。
+
+## 操作定義の追加情報（#97・#99）
+
+`game.profile`は選択中の操作定義の要約（id、name、suitability、status、verifiedDate、gameVersion、groups、actions、assignment、controllerSupported）。定義がなければnull。assignmentは分担の案であり、固定のスマホ画面・サーバーの担当認可を置き換えない。
+
+`game.keys.source`はMinecraft読込成功時の`options`を維持し、他形式の成功を`user`、初期値を`default`、読込不可を`unreadable`、定義なしを`none`とする。設定ファイルの変更は協力中以外に検知し、全入力解放・視点破棄・epoch更新後に新設定を通知する。
+
+未検証（template／extracted／unverified）の定義、または現在のスマホ画面に結び付かない定義ではReadyを拒否する。ゲーム検出・起動と操作互換性を区別し、対応画面と認可を実装して検証するまでは分担の案だけで操作を開始させない。
