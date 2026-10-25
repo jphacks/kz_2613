@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView, usesFixedRoles, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
+import { SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView, networkNotice, usesFixedRoles, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -53,6 +53,15 @@ test('枠: 状態が届く前は全員空き', () => {
 
 const mc = { id: 'minecraft-java', status: 'device', controllerSupported: true, groups: [{ id: 'movement', label: '移動' }, { id: 'look', label: '視点' }, { id: 'gameplay', label: '攻撃・使う' }, { id: 'inventory', label: '持ち物' }],
   actions: [{ id: 'forward', label: '前進', group: 'movement', type: 'button' }, { id: 'look', label: '視点', group: 'look', type: 'mouseDelta' }, { id: 'attack', label: '攻撃', group: 'gameplay', type: 'button' }, { id: 'drop', label: '捨てる', group: 'inventory', type: 'button' }] };
+
+test('通信の注意: BluetoothでPCの音を出しているとき・途切れがちなスマホがあるときだけ出す (#131)', () => {
+  assert.equal(networkNotice(null, null), '');
+  assert.equal(networkNotice({ bluetoothAudio: false }, [{ name: 'P1', connected: true, net: { stalls: 2 } }]), '');
+  assert.match(networkNotice({ bluetoothAudio: true }, []), /Bluetooth.*有線のイヤホン/);
+  const n = networkNotice({ bluetoothAudio: false }, [
+    { name: 'P1', connected: true, net: { stalls: 3 } }, { name: 'P2', connected: false, net: { stalls: 9 } }, { name: 'P3', connected: true, net: { stalls: 5 } }]);
+  assert.match(n, /^P1・P3の通信が途切れがちです/);
+});
 
 test('人数: Minecraftは3人（P1〜P3）だけ固定の分担、2人・4人は操作定義の分担を表示する', () => {
   assert.equal(usesFixedRoles(null), true, '状態が届く前');

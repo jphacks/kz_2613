@@ -52,6 +52,18 @@ export function desktopView(ui, game) {
 }
 
 // 生のプロセス名や診断値ではなく、利用者に必要な復旧操作だけを示す。
+/**
+ * 通信の注意 (#131)。Bluetooth で PC の音を出しているとき、直近 10 秒に受信の途切れ (止まってからまとめて届く) が
+ * 3 回以上あったスマホがあるときに出す。network = state.network、slots = state.slots
+ */
+export function networkNotice(network, slots) {
+  const notes = [];
+  if (network?.bluetoothAudio) notes.push('BluetoothでPCの音を出していると、スマホとの通信が途切れやすくなります。有線のイヤホンかPCのスピーカーを使ってください。');
+  const unstable = (slots || []).filter((s) => s.connected && (s.net?.stalls || 0) >= 3).map((s) => s.name);
+  if (unstable.length) notes.push(`${unstable.join('・')}の通信が途切れがちです。Wi-Fiの電波やBluetoothを確認してください。`);
+  return notes.join(' ');
+}
+
 export function desktopWarning(game, inject, connected = true) {
   if (!connected) return 'PCホストとの接続が切れました。再接続を待っています。';
   if (inject?.emergencyHotkeyError) return '緊急停止キーを登録できません。操作設定で入力をOFFにしてください。';

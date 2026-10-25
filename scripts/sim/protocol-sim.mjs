@@ -474,6 +474,20 @@ async function main() {
       assert(c.game.reason === 'host ready', `reason=${c.game.reason}`);
     });
 
+    await check('通信: 準備〜協力プレイの間だけ低遅延の動作にし、BluetoothでPCの音を出していることを知らせる (#131)', async () => {
+      const lobby = mon.msgs.find((m) => m.type === 'state' && m.game.phase === 'lobby' && m.network);
+      assert(lobby && lobby.network.lowLatency === false, 'ロビーで低遅延の動作になっている');
+      const coop = await mon.waitFor((m) => m.type === 'state' && m.game.phase === 'coop', { from: Math.max(0, mon.mark() - 5), what: 'coop の状態' });
+      assert(coop.network.lowLatency === true, JSON.stringify(coop.network));
+      let from = mon.mark();
+      host.child.stdin.write('bt on\n');
+      await mon.waitFor((m) => m.type === 'state' && m.network?.bluetoothAudio === true, { from, what: 'bt on' });
+      from = mon.mark();
+      host.child.stdin.write('bt off\n');
+      await mon.waitFor((m) => m.type === 'state' && m.network?.bluetoothAudio === false, { from, what: 'bt off' });
+      assert(coop.slots.filter((x) => x.connected).every((x) => x.net && typeof x.net.stalls === 'number'), '枠ごとの途切れの数がない');
+    });
+
     // 以降の注入はモニターで観測する (DRY_RUN なので OS には送られない)
     { const nextState = p1.mark(); mon.send({ type: 'inject_mode', mode: 'on' }); await p1.waitFor(m=>m.type==='game',{from:nextState}); }
     await mon.waitFor((m) => m.type === 'state' && m.inject.mode === 'on' && m.inject.active, { what: 'inject on' });
