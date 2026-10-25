@@ -16,6 +16,9 @@ a { color: var(--color-cyan-ink); }
 .art-1 img { width: 149.451%; height: 112.937%; left: -25.549%; top: -6.993%; }
 .art-2 { aspect-ratio: 363 / 571; }
 .art-2 img { width: 157.851%; height: 128.546%; left: -23.416%; top: -15.937%; }
+/* 4人目 (#57)。画像の不透明部分の外形 (71,17)-(430,581) に合わせて切り抜く */
+.art-3 { aspect-ratio: 359 / 564; }
+.art-3 img { width: 136.769%; height: 107.447%; left: -19.777%; top: -3.014%; }
 .eyebrow { font-size: 12px; letter-spacing: .16em; font-weight: 800; color: var(--color-purple); }
 .muted, .note { color: var(--muted); }
 .ok { color: var(--ok); } .ng { color: var(--ng); } .warn { color: var(--warn); }

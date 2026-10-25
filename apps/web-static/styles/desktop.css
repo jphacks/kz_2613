@@ -315,7 +315,7 @@ body {
 
 .players {
   display: grid;
-  grid-template-columns: repeat(3,minmax(0,1fr));
+  grid-template-columns: repeat(4,minmax(0,1fr));
   gap: 28px;
   height: 100%;
 }
@@ -528,7 +528,8 @@ body {
   width: 1153px;
   height: 536px;
   display: grid;
-  grid-template-columns: repeat(3,minmax(0,1fr));
+  /* 列の数は担当を表示する人数 (2〜4人、#57) */
+  grid-template-columns: repeat(var(--role-count,3),minmax(0,1fr));
   gap: 60px;
 }
 

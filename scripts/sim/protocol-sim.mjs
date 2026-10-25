@@ -217,7 +217,7 @@ function assert(cond, msg) {
   if (!cond) throw new Error(msg);
 }
 
-const ids = { P1: 'sim-client-p1', P2: 'sim-client-p2', P3: 'sim-client-p3', P4: 'sim-client-p4' };
+const ids = { P1: 'sim-client-p1', P2: 'sim-client-p2', P3: 'sim-client-p3', P4: 'sim-client-p4', P5: 'sim-client-p5' };
 const tokens = {};
 
 async function join(key, extra = {}) {
@@ -346,8 +346,24 @@ async function main() {
       assert(p2.closed === null, '元の P2 の接続が切られた');
     }, { rustOnly: true });
 
-    await check('役割: 4 台目は full で拒否し 4004 で閉じる', async () => {
-      const p4 = await join('P4');
+    await check('役割: 満員 (Rust版は 5 台目、#57。Node参照実装は 4 台目) は full で拒否し 4004 で閉じる', async () => {
+      let extra = 'P4';
+      if (target === 'rust') {
+        // 4 台目は P4 として参加できる (ホスト権はない)。この試験の後は切断したまま枠を保つ
+        const p4 = await join('P4');
+        const w4 = await welcome(p4);
+        assert(w4.type === 'welcome' && w4.slot === 'P4' && !w4.isHost, JSON.stringify(w4));
+        extra = 'P5';
+        const c = await join(extra);
+        const w = await c.waitFor((m) => m.type === 'full', { what: 'full' });
+        assert(w, 'full が来ない');
+        assert((await c.waitClose()) === 4004, '終了コードが 4004 でない');
+        const from = mon.mark();
+        p4.close();
+        await mon.waitFor((m) => m.type === 'state' && m.slots.find((s) => s.name === 'P4')?.connected === false, { from, what: 'P4 切断' });
+        return;
+      }
+      const p4 = await join(extra);
       const w = await p4.waitFor((m) => m.type === 'full', { what: 'full' });
       assert(w, 'full が来ない');
       assert((await p4.waitClose()) === 4004, '終了コードが 4004 でない');
@@ -421,13 +437,16 @@ async function main() {
         await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from:gateFrom});
         gateFrom=p1.mark();host.child.stdin.write('target on\n');
         await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from:gateFrom});
+        // 2人でもReadyできる (#57)。1人ではReadyできず、PC画面から必要人数を減らしても迂回できない
         gateFrom=p1.mark();p3.close();
-        await p1.waitFor(m=>m.type==='game' && m.game.connected.length===2,{from:gateFrom});
+        await p1.waitFor(m=>m.type==='game' && m.game.connected.length===2 && m.game.canReady,{from:gateFrom});
+        gateFrom=p1.mark();p2.close();
+        await p1.waitFor(m=>m.type==='game' && m.game.connected.length===1,{from:gateFrom});
         mon.send({type:'required',required:1});
         p1.send({type:'command',cmd:'READY'});
         await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from:gateFrom});
-        gateFrom=p1.mark();p3=await join('P3');await welcome(p3);
-        await p1.waitFor(m=>m.type==='game' && m.game.canReady && m.game.required===3,{from:gateFrom});
+        gateFrom=p1.mark();p2=await join('P2');await welcome(p2);p3=await join('P3');await welcome(p3);
+        await p1.waitFor(m=>m.type==='game' && m.game.canReady && m.game.required===2 && m.game.connected.length===3,{from:gateFrom});
         const rm = mon.mark();
         p2.input('FWD','down'); p3.input('ATTACK','down');
         p2.send({type:'remote',kind:'move',dx:15,dy:5,rseq:1,epoch:p2.epoch});
@@ -892,6 +911,84 @@ async function main() {
       await phaseIs(p1, 'coop', from);
       assert(coop.game.title === 'pseudo-game', 'title');
       app.close();
+    }, { rustOnly: true });
+
+    await check('人数: 2人・4人のMinecraftは操作定義の分担で遊び、Ready後に来た人は参加せず、参加者がそろうまで再開しない (#57・#105)', async () => {
+      // 前提: Minecraft の協力プレイ中 (P1〜P3)。3人は固定の画面
+      let from = p1.mark();
+      p1.send({ type: 'command', cmd: 'END' });
+      const lobby3 = await phaseIs(p1, 'lobby', from);
+      assert(lobby3.game.fixedControls === true, '3人のMinecraftは固定の画面');
+      // 2人: P1 移動 / P2 視点＋攻撃・持ち物
+      from = p1.mark();
+      p3.close();
+      const two = await p1.waitFor((m) => m.type === 'game' && m.game.connected.join() === 'P1,P2', { from, what: '2人' });
+      assert(two.game.fixedControls === false && two.game.profile.assignment.P2 && !two.game.profile.assignment.P3, JSON.stringify(two.game.profile?.assignment));
+      p1.send({ type: 'command', cmd: 'PREPARE' });
+      await phaseIs(p1, 'preparing', from);
+      const f2 = p2.mark();
+      p1.send({ type: 'command', cmd: 'READY' });
+      const c2 = await phaseIs(p1, 'coop', from);
+      await phaseIs(p2, 'coop', f2); // 入力する側にも新しい epoch が届いてから送る
+      const a2 = c2.game.assigned;
+      assert(c2.game.participants.join() === 'P1,P2' && a2.P1.includes('forward') && a2.P2.includes('look') && a2.P2.includes('attack') && !a2.P3, JSON.stringify(a2));
+      let mf = mon.mark();
+      p2.input('act:attack', 'down'); await injected(mon, 'MOUSE_L', 'down', mf); p2.input('act:attack', 'up'); await injected(mon, 'MOUSE_L', 'up', mf);
+      p1.input('act:forward', 'down'); await injected(mon, 'KEY_W', 'down', mf); p1.input('act:forward', 'up'); await injected(mon, 'KEY_W', 'up', mf);
+      // 固定の操作名・割り当てていない操作は送らない
+      mf = mon.mark();
+      p2.input('ATTACK', 'down'); p1.input('act:attack', 'down'); p1.input('FWD', 'down');
+      await noPress(mon, mf);
+      p2.input('ATTACK', 'up'); p1.input('act:attack', 'up'); p1.input('FWD', 'up');
+      // Ready の後に来た P3 は参加しない (入力を送らず、切断しても止めない)
+      from = p1.mark();
+      p3 = await join('P3'); await welcome(p3);
+      await p1.waitFor((m) => m.type === 'game' && m.game.connected.length === 3, { from, what: 'P3 参加' });
+      mf = mon.mark();
+      p3.input('act:attack', 'down'); p3.input('ATTACK', 'down');
+      await noPress(mon, mf);
+      p3.input('act:attack', 'up'); p3.input('ATTACK', 'up');
+      from = p1.mark();
+      p3.close();
+      await sleep(300);
+      assert(!p1.msgs.slice(from).some((m) => m.type === 'game' && m.game.phase === 'paused'), '参加していない P3 の切断で止めた');
+      // 参加者 (P2) が切れたら止め、戻るまで再開できない
+      from = p1.mark();
+      p2.close();
+      const paused = await phaseIs(p1, 'paused', from);
+      assert(!paused.game.canResume && paused.game.readyReasons.some((r) => r.includes('P2')), JSON.stringify(paused.game.readyReasons));
+      from = p1.mark();
+      p2 = await join('P2'); await welcome(p2);
+      await p1.waitFor((m) => m.type === 'game' && (m.game.canResume || m.game.phase === 'coop'), { from, what: 'P2 復帰' });
+      // 4人: 終了して組み直す。P1 移動 / P2 視点 / P3 攻撃・使う / P4 持ち物
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'END' });
+      await phaseIs(p1, 'lobby', from);
+      p3 = await join('P3'); await welcome(p3);
+      const p4 = await join('P4'); await welcome(p4);
+      await p1.waitFor((m) => m.type === 'game' && m.game.connected.length === 4, { from, what: '4人' });
+      p1.send({ type: 'command', cmd: 'PREPARE' });
+      await phaseIs(p1, 'preparing', from);
+      const f4 = p4.mark();
+      p1.send({ type: 'command', cmd: 'READY' });
+      const c4 = await phaseIs(p1, 'coop', from);
+      await phaseIs(p4, 'coop', f4);
+      const a4 = c4.game.assigned;
+      assert(c4.game.fixedControls === false && a4.P2.join() === 'look' && a4.P3.includes('attack') && a4.P4.includes('drop') && !a4.P3.includes('drop'), JSON.stringify(a4));
+      mf = mon.mark();
+      // 捨てるは試験用の options.txt で R
+      p4.input('act:drop', 'down'); await injected(mon, 'KEY_R', 'down', mf); p4.input('act:drop', 'up'); await injected(mon, 'KEY_R', 'up', mf);
+      // 後続の試験のため、3人の Minecraft の協力プレイへ戻す
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'END' });
+      await phaseIs(p1, 'lobby', from);
+      p4.close();
+      await p1.waitFor((m) => m.type === 'game' && m.game.connected.length === 3, { from, what: '3人に戻す' });
+      p1.send({ type: 'command', cmd: 'PREPARE' });
+      await phaseIs(p1, 'preparing', from);
+      p1.send({ type: 'command', cmd: 'READY' });
+      const back = await phaseIs(p1, 'coop', from);
+      assert(back.game.fixedControls === true && back.game.participants.join() === 'P1,P2,P3', '3人の固定の画面に戻らない');
     }, { rustOnly: true });
 
     await check('ゲーム一覧: Steam・Epic を検出して PC 画面にだけ送り、選ぶと全解放して起動を見届ける。一覧にない id・協力プレイ中は起動しない', async () => {

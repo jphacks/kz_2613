@@ -646,3 +646,13 @@
 - `node scripts/sim/controller-diagnostics-test.mjs`を追加し、実際のcontroller・phone-viewに最小DOM・通信・タイマーのスタブを接続。診断表示前のupと`release_inputs`、現在epoch、診断中の通常押下・視点抑止、通信テスト200件の交互のdown/upと連番を確認した。同試験をCIに追加し、`protocol-sim.mjs`の停止試験も保留連打の破棄を含めた。
 - ローカルの`controller-diagnostics-test.mjs`、`phone-view-test.mjs`7観点、`ui-input-test.mjs`7/7、`app-view-test.mjs`18/18、`check-static-pages.mjs`が成功した。既存main `c14562d`のRust dry-runホストで、4回分の保留連打に`release_inputs`を送るとその後450msの保留押下が0件になることも別途確認した。これはPRの全通信試験や新UIと実ブラウザーの結合試験の代わりではない。
 - 画面構造とCSSを変更していないため、撮影画像・指紋は元コミット`3719777`の記録として保持した。Minecraft・スマホ実機・Tauriの新規受入は実施していない。
+
+## 2026-10-25 — 参加人数を2〜4人にし、人数に応じて分担する（Claude Code、#57・#105）
+
+- ユーザー判断：人数はReadyの時点の接続人数で自動に決め、分担は操作定義から自動で振り分ける（[参加人数の決定](../decisions/2026-10-25-variable-players.md)）。
+- ホスト：枠をP1〜P4の4つにし（5台目は4004）、P1を含む2人以上でReadyできるようにした。Readyの時点の接続者を`game.participants`として固定し、分担（`game.assigned`、枠名で配る）とともに終了まで組み直さない。参加者が切断したら一時停止し、戻るまで再開しない。Readyの後に来た人の入力は送らず、その切断では止めない。Minecraftは3人（P1〜P3）だけ従来の専用画面と固定の表（`game.fixedControls`）、2人・4人は操作定義から作った画面で`act:<ID>`を送る。`required`は最低人数2だけを受け付ける。
+- 画面：PCの参加者を4枠、分担の確認を人数分の列にし、見出し・案内を人数に合わせた。4人目は赤のキャラクター（画像の外形を測って切り抜きを設定）。スマホは参加者表示を4人分にし、Readyボタンを「Ready・n人で操作を始める」、後から来た人には「次の開始から参加します」と表示する。定義から作る分担の説明文はカード内3行で切る。
+- `cargo build --release --locked`（初回はOpenSSLの再構築で約12分）・`cargo test --release --locked`はホスト31件＋プローブ3件成功。`protocol-sim.mjs`（Rust dry-run）45/45（満員を5台目に変更、2人でReady可・1人で不可、2人・4人のMinecraftの分担と`act:`の送信、後から来た人の入力拒否・切断で止めない、参加者の切断で再開不可の試験を追加）、`--target node` 20/20、`app-view-test.mjs` 20/20、`ui-input-test.mjs` 7/7、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`verify-ui-evidence.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`、`shutdown-sim.mjs`が成功した。
+- 試験の追加中、P1の状態だけを待ってP2から送った入力がホストに古いepochとして捨てられた（`stale_input`）。ホストの挙動は正しく、試験で入力する端末にも新しい状態が届くのを待つように直した。
+- dry-runホストと模擬スマホ、ヘッドレスChromeで、PC画面の2人・3人・4人の参加と分担（1920×1080、横はみ出しなし）、2人のMinecraftでのP2のスマホ画面（視点パッド・攻撃・使う・持ち物、402×874）を撮影して確認した。
+- スマホ実機・Minecraft・Tauriでの2人・4人の試験は未実施。保存済みの画面撮影（`artifacts/improved-ui/final`）は撮り直していない。PR #108（#94）と`desktop.js`・`app-view-test.mjs`が隣接行で衝突するため、後からマージする側で取り込み直す。

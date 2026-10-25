@@ -22,8 +22,12 @@ use crate::games::{self, Entry};
 use crate::input::Input;
 use crate::rtc::{Peer, RtcSignal};
 
-const SLOT_NAMES: [&str; 3] = ["P1", "P2", "P3"];
-const SLOT_ROLES: [&str; 3] = ["移動・ホスト", "視点", "アクション"];
+// 参加枠は P1〜P4 (#57)。2〜4人で遊び、人数は Ready の時点で接続している人数で決める (#105)
+const MAX_SLOTS: usize = 4;
+const MIN_PLAYERS: usize = 2;
+const SLOT_NAMES: [&str; MAX_SLOTS] = ["P1", "P2", "P3", "P4"];
+// 枠の既定の表示 (Minecraft を 3〜4人で遊ぶときの担当)。実際の担当は分担 (game.assigned) で決まる
+const SLOT_ROLES: [&str; MAX_SLOTS] = ["移動・ホスト", "視点", "アクション", "持ち物"];
 /// 通信契約の版 (docs/architecture/protocol.md)。変えるときは protocol.md とシミュレーションも同時に更新する
 // PC アプリで選べるゲーム (apps/web-static/app-view.js の GAMES と同じ id)。P0 は Minecraft Java Edition のみ。
 // "pseudo-game" は診断用の疑似ゲーム画面 (/game) で、PC アプリの一覧には出さない (ゲーム変更の試験にも使う)
@@ -311,7 +315,7 @@ pub struct Hub {
     input: Input,
     log_file: BufWriter<File>,
     conns: HashMap<u64, Conn>,
-    slots: [Option<Slot>; 3],
+    slots: [Option<Slot>; MAX_SLOTS],
     game: Game,
     inject: InjectMode,
     outputs: Vec<OutputState>,
@@ -337,8 +341,11 @@ pub struct Hub {
     // ゲームの操作定義 (apps/game-profiles/*.json、#97)。起動時に読み、不正なものは理由をログに残して使わない
     profiles: Vec<Profile>,
     profile: Option<Profile>,
-    // 協力プレイで使う分担 (枠ごとの操作 ID、#105)。Ready・再開のときに参加人数から決め、協力プレイ中は組み直さない
+    // 協力プレイで使う分担 (枠の番号ごとの操作 ID、#105)。Ready のときに参加者から決め、終了するまで組み直さない。
+    // 操作定義がなければ空 (Minecraft の固定の表を使う)
     assigned: Vec<Vec<String>>,
+    // Ready の時点で接続していた枠 (協力プレイの参加者)。後から来た人は次の Ready から参加する
+    participants: Vec<usize>,
     app_focused: bool,           // PC アプリが前面か (手動復帰の判定に使う)
     // PC アプリ (デスクトップアプリ) から起動されたか。そのときは前面のプロセス名で PC アプリの前面を判定し、
     // 画面 (WebView2 は背面でも focused のまま) の知らせは使わない
@@ -393,12 +400,12 @@ impl Hub {
             input,
             log_file,
             conns: HashMap::new(),
-            slots: [None, None, None],
+            slots: [None, None, None, None],
             game: Game {
                 phase: Phase::Lobby,
                 host_ready: false,
                 prepare_status: String::new(),
-                required: 3,
+                required: MIN_PLAYERS as u64,
                 reason: None,
                 auto_resume: config.auto_resume,
                 auto_resume_ms: config.auto_resume_ms,
@@ -441,6 +448,7 @@ impl Hub {
             profiles: Vec::new(),
             profile: None,
             assigned: Vec::new(),
+            participants: Vec::new(),
             fake_target: std::env::var("RECOOPLAY_FAKE_TARGET")
                 .ok()
                 .filter(|_| std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1"))
@@ -557,19 +565,32 @@ impl Hub {
     // ---------- スナップショット ----------
 
     fn connected_slots(&self) -> Vec<usize> {
-        (0..3).filter(|&i| self.slots[i].as_ref().is_some_and(|s| s.connected)).collect()
+        (0..MAX_SLOTS).filter(|&i| self.slots[i].as_ref().is_some_and(|s| s.connected)).collect()
     }
 
-    fn ready_reasons(&self) -> Vec<&'static str> {
-        let mut reasons = Vec::new();
-        if self.connected_slots().len() != 3 { reasons.push("3人全員の接続が必要です"); }
-        if !self.title_known(&self.game.title) { reasons.push("ゲームを選択してください"); }
-        if self.profile.as_ref().is_some_and(|p| !profiles::controller_supported(p)) {
-            reasons.push("この操作定義に対応するスマホ画面は未実装です。協力操作は開始できません");
+    fn ready_reasons(&self) -> Vec<String> {
+        let mut reasons: Vec<String> = Vec::new();
+        let connected = self.connected_slots();
+        if self.game.phase == Phase::Paused && !self.participants.is_empty() {
+            // 再開は Ready で決めた参加者で行う。人数を変えるときは終了して組み直す (勝手に組み直さない)
+            let missing: Vec<&str> = self.participants.iter().filter(|i| !connected.contains(i)).map(|&i| SLOT_NAMES[i]).collect();
+            if !missing.is_empty() {
+                reasons.push(format!("{}の再接続を待っています。人数を変えるときは終了して組み直してください", missing.join("・")));
+            }
+        } else {
+            if !connected.contains(&0) { reasons.push("ホスト（P1）の接続が必要です".into()); }
+            if connected.len() < MIN_PLAYERS { reasons.push(format!("{}人以上の接続が必要です", MIN_PLAYERS)); }
+            if self.profile.is_none() && !self.fixed_controls(&connected) {
+                reasons.push("この人数に対応する操作定義がありません。3人（P1〜P3）で遊んでください".into());
+            }
         }
-        if !self.input.available() { reasons.push("入力ドライバーが利用できません"); }
-        if self.hotkey.is_err() && self.fake_target.is_none() { reasons.push("PCの緊急停止キーを登録してください"); }
-        if !self.can_inject() { reasons.push("入力を有効にし、対象ゲームを前面にしてください"); }
+        if !self.title_known(&self.game.title) { reasons.push("ゲームを選択してください".into()); }
+        if self.profile.as_ref().is_some_and(|p| !profiles::controller_supported(p)) {
+            reasons.push("この操作定義に対応するスマホ画面は未実装です。協力操作は開始できません".into());
+        }
+        if !self.input.available() { reasons.push("入力ドライバーが利用できません".into()); }
+        if self.hotkey.is_err() && self.fake_target.is_none() { reasons.push("PCの緊急停止キーを登録してください".into()); }
+        if !self.can_inject() { reasons.push("入力を有効にし、対象ゲームを前面にしてください".into()); }
         reasons
     }
 
@@ -586,10 +607,16 @@ impl Hub {
     }
 
     fn game_snapshot(&self) -> Value {
-        let connected: Vec<&str> = self.connected_slots().into_iter().map(|i| SLOT_NAMES[i]).collect();
+        let connected_idx = self.connected_slots();
+        let connected: Vec<&str> = connected_idx.iter().map(|&i| SLOT_NAMES[i]).collect();
         json!({
             "phase": self.game.phase.name(),
             "required": self.game.required,
+            "maxPlayers": MAX_SLOTS,
+            // Ready で決めた参加者 (ロビー・準備中は空)
+            "participants": self.participants.iter().map(|&i| SLOT_NAMES[i]).collect::<Vec<_>>(),
+            // Minecraft の固定の画面 (P1 移動・P2 視点・P3 アクション) を使うか。使わなければ分担から作った画面
+            "fixedControls": self.fixed_controls(if self.participants.is_empty() { &connected_idx } else { &self.participants }),
             "reason": self.game.reason,
             "autoResume": self.game.auto_resume,
             "autoResumeMs": self.game.auto_resume_ms,
@@ -601,7 +628,12 @@ impl Hub {
             // 操作 → 実際に送るキー (ゲームのキー設定に合わせる)。スマホ・PC 画面のキー表示に使う
             "keys": self.keys_snapshot(),
             // 選んだゲームの操作定義の要約と分担の案 (#97)
-            "profile": self.profile.as_ref().map(|p| profiles::snapshot(p, self.connected_slots().len().max(1))),
+            "profile": self.profile.as_ref().map(|p| {
+                let mut v = profiles::snapshot(p, connected_idx.len().max(1));
+                // 分担の案は、今接続している枠の名前で示す (P3 が空いていて P4 がいる場合など)
+                v["assignment"] = self.slot_map(&self.proposal(p));
+                v
+            }),
             // 今の協力プレイで使っている分担 (Ready・再開のときに決めたもの)
             "assigned": self.assigned_snapshot(),
             "canPrepare": self.can_prepare(),
@@ -621,7 +653,7 @@ impl Hub {
 
     fn slot_snapshot(&self) -> Value {
         Value::Array(
-            (0..3)
+            (0..MAX_SLOTS)
                 .map(|i| match &self.slots[i] {
                     None => json!({ "name": SLOT_NAMES[i], "role": SLOT_ROLES[i], "assigned": false }),
                     Some(s) => json!({
@@ -728,7 +760,7 @@ impl Hub {
         self.release_outputs(None);
         self.reset_look();
         self.game.phase = phase;
-        if phase == Phase::Lobby { self.assigned.clear(); }
+        if phase == Phase::Lobby { self.assigned.clear(); self.participants.clear(); }
         self.game.reason = Some(reason.to_string());
         self.advance_epoch();
         self.log("phase", json!({ "phase": phase.name(), "reason": reason, "epoch": self.game.epoch }));
@@ -789,8 +821,8 @@ impl Hub {
                 self.game.host_ready = true;
                 self.set_phase(Phase::Coop, "host ready"); true
             }
-            // 再開はホストの確認なので、参加人数が変わっていればここで組み直す
-            ("RESUME", Phase::Paused) if self.can_resume() => { self.reload_keybinds(); self.fix_assignment(); self.set_phase(Phase::Coop, "host resume"); true }
+            // 再開は Ready で決めた参加者・分担のまま (参加者がそろうまで再開できない)
+            ("RESUME", Phase::Paused) if self.can_resume() => { self.reload_keybinds(); self.set_phase(Phase::Coop, "host resume"); true }
             ("PAUSE", Phase::Coop | Phase::Paused) => {
                 self.game.auto_resume_until = 0;
                 self.game.reason = Some("host pause".into());
@@ -822,6 +854,7 @@ impl Hub {
                 return None;
             }
             // 担当の確認は固定の表で行い、送るキーはゲームのキー設定に合わせる (送れないキーは送らない)
+            if !self.participants.contains(&slot) { return None; }
             let default = controls::role_control(SLOT_NAMES[slot], control)?;
             self.keybinds.output_for(control).unwrap_or(Some(default))
         } else if slot == 0 && self.remote_game_active() {
@@ -871,24 +904,51 @@ impl Hub {
         json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings, "controls": controls, "actions": actions })
     }
 
-    /// 協力プレイの分担を、今の参加人数と操作定義から決める (#105)。定義がなければ空 (固定の表を使う)
-    fn fix_assignment(&mut self) {
-        let players = self.connected_slots().len().max(1);
-        self.assigned = match &self.profile {
-            Some(p) => profiles::assignment_for(p, players),
-            None => Vec::new(),
-        };
-        self.log("assignment", json!({ "players": players, "assigned": self.assigned }));
+    /// 今接続している枠に、参加人数と操作定義から分担の案を作る (#105)。枠の番号ごと (参加していない枠は空)
+    fn proposal(&self, p: &Profile) -> Vec<Vec<String>> {
+        let slots = self.connected_slots();
+        let mut out = vec![Vec::new(); MAX_SLOTS];
+        // P1 (ホスト) から順に、優先度の高い操作 (移動・視点…) を配る
+        for (k, a) in profiles::assignment_for(p, slots.len().max(1)).into_iter().enumerate() {
+            if let Some(&i) = slots.get(k) { out[i] = a; }
+        }
+        out
     }
 
-    fn assigned_snapshot(&self) -> Value {
-        let m: Map<String, Value> = self.assigned.iter().enumerate().map(|(i, a)| (format!("P{}", i + 1), json!(a))).collect();
+    /// Ready の時点の参加者と分担を確定する。定義がなければ分担は空 (固定の表を使う)
+    fn fix_assignment(&mut self) {
+        self.participants = self.connected_slots();
+        self.assigned = match &self.profile {
+            Some(p) => self.proposal(p),
+            None => Vec::new(),
+        };
+        let players: Vec<&str> = self.participants.iter().map(|&i| SLOT_NAMES[i]).collect();
+        self.log("assignment", json!({ "players": players, "assigned": self.slot_map(&self.assigned) }));
+    }
+
+    /// 枠の番号ごとの分担 → { "P1": [...], ... } (担当のない枠は出さない)
+    fn slot_map(&self, by_slot: &[Vec<String>]) -> Value {
+        let m: Map<String, Value> = by_slot.iter().enumerate().filter(|(_, a)| !a.is_empty()).map(|(i, a)| (SLOT_NAMES[i].to_string(), json!(a))).collect();
         Value::Object(m)
     }
 
-    /// 操作定義から作った画面を使うゲームか (Minecraft 以外で、分担が決まっている)
+    fn assigned_snapshot(&self) -> Value {
+        self.slot_map(&self.assigned)
+    }
+
+    /// Minecraft の固定の画面と表を使うか。実機で確かめた 3人 (P1〜P3) のときだけ使い、
+    /// 2人・4人や枠が飛んでいる場合は操作定義の分担から作った画面にする (#57・#105)
+    fn fixed_controls(&self, players: &[usize]) -> bool {
+        let three = players == [0, 1, 2];
+        match &self.profile {
+            None => three,
+            Some(p) => p.id == "minecraft-java" && three,
+        }
+    }
+
+    /// 操作定義から作った画面を使うか (分担が決まっていて、固定の画面を使わない)
     fn uses_generated_controls(&self) -> bool {
-        self.profile.as_ref().is_some_and(|p| p.id != "minecraft-java") && !self.assigned.is_empty()
+        !self.assigned.is_empty() && !self.fixed_controls(&self.participants)
     }
 
     /// この枠に割り当てた操作か
@@ -1227,6 +1287,7 @@ impl Hub {
         self.game.host_ready = false;
         self.launch = None;
         self.assigned.clear();
+        self.participants.clear();
         self.reload_keybinds();
         self.log("select_game", json!({ "title": self.game.title }));
         self.apply_target();
@@ -1455,7 +1516,9 @@ impl Hub {
         // 協力プレイ中に誰かが切れたら共同入力を止める (ホストの自動交代はしない)
         let paused_by_disconnect = self.game.phase == Phase::Paused
             && self.game.reason.as_deref().is_some_and(|r| r.ends_with("disconnected"));
-        if self.game.phase == Phase::Coop || paused_by_disconnect {
+        // Ready の後に来た (参加していない) 人の切断では止めない
+        let participant = self.participants.contains(&idx);
+        if participant && (self.game.phase == Phase::Coop || paused_by_disconnect) {
             // 期限は協力プレイから止まった時に始め、期限内に別の人が切れたときだけ延ばす。
             // 期限を過ぎた後の切断や、再接続による接続の置き換え (replaced) では延ばさない (期限後は明示の RESUME まで再開しない)
             let now = now_ms();
@@ -1511,7 +1574,7 @@ impl Hub {
                 }
                 // Wi-Fi を切られた場合 TCP の close はすぐ来ないので、アプリ層の ping 途絶で切断を判定する
                 let now = now_ms();
-                for i in 0..3 {
+                for i in 0..MAX_SLOTS {
                     let stale = self.slots[i]
                         .as_ref()
                         .filter(|s| s.connected && now.saturating_sub(s.last_seen) > HEARTBEAT_TIMEOUT_MS)
@@ -1723,7 +1786,7 @@ impl Hub {
                 }
             }
             "required" => {
-                if let Some(r) = msg.get("required").and_then(Value::as_u64).filter(|r| *r == 3) {
+                if let Some(r) = msg.get("required").and_then(Value::as_u64).filter(|r| *r == MIN_PLAYERS as u64) {
                     self.game.required = r;
                     self.log("required", json!({ "required": r }));
                     self.push_game();
@@ -1742,7 +1805,7 @@ impl Hub {
             }
             "reset" => {
                 self.release_outputs(None);
-                for i in 0..3 {
+                for i in 0..MAX_SLOTS {
                     if let Some(slot) = self.slots[i].take() {
                         self.close(slot.conn, 4001, "reset");
                     }
@@ -1782,7 +1845,7 @@ impl Hub {
             return self.close(Some(id), 4002, "no clientId");
         }
         let ip = self.conns[&id].ip.clone();
-        let existing = (0..3).find(|&i| self.slots[i].as_ref().is_some_and(|s| s.client_id == client_id));
+        let existing = (0..MAX_SLOTS).find(|&i| self.slots[i].as_ref().is_some_and(|s| s.client_id == client_id));
         if let Some(i) = existing {
             // 再接続はサーバーが発行したトークンで照合する。clientId だけ知っている別の端末には枠を渡さない
             let token = s(msg, "token").unwrap_or_default();
@@ -1795,7 +1858,7 @@ impl Hub {
         let reconnected = existing.is_some();
         let idx = match existing {
             Some(i) => i,
-            None => match (0..3).find(|&i| self.slots[i].is_none()) {
+            None => match (0..MAX_SLOTS).find(|&i| self.slots[i].is_none()) {
                 Some(i) => {
                     let Some(token) = new_token() else {
                         // 乱数を得られなければ推測できるトークンを発行せず、参加を断る

@@ -1,5 +1,5 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,ROLES,GAMES,slotViews,navigate,joinUrl,screenOnGameUpdate,desktopView,desktopWarning,keyLabel,profileNotice,roleView} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,screenOnGameUpdate,desktopView,desktopWarning,keyLabel,profileNotice,roleView,usesFixedRoles,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let ui={screen:'join',game:GAMES[0].id};
@@ -21,7 +21,7 @@ $('steps').innerHTML=SCREENS.map(s=>`<button data-go="${s}" aria-label="${SCREEN
 $('games').innerHTML=`<button class="game-choice" data-game="minecraft-java" aria-label="Minecraft Java Editionを選択"><h2>Minecraft<br>Java Edition</h2><p>3人で、ひとつの冒険へ。</p><span class="selection">選択中</span></button>`;
 $('gameSteps').innerHTML=GAMES[0].steps.map(s=>`<li>${esc(s)}</li>`).join('');
 const shortRoles=['移動・ホスト','視点','アクション'];
-const character=(i)=>`<div class="character-art art-${i}" aria-hidden="true"><img src="/assets/characters/${['blue','green','purple'][i]}.png" alt=""></div>`;
+const character=(i)=>`<div class="character-art art-${i}" aria-hidden="true"><img src="/assets/characters/${['blue','green','purple','red'][i]}.png" alt=""></div>`;
 function openDialog(dialog){document.querySelectorAll('dialog[open]').forEach(d=>d.close());dialog.showModal();}
 $('settingsBtn').addEventListener('click',()=>openDialog($('settings')));
 $('keyBindingsBtn').addEventListener('click',()=>{$('keyDetails').open=true;openDialog($('settings'));});
@@ -61,25 +61,29 @@ document.addEventListener('keydown',e=>{
 function render(){
   const view=desktopView(ui,game),slots=slotViews(state?.slots),count=slots.filter(s=>s.state==='connected').length;
   document.body.dataset.view=view;document.body.dataset.phase=game?.phase||'lobby';
-  const generated=game?.profile && game.profile.id!=='minecraft-java';
-  document.querySelector('.key-samples').hidden=!!generated;
+  // otherGame: Minecraft 以外を選んだ (案内の文言)。generated: 固定の分担ではなく操作定義の分担を表示する (2人・4人のMinecraftを含む)
+  const otherGame=!!game?.profile&&game.profile.id!=='minecraft-java',generated=!usesFixedRoles(game);
+  document.querySelector('.key-samples').hidden=generated;
   document.querySelectorAll('.key-samples kbd').forEach((el,i)=>{
     const label=keyLabel(game?.keys,['INV','FWD','BACK'][i]);
     el.textContent=label;el.title=label;el.classList.toggle('wide-key',label.length>3);
   });
-  $('roles').innerHTML=ROLES.map((r,i)=>{
-    const role=roleView(game,r.slot);
+  const roleSlots=shownSlots(game);
+  $('roles').style.setProperty('--role-count',String(roleSlots.length));
+  $('roleHeading').textContent=`${roleSlots.length}人で、操作を分担！`;
+  $('roles').innerHTML=roleSlots.map(slot=>{
+    const i=SLOT_NAMES.indexOf(slot),role=roleView(game,slot);
     return `<article class="role-column"><h3>プレイヤー${i+1}</h3>${character(i)}<div class="role-copy"><b>${esc(generated?role.title:shortRoles[i])}</b><p>${generated?esc(role.lines[0]||'担当する操作なし'):esc(['歩く・跳ぶ','カメラを動かす','攻撃・使う'][i])}</p></div></article>`;
   }).join('');
   const titles={join:'',game:'ゲーム選択を<br>しよう！',roles:'分担しよう！',preparing:'準備中<span class="ellipsis">...</span>',ready:'準備完了！',coop:'協力プレイ中',paused:'一時停止中'};
   $('screenTitle').innerHTML=titles[view];
   $('screenTitle').hidden=view==='join';
   $('stateBanner').hidden=['game','roles'].includes(view);
-  $('stateTitle').textContent={join:`${count} / 3人参加中！`,preparing:'ゲームを準備中！',ready:'全員接続・準備OK！',coop:'みんなでプレイ中！',paused:'一時停止中'}[view]||'';
-  $('stateSubtitle').textContent={join:count===3?'人数がそろったら、OKボタンを押そう！':'参加者を待っています……',preparing:'ホストがゲームを準備しています……',ready:'ホストのスマホでReadyを押してください！',coop:'止めるときはホストのスマホでPAUSE',paused:'ホストのスマホで再開できます'}[view]||'';
+  $('stateTitle').textContent={join:`${count}人参加中！`,preparing:'ゲームを準備中！',ready:'全員接続・準備OK！',coop:'みんなでプレイ中！',paused:'一時停止中'}[view]||'';
+  $('stateSubtitle').textContent={join:count>=MIN_PLAYERS?`みんながそろったら、OKボタンを押そう！（${MIN_PLAYERS}〜${MAX_PLAYERS}人）`:`参加者を待っています……（${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べます）`,preparing:'ホストがゲームを準備しています……',ready:'ホストのスマホでReadyを押してください！',coop:'止めるときはホストのスマホでPAUSE',paused:'ホストのスマホで再開できます'}[view]||'';
   if(view==='paused'&&!game?.canResume)$('stateSubtitle').textContent='再開前に、接続と操作設定を確認してください';
   $('leftRule').hidden=!['game','roles'].includes(view);
-  $('explanation').innerHTML=view==='join'?'人数がそろったら、<br>OKボタンを押そう！！':view==='game'?'右側にあるゲーム一覧から<br>遊びたいゲームを<br>選択してください！':view==='roles'?'操作をそれぞれの<br>スマホに分けよう！':'';
+  $('explanation').innerHTML=view==='join'?`${MIN_PLAYERS}〜${MAX_PLAYERS}人がそろったら、<br>OKボタンを押そう！！`:view==='game'?'右側にあるゲーム一覧から<br>遊びたいゲームを<br>選択してください！':view==='roles'?'操作をそれぞれの<br>スマホに分けよう！':'';
   $('secondary').innerHTML=view==='game'?'今回遊べるのは<br>Minecraft Java Editionです。<br>選んだら次へ進もう！':view==='roles'?'ゲームを準備してから<br>スマホでスタート！':'';
   $('nextBtn').hidden=!['join','game','roles'].includes(view);
   $('nextBtn').textContent={join:'OK',game:'このゲームで遊ぶ',roles:'ゲームを開く・準備する'}[view]||'';
@@ -89,9 +93,9 @@ function render(){
   $('playerStage').hidden=['game','roles'].includes(view);
   $('openGameBtn').hidden=!['preparing','ready','paused'].includes(view);
   const notes={preparing:'Minecraftでワールドを準備してください。'};
-  $('actionNote').textContent=view==='preparing'&&generated?'選んだゲームで準備してください。':notes[view]||'';
-  $('openGameBtn').textContent=generated?'選んだゲームを前面にする':'Minecraftを前面にする';
-  $('inputSafety').textContent=(generated?'選択したゲーム':'Minecraft')+'が前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。';
+  $('actionNote').textContent=view==='preparing'&&otherGame?'選んだゲームで準備してください。':notes[view]||'';
+  $('openGameBtn').textContent=otherGame?'選んだゲームを前面にする':'Minecraftを前面にする';
+  $('inputSafety').textContent=(otherGame?'選択したゲーム':'Minecraft')+'が前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。';
   const keyWarnings=game?.keys?.warnings||[];
   const warning=desktopWarning(game,inject,online||!state)||(keyWarnings.length?'キー設定に注意が必要です。「操作設定」で実際に送るキーを確認してください。':'');
   const notices=[warning,profileNotice(game?.profile)].filter(Boolean).join(' ');
@@ -99,9 +103,9 @@ function render(){
   $('steps').hidden=!['join','game','roles'].includes(view);
   document.querySelectorAll('#steps button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===ui.screen?'page':'false'));
   $('players').innerHTML=slots.map((s,i)=>`<article class="player ${s.state}${view==='preparing'&&s.host&&s.state==='connected'?' pending':''}" data-slot="${s.slot}"><div class="player-badge">${s.state==='empty'?'参加待ち':s.state==='lost'?'切断中':view==='ready'?'接続完了！':view==='preparing'?(s.host?'準備中！':'接続完了！'):'接続完了！'}</div><div class="player-info"><p>プレイヤー${i+1}</p><p>${esc(generated?roleView(game,s.slot).title:s.title)}</p><p class="player-device">機種：${esc(s.device||'未接続')}</p></div><svg class="player-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg><div class="character">${character(i)}</div></article>`).join('');
-  $('inputState').textContent=inject?.mode==='off'?'ゲームへの入力はOFFです':inject?.mode==='test'?'診断用の入力先です':inject?.active?'ゲームへの入力はONです（'+(generated?'選択したゲーム':'Minecraft')+'が前面のときだけ）':'ゲームへの入力を停止しています';
+  $('inputState').textContent=inject?.mode==='off'?'ゲームへの入力はOFFです':inject?.mode==='test'?'診断用の入力先です':inject?.active?'ゲームへの入力はONです（'+(otherGame?'選択したゲーム':'Minecraft')+'が前面のときだけ）':'ゲームへの入力を停止しています';
   $('keyWarnings').textContent=keyWarnings.join('。');
-  $('keyBindings').innerHTML=ROLES.map(r=>`<h3>${esc(r.slot)}：${esc(roleView(game,r.slot).title)}</h3><ul>${roleView(game,r.slot).lines.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`).join('');
+  $('keyBindings').innerHTML=roleSlots.map(slot=>`<h3>${esc(slot)}：${esc(roleView(game,slot).title)}</h3><ul>${roleView(game,slot).lines.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`).join('');
   $('gameStatus').textContent=game?.prepareStatus||'';
   document.querySelectorAll('#modeSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===inject?.mode)));
   $('hotkey').textContent=inject?.emergencyHotkeyError?'緊急停止キーを登録できません':`緊急停止：${inject?.emergencyHotkey||'Ctrl+Alt+F12'}`;

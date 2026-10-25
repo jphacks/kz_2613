@@ -1,7 +1,7 @@
 import { myActions, generatedKey, buildGenerated } from './generated-controls.js';
 
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
-import {profileNotice,roleView} from '../app-view.js';
+import {profileNotice,roleView,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS} from '../app-view.js';
 export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleText,bindControl}) {
   const $ = id => document.getElementById(id);
   let lastView = null, lastGen = '';
@@ -27,10 +27,12 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleTex
     $('phase').className = 'pill ' + phase;
     const notice=profileNotice(game.profile);
     $('inputWarn').style.display = game.inputTarget || notice ? 'block' : 'none';
-    const generated = phase === 'coop' && myActions(game, me);
-    const view = phase === 'coop' ? (generated ? 'v-gen' : 'v-' + me) : isHost ? 'v-remote' : 'v-wait';
+    // Ready の後に来た人は今回の協力プレイに参加しない (次の Ready から参加する、#57)
+    const joined = !game.participants?.length || game.participants.includes(me);
+    const generated = phase === 'coop' && joined && myActions(game, me);
+    const view = phase === 'coop' && joined ? (generated ? 'v-gen' : 'v-' + me) : isHost ? 'v-remote' : 'v-wait';
     document.body.dataset.view=view;
-    const characterName={P1:'blue',P2:'green',P3:'purple'}[me];
+    const characterName={P1:'blue',P2:'green',P3:'purple',P4:'red'}[me];
     $('waitCharacter').src=`/assets/characters/${characterName}.png`;
     $('waitHeading').textContent=phase==='paused'?'一時停止中':'接続完了!!';
     const genKey = generated ? generatedKey(game, me) : '';
@@ -47,7 +49,7 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleTex
       lastView = view;
       lastGen = genKey;
     }
-    const players = ['P1', 'P2', 'P3'].map((p) => `<span class="${game.connected.includes(p) ? 'on' : ''}">${p}${p === me ? '（自分）' : ''}</span>`).join('');
+    const players = SLOT_NAMES.map((p) => `<span class="${game.connected.includes(p) ? 'on' : ''}">${p}${p === me ? '（自分）' : ''}</span>`).join('');
     $('players1').innerHTML = players;
     $('players2').innerHTML = players;
     $('remoteRoute').textContent = {app:'PCアプリを操作中',game:generic?'選んだゲームのメニューを操作中':'Minecraftのメニューを操作中',none:'PCアプリまたは対象ゲームを前面にしてください'}[game.remoteRoute] || '';
@@ -56,17 +58,17 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleTex
     $('inputWarn').textContent=[game.inputTarget?$('inputWarn').textContent:'',notice].filter(Boolean).join(' ');
     const startBtn = $('startBtn');
     $('openGameBtn').hidden = !['preparing','paused'].includes(phase);
-    startBtn.textContent = phase === 'paused' ? '再開する' : phase === 'preparing' ? 'Ready・3人で操作を始める' : 'ゲームを開く・準備する';
+    startBtn.textContent = phase === 'paused' ? '再開する' : phase === 'preparing' ? `Ready・${game.connected.length}人で操作を始める` : 'ゲームを開く・準備する';
     startBtn.disabled = !(phase === 'paused' ? game.canResume : phase === 'preparing' ? game.canReady : game.canPrepare);
     $('endBtn').style.display = phase === 'paused' ? 'block' : 'none';
     $('remoteNote').textContent = game.canReady
       ? (phase === 'paused' ? `一時停止中${game.reason ? '（' + reasonText(game.reason) + '）' : ''}。リモコンで操作でき、RESUME で協力プレイに戻ります。` : 'ゲームを開いてワールドを準備した後、ホストだけがReadyを押します。')
-      : phase === 'lobby' ? `ゲームを開いて準備へ進めます（${game.connected.length}/3人接続）。Readyでの開始には3人全員が必要です。`
+      : phase === 'lobby' ? `ゲームを開いて準備へ進めます（${game.connected.length}人接続）。${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べ、Readyのときの人数で分担を決めます。`
       : (game.readyReasons || []).join('。') || 'ホストの明示操作を待っています';
     const autoWait = phase === 'paused' && game.autoResume && game.reason?.endsWith('disconnected');
     document.body.dataset.phase = phase;
     document.body.dataset.slot = me;
-    $('waitTitle').textContent = phase === 'paused' ? (autoWait ? `${reasonText(game.reason)}。戻ると自動で再開します` : '一時停止中') : 'ホストの開始を待っています';
+    $('waitTitle').textContent = !joined ? '次の開始から参加します' : phase === 'paused' ? (autoWait ? `${reasonText(game.reason)}。戻ると自動で再開します` : '一時停止中') : 'ホストの開始を待っています';
     if (phase === 'preparing') $('remoteNote').textContent = [game.prepareStatus, ...(game.readyReasons || []), '準備ができたらホストが明示Ready'].filter(Boolean).join('。');
     if (autoWait && isHost) $('remoteNote').textContent = `${reasonText(game.reason)}。戻ると自動で再開します（RESUME で手動再開も可）。`;
     $('waitRole').textContent = role.title;
