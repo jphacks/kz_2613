@@ -73,6 +73,11 @@ Re:Cooplay（リコープレイ）は、既存のPCゲームに新しい協力�
 | P2 | 視点・カメラ操作 |
 | P3 | 攻撃・アイテムの使用 |
 
+<div align="center">
+  <a href="assets/images/recooplay-role-controllers.webp"><img src="assets/images/recooplay-role-controllers.webp" width="960" alt="3人プレイのスマホ操作画面。左からP1の移動・ジャンプ、P2の視点、P3の攻撃・アイテム操作"></a>
+  <p><sub>左からP1・P2・P3の操作画面を並べた説明用画像。画像を開くと拡大できます。</sub></p>
+</div>
+
 敵が現れたら、移動担当が距離を取り、視点担当が敵を捉え、攻撃担当がタイミングを合わせて攻撃します。
 
 それぞれが別の操作を担当するからこそ、自然と会話や協力が生まれます。
@@ -243,14 +248,10 @@ Hack Day（2026年10月24〜25日）に、複数人で1つのキャラクター�
 
 操作入力は次の構成でPCゲームに伝わります。
 
-```mermaid
-flowchart LR
-    P["スマートフォン（2〜4人）<br/>担当別の操作画面"] -->|"WebSocket / WebRTC"| H["Rustホスト<br/>参加・役割・入力統合"]
-    D["PCアプリ<br/>Tauri"] <--> H
-    C["ゲームごとの操作定義"] --> H
-    H --> I["Windows API<br/>SendInput"]
-    I --> G["既存のPCゲーム"]
-```
+<div align="center">
+  <a href="assets/images/recooplay-system-architecture.webp"><img src="assets/images/recooplay-system-architecture.webp" width="960" alt="3人のスマホからRustホストへ操作を送り、Windows API SendInputで既存PCゲームへ入力する構成。TauriのPCアプリと参加・準備状況やゲーム選択・開始・停止をやり取りする"></a>
+  <p><sub>3人構成を例にした概略図。参加・状態管理はWebSocket、入力の速達にはWebRTC DataChannelも併用します。画像を開くと拡大できます。</sub></p>
+</div>
 
 [開発開始前のコミット](https://github.com/jphacks/kz_2613/tree/5acb0049e6) ／ [GitHub上の変更差分](https://github.com/jphacks/kz_2613/compare/5acb0049e6...main) ／ [Hack Day開発ログ](docs/handoff/BUILD_LOG.md) ／ [システム設計](docs/architecture/system-design.md)
 

@@ -878,3 +878,11 @@
 - #145のCI（head 9f16919、run 40225280916）は、両exeのビルド・全試験・zip作成・展開後dry-run・成果物保存まで成功した。PR #146をmainへマージした（90c3900）。
 - 最終ローカル確認：ホストの `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` が成功（再試行19秒）。`cargo test` はホスト42件＋プローブ4件成功（手動の表出力1件を除外）、更新時刻を確認したexeで `protocol-sim.mjs` が50/50成功した。初回はビルド完了前に旧exeで試験を起動して更新を妨げたため、旧exeの49/50とビルド失敗は合格根拠に使用していない。OpenSSLのPDB不足の既知の警告は残る。
 - PCアプリの `cargo build --release --locked --offline --manifest-path apps/desktop/Cargo.toml` が成功。両exeを再ビルドした後に `package.ps1 -Out dist/issue148-final` でzipを作成し、`node scripts/sim/package-smoke.mjs dist/issue148-final/ReCooplay-0.1.0-windows-x64.zip` の全照合・欠落改変拒否・リポジトリ外での全静的画面配信と正常終了が成功。ローカルの既存記録が未コミットのためmanifestはdirty=true。
+
+## 2026-10-26 — README・ギャラリーへ説明用画像3点を追加
+
+- ユーザー指定の `4.png`・`5.png`・`P1移動.png` を目視し、QRコード参加・役割別スマホ画面・システム構成図に対応することを確認した。Rustホスト・Tauri・WebSocket/WebRTC・SendInputの実装と図を照合し、3人構成の概略図として重大な矛盾がないことを確認した。
+- `assets/images/` に内容別の英語名で追加。Pillowによる可逆WebP変換で各画像の1920×1080と全画素一致を確認した。容量は順に1,183,080・548,174・176,898バイト。既存画像は変更していない。
+- READMEの役割表直後に操作画面を掲載し、Mermaidを構成図へ置換。ギャラリーの参加手順付近にQR参加の説明用画像を掲載した。いずれも拡大用リンクと画像種別を明記し、実機記録や互換性の証明とは扱わない。画像一覧に出典ファイル名・追加日・制作日時未確認を記録した。
+- Python（markdown-it-py・BeautifulSoup・Pillow）で対象Markdown3件を解析し、ローカル参照44件の存在、既存リンク・画像参照の保持、HTML区切り・代替テキスト、Mermaid置換を確認した。追加画像ブロックを元に戻すとREADMEが編集前と全文一致することを検証し、冒頭のサムネイル・動画と指定箇所以外の本文が保持されていることを確認した。
+- `git diff --check`：成功。資料と画像のみの変更であり、製品コードの試験・新しい実機試験は行っていない。
