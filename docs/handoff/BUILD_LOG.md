@@ -521,3 +521,9 @@
 - `node scripts/sim/check-static-pages.mjs`：成功。`app-view-test.mjs`：15/15。`ui-input-test.mjs`：5/5。`node --check scripts/sim/ui-preview.mjs`：成功。`static-assets-sim.mjs --bin <releaseホスト>`：26ファイル・2,546,433 bytesのHTTP/MIME/no-store確認成功。入力・通信の製品実装は変更していない。
 - Windows配布ZIPを `.venv/branding-verified-dist/` へ新規作成（約9.5MB）。全UI26ファイル＋両exeをバイト照合する集約レポートを更新。Minecraft/Tauri実窓・Android/iPhone・ホーム画面追加・別PC起動は今回未検証。
 - 既存PR #96へ追加する。マージ・auto-merge・mainへの直接pushは行わない。
+
+## 2026-10-25 PR #96のマージ前レビュー対応
+
+- 新しいユーザー指示で、現在の全PRを確認し、問題がなければマージする権限が与えられた。以前のマージ禁止は今回の明示判断に従って更新する。
+- レビューの未対応条件だった重複・中間画像をGit追跡から外した。ローカル生画像・各回の採寸JSON・画像SHA256・監査履歴・最新PC/スマホ画像は保持。過去画像リンクには保存方針のREADMEを追加し、最終版へ案内する。
+- 最終ツリーだけをスカッシュマージし、中間画像のコミット履歴をmainへ持ち込まない。入力・描画コードの変更はない。最終画像・26素材の配信・入力/UI試験が成功済みの製品コードを保持する。

@@ -1,5 +1,7 @@
 # PC原案忠実度の進捗・監査履歴
 
+公開時の整理：レビュー条件に従い、途中経過・独立再監査の重複画像をmainの公開対象から除いた。最新PC画像は `pc-fidelity-final/`、最新スマホ画像は `brand-mobile/` に保持する。各回の撮影時刻・採寸・判定JSONと最終manifestの画像ハッシュは保持し、生画像はローカルで保管する。下記の各回の説明は撮影当時の記録であり、過去の画像フォルダへのリンクは現在その保存方針を説明するREADMEへ進む。スカッシュマージで最終ツリーだけをmainへ反映し、途中画像を含むコミットの履歴をmainへ持ち込まない。
+
 ## 達成条件
 
 - G1：原案5枚の原寸視認、画素色・矩形・フォント候補の記録。
@@ -131,7 +133,9 @@ node scripts/sim/ui-preview.mjs
 python scripts/sim/measure-pc-reference.py 'C:/Users/kumes/Downloads/Recooplay素材'
 python scripts/sim/audit-pc-fidelity.py pc-fidelity-accepted-1
 python scripts/sim/audit-pc-fidelity.py pc-fidelity-accepted-2
-python scripts/sim/report-pc-fidelity.py
+# 上の過去2回はローカル保管の生画像が必要。clone直後は最終版で再計測する。
+python scripts/sim/audit-pc-fidelity.py pc-fidelity-final
+# report-pc-fidelity.py は過去2回の生画像・配布ZIPをローカルに保管した開発PC用。
 ```
 
 画像解析はPillowが必要。今回は同梱Pythonランタイムを使用。本番依存の追加なし。撮影はCUAのブラウザAPIで行い、viewportと同じ矩形を直接指定。`metrics.json` に撮影前後で照合したview・viewport・overflow・DPR・スタイル・ボタン矩形を保存する。撮影関数へタブを引数で渡し、古いタブを閉じ込めた関数を使わない。

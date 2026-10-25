@@ -11,6 +11,8 @@ scores={'join':[25,24,19,14,14],'game':[25,25,19,14,14],'roles':[25,25,19,14,13]
 rounds=[]
 for name in ['pc-branding-accepted-1','pc-branding-accepted-2']:
     d=ev/name
+    if not (d/'join-1920.jpg').exists():
+        raise SystemExit('集約にはGit外で保管する各監査回の生画像が必要です。clone直後の再計測には audit-pc-fidelity.py pc-fidelity-final を使ってください。')
     metrics=json.loads((d/'metrics.json').read_text(encoding='utf8'))
     geometry=json.loads((d/'geometry-audit.json').read_text(encoding='utf8'))
     assert len(metrics)==10 and not json.loads((d/'browser-errors.json').read_text(encoding='utf8'))
