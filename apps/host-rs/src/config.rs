@@ -46,7 +46,9 @@ impl Config {
             port,
             wifi,
             required_players: v.get("requiredPlayers").and_then(Value::as_u64).filter(|r| (1..=3).contains(r)).unwrap_or(3),
-            inject_mode: v.get("injectMode").and_then(Value::as_str).unwrap_or("off").to_string(),
+            // 初期値は on (#114)。on でも、協力プレイ中で対象のゲームが前面のときだけ送る。
+            // 手動で ON にする手順は、前面の確認 (#19) が入った後は二重の確認になるためなくした
+            inject_mode: v.get("injectMode").and_then(Value::as_str).unwrap_or("on").to_string(),
             auto_resume: v.get("autoResume").and_then(Value::as_bool).unwrap_or(true),
             auto_resume_ms: v.get("autoResumeMs").and_then(Value::as_u64).unwrap_or(15000),
             look_smooth_min_ms: v.get("lookSmoothMinMs").and_then(Value::as_f64).unwrap_or(30.0),
