@@ -1,6 +1,6 @@
 # Re:Cooplay ホスト（Rust 版）
 
-Node 参照実装（`apps/node-ref/server.js`）と同じ仕様・同じメッセージ形式の PC 側サーバー。スマホ / PC の画面は `apps/web-static/` を配信する。通信契約は `docs/architecture/protocol.md`。
+PC 側サーバー（試作品の Node 参照実装と同じ仕様・メッセージ形式で作り、参照実装は #86 で削除した）。スマホ / PC の画面は `apps/web-static/` を配信する。通信契約は `docs/architecture/protocol.md`。
 
 **検証状況：** PC 上のシミュレーション（注入なし）のみ。Rust 版の実入力・スマホ実機・Minecraft・Tauri は未検証。
 
@@ -44,7 +44,6 @@ cargo build --release --locked
 
 ```powershell
 node scripts\sim\protocol-sim.mjs                 # Rust 版（release ビルドを使う）
-node scripts\sim\protocol-sim.mjs --target node   # Node 参照実装（apps\node-ref で npm ci が必要）
 ```
 
 ホストを `RECOOPLAY_DRY_RUN=1` で起動し、スマホ 3 台と PC 画面を模した WebSocket で役割・認可・進行・入力の先着 1 回処理・切断時の全解放・復帰設定を照合する。OS へ入力を送らないため、ゲームや実機の合格の代わりにはならない。
@@ -75,4 +74,4 @@ node scripts\sim\input-probe-sim.mjs                                    # --mock
 
 WebSocketのHostはlocalhost・ループバックIP・PCのIPv4アドレスと待受ポートに限定する。ブラウザのOriginは接続先のHTTP Originと完全に一致する必要があり、別ポート・別サイト・`null`は403で拒否する。Originなしはループバックからの非ブラウザ検証クライアントだけ許可する。PC管理権限には引き続きループバック接続が必要で、スマホへは渡さない。
 
-1本の接続の識別は1回だけ行う。割当済みの接続でhelloを再送したり、管理接続へ切り替えたりすると4007で閉じる。再接続には新しいWebSocketを使う。Node参照実装にもこの認可修正だけを適用し、通信・入力の比較対象として保持する。
+1本の接続の識別は1回だけ行う。割当済みの接続でhelloを再送したり、管理接続へ切り替えたりすると4007で閉じる。再接続には新しいWebSocketを使う。

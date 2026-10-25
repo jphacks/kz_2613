@@ -21,11 +21,10 @@ jobs:
       - name: Strawberry Perl を優先する
         shell: pwsh
         run: echo "C:\Strawberry\perl\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      # 試験スクリプト (scripts/sim/*.mjs) は依存なしの Node で動く。製品には含まれない
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: npm
-          cache-dependency-path: apps/node-ref/package-lock.json
       - uses: actions/cache@v4
         with:
           path: |
@@ -42,11 +41,6 @@ jobs:
         run: node scripts/sim/protocol-sim.mjs
       - name: 終了通知と親プロセス消失時の全解放
         run: node scripts/sim/shutdown-sim.mjs
-      - name: 比較用の Node 参照実装を準備
-        run: npm ci --no-audit --no-fund
-        working-directory: apps/node-ref
-      - name: 通信契約のシミュレーション（Node 参照実装）
-        run: node scripts/sim/protocol-sim.mjs --target node
       - name: PC 画面の表示ロジック
         run: node scripts/sim/app-view-test.mjs
       - name: スマホのReady・待機・停止と診断前の解放

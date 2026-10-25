@@ -89,4 +89,4 @@ Rustホストは直前の #106 検証で用いた実行ファイルとSHA256が�
 
 ## 再確認手順
 
-`npm ci --prefix apps/node-ref --no-audit --no-fund` 後に `node scripts/sim/ui-preview.mjs` を起動し、`/app` と `/phone?slot=P2&phase=lobby` 等で表示確認できる。OS入力は行わない。原案と画像の一覧は `python scripts/sim/build-ui-gallery.py`、保存画像の整合は `node scripts/sim/verify-ui-evidence.mjs` で再生成・確認する。実機の合格とは分けて記録する。
+`node scripts/sim/ui-preview.mjs`（依存なし）を起動し、`/app` と `/phone?slot=P2&phase=lobby` 等で表示確認できる。OS入力は行わない。原案と画像の一覧は `python scripts/sim/build-ui-gallery.py`、保存画像の整合は `node scripts/sim/verify-ui-evidence.mjs` で再生成・確認する。実機の合格とは分けて記録する。
