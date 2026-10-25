@@ -656,7 +656,7 @@ impl Hub {
             && !self.launch.as_ref().is_some_and(|l| l.id == self.game.title && l.state == "launching")
     }
 
-    fn can_start(&self) -> bool {
+    fn can_ready(&self) -> bool {
         self.game.phase == Phase::Preparing && self.ready_reasons().is_empty()
     }
 
@@ -690,7 +690,6 @@ impl Hub {
             "epoch": self.game.epoch,
             "title": self.game.title,
             "connected": connected,
-            "canStart": self.can_start(),
             // 操作 → 実際に送るキー (ゲームのキー設定に合わせる)。スマホ・PC 画面のキー表示に使う
             "keys": self.keys_snapshot(),
             // 選んだゲームの操作定義の要約と分担の案 (#97)
@@ -703,7 +702,7 @@ impl Hub {
             // 今の協力プレイで使っている分担 (Ready・再開のときに決めたもの)
             "assigned": self.assigned_snapshot(),
             "canPrepare": self.can_prepare(),
-            "canReady": self.can_start(),
+            "canReady": self.can_ready(),
             "canResume": self.can_resume(),
             "hostReady": self.game.host_ready,
             "readyReasons": self.ready_reasons(),
@@ -866,7 +865,7 @@ impl Hub {
                 }};
                 self.push_game(); true
             }
-            ("PREPARE" | "START", Phase::Lobby) if self.can_prepare() => {
+            ("PREPARE", Phase::Lobby) if self.can_prepare() => {
                 self.game.host_ready = false;
                 self.game.prepare_status = if self.fake_target.is_some() {
                     "シミュレーション：実ゲームは起動していません".into()
@@ -881,7 +880,7 @@ impl Hub {
                 self.reload_keybinds();
                 self.set_phase(Phase::Preparing, "host prepare"); true
             }
-            ("READY", Phase::Preparing) if self.can_start() => {
+            ("READY", Phase::Preparing) if self.can_ready() => {
                 self.reload_keybinds();
                 self.fix_assignment();
                 self.game.host_ready = true;
@@ -1939,13 +1938,6 @@ impl Hub {
                     self.record("observe", o);
                 }
             }
-            "required" => {
-                if let Some(r) = msg.get("required").and_then(Value::as_u64).filter(|r| *r == MIN_PLAYERS as u64) {
-                    self.game.required = r;
-                    self.log("required", json!({ "required": r }));
-                    self.push_game();
-                }
-            }
             "auto_resume" => {
                 self.game.auto_resume = msg.get("on").and_then(Value::as_bool).unwrap_or(false);
                 self.log("auto_resume", json!({ "on": self.game.auto_resume }));
@@ -2121,7 +2113,7 @@ impl Hub {
             "command" if via == Via::Ws => {
                 let cmd = s(&msg, "cmd").unwrap_or_default();
                 self.log("command", json!({ "slot": SLOT_NAMES[idx], "cmd": cmd }));
-                if matches!(cmd.as_str(), "READY" | "RESUME" | "PREPARE" | "START" | "OPEN_GAME")
+                if matches!(cmd.as_str(), "READY" | "RESUME" | "PREPARE" | "OPEN_GAME")
                     && msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
                     self.send(self.slots[idx].as_ref().and_then(|s| s.conn), &json!({"type":"command_result","cmd":cmd,"accepted":false,"reasons":["画面の状態が古くなっています。更新を待ってください"]}));
                     return;

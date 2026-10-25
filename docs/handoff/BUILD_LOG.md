@@ -740,3 +740,10 @@
 - `ui-preview.mjs`がNode参照実装の`ws`パッケージを借りていたため、依存なしの最小のWebSocketサーバー`scripts/sim/mini-ws.mjs`（テキスト・バイナリのフレーム、ping/pong、close）に置き換えた。起動して接続し、`welcome`・`state`・`game`・`pong`の受信を確認した。
 - `allow-firewall.ps1`の`-Program`省略時の既定をRust版ホストに、`verify_overlay.py`の必須ファイルからNode参照実装を外した。`AGENTS.md`・`tech-stack.md`・`protocol.md`・`SETUP_WINDOWS.md`・`apps/host-rs/README.md`・`artifacts/improved-ui/README.md`を更新した（過去の記録のBUILD_LOG・判断記録は当時のまま）。
 - `protocol-sim.mjs`（Rust dry-run）46/46、`shutdown-sim.mjs`、`app-view-test.mjs` 27/27、`ui-input-test.mjs` 8/8、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`、`verify-ui-evidence.mjs`、`profile-extract-test.mjs`、`profile-catalog-test.mjs`、`input-probe-sim.mjs` 12/12、`python scripts/verify_overlay.py`が成功した。
+
+## 2026-10-25 — 試作品の名残の整理（Claude Code、#115・#116・#117）
+
+- #115：`config.json`の`requiredPlayers`と`required`メッセージを廃止し、診断画面の「必要人数1/2/3」と効かない「協力プレイ」ボタンを外した。Rust版のビルドで出ていた`field required_players is never read`の警告が消えた。
+- #116：`command: START`（PREPAREの別名）と`game.canStart`を削除し、ホストの関数名を`can_ready`にした。`protocol-sim.mjs`の`START`は`PREPARE`に置き換えた。PC画面から使われていない`startView`・`phaseView`とその試験6件を削除し、操作設定の手順を今の開始手順に合わせた。通信契約の版はv4のまま（使っていた画面がないため）。
+- #117：構造チェックは残し、説明と必須ファイル（操作定義・一覧・操作定義の文書を追加）を今の構成に合わせた。`ISSUE_PLAN.md`は現役の文書のため必須のまま。判断は[試作品の名残の整理](../decisions/2026-10-25-prototype-cleanup.md)。
+- `cargo build`・`cargo test --release --locked`（ホスト32件＋表の出力1件は手動、プローブ3件）成功。`protocol-sim.mjs`（Rust dry-run）46/46、`shutdown-sim.mjs`、`app-view-test.mjs` 21/21、`ui-input-test.mjs` 8/8、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`、`verify-ui-evidence.mjs`、`profile-extract-test.mjs`、`profile-catalog-test.mjs`、`input-probe-sim.mjs` 12/12、`python scripts/verify_overlay.py`（32件）が成功した。

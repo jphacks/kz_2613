@@ -9,7 +9,6 @@ use crate::focus::Target;
 pub struct Config {
     pub port: u16,
     pub wifi: Option<(String, String)>,
-    pub required_players: u64,
     pub inject_mode: String,
     pub auto_resume: bool,
     pub auto_resume_ms: u64,
@@ -45,7 +44,6 @@ impl Config {
         Config {
             port,
             wifi,
-            required_players: v.get("requiredPlayers").and_then(Value::as_u64).filter(|r| (1..=3).contains(r)).unwrap_or(3),
             // 初期値は on (#114)。on でも、協力プレイ中で対象のゲームが前面のときだけ送る。
             // 手動で ON にする手順は、前面の確認 (#19) が入った後は二重の確認になるためなくした
             inject_mode: v.get("injectMode").and_then(Value::as_str).unwrap_or("on").to_string(),

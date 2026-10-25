@@ -1,5 +1,5 @@
 name: Structure checks
-# リポジトリ構成の確認。Rust版ホスト・PCアプリ・シミュレーションは rust.yml で実行する。
+# リポジトリの主要な部分がそろっているかの確認 (Rust なしで速く失敗を知らせる、#117)。ビルド・試験は rust.yml で実行する。
 # 旧Python（FastAPI）・Reactのひな形の検証は #68 で削除した。
 permissions:
   contents: read

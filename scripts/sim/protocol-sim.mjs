@@ -397,9 +397,9 @@ async function main() {
       app.close();
     });
 
-    await check('進行: P1だけが準備と明示Readyを実行でき、旧START・PC画面から迂回できない', async () => {
+    await check('進行: P1だけが準備と明示Readyを実行でき、P2・P3・PC画面から迂回できない', async () => {
       let from = p1.mark();
-      p2.send({type:'command',cmd:'START'}); p3.send({type:'command',cmd:'READY'});
+      p2.send({type:'command',cmd:'PREPARE'}); p3.send({type:'command',cmd:'READY'});
       mon.send({type:'phase',phase:'coop'});
       await sleep(100);
       assert(!p1.msgs.slice(from).some(m=>m.type==='game' && m.game.phase==='coop'), '管理画面/P2/P3から開始した');
@@ -408,7 +408,7 @@ async function main() {
       // 入力の初期値は on (#114)。手動で ON にしなくても、準備の後に Ready できる
       const initial=[...mon.msgs].reverse().find(m=>m.type==='state');
       assert(initial.inject.mode==='on', `入力の初期値=${initial.inject.mode}`);
-      await confirmLineup(mon, p1); p1.send({type:'command',cmd:'START'});
+      await confirmLineup(mon, p1); p1.send({type:'command',cmd:'PREPARE'});
       const prepared = await phaseIs(p1,'preparing',from);
       assert(prepared.game.canReady && !prepared.game.hostReady, '入力の初期値でReadyできない');
       // 入力を止めると (緊急停止・診断) Ready できず、PC 画面で再開すると Ready できる
@@ -712,7 +712,7 @@ async function main() {
       await app.open();
       app.send({ type: 'monitor', page: 'app' });
       await app.waitFor((m) => m.type === 'state', { what: 'app state' });
-      app.send({ type: 'focus', focused: false }); // START 後に Minecraft を前面にした
+      app.send({ type: 'focus', focused: false }); // 準備の後に Minecraft を前面にした
       await sleep(150);
       let mfrom = mon.mark();
       p1.input('FWD', 'down');
@@ -850,7 +850,7 @@ async function main() {
       app.send({ type: 'select_game', title: 'minecraft-java' });
       await p1.waitFor((m) => m.type === 'game' && m.game.title === 'minecraft-java', { from, what: 'title back' });
       from = p1.mark();
-      await confirmLineup(mon, p1); p1.send({ type: 'command', cmd: 'START' });
+      await confirmLineup(mon, p1); p1.send({ type: 'command', cmd: 'PREPARE' });
       await phaseIs(p1, 'preparing', from); p1.send({type:'command',cmd:'READY'});
       await phaseIs(p1, 'coop', from);
       app.close();
@@ -1103,7 +1103,7 @@ async function main() {
       // メンバー・分担の決定前は、起動・準備の直接の要求でも進めない
       afrom = app.mark();
       app.send({ type: 'launch_game', id: 'steam:413150' });
-      p1.send({ type: 'command', cmd: 'START' });
+      p1.send({ type: 'command', cmd: 'PREPARE' });
       s = await app.waitFor((m) => m.type === 'state' && m.game.launch?.state === 'failed', { from: afrom, what: 'unconfirmed reject' });
       assert(s.game.phase === 'lobby', JSON.stringify(s.game));
       // 画面が見ていたメンバーと違う決定は受け付けない
@@ -1135,7 +1135,7 @@ async function main() {
       // 検出したゲームを開始し、押下中に再検出で消えても別ゲームへ送らない。
       from = p1.mark();
       const p3from = p3.mark();
-      await confirmLineup(mon, p1); p1.send({ type: 'command', cmd: 'START' });
+      await confirmLineup(mon, p1); p1.send({ type: 'command', cmd: 'PREPARE' });
       await phaseIs(p1, 'preparing', from);
       const hasCatalogProfile=fs.existsSync(path.join(ROOT,'apps/game-profiles/steam-413150.json'));
       if (hasCatalogProfile) {
@@ -1148,7 +1148,7 @@ async function main() {
         // 既存の対象消失試験はカタログに定義のない模擬Epicゲームで継続する。
         from=p1.mark(); app.send({type:'select_game',title:'epic:Gamma'});
         await p1.waitFor(m=>m.type==='game' && m.game.title==='epic:Gamma' && m.game.phase==='lobby',{from});
-        from=p1.mark(); await confirmLineup(mon, p1); p1.send({type:'command',cmd:'START'}); await phaseIs(p1,'preparing',from);
+        from=p1.mark(); await confirmLineup(mon, p1); p1.send({type:'command',cmd:'PREPARE'}); await phaseIs(p1,'preparing',from);
       }
       p1.send({ type: 'command', cmd: 'READY' });
       await phaseIs(p1, 'coop', from);
@@ -1184,7 +1184,7 @@ async function main() {
       app.send({ type: 'select_game', title: 'minecraft-java' });
       await p1.waitFor((m) => m.type === 'game' && m.game.title === 'minecraft-java' && m.game.phase === 'lobby' && !m.game.launch, { from, what: 'title back' });
       from = p1.mark();
-      await confirmLineup(mon, p1); p1.send({ type: 'command', cmd: 'START' });
+      await confirmLineup(mon, p1); p1.send({ type: 'command', cmd: 'PREPARE' });
       await phaseIs(p1, 'preparing', from);
       p1.send({ type: 'command', cmd: 'READY' });
       await phaseIs(p1, 'coop', from);

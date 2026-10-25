@@ -39,7 +39,6 @@ async function check(mode) {
     await until(async () => { try { return (await fetch(`http://127.0.0.1:${port}/api/info`)).ok; } catch { return false; } }, '起動しない');
     const mon = await client();
     mon.sendJson({ type: 'monitor', page: 'host' });
-    mon.sendJson({ type: 'required', required: 1 });
     mon.sendJson({ type: 'inject_mode', mode: 'on' });
     const p1 = await client();
     p1.sendJson({ type: 'hello', protocolVersion: version, clientId: '終了試験用の端末' });

@@ -1,6 +1,6 @@
 // PC アプリ画面 (app.html) の表示内容を、ホストの状態 (state / game / inject) から作る。
 // 画面の部品に依存しない純粋な関数だけを置き、Node の試験 (scripts/sim/app-view-test.mjs) で表示とサーバー状態の一致を確かめる。
-// 開始できるかどうかはサーバーの canStart をそのまま使い、画面側で判定し直さない (理由の説明だけを作る)。
+// 開始・準備・再開できるかはサーバーの canReady・canPrepare・canResume をそのまま使い、画面側で判定し直さない。
 
 export const SCREENS = ['join', 'game', 'roles'];
 
@@ -135,11 +135,12 @@ export const GAMES = [
   {
     id: 'minecraft-java',
     name: 'Minecraft Java Edition',
-    status: '新しい準備・Ready手順は実機受入前',
+    // 操作設定の「手順」(#109・#114 の後の開始手順)
     steps: [
+      'PCの画面でゲームを選び、メンバーと分担を決定する',
       'Minecraft のランチャーから手動で起動し、ワールドに入っておく',
       'ホットバーに使うアイテムを並べておく（インベントリ操作はホストのリモコンでは限られます）',
-          'Minecraftを開いてワールドを準備し、前面にした後にホストがReadyを押す',
+      '「ゲームを準備する」の後、Minecraftを前面にしてホストがスマホでReadyを押す',
     ],
   },
 ];
@@ -232,45 +233,6 @@ export function slotViews(slots) {
     const label = { empty: '空き', connected: '接続中', lost: '切断中（再接続を待っています）' }[state];
     return { slot: r.slot, title: r.title, host: !!r.host, state, label, device: s.connected ? device(s.ua) : '' };
   });
-}
-
-/** 開始の可否 (サーバーの canStart) と、開始できない理由・注意 */
-export function startView(game, inject) {
-  if (!game) return { canStart: false, reasons: ['PC ホストに接続していません'], notes: [] };
-  const connected = game.connected || [];
-  const reasons = [...(game.readyReasons || [])];
-  if (!connected.includes('P1')) reasons.push('ホスト（P1）が接続していません');
-  const lack = (game.required || MIN_PLAYERS) - connected.length;
-  if (lack > 0) reasons.push(`あと ${lack} 人の参加が必要です（${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べます）`);
-  const notes = [];
-  if (inject && inject.mode !== 'on') notes.push('ゲームへの入力が「常時ON」ではありません。このままでは操作が Minecraft に届きません');
-  return { canStart: !!game.canStart, reasons: game.canStart ? [] : reasons, notes };
-}
-
-/** 進行の表示 (協力プレイ中・一時停止中の案内) */
-export function phaseView(game, inject) {
-  if (!game) return { phase: 'unknown', title: '接続中…', detail: '' };
-  if (game.phase === 'coop') {
-    const delivering = !!inject?.active;
-    return {
-      phase: 'coop',
-      title: '協力プレイ中',
-      detail: inject?.mode === 'test'
-        ? '診断用のテストモードです。操作の送信先は疑似ゲーム画面です。Minecraft で遊ぶには③で「常時ON」に切り替えてください'
-        : delivering
-        ? 'Minecraft に操作を送っています。止めるときはホストのスマホで PAUSE'
-        : inject?.mode === 'on'
-          ? 'Minecraft のウィンドウをクリックして前面にしてください。前面のときだけ操作が届きます'
-          : 'ゲームへの入力が OFF です（③ で「常時ON」にしてください）',
-    };
-  }
-  if (game.phase === 'preparing') return {phase:'preparing',title:'ゲームを準備中',detail: [game.prepareStatus, ...(game.readyReasons || []), 'ホストだけがReadyを押して開始します'].filter(Boolean).join('。')};
-  if (game.phase === 'paused') {
-    const reason = game.reason === 'host pause' ? 'ホストが一時停止しました' : game.reason === 'emergency stop' ? 'PC の緊急停止' : game.reason === 'app focus' ? 'PC アプリの画面に戻ったため、すべてのキーを離しました' : /disconnected$/.test(game.reason || '') ? `${game.reason.split(' ')[0]} の通信が切れました` : game.reason || '';
-    return { phase: 'paused', title: '一時停止中', detail: `${reason}。ホストのスマホで RESUME すると再開します` };
-  }
-  if (game.reason === 'game change') return { phase: 'lobby', title: '準備中', detail: 'ゲームを変えたため、協力プレイを終えて準備中に戻りました。参加者と分担はそのままです' };
-  return { phase: 'lobby', title: '準備中', detail: 'ホストのスマホの矢印・Enter・Esc でもこの画面を操作できます' };
 }
 
 /** ホストのリモコン (矢印・Enter・Esc) による画面の移動。ui = { screen, game }。
