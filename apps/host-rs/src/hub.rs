@@ -1267,9 +1267,10 @@ impl Hub {
         if self.remote_app_active() {
             self.broadcast_monitors(&json!({"type":"remote","route":"app","epoch":self.game.epoch,"kind":kind,"dx":x,"dy":y}));
         } else if self.remote_game_active() {
-            let ok = if kind == "move" { self.input.mouse_move(x.round() as i32,y.round() as i32) }
-                else { self.input.wheel(if y > 0.0 { -1 } else if y < 0.0 { 1 } else { 0 }) };
-            let entry = self.record("remote_input",json!({"kind":kind,"dx":x,"dy":y,"ok":ok}));
+            // スクロール量に合わせてホイールを 1〜3 段送る (40px で 1 段、#122)。下へのスクロールはホイールの負の向き
+            let notches = if kind == "scroll" { ((y.abs() / 40.0).ceil() as i32).clamp(0, 3) * if y > 0.0 { -1 } else { 1 } } else { 0 };
+            let ok = if kind == "move" { self.input.mouse_move(x.round() as i32,y.round() as i32) } else { self.input.wheel(notches) };
+            let entry = self.record("remote_input",json!({"kind":kind,"dx":x,"dy":y,"notches":notches,"ok":ok}));
             self.broadcast_monitors(&json!({"type":"remote_input","entry":entry}));
         }
     }
