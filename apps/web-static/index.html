@@ -86,7 +86,6 @@
         </div>
       </div>
     </div>
-    <button class="cmd pause" data-cmd="PAUSE">一時停止・ホスト操作へ</button>
   </section>
 
   <!-- P2 視点 -->
@@ -115,6 +114,8 @@
       <button class="key" data-ctl="DROP">捨てる<small>Q</small></button>
     </div>
   </section>
+  <!-- ホストの停止操作は担当画面から独立させ、P1が視点・アクションへ交換しても表示する -->
+  <button class="cmd pause" data-cmd="PAUSE" id="fixedPause" hidden>一時停止・ホスト操作へ</button>
 </main>
 
 <dialog id="phoneDiagnostics" aria-labelledby="phoneDiagnosticsTitle"><h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection"></p><footer>

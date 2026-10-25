@@ -35,6 +35,7 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleTex
     // Ready の後に来た人は今回の協力プレイに参加しない (次の Ready から参加する、#57)
     const joined = !game.participants?.length || game.participants.includes(me);
     const generated = phase === 'coop' && joined && myActions(game, me);
+    $('fixedPause').hidden = phase !== 'coop' || !joined || !isHost || !!generated;
     const view = phase === 'coop' && joined ? (generated ? 'v-gen' : 'v-' + roleKey) : isHost ? 'v-remote' : 'v-wait';
     document.body.dataset.view=view;
     const characterName={P1:'blue',P2:'green',P3:'purple',P4:'red'}[me];

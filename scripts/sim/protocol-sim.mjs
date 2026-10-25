@@ -131,7 +131,7 @@ class Client {
     for (const w of [...this.waiters]) w();
   }
   send(m) {
-    if (target === 'rust' && m.type === 'command' && !('epoch' in m)) m = {...m, epoch: this.epoch};
+    if (target === 'rust' && (m.type === 'command' || m.type === 'role_ok') && !('epoch' in m)) m = {...m, epoch: this.epoch};
     this.ws.send(JSON.stringify(m));
   }
   // スマホ同様 1 秒ごとに ping (4 秒の切断判定に掛からないように)
@@ -232,7 +232,7 @@ async function confirmLineup(c, p1) {
   if (target === 'node') return;
   const g = [...p1.msgs].reverse().find((m) => m.type === 'game')?.game;
   const from = p1.mark();
-  c.send({ type: 'confirm_lineup', title: g.title, members: g.connected });
+  c.send({ type: 'confirm_lineup', title: g.title, members: g.connected, epoch: g.epoch });
   await p1.waitFor((m) => m.type === 'game' && m.game.lineupOk, { from, what: 'lineupOk' });
 }
 
@@ -1025,6 +1025,13 @@ async function main() {
       p1.send({ type: 'command', cmd: 'RESUME' });
       await p1.waitFor((m) => m.type === 'command_result' && m.cmd === 'RESUME' && !m.accepted, { from, what: '確認前の再開を拒否' });
       // 担当の変わっていない P1 の確認では進まない。本人 (P2・P3) が確認すると再開できる
+      const staleFrom = p1.mark();
+      p2.send({ type: 'role_ok', epoch: e0 });
+      p3.send({ type: 'role_ok', epoch: null });
+      await sleep(150);
+      assert(lastGame().roleAck.join() === 'P2,P3' && !p1.msgs.slice(staleFrom).some((m) => m.type === 'game' && m.game.canResume), '古い担当またはepochなしの確認を数えた');
+      await p2.waitFor((m) => m.type === 'game' && m.game.epoch === sw.game.epoch, { what: 'P2の新しい担当' });
+      await p3.waitFor((m) => m.type === 'game' && m.game.epoch === sw.game.epoch, { what: 'P3の新しい担当' });
       p1.send({ type: 'role_ok' });
       p2.send({ type: 'role_ok' });
       await p1.waitFor((m) => m.type === 'game' && m.game.roleAck.join() === 'P3', { from, what: 'P2 確認' });
@@ -1065,6 +1072,8 @@ async function main() {
       mon.send({ type: 'swap_roles', a: 'P3', b: 'P2' });
       const undone = await p1.waitFor((m) => m.type === 'game' && m.game.roleOf?.P2 === 'P2', { from, what: '元に戻す' });
       assert(!undone.game.lineupOk && !undone.game.canPrepare && undone.game.roleAck.join() === 'P3,P2', JSON.stringify(undone.game));
+      await p2.waitFor((m) => m.type === 'game' && m.game.epoch === undone.game.epoch, { what: 'P2の復元後の担当' });
+      await p3.waitFor((m) => m.type === 'game' && m.game.epoch === undone.game.epoch, { what: 'P3の復元後の担当' });
       p2.send({ type: 'role_ok' }); p3.send({ type: 'role_ok' });
       await p1.waitFor((m) => m.type === 'game' && m.game.roleAck.length === 0, { from, what: '確認' });
       await confirmLineup(mon, p1);
@@ -1118,8 +1127,10 @@ async function main() {
       s = await app.waitFor((m) => m.type === 'state' && m.game.launch?.state === 'failed', { from: afrom, what: 'unconfirmed reject' });
       assert(s.game.phase === 'lobby', JSON.stringify(s.game));
       // 画面が見ていたメンバーと違う決定は受け付けない
-      app.send({ type: 'confirm_lineup', title: 'steam:413150', members: ['P1', 'P2'] });
-      app.send({ type: 'confirm_lineup', title: 'minecraft-java', members: g.game.connected });
+      app.send({ type: 'confirm_lineup', title: 'steam:413150', members: ['P1', 'P2'], epoch: g.game.epoch });
+      app.send({ type: 'confirm_lineup', title: 'minecraft-java', members: g.game.connected, epoch: g.game.epoch });
+      app.send({ type: 'confirm_lineup', title: g.game.title, members: g.game.connected, epoch: g.game.epoch - 1 });
+      app.send({ type: 'confirm_lineup', title: g.game.title, members: g.game.connected });
       await sleep(200);
       assert(!app.msgs.slice(afrom).some((m) => m.type === 'state' && m.game.lineupOk), '古い画面の決定を受け付けた');
       // 決定 → 戻ると取り消し → 決定し直して起動。起動中の連打は 1 回だけ。ウィンドウが現れるまで launching

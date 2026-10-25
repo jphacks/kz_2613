@@ -295,7 +295,7 @@ import { myActions } from './generated-controls.js';
   });
 
   // ---- 画面の切り替え ----
-  const phoneView = createPhoneView({releaseAll,onDiagnosticsOpen:stopRemote,roleText:ROLE_TEXT,bindControl,onRoleOk:()=>sendWs({type:'role_ok'})});
+  const phoneView = createPhoneView({releaseAll,onDiagnosticsOpen:stopRemote,roleText:ROLE_TEXT,bindControl,onRoleOk:()=>sendWs({type:'role_ok',epoch:game?.epoch})});
   function render() { phoneView({me,isHost,game}); }
 
   // ---- 通信テスト: 20Hz で 10 秒送る (注入はされない) ----

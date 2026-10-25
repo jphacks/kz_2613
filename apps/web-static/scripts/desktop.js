@@ -44,7 +44,7 @@ function gameMain(){
 // 起動は選んだ項目のIDだけを送る (起動方法はホストが決める)
 function rolesRun(action){
   if(!action||action.disabled)return;
-  if(action.kind==='confirm')send({type:'confirm_lineup',title:game.title,members:game.connected});
+  if(action.kind==='confirm')send({type:'confirm_lineup',title:game.title,members:game.connected,epoch:game.epoch});
   else if(action.kind==='launch')send({type:'launch_game',id:action.id});
   else if(action.kind==='prepare')send({type:'prepare'});
   else if(action.kind==='swap')setUi({...ui,swap:true});
@@ -89,6 +89,7 @@ function dialogRemote(control){
 }
 document.addEventListener('keydown',e=>{
   if(document.querySelector('dialog[open]'))return;
+  if((e.key==='Enter'||e.key===' ')&&e.target.closest('[data-swap]')){e.preventDefault();e.target.closest('[data-swap]').click();return;}
   const control={ArrowLeft:'LEFT',ArrowRight:'RIGHT',ArrowUp:'UP',ArrowDown:'DOWN',Enter:'ENTER',Escape:'ESC'}[e.key];
   // 矢印は補助ナビにフォーカスがあっても移動する。Enterはボタン本来の実行を優先する。
   if(control&&(control!=='ENTER'||!e.target.closest('button,a,summary'))){e.preventDefault();remoteControl(control);}
