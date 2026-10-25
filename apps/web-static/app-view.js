@@ -280,6 +280,19 @@ export function device(ua) {
   return 'その他';
 }
 
+/**
+ * 参加の案内の形 (#133)。info = /api/info。
+ * two: ① Wi-Fi・② 参加 の 2 つを並べるか。wifiQr: ① の QR (ホットスポットが OFF なら null で、ON にするボタンを出す)
+ */
+export function joinGuideView(info) {
+  const hotspot = info?.hotspot, wifi = info?.wifi;
+  if (hotspot && !hotspot.on) {
+    return { two: true, wifiQr: null, button: true, bubble: '①→②の順に<br>進めよう！', note: 'PCと同じWi-Fiにつながっていれば、②だけで参加できます' };
+  }
+  if (wifi) return { two: true, wifiQr: wifi.qr, button: false, bubble: '①→②の順に<br>読み取ろう！', note: `Wi-Fi：${wifi.ssid}` };
+  return { two: false, wifiQr: null, button: false, bubble: 'みんなのスマホで<br>読み取ろう！', note: '' };
+}
+
 /** 参加用 URL: ホットスポット (192.168.137.x) を優先する */
 export function joinUrl(info) {
   const urls = info?.urls || [];

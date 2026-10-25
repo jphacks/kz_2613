@@ -21,9 +21,15 @@
     <button class="main-cta disabled-start" id="blockedStart" disabled hidden>START</button>
     <div class="main-cta start-instruction" id="readyInstruction" role="note" hidden>START<span>ホストのスマホでReady</span></div>
     <div class="join-guide" id="joinGuide">
-      <p class="qr-bubble">みんなのスマホで<br>読み取ろう！</p>
+      <p class="qr-bubble" id="qrBubble">みんなのスマホで<br>読み取ろう！</p>
       <svg class="qr-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg>
+      <!-- ① ホットスポットにつなぐ・② 参加する の 2 つを並べる (#133)。1 つの QR で両方はできないため -->
+      <p class="qr-step-label wifi-label" id="wifiLabel" hidden>① Wi-Fiにつなぐ</p>
+      <div class="qr wifi-qr" id="wifiQr" hidden></div>
+      <button class="hotspot-btn" id="hotspotBtn" hidden>ホットスポットを<br>ONにする</button>
+      <p class="qr-step-label join-label" id="joinLabel" hidden>② 参加する</p>
       <div class="qr" id="qr"><span>QRを読み込み中…</span></div>
+      <p class="qr-note" id="qrNote" hidden></p>
       <button class="connection-help" id="connectionHelpBtn">接続方法・URLを確認</button>
     </div>
     <button class="open-game" id="openGameBtn" hidden>Minecraftを前面にする</button>
