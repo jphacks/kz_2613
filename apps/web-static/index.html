@@ -42,14 +42,14 @@
         <button class="key d" data-ctl="DOWN">▼</button>
       </div>
       <div class="col">
-        <button class="key" data-ctl="ENTER">決定<small>Enter</small></button>
-        <button class="key" data-ctl="ESC">戻る<small>Esc</small></button>
+        <button class="key" data-ctl="ENTER">Enterキー</button>
+        <button class="key" data-ctl="ESC">Escキー</button>
       </div>
     </div>
     <div id="remotePad" role="application" aria-label="ホストのタッチパッド">指でPCのカーソルを動かす</div>
     <div class="remoteButtons">
-      <button class="key" data-ctl="REMOTE_LEFT">左クリック</button><button class="key" data-ctl="REMOTE_RIGHT">右クリック</button><button class="key" data-ctl="REMOTE_E">持ち物 E</button>
-      <button class="key" data-ctl="REMOTE_WHEEL_UP">上へ</button><button class="key" data-ctl="REMOTE_WHEEL_DOWN">下へ</button>
+      <button class="key" data-ctl="REMOTE_LEFT">左クリック</button><button class="key" data-ctl="REMOTE_RIGHT">右クリック</button><button class="key" data-ctl="REMOTE_E">Eキー</button>
+      <button class="key" data-ctl="REMOTE_WHEEL_UP">ホイール↑</button><button class="key" data-ctl="REMOTE_WHEEL_DOWN">ホイール↓</button>
     </div>
     <div id="remoteRoute" class="note"></div>
     <button class="cmd" id="startBtn">START</button>
@@ -69,7 +69,7 @@
 
   <!-- 視点のパッドと感度の置き場所。視点を担当する人の操作画面へ移す -->
   <div id="lookHome" hidden>
-    <div id="pad">ドラッグで視点を動かす<div class="dot"></div></div>
+    <div id="pad">ドラッグでマウス移動<div class="dot"></div></div>
     <label class="sens">感度 <input type="range" id="sens" min="0.5" max="6" step="0.1" value="2"> <span id="sensVal">2.0</span></label>
   </div>
 

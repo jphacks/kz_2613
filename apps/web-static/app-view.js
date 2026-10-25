@@ -115,7 +115,26 @@ export function screenOnGameUpdate(ui, previousPhase, game) {
     screen:game?.phase && game.phase !== previousPhase && game.phase !== 'lobby' ? 'roles' : ui.screen};
 }
 
-// 操作ごとの初期のキー表示。ホストの game.keys (ゲームのキー設定に合わせた実際のキー) が来るまで使う (#101)
+/** 実際に送る入力の表示。ゲーム内の操作名から用途を推測しない (#150)。 */
+export function inputKeyLabel(game, action) {
+  if (action.type === 'mouseDelta') return 'マウス移動';
+  if (action.type === 'wheel') return 'ホイール';
+  return outputKeyLabel(game?.keys?.actions?.[action.id]);
+}
+
+export function outputKeyLabel(output) {
+  if (!output?.label) return '送らない';
+  const label = output.label;
+  return /^[A-Za-z0-9↑↓←→]+$/.test(label) ? `${label}キー` : label;
+}
+
+/** 見出しもゲーム内の意味ではなく、割り当てた入力の種類から作る。 */
+export function inputGroupLabel(game, actions) {
+  return [...new Set(actions.map(action => action.type === 'mouseDelta' ? 'マウス移動'
+    : action.type === 'wheel' || inputKeyLabel(game, action).startsWith('ホイール') ? 'ホイール'
+    : /クリック/.test(inputKeyLabel(game, action)) ? 'クリック' : 'キー'))].join('・');
+}
+
 /**
  * 分担の確認画面に出す担当の内容。どのゲームも操作定義と分担 (#105・#141) から作る。
  * 協力プレイ中は決まった分担 (game.assigned)、それ以外は今の参加人数での案 (game.profile.assignment)
@@ -129,10 +148,9 @@ export function roleView(game, slot) {
   for (const id of ids) {
     const a = p.actions.find((x) => x.id === id);
     if (!a) continue;
-    const g = p.groups.find((x) => x.id === a.group);
-    if (!byGroup.has(a.group)) byGroup.set(a.group, { label: g?.label || a.group, items: [] });
-    const key = a.type === 'mouseDelta' ? 'マウス移動' : a.type === 'wheel' ? 'ホイール' : (game.keys?.actions?.[id]?.label ?? '送らない');
-    byGroup.get(a.group).items.push(`${a.label}（${key}）`);
+    const label = inputGroupLabel(game, [a]);
+    if (!byGroup.has(label)) byGroup.set(label, { label, items: [] });
+    byGroup.get(label).items.push(inputKeyLabel(game, a));
   }
   const groups = [...byGroup.values()];
   return {
