@@ -8,7 +8,7 @@ parser=argparse.ArgumentParser()
 parser.add_argument('cycle')
 parser.add_argument('--references',default='C:/Users/kumes/Downloads/Recooplay素材')
 args=parser.parse_args()
-evidence=Path(__file__).resolve().parents[2]/'docs/design/evidence'
+evidence=Path(__file__).resolve().parents[2]/'docs/develop/design/evidence'
 directory=evidence/args.cycle
 refs=json.loads((evidence/'pc-fidelity-reference.json').read_text(encoding='utf8'))
 metrics=json.loads((directory/'metrics.json').read_text(encoding='utf8'))

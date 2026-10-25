@@ -1,6 +1,6 @@
 # Re:Cooplay ホスト（Rust 版）
 
-PC 側サーバー（試作品の Node 参照実装と同じ仕様・メッセージ形式で作り、参照実装は #86 で削除した）。スマホ / PC の画面は `apps/web-static/` を配信する。通信契約は `docs/architecture/protocol.md`。
+PC 側サーバー（試作品の Node 参照実装と同じ仕様・メッセージ形式で作り、参照実装は #86 で削除した）。スマホ / PC の画面は `apps/web-static/` を配信する。通信契約は `docs/protocol-specification.md`。
 
 **検証状況：** PC 上のシミュレーション（注入なし）のみ。Rust 版の実入力・スマホ実機・Minecraft・Tauri は未検証。
 

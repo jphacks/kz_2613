@@ -1,4 +1,4 @@
-// 通信契約 (docs/architecture/protocol.md) のシミュレーション。
+// 通信契約 (docs/protocol-specification.md) のシミュレーション。
 // ホストを RECOOPLAY_DRY_RUN=1 (OS へ入力を送らない) で起動し、スマホ 3 台と PC 画面を模した WebSocket で
 // 役割・認可・進行・入力の先着 1 回処理・切断時の全解放・復帰設定を照合する。
 // 入力注入は行わないので、ゲームや実機の合格の代わりにはならない。

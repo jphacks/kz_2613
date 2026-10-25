@@ -5,7 +5,7 @@
 //
 //   node scripts/profiles/build-catalog.mjs --cache <フォルダ>   # 取得した公開データの置き場 (リポジトリ外)。あれば再取得しない
 //
-// 出力: apps/game-profiles/steam-<AppID>.json ほか、docs/data/top500-games.md と .json
+// 出力: apps/game-profiles/steam-<AppID>.json ほか、docs/develop/data/top500-games.md と .json
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -183,8 +183,8 @@ for (const g of games) {
 catalog.push({ rank: null, id: 'minecraft-java', appid: null, name: 'Minecraft: Java Edition', template: 'override', suitability: 'good', status: 'device', controllerFull: false, sources: ['nonsteam'] });
 catalog.push({ rank: null, id: 'epic-fortnite', appid: null, name: 'Fortnite', template: 'fps', suitability: 'good', status: 'template', controllerFull: true, sources: ['nonsteam'] });
 
-fs.mkdirSync(path.join(ROOT, 'docs', 'data'), { recursive: true });
-fs.writeFileSync(path.join(ROOT, 'docs', 'data', 'top500-games.json'), JSON.stringify({ generated: today, method: '売上上位・全期間の売上上位・最もプレイ・月ごとのトップリリースの順位を合算（scripts/profiles/build-catalog.mjs）', total: catalog.length, games: catalog }, null, 1) + '\n');
+fs.mkdirSync(path.join(ROOT, 'docs', 'develop', 'data'), { recursive: true });
+fs.writeFileSync(path.join(ROOT, 'docs', 'develop', 'data', 'top500-games.json'), JSON.stringify({ generated: today, method: '売上上位・全期間の売上上位・最もプレイ・月ごとのトップリリースの順位を合算（scripts/profiles/build-catalog.mjs）', total: catalog.length, games: catalog }, null, 1) + '\n');
 const count = (k, v) => catalog.filter((c) => c[k] === v).length;
 const md = [
   `# 主要500タイトルの一覧（#98）`, '',
@@ -197,5 +197,5 @@ const md = [
   '| 順位 | ゲーム | AppID | 型 | 向き | 状態 | コントローラー完全対応 |', '|---|---|---|---|---|---|---|',
   ...catalog.map((c) => `| ${c.rank ?? '-'} | ${c.name.replace(/\|/g, '/')} | ${c.appid ?? '-'} | ${c.template} | ${c.suitability} | ${c.status} | ${c.controllerFull ? '○' : ''} |`),
 ];
-fs.writeFileSync(path.join(ROOT, 'docs', 'data', 'top500-games.md'), md.join('\n') + '\n');
+fs.writeFileSync(path.join(ROOT, 'docs', 'develop', 'data', 'top500-games.md'), md.join('\n') + '\n');
 console.log(`生成: ${catalog.length} 本（Steam ${games.length}、overrides ${games.filter((g) => overrides.has('steam-' + g.appid)).length}）`);

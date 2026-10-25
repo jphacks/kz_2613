@@ -29,7 +29,7 @@ const SLOT_NAMES: [&str; MAX_SLOTS] = ["P1", "P2", "P3", "P4"];
 // 枠の既定の表示 (Minecraft を 3〜4人で遊ぶときの担当)。実際の担当は分担 (game.assigned) で決まる
 // 枠の呼び名。操作の分担は操作定義から決める (#141。Minecraft の固定の分担はやめた)
 const SLOT_ROLES: [&str; MAX_SLOTS] = ["ホスト", "参加者", "参加者", "参加者"];
-/// 通信契約の版 (docs/architecture/protocol.md)。変えるときは protocol.md とシミュレーションも同時に更新する
+/// 通信契約の版 (docs/protocol-specification.md)。変えるときは仕様書とシミュレーションも同時に更新する
 // PC アプリで選べるゲーム (apps/web-static/app-view.js の GAMES と同じ id)。P0 は Minecraft Java Edition のみ。
 // "pseudo-game" は診断用の疑似ゲーム画面 (/game) で、PC アプリの一覧には出さない (ゲーム変更の試験にも使う)
 const TITLES: [&str; 2] = ["minecraft-java", "pseudo-game"];
