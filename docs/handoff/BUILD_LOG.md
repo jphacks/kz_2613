@@ -856,6 +856,13 @@
 - `cargo test` 42件成功（Minecraftの3人の分担がこれまでの固定の分担と同じであることを追加）。`protocol-sim.mjs`（Rust dry-run）49/49：試験の送り口で、協力プレイ中はMinecraftの操作の呼び名を定義の操作に読み替え、固定の操作名を拒否する試験は読み替えずに送る。3人の分担が固定の分担と同じであることを追加した。`shutdown-sim.mjs`、`app-view-test.mjs` 25/25、`phone-view-test.mjs`、`ui-input-test.mjs` 11/11、`controller-diagnostics-test.mjs`、`profile-extract-test.mjs`、`profile-catalog-test.mjs`、`input-probe-sim.mjs` 12/12、`check-static-pages.mjs`、`static-assets-sim.mjs`、`verify-ui-evidence.mjs`、`verify_overlay.py`が成功した。
 - dry-runのホストとヘッドレスChrome 3台（スマホの大きさ）で、Minecraftの3人がそれぞれ移動（スティック・ジャンプ・スニーク・ダッシュ）、視点（パッド・感度）、攻撃・使う・持ち物の画面になることを撮影して確認した。実機のMinecraft・3人での操作は未確認。
 
+## 2026-10-26 — 自動前面化の引き継ぎ（Codex、#138）
+
+- Claudeの最終セッション記録で作業停止と未コミットの#138を確認し、引き継いだ。coopへ入った後の前面化は開始条件の前面チェックを通れず到達しないため、開始要求の可否と入力許可を分け、停止した状態で前面化・実際の対象照合を行ってからcoopへ進むよう修正した。前面化拒否時は停止を保ち手動切替を案内し、自動復帰の再試行を解除する。
+- `app-view-test.mjs`25/25、`phone-view-test.mjs`（前面ボタンと拒否案内を追加）、`ui-input-test.mjs`11/11、`controller-diagnostics-test.mjs`、`verify-ui-evidence.mjs`、`profile-catalog-test.mjs`、`static-assets-sim.mjs`（34ファイル）、`check-static-pages.mjs`、`git diff --check` が成功。前面化の成功・拒否をOS操作なしに差し替える通信試験を追加した。Rustの再ビルド・単体・通信試験は続けて実施し、結果を追記する。
+- Windowsの実ウィンドウとスマホでのReady・再開・前面化拒否は未検証で、#138は実機受入まで未完了とする。無線・ファイアウォール設定は変更していない。
+- ClaudeのPR #142〜#144は差分・入力解放・サーバー認可をレビューし、各headのRust・構造CI成功を確認して順にmainへマージした（61ce70b、bf14a63、9902c4a）。実機未検証の条件は引き継ぐ。
+
 ## 2026-10-26 — Windows配布zipの自動検証（Codex、#145）
 
 - 配布物に版・commit・未コミット変更の有無と全ファイルのSHA-256を記録し、zipの照合値を出力する。Windows CIで同じチェックアウトから両exeをビルドし、梱包・検証後に成果物として保存する。利用者向けの安全案内も選択したゲームに合わせた。
