@@ -620,7 +620,7 @@ impl Hub {
     }
 
     fn can_inject(&self) -> bool {
-        self.input.available()
+        self.title_known(&self.game.title) && self.input.available()
             && match self.inject {
                 InjectMode::Off => false,
                 InjectMode::Test => self.game_focused(),
@@ -1099,7 +1099,9 @@ impl Hub {
     fn apply_target(&mut self) {
         self.target = match self.games.iter().find(|g| g.id == self.game.title) {
             Some(g) => Target::install_dir(&g.install_dir),
-            None => self.base_target.clone(),
+            None if TITLES.contains(&self.game.title.as_str()) => self.base_target.clone(),
+            // 一覧から消えたゲームをMinecraftへ読み替えて送らない。
+            None => Target { processes: vec![], title_contains: String::new(), dir: None },
         };
         self.check_target();
         self.push_state();
@@ -1128,8 +1130,22 @@ impl Hub {
         // ゲーム名・インストール先はログに残さない (件数だけ)
         let count = |src: &str| list.iter().filter(|g| g.source == src).count();
         self.log("games_detected", json!({ "steam": count("steam"), "epic": count("epic") }));
+        let previous = self.games.iter().find(|g| g.id == self.game.title).map(|g| g.install_dir.clone());
+        let next = list.iter().find(|g| g.id == self.game.title).map(|g| g.install_dir.clone());
         self.games = list;
-        // 選んでいたゲームが一覧から消えたら、入力先を固定の条件へ戻す (準備・Ready は「ゲームを選択」で止まる)
+        if !TITLES.contains(&self.game.title.as_str()) && previous != next {
+            // 再検出で対象が消えたり場所が変わったら、全解放し旧入力・起動待ちを破棄する。
+            self.release_outputs(None);
+            self.reset_look();
+            self.game.auto_resume_until = 0;
+            self.launch = None;
+            if self.game.phase == Phase::Coop {
+                self.set_phase(Phase::Paused, if next.is_none() { "game unavailable" } else { "game target changed" });
+            } else {
+                self.advance_epoch();
+            }
+        }
+        // 一覧に戻っても自動再開せず、明示操作と現在の入力先を確認する。
         self.apply_target();
         self.push_game();
     }

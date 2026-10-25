@@ -827,7 +827,39 @@ async function main() {
       host.child.stdin.write('target on\n');
       s = await app.waitFor((m) => m.type === 'state' && m.game.launch?.state === 'started', { from: afrom, what: 'started' });
       assert(s.game.phase === 'lobby', '起動しただけで進行が変わった');
-      // 検出したゲームでも準備・Ready の流れで開始できる。戻して再開
+      // 検出したゲームを開始し、押下中に再検出で消えても別ゲームへ送らない。
+      from = p1.mark();
+      const p3from = p3.mark();
+      p1.send({ type: 'command', cmd: 'START' });
+      await phaseIs(p1, 'preparing', from);
+      p1.send({ type: 'command', cmd: 'READY' });
+      await phaseIs(p1, 'coop', from);
+      await p3.waitFor(m => m.type === 'game' && m.game.phase === 'coop' && m.game.epoch === p1.epoch, { from: p3from, what: 'P3 current game epoch' });
+      let mfrom = mon.mark();
+      p1.input('FWD', 'down');
+      p3.input('USE', 'down');
+      await injected(mon, 'KEY_W', 'down', mfrom);
+      await injected(mon, 'MOUSE_R', 'down', mfrom);
+      const manifest = path.join(host.logDir, 'games', 'steam', 'steamapps', 'appmanifest_413150.acf');
+      fs.renameSync(manifest, manifest + '.disabled');
+      from = p1.mark();
+      mfrom = mon.mark();
+      app.send({ type: 'refresh_games' });
+      const absent = await phaseIs(p1, 'paused', from);
+      assert(absent.game.reason === 'game unavailable' && !absent.game.inputActive && !absent.game.canResume, JSON.stringify(absent.game));
+      await injected(mon, 'KEY_W', 'up', mfrom);
+      await injected(mon, 'MOUSE_R', 'up', mfrom);
+      const stopped = mon.mark();
+      p1.input('FWD', 'down');
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await sleep(150);
+      assert(!mon.msgs.slice(stopped).some(m => m.type === 'inject' && m.entry.state === 'down'), '消えた対象への入力を別ゲームへ送った');
+      fs.renameSync(manifest + '.disabled', manifest);
+      afrom = app.mark();
+      app.send({ type: 'refresh_games' });
+      const restored = await app.waitFor(m => m.type === 'state' && !m.gamesScanning && m.games?.length === 2, { from: afrom, what: 'catalog restored' });
+      assert(restored.game.phase === 'paused', '再検出で自動再開した');
+      // Minecraftへ戻して再開する。
       from = p1.mark();
       app.send({ type: 'select_game', title: 'minecraft-java' });
       await p1.waitFor((m) => m.type === 'game' && m.game.title === 'minecraft-java' && !m.game.launch, { from, what: 'title back' });
