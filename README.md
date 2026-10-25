@@ -1,36 +1,49 @@
 # Re:Cooplay（リコープレイ）— ゲームはそのまま。操作はみんなで。
 
 <div align="center">
+  <br>
 
-<img src="assets/images/recooplay-thumbnail.png" alt="Re:Cooplay 製品紹介サムネイル" width="960">
+  <img src="assets/images/recooplay-thumbnail.png" alt="Re:Cooplay 製品紹介サムネイル" width="960">
 
-<img src="assets/images/recooplay-hackday-play.webp" alt="Hack Dayで3人がスマートフォンを使い、同じPC画面を囲んで共同操作する実際の写真" width="760">
+  ---
 
-<sub>Hack Dayでの実プレイ写真：3人で1つのキャラクターを共同操作</sub>
+  ### 🎮 プレイ風景
 
-### 🎮 実際のプレイ風景
-
-**3人で1つのキャラクターを操作する。** Hack Dayで披露したMinecraftの共同プレイをご覧ください。
+  <p>移動・視点・攻撃を3人で分担し、声を掛け合いながら1つのキャラクターを操作する様子をご覧ください。</p>
 
 https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
-<sub>Hack Day中に撮影したMinecraftの実プレイ映像。移動・視点・攻撃などを3人で分担しています。</sub>
+  <p><sub>Hack Dayの開発中に撮影した実プレイ風景：3人がスマートフォンから1つのキャラクターを共同操作</sub></p>
 
-[![Hack Day Audience Award](https://img.shields.io/badge/JPHACKS%202026-Hack%20Day%20Audience%20Award-gold?style=for-the-badge)](https://github.com/jphacks/kz_2613)
+  ---
 
-**JPHACKS 2026 金沢会場 Hack Day Audience Award 受賞**
+  ### クイックリンク
 
-[ギャラリー](docs/gallery.md) ・ [動作確認](docs/verification.md) ・ [資料一覧](docs/README.md)
+  [![ギャラリー](https://img.shields.io/badge/ギャラリー-写真%20%26%20UI-green?style=for-the-badge)](./docs/gallery.md)
+  [![動作確認](https://img.shields.io/badge/動作確認-実機と検証状況-blue?style=for-the-badge)](./docs/verification.md)
+  [![資料一覧](https://img.shields.io/badge/資料一覧-ドキュメント-blueviolet?style=for-the-badge)](./docs/README.md)
+
+  ---
+
+  [![JPHACKS 2026](https://img.shields.io/badge/JPHACKS%202026-Hack%20Day%20Audience%20Award-gold?style=for-the-badge&logo=trophy)](https://github.com/jphacks/kz_2613)
+
+  ## 🎉 JPHACKS 2026 受賞結果 🎉
+
+  ### 🏆 Hack Day（金沢会場）
+
+  **Hack Day Audience Award**
 
 </div>
 
 ---
 
-Re:Cooplay（リコープレイ）は、**既存のPCゲームに新しい協力プレイを後付けするツール**です。
+Re:Cooplay（リコープレイ）は、**既存のPCゲームに、新しい協力プレイを後付けするツール**です。
 
-普段は1人が操作するキャラクターを、2〜4人で分担して動かします。移動する人、視点を動かす人、攻撃する人。**みんなが操作の当事者になることで、いつものゲームに新しい体験が生まれます。**
+普段は1人で操作するゲームのキャラクターを、2〜4人で分担して動かします。
 
-ゲーム本体の改造は不要。参加者はそれぞれのスマートフォンを使い、1つの画面を共有しながら遊べます。
+移動する人、視点を動かす人、攻撃する人。**全員が操作の当事者になることで、いつものゲームに新しい協力体験が生まれます。**
+
+ゲーム本体を改造することなく、手元のスマートフォンから新しい遊び方を楽しめます。
 
 ---
 
@@ -49,6 +62,7 @@ Re:Cooplay（リコープレイ）は、**既存のPCゲームに新しい協力
 - [Hack Dayでの実装差分](#hack-dayでの実装差分)
 - [動作確認の範囲](#動作確認の範囲)
 - [試してみるには](#試してみるには)
+- [起動・開発手順](#起動開発手順)
 - [権利・利用上の注意](#権利利用上の注意)
 
 ---
@@ -71,32 +85,47 @@ Re:Cooplayは、既存のゲームにそんな新しい遊び方を加えたい�
 
 ### 製品説明（具体的な製品の説明）
 
-> **ゲーム体験 × Tech：1つのキャラクターを、みんなで動かす。**
+> **ゲーム体験 × Tech：1つのキャラクターを、みんなで動かす**
 
-Re:Cooplayは、**複数人がそれぞれのスマートフォンから、1つのPCゲームのキャラクターを共同操作する**ツールです。参加人数に応じて操作を分担し、全員の入力を組み合わせて1つのキャラクターを動かします。
+Re:Cooplay（リコープレイ）は、既存のPCゲームに新しい協力プレイを後付けするツールです。
+
+参加者はそれぞれのスマートフォンをコントローラーとして使い、1つのキャラクターの操作を分担します。移動や視点、攻撃など、それぞれの操作を組み合わせることで、みんなで1つのキャラクターを動かします。
 
 #### 例えば、3人でMinecraftを遊ぶ場合
 
 | プレイヤー | 担当する操作 |
-|:--|:--|
+|---|---|
 | P1 | 移動・ジャンプ |
 | P2 | 視点・カメラ操作 |
 | P3 | 攻撃・アイテムの使用 |
 
-敵が現れたとき、移動担当だけでは敵を狙えず、視点担当だけでは攻撃できません。互いの操作に合わせることで、初めて思いどおりにキャラクターを動かせます。
+敵が現れたら、移動担当が距離を取り、視点担当が敵を捉え、攻撃担当がタイミングを合わせて攻撃します。
+
+それぞれが別の操作を担当するからこそ、自然と会話や協力が生まれます。
 
 <br>
 
 #### 遊び方
 
-1. **PCでRe:Cooplayを起動する。** 参加用のQRコードを表示します。
-2. **各自のスマホで参加する。** QRコードからWebアプリを開きます。最初の参加者がホストになります。
-3. **ゲームを選ぶ。** ホストのスマホをリモコンとして使い、PC画面からゲームを選択します。
-4. **担当を確認・決定する。** 参加人数に合わせた操作分担を確認し、必要なら担当を入れ替えます。
-5. **ゲームを起動・準備する。** 遊びたいワールドやステージを開きます。
-6. **みんなでプレイする。** ホストが「Ready」を押すと、各スマホが担当に応じた操作画面に切り替わります。
+1. **デスクトップアプリを起動する**  
+   PCでRe:Cooplayを起動すると、参加用のQRコードが表示されます。
 
-スマホへの専用アプリのインストールは不要です。1つのゲーム画面を見ながら、全員がプレイヤーとして参加できます。
+2. **スマホで参加する**  
+   スマートフォンでQRコードを読み取り、Webアプリで参加します。最初に参加した人がホストとなり、スマホをPC画面のリモコンとして使えるようになります。
+
+3. **遊びたいゲームを選ぶ**  
+   ホストがスマホをリモコンとして操作し、PC画面に表示されたゲーム一覧から遊びたいゲームを選択します。
+
+4. **操作を分担する**  
+   PC画面で参加メンバーそれぞれの担当を確認し、操作分担を決定します。必要に応じて担当を入れ替えることもできます。
+
+5. **ゲームを起動・準備する**  
+   ゲームを起動し、プレイしたいステージやワールドなどを準備します。
+
+6. **みんなで協力プレイ！**  
+   準備ができたら、ホストがスマホから「Ready」を押します。各自のスマホが担当する操作画面に切り替わり、みんなで1つのキャラクターを操作できるようになります。
+
+スマートフォンへの専用アプリのインストールは不要。1つのPCゲーム画面を共有しながら、複数人で協力プレイを楽しめます。
 
 ---
 
@@ -112,8 +141,6 @@ Re:Cooplayでは、**2〜4人で1つのキャラクターを共同操作**でき
 
 <br>
 
-<br>
-
 #### 2. **いつものPCゲームに、新しい遊び方を後付け**
 
 Re:Cooplayは、**ゲーム本体を改造することなく、新しい協力プレイを追加**できます。
@@ -121,8 +148,6 @@ Re:Cooplayは、**ゲーム本体を改造することなく、新しい協力�
 ゲームごとの操作方法に合わせて共同操作を実現する仕組みを備えており、Minecraftでの共同操作に加え、さまざまなPCゲームへの展開を目指しています。
 
 **遊ぶゲームを変えるのではなく、遊び方を変える。** 遊び慣れたゲームにも、新しい楽しさが生まれます。
-
-<br>
 
 <br>
 
@@ -209,23 +234,23 @@ PC画面で参加状況や担当を確認でき、スマホには役割に合っ
 
 #### API・データ
 
-- **Windows API `SendInput`：** 既存ゲームへキーボード・マウス入力を渡す
-- **WebSocket / WebRTC DataChannel：** スマホとPC間で操作・状態を送受信する
-- **ゲームごとの操作定義：** 操作の種類・分担・キー設定を管理する（Minecraftの`options.txt`などを参照）
-- **ローカルネットワーク：** 通常の共同操作に外部クラウドサーバーを必要としない構成
+- **ゲームへの入力：** Windows API `SendInput`（キーボード・マウス入力）
+- **通信：** WebSocket / WebRTC DataChannel（スマホからの操作・状態の送受信）
+- **操作設定：** ゲーム別の操作定義、Minecraftの`options.txt`などのキー設定
+- **ネットワーク：** ローカルWi-Fi（通常の共同操作に外部クラウドサーバーは不要）
 
 #### フレームワーク・ライブラリ・モジュール
 
 - **PCホスト：** Rust / Tokio / axum
 - **PCアプリ：** Tauri 2 / WebView2
-- **PC・スマホ画面：** HTML / CSS / JavaScript
-- **試験・検証：** Rustの自動テスト、Node.jsによる通信シミュレーション・画面テスト
+- **スマホ・PC画面：** HTML / CSS / JavaScript
+- **検証：** Node.js参照実装、通信シミュレーション、ブラウザUIテスト、Windows入力プローブ
 
 #### デバイス
 
-- Windows PC（ゲーム実行・複数人の操作の統合）
-- Androidスマートフォン / iPhone（ブラウザ上のコントローラー）
-- 同じローカルネットワークに接続できる通信環境
+- Windows PC（ゲームの実行・操作入力の統合）
+- Androidスマートフォン / iPhone（ブラウザをコントローラーとして利用）
+- ローカルWi-Fiネットワーク
 
 ---
 
@@ -235,82 +260,74 @@ PC画面で参加状況や担当を確認でき、スマホには役割に合っ
 
 ```mermaid
 flowchart LR
-    P["スマートフォン（2〜4人）<br/>役割別の操作画面"] -->|"WebSocket / WebRTC"| H["Rustホスト<br/>通信・役割・入力統合"]
+    P["スマートフォン（2〜4人）<br/>担当別の操作画面"] -->|"WebSocket / WebRTC"| H["Rustホスト<br/>参加・役割・入力統合"]
     D["PCアプリ<br/>Tauri"] <--> H
-    C["ゲーム別操作定義"] --> H
+    C["ゲームごとの操作定義"] --> H
     H --> I["Windows API<br/>SendInput"]
     I --> G["既存のPCゲーム"]
 ```
 
-| 構成要素 | 役割 |
-|:--|:--|
-| スマホのWebアプリ | QR参加、ホスト用リモコン、担当ごとの操作画面 |
-| TauriのPCアプリ | ゲーム選択、参加者・担当の確認、プレイ準備 |
-| Rustホスト | 入力の受信、役割の管理、複数人の入力の統合と出力 |
-| ゲーム別の操作定義 | タイトルごとに異なる操作やキー割り当てを扱う |
-| Windows API | 既存ゲームへ通常の入力として操作を渡す |
+| 構成要素 | 主な技術 | 役割 |
+|:--|:--|:--|
+| スマホ操作画面 | HTML / CSS / JavaScript | 参加、PC画面のリモコン、担当別のコントローラー |
+| PCアプリ | Tauri / WebView2 | ゲーム選択、参加・分担の確認、開始準備 |
+| PCホスト | Rust / Tokio / axum | 通信、参加状況、役割、ゲーム入力の統合 |
+| リアルタイム通信 | WebSocket / WebRTC DataChannel | スマホからの操作と状態の送受信 |
+| OS入力 | Windows API `SendInput` | ゲームへのキーボード・マウス入力 |
 
-[システム設計](docs/architecture/system-design.md) ／ [通信仕様](docs/architecture/protocol.md)
-
-<br>
+詳しくは[システム設計](docs/architecture/system-design.md)と[通信仕様](docs/architecture/protocol.md)を参照してください。
 
 <br>
 
-#### 1. **複数人の入力を1つの操作に統合する**
+#### 1. **複数人の入力を1つのゲーム操作にまとめる**
 
-参加者それぞれから届く入力を、担当する役割に応じて受け付け、1つのWindows入力としてゲームに伝えます。人数に応じた自動分担と、プレイ開始前・一時停止中の役割交換にも対応しています。
+スマホから送られる「前進」「攻撃」などの操作をPCホストが受け取り、担当者に許可された操作だけをゲームへ渡します。参加人数に応じた操作の自動分担や、担当の入れ替えにも対応しています。
 
-[入力統合](apps/host-rs/src/hub.rs) ／ [入力変換](apps/host-rs/src/controls.rs) ／ [OS入力](apps/host-rs/src/input.rs) ／ [人数別の分担](docs/decisions/2026-10-25-variable-players.md)
-
-<br>
+[入力・セッション統合](apps/host-rs/src/hub.rs) ／ [操作の対応](apps/host-rs/src/controls.rs) ／ [Windows入力](apps/host-rs/src/input.rs) ／ [人数別の分担設計](docs/decisions/2026-10-25-variable-players.md)
 
 <br>
 
-#### 2. **リアルタイム通信と入力の整合性を両立する**
+#### 2. **通信の速さと、操作の正しさを両立する**
 
-WebSocketとWebRTC DataChannelから届く入力の重複や古い状態の入力を防ぎ、視点の連続操作・押下・解放などを扱います。接続状態やプレイの進行状態もPCとスマホで共有します。
+WebSocketとWebRTC DataChannelから届く入力を管理し、同じ操作の重複や古い操作の処理を防ぎます。視点の連続操作や短い連打、長押しにも対応し、複数人が同時に操作しても自然に遊べることを目指しました。
 
-[通信実装](apps/host-rs/src/rtc.rs) ／ [通信仕様](docs/architecture/protocol.md) ／ [通信回帰試験](scripts/sim/protocol-sim.mjs)
-
-<br>
+[WebRTC通信](apps/host-rs/src/rtc.rs) ／ [通信プロトコル](docs/architecture/protocol.md) ／ [通信回帰試験](scripts/sim/protocol-sim.mjs)
 
 <br>
 
-#### 3. **ゲームごとの入力方法に合わせる**
+#### 3. **ゲームごとの操作方法を扱う**
 
-操作の種類、初期キー、分担案をゲーム別に定義し、設定の読み取りや操作画面の生成へつなげます。Steam・Epicのインストール済みタイトルの検出なども備えています。**一覧に表示されることと、そのゲームで共同操作できることは別**として扱います。
+ゲームによって異なるキー設定・操作の種類・担当分担を、操作定義として管理しています。Minecraftのキー設定の読み取り、Steam・Epic Gamesのインストール済みタイトルの検出、担当操作に応じたスマホ画面の生成などを実装しています。
 
-[操作定義](docs/architecture/game-profiles.md) ／ [ゲーム検出](apps/host-rs/src/games.rs) ／ [キー設定](apps/host-rs/src/keybinds.rs) ／ [操作画面の生成](apps/web-static/scripts/generated-controls.js)
+操作定義が登録されていても、**すべてのタイトルで共同操作が動くとは限りません。** ゲームごとの対応状況を確認しながら対象を広げます。
+
+[操作定義](docs/architecture/game-profiles.md) ／ [ゲーム検出](apps/host-rs/src/games.rs) ／ [キー設定](apps/host-rs/src/keybinds.rs) ／ [担当別の画面生成](apps/web-static/scripts/generated-controls.js)
 
 <br>
 
-<br>
+#### 4. **開始・停止・役割変更を安全に管理する**
 
-#### 4. **意図しない入力を残さない**
+ゲームを選び、参加者と分担を決め、ゲームを準備してからホストがReadyを押す手順を設けています。ゲーム以外のウィンドウへ誤入力しないように入力先を確認し、切断・一時停止・緊急停止の際にはキーやマウスボタンの入力を解放します。
 
-ゲーム・参加者・分担の決定後に、ホストが明示的に開始します。入力先のゲーム画面を確認し、一時停止・切断・緊急停止の際には入力を解放して、以前の操作が残らないようにしています。
-
-[対象ウィンドウの判定](apps/host-rs/src/focus.rs) ／ [役割交換の設計](docs/decisions/2026-10-25-role-swap.md) ／ [開始手順の設計](docs/decisions/2026-10-25-launch-after-roles.md)
+[入力先の確認](apps/host-rs/src/focus.rs) ／ [役割交換](docs/decisions/2026-10-25-role-swap.md) ／ [開始手順](docs/decisions/2026-10-25-launch-after-roles.md)
 
 ---
 
 ## Hack Dayでの実装差分
 
-Hack Dayは**2026年10月24〜25日**。開発開始前の基準コミットには`README.md`と`LICENSE`があり、そこから共同操作を成立させるシステムを開発しました。
+**Hack Day：2026年10月24〜25日。** 開発開始前の基準コミットにあったのは`README.md`と`LICENSE`のみで、そこから共同操作のためのシステムを開発しました。
 
-**[開始前の基準コミット](https://github.com/jphacks/kz_2613/tree/5acb0049e6) ／ [GitHubの実装差分](https://github.com/jphacks/kz_2613/compare/5acb0049e6...main)**
+**[開発開始前の基準コミット](https://github.com/jphacks/kz_2613/tree/5acb0049e6) ／ [Hack Dayの実装差分](https://github.com/jphacks/kz_2613/compare/5acb0049e6...main)**
 
-| Hack Day中に開発したもの | コード・証拠 |
+| Hack Day中に開発したもの | 実装・記録 |
 |:--|:--|
-| 複数台のスマホから操作を受け取るPCホスト | [Rustホスト・入力統合](apps/host-rs/src/hub.rs)・[OS入力](apps/host-rs/src/input.rs) |
-| PC・スマホの参加画面と役割別コントローラー | [Web UI](apps/web-static/)・[UIの検証結果](artifacts/improved-ui/README.md) |
-| WebRTC / WebSocketでの通信と操作変換 | [通信実装](apps/host-rs/src/rtc.rs)・[操作定義](apps/host-rs/src/profiles.rs) |
-| 分担、明示的な開始、停止と誤入力対策 | [ホスト実装](apps/host-rs/src/hub.rs)・[開発ログ](docs/handoff/BUILD_LOG.md) |
-| ゲーム別の操作定義とゲーム検出 | [操作定義](apps/game-profiles/)・[検出処理](apps/host-rs/src/games.rs) |
+| 複数スマホからの入力をまとめるWindowsホスト | [セッション・入力統合](apps/host-rs/src/hub.rs)・[Windows入力](apps/host-rs/src/input.rs) |
+| 参加・ゲーム選択・役割分担を行うPC/スマホ画面 | [UIソース](apps/web-static/)・[UI検証](artifacts/improved-ui/README.md) |
+| 操作の送受信とゲームに合わせた入力変換 | [通信実装](apps/host-rs/src/rtc.rs)・[操作定義](apps/host-rs/src/profiles.rs) |
+| 明示的な開始・一時停止・緊急停止・誤入力防止 | [ホスト実装](apps/host-rs/src/hub.rs)・[検証ログ](docs/handoff/BUILD_LOG.md) |
+| ゲームの検出と操作定義による対応タイトルの拡張 | [ゲーム検出](apps/host-rs/src/games.rs)・[操作定義](apps/game-profiles/) |
 
-**Hack Dayの成果を示す中心的な動作は、Minecraftでの3人共同操作です。** 開発経緯は[Hack Day開発・検証ログ](docs/handoff/BUILD_LOG.md)に記録しています。
-
-なお、比較リンクにはREADMEの編集なども含まれます。Hack Day中の実装内容は、コミット履歴と開発ログで確認できます。
+開発・検証の経緯は[Hack Day開発ログ](docs/handoff/BUILD_LOG.md)にまとめています。
 
 ---
 
@@ -328,33 +345,32 @@ Hack Dayは**2026年10月24〜25日**。開発開始前の基準コミットに�
 
 ## 試してみるには
 
-Re:Cooplayは、Windows PCでゲームを実行し、同じローカルネットワークに接続したスマートフォンをコントローラーとして使います。
+1. **Windows PCを用意する。** Re:Cooplayと、遊びたい対応PCゲームを準備します。
+2. **スマホで参加する。** 同じローカルネットワークに2〜4台のスマートフォンを接続し、PCアプリに表示されたQRコードを読み取ります。
+3. **ゲームと役割を決める。** PCアプリでゲームを選び、参加メンバーと分担を確認して、ゲームを起動・準備します。
+4. **共同操作を始める。** ホストがスマホからReadyを押すと、担当に応じた画面で操作できるようになります。
 
-1. **環境を用意する。** Windows PCと、利用するPCゲーム、参加人数分（2〜4台）のスマートフォンを用意します。
-2. **Re:Cooplayを起動する。** [Windowsセットアップ](docs/handoff/SETUP_WINDOWS.md)に従ってPCホスト・PCアプリを準備します。
-3. **スマホから参加する。** PC画面のQRコードを読み取り、同じネットワークからWebアプリにアクセスします。
-4. **ゲームと担当を決める。** ゲームを選択し、人数に応じた分担を確認して、ゲームを起動・準備します。
-5. **プレイを始める。** ホストが「Ready」を押し、共同操作を始めます。
+[Windowsセットアップ](docs/handoff/SETUP_WINDOWS.md) ／ [PCアプリの使い方](apps/desktop/README.md)
 
-### 起動・開発手順
+---
 
-開発環境や起動コマンドの詳細は、以下の資料を参照してください。
+## 起動・開発手順
+
+Windowsでのセットアップ、PCアプリやRustホストの起動・開発方法は、以下にまとめています。
 
 - [Windowsセットアップ](docs/handoff/SETUP_WINDOWS.md)
-- [PCアプリの起動・使い方](apps/desktop/README.md)
-- [Rustホストのビルド・検証](apps/host-rs/README.md)
+- [PCアプリの使い方](apps/desktop/README.md)
+- [Rustホストのビルドと検証](apps/host-rs/README.md)
 
 ---
 
 ## 権利・利用上の注意
 
-Re:Cooplayは、ゲーム開発元とは独立した非公式ツールです。ゲーム本体や、各ゲームのプログラム・素材は同梱していません。利用するゲームごとの規約や、配信・映像公開に関する条件に従ってください。
-
-**Minecraftの公式製品ではなく、Mojang StudiosおよびMicrosoftの承認・提携を受けたものではありません。**
+Re:Cooplayは独立した非公式ツールです。**Minecraftの公式製品ではなく、Mojang StudiosおよびMicrosoftの承認・提携を受けたものではありません。**
 
 **NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.**
 
-Minecraftの名称・画面・デモ素材の扱いについては[利用条件の確認記録](docs/decisions/2026-10-25-minecraft-usage-terms.md)を参照してください。公開用の連絡先や素材の利用条件については、引き続き確認が必要です。
+Minecraftのゲーム本体やゲーム素材は同梱していません。画像・動画・名称の扱いについては[確認記録](docs/decisions/2026-10-25-minecraft-usage-terms.md)を参照してください。デモ素材の使用条件と公開用の連絡先は引き続き確認事項です。
 
 ---
 
