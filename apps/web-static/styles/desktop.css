@@ -191,6 +191,26 @@ body {
   font-size: 26px;
 }
 
+/* 分担の画面の補助ボタン (起動に失敗したときの「手動で起動して準備へ」、#109) */
+.sub-cta {
+  position: absolute;
+  left: 95px;
+  top: 872px;
+  width: 370px;
+  min-height: 52px;
+  border: 2px solid var(--color-cyan);
+  border-radius: 40px;
+  background: var(--color-paper);
+  color: var(--color-cyan-ink);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+[data-view=roles] .action-note {
+  top: 940px;
+  font-size: 20px;
+}
+
 .disabled-start,.start-instruction {
   left: 139px;
   top: 578px;
@@ -447,8 +467,7 @@ body {
   color: var(--color-muted);
 }
 
-.game-list-head button,
-.launch-status button {
+.game-list-head button {
   min-height: 52px;
   padding: 0 24px;
   border: 0;
@@ -546,45 +565,6 @@ body {
   display: block;
 }
 
-.launch-status {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 4px 24px;
-  padding: 16px 24px;
-  border-radius: 20px;
-  background: var(--color-panel-translucent);
-  border-left: 8px solid var(--color-cyan);
-}
-
-/* 右下の安全案内と起動の案内・一覧の末尾が重ならないよう、案内の表示中は枠の下を空ける */
-[data-view=game] .workspace:has(#warning:not([hidden])) .game-frame {
-  padding-bottom: 200px;
-}
-
-.launch-status[hidden] {
-  display: none;
-}
-
-.launch-status[data-state=failed],
-.launch-status[data-state=timeout] {
-  border-left-color: var(--color-error);
-}
-
-.launch-status b {
-  font-size: 26px;
-}
-
-.launch-status p {
-  grid-column: 1;
-  margin: 0;
-  font-size: 21px;
-}
-
-.launch-status button {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-}
 
 .role-band {
   position: absolute;

@@ -17,6 +17,7 @@
     <hr class="left-rule" id="leftRule" hidden>
     <p class="explanation" id="explanation"></p><p class="secondary" id="secondary"></p>
     <button class="main-cta" id="nextBtn" hidden>OK</button>
+    <button class="sub-cta" id="subBtn" hidden></button>
     <button class="main-cta disabled-start" id="blockedStart" disabled hidden>START</button>
     <div class="main-cta start-instruction" id="readyInstruction" role="note" hidden>START<span>ホストのスマホでReady</span></div>
     <div class="join-guide" id="joinGuide">
@@ -34,7 +35,6 @@
     <section id="gameStage" class="game-stage" aria-label="ゲーム選択" hidden><div id="games" class="game-frame">
       <div class="game-list-head"><h2>ゲーム一覧</h2><p id="gamesCount" role="status"></p><button id="refreshGamesBtn">探し直す</button></div>
       <div id="gameList" class="game-list"></div>
-      <div id="launchStatus" class="launch-status" role="status" hidden><b id="launchTitle"></b><p id="launchMessage"></p><button id="retryLaunchBtn" hidden>もう一度起動する</button></div>
     </div></section>
     <section id="roleStage" class="role-stage" aria-label="固定の操作分担" hidden>
       <div class="role-band"><h2 id="roleHeading">3人で、操作を分担！</h2><div class="key-samples" aria-label="このゲームの操作とキー。分担は固定です"><span>持ち物 <kbd>E</kbd></span><span>前進 <kbd>W</kbd></span><span>後退 <kbd>S</kbd></span><svg class="key-up" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 27H34L18 2Z"/></svg><svg class="key-down" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg></div></div>

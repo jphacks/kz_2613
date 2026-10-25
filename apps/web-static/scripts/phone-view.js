@@ -63,7 +63,9 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleTex
     $('endBtn').style.display = phase === 'paused' ? 'block' : 'none';
     $('remoteNote').textContent = game.canReady
       ? (phase === 'paused' ? `一時停止中${game.reason ? '（' + reasonText(game.reason) + '）' : ''}。リモコンで操作でき、RESUME で協力プレイに戻ります。` : 'ゲームを開いてワールドを準備した後、ホストだけがReadyを押します。')
-      : phase === 'lobby' ? `ゲームを開いて準備へ進めます（${game.connected.length}人接続）。${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べ、Readyのときの人数で分担を決めます。`
+      : phase === 'lobby' ? (game.lineupOk
+        ? `メンバーと分担を決定しました（${game.connected.length}人）。PCの画面でゲームを起動してから準備へ進めます。`
+        : `PCの画面でゲームを選び、メンバーと分担を決定してください（${game.connected.length}人接続、${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べます）。`)
       : (game.readyReasons || []).join('。') || 'ホストの明示操作を待っています';
     const autoWait = phase === 'paused' && game.autoResume && game.reason?.endsWith('disconnected');
     document.body.dataset.phase = phase;
