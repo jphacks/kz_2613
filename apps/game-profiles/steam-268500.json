@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-268500",
+  "name": "XCOM® 2",
+  "match": {
+    "ids": [
+      "steam:268500"
+    ],
+    "steamAppIds": [
+      268500
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Strategy, Turn-Based Combat, Tactical, Character Customization, RPG, Turn-Based Tactics"
+    ]
+  },
+  "catalog": {
+    "rank": 460,
+    "template": "pointer",
+    "tags": [
+      "Strategy",
+      "Turn-Based Combat",
+      "Tactical",
+      "Character Customization",
+      "RPG",
+      "Turn-Based Tactics",
+      "Singleplayer",
+      "Sci-fi",
+      "War",
+      "Military"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#476",
+      "globaltopsellers#461"
+    ]
+  }
+}

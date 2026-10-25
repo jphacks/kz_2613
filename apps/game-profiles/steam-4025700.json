@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-4025700",
+  "name": "Heartopia",
+  "match": {
+    "ids": [
+      "steam:4025700"
+    ],
+    "steamAppIds": [
+      4025700
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Free to Play, Life Sim, Multiplayer, Artificial Intelligence, Cute, Casual"
+    ]
+  },
+  "catalog": {
+    "rank": 198,
+    "template": "pointer",
+    "tags": [
+      "Free to Play",
+      "Life Sim",
+      "Multiplayer",
+      "Artificial Intelligence",
+      "Cute",
+      "Casual",
+      "Relaxing",
+      "Character Customization",
+      "City Builder",
+      "Simulation"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#178",
+      "globaltopsellers#182"
+    ]
+  }
+}

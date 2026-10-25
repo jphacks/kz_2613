@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "id": "steam-3347400",
+  "name": "GIRLS' FRONTLINE 2: EXILIUM",
+  "match": {
+    "ids": [
+      "steam:3347400"
+    ],
+    "steamAppIds": [
+      3347400
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Anime, Strategy, RPG, Free to Play, Sexual Content, Turn-Based Strategy"
+    ]
+  },
+  "catalog": {
+    "rank": 290,
+    "template": "pointer",
+    "tags": [
+      "Anime",
+      "Strategy",
+      "RPG",
+      "Free to Play",
+      "Sexual Content",
+      "Turn-Based Strategy",
+      "Turn-Based Combat",
+      "Strategy RPG",
+      "3D",
+      "Story Rich"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#353",
+      "globaltopsellers#617",
+      "topreleases#23"
+    ]
+  }
+}

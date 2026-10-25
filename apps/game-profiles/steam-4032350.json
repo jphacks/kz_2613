@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-4032350",
+  "name": "EA SPORTS™ College Football 27",
+  "match": {
+    "ids": [
+      "steam:4032350"
+    ],
+    "steamAppIds": [
+      4032350
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Simulation, Sports, Competitive, Multiplayer, Football (American), PvP"
+    ]
+  },
+  "catalog": {
+    "rank": 145,
+    "template": "pointer",
+    "tags": [
+      "Simulation",
+      "Sports",
+      "Competitive",
+      "Multiplayer",
+      "Football (American)",
+      "PvP",
+      "Co-op",
+      "Local Co-Op",
+      "Strategy",
+      "Online Co-Op"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#80",
+      "globaltopsellers#169"
+    ]
+  }
+}

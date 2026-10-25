@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "id": "steam-12210",
+  "name": "Grand Theft Auto IV: The Complete Edition",
+  "match": {
+    "ids": [
+      "steam:12210"
+    ],
+    "steamAppIds": [
+      12210
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "limited",
+  "groups": [
+    {
+      "id": "steering",
+      "label": "ハンドル",
+      "role": "P1",
+      "split": [
+        {
+          "id": "left",
+          "label": "左",
+          "actions": [
+            "steer_left"
+          ]
+        },
+        {
+          "id": "right",
+          "label": "右",
+          "actions": [
+            "steer_right"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "throttle",
+      "label": "アクセル・ブレーキ",
+      "role": "P2"
+    },
+    {
+      "id": "gameplay",
+      "label": "サイドブレーキ・ブースト",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "steer_left",
+      "label": "左",
+      "group": "steering",
+      "type": "button",
+      "default": "KEY_A"
+    },
+    {
+      "id": "steer_right",
+      "label": "右",
+      "group": "steering",
+      "type": "button",
+      "default": "KEY_D"
+    },
+    {
+      "id": "accelerate",
+      "label": "アクセル",
+      "group": "throttle",
+      "type": "button",
+      "default": "KEY_W"
+    },
+    {
+      "id": "brake",
+      "label": "ブレーキ",
+      "group": "throttle",
+      "type": "button",
+      "default": "KEY_S"
+    },
+    {
+      "id": "handbrake",
+      "label": "サイドブレーキ",
+      "group": "gameplay",
+      "type": "button",
+      "default": "SPACE"
+    },
+    {
+      "id": "boost",
+      "label": "ブースト",
+      "group": "gameplay",
+      "type": "button",
+      "default": "LSHIFT"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（racing）",
+      "Steamのタグ: Open World, Action, Crime, Automobile Sim, Multiplayer, Third Person"
+    ]
+  },
+  "catalog": {
+    "rank": 488,
+    "template": "racing",
+    "tags": [
+      "Open World",
+      "Action",
+      "Crime",
+      "Automobile Sim",
+      "Multiplayer",
+      "Third Person",
+      "Adventure",
+      "Singleplayer",
+      "Third-Person Shooter",
+      "Moddable"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#490",
+      "globaltopsellers#511"
+    ]
+  }
+}

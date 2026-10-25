@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-39210",
+  "name": "FINAL FANTASY XIV Online",
+  "match": {
+    "ids": [
+      "steam:39210"
+    ],
+    "steamAppIds": [
+      39210
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: MMORPG, RPG, Character Customization, Massively Multiplayer, Fantasy, JRPG"
+    ]
+  },
+  "catalog": {
+    "rank": 105,
+    "template": "pointer",
+    "tags": [
+      "MMORPG",
+      "RPG",
+      "Character Customization",
+      "Massively Multiplayer",
+      "Fantasy",
+      "JRPG",
+      "Story Rich",
+      "Open World",
+      "Multiplayer",
+      "Online Co-Op"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#67",
+      "globaltopsellers#73"
+    ]
+  }
+}

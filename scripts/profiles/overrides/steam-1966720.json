@@ -1,0 +1,142 @@
+{
+  "id": "steam-1966720",
+  "template": "override",
+  "suitability": "good",
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1"
+    },
+    {
+      "id": "look",
+      "label": "視点",
+      "role": "P2"
+    },
+    {
+      "id": "gameplay",
+      "label": "攻撃・使う",
+      "role": "P3"
+    },
+    {
+      "id": "inventory",
+      "label": "持ち物",
+      "role": "P3"
+    },
+    {
+      "id": "communication",
+      "label": "会話",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "verification": {
+    "status": "unverified",
+    "date": "2026-10-25",
+    "sources": [
+      "広く知られた初期設定（未検証・実機未確認）"
+    ]
+  },
+  "actions": [
+    {
+      "id": "forward",
+      "label": "前進",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_W"
+    },
+    {
+      "id": "back",
+      "label": "後退",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_S"
+    },
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_A"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_D"
+    },
+    {
+      "id": "jump",
+      "label": "ジャンプ",
+      "group": "movement",
+      "type": "button",
+      "default": "SPACE"
+    },
+    {
+      "id": "sprint",
+      "label": "走る",
+      "group": "movement",
+      "type": "button",
+      "default": "LSHIFT"
+    },
+    {
+      "id": "crouch",
+      "label": "しゃがむ",
+      "group": "movement",
+      "type": "button",
+      "default": "LCTRL"
+    },
+    {
+      "id": "look",
+      "label": "視点",
+      "group": "look",
+      "type": "mouseDelta"
+    },
+    {
+      "id": "use_item",
+      "label": "アイテムを使う",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "interact",
+      "label": "拾う・使う",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_E"
+    },
+    {
+      "id": "drop",
+      "label": "捨てる",
+      "group": "inventory",
+      "type": "button",
+      "default": "KEY_G"
+    },
+    {
+      "id": "switch_item",
+      "label": "アイテムの切り替え",
+      "group": "inventory",
+      "type": "wheel"
+    },
+    {
+      "id": "push_to_talk",
+      "label": "ボイス",
+      "group": "communication",
+      "type": "button",
+      "default": "KEY_T"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ]
+}

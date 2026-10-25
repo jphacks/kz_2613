@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-434170",
+  "name": "The Jackbox Party Pack 3",
+  "match": {
+    "ids": [
+      "steam:434170"
+    ],
+    "steamAppIds": [
+      434170
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Local Multiplayer, Trivia, Multiplayer, Funny, Casual, Board Game"
+    ]
+  },
+  "catalog": {
+    "rank": 396,
+    "template": "pointer",
+    "tags": [
+      "Local Multiplayer",
+      "Trivia",
+      "Multiplayer",
+      "Funny",
+      "Casual",
+      "Board Game",
+      "Party Game",
+      "Party",
+      "Comedy",
+      "Indie"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#298",
+      "globaltopsellers#516"
+    ]
+  }
+}

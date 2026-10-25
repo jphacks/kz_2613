@@ -1,0 +1,7132 @@
+{
+ "generated": "2026-10-25",
+ "method": "売上上位・全期間の売上上位・最もプレイ・月ごとのトップリリースの順位を合算（scripts/profiles/build-catalog.mjs）",
+ "total": 502,
+ "games": [
+  {
+   "rank": 1,
+   "id": "steam-730",
+   "appid": 730,
+   "name": "Counter-Strike 2",
+   "template": "override",
+   "suitability": "good",
+   "status": "unverified",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#4",
+    "globaltopsellers#3",
+    "mostplayed#1"
+   ]
+  },
+  {
+   "rank": 2,
+   "id": "steam-570",
+   "appid": 570,
+   "name": "Dota 2",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#27",
+    "globaltopsellers#4",
+    "mostplayed#2"
+   ]
+  },
+  {
+   "rank": 3,
+   "id": "steam-1091500",
+   "appid": 1091500,
+   "name": "Cyberpunk 2077",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#2",
+    "globaltopsellers#2",
+    "mostplayed#8"
+   ]
+  },
+  {
+   "rank": 4,
+   "id": "steam-1172470",
+   "appid": 1172470,
+   "name": "Apex Legends™",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#19",
+    "globaltopsellers#12",
+    "mostplayed#7"
+   ]
+  },
+  {
+   "rank": 5,
+   "id": "steam-3393110",
+   "appid": 3393110,
+   "name": "AION 2",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#5",
+    "globaltopsellers#5",
+    "mostplayed#10"
+   ]
+  },
+  {
+   "rank": 6,
+   "id": "steam-1867240",
+   "appid": 1867240,
+   "name": "WARDOGS",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#8",
+    "globaltopsellers#16",
+    "mostplayed#9"
+   ]
+  },
+  {
+   "rank": 7,
+   "id": "steam-578080",
+   "appid": 578080,
+   "name": "PUBG: BATTLEGROUNDS",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#76",
+    "globaltopsellers#8",
+    "mostplayed#3"
+   ]
+  },
+  {
+   "rank": 8,
+   "id": "steam-2767030",
+   "appid": 2767030,
+   "name": "Marvel Rivals",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#6",
+    "globaltopsellers#17",
+    "mostplayed#21",
+    "topreleases#76"
+   ]
+  },
+  {
+   "rank": 9,
+   "id": "steam-236390",
+   "appid": 236390,
+   "name": "War Thunder",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#13",
+    "globaltopsellers#11",
+    "mostplayed#15"
+   ]
+  },
+  {
+   "rank": 10,
+   "id": "steam-1938090",
+   "appid": 1938090,
+   "name": "Call of Duty®",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#53",
+    "globaltopsellers#71",
+    "mostplayed#6"
+   ]
+  },
+  {
+   "rank": 11,
+   "id": "steam-359550",
+   "appid": 359550,
+   "name": "Tom Clancy's Rainbow Six Siege",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#20",
+    "globaltopsellers#29",
+    "mostplayed#16"
+   ]
+  },
+  {
+   "rank": 12,
+   "id": "steam-553850",
+   "appid": 553850,
+   "name": "HELLDIVERS™ 2",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#14",
+    "globaltopsellers#20",
+    "mostplayed#18"
+   ]
+  },
+  {
+   "rank": 13,
+   "id": "steam-2357570",
+   "appid": 2357570,
+   "name": "Overwatch®",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#16",
+    "globaltopsellers#28",
+    "mostplayed#17"
+   ]
+  },
+  {
+   "rank": 14,
+   "id": "steam-381210",
+   "appid": 381210,
+   "name": "Dead by Daylight",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#15",
+    "globaltopsellers#10",
+    "mostplayed#19"
+   ]
+  },
+  {
+   "rank": 15,
+   "id": "steam-3241660",
+   "appid": 3241660,
+   "name": "R.E.P.O.",
+   "template": "override",
+   "suitability": "good",
+   "status": "extracted",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#120",
+    "globaltopsellers#100",
+    "mostplayed#48",
+    "topreleases#5"
+   ]
+  },
+  {
+   "rank": 16,
+   "id": "steam-230410",
+   "appid": 230410,
+   "name": "Warframe",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#9",
+    "globaltopsellers#14",
+    "mostplayed#22"
+   ]
+  },
+  {
+   "rank": 17,
+   "id": "steam-2868840",
+   "appid": 2868840,
+   "name": "Slay the Spire 2",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#70",
+    "globaltopsellers#70",
+    "mostplayed#12"
+   ]
+  },
+  {
+   "rank": 18,
+   "id": "steam-1808500",
+   "appid": 1808500,
+   "name": "ARC Raiders",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#34",
+    "globaltopsellers#41",
+    "mostplayed#27"
+   ]
+  },
+  {
+   "rank": 19,
+   "id": "steam-252490",
+   "appid": 252490,
+   "name": "Rust",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#25",
+    "globaltopsellers#24",
+    "mostplayed#30"
+   ]
+  },
+  {
+   "rank": 20,
+   "id": "steam-3240220",
+   "appid": 3240220,
+   "name": "Grand Theft Auto V Enhanced",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#44",
+    "globaltopsellers#25",
+    "mostplayed#29"
+   ]
+  },
+  {
+   "rank": 21,
+   "id": "steam-2246340",
+   "appid": 2246340,
+   "name": "Monster Hunter Wilds",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#94",
+    "globaltopsellers#67",
+    "mostplayed#71",
+    "topreleases#1"
+   ]
+  },
+  {
+   "rank": 22,
+   "id": "steam-1203620",
+   "appid": 1203620,
+   "name": "Enshrouded",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#11",
+    "globaltopsellers#13",
+    "mostplayed#36"
+   ]
+  },
+  {
+   "rank": 23,
+   "id": "steam-2807960",
+   "appid": 2807960,
+   "name": "Battlefield™ 6",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#81",
+    "globaltopsellers#79",
+    "mostplayed#25"
+   ]
+  },
+  {
+   "rank": 24,
+   "id": "steam-892970",
+   "appid": 892970,
+   "name": "Valheim",
+   "template": "override",
+   "suitability": "good",
+   "status": "unverified",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#95",
+    "globaltopsellers#103",
+    "mostplayed#23"
+   ]
+  },
+  {
+   "rank": 25,
+   "id": "steam-4080220",
+   "appid": 4080220,
+   "name": "EA SPORTS FC™ 27",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#21",
+    "globaltopsellers#9",
+    "mostplayed#41"
+   ]
+  },
+  {
+   "rank": 26,
+   "id": "steam-413150",
+   "appid": 413150,
+   "name": "Stardew Valley",
+   "template": "override",
+   "suitability": "good",
+   "status": "unverified",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#123",
+    "globaltopsellers#96",
+    "mostplayed#24"
+   ]
+  },
+  {
+   "rank": 27,
+   "id": "steam-440",
+   "appid": 440,
+   "name": "Team Fortress 2",
+   "template": "override",
+   "suitability": "good",
+   "status": "unverified",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#57",
+    "globaltopsellers#51",
+    "mostplayed#37"
+   ]
+  },
+  {
+   "rank": 28,
+   "id": "steam-284160",
+   "appid": 284160,
+   "name": "BeamNG.drive",
+   "template": "racing",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#73",
+    "globaltopsellers#66",
+    "mostplayed#34"
+   ]
+  },
+  {
+   "rank": 29,
+   "id": "steam-4126040",
+   "appid": 4126040,
+   "name": "Aniimo",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#28",
+    "globaltopsellers#30",
+    "mostplayed#43"
+   ]
+  },
+  {
+   "rank": 30,
+   "id": "steam-438100",
+   "appid": 438100,
+   "name": "VRChat",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#51",
+    "globaltopsellers#65",
+    "mostplayed#40"
+   ]
+  },
+  {
+   "rank": 31,
+   "id": "steam-1973530",
+   "appid": 1973530,
+   "name": "Limbus Company",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#151",
+    "globaltopsellers#87",
+    "mostplayed#28"
+   ]
+  },
+  {
+   "rank": 32,
+   "id": "steam-2507950",
+   "appid": 2507950,
+   "name": "Delta Force",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#259",
+    "globaltopsellers#86",
+    "mostplayed#32",
+    "topreleases#66"
+   ]
+  },
+  {
+   "rank": 33,
+   "id": "steam-108600",
+   "appid": 108600,
+   "name": "Project Zomboid",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#90",
+    "globaltopsellers#88",
+    "mostplayed#38"
+   ]
+  },
+  {
+   "rank": 34,
+   "id": "steam-1086940",
+   "appid": 1086940,
+   "name": "Baldur's Gate 3",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#50",
+    "globaltopsellers#62",
+    "mostplayed#47"
+   ]
+  },
+  {
+   "rank": 35,
+   "id": "steam-322330",
+   "appid": 322330,
+   "name": "Don't Starve Together",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#142",
+    "globaltopsellers#61",
+    "mostplayed#39"
+   ]
+  },
+  {
+   "rank": 36,
+   "id": "steam-250900",
+   "appid": 250900,
+   "name": "The Binding of Isaac: Rebirth",
+   "template": "topdown",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#212",
+    "globaltopsellers#212",
+    "mostplayed#20"
+   ]
+  },
+  {
+   "rank": 37,
+   "id": "steam-3527290",
+   "appid": 3527290,
+   "name": "PEAK",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#52",
+    "globaltopsellers#57",
+    "mostplayed#53"
+   ]
+  },
+  {
+   "rank": 38,
+   "id": "steam-105600",
+   "appid": 105600,
+   "name": "Terraria",
+   "template": "override",
+   "suitability": "good",
+   "status": "extracted",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#219",
+    "globaltopsellers#192",
+    "mostplayed#26"
+   ]
+  },
+  {
+   "rank": 39,
+   "id": "steam-1142710",
+   "appid": 1142710,
+   "name": "Total War: WARHAMMER III",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#93",
+    "globaltopsellers#85",
+    "mostplayed#50"
+   ]
+  },
+  {
+   "rank": 40,
+   "id": "steam-1245620",
+   "appid": 1245620,
+   "name": "ELDEN RING",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#47",
+    "globaltopsellers#50",
+    "mostplayed#59"
+   ]
+  },
+  {
+   "rank": 41,
+   "id": "steam-221100",
+   "appid": 221100,
+   "name": "DayZ",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#41",
+    "globaltopsellers#46",
+    "mostplayed#63"
+   ]
+  },
+  {
+   "rank": 42,
+   "id": "steam-2483190",
+   "appid": 2483190,
+   "name": "Forza Horizon 6",
+   "template": "racing",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#87",
+    "globaltopsellers#60",
+    "mostplayed#58"
+   ]
+  },
+  {
+   "rank": 43,
+   "id": "steam-2073850",
+   "appid": 2073850,
+   "name": "THE FINALS",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#30",
+    "globaltopsellers#38",
+    "mostplayed#66"
+   ]
+  },
+  {
+   "rank": 44,
+   "id": "steam-322170",
+   "appid": 322170,
+   "name": "Geometry Dash",
+   "template": "platformer",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#308",
+    "globaltopsellers#290",
+    "mostplayed#13"
+   ]
+  },
+  {
+   "rank": 45,
+   "id": "steam-1295660",
+   "appid": 1295660,
+   "name": "Sid Meier's Civilization VII",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#109",
+    "globaltopsellers#102",
+    "topreleases#3"
+   ]
+  },
+  {
+   "rank": 46,
+   "id": "steam-394360",
+   "appid": 394360,
+   "name": "Hearts of Iron IV",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#156",
+    "globaltopsellers#139",
+    "mostplayed#44"
+   ]
+  },
+  {
+   "rank": 47,
+   "id": "steam-1623730",
+   "appid": 1623730,
+   "name": "Palworld",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#113",
+    "globaltopsellers#135",
+    "mostplayed#51"
+   ]
+  },
+  {
+   "rank": 48,
+   "id": "steam-550",
+   "appid": 550,
+   "name": "Left 4 Dead 2",
+   "template": "override",
+   "suitability": "good",
+   "status": "unverified",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#251",
+    "globaltopsellers#203",
+    "mostplayed#31"
+   ]
+  },
+  {
+   "rank": 49,
+   "id": "steam-632360",
+   "appid": 632360,
+   "name": "Risk of Rain 2",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#32",
+    "globaltopsellers#47",
+    "mostplayed#70"
+   ]
+  },
+  {
+   "rank": 50,
+   "id": "steam-4001890",
+   "appid": 4001890,
+   "name": "How to Fish",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#65",
+    "globaltopsellers#45",
+    "mostplayed#67"
+   ]
+  },
+  {
+   "rank": 51,
+   "id": "steam-1174180",
+   "appid": 1174180,
+   "name": "Red Dead Redemption 2",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#159",
+    "globaltopsellers#231",
+    "mostplayed#42"
+   ]
+  },
+  {
+   "rank": 52,
+   "id": "steam-294100",
+   "appid": 294100,
+   "name": "RimWorld",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#55",
+    "globaltopsellers#43",
+    "mostplayed#72"
+   ]
+  },
+  {
+   "rank": 53,
+   "id": "steam-1085660",
+   "appid": 1085660,
+   "name": "Destiny 2",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#35",
+    "globaltopsellers#56",
+    "mostplayed#74"
+   ]
+  },
+  {
+   "rank": 54,
+   "id": "steam-1222670",
+   "appid": 1222670,
+   "name": "The Sims™ 4",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#61",
+    "globaltopsellers#82",
+    "mostplayed#69"
+   ]
+  },
+  {
+   "rank": 55,
+   "id": "steam-4019220",
+   "appid": 4019220,
+   "name": "Dressmaker",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#29",
+    "globaltopsellers#31",
+    "mostplayed#78"
+   ]
+  },
+  {
+   "rank": 56,
+   "id": "steam-489830",
+   "appid": 489830,
+   "name": "The Elder Scrolls V: Skyrim Special Edition",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#116",
+    "globaltopsellers#163",
+    "mostplayed#56"
+   ]
+  },
+  {
+   "rank": 57,
+   "id": "steam-1449850",
+   "appid": 1449850,
+   "name": "Yu-Gi-Oh! Master Duel",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#148",
+    "globaltopsellers#137",
+    "mostplayed#57"
+   ]
+  },
+  {
+   "rank": 58,
+   "id": "steam-2300320",
+   "appid": 2300320,
+   "name": "Farming Simulator 25",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#102",
+    "globaltopsellers#76",
+    "mostplayed#68"
+   ]
+  },
+  {
+   "rank": 59,
+   "id": "steam-2183900",
+   "appid": 2183900,
+   "name": "Warhammer 40,000: Space Marine 2",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#74",
+    "globaltopsellers#42",
+    "mostplayed#75"
+   ]
+  },
+  {
+   "rank": 60,
+   "id": "steam-1304930",
+   "appid": 1304930,
+   "name": "The Outlast Trials",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#150",
+    "globaltopsellers#177",
+    "mostplayed#54"
+   ]
+  },
+  {
+   "rank": 61,
+   "id": "steam-3513350",
+   "appid": 3513350,
+   "name": "Wuthering Waves",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#38",
+    "globaltopsellers#32",
+    "mostplayed#82"
+   ]
+  },
+  {
+   "rank": 62,
+   "id": "steam-1364780",
+   "appid": 1364780,
+   "name": "Street Fighter™ 6",
+   "template": "fighting",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#208",
+    "globaltopsellers#145",
+    "mostplayed#55"
+   ]
+  },
+  {
+   "rank": 63,
+   "id": "steam-739630",
+   "appid": 739630,
+   "name": "Phasmophobia",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#77",
+    "globaltopsellers#69",
+    "mostplayed#77"
+   ]
+  },
+  {
+   "rank": 64,
+   "id": "steam-3259780",
+   "appid": 3259780,
+   "name": "FINAL FANTASY RESONANCE",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#3",
+    "globaltopsellers#6",
+    "mostplayed#91"
+   ]
+  },
+  {
+   "rank": 65,
+   "id": "steam-2139460",
+   "appid": 2139460,
+   "name": "Once Human",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#22",
+    "globaltopsellers#19",
+    "mostplayed#89"
+   ]
+  },
+  {
+   "rank": 66,
+   "id": "steam-292030",
+   "appid": 292030,
+   "name": "The Witcher 3: Wild Hunt — Remastered",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#327",
+    "globaltopsellers#271",
+    "mostplayed#33"
+   ]
+  },
+  {
+   "rank": 67,
+   "id": "steam-4000",
+   "appid": 4000,
+   "name": "Garry's Mod",
+   "template": "override",
+   "suitability": "good",
+   "status": "unverified",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#226",
+    "globaltopsellers#256",
+    "mostplayed#49"
+   ]
+  },
+  {
+   "rank": 68,
+   "id": "steam-2073620",
+   "appid": 2073620,
+   "name": "Arena Breakout: Infinite",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#108",
+    "globaltopsellers#72",
+    "mostplayed#80"
+   ]
+  },
+  {
+   "rank": 69,
+   "id": "steam-4435490",
+   "appid": 4435490,
+   "name": "Call of Duty®: Modern Warfare® 4",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#1",
+    "globaltopsellers#1"
+   ]
+  },
+  {
+   "rank": 70,
+   "id": "steam-2050650",
+   "appid": 2050650,
+   "name": "Resident Evil 4",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#56",
+    "globaltopsellers#34",
+    "mostplayed#94"
+   ]
+  },
+  {
+   "rank": 71,
+   "id": "steam-4954910",
+   "appid": 4954910,
+   "name": "Scam With Your Friends",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#7",
+    "globaltopsellers#15"
+   ]
+  },
+  {
+   "rank": 72,
+   "id": "steam-4115450",
+   "appid": 4115450,
+   "name": "Phantom Blade Zero",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#17",
+    "globaltopsellers#7"
+   ]
+  },
+  {
+   "rank": 73,
+   "id": "steam-4078430",
+   "appid": 4078430,
+   "name": "STAR WARS: Galactic Racer™",
+   "template": "racing",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#10",
+    "globaltopsellers#18"
+   ]
+  },
+  {
+   "rank": 74,
+   "id": "steam-1203220",
+   "appid": 1203220,
+   "name": "NARAKA: BLADEPOINT",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#437",
+    "globaltopsellers#141",
+    "mostplayed#46"
+   ]
+  },
+  {
+   "rank": 75,
+   "id": "steam-216150",
+   "appid": 216150,
+   "name": "MapleStory",
+   "template": "platformer",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#12",
+    "globaltopsellers#21"
+   ]
+  },
+  {
+   "rank": 76,
+   "id": "steam-4162040",
+   "appid": 4162040,
+   "name": "Zenless Zone Zero",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#46",
+    "globaltopsellers#49",
+    "mostplayed#95"
+   ]
+  },
+  {
+   "rank": 77,
+   "id": "steam-5335510",
+   "appid": 5335510,
+   "name": "Moon Sweepers",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#18",
+    "globaltopsellers#23"
+   ]
+  },
+  {
+   "rank": 78,
+   "id": "steam-3219030",
+   "appid": 3219030,
+   "name": "Planet Zoo 2",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#24",
+    "globaltopsellers#22"
+   ]
+  },
+  {
+   "rank": 79,
+   "id": "steam-2929250",
+   "appid": 2929250,
+   "name": "over the hill",
+   "template": "racing",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#23",
+    "globaltopsellers#27"
+   ]
+  },
+  {
+   "rank": 80,
+   "id": "steam-4356430",
+   "appid": 4356430,
+   "name": "NBA 2K27",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#31",
+    "globaltopsellers#26"
+   ]
+  },
+  {
+   "rank": 81,
+   "id": "steam-1771300",
+   "appid": 1771300,
+   "name": "Kingdom Come: Deliverance II",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#260",
+    "globaltopsellers#293",
+    "topreleases#2"
+   ]
+  },
+  {
+   "rank": 82,
+   "id": "steam-2694490",
+   "appid": 2694490,
+   "name": "Path of Exile 2",
+   "template": "topdown",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#96",
+    "globaltopsellers#91",
+    "topreleases#67"
+   ]
+  },
+  {
+   "rank": 83,
+   "id": "steam-3010850",
+   "appid": 3010850,
+   "name": "Gears of War: E-Day",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#26",
+    "globaltopsellers#39"
+   ]
+  },
+  {
+   "rank": 84,
+   "id": "steam-1374490",
+   "appid": 1374490,
+   "name": "RuneScape: Dragonwilds",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#33",
+    "globaltopsellers#33"
+   ]
+  },
+  {
+   "rank": 85,
+   "id": "steam-3764200",
+   "appid": 3764200,
+   "name": "Resident Evil Requiem",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#40",
+    "globaltopsellers#35"
+   ]
+  },
+  {
+   "rank": 86,
+   "id": "steam-2288340",
+   "appid": 2288340,
+   "name": "ACE COMBAT 8: WINGS OF THEVE",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#37",
+    "globaltopsellers#40"
+   ]
+  },
+  {
+   "rank": 87,
+   "id": "steam-3564740",
+   "appid": 3564740,
+   "name": "Where Winds Meet",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#42",
+    "globaltopsellers#37"
+   ]
+  },
+  {
+   "rank": 88,
+   "id": "steam-3321460",
+   "appid": 3321460,
+   "name": "Crimson Desert Enhanced",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#48",
+    "globaltopsellers#36"
+   ]
+  },
+  {
+   "rank": 89,
+   "id": "steam-3932890",
+   "appid": 3932890,
+   "name": "Escape from Tarkov",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#71",
+    "globaltopsellers#58",
+    "mostplayed#97"
+   ]
+  },
+  {
+   "rank": 90,
+   "id": "steam-2141910",
+   "appid": 2141910,
+   "name": "Magic: The Gathering Arena",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#39",
+    "globaltopsellers#54"
+   ]
+  },
+  {
+   "rank": 91,
+   "id": "steam-1158310",
+   "appid": 1158310,
+   "name": "Crusader Kings III",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#89",
+    "globaltopsellers#90",
+    "mostplayed#93"
+   ]
+  },
+  {
+   "rank": 92,
+   "id": "steam-3960600",
+   "appid": 3960600,
+   "name": "Warrior Cats: Clans of the Forest",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#36",
+    "globaltopsellers#64"
+   ]
+  },
+  {
+   "rank": 93,
+   "id": "steam-1566200",
+   "appid": 1566200,
+   "name": "Tape to Tape",
+   "template": "topdown",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#49",
+    "globaltopsellers#53"
+   ]
+  },
+  {
+   "rank": 94,
+   "id": "steam-227300",
+   "appid": 227300,
+   "name": "Euro Truck Simulator 2",
+   "template": "racing",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#646",
+    "globaltopsellers#111",
+    "mostplayed#35"
+   ]
+  },
+  {
+   "rank": 95,
+   "id": "steam-4231820",
+   "appid": 4231820,
+   "name": "Castlevania: Belmont's Curse",
+   "template": "platformer",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#45",
+    "globaltopsellers#59"
+   ]
+  },
+  {
+   "rank": 96,
+   "id": "steam-2054970",
+   "appid": 2054970,
+   "name": "Dragon's Dogma 2",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#54",
+    "globaltopsellers#55"
+   ]
+  },
+  {
+   "rank": 97,
+   "id": "steam-1449690",
+   "appid": 1449690,
+   "name": "The Walking Dead: The Telltale Definitive Series",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#72",
+    "globaltopsellers#48"
+   ]
+  },
+  {
+   "rank": 98,
+   "id": "steam-2479810",
+   "appid": 2479810,
+   "name": "Gray Zone Warfare",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#60",
+    "globaltopsellers#63"
+   ]
+  },
+  {
+   "rank": 99,
+   "id": "steam-289070",
+   "appid": 289070,
+   "name": "Sid Meier’s Civilization® VI",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#265",
+    "globaltopsellers#222",
+    "mostplayed#65"
+   ]
+  },
+  {
+   "rank": 100,
+   "id": "steam-2315050",
+   "appid": 2315050,
+   "name": "We Were Here Tomorrow",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#78",
+    "globaltopsellers#52"
+   ]
+  },
+  {
+   "rank": 101,
+   "id": "steam-1974050",
+   "appid": 1974050,
+   "name": "Torchlight: Infinite",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#86",
+    "globaltopsellers#44"
+   ]
+  },
+  {
+   "rank": 102,
+   "id": "steam-1551980",
+   "appid": 1551980,
+   "name": "Clive Barker's Hellraiser: Revival",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#59",
+    "globaltopsellers#74"
+   ]
+  },
+  {
+   "rank": 103,
+   "id": "steam-813780",
+   "appid": 813780,
+   "name": "Age of Empires II: Definitive Edition",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#161",
+    "globaltopsellers#131",
+    "mostplayed#85"
+   ]
+  },
+  {
+   "rank": 104,
+   "id": "steam-306130",
+   "appid": 306130,
+   "name": "The Elder Scrolls® Online",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#63",
+    "globaltopsellers#77"
+   ]
+  },
+  {
+   "rank": 105,
+   "id": "steam-39210",
+   "appid": 39210,
+   "name": "FINAL FANTASY XIV Online",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#67",
+    "globaltopsellers#73"
+   ]
+  },
+  {
+   "rank": 106,
+   "id": "steam-2525380",
+   "appid": 2525380,
+   "name": "Tomb Raider IV-VI Remastered",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#316",
+    "globaltopsellers#239",
+    "topreleases#16"
+   ]
+  },
+  {
+   "rank": 107,
+   "id": "steam-3940610",
+   "appid": 3940610,
+   "name": "EA SPORTS™ Madden NFL 27",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#43",
+    "globaltopsellers#101"
+   ]
+  },
+  {
+   "rank": 108,
+   "id": "steam-3124540",
+   "appid": 3124540,
+   "name": "Far Far West",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#66",
+    "globaltopsellers#81"
+   ]
+  },
+  {
+   "rank": 109,
+   "id": "steam-5306540",
+   "appid": 5306540,
+   "name": "Groundwork Simulator",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#64",
+    "globaltopsellers#84"
+   ]
+  },
+  {
+   "rank": 110,
+   "id": "steam-1151340",
+   "appid": 1151340,
+   "name": "Fallout 76",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#58",
+    "globaltopsellers#95"
+   ]
+  },
+  {
+   "rank": 111,
+   "id": "steam-1401590",
+   "appid": 1401590,
+   "name": "Disney Dreamlight Valley",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#62",
+    "globaltopsellers#92"
+   ]
+  },
+  {
+   "rank": 112,
+   "id": "steam-270880",
+   "appid": 270880,
+   "name": "American Truck Simulator",
+   "template": "racing",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#68",
+    "globaltopsellers#93"
+   ]
+  },
+  {
+   "rank": 113,
+   "id": "steam-1478500",
+   "appid": 1478500,
+   "name": "Big Walk",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#82",
+    "globaltopsellers#80"
+   ]
+  },
+  {
+   "rank": 114,
+   "id": "steam-2406770",
+   "appid": 2406770,
+   "name": "Bodycam",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#85",
+    "globaltopsellers#78"
+   ]
+  },
+  {
+   "rank": 115,
+   "id": "steam-518790",
+   "appid": 518790,
+   "name": "theHunter: Call of the Wild™",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#88",
+    "globaltopsellers#75"
+   ]
+  },
+  {
+   "rank": 116,
+   "id": "steam-3892270",
+   "appid": 3892270,
+   "name": "Gamble With Your Friends",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#100",
+    "globaltopsellers#68"
+   ]
+  },
+  {
+   "rank": 117,
+   "id": "steam-3247750",
+   "appid": 3247750,
+   "name": "Mycopunk",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#75",
+    "globaltopsellers#98"
+   ]
+  },
+  {
+   "rank": 118,
+   "id": "steam-4656000",
+   "appid": 4656000,
+   "name": "BOMBANANA!",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#97",
+    "globaltopsellers#83"
+   ]
+  },
+  {
+   "rank": 119,
+   "id": "steam-3751260",
+   "appid": 3751260,
+   "name": "The Blood of Dawnwalker",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#92",
+    "globaltopsellers#99"
+   ]
+  },
+  {
+   "rank": 120,
+   "id": "steam-3164500",
+   "appid": 3164500,
+   "name": "Schedule I",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#83",
+    "globaltopsellers#109"
+   ]
+  },
+  {
+   "rank": 121,
+   "id": "steam-3883570",
+   "appid": 3883570,
+   "name": "Invokyr",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#91",
+    "globaltopsellers#105"
+   ]
+  },
+  {
+   "rank": 122,
+   "id": "steam-5155360",
+   "appid": 5155360,
+   "name": "Hood Warfare 2",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#69",
+    "globaltopsellers#138"
+   ]
+  },
+  {
+   "rank": 123,
+   "id": "steam-292000",
+   "appid": 292000,
+   "name": "No More Room in Hell 2",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#79",
+    "globaltopsellers#132"
+   ]
+  },
+  {
+   "rank": 124,
+   "id": "steam-714010",
+   "appid": 714010,
+   "name": "Aimlabs",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#171",
+    "globaltopsellers#224",
+    "mostplayed#83"
+   ]
+  },
+  {
+   "rank": 125,
+   "id": "steam-3028330",
+   "appid": 3028330,
+   "name": "Battlefield™ REDSEC",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#99",
+    "globaltopsellers#118"
+   ]
+  },
+  {
+   "rank": 126,
+   "id": "steam-427520",
+   "appid": 427520,
+   "name": "Factorio",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#111",
+    "globaltopsellers#106"
+   ]
+  },
+  {
+   "rank": 127,
+   "id": "steam-3669870",
+   "appid": 3669870,
+   "name": "CONTROL Resonant",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#98",
+    "globaltopsellers#120"
+   ]
+  },
+  {
+   "rank": 128,
+   "id": "steam-1476970",
+   "appid": 1476970,
+   "name": "IdleOn - The Incremental MMO",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#105",
+    "globaltopsellers#114"
+   ]
+  },
+  {
+   "rank": 129,
+   "id": "steam-582660",
+   "appid": 582660,
+   "name": "Black Desert",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#107",
+    "globaltopsellers#113"
+   ]
+  },
+  {
+   "rank": 130,
+   "id": "steam-266410",
+   "appid": 266410,
+   "name": "iRacing",
+   "template": "racing",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#106",
+    "globaltopsellers#116"
+   ]
+  },
+  {
+   "rank": 131,
+   "id": "steam-2087540",
+   "appid": 2087540,
+   "name": "Escape from Playtime",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#104",
+    "globaltopsellers#121"
+   ]
+  },
+  {
+   "rank": 132,
+   "id": "steam-1643320",
+   "appid": 1643320,
+   "name": "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#115",
+    "globaltopsellers#110"
+   ]
+  },
+  {
+   "rank": 133,
+   "id": "steam-2651280",
+   "appid": 2651280,
+   "name": "Marvel's Spider-Man 2",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#258",
+    "globaltopsellers#289",
+    "topreleases#32"
+   ]
+  },
+  {
+   "rank": 134,
+   "id": "steam-529340",
+   "appid": 529340,
+   "name": "Victoria 3",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#133",
+    "globaltopsellers#94"
+   ]
+  },
+  {
+   "rank": 135,
+   "id": "steam-4199960",
+   "appid": 4199960,
+   "name": "The Jackbox Party Pack 12",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#84",
+    "globaltopsellers#150"
+   ]
+  },
+  {
+   "rank": 136,
+   "id": "steam-2272360",
+   "appid": 2272360,
+   "name": "Warhammer 40,000: Dawn of War IV",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#119",
+    "globaltopsellers#117"
+   ]
+  },
+  {
+   "rank": 137,
+   "id": "steam-3357650",
+   "appid": 3357650,
+   "name": "PRAGMATA",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#118",
+    "globaltopsellers#119"
+   ]
+  },
+  {
+   "rank": 138,
+   "id": "steam-3569420",
+   "appid": 3569420,
+   "name": "Chained Beasts",
+   "template": "topdown",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#114",
+    "globaltopsellers#124"
+   ]
+  },
+  {
+   "rank": 139,
+   "id": "steam-2887580",
+   "appid": 2887580,
+   "name": "Active Matter",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#103",
+    "globaltopsellers#136"
+   ]
+  },
+  {
+   "rank": 140,
+   "id": "steam-2399830",
+   "appid": 2399830,
+   "name": "ARK: Survival Ascended",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#124",
+    "globaltopsellers#115"
+   ]
+  },
+  {
+   "rank": 141,
+   "id": "steam-261550",
+   "appid": 261550,
+   "name": "Mount & Blade II: Bannerlord",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#215",
+    "globaltopsellers#194",
+    "mostplayed#84"
+   ]
+  },
+  {
+   "rank": 142,
+   "id": "steam-2344520",
+   "appid": 2344520,
+   "name": "Diablo® IV",
+   "template": "topdown",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#129",
+    "globaltopsellers#112"
+   ]
+  },
+  {
+   "rank": 143,
+   "id": "steam-3314580",
+   "appid": 3314580,
+   "name": "Trash Day",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#101",
+    "globaltopsellers#142"
+   ]
+  },
+  {
+   "rank": 144,
+   "id": "steam-418370",
+   "appid": 418370,
+   "name": "Resident Evil 7 Biohazard",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#136",
+    "globaltopsellers#108"
+   ]
+  },
+  {
+   "rank": 145,
+   "id": "steam-4032350",
+   "appid": 4032350,
+   "name": "EA SPORTS™ College Football 27",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#80",
+    "globaltopsellers#169"
+   ]
+  },
+  {
+   "rank": 146,
+   "id": "steam-5228920",
+   "appid": 5228920,
+   "name": "Brick by Brick: Tidy Up the Small Town!",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#122",
+    "globaltopsellers#127"
+   ]
+  },
+  {
+   "rank": 147,
+   "id": "steam-2075800",
+   "appid": 2075800,
+   "name": "STAR WARS Zero Company™",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#110",
+    "globaltopsellers#143"
+   ]
+  },
+  {
+   "rank": 148,
+   "id": "steam-1962700",
+   "appid": 1962700,
+   "name": "Subnautica 2",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#128",
+    "globaltopsellers#126"
+   ]
+  },
+  {
+   "rank": 149,
+   "id": "steam-3493540",
+   "appid": 3493540,
+   "name": "Transport Fever 3",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#170",
+    "globaltopsellers#89"
+   ]
+  },
+  {
+   "rank": 150,
+   "id": "steam-3645890",
+   "appid": 3645890,
+   "name": "GONE Fishing",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#112",
+    "globaltopsellers#148"
+   ]
+  },
+  {
+   "rank": 151,
+   "id": "steam-949230",
+   "appid": 949230,
+   "name": "Cities: Skylines II",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#137",
+    "globaltopsellers#123"
+   ]
+  },
+  {
+   "rank": 152,
+   "id": "steam-960090",
+   "appid": 960090,
+   "name": "Bloons TD 6",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#158",
+    "globaltopsellers#214",
+    "mostplayed#90"
+   ]
+  },
+  {
+   "rank": 153,
+   "id": "steam-291550",
+   "appid": 291550,
+   "name": "Brawlhalla",
+   "template": "fighting",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#224",
+    "globaltopsellers#260",
+    "mostplayed#79"
+   ]
+  },
+  {
+   "rank": 154,
+   "id": "steam-881020",
+   "appid": 881020,
+   "name": "Granblue Fantasy: Relink",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#162",
+    "globaltopsellers#104"
+   ]
+  },
+  {
+   "rank": 155,
+   "id": "steam-3722330",
+   "appid": 3722330,
+   "name": "Shift At Midnight",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#127",
+    "globaltopsellers#140"
+   ]
+  },
+  {
+   "rank": 156,
+   "id": "steam-2592160",
+   "appid": 2592160,
+   "name": "Dispatch",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#131",
+    "globaltopsellers#144"
+   ]
+  },
+  {
+   "rank": 157,
+   "id": "steam-3905010",
+   "appid": 3905010,
+   "name": "ONE PIECE: Grand Gourmet",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#152",
+    "globaltopsellers#130"
+   ]
+  },
+  {
+   "rank": 158,
+   "id": "steam-304390",
+   "appid": 304390,
+   "name": "FOR HONOR™",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#117",
+    "globaltopsellers#166"
+   ]
+  },
+  {
+   "rank": 159,
+   "id": "steam-3224770",
+   "appid": 3224770,
+   "name": "Umamusume: Pretty Derby",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#125",
+    "globaltopsellers#158"
+   ]
+  },
+  {
+   "rank": 160,
+   "id": "steam-1066890",
+   "appid": 1066890,
+   "name": "Automobilista 2",
+   "template": "racing",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#176",
+    "globaltopsellers#107"
+   ]
+  },
+  {
+   "rank": 161,
+   "id": "steam-1196590",
+   "appid": 1196590,
+   "name": "Resident Evil Village",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#153",
+    "globaltopsellers#133"
+   ]
+  },
+  {
+   "rank": 162,
+   "id": "steam-1665460",
+   "appid": 1665460,
+   "name": "eFootball™",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#512",
+    "globaltopsellers#171",
+    "mostplayed#61"
+   ]
+  },
+  {
+   "rank": 163,
+   "id": "steam-281990",
+   "appid": 281990,
+   "name": "Stellaris",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#135",
+    "globaltopsellers#152"
+   ]
+  },
+  {
+   "rank": 164,
+   "id": "steam-1361210",
+   "appid": 1361210,
+   "name": "Warhammer 40,000: Darktide",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#130",
+    "globaltopsellers#161"
+   ]
+  },
+  {
+   "rank": 165,
+   "id": "steam-2537590",
+   "appid": 2537590,
+   "name": "Microsoft Flight Simulator 2024",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#139",
+    "globaltopsellers#157"
+   ]
+  },
+  {
+   "rank": 166,
+   "id": "steam-376210",
+   "appid": 376210,
+   "name": "The Isle",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#144",
+    "globaltopsellers#153"
+   ]
+  },
+  {
+   "rank": 167,
+   "id": "steam-244210",
+   "appid": 244210,
+   "name": "Assetto Corsa",
+   "template": "racing",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#278",
+    "globaltopsellers#268",
+    "mostplayed#76"
+   ]
+  },
+  {
+   "rank": 168,
+   "id": "steam-883710",
+   "appid": 883710,
+   "name": "Resident Evil 2",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#173",
+    "globaltopsellers#129"
+   ]
+  },
+  {
+   "rank": 169,
+   "id": "steam-2325290",
+   "appid": 2325290,
+   "name": "Sky: Children of the Light",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#157",
+    "globaltopsellers#146"
+   ]
+  },
+  {
+   "rank": 170,
+   "id": "steam-2661300",
+   "appid": 2661300,
+   "name": "Grounded 2",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#138",
+    "globaltopsellers#167"
+   ]
+  },
+  {
+   "rank": 171,
+   "id": "steam-1144200",
+   "appid": 1144200,
+   "name": "Ready or Not",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#141",
+    "globaltopsellers#165"
+   ]
+  },
+  {
+   "rank": 172,
+   "id": "steam-1912410",
+   "appid": 1912410,
+   "name": "Minecraft Dungeons II",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#147",
+    "globaltopsellers#162"
+   ]
+  },
+  {
+   "rank": 173,
+   "id": "steam-1286830",
+   "appid": 1286830,
+   "name": "STAR WARS™: The Old Republic™",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#140",
+    "globaltopsellers#173"
+   ]
+  },
+  {
+   "rank": 174,
+   "id": "steam-2638890",
+   "appid": 2638890,
+   "name": "Onimusha: Way of the Sword",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#164",
+    "globaltopsellers#149"
+   ]
+  },
+  {
+   "rank": 175,
+   "id": "steam-1783560",
+   "appid": 1783560,
+   "name": "The Last Caretaker",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#160",
+    "globaltopsellers#155"
+   ]
+  },
+  {
+   "rank": 176,
+   "id": "steam-311210",
+   "appid": 311210,
+   "name": "Call of Duty®: Black Ops III",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#121",
+    "globaltopsellers#197"
+   ]
+  },
+  {
+   "rank": 177,
+   "id": "steam-2828710",
+   "appid": 2828710,
+   "name": "Valor Mortis",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#149",
+    "globaltopsellers#170"
+   ]
+  },
+  {
+   "rank": 178,
+   "id": "steam-377160",
+   "appid": 377160,
+   "name": "Fallout 4",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#132",
+    "globaltopsellers#189"
+   ]
+  },
+  {
+   "rank": 179,
+   "id": "steam-1465360",
+   "appid": 1465360,
+   "name": "SnowRunner",
+   "template": "racing",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#194",
+    "globaltopsellers#128"
+   ]
+  },
+  {
+   "rank": 180,
+   "id": "steam-1943950",
+   "appid": 1943950,
+   "name": "Escape the Backrooms",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#168",
+    "globaltopsellers#156"
+   ]
+  },
+  {
+   "rank": 181,
+   "id": "steam-251570",
+   "appid": 251570,
+   "name": "7 Days to Die",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#220",
+    "globaltopsellers#243",
+    "mostplayed#87"
+   ]
+  },
+  {
+   "rank": 182,
+   "id": "steam-1466860",
+   "appid": 1466860,
+   "name": "Age of Empires IV: Anniversary Edition",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#193",
+    "globaltopsellers#134"
+   ]
+  },
+  {
+   "rank": 183,
+   "id": "steam-750920",
+   "appid": 750920,
+   "name": "Shadow of the Tomb Raider: Definitive Edition",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#233",
+    "globaltopsellers#97"
+   ]
+  },
+  {
+   "rank": 184,
+   "id": "steam-2871520",
+   "appid": 2871520,
+   "name": "Deep Dish Dungeon",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#146",
+    "globaltopsellers#185"
+   ]
+  },
+  {
+   "rank": 185,
+   "id": "steam-3219630",
+   "appid": 3219630,
+   "name": "Halloween: The Game",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#126",
+    "globaltopsellers#206"
+   ]
+  },
+  {
+   "rank": 186,
+   "id": "steam-552990",
+   "appid": 552990,
+   "name": "World of Warships",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#184",
+    "globaltopsellers#151"
+   ]
+  },
+  {
+   "rank": 187,
+   "id": "steam-2333000",
+   "appid": 2333000,
+   "name": "Silver Pines",
+   "template": "platformer",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#166",
+    "globaltopsellers#172"
+   ]
+  },
+  {
+   "rank": 188,
+   "id": "steam-4508340",
+   "appid": 4508340,
+   "name": "NTE: Neverness to Everness",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#191",
+    "globaltopsellers#147"
+   ]
+  },
+  {
+   "rank": 189,
+   "id": "steam-594650",
+   "appid": 594650,
+   "name": "Hunt: Showdown 1896",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#248",
+    "globaltopsellers#180",
+    "mostplayed#92"
+   ]
+  },
+  {
+   "rank": 190,
+   "id": "steam-526870",
+   "appid": 526870,
+   "name": "Satisfactory",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#155",
+    "globaltopsellers#184"
+   ]
+  },
+  {
+   "rank": 191,
+   "id": "steam-3949040",
+   "appid": 3949040,
+   "name": "RV There Yet?",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#180",
+    "globaltopsellers#159"
+   ]
+  },
+  {
+   "rank": 192,
+   "id": "steam-1599340",
+   "appid": 1599340,
+   "name": "Lost Ark",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#163",
+    "globaltopsellers#178"
+   ]
+  },
+  {
+   "rank": 193,
+   "id": "steam-4704690",
+   "appid": 4704690,
+   "name": "MECCHA CHAMELEON",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#186",
+    "globaltopsellers#160"
+   ]
+  },
+  {
+   "rank": 194,
+   "id": "steam-1659040",
+   "appid": 1659040,
+   "name": "HITMAN World of Assassination",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#195",
+    "globaltopsellers#154"
+   ]
+  },
+  {
+   "rank": 195,
+   "id": "steam-2221490",
+   "appid": 2221490,
+   "name": "Tom Clancy’s The Division® 2",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#165",
+    "globaltopsellers#187"
+   ]
+  },
+  {
+   "rank": 196,
+   "id": "steam-945360",
+   "appid": 945360,
+   "name": "Among Us",
+   "template": "override",
+   "suitability": "good",
+   "status": "unverified",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#266",
+    "globaltopsellers#241",
+    "mostplayed#86"
+   ]
+  },
+  {
+   "rank": 197,
+   "id": "steam-3740090",
+   "appid": 3740090,
+   "name": "Bruisers 2D Boxing",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#145",
+    "globaltopsellers#215"
+   ]
+  },
+  {
+   "rank": 198,
+   "id": "steam-4025700",
+   "appid": 4025700,
+   "name": "Heartopia",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#178",
+    "globaltopsellers#182"
+   ]
+  },
+  {
+   "rank": 199,
+   "id": "steam-24200",
+   "appid": 24200,
+   "name": "DC Universe™ Online",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#134",
+    "globaltopsellers#229"
+   ]
+  },
+  {
+   "rank": 200,
+   "id": "steam-2584270",
+   "appid": 2584270,
+   "name": "Mortal Shell II",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#179",
+    "globaltopsellers#195"
+   ]
+  },
+  {
+   "rank": 201,
+   "id": "steam-3624140",
+   "appid": 3624140,
+   "name": "Wanderburg",
+   "template": "topdown",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#200",
+    "globaltopsellers#175"
+   ]
+  },
+  {
+   "rank": 202,
+   "id": "steam-548430",
+   "appid": 548430,
+   "name": "Deep Rock Galactic",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#197",
+    "globaltopsellers#183"
+   ]
+  },
+  {
+   "rank": 203,
+   "id": "steam-799960",
+   "appid": 799960,
+   "name": "Wizard101",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#143",
+    "globaltopsellers#242"
+   ]
+  },
+  {
+   "rank": 204,
+   "id": "steam-1669000",
+   "appid": 1669000,
+   "name": "Age of Wonders 4",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#177",
+    "globaltopsellers#208"
+   ]
+  },
+  {
+   "rank": 205,
+   "id": "steam-3419520",
+   "appid": 3419520,
+   "name": "Quarantine Zone: The Last Check",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#190",
+    "globaltopsellers#201"
+   ]
+  },
+  {
+   "rank": 206,
+   "id": "steam-2138720",
+   "appid": 2138720,
+   "name": "REMATCH",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#188",
+    "globaltopsellers#204"
+   ]
+  },
+  {
+   "rank": 207,
+   "id": "steam-1284210",
+   "appid": 1284210,
+   "name": "Guild Wars 2®",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#187",
+    "globaltopsellers#209"
+   ]
+  },
+  {
+   "rank": 208,
+   "id": "steam-2074920",
+   "appid": 2074920,
+   "name": "The First Descendant",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#204",
+    "globaltopsellers#196"
+   ]
+  },
+  {
+   "rank": 209,
+   "id": "steam-1671210",
+   "appid": 1671210,
+   "name": "DELTARUNE",
+   "template": "topdown",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#175",
+    "globaltopsellers#227"
+   ]
+  },
+  {
+   "rank": 210,
+   "id": "steam-976730",
+   "appid": 976730,
+   "name": "Halo: The Master Chief Collection",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#154",
+    "globaltopsellers#250"
+   ]
+  },
+  {
+   "rank": 211,
+   "id": "steam-1607250",
+   "appid": 1607250,
+   "name": "MY HERO ULTRA RUMBLE",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#185",
+    "globaltopsellers#219"
+   ]
+  },
+  {
+   "rank": 212,
+   "id": "steam-1289670",
+   "appid": 1289670,
+   "name": "EA Play",
+   "template": "racing",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#206",
+    "globaltopsellers#198"
+   ]
+  },
+  {
+   "rank": 213,
+   "id": "steam-4705510",
+   "appid": 4705510,
+   "name": "Happy Wheels",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#174",
+    "globaltopsellers#235"
+   ]
+  },
+  {
+   "rank": 214,
+   "id": "steam-218620",
+   "appid": 218620,
+   "name": "PAYDAY 2",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#196",
+    "globaltopsellers#213"
+   ]
+  },
+  {
+   "rank": 215,
+   "id": "steam-2622380",
+   "appid": 2622380,
+   "name": "ELDEN RING NIGHTREIGN",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#222",
+    "globaltopsellers#217",
+    "mostplayed#98"
+   ]
+  },
+  {
+   "rank": 216,
+   "id": "steam-1326470",
+   "appid": 1326470,
+   "name": "Sons Of The Forest",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#205",
+    "globaltopsellers#205"
+   ]
+  },
+  {
+   "rank": 217,
+   "id": "steam-3115160",
+   "appid": 3115160,
+   "name": "Warhammer 40,000: Boltgun 2",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#181",
+    "globaltopsellers#230"
+   ]
+  },
+  {
+   "rank": 218,
+   "id": "steam-219740",
+   "appid": 219740,
+   "name": "Don't Starve",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#240",
+    "globaltopsellers#174"
+   ]
+  },
+  {
+   "rank": 219,
+   "id": "steam-3486530",
+   "appid": 3486530,
+   "name": "Stupid Never Dies",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#182",
+    "globaltopsellers#233"
+   ]
+  },
+  {
+   "rank": 220,
+   "id": "steam-2869860",
+   "appid": 2869860,
+   "name": "Monster Prom 4: Monster Con",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#172",
+    "globaltopsellers#246"
+   ]
+  },
+  {
+   "rank": 221,
+   "id": "steam-454650",
+   "appid": 454650,
+   "name": "DRAGON BALL XENOVERSE 2",
+   "template": "fighting",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#211",
+    "globaltopsellers#207"
+   ]
+  },
+  {
+   "rank": 222,
+   "id": "steam-588650",
+   "appid": 588650,
+   "name": "Dead Cells",
+   "template": "platformer",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#244",
+    "globaltopsellers#176"
+   ]
+  },
+  {
+   "rank": 223,
+   "id": "steam-648800",
+   "appid": 648800,
+   "name": "Raft",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#254",
+    "globaltopsellers#168"
+   ]
+  },
+  {
+   "rank": 224,
+   "id": "steam-4108000",
+   "appid": 4108000,
+   "name": "Machine Party",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#221",
+    "globaltopsellers#202"
+   ]
+  },
+  {
+   "rank": 225,
+   "id": "steam-286160",
+   "appid": 286160,
+   "name": "Tabletop Simulator",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#167",
+    "globaltopsellers#257"
+   ]
+  },
+  {
+   "rank": 226,
+   "id": "steam-391220",
+   "appid": 391220,
+   "name": "Rise of the Tomb Raider™",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#299",
+    "globaltopsellers#125"
+   ]
+  },
+  {
+   "rank": 227,
+   "id": "steam-499170",
+   "appid": 499170,
+   "name": "Order of the Sinking Star",
+   "template": "topdown",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#236",
+    "globaltopsellers#191"
+   ]
+  },
+  {
+   "rank": 228,
+   "id": "steam-952060",
+   "appid": 952060,
+   "name": "Resident Evil 3",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#237",
+    "globaltopsellers#190"
+   ]
+  },
+  {
+   "rank": 229,
+   "id": "steam-1172710",
+   "appid": 1172710,
+   "name": "Dune: Awakening",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#192",
+    "globaltopsellers#236"
+   ]
+  },
+  {
+   "rank": 230,
+   "id": "steam-1984270",
+   "appid": 1984270,
+   "name": "Digimon Story Time Stranger",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#202",
+    "globaltopsellers#226"
+   ]
+  },
+  {
+   "rank": 231,
+   "id": "steam-690830",
+   "appid": 690830,
+   "name": "Foundation",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#375",
+    "globaltopsellers#348",
+    "topreleases#37"
+   ]
+  },
+  {
+   "rank": 232,
+   "id": "steam-2254990",
+   "appid": 2254990,
+   "name": "Permafrost",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#209",
+    "globaltopsellers#223"
+   ]
+  },
+  {
+   "rank": 233,
+   "id": "steam-2121510",
+   "appid": 2121510,
+   "name": "Tenebris Somnia",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#189",
+    "globaltopsellers#245"
+   ]
+  },
+  {
+   "rank": 234,
+   "id": "steam-1562430",
+   "appid": 1562430,
+   "name": "DREDGE",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#214",
+    "globaltopsellers#220"
+   ]
+  },
+  {
+   "rank": 235,
+   "id": "steam-2397300",
+   "appid": 2397300,
+   "name": "Half Sword",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#183",
+    "globaltopsellers#255"
+   ]
+  },
+  {
+   "rank": 236,
+   "id": "steam-1133870",
+   "appid": 1133870,
+   "name": "Space Engineers 2",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#347",
+    "globaltopsellers#378",
+    "topreleases#39"
+   ]
+  },
+  {
+   "rank": 237,
+   "id": "steam-2456740",
+   "appid": 2456740,
+   "name": "inZOI",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#201",
+    "globaltopsellers#247"
+   ]
+  },
+  {
+   "rank": 238,
+   "id": "steam-1903340",
+   "appid": 1903340,
+   "name": "Clair Obscur: Expedition 33",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#216",
+    "globaltopsellers#232"
+   ]
+  },
+  {
+   "rank": 239,
+   "id": "steam-2001120",
+   "appid": 2001120,
+   "name": "Split Fiction",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#264",
+    "globaltopsellers#188"
+   ]
+  },
+  {
+   "rank": 240,
+   "id": "steam-232090",
+   "appid": 232090,
+   "name": "Killing Floor 2",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#203",
+    "globaltopsellers#254"
+   ]
+  },
+  {
+   "rank": 241,
+   "id": "steam-3812600",
+   "appid": 3812600,
+   "name": "ReStory: Chill Electronics Repairs",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#199",
+    "globaltopsellers#259"
+   ]
+  },
+  {
+   "rank": 242,
+   "id": "steam-1062090",
+   "appid": 1062090,
+   "name": "Timberborn",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#238",
+    "globaltopsellers#221"
+   ]
+  },
+  {
+   "rank": 243,
+   "id": "steam-5258340",
+   "appid": 5258340,
+   "name": "One Million Coins",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#262",
+    "globaltopsellers#200"
+   ]
+  },
+  {
+   "rank": 244,
+   "id": "steam-3070070",
+   "appid": 3070070,
+   "name": "TCG Card Shop Simulator",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#223",
+    "globaltopsellers#240"
+   ]
+  },
+  {
+   "rank": 245,
+   "id": "steam-1962663",
+   "appid": 1962663,
+   "name": "Call of Duty®: Warzone™",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#249",
+    "globaltopsellers#216"
+   ]
+  },
+  {
+   "rank": 246,
+   "id": "steam-1818450",
+   "appid": 1818450,
+   "name": "STALZONE",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#256",
+    "globaltopsellers#211"
+   ]
+  },
+  {
+   "rank": 247,
+   "id": "steam-1285190",
+   "appid": 1285190,
+   "name": "Borderlands 4",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#169",
+    "globaltopsellers#299"
+   ]
+  },
+  {
+   "rank": 248,
+   "id": "steam-1284190",
+   "appid": 1284190,
+   "name": "The Planet Crafter",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#230",
+    "globaltopsellers#238"
+   ]
+  },
+  {
+   "rank": 249,
+   "id": "steam-784080",
+   "appid": 784080,
+   "name": "MechWarrior 5: Mercenaries",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#198",
+    "globaltopsellers#272"
+   ]
+  },
+  {
+   "rank": 250,
+   "id": "steam-2958130",
+   "appid": 2958130,
+   "name": "Jurassic World Evolution 3",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#218",
+    "globaltopsellers#258"
+   ]
+  },
+  {
+   "rank": 251,
+   "id": "steam-440900",
+   "appid": 440900,
+   "name": "Conan Exiles Enhanced",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#227",
+    "globaltopsellers#251"
+   ]
+  },
+  {
+   "rank": 252,
+   "id": "steam-1172620",
+   "appid": 1172620,
+   "name": "Sea of Thieves: 2026 Edition",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#235",
+    "globaltopsellers#244"
+   ]
+  },
+  {
+   "rank": 253,
+   "id": "steam-3751950",
+   "appid": 3751950,
+   "name": "Assassin's Creed Black Flag Resynced",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#245",
+    "globaltopsellers#237"
+   ]
+  },
+  {
+   "rank": 254,
+   "id": "steam-1874880",
+   "appid": 1874880,
+   "name": "Arma Reforger",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#225",
+    "globaltopsellers#264"
+   ]
+  },
+  {
+   "rank": 255,
+   "id": "steam-1363080",
+   "appid": 1363080,
+   "name": "Manor Lords",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#273",
+    "globaltopsellers#218"
+   ]
+  },
+  {
+   "rank": 256,
+   "id": "steam-5316540",
+   "appid": 5316540,
+   "name": "Tidy Up the Halloween Shop",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#231",
+    "globaltopsellers#263"
+   ]
+  },
+  {
+   "rank": 257,
+   "id": "steam-668580",
+   "appid": 668580,
+   "name": "Atomic Heart",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#378",
+    "globaltopsellers#122"
+   ]
+  },
+  {
+   "rank": 258,
+   "id": "steam-275850",
+   "appid": 275850,
+   "name": "No Man's Sky",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#207",
+    "globaltopsellers#296"
+   ]
+  },
+  {
+   "rank": 259,
+   "id": "steam-1966720",
+   "appid": 1966720,
+   "name": "Lethal Company",
+   "template": "override",
+   "suitability": "good",
+   "status": "unverified",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#243",
+    "globaltopsellers#262"
+   ]
+  },
+  {
+   "rank": 260,
+   "id": "steam-2543830",
+   "appid": 2543830,
+   "name": "Way of the Hunter 2",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#210",
+    "globaltopsellers#302"
+   ]
+  },
+  {
+   "rank": 261,
+   "id": "steam-767560",
+   "appid": 767560,
+   "name": "War Robots",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#279",
+    "globaltopsellers#234"
+   ]
+  },
+  {
+   "rank": 262,
+   "id": "steam-1407200",
+   "appid": 1407200,
+   "name": "World of Tanks",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#335",
+    "globaltopsellers#179"
+   ]
+  },
+  {
+   "rank": 263,
+   "id": "steam-3717070",
+   "appid": 3717070,
+   "name": "WWE 2K26",
+   "template": "fighting",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#241",
+    "globaltopsellers#275"
+   ]
+  },
+  {
+   "rank": 264,
+   "id": "steam-2590240",
+   "appid": 2590240,
+   "name": "METRO 2039",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#309",
+    "globaltopsellers#210"
+   ]
+  },
+  {
+   "rank": 265,
+   "id": "steam-1794680",
+   "appid": 1794680,
+   "name": "Vampire Survivors",
+   "template": "topdown",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#271",
+    "globaltopsellers#249"
+   ]
+  },
+  {
+   "rank": 266,
+   "id": "steam-1466060",
+   "appid": 1466060,
+   "name": "Tainted Grail: The Fall of Avalon",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#247",
+    "globaltopsellers#283"
+   ]
+  },
+  {
+   "rank": 267,
+   "id": "steam-4358690",
+   "appid": 4358690,
+   "name": "Graveyard Keeper 2",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#257",
+    "globaltopsellers#276"
+   ]
+  },
+  {
+   "rank": 268,
+   "id": "steam-1328670",
+   "appid": 1328670,
+   "name": "Mass Effect™ Legendary Edition",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#229",
+    "globaltopsellers#309"
+   ]
+  },
+  {
+   "rank": 269,
+   "id": "steam-2707930",
+   "appid": 2707930,
+   "name": "Palia",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#217",
+    "globaltopsellers#323"
+   ]
+  },
+  {
+   "rank": 270,
+   "id": "steam-2129530",
+   "appid": 2129530,
+   "name": "REANIMAL",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#239",
+    "globaltopsellers#303"
+   ]
+  },
+  {
+   "rank": 271,
+   "id": "steam-1217060",
+   "appid": 1217060,
+   "name": "Gunfire Reborn",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#242",
+    "globaltopsellers#306"
+   ]
+  },
+  {
+   "rank": 272,
+   "id": "steam-21690",
+   "appid": 21690,
+   "name": "Resident Evil 5",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#280",
+    "globaltopsellers#273"
+   ]
+  },
+  {
+   "rank": 273,
+   "id": "steam-1371980",
+   "appid": 1371980,
+   "name": "No Rest for the Wicked",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#268",
+    "globaltopsellers#286"
+   ]
+  },
+  {
+   "rank": 274,
+   "id": "steam-463530",
+   "appid": 463530,
+   "name": "Empires of the Undergrowth",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#287",
+    "globaltopsellers#267"
+   ]
+  },
+  {
+   "rank": 275,
+   "id": "steam-1657630",
+   "appid": 1657630,
+   "name": "Slime Rancher 2",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#274",
+    "globaltopsellers#281"
+   ]
+  },
+  {
+   "rank": 276,
+   "id": "steam-2536520",
+   "appid": 2536520,
+   "name": "Diablo II: Resurrected – Infernal Edition",
+   "template": "topdown",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#269",
+    "globaltopsellers#287"
+   ]
+  },
+  {
+   "rank": 277,
+   "id": "steam-1118520",
+   "appid": 1118520,
+   "name": "Paralives",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#232",
+    "globaltopsellers#325"
+   ]
+  },
+  {
+   "rank": 278,
+   "id": "steam-3841510",
+   "appid": 3841510,
+   "name": "DYNASTY WARRIORS 3: Complete Edition Remastered",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#289",
+    "globaltopsellers#274"
+   ]
+  },
+  {
+   "rank": 279,
+   "id": "steam-3059520",
+   "appid": 3059520,
+   "name": "F1® 25",
+   "template": "racing",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#370",
+    "globaltopsellers#193"
+   ]
+  },
+  {
+   "rank": 280,
+   "id": "steam-3041230",
+   "appid": 3041230,
+   "name": "Windrose",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#267",
+    "globaltopsellers#305"
+   ]
+  },
+  {
+   "rank": 281,
+   "id": "steam-2437170",
+   "appid": 2437170,
+   "name": "SMITE 2",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#213",
+    "globaltopsellers#360"
+   ]
+  },
+  {
+   "rank": 282,
+   "id": "steam-1426210",
+   "appid": 1426210,
+   "name": "It Takes Two",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#321",
+    "globaltopsellers#253"
+   ]
+  },
+  {
+   "rank": 283,
+   "id": "steam-427410",
+   "appid": 427410,
+   "name": "Abiotic Factor",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#234",
+    "globaltopsellers#343"
+   ]
+  },
+  {
+   "rank": 284,
+   "id": "steam-1488490",
+   "appid": 1488490,
+   "name": "Nivalis Nights",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#263",
+    "globaltopsellers#320"
+   ]
+  },
+  {
+   "rank": 285,
+   "id": "steam-4380490",
+   "appid": 4380490,
+   "name": "Cat Mail Co.",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#276",
+    "globaltopsellers#310"
+   ]
+  },
+  {
+   "rank": 286,
+   "id": "steam-1716740",
+   "appid": 1716740,
+   "name": "Starfield",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#252",
+    "globaltopsellers#339"
+   ]
+  },
+  {
+   "rank": 287,
+   "id": "steam-4406280",
+   "appid": 4406280,
+   "name": "the cabin game",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#228",
+    "globaltopsellers#366"
+   ]
+  },
+  {
+   "rank": 288,
+   "id": "steam-2948190",
+   "appid": 2948190,
+   "name": "World of Sea Battle",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#302",
+    "globaltopsellers#292"
+   ]
+  },
+  {
+   "rank": 289,
+   "id": "steam-3845070",
+   "appid": 3845070,
+   "name": "Dupery: A Game of Solo Deduction",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#312",
+    "globaltopsellers#282"
+   ]
+  },
+  {
+   "rank": 290,
+   "id": "steam-3347400",
+   "appid": 3347400,
+   "name": "GIRLS' FRONTLINE 2: EXILIUM",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#353",
+    "globaltopsellers#617",
+    "topreleases#23"
+   ]
+  },
+  {
+   "rank": 291,
+   "id": "steam-2478970",
+   "appid": 2478970,
+   "name": "Tomb Raider I-III Remastered Starring Lara Croft",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#337",
+    "globaltopsellers#261"
+   ]
+  },
+  {
+   "rank": 292,
+   "id": "steam-8870",
+   "appid": 8870,
+   "name": "BioShock Infinite",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#282",
+    "globaltopsellers#317"
+   ]
+  },
+  {
+   "rank": 293,
+   "id": "steam-1737870",
+   "appid": 1737870,
+   "name": "REKA",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#270",
+    "globaltopsellers#330"
+   ]
+  },
+  {
+   "rank": 294,
+   "id": "steam-1190970",
+   "appid": 1190970,
+   "name": "House Flipper 2",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#281",
+    "globaltopsellers#321"
+   ]
+  },
+  {
+   "rank": 295,
+   "id": "steam-4732690",
+   "appid": 4732690,
+   "name": "Arknights: Endfield",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#338",
+    "globaltopsellers#270"
+   ]
+  },
+  {
+   "rank": 296,
+   "id": "steam-3768760",
+   "appid": 3768760,
+   "name": "007 First Light",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#285",
+    "globaltopsellers#324"
+   ]
+  },
+  {
+   "rank": 297,
+   "id": "steam-728880",
+   "appid": 728880,
+   "name": "Overcooked! 2",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#361",
+    "globaltopsellers#248"
+   ]
+  },
+  {
+   "rank": 298,
+   "id": "steam-3808690",
+   "appid": 3808690,
+   "name": "Pathogenic",
+   "template": "topdown",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#277",
+    "globaltopsellers#333"
+   ]
+  },
+  {
+   "rank": 299,
+   "id": "steam-1149460",
+   "appid": 1149460,
+   "name": "ICARUS",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#275",
+    "globaltopsellers#337"
+   ]
+  },
+  {
+   "rank": 300,
+   "id": "steam-4968640",
+   "appid": 4968640,
+   "name": "Japanese Ramen Simulator",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#452",
+    "globaltopsellers#164"
+   ]
+  },
+  {
+   "rank": 301,
+   "id": "steam-255710",
+   "appid": 255710,
+   "name": "Cities: Skylines",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#318",
+    "globaltopsellers#301"
+   ]
+  },
+  {
+   "rank": 302,
+   "id": "steam-221040",
+   "appid": 221040,
+   "name": "Resident Evil 6",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#342",
+    "globaltopsellers#279"
+   ]
+  },
+  {
+   "rank": 303,
+   "id": "steam-3228590",
+   "appid": 3228590,
+   "name": "Deadzone: Rogue",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#272",
+    "globaltopsellers#351"
+   ]
+  },
+  {
+   "rank": 304,
+   "id": "steam-4098030",
+   "appid": 4098030,
+   "name": "Shipping Store Simulator 2037",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#311",
+    "globaltopsellers#313"
+   ]
+  },
+  {
+   "rank": 305,
+   "id": "steam-493520",
+   "appid": 493520,
+   "name": "GTFO",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#307",
+    "globaltopsellers#318"
+   ]
+  },
+  {
+   "rank": 306,
+   "id": "steam-4354570",
+   "appid": 4354570,
+   "name": "FINAL FANTASY VII REVELATION",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#250",
+    "globaltopsellers#377"
+   ]
+  },
+  {
+   "rank": 307,
+   "id": "steam-3355800",
+   "appid": 3355800,
+   "name": "Bank Simulator",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#363",
+    "globaltopsellers#265"
+   ]
+  },
+  {
+   "rank": 308,
+   "id": "steam-1790600",
+   "appid": 1790600,
+   "name": "DRAGON BALL: Sparking! ZERO",
+   "template": "fighting",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#293",
+    "globaltopsellers#336"
+   ]
+  },
+  {
+   "rank": 309,
+   "id": "steam-202970",
+   "appid": 202970,
+   "name": "Call of Duty®: Black Ops II",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#255",
+    "globaltopsellers#381"
+   ]
+  },
+  {
+   "rank": 310,
+   "id": "steam-2670630",
+   "appid": 2670630,
+   "name": "Supermarket Simulator",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#310",
+    "globaltopsellers#329"
+   ]
+  },
+  {
+   "rank": 311,
+   "id": "steam-866570",
+   "appid": 866570,
+   "name": "System Shock 2: 25th Anniversary Remaster",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#261",
+    "globaltopsellers#379"
+   ]
+  },
+  {
+   "rank": 312,
+   "id": "steam-9900",
+   "appid": 9900,
+   "name": "Star Trek Online",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#253",
+    "globaltopsellers#400"
+   ]
+  },
+  {
+   "rank": 313,
+   "id": "steam-2347080",
+   "appid": 2347080,
+   "name": "Frosthaven",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#313",
+    "globaltopsellers#340"
+   ]
+  },
+  {
+   "rank": 314,
+   "id": "steam-3079210",
+   "appid": 3079210,
+   "name": "Hell Let Loose: Vietnam",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#246",
+    "globaltopsellers#408"
+   ]
+  },
+  {
+   "rank": 315,
+   "id": "steam-1857950",
+   "appid": 1857950,
+   "name": "VEIN",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#286",
+    "globaltopsellers#368"
+   ]
+  },
+  {
+   "rank": 316,
+   "id": "steam-2000950",
+   "appid": 2000950,
+   "name": "Call of Duty®: Modern Warfare®",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#349",
+    "globaltopsellers#307"
+   ]
+  },
+  {
+   "rank": 317,
+   "id": "steam-1313140",
+   "appid": 1313140,
+   "name": "Cult of the Lamb",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#296",
+    "globaltopsellers#362"
+   ]
+  },
+  {
+   "rank": 318,
+   "id": "steam-2679100",
+   "appid": 2679100,
+   "name": "Witchspire",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#292",
+    "globaltopsellers#369"
+   ]
+  },
+  {
+   "rank": 319,
+   "id": "steam-2186680",
+   "appid": 2186680,
+   "name": "Warhammer 40,000: Rogue Trader",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#304",
+    "globaltopsellers#357"
+   ]
+  },
+  {
+   "rank": 320,
+   "id": "steam-2879840",
+   "appid": 2879840,
+   "name": "Escape Simulator 2",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#340",
+    "globaltopsellers#322"
+   ]
+  },
+  {
+   "rank": 321,
+   "id": "steam-1778820",
+   "appid": 1778820,
+   "name": "TEKKEN 8",
+   "template": "fighting",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#333",
+    "globaltopsellers#331"
+   ]
+  },
+  {
+   "rank": 322,
+   "id": "steam-346110",
+   "appid": 346110,
+   "name": "ARK: Survival Evolved",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#388",
+    "globaltopsellers#278"
+   ]
+  },
+  {
+   "rank": 323,
+   "id": "steam-3031880",
+   "appid": 3031880,
+   "name": "Car Park Capital",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#283",
+    "globaltopsellers#386"
+   ]
+  },
+  {
+   "rank": 324,
+   "id": "steam-4421010",
+   "appid": 4421010,
+   "name": "Bills Must Be Paid",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#319",
+    "globaltopsellers#355"
+   ]
+  },
+  {
+   "rank": 325,
+   "id": "steam-2852190",
+   "appid": 2852190,
+   "name": "Monster Hunter Stories 3: Twisted Reflection",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#360",
+    "globaltopsellers#319"
+   ]
+  },
+  {
+   "rank": 326,
+   "id": "steam-613100",
+   "appid": 613100,
+   "name": "House Flipper",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#391",
+    "globaltopsellers#288"
+   ]
+  },
+  {
+   "rank": 327,
+   "id": "steam-1229490",
+   "appid": 1229490,
+   "name": "ULTRAKILL",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#288",
+    "globaltopsellers#392"
+   ]
+  },
+  {
+   "rank": 328,
+   "id": "steam-1206560",
+   "appid": 1206560,
+   "name": "WorldBox - God Simulator",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#339",
+    "globaltopsellers#341"
+   ]
+  },
+  {
+   "rank": 329,
+   "id": "steam-2625420",
+   "appid": 2625420,
+   "name": "Drive Beyond Horizons",
+   "template": "racing",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#354",
+    "globaltopsellers#326"
+   ]
+  },
+  {
+   "rank": 330,
+   "id": "steam-3844970",
+   "appid": 3844970,
+   "name": "Burglin' Gnomes",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#324",
+    "globaltopsellers#358"
+   ]
+  },
+  {
+   "rank": 331,
+   "id": "steam-3595270",
+   "appid": 3595270,
+   "name": "Call of Duty®: Modern Warfare® III",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#371",
+    "globaltopsellers#312"
+   ]
+  },
+  {
+   "rank": 332,
+   "id": "steam-3606480",
+   "appid": 3606480,
+   "name": "Call of Duty®: Black Ops 7",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#305",
+    "globaltopsellers#387"
+   ]
+  },
+  {
+   "rank": 333,
+   "id": "steam-2141730",
+   "appid": 2141730,
+   "name": "Backrooms: Escape Together",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#352",
+    "globaltopsellers#342"
+   ]
+  },
+  {
+   "rank": 334,
+   "id": "steam-4094350",
+   "appid": 4094350,
+   "name": "Online: 404",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#350",
+    "globaltopsellers#347"
+   ]
+  },
+  {
+   "rank": 335,
+   "id": "steam-2215430",
+   "appid": 2215430,
+   "name": "Ghost of Tsushima DIRECTOR'S CUT",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#325",
+    "globaltopsellers#373"
+   ]
+  },
+  {
+   "rank": 336,
+   "id": "steam-962130",
+   "appid": 962130,
+   "name": "Grounded",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#303",
+    "globaltopsellers#397"
+   ]
+  },
+  {
+   "rank": 337,
+   "id": "steam-3293260",
+   "appid": 3293260,
+   "name": "Waterpark Simulator",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#301",
+    "globaltopsellers#403"
+   ]
+  },
+  {
+   "rank": 338,
+   "id": "steam-1020790",
+   "appid": 1020790,
+   "name": "NARUTO X BORUTO Ultimate Ninja STORM CONNECTIONS",
+   "template": "fighting",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#394",
+    "globaltopsellers#311"
+   ]
+  },
+  {
+   "rank": 339,
+   "id": "steam-2968420",
+   "appid": 2968420,
+   "name": "PowerWash Simulator 2",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#323",
+    "globaltopsellers#383"
+   ]
+  },
+  {
+   "rank": 340,
+   "id": "steam-3469910",
+   "appid": 3469910,
+   "name": "Star Trek: Outposts Unknown",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#331",
+    "globaltopsellers#375"
+   ]
+  },
+  {
+   "rank": 341,
+   "id": "steam-2209900",
+   "appid": 2209900,
+   "name": "Moonlight Peaks",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#295",
+    "globaltopsellers#412"
+   ]
+  },
+  {
+   "rank": 342,
+   "id": "steam-488790",
+   "appid": 488790,
+   "name": "South Park™: The Fractured But Whole™",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#297",
+    "globaltopsellers#411"
+   ]
+  },
+  {
+   "rank": 343,
+   "id": "steam-534380",
+   "appid": 534380,
+   "name": "Dying Light 2 Stay Human: Reloaded Edition",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#385",
+    "globaltopsellers#328"
+   ]
+  },
+  {
+   "rank": 344,
+   "id": "steam-492720",
+   "appid": 492720,
+   "name": "Tropico 6",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#420",
+    "globaltopsellers#295"
+   ]
+  },
+  {
+   "rank": 345,
+   "id": "steam-1665190",
+   "appid": 1665190,
+   "name": "Monster Prom 3: Monster Roadtrip",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#290",
+    "globaltopsellers#427"
+   ]
+  },
+  {
+   "rank": 346,
+   "id": "steam-2358720",
+   "appid": 2358720,
+   "name": "Black Myth: Wukong",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#468",
+    "globaltopsellers#252"
+   ]
+  },
+  {
+   "rank": 347,
+   "id": "steam-203160",
+   "appid": 203160,
+   "name": "Tomb Raider Game of the Year",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#496",
+    "globaltopsellers#228"
+   ]
+  },
+  {
+   "rank": 348,
+   "id": "steam-4069520",
+   "appid": 4069520,
+   "name": "Super Battle Golf",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#291",
+    "globaltopsellers#436"
+   ]
+  },
+  {
+   "rank": 349,
+   "id": "steam-482400",
+   "appid": 482400,
+   "name": "System Shock",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#322",
+    "globaltopsellers#407"
+   ]
+  },
+  {
+   "rank": 350,
+   "id": "steam-1167630",
+   "appid": 1167630,
+   "name": "Teardown",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#336",
+    "globaltopsellers#394"
+   ]
+  },
+  {
+   "rank": 351,
+   "id": "steam-3199170",
+   "appid": 3199170,
+   "name": "Blood Strike",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#384",
+    "globaltopsellers#346"
+   ]
+  },
+  {
+   "rank": 352,
+   "id": "steam-2429640",
+   "appid": 2429640,
+   "name": "Throne and Liberty",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#366",
+    "globaltopsellers#365"
+   ]
+  },
+  {
+   "rank": 353,
+   "id": "steam-1817070",
+   "appid": 1817070,
+   "name": "Marvel’s Spider-Man Remastered",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#315",
+    "globaltopsellers#417"
+   ]
+  },
+  {
+   "rank": 354,
+   "id": "steam-2688950",
+   "appid": 2688950,
+   "name": "Planet Coaster 2",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#345",
+    "globaltopsellers#389"
+   ]
+  },
+  {
+   "rank": 355,
+   "id": "steam-1253220",
+   "appid": 1253220,
+   "name": "The Gold River Project",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#294",
+    "globaltopsellers#442"
+   ]
+  },
+  {
+   "rank": 356,
+   "id": "steam-219990",
+   "appid": 219990,
+   "name": "Grim Dawn",
+   "template": "topdown",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#356",
+    "globaltopsellers#382"
+   ]
+  },
+  {
+   "rank": 357,
+   "id": "steam-1030300",
+   "appid": 1030300,
+   "name": "Hollow Knight: Silksong",
+   "template": "platformer",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#407",
+    "globaltopsellers#334"
+   ]
+  },
+  {
+   "rank": 358,
+   "id": "steam-3164330",
+   "appid": 3164330,
+   "name": "Infinity Nikki",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#359",
+    "globaltopsellers#384"
+   ]
+  },
+  {
+   "rank": 359,
+   "id": "steam-4883590",
+   "appid": 4883590,
+   "name": "iRacing® Studios NASCAR 26",
+   "template": "racing",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#284",
+    "globaltopsellers#460"
+   ]
+  },
+  {
+   "rank": 360,
+   "id": "steam-444200",
+   "appid": 444200,
+   "name": "World of Tanks Blitz",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#519",
+    "globaltopsellers#225"
+   ]
+  },
+  {
+   "rank": 361,
+   "id": "steam-2402680",
+   "appid": 2402680,
+   "name": "Dimraeth",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#343",
+    "globaltopsellers#402"
+   ]
+  },
+  {
+   "rank": 362,
+   "id": "steam-2486820",
+   "appid": 2486820,
+   "name": "Sonic Racing: CrossWorlds",
+   "template": "racing",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#314",
+    "globaltopsellers#432"
+   ]
+  },
+  {
+   "rank": 363,
+   "id": "steam-4207990",
+   "appid": 4207990,
+   "name": "GemCraft - Legacy Collection",
+   "template": "topdown",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#330",
+    "globaltopsellers#416"
+   ]
+  },
+  {
+   "rank": 364,
+   "id": "steam-880940",
+   "appid": 880940,
+   "name": "Pummel Party",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#461",
+    "globaltopsellers#285"
+   ]
+  },
+  {
+   "rank": 365,
+   "id": "steam-359320",
+   "appid": 359320,
+   "name": "Elite Dangerous",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#357",
+    "globaltopsellers#390"
+   ]
+  },
+  {
+   "rank": 366,
+   "id": "steam-374320",
+   "appid": 374320,
+   "name": "DARK SOULS™ III",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#328",
+    "globaltopsellers#420"
+   ]
+  },
+  {
+   "rank": 367,
+   "id": "steam-2399420",
+   "appid": 2399420,
+   "name": "Le Mans Ultimate",
+   "template": "racing",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#400",
+    "globaltopsellers#349"
+   ]
+  },
+  {
+   "rank": 368,
+   "id": "steam-1343400",
+   "appid": 1343400,
+   "name": "RuneScape ®",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#332",
+    "globaltopsellers#418"
+   ]
+  },
+  {
+   "rank": 369,
+   "id": "steam-367520",
+   "appid": 367520,
+   "name": "Hollow Knight",
+   "template": "platformer",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#418",
+    "globaltopsellers#332"
+   ]
+  },
+  {
+   "rank": 370,
+   "id": "steam-2426960",
+   "appid": 2426960,
+   "name": "Summoners War",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#396",
+    "globaltopsellers#359"
+   ]
+  },
+  {
+   "rank": 371,
+   "id": "steam-646570",
+   "appid": 646570,
+   "name": "Slay the Spire",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#443",
+    "globaltopsellers#316"
+   ]
+  },
+  {
+   "rank": 372,
+   "id": "steam-2168680",
+   "appid": 2168680,
+   "name": "Nuclear Option",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#329",
+    "globaltopsellers#434"
+   ]
+  },
+  {
+   "rank": 373,
+   "id": "steam-2322010",
+   "appid": 2322010,
+   "name": "God of War Ragnarök",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#334",
+    "globaltopsellers#429"
+   ]
+  },
+  {
+   "rank": 374,
+   "id": "steam-3556750",
+   "appid": 3556750,
+   "name": "Warhammer 40,000: Dawn of War - Definitive Edition",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#409",
+    "globaltopsellers#356"
+   ]
+  },
+  {
+   "rank": 375,
+   "id": "steam-2950790",
+   "appid": 2950790,
+   "name": "IRON NEST: Heavy Turret Simulator",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#348",
+    "globaltopsellers#419"
+   ]
+  },
+  {
+   "rank": 376,
+   "id": "steam-391540",
+   "appid": 391540,
+   "name": "Undertale",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#404",
+    "globaltopsellers#364"
+   ]
+  },
+  {
+   "rank": 377,
+   "id": "steam-2142790",
+   "appid": 2142790,
+   "name": "Fields of Mistria",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#344",
+    "globaltopsellers#430"
+   ]
+  },
+  {
+   "rank": 378,
+   "id": "steam-2567870",
+   "appid": 2567870,
+   "name": "Chained Together",
+   "template": "platformer",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#508",
+    "globaltopsellers#269"
+   ]
+  },
+  {
+   "rank": 379,
+   "id": "steam-2379780",
+   "appid": 2379780,
+   "name": "Balatro",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#365",
+    "globaltopsellers#414"
+   ]
+  },
+  {
+   "rank": 380,
+   "id": "steam-3595230",
+   "appid": 3595230,
+   "name": "Call of Duty®: Modern Warfare® II",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#389",
+    "globaltopsellers#391"
+   ]
+  },
+  {
+   "rank": 381,
+   "id": "steam-2878450",
+   "appid": 2878450,
+   "name": "Master of Command",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#380",
+    "globaltopsellers#401"
+   ]
+  },
+  {
+   "rank": 382,
+   "id": "steam-2552430",
+   "appid": 2552430,
+   "name": "KINGDOM HEARTS -HD 1.5+2.5 ReMIX-",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#306",
+    "globaltopsellers#479"
+   ]
+  },
+  {
+   "rank": 383,
+   "id": "steam-2646460",
+   "appid": 2646460,
+   "name": "Soulmask",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#435",
+    "globaltopsellers#350"
+   ]
+  },
+  {
+   "rank": 384,
+   "id": "steam-380600",
+   "appid": 380600,
+   "name": "Fishing Planet",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#447",
+    "globaltopsellers#338"
+   ]
+  },
+  {
+   "rank": 385,
+   "id": "steam-2185060",
+   "appid": 2185060,
+   "name": "Two Point Museum",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#412",
+    "globaltopsellers#374"
+   ]
+  },
+  {
+   "rank": 386,
+   "id": "steam-1145350",
+   "appid": 1145350,
+   "name": "Hades II",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#392",
+    "globaltopsellers#395"
+   ]
+  },
+  {
+   "rank": 387,
+   "id": "steam-552500",
+   "appid": 552500,
+   "name": "Warhammer: Vermintide 2",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#386",
+    "globaltopsellers#409"
+   ]
+  },
+  {
+   "rank": 388,
+   "id": "steam-2623190",
+   "appid": 2623190,
+   "name": "The Elder Scrolls IV: Oblivion Remastered",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#320",
+    "globaltopsellers#480"
+   ]
+  },
+  {
+   "rank": 389,
+   "id": "steam-2684630",
+   "appid": 2684630,
+   "name": "Endacopia",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#326",
+    "globaltopsellers#476"
+   ]
+  },
+  {
+   "rank": 390,
+   "id": "steam-3100310",
+   "appid": 3100310,
+   "name": "Arms of God",
+   "template": "topdown",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#379",
+    "globaltopsellers#426"
+   ]
+  },
+  {
+   "rank": 391,
+   "id": "steam-8500",
+   "appid": 8500,
+   "name": "EVE Online",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#421",
+    "globaltopsellers#385"
+   ]
+  },
+  {
+   "rank": 392,
+   "id": "steam-1129580",
+   "appid": 1129580,
+   "name": "Medieval Dynasty",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#374",
+    "globaltopsellers#435"
+   ]
+  },
+  {
+   "rank": 393,
+   "id": "steam-3375110",
+   "appid": 3375110,
+   "name": "Tiny Eden",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#369",
+    "globaltopsellers#441"
+   ]
+  },
+  {
+   "rank": 394,
+   "id": "steam-4304900",
+   "appid": 4304900,
+   "name": "Big Dig",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#405",
+    "globaltopsellers#405"
+   ]
+  },
+  {
+   "rank": 395,
+   "id": "steam-4678800",
+   "appid": 4678800,
+   "name": "Train Sim World® 7 ",
+   "template": "racing",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#444",
+    "globaltopsellers#367"
+   ]
+  },
+  {
+   "rank": 396,
+   "id": "steam-434170",
+   "appid": 434170,
+   "name": "The Jackbox Party Pack 3",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#298",
+    "globaltopsellers#516"
+   ]
+  },
+  {
+   "rank": 397,
+   "id": "steam-1260320",
+   "appid": 1260320,
+   "name": "Party Animals",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#454",
+    "globaltopsellers#361"
+   ]
+  },
+  {
+   "rank": 398,
+   "id": "steam-268910",
+   "appid": 268910,
+   "name": "Cuphead",
+   "template": "platformer",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#470",
+    "globaltopsellers#345"
+   ]
+  },
+  {
+   "rank": 399,
+   "id": "steam-655500",
+   "appid": 655500,
+   "name": "MX Bikes",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#367",
+    "globaltopsellers#451"
+   ]
+  },
+  {
+   "rank": 400,
+   "id": "steam-3105440",
+   "appid": 3105440,
+   "name": "Heroes of Might and Magic: Olden Era",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#552",
+    "globaltopsellers#266"
+   ]
+  },
+  {
+   "rank": 401,
+   "id": "steam-242760",
+   "appid": 242760,
+   "name": "The Forest",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#449",
+    "globaltopsellers#371"
+   ]
+  },
+  {
+   "rank": 402,
+   "id": "steam-3712080",
+   "appid": 3712080,
+   "name": "Funnel Runners",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#300",
+    "globaltopsellers#524"
+   ]
+  },
+  {
+   "rank": 403,
+   "id": "steam-1089090",
+   "appid": 1089090,
+   "name": "ONE PIECE: PIRATE WARRIORS 4",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#484",
+    "globaltopsellers#344"
+   ]
+  },
+  {
+   "rank": 404,
+   "id": "steam-1184370",
+   "appid": 1184370,
+   "name": "Pathfinder: Wrath of the Righteous - Enhanced Edition",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#408",
+    "globaltopsellers#421"
+   ]
+  },
+  {
+   "rank": 405,
+   "id": "steam-2000890",
+   "appid": 2000890,
+   "name": "MechWarrior 5: Clans",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#358",
+    "globaltopsellers#475"
+   ]
+  },
+  {
+   "rank": 406,
+   "id": "steam-3920610",
+   "appid": 3920610,
+   "name": "FATAL FRAME II: Crimson Butterfly REMAKE",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#411",
+    "globaltopsellers#424"
+   ]
+  },
+  {
+   "rank": 407,
+   "id": "steam-3404260",
+   "appid": 3404260,
+   "name": "Dead as Disco",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#346",
+    "globaltopsellers#493"
+   ]
+  },
+  {
+   "rank": 408,
+   "id": "steam-4113940",
+   "appid": 4113940,
+   "name": "Sovereign Tower",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#383",
+    "globaltopsellers#456"
+   ]
+  },
+  {
+   "rank": 409,
+   "id": "steam-3405690",
+   "appid": 3405690,
+   "name": "EA SPORTS FC™ 26",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "globaltopsellers#406",
+    "mostplayed#45"
+   ]
+  },
+  {
+   "rank": 410,
+   "id": "steam-1577120",
+   "appid": 1577120,
+   "name": "The Quarry",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#445",
+    "globaltopsellers#399"
+   ]
+  },
+  {
+   "rank": 411,
+   "id": "steam-1636440",
+   "appid": 1636440,
+   "name": "SILENT HILL: Townfall",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#381",
+    "globaltopsellers#467"
+   ]
+  },
+  {
+   "rank": 412,
+   "id": "steam-629730",
+   "appid": 629730,
+   "name": "Blade and Sorcery",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#362",
+    "globaltopsellers#487"
+   ]
+  },
+  {
+   "rank": 413,
+   "id": "steam-3058630",
+   "appid": 3058630,
+   "name": "Assetto Corsa EVO",
+   "template": "racing",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#721",
+    "globaltopsellers#445",
+    "topreleases#33"
+   ]
+  },
+  {
+   "rank": 414,
+   "id": "steam-4197610",
+   "appid": 4197610,
+   "name": "Librarian: Tidy Up the Arcane Library!",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#413",
+    "globaltopsellers#438"
+   ]
+  },
+  {
+   "rank": 415,
+   "id": "steam-3271280",
+   "appid": 3271280,
+   "name": "Shroom and Gloom",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#368",
+    "globaltopsellers#484"
+   ]
+  },
+  {
+   "rank": 416,
+   "id": "steam-2769570",
+   "appid": 2769570,
+   "name": "Fable",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#382",
+    "globaltopsellers#471"
+   ]
+  },
+  {
+   "rank": 417,
+   "id": "steam-1604030",
+   "appid": 1604030,
+   "name": "V Rising",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#402",
+    "globaltopsellers#452"
+   ]
+  },
+  {
+   "rank": 418,
+   "id": "steam-3558600",
+   "appid": 3558600,
+   "name": "Leafy Corner",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#399",
+    "globaltopsellers#457"
+   ]
+  },
+  {
+   "rank": 419,
+   "id": "steam-3048060",
+   "appid": 3048060,
+   "name": "Trivia Murder Party 3",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#317",
+    "globaltopsellers#541"
+   ]
+  },
+  {
+   "rank": 420,
+   "id": "steam-2495100",
+   "appid": 2495100,
+   "name": "Hello Kitty Island Adventure",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#529",
+    "globaltopsellers#640",
+    "topreleases#34"
+   ]
+  },
+  {
+   "rank": 421,
+   "id": "steam-2072560",
+   "appid": 2072560,
+   "name": "DRAGON BALL GEKISHIN SQUADRA",
+   "template": "topdown",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#355",
+    "globaltopsellers#505"
+   ]
+  },
+  {
+   "rank": 422,
+   "id": "steam-648410",
+   "appid": 648410,
+   "name": "Colony Ship: A Post-Earth Role Playing Game",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#372",
+    "globaltopsellers#488"
+   ]
+  },
+  {
+   "rank": 423,
+   "id": "steam-2385530",
+   "appid": 2385530,
+   "name": "PGA TOUR 2K25",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#532",
+    "globaltopsellers#793",
+    "topreleases#7"
+   ]
+  },
+  {
+   "rank": 424,
+   "id": "steam-620980",
+   "appid": 620980,
+   "name": "Beat Saber",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#416",
+    "globaltopsellers#447"
+   ]
+  },
+  {
+   "rank": 425,
+   "id": "steam-2215200",
+   "appid": 2215200,
+   "name": "LEGO® Batman™: Legacy of the Dark Knight",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#351",
+    "globaltopsellers#514"
+   ]
+  },
+  {
+   "rank": 426,
+   "id": "steam-594570",
+   "appid": 594570,
+   "name": "Total War: WARHAMMER II",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#403",
+    "globaltopsellers#464"
+   ]
+  },
+  {
+   "rank": 427,
+   "id": "steam-2643390",
+   "appid": 2643390,
+   "name": "Star Trek: Voyager - Across the Unknown",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#414",
+    "globaltopsellers#453"
+   ]
+  },
+  {
+   "rank": 428,
+   "id": "steam-678950",
+   "appid": 678950,
+   "name": "DRAGON BALL FighterZ",
+   "template": "fighting",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#432",
+    "globaltopsellers#437"
+   ]
+  },
+  {
+   "rank": 429,
+   "id": "steam-1621690",
+   "appid": 1621690,
+   "name": "Core Keeper",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#465",
+    "globaltopsellers#404"
+   ]
+  },
+  {
+   "rank": 430,
+   "id": "steam-304240",
+   "appid": 304240,
+   "name": "Resident Evil",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#438",
+    "globaltopsellers#433"
+   ]
+  },
+  {
+   "rank": 431,
+   "id": "steam-899770",
+   "appid": 899770,
+   "name": "Last Epoch",
+   "template": "topdown",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#441",
+    "globaltopsellers#431"
+   ]
+  },
+  {
+   "rank": 432,
+   "id": "steam-339340",
+   "appid": 339340,
+   "name": "Resident Evil 0",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#446",
+    "globaltopsellers#428"
+   ]
+  },
+  {
+   "rank": 433,
+   "id": "steam-1913370",
+   "appid": 1913370,
+   "name": "OPERATOR",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#377",
+    "globaltopsellers#499"
+   ]
+  },
+  {
+   "rank": 434,
+   "id": "steam-4594150",
+   "appid": 4594150,
+   "name": "Sir, We Have an Orc Problem",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#427",
+    "globaltopsellers#449"
+   ]
+  },
+  {
+   "rank": 435,
+   "id": "steam-1430190",
+   "appid": 1430190,
+   "name": "Killing Floor 3",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#364",
+    "globaltopsellers#518"
+   ]
+  },
+  {
+   "rank": 436,
+   "id": "steam-703080",
+   "appid": 703080,
+   "name": "Planet Zoo",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#401",
+    "globaltopsellers#481"
+   ]
+  },
+  {
+   "rank": 437,
+   "id": "steam-611790",
+   "appid": 611790,
+   "name": "House Party",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#415",
+    "globaltopsellers#469"
+   ]
+  },
+  {
+   "rank": 438,
+   "id": "steam-1888930",
+   "appid": 1888930,
+   "name": "The Last of Us™ Part I",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#423",
+    "globaltopsellers#466"
+   ]
+  },
+  {
+   "rank": 439,
+   "id": "steam-3008130",
+   "appid": 3008130,
+   "name": "Dying Light: The Beast",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#481",
+    "globaltopsellers#410"
+   ]
+  },
+  {
+   "rank": 440,
+   "id": "steam-3557620",
+   "appid": 3557620,
+   "name": "Blue Archive",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#494",
+    "globaltopsellers#398"
+   ]
+  },
+  {
+   "rank": 441,
+   "id": "steam-2071280",
+   "appid": 2071280,
+   "name": "Ravenswatch",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#410",
+    "globaltopsellers#486"
+   ]
+  },
+  {
+   "rank": 442,
+   "id": "steam-2218750",
+   "appid": 2218750,
+   "name": "Halls of Torment",
+   "template": "topdown",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#439",
+    "globaltopsellers#458"
+   ]
+  },
+  {
+   "rank": 443,
+   "id": "steam-1721470",
+   "appid": 1721470,
+   "name": "Poppy Playtime",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#459",
+    "globaltopsellers#440"
+   ]
+  },
+  {
+   "rank": 444,
+   "id": "steam-1689620",
+   "appid": 1689620,
+   "name": "BLEACH Rebirth of Souls",
+   "template": "fighting",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#424",
+    "globaltopsellers#477"
+   ]
+  },
+  {
+   "rank": 445,
+   "id": "steam-1853440",
+   "appid": 1853440,
+   "name": "Tropico 7",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#460",
+    "globaltopsellers#444"
+   ]
+  },
+  {
+   "rank": 446,
+   "id": "steam-2060160",
+   "appid": 2060160,
+   "name": "The Farmer Was Replaced",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#456",
+    "globaltopsellers#454"
+   ]
+  },
+  {
+   "rank": 447,
+   "id": "steam-2531310",
+   "appid": 2531310,
+   "name": "The Last of Us™ Part II Remastered",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#471",
+    "globaltopsellers#439"
+   ]
+  },
+  {
+   "rank": 448,
+   "id": "steam-2124120",
+   "appid": 2124120,
+   "name": "SULFUR",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#387",
+    "globaltopsellers#525"
+   ]
+  },
+  {
+   "rank": 449,
+   "id": "steam-961200",
+   "appid": 961200,
+   "name": "Predecessor",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#341",
+    "globaltopsellers#573"
+   ]
+  },
+  {
+   "rank": 450,
+   "id": "steam-4210580",
+   "appid": 4210580,
+   "name": "Ore Factory Squad ⛏️",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#522",
+    "globaltopsellers#396"
+   ]
+  },
+  {
+   "rank": 451,
+   "id": "steam-2840770",
+   "appid": 2840770,
+   "name": "Avatar: Frontiers of Pandora™",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#417",
+    "globaltopsellers#504"
+   ]
+  },
+  {
+   "rank": 452,
+   "id": "steam-1272080",
+   "appid": 1272080,
+   "name": "PAYDAY 3",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#425",
+    "globaltopsellers#496"
+   ]
+  },
+  {
+   "rank": 453,
+   "id": "steam-2881650",
+   "appid": 2881650,
+   "name": "Content Warning",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#434",
+    "globaltopsellers#491"
+   ]
+  },
+  {
+   "rank": 454,
+   "id": "steam-2379740",
+   "appid": 2379740,
+   "name": "Wizardry Variants Daphne",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#628",
+    "globaltopsellers#297"
+   ]
+  },
+  {
+   "rank": 455,
+   "id": "steam-743450",
+   "appid": 743450,
+   "name": "Monster Prom",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#398",
+    "globaltopsellers#528"
+   ]
+  },
+  {
+   "rank": 456,
+   "id": "steam-2104890",
+   "appid": 2104890,
+   "name": "RoadCraft",
+   "template": "racing",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#572",
+    "globaltopsellers#354"
+   ]
+  },
+  {
+   "rank": 457,
+   "id": "steam-585420",
+   "appid": 585420,
+   "name": "Trailmakers",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#393",
+    "globaltopsellers#539"
+   ]
+  },
+  {
+   "rank": 458,
+   "id": "steam-3061570",
+   "appid": 3061570,
+   "name": "Persona5: The Phantom X",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#426",
+    "globaltopsellers#509"
+   ]
+  },
+  {
+   "rank": 459,
+   "id": "steam-312520",
+   "appid": 312520,
+   "name": "Rain World",
+   "template": "platformer",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#464",
+    "globaltopsellers#473"
+   ]
+  },
+  {
+   "rank": 460,
+   "id": "steam-268500",
+   "appid": 268500,
+   "name": "XCOM® 2",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#476",
+    "globaltopsellers#461"
+   ]
+  },
+  {
+   "rank": 461,
+   "id": "steam-389730",
+   "appid": 389730,
+   "name": "TEKKEN 7",
+   "template": "fighting",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#586",
+    "globaltopsellers#353"
+   ]
+  },
+  {
+   "rank": 462,
+   "id": "steam-4049180",
+   "appid": 4049180,
+   "name": "Disney/Pixar Toy Story 3 Complete Edition",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#477",
+    "globaltopsellers#465"
+   ]
+  },
+  {
+   "rank": 463,
+   "id": "steam-1282270",
+   "appid": 1282270,
+   "name": "Strinova",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#579",
+    "globaltopsellers#363"
+   ]
+  },
+  {
+   "rank": 464,
+   "id": "steam-1162750",
+   "appid": 1162750,
+   "name": "Songs of Syx",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#442",
+    "globaltopsellers#502"
+   ]
+  },
+  {
+   "rank": 465,
+   "id": "steam-371970",
+   "appid": 371970,
+   "name": "Barony",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#373",
+    "globaltopsellers#574"
+   ]
+  },
+  {
+   "rank": 466,
+   "id": "steam-570940",
+   "appid": 570940,
+   "name": "DARK SOULS™: REMASTERED",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#429",
+    "globaltopsellers#522"
+   ]
+  },
+  {
+   "rank": 467,
+   "id": "steam-3510740",
+   "appid": 3510740,
+   "name": "Normal Golf Game",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#376",
+    "globaltopsellers#577"
+   ]
+  },
+  {
+   "rank": 468,
+   "id": "steam-3470960",
+   "appid": 3470960,
+   "name": "Tales of Eternia Remastered",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#578",
+    "globaltopsellers#376"
+   ]
+  },
+  {
+   "rank": 469,
+   "id": "steam-990080",
+   "appid": 990080,
+   "name": "Hogwarts Legacy",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#397",
+    "globaltopsellers#559"
+   ]
+  },
+  {
+   "rank": 470,
+   "id": "steam-2825860",
+   "appid": 2825860,
+   "name": "The Sinking City 2",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#462",
+    "globaltopsellers#498"
+   ]
+  },
+  {
+   "rank": 471,
+   "id": "steam-3552140",
+   "appid": 3552140,
+   "name": "Retro Rewind - Video Store Simulator",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#433",
+    "globaltopsellers#533"
+   ]
+  },
+  {
+   "rank": 472,
+   "id": "steam-1250410",
+   "appid": 1250410,
+   "name": "Microsoft Flight Simulator (2020) 40th Anniversary Edition",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#517",
+    "globaltopsellers#450"
+   ]
+  },
+  {
+   "rank": 473,
+   "id": "steam-3097560",
+   "appid": 3097560,
+   "name": "Liar's Bar",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#515",
+    "globaltopsellers#455"
+   ]
+  },
+  {
+   "rank": 474,
+   "id": "steam-3834090",
+   "appid": 3834090,
+   "name": "YAPYAP",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#451",
+    "globaltopsellers#520"
+   ]
+  },
+  {
+   "rank": 475,
+   "id": "steam-211500",
+   "appid": 211500,
+   "name": "RaceRoom Racing Experience",
+   "template": "racing",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#694",
+    "globaltopsellers#277"
+   ]
+  },
+  {
+   "rank": 476,
+   "id": "steam-3168520",
+   "appid": 3168520,
+   "name": "BloomTale",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#431",
+    "globaltopsellers#545"
+   ]
+  },
+  {
+   "rank": 477,
+   "id": "steam-2835570",
+   "appid": 2835570,
+   "name": "Buckshot Roulette",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#624",
+    "globaltopsellers#352"
+   ]
+  },
+  {
+   "rank": 478,
+   "id": "steam-1573360",
+   "appid": 1573360,
+   "name": "Infinity Kingdom",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#463",
+    "globaltopsellers#515"
+   ]
+  },
+  {
+   "rank": 479,
+   "id": "steam-2436940",
+   "appid": 2436940,
+   "name": "Sephiria",
+   "template": "topdown",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#555",
+    "globaltopsellers#425"
+   ]
+  },
+  {
+   "rank": 480,
+   "id": "steam-3678970",
+   "appid": 3678970,
+   "name": "TBH: Task Bar Hero",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#958",
+    "globaltopsellers#304",
+    "mostplayed#73"
+   ]
+  },
+  {
+   "rank": 481,
+   "id": "steam-3274580",
+   "appid": 3274580,
+   "name": "Anno 117: Pax Romana",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#605",
+    "globaltopsellers#380"
+   ]
+  },
+  {
+   "rank": 482,
+   "id": "steam-349040",
+   "appid": 349040,
+   "name": "NARUTO SHIPPUDEN: Ultimate Ninja STORM 4",
+   "template": "fighting",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#574",
+    "globaltopsellers#415"
+   ]
+  },
+  {
+   "rank": 483,
+   "id": "steam-686060",
+   "appid": 686060,
+   "name": "Mewgenics",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#483",
+    "globaltopsellers#508"
+   ]
+  },
+  {
+   "rank": 484,
+   "id": "steam-5064340",
+   "appid": 5064340,
+   "name": "DinoBones: Tidy Up the Museum",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#480",
+    "globaltopsellers#512"
+   ]
+  },
+  {
+   "rank": 485,
+   "id": "steam-753640",
+   "appid": 753640,
+   "name": "Outer Wilds",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#458",
+    "globaltopsellers#536"
+   ]
+  },
+  {
+   "rank": 486,
+   "id": "steam-620",
+   "appid": 620,
+   "name": "Portal 2",
+   "template": "override",
+   "suitability": "good",
+   "status": "unverified",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#473",
+    "globaltopsellers#521"
+   ]
+  },
+  {
+   "rank": 487,
+   "id": "steam-835570",
+   "appid": 835570,
+   "name": "Conqueror's Blade",
+   "template": "action3d",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#713",
+    "globaltopsellers#284"
+   ]
+  },
+  {
+   "rank": 488,
+   "id": "steam-12210",
+   "appid": 12210,
+   "name": "Grand Theft Auto IV: The Complete Edition",
+   "template": "racing",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#490",
+    "globaltopsellers#511"
+   ]
+  },
+  {
+   "rank": 489,
+   "id": "steam-254700",
+   "appid": 254700,
+   "name": "Resident Evil 4 (2005)",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#559",
+    "globaltopsellers#443"
+   ]
+  },
+  {
+   "rank": 490,
+   "id": "steam-4225980",
+   "appid": 4225980,
+   "name": "Trails in the Sky 2nd Chapter",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#612",
+    "globaltopsellers#393"
+   ]
+  },
+  {
+   "rank": 491,
+   "id": "steam-2552310",
+   "appid": 2552310,
+   "name": "Dungeon Inn",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#583",
+    "globaltopsellers#423"
+   ]
+  },
+  {
+   "rank": 492,
+   "id": "steam-787480",
+   "appid": 787480,
+   "name": "Phoenix Wright: Ace Attorney Trilogy",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#561",
+    "globaltopsellers#446"
+   ]
+  },
+  {
+   "rank": 493,
+   "id": "steam-2444750",
+   "appid": 2444750,
+   "name": "Shape of Dreams",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#506",
+    "globaltopsellers#506"
+   ]
+  },
+  {
+   "rank": 494,
+   "id": "steam-49520",
+   "appid": 49520,
+   "name": "Borderlands 2",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#390",
+    "globaltopsellers#623"
+   ]
+  },
+  {
+   "rank": 495,
+   "id": "steam-3065800",
+   "appid": 3065800,
+   "name": "Marathon",
+   "template": "fps",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#395",
+    "globaltopsellers#618"
+   ]
+  },
+  {
+   "rank": 496,
+   "id": "steam-1876890",
+   "appid": 1876890,
+   "name": "Wandering Sword",
+   "template": "action3d",
+   "suitability": "limited",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#715",
+    "globaltopsellers#298"
+   ]
+  },
+  {
+   "rank": 497,
+   "id": "steam-2201320",
+   "appid": 2201320,
+   "name": "Date Everything!",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#430",
+    "globaltopsellers#586"
+   ]
+  },
+  {
+   "rank": 498,
+   "id": "steam-236850",
+   "appid": 236850,
+   "name": "Europa Universalis IV",
+   "template": "pointer",
+   "suitability": "unsuitable",
+   "status": "template",
+   "controllerFull": false,
+   "sources": [
+    "topsellers#516",
+    "globaltopsellers#501"
+   ]
+  },
+  {
+   "rank": null,
+   "id": "steam-1281930",
+   "appid": 1281930,
+   "name": "tModLoader",
+   "template": "override",
+   "suitability": "good",
+   "status": "extracted",
+   "controllerFull": false,
+   "sources": [
+    "override"
+   ]
+  },
+  {
+   "rank": null,
+   "id": "steam-1568590",
+   "appid": 1568590,
+   "name": "Goose Goose Duck",
+   "template": "override",
+   "suitability": "good",
+   "status": "extracted",
+   "controllerFull": false,
+   "sources": [
+    "override"
+   ]
+  },
+  {
+   "rank": null,
+   "id": "minecraft-java",
+   "appid": null,
+   "name": "Minecraft: Java Edition",
+   "template": "override",
+   "suitability": "good",
+   "status": "device",
+   "controllerFull": false,
+   "sources": [
+    "nonsteam"
+   ]
+  },
+  {
+   "rank": null,
+   "id": "epic-fortnite",
+   "appid": null,
+   "name": "Fortnite",
+   "template": "fps",
+   "suitability": "good",
+   "status": "template",
+   "controllerFull": true,
+   "sources": [
+    "nonsteam"
+   ]
+  }
+ ]
+}

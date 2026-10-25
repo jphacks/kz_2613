@@ -1,0 +1,112 @@
+{
+  "id": "steam-945360",
+  "template": "override",
+  "suitability": "good",
+  "verification": {
+    "status": "unverified",
+    "date": "2026-10-25",
+    "sources": [
+      "広く知られた初期設定（未検証・実機未確認）"
+    ]
+  },
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1",
+      "split": [
+        {
+          "id": "horizontal",
+          "label": "左右",
+          "actions": [
+            "left",
+            "right"
+          ]
+        },
+        {
+          "id": "vertical",
+          "label": "上下",
+          "actions": [
+            "forward",
+            "back"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gameplay",
+      "label": "使う・役職の操作",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "forward",
+      "label": "前進",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_W"
+    },
+    {
+      "id": "back",
+      "label": "後退",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_S"
+    },
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_A"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_D"
+    },
+    {
+      "id": "use",
+      "label": "使う",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_E"
+    },
+    {
+      "id": "kill",
+      "label": "キル",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_Q"
+    },
+    {
+      "id": "report",
+      "label": "通報",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_R"
+    },
+    {
+      "id": "map",
+      "label": "マップ",
+      "group": "menu",
+      "type": "button",
+      "default": "TAB"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "steam-2869860",
+  "name": "Monster Prom 4: Monster Con",
+  "match": {
+    "ids": [
+      "steam:2869860"
+    ],
+    "steamAppIds": [
+      2869860
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Visual Novel, LGBTQ+, Comedy, Dating Sim, Multiplayer, Choices Matter"
+    ]
+  },
+  "catalog": {
+    "rank": 220,
+    "template": "pointer",
+    "tags": [
+      "Visual Novel",
+      "LGBTQ+",
+      "Comedy",
+      "Dating Sim",
+      "Multiplayer",
+      "Choices Matter",
+      "Story Rich",
+      "Dark Humor",
+      "Funny",
+      "Multiple Endings"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#172",
+      "globaltopsellers#246"
+    ]
+  }
+}

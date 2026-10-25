@@ -1,0 +1,138 @@
+{
+  "schema": 1,
+  "id": "steam-1689620",
+  "name": "BLEACH Rebirth of Souls",
+  "match": {
+    "ids": [
+      "steam:1689620"
+    ],
+    "steamAppIds": [
+      1689620
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "limited",
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1",
+      "split": [
+        {
+          "id": "horizontal",
+          "label": "左右",
+          "actions": [
+            "left",
+            "right"
+          ]
+        },
+        {
+          "id": "vertical",
+          "label": "ジャンプ・しゃがみ",
+          "actions": [
+            "up",
+            "down"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gameplay",
+      "label": "攻撃",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_A"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_D"
+    },
+    {
+      "id": "up",
+      "label": "ジャンプ",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_W"
+    },
+    {
+      "id": "down",
+      "label": "しゃがむ",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_S"
+    },
+    {
+      "id": "light",
+      "label": "弱攻撃",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_J"
+    },
+    {
+      "id": "heavy",
+      "label": "強攻撃",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_K"
+    },
+    {
+      "id": "special",
+      "label": "必殺技",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_L"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（fighting）",
+      "Steamのタグ: Action, Anime, 3D Fighter, 3D, PvP, Swordplay"
+    ]
+  },
+  "catalog": {
+    "rank": 444,
+    "template": "fighting",
+    "tags": [
+      "Action",
+      "Anime",
+      "3D Fighter",
+      "3D",
+      "PvP",
+      "Swordplay",
+      "Multiplayer",
+      "Comic Book",
+      "Combat",
+      "Singleplayer"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#424",
+      "globaltopsellers#477"
+    ]
+  }
+}

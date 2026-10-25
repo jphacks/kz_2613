@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "id": "steam-1295660",
+  "name": "Sid Meier's Civilization VII",
+  "match": {
+    "ids": [
+      "steam:1295660"
+    ],
+    "steamAppIds": [
+      1295660
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "unsuitable",
+  "groups": [
+    {
+      "id": "pointer",
+      "label": "マウス操作",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "select",
+      "label": "選ぶ",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "context",
+      "label": "別の操作",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "scroll",
+      "label": "スクロール",
+      "group": "pointer",
+      "type": "wheel"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（pointer）",
+      "Steamのタグ: Grand Strategy, City Builder, Strategy, 4X, Historical, Military"
+    ]
+  },
+  "catalog": {
+    "rank": 45,
+    "template": "pointer",
+    "tags": [
+      "Grand Strategy",
+      "City Builder",
+      "Strategy",
+      "4X",
+      "Historical",
+      "Military",
+      "Multiplayer",
+      "Simulation",
+      "Diplomacy",
+      "War"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#109",
+      "globaltopsellers#102",
+      "topreleases#3"
+    ]
+  }
+}

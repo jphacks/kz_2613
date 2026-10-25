@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "id": "steam-4231820",
+  "name": "Castlevania: Belmont's Curse",
+  "match": {
+    "ids": [
+      "steam:4231820"
+    ],
+    "steamAppIds": [
+      4231820
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "limited",
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1",
+      "split": [
+        {
+          "id": "left",
+          "label": "左",
+          "actions": [
+            "left"
+          ]
+        },
+        {
+          "id": "right",
+          "label": "右",
+          "actions": [
+            "right"
+          ]
+        },
+        {
+          "id": "vertical",
+          "label": "ジャンプ・上下",
+          "actions": [
+            "jump",
+            "up",
+            "down"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gameplay",
+      "label": "アクション",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_LEFT"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_RIGHT"
+    },
+    {
+      "id": "up",
+      "label": "上",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_UP"
+    },
+    {
+      "id": "down",
+      "label": "下",
+      "group": "movement",
+      "type": "button",
+      "default": "ARROW_DOWN"
+    },
+    {
+      "id": "jump",
+      "label": "ジャンプ",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_Z"
+    },
+    {
+      "id": "action",
+      "label": "アクション",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_X"
+    },
+    {
+      "id": "special",
+      "label": "特殊",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_C"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（platformer）",
+      "Steamのタグ: Metroidvania, Action, Female Protagonist, Action RPG, 2D Platformer, Platformer"
+    ]
+  },
+  "catalog": {
+    "rank": 95,
+    "template": "platformer",
+    "tags": [
+      "Metroidvania",
+      "Action",
+      "Female Protagonist",
+      "Action RPG",
+      "2D Platformer",
+      "Platformer",
+      "RPG",
+      "Action-Adventure",
+      "2D",
+      "Dark Fantasy"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#45",
+      "globaltopsellers#59"
+    ]
+  }
+}

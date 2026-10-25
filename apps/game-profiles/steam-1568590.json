@@ -1,0 +1,197 @@
+{
+  "schema": 1,
+  "id": "steam-1568590",
+  "name": "Goose Goose Duck",
+  "match": {
+    "ids": [
+      "steam:1568590"
+    ],
+    "steamAppIds": [
+      1568590
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "good",
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1",
+      "split": [
+        {
+          "id": "horizontal",
+          "label": "左右",
+          "actions": [
+            "left",
+            "right"
+          ]
+        },
+        {
+          "id": "vertical",
+          "label": "上下",
+          "actions": [
+            "up",
+            "down"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gameplay",
+      "label": "使う・役職の能力",
+      "role": "P3"
+    },
+    {
+      "id": "communication",
+      "label": "会話",
+      "role": "none"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "up",
+      "label": "上",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_W",
+      "bind": "GameControls/MoveUp"
+    },
+    {
+      "id": "down",
+      "label": "下",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_S",
+      "bind": "GameControls/MoveDown"
+    },
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_A",
+      "bind": "GameControls/MoveLeft"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_D",
+      "bind": "GameControls/MoveRight"
+    },
+    {
+      "id": "use",
+      "label": "使う",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_E",
+      "bind": "GameControls/Use"
+    },
+    {
+      "id": "primary",
+      "label": "能力1",
+      "group": "gameplay",
+      "type": "button",
+      "default": "SPACE",
+      "bind": "GameControls/Primary"
+    },
+    {
+      "id": "secondary",
+      "label": "能力2",
+      "group": "gameplay",
+      "type": "button",
+      "default": "LCTRL",
+      "bind": "GameControls/Secondary"
+    },
+    {
+      "id": "tertiary",
+      "label": "能力3",
+      "group": "gameplay",
+      "type": "button",
+      "default": "LSHIFT",
+      "bind": "GameControls/Tertiary"
+    },
+    {
+      "id": "report",
+      "label": "通報",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_R",
+      "bind": "GameControls/Report"
+    },
+    {
+      "id": "chat",
+      "label": "チャット",
+      "group": "communication",
+      "type": "button",
+      "default": "KEY_Y",
+      "bind": "GameControls/Chat"
+    },
+    {
+      "id": "mute",
+      "label": "ミュート",
+      "group": "communication",
+      "type": "button",
+      "default": "KEY_M",
+      "bind": "GameControls/Mute"
+    },
+    {
+      "id": "ptt",
+      "label": "ボイス",
+      "group": "communication",
+      "type": "button",
+      "default": "KEY_T",
+      "bind": "GameControls/Ptt"
+    },
+    {
+      "id": "map",
+      "label": "マップ",
+      "group": "menu",
+      "type": "button",
+      "default": "TAB",
+      "bind": "GameControls/Map"
+    },
+    {
+      "id": "tasks",
+      "label": "タスク",
+      "group": "menu",
+      "type": "button",
+      "default": "KEY_Z",
+      "bind": "GameControls/Tasks"
+    }
+  ],
+  "verification": {
+    "status": "extracted",
+    "date": "2026-10-25",
+    "sources": [
+      "ゲーム本体に埋め込まれた Input System の定義（PlayerControls / GameControls）"
+    ]
+  },
+  "catalog": {
+    "rank": null,
+    "template": "override",
+    "tags": [
+      "Multiplayer",
+      "Free to Play",
+      "Online Co-Op",
+      "Social Deduction",
+      "2D",
+      "Indie",
+      "PvP",
+      "Character Customization",
+      "Action",
+      "Funny"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "override"
+    ]
+  }
+}

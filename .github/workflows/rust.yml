@@ -51,6 +51,8 @@ jobs:
         run: node scripts/sim/app-view-test.mjs
       - name: 操作定義の静的抽出
         run: node scripts/sim/profile-extract-test.mjs
+      - name: カタログと操作定義の照合
+        run: node scripts/sim/profile-catalog-test.mjs
       - name: 静的画面の構文
         run: node scripts/sim/check-static-pages.mjs
       - name: UI入力のキャンセルとWebRTC形式

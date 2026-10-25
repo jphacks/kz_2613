@@ -1,0 +1,156 @@
+{
+  "schema": 1,
+  "id": "steam-1794680",
+  "name": "Vampire Survivors",
+  "match": {
+    "ids": [
+      "steam:1794680"
+    ],
+    "steamAppIds": [
+      1794680
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "good",
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1",
+      "split": [
+        {
+          "id": "horizontal",
+          "label": "左右",
+          "actions": [
+            "left",
+            "right"
+          ]
+        },
+        {
+          "id": "vertical",
+          "label": "上下",
+          "actions": [
+            "forward",
+            "back"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "look",
+      "label": "狙い",
+      "role": "P2"
+    },
+    {
+      "id": "gameplay",
+      "label": "攻撃・使う",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "forward",
+      "label": "前進",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_W"
+    },
+    {
+      "id": "back",
+      "label": "後退",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_S"
+    },
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_A"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_D"
+    },
+    {
+      "id": "aim",
+      "label": "狙い",
+      "group": "look",
+      "type": "mouseDelta"
+    },
+    {
+      "id": "attack",
+      "label": "攻撃",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "secondary",
+      "label": "特殊攻撃",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "dash",
+      "label": "ダッシュ",
+      "group": "gameplay",
+      "type": "button",
+      "default": "SPACE"
+    },
+    {
+      "id": "interact",
+      "label": "使う",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_E"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "template",
+    "date": "2026-10-25",
+    "sources": [
+      "ジャンルの型（topdown）",
+      "Steamのタグ: Action Roguelike, Bullet Hell, Roguelite, Pixel Graphics, Vampires, 2D"
+    ]
+  },
+  "catalog": {
+    "rank": 265,
+    "template": "topdown",
+    "tags": [
+      "Action Roguelike",
+      "Bullet Hell",
+      "Roguelite",
+      "Pixel Graphics",
+      "Vampires",
+      "2D",
+      "Indie",
+      "Singleplayer",
+      "Roguelike",
+      "Casual"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#271",
+      "globaltopsellers#249"
+    ]
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "schema": 1,
+  "id": "steam-440",
+  "name": "Team Fortress 2",
+  "match": {
+    "ids": [
+      "steam:440"
+    ],
+    "steamAppIds": [
+      440
+    ],
+    "processes": [],
+    "titleContains": null
+  },
+  "suitability": "good",
+  "groups": [
+    {
+      "id": "movement",
+      "label": "移動",
+      "role": "P1"
+    },
+    {
+      "id": "look",
+      "label": "視点",
+      "role": "P2"
+    },
+    {
+      "id": "gameplay",
+      "label": "攻撃・使う",
+      "role": "P3"
+    },
+    {
+      "id": "inventory",
+      "label": "持ち物",
+      "role": "P3"
+    },
+    {
+      "id": "menu",
+      "label": "メニュー",
+      "role": "host"
+    }
+  ],
+  "actions": [
+    {
+      "id": "forward",
+      "label": "前進",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_W"
+    },
+    {
+      "id": "back",
+      "label": "後退",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_S"
+    },
+    {
+      "id": "left",
+      "label": "左",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_A"
+    },
+    {
+      "id": "right",
+      "label": "右",
+      "group": "movement",
+      "type": "button",
+      "default": "KEY_D"
+    },
+    {
+      "id": "jump",
+      "label": "ジャンプ",
+      "group": "movement",
+      "type": "button",
+      "default": "SPACE"
+    },
+    {
+      "id": "crouch",
+      "label": "しゃがむ",
+      "group": "movement",
+      "type": "button",
+      "default": "LCTRL"
+    },
+    {
+      "id": "look",
+      "label": "視点",
+      "group": "look",
+      "type": "mouseDelta"
+    },
+    {
+      "id": "fire",
+      "label": "撃つ",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
+      "id": "secondary",
+      "label": "サブ攻撃",
+      "group": "gameplay",
+      "type": "button",
+      "default": "MOUSE_R"
+    },
+    {
+      "id": "reload",
+      "label": "リロード",
+      "group": "gameplay",
+      "type": "button",
+      "default": "KEY_R"
+    },
+    {
+      "id": "slot1",
+      "label": "武器1",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_1"
+    },
+    {
+      "id": "slot2",
+      "label": "武器2",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_2"
+    },
+    {
+      "id": "slot3",
+      "label": "武器3",
+      "group": "inventory",
+      "type": "button",
+      "default": "DIGIT_3"
+    },
+    {
+      "id": "scoreboard",
+      "label": "スコア",
+      "group": "menu",
+      "type": "button",
+      "default": "TAB"
+    },
+    {
+      "id": "pause",
+      "label": "メニュー",
+      "group": "menu",
+      "type": "button",
+      "default": "ESC"
+    }
+  ],
+  "verification": {
+    "status": "unverified",
+    "date": "2026-10-25",
+    "sources": [
+      "広く知られた初期設定（未検証・実機未確認）"
+    ]
+  },
+  "catalog": {
+    "rank": 27,
+    "template": "override",
+    "tags": [
+      "Free to Play",
+      "Hero Shooter",
+      "Multiplayer",
+      "FPS",
+      "Shooter",
+      "Action",
+      "Class-Based",
+      "Funny",
+      "Team-Based",
+      "First-Person"
+    ],
+    "controllerFull": false,
+    "sources": [
+      "topsellers#57",
+      "globaltopsellers#51",
+      "mostplayed#37"
+    ]
+  }
+}
