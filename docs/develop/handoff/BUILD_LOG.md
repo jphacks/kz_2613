@@ -933,3 +933,11 @@
 - 修正（`focus.rs`）：いまの前面のウィンドウの入力に一時的につないで（`AttachThreadInput`）から `BringWindowToTop`・`SetForegroundWindow` を呼び、すぐに切り離す。`SW_RESTORE` は最小化しているときだけにした。前面になったかは30msごとに最大7回確かめ、だめなら1回だけやり直す（最大約0.4秒）。対象のウィンドウは、持ち主のいる補助のウィンドウやツールウィンドウより本体のウィンドウを優先する。キー入力の注入は使っていない。手動の前面化・準備・Ready・再開・自動の再開は、すべてこの処理を通る。
 - 試験：`cargo build --release --locked` 成功。`cargo test --release --locked` はホスト43件（手動用の1件は除外）＋プローブ4件成功。`protocol-sim.mjs` は再ビルドしたexe（07:04）で50/50成功。`git diff --check` 成功。
 - 実機は未検証：dry-runとシミュレーションでは実際のウィンドウを操作しないので、PCアプリ・ブラウザー・スマホ操作の後に、Minecraftや検出したゲームが実際に前面に来るかは確認していない。
+
+## 2026-10-26 — 審査員向けのPC・スマホ画面一覧（Claude Code）
+
+- ユーザーの依頼で、最新のPC画面とスマホ画面の全画面スクリーンショットを撮り、`docs/screenshots.md` にまとめた。READMEの製品説明の流れの後と「技術仕様書」の一覧、`docs/gallery.md` の案内からリンクした。
+- 撮影は `scripts/sim/capture-screens.mjs` で行った。main（ee43c5d、#153マージ後）を再ビルドしたRustホストを dry-run・疑似の入力先・偽のランチャー情報で起動し、headless Chrome で PC（1920×1080）1台とスマホ（402×874、2倍の解像度）3台を別々のブラウザーコンテキストで開いた。PCアプリとスマホのボタンを実際に押して、参加→ゲーム選択→分担→決定→準備・Ready→協力プレイ→一時停止→設定・接続・診断→緊急停止（ホストの標準入力の `stop`）の順に進め、PC11枚・スマホ12枚を撮った。OS入力・実ゲームの操作はしていない。
+- QR・URLの実際のIPは、撮影時に `/api/info` の応答を説明用のアドレス（192.0.2.10、RFC 5737）へ差し替えた。QRはホストと同じ `qrcode` クレートで `http://192.0.2.10:8080/` から作った（`scripts/sim/fixtures/demo-join-qr.svg`）。Wi-Fiは偽のホットスポット「ReCooplay-Demo」。撮影時に画面の文字に127.0.0.1と説明用以外のIPがないことを検査し、全23枚を目で確認した。
+- 疑似の入力先は Ready のときに前面にできる（#138の自動前面化）ので、準備の後すぐにReadyを押せる状態になり、「準備中」の画面は単独では撮れなかった。Minecraftのタイルの画像は、空の実行ファイルから取り出したWindowsの汎用のアイコンになっている。
+- `python scripts/check-public-docs.py`（16ファイル）と `--all`（76ファイル・512参照）、`python scripts/verify_overlay.py`、`node --check scripts/sim/capture-screens.mjs`、`git diff --check` が成功。画像は24ファイル・約3.9MB。シミュレーションでの撮影で、実機での動作確認ではない。

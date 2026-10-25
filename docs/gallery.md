@@ -2,7 +2,7 @@
 
 QRコードでの参加、担当別の操作画面、実際の共同プレイを紹介します。
 
-[製品紹介](../README.md) ／ [使い方](usage.md) ／ [動作確認](verification.md)
+[製品紹介](../README.md) ／ [画面一覧（最新のスクリーンショット）](screenshots.md) ／ [使い方](usage.md) ／ [動作確認](verification.md)
 
 ## 実プレイ動画
 
