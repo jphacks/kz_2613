@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning } from '../../apps/web-static/app-view.js';
+import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -19,6 +19,15 @@ function test(name, fn) {
 
 const slot = (name, connected, ua = '') => ({ name, assigned: true, connected, ua });
 const game = (connected, extra = {}) => ({ phase: 'lobby', required: 3, connected, canStart: connected.includes('P1') && connected.length >= 3, ...extra });
+
+test('操作定義: 仮・抽出・未検証とReady不可を区別し過去の記録を新規合格にしない',()=>{
+  for(const status of ['template','extracted','unverified']){
+    const note=profileNotice({name:'試験ゲーム',status,controllerSupported:false});
+    assert.match(note,/未検証/); assert.match(note,/Readyできません/);
+  }
+  assert.equal(profileNotice({id:'minecraft-java',status:'device',controllerSupported:true}), '');
+  assert.match(profileNotice({status:'device',controllerSupported:false}),/過去の実機記録/);
+});
 
 test('PC画面: 定期更新で手動移動を戻さず、準備・停止への遷移時だけ分担へ案内する',()=>{
   const ui={screen:'join',game:'minecraft-java'};

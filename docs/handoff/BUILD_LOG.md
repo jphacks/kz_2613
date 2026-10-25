@@ -591,3 +591,13 @@
 - `shutdown-sim.mjs`はquit・EOF両方成功。`static-assets-sim.mjs`は26ファイル成功。`package.ps1 -Out .venv/pr103-package`で約9.7MBのZIP作成成功、同梱Minecraft定義をソースとバイト照合した。
 - 本変更経路のMinecraft・スマホ実機は未検証。5タイトルの自動抽出の再照合、設定階層・動的alias等は受入未完了として#97・#99・#100を自動クローズしない。過去の作者の実機観測と今回のfixture/dry-runを区別する。
 - 追加の境界検証で、全解除だけのSource/Unreal設定が初期キーへ戻る問題を修正。全解除・置換・未記載操作のキー解除を重ねる際も解除を保持し、再bindした有効操作だけを復元する。並列単体試験のfixture名も一意化。追加後のRust単体はホスト24件＋プローブ3件、計27件成功。
+
+## 2026-10-25 PR #104の修正・統合レビュー
+
+- マージ済み#103と他担当のREADME更新・PR #104への追加コミットを統合。Minecraftの既存`options`契約を維持し、他形式の`user`と区別する。
+- 仮・自動抽出・未検証・過去の実機記録をPCとスマホで区別し、未対応定義のReady不可を明示。Rust側の拒否は#103で導入済み。カタログを操作成立済みの一覧として扱わない。
+- `cargo build --release --locked`成功、単体はホスト24件＋プローブ3件成功。Rustの形式検証で全502定義の読込エラー0。`profile-catalog-test.mjs`は一覧・識別条件・状態・出典を照合し、template488／extracted4／unverified9／device1を確認。CIにも追加した。
+- `protocol-sim.mjs --bin .venv/final-runtime/recooplay-host.exe`は43/43成功。未検証のStardew定義ではReadyと協力入力を拒否し、その後の模擬Epic対象消失では全解放・一時停止を確認した。
+- 画面17/17、UI入力5/5、静的構文と差分空白検査成功。終了時全解放はquit・EOF両方成功。素材配信26ファイル・2,548,146 bytesを確認。配布ZIPへ全502定義を同梱する。
+- Rust dry-runでPC2解像度・スマホ縦6サイズを撮影し、PC警告の画面内表示・スマホ横はみ出し0・操作ボタンの画面外配置0を確認。証拠は`docs/design/evidence/catalog-review/`。PC1920の初回寸法不一致は採用せず再撮影した。
+- 実ゲーム502本の互換性・スマホ実タッチは未検証。#98は開いたままとする。新しい本番依存は追加していない。
