@@ -682,3 +682,14 @@
 - 試験の書き換え中、起動要求の回数をホストのログで数えたが、ログがすぐに書き出されず0回と出た。ログではなくepochの進み方で数えるように直した。
 - dry-runホスト・模擬スマホ2台・偽のSteamゲームに対し、ヘッドレスChromeでPC画面を操作した。Terrariaを選ぶ（起動しない）→ 分担の画面でEnterにより決定（「2人で決定！」）→ 選択画面へ戻ると取り消し → 決定し直して起動（「起動中…」で押せない）→「起動しました」の案内と「ゲームを準備する」→ 準備中、の順に進み、ホストのログで決定・取り消し・起動1回・準備を確認した。
 - 起動の失敗・タイムアウト時の補助ボタン、起動済みのゲームを前面にする経路、実機（PCアプリ・実際のSteam/Epic・スマホのリモコン）は未確認。
+
+## 2026-10-25 — README先頭の画像を指定サムネイルへ差し替え
+
+- ユーザー指定のPNGを assets/images/recooplay-thumbnail.png に無加工で追加し、README先頭の画像参照と代替テキスト・表示幅を更新した。
+- Node.jsの検証でREADMEの画像参照、PNG形式、1920×1080、元画像とのSHA-256一致を確認した。元画像を目視確認し、git diff --check も成功。
+
+## 2026-10-25 — PR #111のレビュー修正（Codex）
+
+- 最新main `4bb5134`を取り込み、BUILD_LOGの両方の記録を保持して競合を解消した。既存の未コミット記録はstashへ保持している。
+- 起動済みのゲームを前面化する経路が、全解放・視点破棄・epoch更新より先にreturnしていたため、両方の起動経路に共通する位置へ安全停止を移した。決定要求`confirm_lineup`には現在のepochを必須とし、古いepoch・epochなしの要求を拒否する通信試験を追加した。
+- `node scripts/sim/app-view-test.mjs`26/26、`node scripts/sim/ui-input-test.mjs`7/7、`node scripts/sim/phone-view-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`git diff --check`が成功。Rustのビルド・単体・通信・終了試験は修正後のCIで確認する。新規の実機試験は実施していない。

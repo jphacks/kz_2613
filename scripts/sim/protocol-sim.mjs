@@ -232,7 +232,7 @@ async function confirmLineup(c, p1) {
   if (target === 'node') return;
   const g = [...p1.msgs].reverse().find((m) => m.type === 'game')?.game;
   const from = p1.mark();
-  c.send({ type: 'confirm_lineup', title: g.title, members: g.connected });
+  c.send({ type: 'confirm_lineup', title: g.title, members: g.connected, epoch: g.epoch });
   await p1.waitFor((m) => m.type === 'game' && m.game.lineupOk, { from, what: 'lineupOk' });
 }
 
@@ -1049,8 +1049,10 @@ async function main() {
       s = await app.waitFor((m) => m.type === 'state' && m.game.launch?.state === 'failed', { from: afrom, what: 'unconfirmed reject' });
       assert(s.game.phase === 'lobby', JSON.stringify(s.game));
       // 画面が見ていたメンバーと違う決定は受け付けない
-      app.send({ type: 'confirm_lineup', title: 'steam:413150', members: ['P1', 'P2'] });
-      app.send({ type: 'confirm_lineup', title: 'minecraft-java', members: g.game.connected });
+      app.send({ type: 'confirm_lineup', title: 'steam:413150', members: ['P1', 'P2'], epoch: g.game.epoch });
+      app.send({ type: 'confirm_lineup', title: 'minecraft-java', members: g.game.connected, epoch: g.game.epoch });
+      app.send({ type: 'confirm_lineup', title: g.game.title, members: g.game.connected, epoch: g.game.epoch - 1 });
+      app.send({ type: 'confirm_lineup', title: g.game.title, members: g.game.connected });
       await sleep(200);
       assert(!app.msgs.slice(afrom).some((m) => m.type === 'state' && m.game.lineupOk), '古い画面の決定を受け付けた');
       // 決定 → 戻ると取り消し → 決定し直して起動。起動中の連打は 1 回だけ。ウィンドウが現れるまで launching
