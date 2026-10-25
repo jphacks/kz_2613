@@ -647,6 +647,16 @@
 - ローカルの`controller-diagnostics-test.mjs`、`phone-view-test.mjs`7観点、`ui-input-test.mjs`7/7、`app-view-test.mjs`18/18、`check-static-pages.mjs`が成功した。既存main `c14562d`のRust dry-runホストで、4回分の保留連打に`release_inputs`を送るとその後450msの保留押下が0件になることも別途確認した。これはPRの全通信試験や新UIと実ブラウザーの結合試験の代わりではない。
 - 画面構造とCSSを変更していないため、撮影画像・指紋は元コミット`3719777`の記録として保持した。Minecraft・スマホ実機・Tauriの新規受入は実施していない。
 
+## 2026-10-25 — 参加人数を2〜4人にし、人数に応じて分担する（Claude Code、#57・#105）
+
+- ユーザー判断：人数はReadyの時点の接続人数で自動に決め、分担は操作定義から自動で振り分ける（[参加人数の決定](../decisions/2026-10-25-variable-players.md)）。
+- ホスト：枠をP1〜P4の4つにし（5台目は4004）、P1を含む2人以上でReadyできるようにした。Readyの時点の接続者を`game.participants`として固定し、分担（`game.assigned`、枠名で配る）とともに終了まで組み直さない。参加者が切断したら一時停止し、戻るまで再開しない。Readyの後に来た人の入力は送らず、その切断では止めない。Minecraftは3人（P1〜P3）だけ従来の専用画面と固定の表（`game.fixedControls`）、2人・4人は操作定義から作った画面で`act:<ID>`を送る。`required`は最低人数2だけを受け付ける。
+- 画面：PCの参加者を4枠、分担の確認を人数分の列にし、見出し・案内を人数に合わせた。4人目は赤のキャラクター（画像の外形を測って切り抜きを設定）。スマホは参加者表示を4人分にし、Readyボタンを「Ready・n人で操作を始める」、後から来た人には「次の開始から参加します」と表示する。定義から作る分担の説明文はカード内3行で切る。
+- `cargo build --release --locked`（初回はOpenSSLの再構築で約12分）・`cargo test --release --locked`はホスト31件＋プローブ3件成功。`protocol-sim.mjs`（Rust dry-run）45/45（満員を5台目に変更、2人でReady可・1人で不可、2人・4人のMinecraftの分担と`act:`の送信、後から来た人の入力拒否・切断で止めない、参加者の切断で再開不可の試験を追加）、`--target node` 20/20、`app-view-test.mjs` 20/20、`ui-input-test.mjs` 7/7、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`verify-ui-evidence.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`、`shutdown-sim.mjs`が成功した。
+- 試験の追加中、P1の状態だけを待ってP2から送った入力がホストに古いepochとして捨てられた（`stale_input`）。ホストの挙動は正しく、試験で入力する端末にも新しい状態が届くのを待つように直した。
+- dry-runホストと模擬スマホ、ヘッドレスChromeで、PC画面の2人・3人・4人の参加と分担（1920×1080、横はみ出しなし）、2人のMinecraftでのP2のスマホ画面（視点パッド・攻撃・使う・持ち物、402×874）を撮影して確認した。
+- スマホ実機・Minecraft・Tauriでの2人・4人の試験は未実施。保存済みの画面撮影（`artifacts/improved-ui/final`）は撮り直していない。PR #108（#94）と`desktop.js`・`app-view-test.mjs`が隣接行で衝突するため、後からマージする側で取り込み直す。
+
 ## 2026-10-25 — 検出したゲームの選択画面と起動要求（Claude Code、#94）
 
 - PC画面の「② ゲーム選択」を、固定のMinecraft（手動起動）とホストの`state.games`（Steam・Epic）の一覧に変更した。検出しただけの項目（`verified`がtrueでない）に「未検証」、出所（Steam・Epic Games）を表示する。件数・探索中の表示と「探し直す」（`refresh_games`）を追加した。
@@ -655,3 +665,10 @@
 - 既存の`recooplay-host.exe`（ホストは変更なし）をdry-run・`RECOOPLAY_FAKE_TARGET=1`・偽のSteam 2件／Epic 1件（名前に`<b>&`を含む）で起動し、ヘッドレスChromeをCDPで操作して1920×1080と1280×720で確認した。一覧・未検証の表示、↓キーでの選択（`select_game`）、Enterでの`launch_game`と「起動しました」・ホストの案内文、主ボタンの「次へ進む」への切替、ゲーム名のエスケープ、1280×720でページがはみ出さないことを確認した。右下の安全案内が起動の案内と重なったため、案内の表示中は一覧の枠の下を空けた。
 - 失敗・タイムアウトの表示と再要求のボタンは単体試験のみで、ブラウザでは確認していない。リモコン（スマホP1）経由の操作は、キーボードと同じ関数を通ることを確認しただけで実端末では未確認。保存済みのPC画面の撮影（`artifacts/improved-ui/final`）は撮り直していない。実際のSteam・Epicでの起動・Tauri・Minecraftは未検証。
 - 同日、ユーザーが開発PCで実機確認した（PCアプリ`recooplay-desktop.exe`を本ブランチのリポジトリから起動、ホストは既存ビルド・注入OFF）。Steamのゲーム12件・Epic 0件を検出し、ユーザーが選択画面の表示を目視で確認した。ログでは、Steam版Terrariaの選択（`select_game`）、`launch_game`、ランチャーへの要求成功、約9.5秒後の`launch_result: started`、前面の入力先判定`terraria.exe`への切替を確認した。検出したゲームへの入力（注入ON）、スマホのリモコン操作、起動失敗の表示、Epicは今回も未検証。
+
+## 2026-10-25 — PR #110のレビューとmain取り込み（Codex）
+
+- ユーザーのレビュー・問題がなければマージする依頼に基づき、`4276fe5`を確認した。最新main `714a331`を取り込み、`desktop.js`、`app-view-test.mjs`、BUILD_LOGの競合を両方の変更を保持して解消した。#108のゲーム一覧・起動案内と、#110の2〜4人の表示・分担を統合した。既存の未コミットBUILD_LOGは専用stashへ保存し、コミット後に復元する。
+- Ready時の参加者・分担の固定、途中参加者の操作拒否、元の参加者が戻るまで再開不可、ホスト権限と全解放経路をレビューした。スマホの2人・4人のReady表示、途中参加P4の待機・赤キャラクター、2人・4人のMinecraftの生成操作と担当外の枠を回帰試験へ追加した。
+- 統合後の`node scripts/sim/app-view-test.mjs`は24/24、`node scripts/sim/ui-input-test.mjs`は7/7、`node scripts/sim/phone-view-test.mjs`、`node scripts/sim/controller-diagnostics-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`node scripts/sim/verify-ui-evidence.mjs`、`node scripts/sim/static-assets-sim.mjs`（33ファイル）、`node scripts/sim/profile-catalog-test.mjs`（502定義）、`node scripts/sim/profile-extract-test.mjs`が成功。Node参照実装の`node scripts/sim/protocol-sim.mjs --target node`は20/20成功。`git diff --check`も成功した。
+- Rustの再ビルド・単体試験・dry-run試験は別途結果を記録する。今回のレビューでは新しいスマホ実機・Minecraft・Tauriの受入を実施していない。#109の起動順序変更は本PRに含めない。

@@ -28,7 +28,7 @@
 .role-column .character-art { position: absolute; top: 118px; left: 50%; transform: translateX(-50%); width: 280px; }
 .role-copy { position: absolute; top: 360px; left: 50%; transform: translateX(-50%); width: 200px; color: var(--color-paper); }
 .role-copy b { font-size: 25px; }
-.role-copy p { font-size: 19px; line-height: 1.5; margin-top: 8px; }
+.role-copy p { font-size: 19px; line-height: 1.5; margin-top: 8px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
 .role-column:nth-child(2) h3 { border-color: var(--color-cyan); }
 .role-band h2 { font-size: 58px; }
 .key-samples kbd { min-width: 50px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }

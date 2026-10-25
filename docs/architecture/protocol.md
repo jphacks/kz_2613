@@ -52,7 +52,7 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 |---|---|---|
 | `welcome` | `protocolVersion`、`token`（再接続用。サーバーが枠ごとに発行するOS乱数128bitの16進32文字。スマホはlocalStorageに保存する。ログ・PC画面には出さない）、`slot`、`role`、`isHost`、`reconnected` | 割り当てた枠 |
 | `error` | `code`（`protocol_version` / `bad_token`）、`protocolVersion`（`protocol_version` の場合、ホストの版） | 接続を受け付けない理由。続いて接続を閉じる |
-| `full` | — | 満員。続いて接続を閉じる（4004） |
+| `full` | — | 満員（Rust版はP1〜P4の4枠、#57）。続いて接続を閉じる（4004） |
 | `game` | `game`（下記） | 進行の状態が変わるたびに全員へ送る |
 | `pong` | `t` | |
 | `ack` | `iseq`、`t`、`via`（`ws`/`rtc`）、`stale`（古い `epoch` で処理しなかった場合 `true`） | 入力を受け取った。`via` は先に届いた経路 |
@@ -76,7 +76,7 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | 画面 → ホスト | `select_game` | `title`（`minecraft-java`、診断用の `pseudo-game`、検出したゲームの `id`）。選んだゲームはホストが保持し `game.title` で配る。ロビー以外で別のゲームに変えると、全解放して `lobby`（`reason: game change`）へ戻す。参加者・役割は保つ。同じ・未知の値は無視する（Rust版） |
 | 画面 → ホスト | `launch_game` | `id`（`state.games` の項目）。ホストは手元の一覧から起動方法を引き、検出時に確かめた値だけで起動する（Steam：`steam://rungameid/<appid>`、Epic：`com.epicgames.launcher://apps/...`）。パス・URLは受け取らない。そのゲームを選び（別のゲームからなら `game change`）、全解放・epoch更新の後に起動し、ウィンドウが現れたら前面にする。協力プレイ中・一覧にない値は起動せず `game.launch.state: failed` を返す。dry-runでは起動しない（Rust版） |
 | 画面 → ホスト | `refresh_games` | インストール済みのゲームを探し直す（Rust版） |
-| 画面 → ホスト | `required` / `auto_resume` / `phase` / `reset` | 必要人数（1〜3）、自動復帰のON/OFF、進行の強制変更、全枠の解放 |
+| 画面 → ホスト | `required` / `auto_resume` / `phase` / `reset` | 必要人数（Rust版は最低人数2のみ受け付け、人数は接続人数で決まる）、自動復帰のON/OFF、進行の強制変更、全枠の解放 |
 | 画面 → ホスト | `observe` | 疑似ゲーム画面の照合結果。ログに記録する |
 | ホスト → 画面 | `state` | 全枠の状態、`game`、`inject`（モード・有効かどうか・出力一覧・押下中の出力・緊急停止キー `emergencyHotkey` とその登録エラー `emergencyHotkeyError`、入力先 `target`（`ok`・`expect`・前面の `process`・`title`））、`games`（検出したゲーム：`id`・`name`・`source`（`steam`/`epic`）・`verified`（常に `false`）・`launchable`。インストール先は送らない）、`gamesScanning`。1秒ごとと変化時に送る。`games` はPC画面にだけ送り、スマホには送らない（Rust版） |
 | ホスト → 画面 | `inject` / `look` / `log` | 注入1件ごと、視点の100msごとの集計、イベントログ |
@@ -99,7 +99,7 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 
 ホスト操作の追加項目・認可は [ホストのタッチパッド](host-remote.md) に記載する。remoteはP1・非coop・現在epochだけを認可し、サーバーがPC画面か対象ゲームかを排他的に判定する。release_inputsは認証済み参加者の現在epochだけを受け付け、合成入力と保留分を即時破棄する。
 
-v4ではOPEN_GAME（現在epoch必須）とPC画面のopen_gameを追加する。進行を変えず、許可された既存ゲームの前面化だけを試みる。必要人数は固定3人とし、requiredによる人数削減は受け付けない。
+v4ではOPEN_GAME（現在epoch必須）とPC画面のopen_gameを追加する。進行を変えず、許可された既存ゲームの前面化だけを試みる。必要人数は固定3人とし、requiredによる人数削減は受け付けない。→ 2026-10-25に2〜4人へ変更（[参加人数の決定](../decisions/2026-10-25-variable-players.md)）。`required`は最低人数2で、PC画面から減らせない。
 
 ## 操作定義の追加情報（#97・#99）
 
@@ -111,8 +111,9 @@ v4ではOPEN_GAME（現在epoch必須）とPC画面のopen_gameを追加する�
 
 ## 生成操作画面の入力（#60・#105）
 
-- `game.profile.assignment`は現在人数での案、`assignments`は1〜4人の案。実セッションの枠数とReady条件は3人のまま。1・2・4人の操作開始を意味しない。
-- `game.assigned`はReady・明示再開で確定した枠→操作ID。協力中は固定し、ゲーム変更・lobbyへの終了で破棄する。
-- Minecraftは従来の操作名と専用画面を維持する。生成画面では`act:<ID>`、ホイールは`act:<ID>:up|down`を送り、現在epoch・coop・確定した割当・操作種類・実キーをサーバーで照合する。固定操作名による迂回を拒否する。
+- `game.profile.assignment`は今接続している枠への案（枠名で示す。P3が空いてP4がいる場合はP4に付く）、`assignments`は1〜4人の案（P1から順の番号）。
+- `game.participants`はReadyで確定した参加者の枠（ロビー・準備中は空）、`game.assigned`は参加者の枠→操作ID。終了（END・ゲーム変更・リセット）まで固定し、再開でも組み直さない。参加者がそろうまで`canResume`は偽。参加者以外の入力は送らず、その切断では止めない（#57・#105）。
+- `game.fixedControls`は、Minecraftの専用画面と固定の表を使うか。Minecraftを3人（P1〜P3）で遊ぶときだけ真。`game.maxPlayers`は枠の数（4）。
+- Minecraftは3人では従来の操作名と専用画面を維持し、2人・4人では生成画面を使う。生成画面では`act:<ID>`、ホイールは`act:<ID>:up|down`を送り、現在epoch・coop・確定した割当・操作種類・実キーをサーバーで照合する。固定操作名による迂回を拒否する。
 - `game.keys.actions`は操作ID→実出力の`{out,label}`またはnull。視点は確定分担に含む枠だけを許可する。
 - 未検証の定義ではReadyを許可しない。reviewed/deviceの定義でも、生成画面が扱えないaxis2d・textを担当に含む場合は拒否する。対応済みの定義はbutton・wheel・mouseDeltaを生成する。実機互換性は別の受入条件。

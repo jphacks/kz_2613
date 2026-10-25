@@ -10,10 +10,13 @@ const DIRS = [
 ];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-/** この人に割り当てた操作 (定義のないゲーム・Minecraft では null = 専用の画面を使う) */
+/**
+ * この人に割り当てた操作。定義のないゲームと 3人 (P1〜P3) の Minecraft は null = 専用の画面を使う。
+ * Minecraft も 2人・4人ではこの画面を使う (#105、ホストの game.fixedControls)
+ */
 export function myActions(game, me) {
   const p = game?.profile;
-  if (!p || p.id === 'minecraft-java' || !game.assigned || !Object.keys(game.assigned).length) return null;
+  if (!p || (p.id === 'minecraft-java' && game.fixedControls !== false) || !game.assigned || !Object.keys(game.assigned).length) return null;
   return (game.assigned[me] || []).map((id) => p.actions.find((a) => a.id === id)).filter(Boolean);
 }
 

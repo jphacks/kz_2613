@@ -4,6 +4,30 @@
 
 export const SCREENS = ['join', 'game', 'roles'];
 
+// 参加人数 (#57)。2〜4人で遊び、Ready の時点で接続している人数で分担を決める (ホストが判定する)
+export const MIN_PLAYERS = 2;
+export const MAX_PLAYERS = 4;
+export const SLOT_NAMES = ['P1', 'P2', 'P3', 'P4'];
+
+/**
+ * Minecraft の固定の分担 (P1 移動・P2 視点・P3 アクション) を使うか。実機で確かめた 3人のときだけで、
+ * 2人・4人は操作定義から作った分担を使う。判定はホストの game.fixedControls に従う
+ */
+export function usesFixedRoles(game) {
+  const p = game?.profile;
+  if (!p) return true;
+  // 誰も接続していないときは、基本の3人の分担を見せる (shownSlots と同じ)
+  const nobody = !game.connected?.length && !game.participants?.length;
+  return p.id === 'minecraft-java' && (game.fixedControls !== false || nobody);
+}
+
+/** 担当を表示する枠: 協力プレイの参加者、なければ接続中の枠 (誰もいなければ固定の3人) */
+export function shownSlots(game) {
+  if (game?.participants?.length) return game.participants;
+  if (game?.connected?.length) return SLOT_NAMES.filter((s) => game.connected.includes(s));
+  return ['P1', 'P2', 'P3'];
+}
+
 export const SCREEN_TITLES = { join: '① 参加', game: '② ゲーム選択', roles: '③ 操作分担の確認' };
 
 export function profileNotice(profile) {
@@ -28,7 +52,9 @@ export function desktopWarning(game, inject, connected = true) {
   if (['preparing','coop','paused'].includes(game?.phase)) {
     if (inject?.mode === 'off') return '入力がOFFです。操作設定で入力をONにしてください。';
     if (inject?.mode === 'test') return '確認用の入力先です。実ゲームで遊ぶ前に操作設定を確認してください。';
-    if (game?.connected?.length < 3) return '3人全員の接続を待っています。';
+    const missing = (game?.participants || []).filter((p) => !game.connected?.includes(p));
+    if (missing.length) return `${missing.join('・')}の再接続を待っています。`;
+    if ((game?.connected?.length || 0) < (game?.required || MIN_PLAYERS)) return `${MIN_PLAYERS}人以上の接続を待っています。`;
     if (game?.phase === 'preparing' && !inject?.active) return 'Minecraftを前面にして、ワールドの準備を確認してください。';
     if (game?.phase === 'coop' && !inject?.active) return '操作を停止しています。Minecraftを前面にしてください。';
   }
@@ -69,7 +95,7 @@ export function roleControls(slot, keys) {
  */
 export function roleView(game, slot) {
   const p = game?.profile;
-  if (!p || p.id === 'minecraft-java') {
+  if (usesFixedRoles(game)) {
     const r = ROLES.find((x) => x.slot === slot);
     return { title: r?.title || '', lines: roleControls(slot, game?.keys) };
   }
@@ -95,6 +121,8 @@ export const ROLES = [
   { slot: 'P1', title: '移動・ホスト', controls: roleControls('P1'), host: true },
   { slot: 'P2', title: '視点', controls: roleControls('P2') },
   { slot: 'P3', title: 'アクション', controls: roleControls('P3') },
+  // 4人目は固定の分担を持たない (操作定義の分担で担当が決まる)
+  { slot: 'P4', title: '参加者', controls: [] },
 ];
 
 // Minecraft は公式ランチャーで「プレイ」を押す必要があるため手動起動 (#55)。Steam・Epic の検出・起動はホストの state.games (#54・#93)
@@ -167,7 +195,7 @@ export function joinUrl(info) {
   return urls.find((u) => u.hotspot) || urls[0] || null;
 }
 
-/** P1〜P3 の枠の表示 */
+/** P1〜P4 の枠の表示 */
 export function slotViews(slots) {
   return ROLES.map((r) => {
     const s = (slots || []).find((x) => x.name === r.slot) || {};
@@ -183,8 +211,8 @@ export function startView(game, inject) {
   const connected = game.connected || [];
   const reasons = [...(game.readyReasons || [])];
   if (!connected.includes('P1')) reasons.push('ホスト（P1）が接続していません');
-  const lack = (game.required || 3) - connected.length;
-  if (lack > 0) reasons.push(`あと ${lack} 人の参加が必要です（${connected.length}/${game.required}人）`);
+  const lack = (game.required || MIN_PLAYERS) - connected.length;
+  if (lack > 0) reasons.push(`あと ${lack} 人の参加が必要です（${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べます）`);
   const notes = [];
   if (inject && inject.mode !== 'on') notes.push('ゲームへの入力が「常時ON」ではありません。このままでは操作が Minecraft に届きません');
   return { canStart: !!game.canStart, reasons: game.canStart ? [] : reasons, notes };

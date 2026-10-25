@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView, gameList, gameCard, gameAction, launchView } from '../../apps/web-static/app-view.js';
+import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView, usesFixedRoles, shownSlots, gameList, gameCard, gameAction, launchView } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -38,15 +38,37 @@ test('PC画面: 定期更新で手動移動を戻さず、準備・停止への�
 });
 
 test('枠: 空き・接続中・切断中をサーバーの slots どおりに表示する', () => {
-  const v = slotViews([slot('P1', true, 'iPhone'), slot('P2', false), { name: 'P3', assigned: false }]);
-  assert.deepEqual(v.map((s) => s.state), ['connected', 'lost', 'empty']);
+  const v = slotViews([slot('P1', true, 'iPhone'), slot('P2', false), { name: 'P3', assigned: false }, slot('P4', true)]);
+  assert.deepEqual(v.map((s) => s.state), ['connected', 'lost', 'empty', 'connected']);
   assert.equal(v[0].host, true);
   assert.equal(v[0].device, 'iPhone');
   assert.equal(v[1].device, '', '切断中の端末の種類は出さない');
 });
 
 test('枠: 状態が届く前は全員空き', () => {
-  assert.deepEqual(slotViews(undefined).map((s) => s.state), ['empty', 'empty', 'empty']);
+  assert.deepEqual(slotViews(undefined).map((s) => s.state), ['empty', 'empty', 'empty', 'empty']);
+});
+
+const mc = { id: 'minecraft-java', status: 'device', controllerSupported: true, groups: [{ id: 'movement', label: '移動' }, { id: 'look', label: '視点' }, { id: 'gameplay', label: '攻撃・使う' }, { id: 'inventory', label: '持ち物' }],
+  actions: [{ id: 'forward', label: '前進', group: 'movement', type: 'button' }, { id: 'look', label: '視点', group: 'look', type: 'mouseDelta' }, { id: 'attack', label: '攻撃', group: 'gameplay', type: 'button' }, { id: 'drop', label: '捨てる', group: 'inventory', type: 'button' }] };
+
+test('人数: Minecraftは3人（P1〜P3）だけ固定の分担、2人・4人は操作定義の分担を表示する', () => {
+  assert.equal(usesFixedRoles(null), true, '状態が届く前');
+  assert.equal(usesFixedRoles({ profile: mc, fixedControls: true }), true);
+  assert.equal(usesFixedRoles({ profile: mc, fixedControls: false, connected: ['P1', 'P2'] }), false);
+  assert.equal(usesFixedRoles({ profile: mc, fixedControls: false, connected: [] }), true, '誰もいなければ基本の3人');
+  assert.equal(usesFixedRoles({ profile: { ...mc, id: 'other' }, fixedControls: false }), false);
+  const two = { phase: 'lobby', profile: { ...mc, assignment: { P1: ['forward'], P2: ['look', 'attack', 'drop'] } }, fixedControls: false, connected: ['P1', 'P2'], keys: { actions: { attack: { label: '左クリック' } } } };
+  assert.equal(roleView(two, 'P2').title, '視点・攻撃・使う・持ち物');
+  assert.match(roleView(two, 'P2').lines.join(), /攻撃（左クリック）/);
+  assert.equal(roleView({ ...two, fixedControls: true }, 'P2').title, '視点', '3人では固定の分担');
+  assert.equal(roleView(two, 'P3').title, '担当なし');
+});
+
+test('人数: 担当を表示する枠は参加者、なければ接続中の枠', () => {
+  assert.deepEqual(shownSlots(null), ['P1', 'P2', 'P3']);
+  assert.deepEqual(shownSlots({ connected: ['P4', 'P1'] }), ['P1', 'P4']);
+  assert.deepEqual(shownSlots({ connected: ['P1', 'P2', 'P3', 'P4'], participants: ['P1', 'P2'] }), ['P1', 'P2'], 'Readyの後に来た人は含めない');
 });
 
 test('開始: canStart はサーバーの値をそのまま表示する (画面で判定し直さない)', () => {
@@ -217,7 +239,9 @@ test('本番の安全案内: 切断・緊急停止・入力OFF・前面喪失と
   assert.match(desktopWarning(g,{mode:'test'}),/確認用/);
   assert.match(desktopWarning(g,{mode:'on'},false),/接続が切れ/);
   assert.match(desktopWarning({...g,reason:'emergency stop'},{mode:'off'}),/緊急停止/);
-  assert.match(desktopWarning({...g,phase:'paused',connected:['P1','P2']},{mode:'on'}),/3人全員/);
+  assert.match(desktopWarning({...g,phase:'paused',connected:['P1','P2'],participants:['P1','P2','P3']},{mode:'on'}),/P3の再接続/);
+  assert.equal(desktopWarning({...g,phase:'paused',connected:['P1','P2'],participants:['P1','P2']},{mode:'on',active:true}),'','2人で始めたら3人目を待たない');
+  assert.match(desktopWarning({...g,phase:'preparing',connected:['P1']},{mode:'on'}),/2人以上/);
   assert.match(desktopWarning(g,{emergencyHotkeyError:'失敗'}),/登録できません/);
   assert.equal(desktopWarning(g,{mode:'on',active:true}),'');
 });

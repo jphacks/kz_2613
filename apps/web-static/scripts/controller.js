@@ -11,8 +11,10 @@ import { myActions } from './generated-controls.js';
     P1: '移動（WASD・ジャンプ・スニーク・ダッシュ）とホスト操作',
     P2: '視点（画面をドラッグしてカメラを動かす）',
     P3: 'アクション（攻撃・使う・持ち物の切り替え）',
+    // 4人目の担当は操作定義の分担で決まる (#105)
+    P4: '分担はReadyのときに決まります',
   };
-  const COLORS = { P1: 'var(--p1)', P2: 'var(--p2)', P3: 'var(--p3)' };
+  const COLORS = { P1: 'var(--p1)', P2: 'var(--p2)', P3: 'var(--p3)', P4: 'var(--p4)' };
   // 通信契約の版 (docs/architecture/protocol.md)。PC のホストと合わなければ接続できない
   const PROTOCOL_VERSION = 4;
 

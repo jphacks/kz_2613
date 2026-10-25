@@ -41,6 +41,9 @@ async function test(name,fn) { await fn();passed++;console.log(`合格: ${name}`
 try {
   await test('操作定義の画面: 割り当てた操作だけをボタンにし、方向は十字、ホイールは前後、視点はパッドを移す。Minecraft は専用画面', () => {
     assert.equal(myActions({ ...GAME, profile: { ...GAME.profile, id: 'minecraft-java' } }, 'P1'), null);
+    const minecraft = { ...GAME, profile: { ...GAME.profile, id: 'minecraft-java' }, fixedControls: false };
+    assert.deepEqual(myActions(minecraft, 'P2').map((a) => a.id), ['jump'], '2人・4人のMinecraftでは固定画面に戻さず確定した担当を使う');
+    assert.deepEqual(myActions(minecraft, 'P4'), [], '担当外の枠へ操作を渡さない');
     assert.equal(myActions({ ...GAME, assigned: {} }, 'P1'), null);
     assert.deepEqual(myActions(GAME, 'P2').map((a) => a.id), ['jump']);
     const box = new FakeNode(), bound = [], look = [new FakeNode()];
