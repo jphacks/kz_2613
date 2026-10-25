@@ -455,7 +455,7 @@ async function main() {
     await check('キー設定: Minecraft の options.txt に合わせて送る (ダッシュ = Q、捨てる = R)', async () => {
       const st = await mon.waitFor((m) => m.type === 'state' && m.game?.keys, { what: 'keys' });
       const k = st.game.keys;
-      assert(k.source === 'options', `source=${k.source}`);
+      assert(k.source === 'user', `source=${k.source}`);
       assert(k.controls.SPRINT?.out === 'KEY_Q' && k.controls.DROP?.out === 'KEY_R' && k.controls.FWD?.out === 'KEY_W', JSON.stringify(k.controls));
       let from = mon.mark();
       p1.input('SPRINT', 'down');
