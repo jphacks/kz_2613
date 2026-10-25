@@ -139,6 +139,7 @@
 </footer>
 
 <script type="module">
+  import { createVirtualCursor } from './scripts/virtual-cursor.js';
   import { SCREENS, SCREEN_TITLES, ROLES, GAMES, slotViews, startView, phaseView, navigate, joinUrl } from './app-view.js';
 
   const $ = (id) => document.getElementById(id);
@@ -248,6 +249,7 @@
   }
 
   // ホストとの接続 (PC 画面 = モニター)。ホストのスマホのリモコンは "remote" で届く
+  const cursor = createVirtualCursor();
   let ws = null;
   function connect() {
     ws = new WebSocket(`ws://${location.host}/ws`);
@@ -259,7 +261,9 @@
       else if (m.type === 'game') game = m.game;
       if (m.type === 'state' || m.type === 'game') { if (game?.title) ui.game = game.title; render(); }
       // この画面が前面のときだけ反応する (Minecraft が前面ならキー入力として Minecraft へ届いている)
-      else if (m.type === 'remote' && m.state === 'down' && document.hasFocus()) setUi(navigate(ui, m.control));
+      else if (m.type === 'remote' && m.route === 'app' && m.epoch === game?.epoch) {
+        if (!cursor.handle(m) && m.state === 'down') setUi(navigate(ui, m.control));
+      }
     };
   }
 
