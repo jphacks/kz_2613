@@ -1,0 +1,4240 @@
+[
+  {
+    "screen": "join",
+    "width": 1920,
+    "height": 1080,
+    "capturedAt": "2026-10-25T00:28:50.905Z",
+    "buttons": [
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 478,
+          "height": 102,
+          "left": 136,
+          "right": 424,
+          "top": 376,
+          "width": 288,
+          "x": 136,
+          "y": 376
+        },
+        "text": "OK"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1058,
+          "height": 36,
+          "left": 95,
+          "right": 464,
+          "top": 1022,
+          "width": 369,
+          "x": 95,
+          "y": 1022
+        },
+        "text": "接続方法・URLを確認"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 1362.15625,
+          "right": 1444.28125,
+          "top": 1030,
+          "width": 82.125,
+          "x": 1362.15625,
+          "y": 1030
+        },
+        "text": "① 参加"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 1456.28125,
+          "right": 1591.875,
+          "top": 1030,
+          "width": 135.59375,
+          "x": 1456.28125,
+          "y": 1030
+        },
+        "text": "② ゲーム選択"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 1603.875,
+          "right": 1776,
+          "top": 1030,
+          "width": 172.125,
+          "x": 1603.875,
+          "y": 1030
+        },
+        "text": "③ 操作分担の確認"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 1798,
+          "right": 1896,
+          "top": 1030,
+          "width": 98,
+          "x": 1798,
+          "y": 1030
+        },
+        "text": "操作設定"
+      }
+    ],
+    "elements": [
+      {
+        "rect": {
+          "bottom": 1080,
+          "height": 1080,
+          "left": 0,
+          "right": 561,
+          "top": 0,
+          "width": 561,
+          "x": 0,
+          "y": 0
+        },
+        "selector": ".sidebar",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Re:Cooplay\n3人\n参加中！\n\nOK\n\nみんなのスマホで\n読み取ろう！\n\n表示用・QRなし\n接続方法・URLを確認"
+      },
+      {
+        "rect": {
+          "bottom": 357,
+          "height": 236,
+          "left": 35,
+          "right": 530,
+          "top": 121,
+          "width": 495,
+          "x": 35,
+          "y": 121
+        },
+        "selector": "#screenTitle",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(23, 193, 255)",
+          "borderRadius": "0px",
+          "color": "rgb(23, 193, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "100px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "118px",
+          "textShadow": "rgb(255, 255, 255) 3px 3px 0px, rgb(191, 191, 191) 5px 7px 0px"
+        },
+        "text": "3人\n参加中！"
+      },
+      {
+        "rect": {
+          "bottom": 478,
+          "height": 102,
+          "left": 136,
+          "right": 424,
+          "top": 376,
+          "width": 288,
+          "x": 136,
+          "y": 376
+        },
+        "selector": "#nextBtn",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "4px solid rgb(23, 193, 255)",
+          "borderRadius": "60px",
+          "color": "rgb(23, 193, 255)",
+          "fontFamily": "Arial, \"Noto Sans JP\", sans-serif",
+          "fontSize": "64px",
+          "fontWeight": "700",
+          "letterSpacing": "normal",
+          "lineHeight": "64px",
+          "textShadow": "none"
+        },
+        "text": "OK"
+      },
+      {
+        "rect": {
+          "bottom": 370,
+          "height": 230,
+          "left": 646,
+          "right": 887.65625,
+          "top": 140,
+          "width": 241.65625,
+          "x": 646,
+          "y": 140
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー1\n\n移動・ホスト\n\n機種：Android"
+      },
+      {
+        "rect": {
+          "bottom": 370,
+          "height": 230,
+          "left": 915.65625,
+          "right": 1157.328125,
+          "top": 140,
+          "width": 241.671875,
+          "x": 915.65625,
+          "y": 140
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー2\n\n視点\n\n機種：iPhone"
+      },
+      {
+        "rect": {
+          "bottom": 370,
+          "height": 230,
+          "left": 1185.328125,
+          "right": 1427,
+          "top": 140,
+          "width": 241.671875,
+          "x": 1185.328125,
+          "y": 140
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー3\n\nアクション\n\n機種：Android"
+      },
+      {
+        "rect": {
+          "bottom": 1080,
+          "height": 644,
+          "left": 646,
+          "right": 887.65625,
+          "top": 436,
+          "width": 241.65625,
+          "x": 646,
+          "y": 436
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "移動・ホスト\nP1"
+      },
+      {
+        "rect": {
+          "bottom": 1080,
+          "height": 644,
+          "left": 915.65625,
+          "right": 1157.328125,
+          "top": 436,
+          "width": 241.671875,
+          "x": 915.65625,
+          "y": 436
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "視点\nP2"
+      },
+      {
+        "rect": {
+          "bottom": 1080,
+          "height": 644,
+          "left": 1185.328125,
+          "right": 1427,
+          "top": 436,
+          "width": 241.671875,
+          "x": 1185.328125,
+          "y": 436
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "アクション\nP3"
+      },
+      {
+        "rect": {
+          "bottom": 127,
+          "height": 55,
+          "left": 669.828125,
+          "right": 863.828125,
+          "top": 72,
+          "width": 194,
+          "x": 669.828125,
+          "y": 72
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "接続完了！"
+      },
+      {
+        "rect": {
+          "bottom": 127,
+          "height": 55,
+          "left": 939.484375,
+          "right": 1133.484375,
+          "top": 72,
+          "width": 194,
+          "x": 939.484375,
+          "y": 72
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "接続完了！"
+      },
+      {
+        "rect": {
+          "bottom": 127,
+          "height": 55,
+          "left": 1209.15625,
+          "right": 1403.15625,
+          "top": 72,
+          "width": 194,
+          "x": 1209.15625,
+          "y": 72
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "接続完了！"
+      },
+      {
+        "rect": {
+          "bottom": 628,
+          "height": 97,
+          "left": 126,
+          "right": 442,
+          "top": 531,
+          "width": 316,
+          "x": 126,
+          "y": 531
+        },
+        "selector": ".qr-bubble",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "38.4px",
+          "textShadow": "none"
+        },
+        "text": "みんなのスマホで\n読み取ろう！"
+      },
+      {
+        "rect": {
+          "bottom": 1018,
+          "height": 369,
+          "left": 95,
+          "right": 464,
+          "top": 649,
+          "width": 369,
+          "x": 95,
+          "y": 649
+        },
+        "selector": ".qr",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "表示用・QRなし"
+      },
+      {
+        "rect": {
+          "bottom": 444,
+          "height": 0,
+          "left": 60,
+          "right": 498,
+          "top": 444,
+          "width": 438,
+          "x": 60,
+          "y": 444
+        },
+        "selector": ".explanation",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 637,
+          "height": 0,
+          "left": 60,
+          "right": 498,
+          "top": 637,
+          "width": 438,
+          "x": 60,
+          "y": 637
+        },
+        "selector": ".secondary",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "24px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "30px",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 580,
+          "right": 1896,
+          "top": 1030,
+          "width": 1316,
+          "x": 580,
+          "y": 1030
+        },
+        "selector": ".utility-bar",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "18px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "緊急停止：Ctrl+Alt+F12\n① 参加\n② ゲーム選択\n③ 操作分担の確認\n操作設定"
+      }
+    ],
+    "overflow": [
+      1920,
+      1080
+    ],
+    "view": "join",
+    "viewport": [
+      1920,
+      1080
+    ]
+  },
+  {
+    "screen": "game",
+    "width": 1920,
+    "height": 1080,
+    "capturedAt": "2026-10-25T00:28:51.463Z",
+    "buttons": [
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 838,
+          "height": 67,
+          "left": 60,
+          "right": 529,
+          "top": 771,
+          "width": 469,
+          "x": 60,
+          "y": 771
+        },
+        "text": "このゲームで遊ぶ"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 711.5,
+          "height": 359,
+          "left": 1052.296875,
+          "right": 1443.6875,
+          "top": 352.5,
+          "width": 391.390625,
+          "x": 1052.296875,
+          "y": 352.5
+        },
+        "text": "MinecraftJava Edition3人で、ひとつの冒険へ。選択中"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 1362.15625,
+          "right": 1444.28125,
+          "top": 1030,
+          "width": 82.125,
+          "x": 1362.15625,
+          "y": 1030
+        },
+        "text": "① 参加"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 1456.28125,
+          "right": 1591.875,
+          "top": 1030,
+          "width": 135.59375,
+          "x": 1456.28125,
+          "y": 1030
+        },
+        "text": "② ゲーム選択"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 1603.875,
+          "right": 1776,
+          "top": 1030,
+          "width": 172.125,
+          "x": 1603.875,
+          "y": 1030
+        },
+        "text": "③ 操作分担の確認"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 1798,
+          "right": 1896,
+          "top": 1030,
+          "width": 98,
+          "x": 1798,
+          "y": 1030
+        },
+        "text": "操作設定"
+      }
+    ],
+    "elements": [
+      {
+        "rect": {
+          "bottom": 1080,
+          "height": 1080,
+          "left": 0,
+          "right": 561,
+          "top": 0,
+          "width": 561,
+          "x": 0,
+          "y": 0
+        },
+        "selector": ".sidebar",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Re:Cooplay\nゲーム選択を\nしよう！\n\n右側にあるゲーム一覧から\n遊びたいゲームを\n選択してください！\n\n今回遊べるのは\nMinecraft Java Editionです。\n選んだら次へ進もう！\n\nこのゲームで遊ぶ"
+      },
+      {
+        "rect": {
+          "bottom": 366.59375,
+          "height": 153.59375,
+          "left": 35,
+          "right": 530,
+          "top": 213,
+          "width": 495,
+          "x": 35,
+          "y": 213
+        },
+        "selector": "#screenTitle",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "64px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "76.8px",
+          "textShadow": "rgb(255, 255, 255) 3px 3px 0px, rgb(191, 191, 191) 5px 7px 0px"
+        },
+        "text": "ゲーム選択を\nしよう！"
+      },
+      {
+        "rect": {
+          "bottom": 838,
+          "height": 67,
+          "left": 60,
+          "right": 529,
+          "top": 771,
+          "width": 469,
+          "x": 60,
+          "y": 771
+        },
+        "selector": "#nextBtn",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(0, 0, 0)",
+          "borderRadius": "60px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "Arial, \"Noto Sans JP\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "700",
+          "letterSpacing": "normal",
+          "lineHeight": "28px",
+          "textShadow": "none"
+        },
+        "text": "このゲームで遊ぶ"
+      },
+      {
+        "rect": {
+          "bottom": 1023,
+          "height": 982,
+          "left": 611,
+          "right": 1885,
+          "top": 41,
+          "width": 1274,
+          "x": 611,
+          "y": 41
+        },
+        "selector": ".game-frame",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Minecraft\nJava Edition\n\n3人で、ひとつの冒険へ。\n\n選択中"
+      },
+      {
+        "rect": {
+          "bottom": 387,
+          "height": 1,
+          "left": 60,
+          "right": 498,
+          "top": 386,
+          "width": 438,
+          "x": 60,
+          "y": 386
+        },
+        "selector": ".left-rule",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "",
+          "borderRadius": "0px",
+          "color": "rgb(128, 128, 128)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 564,
+          "height": 120,
+          "left": 60,
+          "right": 498,
+          "top": 444,
+          "width": 438,
+          "x": 60,
+          "y": 444
+        },
+        "selector": ".explanation",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "右側にあるゲーム一覧から\n遊びたいゲームを\n選択してください！"
+      },
+      {
+        "rect": {
+          "bottom": 727,
+          "height": 90,
+          "left": 60,
+          "right": 498,
+          "top": 637,
+          "width": 438,
+          "x": 60,
+          "y": 637
+        },
+        "selector": ".secondary",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "24px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "30px",
+          "textShadow": "none"
+        },
+        "text": "今回遊べるのは\nMinecraft Java Editionです。\n選んだら次へ進もう！"
+      },
+      {
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 580,
+          "right": 1896,
+          "top": 1030,
+          "width": 1316,
+          "x": 580,
+          "y": 1030
+        },
+        "selector": ".utility-bar",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "18px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "緊急停止：Ctrl+Alt+F12\n① 参加\n② ゲーム選択\n③ 操作分担の確認\n操作設定"
+      }
+    ],
+    "overflow": [
+      1920,
+      1080
+    ],
+    "view": "game",
+    "viewport": [
+      1920,
+      1080
+    ]
+  },
+  {
+    "screen": "roles",
+    "width": 1920,
+    "height": 1080,
+    "capturedAt": "2026-10-25T00:28:52.021Z",
+    "buttons": [
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 854,
+          "height": 72,
+          "left": 95,
+          "right": 465,
+          "top": 782,
+          "width": 370,
+          "x": 95,
+          "y": 782
+        },
+        "text": "ゲームを開く・準備する"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 1362.15625,
+          "right": 1444.28125,
+          "top": 1030,
+          "width": 82.125,
+          "x": 1362.15625,
+          "y": 1030
+        },
+        "text": "① 参加"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 1456.28125,
+          "right": 1591.875,
+          "top": 1030,
+          "width": 135.59375,
+          "x": 1456.28125,
+          "y": 1030
+        },
+        "text": "② ゲーム選択"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 1603.875,
+          "right": 1776,
+          "top": 1030,
+          "width": 172.125,
+          "x": 1603.875,
+          "y": 1030
+        },
+        "text": "③ 操作分担の確認"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 1798,
+          "right": 1896,
+          "top": 1030,
+          "width": 98,
+          "x": 1798,
+          "y": 1030
+        },
+        "text": "操作設定"
+      }
+    ],
+    "elements": [
+      {
+        "rect": {
+          "bottom": 1080,
+          "height": 1080,
+          "left": 0,
+          "right": 561,
+          "top": 0,
+          "width": 561,
+          "x": 0,
+          "y": 0
+        },
+        "selector": ".sidebar",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Re:Cooplay\n分担しよう！\n\n操作をそれぞれの\nスマホに分けよう！\n\nゲームを準備してから\nスマホでスタート！\n\nゲームを開く・準備する"
+      },
+      {
+        "rect": {
+          "bottom": 359.796875,
+          "height": 76.796875,
+          "left": 35,
+          "right": 530,
+          "top": 283,
+          "width": 495,
+          "x": 35,
+          "y": 283
+        },
+        "selector": "#screenTitle",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "64px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "76.8px",
+          "textShadow": "rgb(255, 255, 255) 3px 3px 0px, rgb(191, 191, 191) 5px 7px 0px"
+        },
+        "text": "分担しよう！"
+      },
+      {
+        "rect": {
+          "bottom": 854,
+          "height": 72,
+          "left": 95,
+          "right": 465,
+          "top": 782,
+          "width": 370,
+          "x": 95,
+          "y": 782
+        },
+        "selector": "#nextBtn",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "4px solid rgb(23, 193, 255)",
+          "borderRadius": "60px",
+          "color": "rgb(23, 193, 255)",
+          "fontFamily": "Arial, \"Noto Sans JP\", sans-serif",
+          "fontSize": "26px",
+          "fontWeight": "700",
+          "letterSpacing": "normal",
+          "lineHeight": "26px",
+          "textShadow": "none"
+        },
+        "text": "ゲームを開く・準備する"
+      },
+      {
+        "rect": {
+          "bottom": 296,
+          "height": 244,
+          "left": 616,
+          "right": 1890,
+          "top": 52,
+          "width": 1274,
+          "x": 616,
+          "y": 52
+        },
+        "selector": ".role-band",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0.5)",
+          "border": "3px solid rgb(0, 0, 0)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "3人で、操作を分担！\n使う\nE\n前進\nW\n後退\nS"
+      },
+      {
+        "rect": {
+          "bottom": 940,
+          "height": 536,
+          "left": 669,
+          "right": 1822,
+          "top": 404,
+          "width": 1153,
+          "x": 669,
+          "y": 404
+        },
+        "selector": ".role-columns",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "P1\n移動・ホスト\n\n歩く・跳ぶ\n\nP2\n視点\n\nカメラを動かす\n\nP3\nアクション\n\n攻撃・使う"
+      },
+      {
+        "rect": {
+          "bottom": 397,
+          "height": 1,
+          "left": 60,
+          "right": 498,
+          "top": 396,
+          "width": 438,
+          "x": 60,
+          "y": 396
+        },
+        "selector": ".left-rule",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "",
+          "borderRadius": "0px",
+          "color": "rgb(128, 128, 128)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 560,
+          "height": 80,
+          "left": 60,
+          "right": 498,
+          "top": 480,
+          "width": 438,
+          "x": 60,
+          "y": 480
+        },
+        "selector": ".explanation",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "操作をそれぞれの\nスマホに分けよう！"
+      },
+      {
+        "rect": {
+          "bottom": 737,
+          "height": 80,
+          "left": 60,
+          "right": 498,
+          "top": 657,
+          "width": 438,
+          "x": 60,
+          "y": 657
+        },
+        "selector": ".secondary",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "ゲームを準備してから\nスマホでスタート！"
+      },
+      {
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 580,
+          "right": 1896,
+          "top": 1030,
+          "width": 1316,
+          "x": 580,
+          "y": 1030
+        },
+        "selector": ".utility-bar",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "18px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "緊急停止：Ctrl+Alt+F12\n① 参加\n② ゲーム選択\n③ 操作分担の確認\n操作設定"
+      }
+    ],
+    "overflow": [
+      1920,
+      1080
+    ],
+    "view": "roles",
+    "viewport": [
+      1920,
+      1080
+    ]
+  },
+  {
+    "screen": "preparing",
+    "width": 1920,
+    "height": 1080,
+    "capturedAt": "2026-10-25T00:28:52.317Z",
+    "buttons": [
+      {
+        "disabled": true,
+        "rect": {
+          "bottom": 680,
+          "height": 102,
+          "left": 139,
+          "right": 427,
+          "top": 578,
+          "width": 288,
+          "x": 139,
+          "y": 578
+        },
+        "text": "START"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 798,
+          "height": 54,
+          "left": 85,
+          "right": 475,
+          "top": 744,
+          "width": 390,
+          "x": 85,
+          "y": 744
+        },
+        "text": "Minecraftを前面にする"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 794.515625,
+          "right": 892.515625,
+          "top": 1030,
+          "width": 98,
+          "x": 794.515625,
+          "y": 1030
+        },
+        "text": "操作設定"
+      }
+    ],
+    "elements": [
+      {
+        "rect": {
+          "bottom": 1080,
+          "height": 1080,
+          "left": 0,
+          "right": 561,
+          "top": 0,
+          "width": 561,
+          "x": 0,
+          "y": 0
+        },
+        "selector": ".sidebar",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Re:Cooplay\n準備中...\n\nSTART\nMinecraftを前面にする\n\nMinecraftでワールドを準備してください。"
+      },
+      {
+        "rect": {
+          "bottom": 534,
+          "height": 145,
+          "left": 35,
+          "right": 530,
+          "top": 389,
+          "width": 495,
+          "x": 35,
+          "y": 389
+        },
+        "selector": "#screenTitle",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(204, 51, 255)",
+          "borderRadius": "0px",
+          "color": "rgb(204, 51, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "100px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "145px",
+          "textShadow": "rgb(255, 255, 255) 3px 3px 0px, rgb(191, 191, 191) 5px 7px 0px"
+        },
+        "text": "準備中..."
+      },
+      {
+        "rect": {
+          "bottom": 680,
+          "height": 102,
+          "left": 139,
+          "right": 427,
+          "top": 578,
+          "width": 288,
+          "x": 139,
+          "y": 578
+        },
+        "selector": "#blockedStart",
+        "style": {
+          "backgroundColor": "rgb(233, 233, 233)",
+          "border": "4px solid rgb(23, 193, 255)",
+          "borderRadius": "60px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "Arial, \"Noto Sans JP\", sans-serif",
+          "fontSize": "64px",
+          "fontWeight": "700",
+          "letterSpacing": "normal",
+          "lineHeight": "64px",
+          "textShadow": "none"
+        },
+        "text": "START"
+      },
+      {
+        "rect": {
+          "bottom": 370,
+          "height": 230,
+          "left": 646,
+          "right": 887.65625,
+          "top": 140,
+          "width": 241.65625,
+          "x": 646,
+          "y": 140
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー1\n\n移動・ホスト\n\n機種：Android"
+      },
+      {
+        "rect": {
+          "bottom": 370,
+          "height": 230,
+          "left": 915.65625,
+          "right": 1157.328125,
+          "top": 140,
+          "width": 241.671875,
+          "x": 915.65625,
+          "y": 140
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー2\n\n視点\n\n機種：iPhone"
+      },
+      {
+        "rect": {
+          "bottom": 370,
+          "height": 230,
+          "left": 1185.328125,
+          "right": 1427,
+          "top": 140,
+          "width": 241.671875,
+          "x": 1185.328125,
+          "y": 140
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー3\n\nアクション\n\n機種：Android"
+      },
+      {
+        "rect": {
+          "bottom": 1080,
+          "height": 644,
+          "left": 646,
+          "right": 887.65625,
+          "top": 436,
+          "width": 241.65625,
+          "x": 646,
+          "y": 436
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "移動・ホスト\nP1"
+      },
+      {
+        "rect": {
+          "bottom": 1080,
+          "height": 644,
+          "left": 915.65625,
+          "right": 1157.328125,
+          "top": 436,
+          "width": 241.671875,
+          "x": 915.65625,
+          "y": 436
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "視点\nP2"
+      },
+      {
+        "rect": {
+          "bottom": 1080,
+          "height": 644,
+          "left": 1185.328125,
+          "right": 1427,
+          "top": 436,
+          "width": 241.671875,
+          "x": 1185.328125,
+          "y": 436
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "アクション\nP3"
+      },
+      {
+        "rect": {
+          "bottom": 127,
+          "height": 55,
+          "left": 669.828125,
+          "right": 863.828125,
+          "top": 72,
+          "width": 194,
+          "x": 669.828125,
+          "y": 72
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "接続済み"
+      },
+      {
+        "rect": {
+          "bottom": 127,
+          "height": 55,
+          "left": 939.484375,
+          "right": 1133.484375,
+          "top": 72,
+          "width": 194,
+          "x": 939.484375,
+          "y": 72
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "接続済み"
+      },
+      {
+        "rect": {
+          "bottom": 127,
+          "height": 55,
+          "left": 1209.15625,
+          "right": 1403.15625,
+          "top": 72,
+          "width": 194,
+          "x": 1209.15625,
+          "y": 72
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "接続済み"
+      },
+      {
+        "rect": {
+          "bottom": 444,
+          "height": 0,
+          "left": 60,
+          "right": 498,
+          "top": 444,
+          "width": 438,
+          "x": 60,
+          "y": 444
+        },
+        "selector": ".explanation",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 637,
+          "height": 0,
+          "left": 60,
+          "right": 498,
+          "top": 637,
+          "width": 438,
+          "x": 60,
+          "y": 637
+        },
+        "selector": ".secondary",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "24px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "30px",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 580,
+          "right": 1896,
+          "top": 1030,
+          "width": 1316,
+          "x": 580,
+          "y": 1030
+        },
+        "selector": ".utility-bar",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "18px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "緊急停止：Ctrl+Alt+F12\n操作設定"
+      },
+      {
+        "rect": {
+          "bottom": 798,
+          "height": 54,
+          "left": 85,
+          "right": 475,
+          "top": 744,
+          "width": 390,
+          "x": 85,
+          "y": 744
+        },
+        "selector": "#openGameBtn",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "2px solid rgb(23, 193, 255)",
+          "borderRadius": "999px",
+          "color": "rgb(7, 92, 134)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "22px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Minecraftを前面にする"
+      }
+    ],
+    "overflow": [
+      1920,
+      1080
+    ],
+    "view": "preparing",
+    "viewport": [
+      1920,
+      1080
+    ]
+  },
+  {
+    "screen": "ready",
+    "width": 1920,
+    "height": 1080,
+    "capturedAt": "2026-10-25T00:28:52.581Z",
+    "buttons": [
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 798,
+          "height": 54,
+          "left": 85,
+          "right": 475,
+          "top": 744,
+          "width": 390,
+          "x": 85,
+          "y": 744
+        },
+        "text": "Minecraftを前面にする"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 794.515625,
+          "right": 892.515625,
+          "top": 1030,
+          "width": 98,
+          "x": 794.515625,
+          "y": 1030
+        },
+        "text": "操作設定"
+      }
+    ],
+    "elements": [
+      {
+        "rect": {
+          "bottom": 1080,
+          "height": 1080,
+          "left": 0,
+          "right": 561,
+          "top": 0,
+          "width": 561,
+          "x": 0,
+          "y": 0
+        },
+        "selector": ".sidebar",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Re:Cooplay\n準備完了！\n\nSTART\nホストのスマホでReady\nMinecraftを前面にする"
+      },
+      {
+        "rect": {
+          "bottom": 534,
+          "height": 145,
+          "left": 35,
+          "right": 530,
+          "top": 389,
+          "width": 495,
+          "x": 35,
+          "y": 389
+        },
+        "selector": "#screenTitle",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(23, 193, 255)",
+          "borderRadius": "0px",
+          "color": "rgb(23, 193, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "100px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "145px",
+          "textShadow": "rgb(255, 255, 255) 3px 3px 0px, rgb(191, 191, 191) 5px 7px 0px"
+        },
+        "text": "準備完了！"
+      },
+      {
+        "rect": {
+          "bottom": 680,
+          "height": 102,
+          "left": 139,
+          "right": 427,
+          "top": 578,
+          "width": 288,
+          "x": 139,
+          "y": 578
+        },
+        "selector": "#readyInstruction",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "4px solid rgb(23, 193, 255)",
+          "borderRadius": "60px",
+          "color": "rgb(23, 193, 255)",
+          "fontFamily": "Arial, \"Noto Sans JP\", sans-serif",
+          "fontSize": "64px",
+          "fontWeight": "700",
+          "letterSpacing": "normal",
+          "lineHeight": "64px",
+          "textShadow": "none"
+        },
+        "text": "START\nホストのスマホでReady"
+      },
+      {
+        "rect": {
+          "bottom": 370,
+          "height": 230,
+          "left": 646,
+          "right": 887.65625,
+          "top": 140,
+          "width": 241.65625,
+          "x": 646,
+          "y": 140
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー1\n\n移動・ホスト\n\n機種：Android"
+      },
+      {
+        "rect": {
+          "bottom": 370,
+          "height": 230,
+          "left": 915.65625,
+          "right": 1157.328125,
+          "top": 140,
+          "width": 241.671875,
+          "x": 915.65625,
+          "y": 140
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー2\n\n視点\n\n機種：iPhone"
+      },
+      {
+        "rect": {
+          "bottom": 370,
+          "height": 230,
+          "left": 1185.328125,
+          "right": 1427,
+          "top": 140,
+          "width": 241.671875,
+          "x": 1185.328125,
+          "y": 140
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー3\n\nアクション\n\n機種：Android"
+      },
+      {
+        "rect": {
+          "bottom": 1080,
+          "height": 644,
+          "left": 646,
+          "right": 887.65625,
+          "top": 436,
+          "width": 241.65625,
+          "x": 646,
+          "y": 436
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "移動・ホスト\nP1"
+      },
+      {
+        "rect": {
+          "bottom": 1080,
+          "height": 644,
+          "left": 915.65625,
+          "right": 1157.328125,
+          "top": 436,
+          "width": 241.671875,
+          "x": 915.65625,
+          "y": 436
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "視点\nP2"
+      },
+      {
+        "rect": {
+          "bottom": 1080,
+          "height": 644,
+          "left": 1185.328125,
+          "right": 1427,
+          "top": 436,
+          "width": 241.671875,
+          "x": 1185.328125,
+          "y": 436
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "アクション\nP3"
+      },
+      {
+        "rect": {
+          "bottom": 127,
+          "height": 55,
+          "left": 669.828125,
+          "right": 863.828125,
+          "top": 72,
+          "width": 194,
+          "x": 669.828125,
+          "y": 72
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "条件OK"
+      },
+      {
+        "rect": {
+          "bottom": 127,
+          "height": 55,
+          "left": 939.484375,
+          "right": 1133.484375,
+          "top": 72,
+          "width": 194,
+          "x": 939.484375,
+          "y": 72
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "条件OK"
+      },
+      {
+        "rect": {
+          "bottom": 127,
+          "height": 55,
+          "left": 1209.15625,
+          "right": 1403.15625,
+          "top": 72,
+          "width": 194,
+          "x": 1209.15625,
+          "y": 72
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "条件OK"
+      },
+      {
+        "rect": {
+          "bottom": 444,
+          "height": 0,
+          "left": 60,
+          "right": 498,
+          "top": 444,
+          "width": 438,
+          "x": 60,
+          "y": 444
+        },
+        "selector": ".explanation",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 637,
+          "height": 0,
+          "left": 60,
+          "right": 498,
+          "top": 637,
+          "width": 438,
+          "x": 60,
+          "y": 637
+        },
+        "selector": ".secondary",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "24px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "30px",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 1070,
+          "height": 40,
+          "left": 580,
+          "right": 1896,
+          "top": 1030,
+          "width": 1316,
+          "x": 580,
+          "y": 1030
+        },
+        "selector": ".utility-bar",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "18px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "緊急停止：Ctrl+Alt+F12\n操作設定"
+      },
+      {
+        "rect": {
+          "bottom": 798,
+          "height": 54,
+          "left": 85,
+          "right": 475,
+          "top": 744,
+          "width": 390,
+          "x": 85,
+          "y": 744
+        },
+        "selector": "#openGameBtn",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "2px solid rgb(23, 193, 255)",
+          "borderRadius": "999px",
+          "color": "rgb(7, 92, 134)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "22px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Minecraftを前面にする"
+      }
+    ],
+    "overflow": [
+      1920,
+      1080
+    ],
+    "view": "ready",
+    "viewport": [
+      1920,
+      1080
+    ]
+  },
+  {
+    "screen": "join",
+    "width": 1280,
+    "height": 720,
+    "capturedAt": "2026-10-25T00:28:53.141Z",
+    "buttons": [
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 318.66668701171875,
+          "height": 68.00001525878906,
+          "left": 90.66667175292967,
+          "right": 282.66668701171875,
+          "top": 250.6666717529297,
+          "width": 192.00001525878903,
+          "x": 90.66667175292967,
+          "y": 250.6666717529297
+        },
+        "text": "OK"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 705.3333740234375,
+          "height": 24,
+          "left": 63.33333587646485,
+          "right": 309.33333587646484,
+          "top": 681.3333740234375,
+          "width": 246,
+          "x": 63.33333587646485,
+          "y": 681.3333740234375
+        },
+        "text": "接続方法・URLを確認"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 879.21875,
+          "right": 938.28125,
+          "top": 686.6666870117188,
+          "width": 59.0625,
+          "x": 879.21875,
+          "y": 686.6666870117188
+        },
+        "text": "① 参加"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 946.28125,
+          "right": 1044.9375,
+          "top": 686.6666870117188,
+          "width": 98.65625,
+          "x": 946.28125,
+          "y": 686.6666870117188
+        },
+        "text": "② ゲーム選択"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 1052.9375,
+          "right": 1178.666748046875,
+          "top": 686.6666870117188,
+          "width": 125.729248046875,
+          "x": 1052.9375,
+          "y": 686.6666870117188
+        },
+        "text": "③ 操作分担の確認"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 1193.3333740234375,
+          "right": 1264,
+          "top": 686.6666870117188,
+          "width": 70.6666259765625,
+          "x": 1193.3333740234375,
+          "y": 686.6666870117188
+        },
+        "text": "操作設定"
+      }
+    ],
+    "elements": [
+      {
+        "rect": {
+          "bottom": 720,
+          "height": 720,
+          "left": 0,
+          "right": 374,
+          "top": 0,
+          "width": 374,
+          "x": 0,
+          "y": 0
+        },
+        "selector": ".sidebar",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Re:Cooplay\n3人\n参加中！\n\nOK\n\nみんなのスマホで\n読み取ろう！\n\n表示用・QRなし\n接続方法・URLを確認"
+      },
+      {
+        "rect": {
+          "bottom": 238,
+          "height": 157.3333282470703,
+          "left": 23.33333396911621,
+          "right": 353.3333339691162,
+          "top": 80.66667175292969,
+          "width": 330,
+          "x": 23.33333396911621,
+          "y": 80.66667175292969
+        },
+        "selector": "#screenTitle",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(23, 193, 255)",
+          "borderRadius": "0px",
+          "color": "rgb(23, 193, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "100px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "118px",
+          "textShadow": "rgb(255, 255, 255) 3px 3px 0px, rgb(191, 191, 191) 5px 7px 0px"
+        },
+        "text": "3人\n参加中！"
+      },
+      {
+        "rect": {
+          "bottom": 318.66668701171875,
+          "height": 68.00001525878906,
+          "left": 90.66667175292967,
+          "right": 282.66668701171875,
+          "top": 250.6666717529297,
+          "width": 192.00001525878903,
+          "x": 90.66667175292967,
+          "y": 250.6666717529297
+        },
+        "selector": "#nextBtn",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "4px solid rgb(23, 193, 255)",
+          "borderRadius": "60px",
+          "color": "rgb(23, 193, 255)",
+          "fontFamily": "Arial, \"Noto Sans JP\", sans-serif",
+          "fontSize": "64px",
+          "fontWeight": "700",
+          "letterSpacing": "normal",
+          "lineHeight": "64px",
+          "textShadow": "none"
+        },
+        "text": "OK"
+      },
+      {
+        "rect": {
+          "bottom": 246.66667938232425,
+          "height": 153.33334350585938,
+          "left": 430.6666870117187,
+          "right": 591.7708740234375,
+          "top": 93.33333587646484,
+          "width": 161.10418701171875,
+          "x": 430.6666870117187,
+          "y": 93.33333587646484
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー1\n\n移動・ホスト\n\n機種：Android"
+      },
+      {
+        "rect": {
+          "bottom": 246.66667938232425,
+          "height": 153.33334350585938,
+          "left": 610.4375,
+          "right": 771.5521240234375,
+          "top": 93.33333587646484,
+          "width": 161.1146240234375,
+          "x": 610.4375,
+          "y": 93.33333587646484
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー2\n\n視点\n\n機種：iPhone"
+      },
+      {
+        "rect": {
+          "bottom": 246.66667938232425,
+          "height": 153.33334350585938,
+          "left": 790.21875,
+          "right": 951.3333740234376,
+          "top": 93.33333587646484,
+          "width": 161.1146240234375,
+          "x": 790.21875,
+          "y": 93.33333587646484
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー3\n\nアクション\n\n機種：Android"
+      },
+      {
+        "rect": {
+          "bottom": 720,
+          "height": 429.3333129882813,
+          "left": 430.6666870117187,
+          "right": 591.7708740234375,
+          "top": 290.66668701171875,
+          "width": 161.10418701171875,
+          "x": 430.6666870117187,
+          "y": 290.66668701171875
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "移動・ホスト\nP1"
+      },
+      {
+        "rect": {
+          "bottom": 720,
+          "height": 429.3333129882813,
+          "left": 610.4375,
+          "right": 771.5521240234375,
+          "top": 290.66668701171875,
+          "width": 161.1146240234375,
+          "x": 610.4375,
+          "y": 290.66668701171875
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "視点\nP2"
+      },
+      {
+        "rect": {
+          "bottom": 720,
+          "height": 429.3333129882813,
+          "left": 790.21875,
+          "right": 951.3333740234376,
+          "top": 290.66668701171875,
+          "width": 161.1146240234375,
+          "x": 790.21875,
+          "y": 290.66668701171875
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "アクション\nP3"
+      },
+      {
+        "rect": {
+          "bottom": 84.66667175292969,
+          "height": 36.66667175292969,
+          "left": 446.5520935058594,
+          "right": 575.8854370117188,
+          "top": 48,
+          "width": 129.33334350585938,
+          "x": 446.5520935058594,
+          "y": 48
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "接続完了！"
+      },
+      {
+        "rect": {
+          "bottom": 84.66667175292969,
+          "height": 36.66667175292969,
+          "left": 626.3229370117188,
+          "right": 755.65625,
+          "top": 48,
+          "width": 129.33331298828125,
+          "x": 626.3229370117188,
+          "y": 48
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "接続完了！"
+      },
+      {
+        "rect": {
+          "bottom": 84.66667175292969,
+          "height": 36.66667175292969,
+          "left": 806.1041870117188,
+          "right": 935.4375,
+          "top": 48,
+          "width": 129.33331298828125,
+          "x": 806.1041870117188,
+          "y": 48
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "接続完了！"
+      },
+      {
+        "rect": {
+          "bottom": 418.6666870117187,
+          "height": 64.66668701171875,
+          "left": 84,
+          "right": 294.66668701171875,
+          "top": 354,
+          "width": 210.66668701171875,
+          "x": 84,
+          "y": 354
+        },
+        "selector": ".qr-bubble",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "38.4px",
+          "textShadow": "none"
+        },
+        "text": "みんなのスマホで\n読み取ろう！"
+      },
+      {
+        "rect": {
+          "bottom": 678.6666870117188,
+          "height": 246,
+          "left": 63.33333587646485,
+          "right": 309.33333587646484,
+          "top": 432.6666870117187,
+          "width": 246,
+          "x": 63.33333587646485,
+          "y": 432.6666870117187
+        },
+        "selector": ".qr",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "表示用・QRなし"
+      },
+      {
+        "rect": {
+          "bottom": 296,
+          "height": 0,
+          "left": 40,
+          "right": 332,
+          "top": 296,
+          "width": 292,
+          "x": 40,
+          "y": 296
+        },
+        "selector": ".explanation",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 424.6666870117187,
+          "height": 0,
+          "left": 40,
+          "right": 332,
+          "top": 424.6666870117187,
+          "width": 292,
+          "x": 40,
+          "y": 424.6666870117187
+        },
+        "selector": ".secondary",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "24px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "30px",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 386.6666870117187,
+          "right": 1264,
+          "top": 686.6666870117188,
+          "width": 877.3333129882812,
+          "x": 386.6666870117187,
+          "y": 686.6666870117188
+        },
+        "selector": ".utility-bar",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "20px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "緊急停止：Ctrl+Alt+F12\n① 参加\n② ゲーム選択\n③ 操作分担の確認\n操作設定"
+      }
+    ],
+    "overflow": [
+      1280,
+      720
+    ],
+    "view": "join",
+    "viewport": [
+      1280,
+      720
+    ]
+  },
+  {
+    "screen": "game",
+    "width": 1280,
+    "height": 720,
+    "capturedAt": "2026-10-25T00:28:53.655Z",
+    "buttons": [
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 558.6666870117188,
+          "height": 44.66668701171875,
+          "left": 40,
+          "right": 352.66668701171875,
+          "top": 514,
+          "width": 312.66668701171875,
+          "x": 40,
+          "y": 514
+        },
+        "text": "このゲームで遊ぶ"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 474.3333435058594,
+          "height": 239.33334350585935,
+          "left": 701.53125,
+          "right": 962.4583740234376,
+          "top": 235,
+          "width": 260.9271240234375,
+          "x": 701.53125,
+          "y": 235
+        },
+        "text": "MinecraftJava Edition3人で、ひとつの冒険へ。選択中"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 879.21875,
+          "right": 938.28125,
+          "top": 686.6666870117188,
+          "width": 59.0625,
+          "x": 879.21875,
+          "y": 686.6666870117188
+        },
+        "text": "① 参加"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 946.28125,
+          "right": 1044.9375,
+          "top": 686.6666870117188,
+          "width": 98.65625,
+          "x": 946.28125,
+          "y": 686.6666870117188
+        },
+        "text": "② ゲーム選択"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 1052.9375,
+          "right": 1178.666748046875,
+          "top": 686.6666870117188,
+          "width": 125.729248046875,
+          "x": 1052.9375,
+          "y": 686.6666870117188
+        },
+        "text": "③ 操作分担の確認"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 1193.3333740234375,
+          "right": 1264,
+          "top": 686.6666870117188,
+          "width": 70.6666259765625,
+          "x": 1193.3333740234375,
+          "y": 686.6666870117188
+        },
+        "text": "操作設定"
+      }
+    ],
+    "elements": [
+      {
+        "rect": {
+          "bottom": 720,
+          "height": 720,
+          "left": 0,
+          "right": 374,
+          "top": 0,
+          "width": 374,
+          "x": 0,
+          "y": 0
+        },
+        "selector": ".sidebar",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Re:Cooplay\nゲーム選択を\nしよう！\n\n右側にあるゲーム一覧から\n遊びたいゲームを\n選択してください！\n\n今回遊べるのは\nMinecraft Java Editionです。\n選んだら次へ進もう！\n\nこのゲームで遊ぶ"
+      },
+      {
+        "rect": {
+          "bottom": 244.39584350585935,
+          "height": 102.39584350585938,
+          "left": 23.33333396911621,
+          "right": 353.3333339691162,
+          "top": 142,
+          "width": 330,
+          "x": 23.33333396911621,
+          "y": 142
+        },
+        "selector": "#screenTitle",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "64px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "76.8px",
+          "textShadow": "rgb(255, 255, 255) 3px 3px 0px, rgb(191, 191, 191) 5px 7px 0px"
+        },
+        "text": "ゲーム選択を\nしよう！"
+      },
+      {
+        "rect": {
+          "bottom": 558.6666870117188,
+          "height": 44.66668701171875,
+          "left": 40,
+          "right": 352.66668701171875,
+          "top": 514,
+          "width": 312.66668701171875,
+          "x": 40,
+          "y": 514
+        },
+        "selector": "#nextBtn",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(0, 0, 0)",
+          "borderRadius": "60px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "Arial, \"Noto Sans JP\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "700",
+          "letterSpacing": "normal",
+          "lineHeight": "28px",
+          "textShadow": "none"
+        },
+        "text": "このゲームで遊ぶ"
+      },
+      {
+        "rect": {
+          "bottom": 682.000020980835,
+          "height": 654.6666870117188,
+          "left": 407.3333435058594,
+          "right": 1256.6667175292969,
+          "top": 27.33333396911621,
+          "width": 849.3333740234375,
+          "x": 407.3333435058594,
+          "y": 27.33333396911621
+        },
+        "selector": ".game-frame",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Minecraft\nJava Edition\n\n3人で、ひとつの冒険へ。\n\n選択中"
+      },
+      {
+        "rect": {
+          "bottom": 258,
+          "height": 0.666656494140625,
+          "left": 40,
+          "right": 332,
+          "top": 257.3333435058594,
+          "width": 292,
+          "x": 40,
+          "y": 257.3333435058594
+        },
+        "selector": ".left-rule",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "",
+          "borderRadius": "0px",
+          "color": "rgb(128, 128, 128)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 376,
+          "height": 80,
+          "left": 40,
+          "right": 332,
+          "top": 296,
+          "width": 292,
+          "x": 40,
+          "y": 296
+        },
+        "selector": ".explanation",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "右側にあるゲーム一覧から\n遊びたいゲームを\n選択してください！"
+      },
+      {
+        "rect": {
+          "bottom": 484.6666870117187,
+          "height": 60,
+          "left": 40,
+          "right": 332,
+          "top": 424.6666870117187,
+          "width": 292,
+          "x": 40,
+          "y": 424.6666870117187
+        },
+        "selector": ".secondary",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "24px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "30px",
+          "textShadow": "none"
+        },
+        "text": "今回遊べるのは\nMinecraft Java Editionです。\n選んだら次へ進もう！"
+      },
+      {
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 386.6666870117187,
+          "right": 1264,
+          "top": 686.6666870117188,
+          "width": 877.3333129882812,
+          "x": 386.6666870117187,
+          "y": 686.6666870117188
+        },
+        "selector": ".utility-bar",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "20px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "緊急停止：Ctrl+Alt+F12\n① 参加\n② ゲーム選択\n③ 操作分担の確認\n操作設定"
+      }
+    ],
+    "overflow": [
+      1280,
+      720
+    ],
+    "view": "game",
+    "viewport": [
+      1280,
+      720
+    ]
+  },
+  {
+    "screen": "roles",
+    "width": 1280,
+    "height": 720,
+    "capturedAt": "2026-10-25T00:28:54.175Z",
+    "buttons": [
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 569.3333740234375,
+          "height": 48,
+          "left": 63.33333587646485,
+          "right": 309.99999237060547,
+          "top": 521.3333740234375,
+          "width": 246.66665649414065,
+          "x": 63.33333587646485,
+          "y": 521.3333740234375
+        },
+        "text": "ゲームを開く・準備する"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 879.21875,
+          "right": 938.28125,
+          "top": 686.6666870117188,
+          "width": 59.0625,
+          "x": 879.21875,
+          "y": 686.6666870117188
+        },
+        "text": "① 参加"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 946.28125,
+          "right": 1044.9375,
+          "top": 686.6666870117188,
+          "width": 98.65625,
+          "x": 946.28125,
+          "y": 686.6666870117188
+        },
+        "text": "② ゲーム選択"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 1052.9375,
+          "right": 1178.666748046875,
+          "top": 686.6666870117188,
+          "width": 125.729248046875,
+          "x": 1052.9375,
+          "y": 686.6666870117188
+        },
+        "text": "③ 操作分担の確認"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 1193.3333740234375,
+          "right": 1264,
+          "top": 686.6666870117188,
+          "width": 70.6666259765625,
+          "x": 1193.3333740234375,
+          "y": 686.6666870117188
+        },
+        "text": "操作設定"
+      }
+    ],
+    "elements": [
+      {
+        "rect": {
+          "bottom": 720,
+          "height": 720,
+          "left": 0,
+          "right": 374,
+          "top": 0,
+          "width": 374,
+          "x": 0,
+          "y": 0
+        },
+        "selector": ".sidebar",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Re:Cooplay\n分担しよう！\n\n操作をそれぞれの\nスマホに分けよう！\n\nゲームを準備してから\nスマホでスタート！\n\nゲームを開く・準備する"
+      },
+      {
+        "rect": {
+          "bottom": 239.86459350585935,
+          "height": 51.19792175292969,
+          "left": 23.33333396911621,
+          "right": 353.3333339691162,
+          "top": 188.6666717529297,
+          "width": 330,
+          "x": 23.33333396911621,
+          "y": 188.6666717529297
+        },
+        "selector": "#screenTitle",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "64px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "76.8px",
+          "textShadow": "rgb(255, 255, 255) 3px 3px 0px, rgb(191, 191, 191) 5px 7px 0px"
+        },
+        "text": "分担しよう！"
+      },
+      {
+        "rect": {
+          "bottom": 569.3333740234375,
+          "height": 48,
+          "left": 63.33333587646485,
+          "right": 309.99999237060547,
+          "top": 521.3333740234375,
+          "width": 246.66665649414065,
+          "x": 63.33333587646485,
+          "y": 521.3333740234375
+        },
+        "selector": "#nextBtn",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "4px solid rgb(23, 193, 255)",
+          "borderRadius": "60px",
+          "color": "rgb(23, 193, 255)",
+          "fontFamily": "Arial, \"Noto Sans JP\", sans-serif",
+          "fontSize": "26px",
+          "fontWeight": "700",
+          "letterSpacing": "normal",
+          "lineHeight": "26px",
+          "textShadow": "none"
+        },
+        "text": "ゲームを開く・準備する"
+      },
+      {
+        "rect": {
+          "bottom": 197.3333396911621,
+          "height": 162.6666717529297,
+          "left": 410.6666870117187,
+          "right": 1260,
+          "top": 34.66666793823242,
+          "width": 849.3333129882812,
+          "x": 410.6666870117187,
+          "y": 34.66666793823242
+        },
+        "selector": ".role-band",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0.5)",
+          "border": "3px solid rgb(0, 0, 0)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "3人で、操作を分担！\n使う\nE\n前進\nW\n後退\nS"
+      },
+      {
+        "rect": {
+          "bottom": 626.6666870117188,
+          "height": 357.3333435058594,
+          "left": 446,
+          "right": 1214.666748046875,
+          "top": 269.3333435058594,
+          "width": 768.666748046875,
+          "x": 446,
+          "y": 269.3333435058594
+        },
+        "selector": ".role-columns",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "P1\n移動・ホスト\n\n歩く・跳ぶ\n\nP2\n視点\n\nカメラを動かす\n\nP3\nアクション\n\n攻撃・使う"
+      },
+      {
+        "rect": {
+          "bottom": 264.66668701171875,
+          "height": 0.66668701171875,
+          "left": 40,
+          "right": 332,
+          "top": 264,
+          "width": 292,
+          "x": 40,
+          "y": 264
+        },
+        "selector": ".left-rule",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "",
+          "borderRadius": "0px",
+          "color": "rgb(128, 128, 128)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 373.3333435058594,
+          "height": 53.333343505859375,
+          "left": 40,
+          "right": 332,
+          "top": 320,
+          "width": 292,
+          "x": 40,
+          "y": 320
+        },
+        "selector": ".explanation",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "操作をそれぞれの\nスマホに分けよう！"
+      },
+      {
+        "rect": {
+          "bottom": 491.3333435058594,
+          "height": 53.333343505859375,
+          "left": 40,
+          "right": 332,
+          "top": 438,
+          "width": 292,
+          "x": 40,
+          "y": 438
+        },
+        "selector": ".secondary",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "ゲームを準備してから\nスマホでスタート！"
+      },
+      {
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 386.6666870117187,
+          "right": 1264,
+          "top": 686.6666870117188,
+          "width": 877.3333129882812,
+          "x": 386.6666870117187,
+          "y": 686.6666870117188
+        },
+        "selector": ".utility-bar",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "20px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "緊急停止：Ctrl+Alt+F12\n① 参加\n② ゲーム選択\n③ 操作分担の確認\n操作設定"
+      }
+    ],
+    "overflow": [
+      1280,
+      720
+    ],
+    "view": "roles",
+    "viewport": [
+      1280,
+      720
+    ]
+  },
+  {
+    "screen": "preparing",
+    "width": 1280,
+    "height": 720,
+    "capturedAt": "2026-10-25T00:28:54.411Z",
+    "buttons": [
+      {
+        "disabled": true,
+        "rect": {
+          "bottom": 453.3333435058594,
+          "height": 68,
+          "left": 92.66667175292967,
+          "right": 284.66668701171875,
+          "top": 385.3333435058594,
+          "width": 192.00001525878903,
+          "x": 92.66667175292967,
+          "y": 385.3333435058594
+        },
+        "text": "START"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 532,
+          "height": 36,
+          "left": 56.66666793823242,
+          "right": 316.66669845581055,
+          "top": 496,
+          "width": 260.0000305175781,
+          "x": 56.66666793823242,
+          "y": 496
+        },
+        "text": "Minecraftを前面にする"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 543.9375,
+          "right": 614.6041870117188,
+          "top": 686.6666870117188,
+          "width": 70.66668701171875,
+          "x": 543.9375,
+          "y": 686.6666870117188
+        },
+        "text": "操作設定"
+      }
+    ],
+    "elements": [
+      {
+        "rect": {
+          "bottom": 720,
+          "height": 720,
+          "left": 0,
+          "right": 374,
+          "top": 0,
+          "width": 374,
+          "x": 0,
+          "y": 0
+        },
+        "selector": ".sidebar",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Re:Cooplay\n準備中...\n\nSTART\nMinecraftを前面にする\n\nMinecraftでワールドを準備してください。"
+      },
+      {
+        "rect": {
+          "bottom": 356,
+          "height": 96.66665649414062,
+          "left": 23.33333396911621,
+          "right": 353.3333339691162,
+          "top": 259.3333435058594,
+          "width": 330,
+          "x": 23.33333396911621,
+          "y": 259.3333435058594
+        },
+        "selector": "#screenTitle",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(204, 51, 255)",
+          "borderRadius": "0px",
+          "color": "rgb(204, 51, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "100px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "145px",
+          "textShadow": "rgb(255, 255, 255) 3px 3px 0px, rgb(191, 191, 191) 5px 7px 0px"
+        },
+        "text": "準備中..."
+      },
+      {
+        "rect": {
+          "bottom": 453.3333435058594,
+          "height": 68,
+          "left": 92.66667175292967,
+          "right": 284.66668701171875,
+          "top": 385.3333435058594,
+          "width": 192.00001525878903,
+          "x": 92.66667175292967,
+          "y": 385.3333435058594
+        },
+        "selector": "#blockedStart",
+        "style": {
+          "backgroundColor": "rgb(233, 233, 233)",
+          "border": "4px solid rgb(23, 193, 255)",
+          "borderRadius": "60px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "Arial, \"Noto Sans JP\", sans-serif",
+          "fontSize": "64px",
+          "fontWeight": "700",
+          "letterSpacing": "normal",
+          "lineHeight": "64px",
+          "textShadow": "none"
+        },
+        "text": "START"
+      },
+      {
+        "rect": {
+          "bottom": 246.66667938232425,
+          "height": 153.33334350585938,
+          "left": 430.6666870117187,
+          "right": 591.7708740234375,
+          "top": 93.33333587646484,
+          "width": 161.10418701171875,
+          "x": 430.6666870117187,
+          "y": 93.33333587646484
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー1\n\n移動・ホスト\n\n機種：Android"
+      },
+      {
+        "rect": {
+          "bottom": 246.66667938232425,
+          "height": 153.33334350585938,
+          "left": 610.4375,
+          "right": 771.5521240234375,
+          "top": 93.33333587646484,
+          "width": 161.1146240234375,
+          "x": 610.4375,
+          "y": 93.33333587646484
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー2\n\n視点\n\n機種：iPhone"
+      },
+      {
+        "rect": {
+          "bottom": 246.66667938232425,
+          "height": 153.33334350585938,
+          "left": 790.21875,
+          "right": 951.3333740234376,
+          "top": 93.33333587646484,
+          "width": 161.1146240234375,
+          "x": 790.21875,
+          "y": 93.33333587646484
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー3\n\nアクション\n\n機種：Android"
+      },
+      {
+        "rect": {
+          "bottom": 720,
+          "height": 429.3333129882813,
+          "left": 430.6666870117187,
+          "right": 591.7708740234375,
+          "top": 290.66668701171875,
+          "width": 161.10418701171875,
+          "x": 430.6666870117187,
+          "y": 290.66668701171875
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "移動・ホスト\nP1"
+      },
+      {
+        "rect": {
+          "bottom": 720,
+          "height": 429.3333129882813,
+          "left": 610.4375,
+          "right": 771.5521240234375,
+          "top": 290.66668701171875,
+          "width": 161.1146240234375,
+          "x": 610.4375,
+          "y": 290.66668701171875
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "視点\nP2"
+      },
+      {
+        "rect": {
+          "bottom": 720,
+          "height": 429.3333129882813,
+          "left": 790.21875,
+          "right": 951.3333740234376,
+          "top": 290.66668701171875,
+          "width": 161.1146240234375,
+          "x": 790.21875,
+          "y": 290.66668701171875
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "アクション\nP3"
+      },
+      {
+        "rect": {
+          "bottom": 84.66667175292969,
+          "height": 36.66667175292969,
+          "left": 446.5520935058594,
+          "right": 575.8854370117188,
+          "top": 48,
+          "width": 129.33334350585938,
+          "x": 446.5520935058594,
+          "y": 48
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "接続済み"
+      },
+      {
+        "rect": {
+          "bottom": 84.66667175292969,
+          "height": 36.66667175292969,
+          "left": 626.3229370117188,
+          "right": 755.65625,
+          "top": 48,
+          "width": 129.33331298828125,
+          "x": 626.3229370117188,
+          "y": 48
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "接続済み"
+      },
+      {
+        "rect": {
+          "bottom": 84.66667175292969,
+          "height": 36.66667175292969,
+          "left": 806.1041870117188,
+          "right": 935.4375,
+          "top": 48,
+          "width": 129.33331298828125,
+          "x": 806.1041870117188,
+          "y": 48
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "接続済み"
+      },
+      {
+        "rect": {
+          "bottom": 296,
+          "height": 0,
+          "left": 40,
+          "right": 332,
+          "top": 296,
+          "width": 292,
+          "x": 40,
+          "y": 296
+        },
+        "selector": ".explanation",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 424.6666870117187,
+          "height": 0,
+          "left": 40,
+          "right": 332,
+          "top": 424.6666870117187,
+          "width": 292,
+          "x": 40,
+          "y": 424.6666870117187
+        },
+        "selector": ".secondary",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "24px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "30px",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 386.6666870117187,
+          "right": 1264,
+          "top": 686.6666870117188,
+          "width": 877.3333129882812,
+          "x": 386.6666870117187,
+          "y": 686.6666870117188
+        },
+        "selector": ".utility-bar",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "20px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "緊急停止：Ctrl+Alt+F12\n操作設定"
+      },
+      {
+        "rect": {
+          "bottom": 532,
+          "height": 36,
+          "left": 56.66666793823242,
+          "right": 316.66669845581055,
+          "top": 496,
+          "width": 260.0000305175781,
+          "x": 56.66666793823242,
+          "y": 496
+        },
+        "selector": "#openGameBtn",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "2px solid rgb(23, 193, 255)",
+          "borderRadius": "999px",
+          "color": "rgb(7, 92, 134)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "22px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Minecraftを前面にする"
+      }
+    ],
+    "overflow": [
+      1280,
+      720
+    ],
+    "view": "preparing",
+    "viewport": [
+      1280,
+      720
+    ]
+  },
+  {
+    "screen": "ready",
+    "width": 1280,
+    "height": 720,
+    "capturedAt": "2026-10-25T00:28:54.627Z",
+    "buttons": [
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 532,
+          "height": 36,
+          "left": 56.66666793823242,
+          "right": 316.66669845581055,
+          "top": 496,
+          "width": 260.0000305175781,
+          "x": 56.66666793823242,
+          "y": 496
+        },
+        "text": "Minecraftを前面にする"
+      },
+      {
+        "disabled": false,
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 543.9375,
+          "right": 614.6041870117188,
+          "top": 686.6666870117188,
+          "width": 70.66668701171875,
+          "x": 543.9375,
+          "y": 686.6666870117188
+        },
+        "text": "操作設定"
+      }
+    ],
+    "elements": [
+      {
+        "rect": {
+          "bottom": 720,
+          "height": 720,
+          "left": 0,
+          "right": 374,
+          "top": 0,
+          "width": 374,
+          "x": 0,
+          "y": 0
+        },
+        "selector": ".sidebar",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Re:Cooplay\n準備完了！\n\nSTART\nホストのスマホでReady\nMinecraftを前面にする"
+      },
+      {
+        "rect": {
+          "bottom": 356,
+          "height": 96.66665649414062,
+          "left": 23.33333396911621,
+          "right": 353.3333339691162,
+          "top": 259.3333435058594,
+          "width": 330,
+          "x": 23.33333396911621,
+          "y": 259.3333435058594
+        },
+        "selector": "#screenTitle",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(23, 193, 255)",
+          "borderRadius": "0px",
+          "color": "rgb(23, 193, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "100px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "145px",
+          "textShadow": "rgb(255, 255, 255) 3px 3px 0px, rgb(191, 191, 191) 5px 7px 0px"
+        },
+        "text": "準備完了！"
+      },
+      {
+        "rect": {
+          "bottom": 453.3333435058594,
+          "height": 68,
+          "left": 92.66667175292967,
+          "right": 284.66668701171875,
+          "top": 385.3333435058594,
+          "width": 192.00001525878903,
+          "x": 92.66667175292967,
+          "y": 385.3333435058594
+        },
+        "selector": "#readyInstruction",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "4px solid rgb(23, 193, 255)",
+          "borderRadius": "60px",
+          "color": "rgb(23, 193, 255)",
+          "fontFamily": "Arial, \"Noto Sans JP\", sans-serif",
+          "fontSize": "64px",
+          "fontWeight": "700",
+          "letterSpacing": "normal",
+          "lineHeight": "64px",
+          "textShadow": "none"
+        },
+        "text": "START\nホストのスマホでReady"
+      },
+      {
+        "rect": {
+          "bottom": 246.66667938232425,
+          "height": 153.33334350585938,
+          "left": 430.6666870117187,
+          "right": 591.7708740234375,
+          "top": 93.33333587646484,
+          "width": 161.10418701171875,
+          "x": 430.6666870117187,
+          "y": 93.33333587646484
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー1\n\n移動・ホスト\n\n機種：Android"
+      },
+      {
+        "rect": {
+          "bottom": 246.66667938232425,
+          "height": 153.33334350585938,
+          "left": 610.4375,
+          "right": 771.5521240234375,
+          "top": 93.33333587646484,
+          "width": 161.1146240234375,
+          "x": 610.4375,
+          "y": 93.33333587646484
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー2\n\n視点\n\n機種：iPhone"
+      },
+      {
+        "rect": {
+          "bottom": 246.66667938232425,
+          "height": 153.33334350585938,
+          "left": 790.21875,
+          "right": 951.3333740234376,
+          "top": 93.33333587646484,
+          "width": 161.1146240234375,
+          "x": 790.21875,
+          "y": 93.33333587646484
+        },
+        "selector": ".player-info",
+        "style": {
+          "backgroundColor": "color(srgb 1 1 1 / 0.8)",
+          "border": "3px solid rgb(23, 193, 255)",
+          "borderRadius": "20px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "30px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "36px",
+          "textShadow": "none"
+        },
+        "text": "プレイヤー3\n\nアクション\n\n機種：Android"
+      },
+      {
+        "rect": {
+          "bottom": 720,
+          "height": 429.3333129882813,
+          "left": 430.6666870117187,
+          "right": 591.7708740234375,
+          "top": 290.66668701171875,
+          "width": 161.10418701171875,
+          "x": 430.6666870117187,
+          "y": 290.66668701171875
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "移動・ホスト\nP1"
+      },
+      {
+        "rect": {
+          "bottom": 720,
+          "height": 429.3333129882813,
+          "left": 610.4375,
+          "right": 771.5521240234375,
+          "top": 290.66668701171875,
+          "width": 161.1146240234375,
+          "x": 610.4375,
+          "y": 290.66668701171875
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "視点\nP2"
+      },
+      {
+        "rect": {
+          "bottom": 720,
+          "height": 429.3333129882813,
+          "left": 790.21875,
+          "right": 951.3333740234376,
+          "top": 290.66668701171875,
+          "width": 161.1146240234375,
+          "x": 790.21875,
+          "y": 290.66668701171875
+        },
+        "selector": ".character",
+        "style": {
+          "backgroundColor": "rgb(217, 217, 217)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "40px 40px 0px 0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": "アクション\nP3"
+      },
+      {
+        "rect": {
+          "bottom": 84.66667175292969,
+          "height": 36.66667175292969,
+          "left": 446.5520935058594,
+          "right": 575.8854370117188,
+          "top": 48,
+          "width": 129.33334350585938,
+          "x": 446.5520935058594,
+          "y": 48
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "条件OK"
+      },
+      {
+        "rect": {
+          "bottom": 84.66667175292969,
+          "height": 36.66667175292969,
+          "left": 626.3229370117188,
+          "right": 755.65625,
+          "top": 48,
+          "width": 129.33331298828125,
+          "x": 626.3229370117188,
+          "y": 48
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "条件OK"
+      },
+      {
+        "rect": {
+          "bottom": 84.66667175292969,
+          "height": 36.66667175292969,
+          "left": 806.1041870117188,
+          "right": 935.4375,
+          "top": 48,
+          "width": 129.33331298828125,
+          "x": 806.1041870117188,
+          "y": 48
+        },
+        "selector": ".player-badge",
+        "style": {
+          "backgroundColor": "rgb(23, 193, 255)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderRadius": "40px",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "28px",
+          "fontWeight": "900",
+          "letterSpacing": "normal",
+          "lineHeight": "55px",
+          "textShadow": "none"
+        },
+        "text": "条件OK"
+      },
+      {
+        "rect": {
+          "bottom": 296,
+          "height": 0,
+          "left": 40,
+          "right": 332,
+          "top": 296,
+          "width": 292,
+          "x": 40,
+          "y": 296
+        },
+        "selector": ".explanation",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "32px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "40px",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 424.6666870117187,
+          "height": 0,
+          "left": 40,
+          "right": 332,
+          "top": 424.6666870117187,
+          "width": 292,
+          "x": 40,
+          "y": 424.6666870117187
+        },
+        "selector": ".secondary",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "24px",
+          "fontWeight": "600",
+          "letterSpacing": "normal",
+          "lineHeight": "30px",
+          "textShadow": "none"
+        },
+        "text": ""
+      },
+      {
+        "rect": {
+          "bottom": 713.3333740234375,
+          "height": 26.66668701171875,
+          "left": 386.6666870117187,
+          "right": 1264,
+          "top": 686.6666870117188,
+          "width": 877.3333129882812,
+          "x": 386.6666870117187,
+          "y": 686.6666870117188
+        },
+        "selector": ".utility-bar",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(0, 0, 0)",
+          "borderRadius": "0px",
+          "color": "rgb(0, 0, 0)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "20px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "緊急停止：Ctrl+Alt+F12\n操作設定"
+      },
+      {
+        "rect": {
+          "bottom": 532,
+          "height": 36,
+          "left": 56.66666793823242,
+          "right": 316.66669845581055,
+          "top": 496,
+          "width": 260.0000305175781,
+          "x": 56.66666793823242,
+          "y": 496
+        },
+        "selector": "#openGameBtn",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "2px solid rgb(23, 193, 255)",
+          "borderRadius": "999px",
+          "color": "rgb(7, 92, 134)",
+          "fontFamily": "\"Noto Sans JP\", Arial, \"Yu Gothic\", sans-serif",
+          "fontSize": "22px",
+          "fontWeight": "800",
+          "letterSpacing": "normal",
+          "lineHeight": "normal",
+          "textShadow": "none"
+        },
+        "text": "Minecraftを前面にする"
+      }
+    ],
+    "overflow": [
+      1280,
+      720
+    ],
+    "view": "ready",
+    "viewport": [
+      1280,
+      720
+    ]
+  }
+]

@@ -1,0 +1,586 @@
+[
+  {
+    "screen": "join",
+    "width": 1920,
+    "capturedAt": "2026-10-25T02:04:48.149Z",
+    "checks": [
+      {
+        "element": "見出しの着色画素",
+        "pass": true
+      },
+      {
+        "element": "info",
+        "reference": [
+          648,
+          140,
+          777,
+          230
+        ],
+        "actual": [
+          646,
+          140,
+          781.0,
+          230
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.51,
+          0.0
+        ],
+        "pass": true
+      },
+      {
+        "element": "characters",
+        "reference": [
+          646,
+          436,
+          781,
+          644
+        ],
+        "actual": [
+          646,
+          436,
+          781.0,
+          644
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.0,
+          0.0
+        ],
+        "pass": true
+      },
+      {
+        "element": "cta",
+        "reference": [
+          136,
+          376,
+          288,
+          102
+        ],
+        "actual": [
+          136,
+          376,
+          288,
+          102
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.0,
+          0.0
+        ],
+        "pass": true
+      },
+      {
+        "element": "qr",
+        "reference": [
+          95,
+          649,
+          369,
+          369
+        ],
+        "actual": [
+          95,
+          649,
+          369,
+          369
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.0,
+          0.0
+        ],
+        "pass": true
+      }
+    ],
+    "wholeImageMeanAbsoluteDifference": 12.149,
+    "titleInk": {
+      "reference": [
+        99,
+        144,
+        342,
+        203
+      ],
+      "actual": [
+        100,
+        145,
+        339,
+        200
+      ],
+      "centerDelta": [
+        -0.5,
+        -0.5
+      ],
+      "sizeDeltaPercent": [
+        -0.88,
+        -1.48
+      ]
+    }
+  },
+  {
+    "screen": "game",
+    "width": 1920,
+    "capturedAt": "2026-10-25T02:04:49.341Z",
+    "checks": [
+      {
+        "element": "見出しの着色画素",
+        "pass": true
+      },
+      {
+        "element": "panel",
+        "reference": [
+          611,
+          41,
+          1274,
+          982
+        ],
+        "actual": [
+          611,
+          41,
+          1274,
+          982
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.0,
+          0.0
+        ],
+        "pass": true
+      },
+      {
+        "element": "cta",
+        "reference": [
+          60,
+          771,
+          469,
+          67
+        ],
+        "actual": [
+          60,
+          771,
+          469,
+          67
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.0,
+          0.0
+        ],
+        "pass": true
+      },
+      {
+        "element": "rule",
+        "reference": [
+          60,
+          386,
+          438,
+          1
+        ],
+        "actual": [
+          60,
+          386,
+          438,
+          1
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.0,
+          0.0
+        ],
+        "pass": true
+      }
+    ],
+    "wholeImageMeanAbsoluteDifference": 5.947,
+    "titleInk": {
+      "reference": [
+        105,
+        228,
+        371,
+        135
+      ],
+      "actual": [
+        105,
+        229,
+        371,
+        135
+      ],
+      "centerDelta": [
+        0.0,
+        1.0
+      ],
+      "sizeDeltaPercent": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  {
+    "screen": "roles",
+    "width": 1920,
+    "capturedAt": "2026-10-25T02:04:50.532Z",
+    "checks": [
+      {
+        "element": "見出しの着色画素",
+        "pass": true
+      },
+      {
+        "element": "band",
+        "reference": [
+          616,
+          52,
+          1274,
+          244
+        ],
+        "actual": [
+          616,
+          52,
+          1274,
+          244
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.0,
+          0.0
+        ],
+        "pass": true
+      },
+      {
+        "element": "characters",
+        "reference": [
+          669,
+          404,
+          1153,
+          536
+        ],
+        "actual": [
+          669,
+          404,
+          1153,
+          536
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.0,
+          0.0
+        ],
+        "pass": true
+      },
+      {
+        "element": "rule",
+        "reference": [
+          59,
+          396,
+          438,
+          1
+        ],
+        "actual": [
+          59,
+          396,
+          438,
+          1
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.0,
+          0.0
+        ],
+        "pass": true
+      }
+    ],
+    "wholeImageMeanAbsoluteDifference": 12.832,
+    "titleInk": {
+      "reference": [
+        100,
+        304,
+        356,
+        59
+      ],
+      "actual": [
+        100,
+        304,
+        356,
+        59
+      ],
+      "centerDelta": [
+        0.0,
+        0.0
+      ],
+      "sizeDeltaPercent": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  {
+    "screen": "preparing",
+    "width": 1920,
+    "capturedAt": "2026-10-25T02:04:51.497Z",
+    "checks": [
+      {
+        "element": "見出しの着色画素",
+        "pass": true
+      },
+      {
+        "element": "info",
+        "reference": [
+          648,
+          140,
+          777,
+          230
+        ],
+        "actual": [
+          646,
+          140,
+          781.0,
+          230
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.51,
+          0.0
+        ],
+        "pass": true
+      },
+      {
+        "element": "characters",
+        "reference": [
+          646,
+          436,
+          781,
+          644
+        ],
+        "actual": [
+          646,
+          436,
+          781.0,
+          644
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.0,
+          0.0
+        ],
+        "pass": true
+      },
+      {
+        "element": "cta",
+        "reference": [
+          139,
+          578,
+          288,
+          102
+        ],
+        "actual": [
+          139,
+          578,
+          288,
+          102
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.0,
+          0.0
+        ],
+        "pass": true
+      }
+    ],
+    "wholeImageMeanAbsoluteDifference": 10.462,
+    "titleInk": {
+      "reference": [
+        112,
+        421,
+        356,
+        89
+      ],
+      "actual": [
+        110,
+        422,
+        360,
+        90
+      ],
+      "centerDelta": [
+        0.0,
+        1.5
+      ],
+      "sizeDeltaPercent": [
+        1.12,
+        1.12
+      ]
+    }
+  },
+  {
+    "screen": "ready",
+    "width": 1920,
+    "capturedAt": "2026-10-25T02:04:52.411Z",
+    "checks": [
+      {
+        "element": "見出しの着色画素",
+        "pass": true
+      },
+      {
+        "element": "info",
+        "reference": [
+          648,
+          140,
+          777,
+          230
+        ],
+        "actual": [
+          646,
+          140,
+          781.0,
+          230
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.51,
+          0.0
+        ],
+        "pass": true
+      },
+      {
+        "element": "characters",
+        "reference": [
+          646,
+          436,
+          781,
+          644
+        ],
+        "actual": [
+          646,
+          436,
+          781.0,
+          644
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.0,
+          0.0
+        ],
+        "pass": true
+      },
+      {
+        "element": "cta",
+        "reference": [
+          139,
+          578,
+          288,
+          102
+        ],
+        "actual": [
+          139,
+          578,
+          288,
+          102
+        ],
+        "centerDelta": [
+          0.0,
+          0.0
+        ],
+        "sizeDeltaPercent": [
+          0.0,
+          0.0
+        ],
+        "pass": true
+      }
+    ],
+    "wholeImageMeanAbsoluteDifference": 9.076,
+    "titleInk": {
+      "reference": [
+        51,
+        421,
+        436,
+        89
+      ],
+      "actual": [
+        55,
+        422,
+        436,
+        89
+      ],
+      "centerDelta": [
+        4.0,
+        1.0
+      ],
+      "sizeDeltaPercent": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  {
+    "screen": "join",
+    "width": 1280,
+    "capturedAt": "2026-10-25T02:04:53.515Z",
+    "checks": []
+  },
+  {
+    "screen": "game",
+    "width": 1280,
+    "capturedAt": "2026-10-25T02:04:54.494Z",
+    "checks": []
+  },
+  {
+    "screen": "roles",
+    "width": 1280,
+    "capturedAt": "2026-10-25T02:04:55.522Z",
+    "checks": []
+  },
+  {
+    "screen": "preparing",
+    "width": 1280,
+    "capturedAt": "2026-10-25T02:04:56.255Z",
+    "checks": []
+  },
+  {
+    "screen": "ready",
+    "width": 1280,
+    "capturedAt": "2026-10-25T02:04:57.011Z",
+    "checks": []
+  }
+]
