@@ -68,7 +68,7 @@ test('人数: Minecraftは3人（P1〜P3）だけ固定の分担、2人・4人�
 });
 
 test('人数: 担当を表示する枠は参加者、なければ接続中の枠', () => {
-  assert.deepEqual(shownSlots(null), ['P1', 'P2', 'P3']);
+  assert.deepEqual(shownSlots(null), [], '誰もいなければ 3 人分の固定の表示を出さない (#126)');
   assert.deepEqual(shownSlots({ connected: ['P4', 'P1'] }), ['P1', 'P4']);
   assert.deepEqual(shownSlots({ connected: ['P1', 'P2', 'P3', 'P4'], participants: ['P1', 'P2'] }), ['P1', 'P2'], 'Readyの後に来た人は含めない');
 });

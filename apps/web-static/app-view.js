@@ -21,11 +21,11 @@ export function usesFixedRoles(game) {
   return p.id === 'minecraft-java' && (game.fixedControls !== false || nobody);
 }
 
-/** 担当を表示する枠: 協力プレイの参加者、なければ接続中の枠 (誰もいなければ固定の3人) */
+/** 担当を表示する枠: 協力プレイの参加者、なければ接続中の枠。誰もいなければ空 (3人分の固定の表示は出さない、#126) */
 export function shownSlots(game) {
   if (game?.participants?.length) return game.participants;
   if (game?.connected?.length) return SLOT_NAMES.filter((s) => game.connected.includes(s));
-  return ['P1', 'P2', 'P3'];
+  return [];
 }
 
 export const SCREEN_TITLES = { join: '① 参加', game: '② ゲーム選択', roles: '③ 操作分担の確認' };
