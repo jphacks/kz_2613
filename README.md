@@ -241,6 +241,4 @@ flowchart LR
 
 詳しくは[システム設計](docs/architecture/system-design.md)と[通信仕様](docs/architecture/protocol.md)を参照してください。
 
----
-
 Hack Dayのライブデモと懇親会では、Minecraftをスマートフォン3台で共同操作しました。2人によるホラーゲームのチーム内試遊も行っています。対応ゲームの範囲や検証条件は[動作確認の詳細](docs/verification.md)にまとめています。
