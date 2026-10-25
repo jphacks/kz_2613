@@ -98,11 +98,11 @@ test('手動登録: 一覧に「手動登録」「未検証」と出し、件数
 test('人数: どの人数・どのゲームも操作定義の分担を表示する (Minecraft の3人も、#141)', () => {
   assert.deepEqual(roleView(null, 'P1'), { title: '', lines: [] }, '状態が届く前');
   const two = { phase: 'lobby', profile: { ...mc, assignment: { P1: ['forward'], P2: ['look', 'attack', 'drop'] } }, connected: ['P1', 'P2'], keys: { actions: { attack: { label: '左クリック' } } } };
-  assert.equal(roleView(two, 'P2').title, '視点・攻撃・使う・持ち物');
-  assert.match(roleView(two, 'P2').lines.join(), /攻撃（左クリック）/);
+  assert.equal(roleView(two, 'P2').title, 'マウス移動・クリック・キー');
+  assert.match(roleView(two, 'P2').lines.join(), /クリック：左クリック/);
   assert.equal(roleView(two, 'P3').title, '担当なし');
   const three = { phase: 'lobby', profile: { ...mc, assignment: { P1: ['forward'], P2: ['look'], P3: ['attack', 'drop'] } }, connected: ['P1', 'P2', 'P3'] };
-  assert.deepEqual(['P1', 'P2', 'P3'].map((s) => roleView(three, s).title), ['移動', '視点', '攻撃・使う・持ち物']);
+  assert.deepEqual(['P1', 'P2', 'P3'].map((s) => roleView(three, s).title), ['キー', 'マウス移動', 'キー']);
 });
 
 test('人数: 担当を表示する枠は参加者、なければ接続中の枠', () => {
@@ -114,7 +114,8 @@ test('人数: 担当を表示する枠は参加者、なければ接続中の枠
 test('キー表示: 担当の操作にはホストの keys (ゲームのキー設定) のキーを出し、送れないキーは「送らない」', () => {
   const g = { phase: 'lobby', profile: { ...mc, actions: [...mc.actions, { id: 'sprint', label: 'ダッシュ', group: 'movement', type: 'button' }], assignment: { P1: ['sprint', 'drop'] } }, connected: ['P1'], keys: { actions: { sprint: { label: 'Q' }, drop: null } } };
   const lines = roleView(g, 'P1').lines.join();
-  assert.match(lines, /（Q）/);
+  assert.match(lines, /Qキー/);
+  assert.doesNotMatch(lines, /ダッシュ|捨てる/);
   assert.match(lines, /送らない/);
 });
 
@@ -124,12 +125,12 @@ test('分担の確認: 操作定義があれば分担の案 (協力プレイ中�
     assignment: { P1: ['left'], P2: ['aim', 'zoom'], P3: [] } };
   const keys = { actions: { left: { label: 'A' } } };
   const v = roleView({ profile, keys }, 'P1');
-  assert.equal(v.title, '移動');
-  assert.deepEqual(v.lines, ['移動：左（A）']);
-  assert.deepEqual(roleView({ profile, keys }, 'P2').lines, ['アクション：狙い（マウス移動）、ズーム（ホイール）']);
+  assert.equal(v.title, 'キー');
+  assert.deepEqual(v.lines, ['キー：Aキー']);
+  assert.deepEqual(roleView({ profile, keys }, 'P2').lines, ['マウス移動：マウス移動', 'ホイール：ホイール']);
   assert.equal(roleView({ profile, keys }, 'P3').title, '担当なし');
-  assert.deepEqual(roleView({ phase:'coop', profile, keys, assigned: { P1: ['aim'] } }, 'P1').lines, ['アクション：狙い（マウス移動）']);
-  assert.deepEqual(roleView({phase:'lobby',profile,keys,assigned:{P1:['aim']}},'P1').lines,['移動：左（A）']);
+  assert.deepEqual(roleView({ phase:'coop', profile, keys, assigned: { P1: ['aim'] } }, 'P1').lines, ['マウス移動：マウス移動']);
+  assert.deepEqual(roleView({phase:'lobby',profile,keys,assigned:{P1:['aim']}},'P1').lines,['キー：Aキー']);
 });
 
 test('リモコン: 右・Enter で次、左・Esc で前の画面へ。端で止まる', () => {
@@ -219,9 +220,9 @@ test('分担の画面: 準備中に参加者が変わったら、分担の画面
 });
 
 test('役割の入れ替え: 分担はホストが入れ替え後の席で配った案で表示し、一時停止中は入れ替えの画面を開ける (#47)', () => {
-  const g = { phase: 'lobby', profile: { ...mc, assignment: { P1: ['forward'], P2: ['attack'], P3: ['look'] } }, connected: ['P1', 'P2', 'P3'], roleOf: { P1: 'P1', P2: 'P3', P3: 'P2' } };
-  assert.equal(roleView(g, 'P2').title, '攻撃・使う', 'P2 が P3 の担当になる');
-  assert.equal(roleView(g, 'P3').title, '視点');
+  const g = { phase: 'lobby', profile: { ...mc, assignment: { P1: ['forward'], P2: ['attack'], P3: ['look'] } }, connected: ['P1', 'P2', 'P3'], roleOf: { P1: 'P1', P2: 'P3', P3: 'P2' }, keys: { actions: { attack: { label: '左クリック' } } } };
+  assert.equal(roleView(g, 'P2').title, 'クリック', 'P2 が P3 の入力を担当する');
+  assert.equal(roleView(g, 'P3').title, 'マウス移動');
   const paused = { phase: 'paused', roleAck: ['P2', 'P3'] };
   assert.equal(desktopView({ screen: 'join', swap: true }, paused), 'roles');
   assert.equal(desktopView({ screen: 'join', swap: false }, paused), 'paused');

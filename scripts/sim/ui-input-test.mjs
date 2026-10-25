@@ -57,7 +57,7 @@ try {
     const html = box.innerHTML;
     assert.match(html, /gen-stick/);
     assert.match(html, /送らない/); // action は送れないキー
-    assert.match(html, />D</); // 実際のキーの表示
+    assert.match(html, />Dキー</); // 実際のキーの表示
     assert.ok(box.parts.some((g) => g.parts?.includes(look[0])), '視点のパッドを移していない');
     const p3 = new FakeNode();
     const none = [];
@@ -65,6 +65,24 @@ try {
     assert.deepEqual(none, [null], '担当がなければ前のスティックを外す');
     assert.match(p3.innerHTML, /担当する操作がありません/);
     assert.notEqual(generatedKey(GAME, 'P1'), generatedKey({ ...GAME, keys: { actions: { left: { label: 'Z' } } } }, 'P1'), 'キーが変わったら作り直す');
+  });
+  await test('操作の主表示: Minecraftも別ゲームも実キー・クリック・ホイールを示し、ゲーム内の意味を流用しない (#150)', () => {
+    for (const id of ['minecraft-java', 'generic']) {
+      const game = { ...GAME, profile: { ...GAME.profile, id,
+        groups: [{ id: 'gameplay', label: '攻撃・持ち物' }],
+        actions: [{ id: 'use', label: '置く', group: 'gameplay', type: 'button' },
+          { id: 'inventory', label: 'インベントリ', group: 'gameplay', type: 'button' },
+          { id: 'wheel', label: '持ち物の切り替え', group: 'gameplay', type: 'wheel' }] },
+        assigned: { P1: ['use', 'inventory', 'wheel'] },
+        keys: { actions: { use: { label: '右クリック' }, inventory: { label: 'R' } } } };
+      const box = new FakeNode(), controls = [];
+      buildGenerated(box, game, 'P1', { bindControl: el => controls.push(el.ctl) });
+      assert.deepEqual(controls, ['act:use', 'act:inventory', 'act:wheel:up', 'act:wheel:down']);
+      assert.match(box.innerHTML, /act:use">右クリック<\/button>/);
+      assert.match(box.innerHTML, /act:inventory">Rキー<\/button>/);
+      assert.match(box.innerHTML, /ホイール↑/);
+      assert.doesNotMatch(box.innerHTML, /攻撃|持ち物|置く|インベントリ/);
+    }
   });
   await test('視点: 操作定義の分担があれば、視点を割り当てた人だけが look を送る', () => {
     const pad = new Element(), sent = [];
