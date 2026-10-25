@@ -69,3 +69,7 @@
 - 画面：`node scripts/sim/app-view-test.mjs`、`node scripts/sim/check-static-pages.mjs`
 - 構造確認：`python scripts/verify_overlay.py`
 - Windowsの構築手順は `docs/handoff/SETUP_WINDOWS.md`、Issue・ブランチ・PRの共通運用は `docs/handoff/DEVELOPMENT_WORKFLOW.md` に従う。
+
+## 2026-10-25の開始手順
+
+開始はP1によるゲーム準備（preparing）と明示Readyの二段階。接続人数とReadyを混同しない。詳細は docs/decisions/2026-10-25-two-stage-ready.md を参照する。

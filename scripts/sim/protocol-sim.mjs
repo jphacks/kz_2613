@@ -23,7 +23,7 @@ const opt = (name, def) => {
 const target = opt('--target', 'rust');
 const PORT = Number(opt('--port', 18000 + Math.floor(Math.random() * 1000)));
 const BASE = `http://127.0.0.1:${PORT}`;
-const PROTOCOL_VERSION = 3;
+const PROTOCOL_VERSION = target === 'node' ? 3 : 4;
 
 // ブラウザと同じOrigin付きのハンドシェイクを送り、アップグレード前の拒否も確認する。
 function handshake(origin, host = `127.0.0.1:${PORT}`) {
@@ -109,6 +109,7 @@ class Client {
     for (const w of [...this.waiters]) w();
   }
   send(m) {
+    if (target === 'rust' && m.type === 'command' && !('epoch' in m)) m = {...m, epoch: this.epoch};
     this.ws.send(JSON.stringify(m));
   }
   // スマホ同様 1 秒ごとに ping (4 秒の切断判定に掛からないように)
@@ -356,18 +357,30 @@ async function main() {
       p1.input('JUMP', 'up');
     }, { rustOnly: true });
 
-    await check('進行: P1 以外の START は無視、P1 の START で coop', async () => {
-      const g = await mon.waitFor((m) => m.type === 'game' && m.game.canStart, { what: 'canStart' });
-      assert(g.game.phase === 'lobby', 'lobby でない');
+    await check('進行: P1だけが準備と明示Readyを実行でき、旧START・PC画面から迂回できない', async () => {
       let from = p1.mark();
-      p2.send({ type: 'command', cmd: 'START' });
-      p3.send({ type: 'command', cmd: 'START' });
-      await sleep(300);
-      assert(!p1.msgs.slice(from).some((m) => m.type === 'game' && m.game.phase === 'coop'), 'P2/P3 の START で開始した');
-      from = p1.mark();
-      p1.send({ type: 'command', cmd: 'START' });
-      const c = await phaseIs(p1, 'coop', from);
-      assert(c.game.reason === 'host start', `reason=${c.game.reason}`);
+      p2.send({type:'command',cmd:'START'}); p3.send({type:'command',cmd:'READY'});
+      if (target === 'rust') mon.send({type:'phase',phase:'coop'});
+      await sleep(100);
+      assert(!p1.msgs.slice(from).some(m=>m.type==='game' && m.game.phase==='coop'), '管理画面/P2/P3から開始した');
+      if (target === 'rust') {
+        p1.send({type:'command',cmd:'READY'});
+        await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from});
+        p1.send({type:'command',cmd:'START'});
+        const prepared = await phaseIs(p1,'preparing',from);
+        assert(!prepared.game.canReady && !prepared.game.hostReady, 'OFFなのにReadyが許可された');
+        from = p1.mark();
+        p1.send({type:'command',cmd:'READY'});
+        await p1.waitFor(m=>m.type==='command_result' && m.cmd==='READY' && !m.accepted,{from});
+        mon.send({type:'inject_mode',mode:'on'});
+        await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from});
+        from = p1.mark();
+        p1.send({type:'command',cmd:'READY',epoch:0});
+        await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from});
+        p1.send({type:'command',cmd:'READY'});
+      } else p1.send({type:'command',cmd:'START'});
+      const c = await phaseIs(p1,'coop',from);
+      assert(c.game.reason === (target === 'rust' ? 'host ready' : 'host start'), `reason=${c.game.reason}`);
     });
 
     // 以降の注入はモニターで観測する (DRY_RUN なので OS には送られない)
@@ -700,6 +713,7 @@ async function main() {
       await p1.waitFor((m) => m.type === 'game' && m.game.title === 'minecraft-java', { from, what: 'title back' });
       from = p1.mark();
       p1.send({ type: 'command', cmd: 'START' });
+      if (target === 'rust') { await phaseIs(p1, 'preparing', from); p1.send({type:'command',cmd:'READY'}); }
       await phaseIs(p1, 'coop', from);
       app.close();
     }, { rustOnly: true });

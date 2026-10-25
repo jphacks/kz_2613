@@ -28,7 +28,7 @@ const TITLES: [&str; 2] = ["minecraft-java", "pseudo-game"];
 // PC アプリ (apps/desktop) の実行ファイル名。前面になったら PC アプリへの手動復帰とみなす
 const DESKTOP_PROCESS: &str = "recooplay-desktop.exe";
 const DEFAULT_TITLE: &str = TITLES[0];
-const PROTOCOL_VERSION: u64 = 3;
+const PROTOCOL_VERSION: u64 = 4;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
@@ -181,6 +181,7 @@ impl Slot {
 #[derive(PartialEq, Eq, Clone, Copy)]
 enum Phase {
     Lobby,
+    Preparing,
     Coop,
     Paused,
 }
@@ -189,6 +190,7 @@ impl Phase {
     fn name(self) -> &'static str {
         match self {
             Phase::Lobby => "lobby",
+            Phase::Preparing => "preparing",
             Phase::Coop => "coop",
             Phase::Paused => "paused",
         }
@@ -196,6 +198,7 @@ impl Phase {
     fn parse(s: &str) -> Option<Phase> {
         match s {
             "lobby" => Some(Phase::Lobby),
+            "preparing" => Some(Phase::Preparing),
             "coop" => Some(Phase::Coop),
             "paused" => Some(Phase::Paused),
             _ => None,
@@ -204,6 +207,8 @@ impl Phase {
 }
 
 struct Game {
+    host_ready: bool,
+    prepare_status: String,
     phase: Phase,
     required: u64,
     reason: Option<String>,
@@ -348,6 +353,8 @@ impl Hub {
             slots: [None, None, None],
             game: Game {
                 phase: Phase::Lobby,
+                host_ready: false,
+                prepare_status: String::new(),
                 required: config.required_players,
                 reason: None,
                 auto_resume: config.auto_resume,
@@ -491,9 +498,26 @@ impl Hub {
         (0..3).filter(|&i| self.slots[i].as_ref().is_some_and(|s| s.connected)).collect()
     }
 
+    fn ready_reasons(&self) -> Vec<&'static str> {
+        let mut reasons = Vec::new();
+        if self.connected_slots().len() != 3 { reasons.push("3人全員の接続が必要です"); }
+        if self.game.title != "minecraft-java" && self.game.title != "pseudo-game" { reasons.push("ゲームを選択してください"); }
+        if !self.input.available() { reasons.push("入力ドライバーが利用できません"); }
+        if self.hotkey.is_err() && self.fake_target.is_none() { reasons.push("PCの緊急停止キーを登録してください"); }
+        if !self.can_inject() { reasons.push("入力を有効にし、対象ゲームを前面にしてください"); }
+        reasons
+    }
+
+    fn can_prepare(&self) -> bool {
+        self.game.phase == Phase::Lobby && self.connected_slots().contains(&0)
+    }
+
     fn can_start(&self) -> bool {
-        let c = self.connected_slots();
-        c.contains(&0) && c.len() as u64 >= self.game.required
+        self.game.phase == Phase::Preparing && self.ready_reasons().is_empty()
+    }
+
+    fn can_resume(&self) -> bool {
+        self.game.phase == Phase::Paused && self.game.host_ready && self.ready_reasons().is_empty()
     }
 
     fn game_snapshot(&self) -> Value {
@@ -509,6 +533,12 @@ impl Hub {
             "title": self.game.title,
             "connected": connected,
             "canStart": self.can_start(),
+            "canPrepare": self.can_prepare(),
+            "canReady": self.can_start(),
+            "canResume": self.can_resume(),
+            "hostReady": self.game.host_ready,
+            "readyReasons": self.ready_reasons(),
+            "prepareStatus": self.game.prepare_status,
             // 入力が PC に届く状態か (注入モード・入力先のウィンドウ)。スマホに「届いていない」ことを知らせる
             "inputActive": self.can_inject(),
             "inputTarget": self.inject == InjectMode::On && !self.target_ok,
@@ -640,7 +670,7 @@ impl Hub {
             .connected_slots()
             .into_iter()
             .all(|i| self.slots[i].as_ref().is_some_and(|s| s.rtc_state != "connecting"));
-        if self.can_start() && rtc_settled {
+        if self.can_resume() && rtc_settled {
             self.set_phase(Phase::Coop, "auto resume");
         }
     }
@@ -649,14 +679,43 @@ impl Hub {
         if slot != 0 {
             return;
         }
-        let can_start = self.can_start();
-        match (cmd, self.game.phase) {
-            ("START", Phase::Lobby) if can_start => self.set_phase(Phase::Coop, "host start"),
-            ("RESUME", Phase::Paused) if can_start => self.set_phase(Phase::Coop, "host resume"),
-            ("PAUSE", Phase::Coop) => self.set_phase(Phase::Paused, "host pause"),
-            ("END", p) if p != Phase::Lobby => self.set_phase(Phase::Lobby, "host end"),
-            _ => {}
-        }
+        let accepted = match (cmd, self.game.phase) {
+            ("PREPARE" | "START", Phase::Lobby) if self.can_prepare() => {
+                self.game.host_ready = false;
+                self.game.prepare_status = if self.fake_target.is_some() {
+                    "シミュレーション：実ゲームは起動していません".into()
+                } else if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
+                    "dry-run：Minecraftを手動で開いてください".into()
+                } else {
+                    match crate::focus::activate(&self.target) {
+                        Ok(()) => "Minecraftのウィンドウを前面にしました。ワールドを準備してください".into(),
+                        Err(reason) => format!("{}。Minecraftを手動で開き、ワールドを準備してください", reason),
+                    }
+                };
+                self.set_phase(Phase::Preparing, "host prepare"); true
+            }
+            ("READY", Phase::Preparing) if self.can_start() => {
+                self.game.host_ready = true;
+                self.set_phase(Phase::Coop, "host ready"); true
+            }
+            ("RESUME", Phase::Paused) if self.can_resume() => { self.set_phase(Phase::Coop, "host resume"); true }
+            ("PAUSE", Phase::Coop | Phase::Paused) => {
+                self.game.auto_resume_until = 0;
+                self.game.reason = Some("host pause".into());
+                if self.game.phase == Phase::Paused { self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); }
+                else { self.set_phase(Phase::Paused, "host pause"); } true
+            }
+            ("END", p) if p != Phase::Lobby => {
+                self.game.host_ready = false;
+                self.game.auto_resume_until = 0;
+                self.set_phase(Phase::Lobby, "host end"); true
+            }
+            _ => false,
+        };
+        self.send(self.slots[slot].as_ref().and_then(|s| s.conn), &json!({
+            "type": "command_result", "cmd": cmd, "accepted": accepted,
+            "reasons": if accepted { vec![] } else { self.ready_reasons() },
+        }));
     }
 
     /// その操作を今このスロットが使えるか → 出力の番号
@@ -974,6 +1033,11 @@ impl Hub {
         let released: Vec<String> = std::mem::take(&mut s.pressed).into_iter().collect();
         self.release_outputs(Some(SLOT_NAMES[idx]));
         self.log("disconnect", json!({ "slot": SLOT_NAMES[idx], "reason": reason, "released": released }));
+        if self.game.phase == Phase::Preparing {
+            self.release_outputs(None);
+            self.reset_look();
+            self.advance_epoch();
+        }
         // 協力プレイ中に誰かが切れたら共同入力を止める (ホストの自動交代はしない)
         let paused_by_disconnect = self.game.phase == Phase::Paused
             && self.game.reason.as_deref().is_some_and(|r| r.ends_with("disconnected"));
@@ -1211,12 +1275,14 @@ impl Hub {
                     }
                 }
             }
+            "prepare" => { if self.can_prepare() { self.command(0, "PREPARE"); } }
             "select_game" => {
                 let Some(t) = s(msg, "title").filter(|t| TITLES.contains(&t.as_str())) else { return };
                 if t == self.game.title {
                     return;
                 }
                 self.game.title = t;
+                self.game.host_ready = false;
                 self.log("select_game", json!({ "title": self.game.title }));
                 // ゲームを変えたら全解放してロビー (ホストのリモコン) へ戻る。参加者と役割はそのまま
                 if self.game.phase != Phase::Lobby {
@@ -1250,7 +1316,8 @@ impl Hub {
             }
             "phase" => {
                 if let Some(p) = s(msg, "phase").as_deref().and_then(Phase::parse) {
-                    self.set_phase(p, "dashboard");
+                    if p == Phase::Lobby { self.game.host_ready = false; self.set_phase(p, "dashboard"); }
+                    else if p == Phase::Paused && self.game.phase == Phase::Coop { self.command(0, "PAUSE"); }
                 }
             }
             "reset" => {
@@ -1266,6 +1333,7 @@ impl Hub {
                     }
                 }
                 self.game.phase = Phase::Lobby;
+                self.game.host_ready = false;
                 self.advance_epoch();
                 self.log("reset", json!({}));
                 self.push_game();
@@ -1413,6 +1481,11 @@ impl Hub {
             "command" if via == Via::Ws => {
                 let cmd = s(&msg, "cmd").unwrap_or_default();
                 self.log("command", json!({ "slot": SLOT_NAMES[idx], "cmd": cmd }));
+                if matches!(cmd.as_str(), "READY" | "RESUME" | "PREPARE" | "START")
+                    && msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
+                    self.send(self.slots[idx].as_ref().and_then(|s| s.conn), &json!({"type":"command_result","cmd":cmd,"accepted":false,"reasons":["画面の状態が古くなっています。更新を待ってください"]}));
+                    return;
+                }
                 self.command(idx, &cmd);
             }
             "rtc-offer" => self.start_rtc(idx, &s(&msg, "sdp").unwrap_or_default()),
