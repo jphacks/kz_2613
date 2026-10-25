@@ -1,7 +1,7 @@
 # Re:Cooplay（リコープレイ）— ゲームはそのまま。遊び方を変える。
 
 <div align="center">
-  <img src="apps/web-static/assets/logo.png" alt="Re:Cooplay ロゴ" width="430">
+  <img src="assets/images/recooplay-thumbnail.png" alt="Re:Cooplay 製品紹介サムネイル" width="960">
 
   <p>
     <a href="https://github.com/jphacks/kz_2613">
