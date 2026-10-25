@@ -1,3 +1,9 @@
+
+
+https://github.com/user-attachments/assets/8bf3bb9e-31fd-4ce2-8335-17c2f419e65b
+
+
+
 # Re:Cooplay（リコープレイ）— ゲームはそのまま。遊び方を変える。
 
 <div align="center">
@@ -11,7 +17,7 @@
 
   <p>移動・視点・攻撃を3人で分担し、声を掛け合いながら1つのキャラクターを操作する様子をご覧ください。</p>
 
-  <!-- プレイ映像の埋め込み位置 -->
+https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
   <img src="assets/images/recooplay-hackday-play.webp" alt="Hack Dayの開発中に3人がそれぞれスマートフォンを持ち、PCゲームの1つのキャラクターを共同操作している様子" width="720">
 
