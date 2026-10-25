@@ -5,6 +5,7 @@ import { recordInputMetric, inputMetrics } from './ui-metrics.js';
 
 import { bindTouchpad } from './touchpad.js';
 import { myActions } from './generated-controls.js';
+import { phoneAdvice } from '../app-view.js';
 (() => {
   const $ = (id) => document.getElementById(id);
   const ROLE_TEXT = {
@@ -177,6 +178,8 @@ import { myActions } from './generated-controls.js';
     if (performance.now() - statsAt < 100) return;
     statsAt = performance.now();
     const s = stats();
+    // 自分の通信が悪いときの対処の案内 (#70)。接続・診断の画面に出す
+    $('phoneNetAdvice').textContent = phoneAdvice(s);
     $('sent').textContent = sent;
     $('unacked').textContent = pending.size;
     if (s) $('rttAvg').textContent = `${s.avg}/${s.max}ms`;

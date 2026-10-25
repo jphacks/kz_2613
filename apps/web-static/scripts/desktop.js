@@ -1,5 +1,5 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,screenOnGameUpdate,desktopView,desktopWarning,keyLabel,profileNotice,roleView,networkNotice,usesFixedRoles,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,rolesAction} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,screenOnGameUpdate,desktopView,desktopWarning,keyLabel,profileNotice,roleView,networkNotice,slotDiagnosis,usesFixedRoles,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,rolesAction} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // swap: 一時停止中に担当を入れ替える画面を開いているか (#47)
@@ -161,6 +161,9 @@ function render(){
   $('keyWarnings').textContent=keyWarnings.join('。');
   $('keyBindings').innerHTML=roleSlots.map(slot=>`<h3>${esc(slot)}：${esc(roleView(game,slot).title)}</h3><ul>${roleView(game,slot).lines.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`).join('');
   $('gameStatus').textContent=game?.prepareStatus||'';
+  // 通信の診断 (#70): つながっているスマホごとの経路・往復時間・途切れと、対処の案内
+  const diag=(state?.slots||[]).filter(x=>x.connected).map(slotDiagnosis);
+  $('netDiag').innerHTML=diag.length?diag.map(d=>`<section class="net-row" data-level="${d.level}"><h3>${esc(d.name)}：${{ok:'良好',warn:'注意',bad:'不安定'}[d.level]}</h3><p>経路 ${esc(d.path)}・往復 ${d.rtt??'-'}ms（95% ${d.p95??'-'}ms）・途切れ ${d.stalls}回/10秒・再接続 ${d.reconnects}回</p>${d.hints.length?`<ul>${d.hints.map(h=>`<li>${esc(h)}</li>`).join('')}</ul>`:''}</section>`).join('')+(state?.network?.bluetoothAudio?'<p class="net-bt">PCの音の出力先がBluetoothです。有線のイヤホンかPCのスピーカーにすると、通信が安定しやすくなります。</p>':''):'<p>つながっているスマホはありません。</p>';
   document.querySelectorAll('#modeSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===inject?.mode)));
   $('hotkey').textContent=inject?.emergencyHotkeyError?'緊急停止キーを登録できません':`緊急停止：${inject?.emergencyHotkey||'Ctrl+Alt+F12'}`;
 }
