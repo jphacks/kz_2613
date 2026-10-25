@@ -25,7 +25,12 @@ const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,`http://127.0.0.1:${port}`);
   if (url.pathname==='/') {res.setHeader('Content-Type',types['.html']);return res.end(shell);}
-  if (url.pathname==='/api/info') {res.setHeader('Content-Type','application/json');return res.end(JSON.stringify({urls:[{url:`http://127.0.0.1:${port}/phone`,ip:'127.0.0.1',name:'表示検証',qr:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="8" y="8" width="84" height="84" fill="white" stroke="black"/><text x="50" y="54" text-anchor="middle" font-size="12">表示用・QRなし</text></svg>'}]}));}
+  if (url.pathname==='/api/info') {
+    const scenario=new URL(req.headers.referer || '/',`http://127.0.0.1:${port}`).searchParams.get('qr');
+    if(scenario==='error'){res.statusCode=503;return res.end();}
+    res.setHeader('Content-Type','application/json');
+    return res.end(JSON.stringify({urls:scenario==='missing'?[]:[{url:`http://127.0.0.1:${port}/phone`,ip:'127.0.0.1',address:'127.0.0.1',name:'表示検証',qr:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="8" y="8" width="84" height="84" fill="white" stroke="black"/><text x="50" y="54" text-anchor="middle" font-size="10">表示用・QRなし</text></svg>'}]}));
+  }
   const relative=({ '/phone':'index.html','/app':'app.html' })[url.pathname] || url.pathname.slice(1);
   const resolved=path.resolve(root,relative);
   if (!resolved.startsWith(path.resolve(root)+path.sep)) {res.statusCode=403;return res.end();}
@@ -42,19 +47,31 @@ const wss=new WebSocketServer({server});
 wss.on('connection',(ws,req)=>{
   const params=new URL(req.url,`http://127.0.0.1:${port}`).searchParams;
   const slot=['P1','P2','P3'].includes(params.get('slot'))?params.get('slot'):'P1';let phase=params.get('phase')||'lobby';let epoch=1;
+  const scenario=params.get('scenario')||'';
+  const count=Math.max(0,Math.min(3,Number(params.get('count')??3)));
+  const connected=['P1','P2','P3'].slice(0,count);
+  let mode=scenario==='off'||scenario==='emergency'?'off':'on';
+  const active=()=>mode==='on'&&!['blocked','target'].includes(scenario);
+  const canReady=()=>phase==='preparing'&&active()&&count===3;
   const send=m=>{if(ws.readyState===1)ws.send(JSON.stringify(m));};
-  const game=()=>({phase,epoch,required:3,connected:['P1','P2','P3'],title:'minecraft-java',hostReady:phase==='coop'||phase==='paused',canPrepare:phase==='lobby',canReady:phase==='preparing',canStart:phase==='preparing',canResume:phase==='paused',readyReasons:[],autoResume:false,inputActive:true,inputTarget:false,remoteRoute:phase==='coop'?'none':'app',prepareStatus:'表示検証：実ゲームは開いていません'});
-  const state=()=>({type:'state',game:game(),slots:['P1','P2','P3'].map(name=>({name,assigned:true,connected:true,ua:name==='P2'?'iPhone':'Android'})),inject:{mode:'on',active:true,available:true,emergencyHotkey:'Ctrl+Alt+F12',target:{ok:true}}});
-  const push=()=>send({type:'game',game:game()});
+  const game=()=>({phase,epoch,required:3,connected,title:'minecraft-java',hostReady:phase==='coop'||phase==='paused',canPrepare:phase==='lobby'&&count>0,canReady:canReady(),canStart:canReady(),canResume:phase==='paused'&&active()&&count===3,readyReasons:count<3?['3人全員の接続を待っています']:!active()?['入力を有効にし、対象ゲームを前面にしてください']:[],reason:scenario==='emergency'?'emergency stop':scenario==='lost'?'P3 disconnected':phase==='paused'?'host pause':'',autoResume:false,inputActive:active(),inputTarget:false,remoteRoute:phase==='coop'?'none':'app',prepareStatus:'表示検証：実ゲームは開いていません'});
+  const state=()=>({type:'state',game:game(),slots:['P1','P2','P3'].map((name,i)=>({name,assigned:i<count||scenario==='lost',connected:i<count,ua:name==='P2'?'iPhone':'Android'})),inject:{mode,active:active(),available:true,emergencyHotkey:'Ctrl+Alt+F12',target:{ok:active()}}});
+  const push=()=>send(state());
+  let monitor=false;
+  const periodic=setInterval(()=>{if(monitor)push();},1000);
+  ws.on('close',()=>clearInterval(periodic));
   ws.on('message',raw=>{
     const m=JSON.parse(String(raw));
     if(m.type==='hello') {
       if(phase==='full')return send({type:'full'});
       if(phase==='bad_token'||phase==='protocol_version')return send({type:'error',code:phase});
       send({type:'welcome',slot,isHost:slot==='P1',role:{P1:'移動・ホスト',P2:'視点',P3:'アクション'}[slot],token:'表示検証用'});push();
-    } else if(m.type==='monitor') {send(state());push();}
+    } else if(m.type==='monitor') {monitor=true;push();if(scenario==='disconnected')ws.close(1011);}
     else if(m.type==='ping')send({type:'pong',t:m.t});
     else if(m.type==='input')send({type:'ack',iseq:m.iseq,via:'ws'});
+    else if(m.type==='prepare'&&game().canPrepare){phase='preparing';epoch++;push();}
+    else if(m.type==='inject_mode'&&['off','on'].includes(m.mode)){mode=m.mode;epoch++;push();}
+    else if(m.type==='open_game')push();
     else if(m.type==='command') {
       if(m.cmd==='PAUSE')phase='paused';if(m.cmd==='READY'||m.cmd==='RESUME')phase='coop';if(m.cmd==='PREPARE')phase='preparing';if(m.cmd==='END')phase='lobby';epoch++;push();
     } else if(m.type==='release_inputs'){epoch++;push();}
