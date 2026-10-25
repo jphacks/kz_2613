@@ -1522,10 +1522,11 @@ impl Hub {
     /// 入力先を選んだゲームに合わせる。一覧のゲームはインストール先のフォルダ内のプロセスだけを対象にする
     fn apply_target(&mut self) {
         self.target = match self.games.iter().find(|g| g.id == self.game.title) {
+            Some(g) if g.source == games::MANUAL_SOURCE => Target::executable(Path::new(&g.launch_uri)),
             Some(g) => Target::install_dir(&g.install_dir),
             None if TITLES.contains(&self.game.title.as_str()) => self.base_target.clone(),
             // 一覧から消えたゲームをMinecraftへ読み替えて送らない。
-            None => Target { processes: vec![], title_contains: String::new(), dir: None },
+            None => Target { processes: vec![], title_contains: String::new(), dir: None, executable: None },
         };
         self.check_target();
         self.push_state();

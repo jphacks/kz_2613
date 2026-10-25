@@ -1512,6 +1512,11 @@ async function main() {
       const listed = await app.waitFor((m) => m.type === 'state' && !m.gamesScanning && registered(m).length === 1, { from, what: 'listed' });
       const g = registered(listed)[0];
       assert(g.name === 'SimGame' && g.verified === false && g.id.startsWith('manual:') && !('exe' in g) && !JSON.stringify(listed).includes(dir), JSON.stringify(g));
+      // 選択後の入力先説明にも実行ファイルのパスを渡さず、フォルダー全体の許可へ戻さない。
+      const selectedFrom = app.mark();
+      app.send({ type: 'select_game', title: g.id });
+      const selected = await app.waitFor((m) => m.type === 'state' && m.game.title === g.id, { from: selectedFrom, what: 'manual selected' });
+      assert(selected.inject.target.expect === '手動登録した実行ファイル' && !JSON.stringify(selected).includes(dir), '手動登録の入力先が広すぎるか、場所を画面へ送った');
       // 同じものは二重に登録しない
       from = app.mark();
       app.send({ type: 'add_game' });
