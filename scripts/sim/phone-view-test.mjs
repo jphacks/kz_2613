@@ -17,7 +17,7 @@ const el=id=>{if(!elements.has(id))elements.set(id,new Element(id));return eleme
 const views=['v-remote','v-wait','v-gen'].map(el);
 el('pad').parentElement=el('lookHome');
 const sens=new Element('sens');
-globalThis.document={getElementById:el,createElement:()=>new Element(),createTextNode:text=>({textContent:text}),body:{dataset:{}},querySelector:()=>sens,querySelectorAll:s=>s==='.view'?views:[]};
+globalThis.document={getElementById:el,createElement:()=>new Element(),createTextNode:text=>({textContent:text}),body:{dataset:{}},querySelector:()=>sens,querySelectorAll:s=>s==='.view'?views:s==='[data-ctl="REMOTE_E"]'?[el('remoteE')]:[]};
 let released=0,diagnosticsOpened=0;
 const render=createPhoneView({releaseAll:()=>released++,onDiagnosticsOpen:()=>diagnosticsOpened++,bindControl(){}});
 // Minecraft の3人も操作定義の分担で操作画面を作る (#141)
@@ -55,7 +55,7 @@ update('P2',{phase:'preparing',canReady:true});
 assert.equal(el('v-wait').show,true);
 assert.equal(el('v-remote').show,false);
 assert.equal(el('waitCharacter').src,'/assets/characters/green.png');
-assert.equal(el('waitRole').textContent,'視点');
+assert.equal(el('waitRole').textContent,'マウス移動');
 assert.equal(el('waitHeading').textContent,'接続完了!!');
 update('P3',{phase:'coop',participants:['P1','P2','P3'],assigned});
 assert.equal(el('v-gen').show,true,'Minecraftの3人も操作定義から作った画面');
@@ -91,4 +91,10 @@ const shown=['remoteRoute','openGameBtn','inputWarn','remoteNote'].map((id)=>el(
 assert.match(shown,/Outlastのメニューを操作中/);
 assert.match(shown,/Outlastを前面にする/);
 assert.doesNotMatch(shown,/Minecraft|ワールド/);
+update('P1',{phase:'preparing',keys:{controls:{INV:{out:'KEY_R',label:'R'}}}});
+assert.equal(el('remoteE').textContent,'Rキー','リモコンもゲーム内設定の実際のキーを出す');
+update('P1',{phase:'preparing',keys:{controls:{INV:null}}});
+assert.equal(el('remoteE').textContent,'送らない','未割り当てをEキーと偽らない');
+update('P1',{phase:'preparing',keys:{controls:{}}});
+assert.equal(el('remoteE').textContent,'Eキー','汎用のリモコンはEを送る');
 console.log('合格: ホスト準備・Ready可否・参加者待機・担当画面・Pause・診断前解放・未検証案内・ゲーム名の案内（8観点、OS入力なし）');

@@ -1,6 +1,7 @@
 // 操作定義 (game.profile) と分担 (game.assigned) から、その人の操作画面を作る (#60・#105)。
 // どのゲーム (Minecraft を含む) もこの画面を使う (#141)。
 // ボタンは "act:<操作ID>" を送る。ホストは割り当てた操作だけを、ゲームのキー設定に合わせて送る。
+import { inputKeyLabel, inputGroupLabel } from '../app-view.js';
 
 // 方向の操作の見分け方 (スティックの上・左・右・下)
 const DIRS = [
@@ -27,19 +28,18 @@ export function generatedKey(game, me) {
 /** container に操作画面を作る。lookParts は視点のパッドと感度 (担当するときだけ移す) */
 export function buildGenerated(container, game, me, { bindControl, bindStick = () => {}, lookParts }) {
   const acts = myActions(game, me) || [];
-  const keyOf = (a) => game.keys?.actions?.[a.id]?.label ?? '送らない';
+  const keyOf = (a) => inputKeyLabel(game, a);
   container.innerHTML = '';
   let stick = null;
   const groups = new Map();
   for (const a of acts) {
-    const g = game.profile.groups.find((x) => x.id === a.group);
-    if (!groups.has(a.group)) groups.set(a.group, { label: g?.label || a.group, acts: [] });
+    if (!groups.has(a.group)) groups.set(a.group, { acts: [] });
     groups.get(a.group).acts.push(a);
   }
-  for (const { label, acts: list } of groups.values()) {
+  for (const { acts: list } of groups.values()) {
     const sec = document.createElement('div');
     sec.className = 'gen-group';
-    sec.innerHTML = `<div class="gen-label">${esc(label)}</div>`;
+    sec.innerHTML = `<div class="gen-label">${esc(inputGroupLabel(game, list))}</div>`;
     const buttons = list.filter((a) => a.type === 'button');
     // 方向の操作が 2 つ以上あればスティックにする (#139。斜めは 2 方向を同時に押す)。1 人に 1 つまで
     const dir = DIRS.map(([name, rx, mark]) => [name, buttons.find((a) => rx.test(a.id)), mark]).filter(([, a]) => a);
@@ -59,10 +59,10 @@ export function buildGenerated(container, game, me, { bindControl, bindStick = (
     grid.className = 'gen-grid';
     for (const a of list) {
       if (used.has(a.id)) continue;
-      if (a.type === 'button') grid.insertAdjacentHTML('beforeend', `<button class="key" data-ctl="act:${esc(a.id)}">${esc(a.label)}<small>${esc(keyOf(a))}</small></button>`);
+      if (a.type === 'button') grid.insertAdjacentHTML('beforeend', `<button class="key" data-ctl="act:${esc(a.id)}">${esc(keyOf(a))}</button>`);
       else if (a.type === 'wheel') {
-        grid.insertAdjacentHTML('beforeend', `<button class="key" data-ctl="act:${esc(a.id)}:up">◀ ${esc(a.label)}<small>ホイール↑</small></button>`);
-        grid.insertAdjacentHTML('beforeend', `<button class="key" data-ctl="act:${esc(a.id)}:down">${esc(a.label)} ▶<small>ホイール↓</small></button>`);
+        grid.insertAdjacentHTML('beforeend', `<button class="key" data-ctl="act:${esc(a.id)}:up">ホイール↑</button>`);
+        grid.insertAdjacentHTML('beforeend', `<button class="key" data-ctl="act:${esc(a.id)}:down">ホイール↓</button>`);
       }
     }
     if (grid.children.length) sec.append(grid);

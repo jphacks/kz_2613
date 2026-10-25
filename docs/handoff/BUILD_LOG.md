@@ -879,6 +879,14 @@
 - 最終ローカル確認：ホストの `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` が成功（再試行19秒）。`cargo test` はホスト42件＋プローブ4件成功（手動の表出力1件を除外）、更新時刻を確認したexeで `protocol-sim.mjs` が50/50成功した。初回はビルド完了前に旧exeで試験を起動して更新を妨げたため、旧exeの49/50とビルド失敗は合格根拠に使用していない。OpenSSLのPDB不足の既知の警告は残る。
 - PCアプリの `cargo build --release --locked --offline --manifest-path apps/desktop/Cargo.toml` が成功。両exeを再ビルドした後に `package.ps1 -Out dist/issue148-final` でzipを作成し、`node scripts/sim/package-smoke.mjs dist/issue148-final/ReCooplay-0.1.0-windows-x64.zip` の全照合・欠落改変拒否・リポジトリ外での全静的画面配信と正常終了が成功。ローカルの既存記録が未コミットのためmanifestはdirty=true。
 
+## 2026-10-26 — キー名を主表示にする（Codex、#150）
+
+- ユーザーの指摘と明示選択「送るキー名を中心にする」を受け、操作ボタンとPC・スマホの分担確認を「左クリック」「Eキー」「ホイール」「マウス移動」等の実際の入力名へ統一した。見出しも入力種類から作り、ゲーム内の「攻撃」「持ち物」等の意味を流用しない。操作IDと入力の送信処理・分担は従来どおり。
+- リモコンのキー表示もMinecraftの設定変更・未割り当てを反映する。操作の名前が「インベントリ」でもRに変更した場合はRキー、送れなければ「送らない」。実キーが変わると操作面を作り直し、既存の全解放経路を使う。
+- `node scripts/sim/app-view-test.mjs`25/25、`ui-input-test.mjs`12/12、`phone-view-test.mjs`（リモコンのキー変更・未割り当てを含む）、`controller-diagnostics-test.mjs`、`check-static-pages.mjs`、`verify-ui-evidence.mjs`、`static-assets-sim.mjs`（34ファイル）、`protocol-sim.mjs`（既存の最新Rustホストのdry-run）50/50、`git diff --check`が成功。Rustソースは変更していない。
+- computer-useスキルを参照しブラウザーでの画面確認を試みたが、接続可能なアプリ・ブラウザーは0件だった（cua.getState）。今回の表示の実ブラウザー撮影・スマホ実機・ゲーム内入力は未検証。保存済み104画面の証拠検査は新しい表示の目視確認とは区別する。
+- Issue整理：#140はユーザーの明示承認後にクローズ済み。前提Issueがクローズ済みの#38・#50・#53・#55・#58・#63から古いblockedを外し、実装済み部分と残る作業・最新の判断を本文へ追記した。#138・#139・#141の実機受入については、ユーザーの「チェックできた」の範囲を確認中であり、実機確認済みとは読み替えていない。
+
 ## 2026-10-26 — README・ギャラリーへ説明用画像3点を追加
 
 - ユーザー指定の `4.png`・`5.png`・`P1移動.png` を目視し、QRコード参加・役割別スマホ画面・システム構成図に対応することを確認した。Rustホスト・Tauri・WebSocket/WebRTC・SendInputの実装と図を照合し、3人構成の概略図として重大な矛盾がないことを確認した。
