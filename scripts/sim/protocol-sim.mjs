@@ -1475,6 +1475,14 @@ async function main() {
       assert(!p1.msgs.slice(from).some(m => m.type === 'game' && m.game.phase === 'coop'), '緊急停止後に自動復帰した');
     });
 
+    // ENDは直前の緊急停止状態で検証する。後続のゲーム選択がロビーへ移ることに依存させない。
+    await check('進行: P1 の END で lobby', async () => {
+      const from = p1.mark();
+      p1.send({ type: 'command', cmd: 'END' });
+      const g = await phaseIs(p1, 'lobby', from);
+      assert(g.game.reason === 'host end', `reason=${g.game.reason}`);
+    });
+
     await check('手動登録: PC 画面で選んだ .exe だけを登録し、名前の変更・解除ができ、スマホからは登録できない (#49・#56)', async () => {
       const pick = path.join(host.logDir, 'pick.txt');
       const dir = path.join(host.logDir, 'manual', 'Sim Manual Game');
@@ -1537,13 +1545,6 @@ async function main() {
       const log = fs.readdirSync(host.logDir).filter((f) => f.endsWith('.jsonl')).map((f) => fs.readFileSync(path.join(host.logDir, f), 'utf8')).join('');
       assert(log.includes('"manual_game"') && !log.includes('SimGame') && !log.includes('シムゲーム') && !log.includes('Sim Manual Game'), 'ログに名前・場所が出た');
       app.close();
-    });
-
-    await check('進行: P1 の END で lobby', async () => {
-      const from = p1.mark();
-      p1.send({ type: 'command', cmd: 'END' });
-      const g = await phaseIs(p1, 'lobby', from);
-      assert(g.game.reason === 'host end', `reason=${g.game.reason}`);
     });
 
     await check('切断: 4 秒受信がなければ切断扱いにする', async () => {

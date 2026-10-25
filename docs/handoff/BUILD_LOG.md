@@ -829,3 +829,8 @@
 - 対象照合のRust単体試験と、手動登録を選択した後の状態にもパスを出さない通信回帰試験を追加した。ランチャーから別exeが起動する場合は実際に操作するexeを登録する方針を判断記録へ反映した。mainの先行3件とREADME更新を#137へ取り込んだ。
 - ローカルの `node scripts/sim/app-view-test.mjs`25/25、`ui-input-test.mjs`10/10、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`（33ファイル）、`git diff --check`が成功した。Rustの修正後ビルド・単体・通信試験は最新コミットのCIで確認する。ローカルのRust再ビルドや新しい実機試験は行っていない。
 - 作業開始時の未コミットBUILD_LOGはstashへ保持している。関連Issueはクローズしていない。
+
+### PR #137の通信試験の前提整理
+
+- head `00a5a96`のCIで、Rustのビルド・単体試験と手動登録の追加チェックは成功したが、通信試験は48/49だった。追加したゲーム選択がlobbyへ戻したため、後続のEND試験がpausedを前提として待ち続けたことが原因だった（ジョブ121239895095）。入力先制限の製品コードの失敗ではない。
+- END試験を手動登録試験の前へ移し、緊急停止後のpausedから実際にENDでlobbyへ移る試験として保持した。手動登録を選択した後の入力先・パス非公開チェックも保持し、49件の確認範囲は減らしていない。最新headのCIで再確認する。
