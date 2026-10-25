@@ -45,7 +45,9 @@ function handshake(origin, host = `127.0.0.1:${PORT}`) {
 function startHost() {
   const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-sim-'));
   // config.json の影響を受けないよう、画面だけを持つ一時ルートを使う
-  const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1' };
+  const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1',
+    // Minecraft のキー設定の試験用 (ダッシュ = Q、捨てる = R に変えた options.txt)。#101
+    RECOOPLAY_MINECRAFT_OPTIONS: path.join(ROOT, 'scripts', 'sim', 'fixtures', 'minecraft-options.txt') };
   let cmd;
   let cmdArgs;
   if (target === 'node') {
@@ -449,6 +451,24 @@ async function main() {
       p3.input('ATTACK', 'up');
       await injected(mon, 'MOUSE_L', 'up', from);
     });
+
+    await check('キー設定: Minecraft の options.txt に合わせて送る (ダッシュ = Q、捨てる = R)', async () => {
+      const st = await mon.waitFor((m) => m.type === 'state' && m.game?.keys, { what: 'keys' });
+      const k = st.game.keys;
+      assert(k.source === 'options', `source=${k.source}`);
+      assert(k.controls.SPRINT?.out === 'KEY_Q' && k.controls.DROP?.out === 'KEY_R' && k.controls.FWD?.out === 'KEY_W', JSON.stringify(k.controls));
+      let from = mon.mark();
+      p1.input('SPRINT', 'down');
+      await injected(mon, 'KEY_Q', 'down', from);
+      p1.input('SPRINT', 'up');
+      await injected(mon, 'KEY_Q', 'up', from);
+      from = mon.mark();
+      p3.input('DROP', 'down');
+      await injected(mon, 'KEY_R', 'down', from);
+      p3.input('DROP', 'up');
+      await injected(mon, 'KEY_R', 'up', from);
+      assert(!mon.msgs.slice(from).some((m) => m.type === 'inject' && m.entry.out === 'KEY_Q'), '捨てるでダッシュ (Q) を送った');
+    }, { rustOnly: true });
 
     await check('入力: 同じ iseq の重複は 1 回だけ処理し、欠番は届くまで待つ', async () => {
       const from = p3.mark();

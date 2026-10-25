@@ -64,3 +64,4 @@ footer a { margin-left: auto; }
 @media (max-width: 1300px) { .workspace { gap: 16px; } .sidebar { gap: 16px; } .roles .mascot { width: 58px; height: 58px; font-size: 30px; } .roles .slot { padding: 16px 10px; } }
 @media (max-height: 800px) { .sidebar { padding: 24px; gap: 12px; } .sidebar .qr { width: min(100%, 23vh); margin-bottom: 8px; } .join-guide h2 { font-size: 14px; margin-bottom: 8px; } .sidebar-tip { font-size: 11px !important; } .participant-count { margin: 10px 0; } .sidebar .count { font-size: 40px; } }
 @media (max-width: 900px) { .desktop-shell { grid-template-columns: 260px minmax(0,1fr); } .sidebar { padding: 20px; } .slots, .roles { grid-template-columns: 1fr; } .game { flex-direction: column; align-items: flex-start; } }
+.keys-warn { grid-column: 1 / -1; color: var(--warn, #b45309); }

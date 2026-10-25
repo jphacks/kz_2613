@@ -1,6 +1,6 @@
 
   import { createVirtualCursor } from './virtual-cursor.js';
-  import { SCREENS, SCREEN_TITLES, ROLES, GAMES, slotViews, startView, phaseView, navigate, joinUrl, screenOnGameUpdate } from '../app-view.js';
+  import { SCREENS, SCREEN_TITLES, ROLES, GAMES, slotViews, startView, phaseView, navigate, joinUrl, screenOnGameUpdate, roleControls } from '../app-view.js';
 
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -82,9 +82,10 @@
       return `<div class="card role slot ${s.state}" data-slot="${r.slot}">
         <div class="mascot" aria-hidden="true"><span>${{P1:"↟",P2:"✥",P3:"✦"}[r.slot]}</span></div><div class="name">${r.slot}<span class="role-title">${esc(r.title)}</span>${r.host ? '<span class="host">ホスト管理</span>' : ''}</div>
         <div class="state">${esc(s.label)}</div>
-        <ul>${r.controls.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+        <ul>${roleControls(r.slot, game?.keys).map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
       </div>`;
-    }).join('');
+    }).join('') + ((game?.keys?.warnings || []).length
+      ? `<div class="card warn keys-warn">⚠ キー設定：${game.keys.warnings.map(esc).join('<br>')}</div>` : '');
     $('prepareBtn').disabled = !game?.canPrepare;
     $('prepareBtn').hidden = game?.phase !== 'lobby';
     $('openGameBtn').hidden = !['preparing','paused'].includes(game?.phase);

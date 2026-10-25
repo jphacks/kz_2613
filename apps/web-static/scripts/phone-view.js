@@ -37,6 +37,10 @@ export function createPhoneView({releaseAll,roleText}) {
     if (autoWait && isHost) $('remoteNote').textContent = `${reasonText(game.reason)}。戻ると自動で再開します（RESUME で手動再開も可）。`;
     $('waitRole').textContent = `あなたの担当: ${roleText[me]}`;
     $('burst').style.display = phase === 'coop' ? 'none' : '';
+    // ボタンのキー表示を、ゲームのキー設定に合わせた実際のキーにする (#101)
+    for (const [control, out] of Object.entries(game.keys?.controls || {})) {
+      document.querySelectorAll(`[data-ctl="${control}"] small`).forEach((el) => { el.textContent = out ? out.label : '送らない'; });
+    }
   }
   return render;
 }

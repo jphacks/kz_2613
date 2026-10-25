@@ -15,6 +15,7 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use crate::config::Config;
 use crate::controls::{self, Kind, OUTPUTS};
+use crate::keybinds::{self, Keybinds};
 use crate::focus::{self, Foreground, Target};
 use crate::input::Input;
 use crate::rtc::{Peer, RtcSignal};
@@ -298,6 +299,9 @@ pub struct Hub {
     target_fg: Option<Foreground>,
     target_ok: bool,
     fake_target: Option<bool>, // 試験用 (DRY_RUN のときだけ)。Some なら OS に問い合わせない
+    // ゲームのキー設定に合わせた、操作 → 送るキーの対応 (#101)。準備・Ready・再開のたびに読み直す
+    keybinds: Keybinds,
+    minecraft_options: Option<std::path::PathBuf>,
     app_focused: bool,           // PC アプリが前面か (手動復帰の判定に使う)
     // PC アプリ (デスクトップアプリ) から起動されたか。そのときは前面のプロセス名で PC アプリの前面を判定し、
     // 画面 (WebView2 は背面でも focused のまま) の知らせは使わない
@@ -389,6 +393,8 @@ impl Hub {
             target: Target { processes: config.target.processes.clone(), title_contains: config.target.title_contains.clone() },
             target_fg: None,
             target_ok: false,
+            keybinds: Keybinds::defaults("default"),
+            minecraft_options: keybinds::minecraft_options_path(config.minecraft_options.as_deref()),
             fake_target: std::env::var("RECOOPLAY_FAKE_TARGET")
                 .ok()
                 .filter(|_| std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1"))
@@ -396,6 +402,7 @@ impl Hub {
             app_focused: false,
             desktop: std::env::var("RECOOPLAY_DESKTOP").as_deref() == Ok("1"),
         };
+        hub.reload_keybinds();
         hub.schedule(now + LOOK_TICK, Timer::LookTick);
         hub.schedule(now + Duration::from_millis(100), Timer::LookReport);
         hub.schedule(now + Duration::from_secs(1), Timer::Heartbeat);
@@ -535,6 +542,8 @@ impl Hub {
             "title": self.game.title,
             "connected": connected,
             "canStart": self.can_start(),
+            // 操作 → 実際に送るキー (ゲームのキー設定に合わせる)。スマホ・PC 画面のキー表示に使う
+            "keys": self.keys_snapshot(),
             "canPrepare": self.can_prepare(),
             "canReady": self.can_start(),
             "canResume": self.can_resume(),
@@ -704,13 +713,15 @@ impl Hub {
                         Err(reason) => format!("{}。Minecraftを手動で開き、ワールドを準備してください", reason),
                     }
                 };
+                self.reload_keybinds();
                 self.set_phase(Phase::Preparing, "host prepare"); true
             }
             ("READY", Phase::Preparing) if self.can_start() => {
+                self.reload_keybinds();
                 self.game.host_ready = true;
                 self.set_phase(Phase::Coop, "host ready"); true
             }
-            ("RESUME", Phase::Paused) if self.can_resume() => { self.set_phase(Phase::Coop, "host resume"); true }
+            ("RESUME", Phase::Paused) if self.can_resume() => { self.reload_keybinds(); self.set_phase(Phase::Coop, "host resume"); true }
             ("PAUSE", Phase::Coop | Phase::Paused) => {
                 self.game.auto_resume_until = 0;
                 self.game.reason = Some("host pause".into());
@@ -733,13 +744,42 @@ impl Hub {
     /// その操作を今このスロットが使えるか → 出力の番号
     fn resolve_control(&self, slot: usize, control: &str) -> Option<usize> {
         let id = if self.game.phase == Phase::Coop {
-            controls::role_control(SLOT_NAMES[slot], control)
+            // 担当の確認は固定の表で行い、送るキーはゲームのキー設定に合わせる (送れないキーは送らない)
+            let default = controls::role_control(SLOT_NAMES[slot], control)?;
+            self.keybinds.output_for(control).unwrap_or(Some(default))
         } else if slot == 0 && self.remote_game_active() {
-            controls::remote_control(control)
+            let default = controls::remote_control(control)?;
+            // メニューでの「持ち物」はインベントリのキー (Minecraft の設定に合わせる)
+            if control == "REMOTE_E" { self.keybinds.output_for("INV").unwrap_or(Some(default)) } else { Some(default) }
         } else {
             None
         }?;
         OUTPUTS.iter().position(|o| o.id == id)
+    }
+
+    /// ゲームのキー設定を読み直す。Minecraft のときだけ options.txt を読み、ほかは初期のキー
+    fn reload_keybinds(&mut self) {
+        self.keybinds = if self.game.title == "minecraft-java" {
+            Keybinds::load_minecraft(self.minecraft_options.as_deref())
+        } else {
+            Keybinds::defaults("default")
+        };
+        // ファイルの場所 (ユーザー名を含む) はログに残さない
+        self.log("keybinds", json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings }));
+        self.push_game();
+    }
+
+    fn keys_snapshot(&self) -> Value {
+        let controls: Map<String, Value> = self
+            .keybinds
+            .controls
+            .iter()
+            .map(|(c, o)| {
+                let v = o.and_then(controls::output).map_or(Value::Null, |out| json!({ "out": out.id, "label": out.label }));
+                (c.to_string(), v)
+            })
+            .collect();
+        json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings, "controls": controls })
     }
 
     // ---------- 入力注入 ----------
@@ -1332,6 +1372,7 @@ impl Hub {
                 }
                 self.game.title = t;
                 self.game.host_ready = false;
+                self.reload_keybinds();
                 self.log("select_game", json!({ "title": self.game.title }));
                 // ゲームを変えたら全解放してロビー (ホストのリモコン) へ戻る。参加者と役割はそのまま
                 if self.game.phase != Phase::Lobby {
