@@ -6,7 +6,7 @@
 
 > **撮影について**
 > - 2026年10月26日に、最新のRustホストと画面（`apps/web-static`）を使って撮影しました。PCは1920×1080、スマホは402×874（2倍の解像度）です。
-> - ホストを試験用の設定（dry-run）で動かして撮影しました。PCへのキー入力やゲームの操作は行っていません。そのため、ゲームのウィンドウは疑似のもので、ゲーム一覧（Minecraft・Gamma・Stardew Valley）も試験用のデータです。
+> - ホストを試験用の設定（dry-run）で動かして撮影しました。PCへのキー入力やゲームの操作は行っていません。そのため、ゲームのウィンドウは疑似のものです。ゲーム選択の画面だけは、開発PCで動かしたPCアプリ（Steam・Epicで13件を検出）の画面です。
 > - QRコード・URLのIPアドレスは説明用のアドレス（192.0.2.10）に、Wi-Fiの名前は「ReCooplay-Demo」に差し替えています。このQRを読み取っても接続できません。
 > - 3人で遊ぶ例です（P1がiPhone、P2がAndroid、P3がiPhone）。2〜4人で遊べるので、4人目の枠は「参加待ち」と表示されています。
 
@@ -42,9 +42,9 @@ PCアプリを起動すると、参加用のQRコードが表示されます。�
 
 ホストがスマホのリモコンで、PCに入っているゲームの一覧から遊ぶゲームを選びます。Steam・Epic Gamesのゲームを自動で見つけ、Minecraftは公式ランチャーから起動できます。操作が届くかまだ確かめていないゲームには「未検証」と表示します。
 
-<a href="screenshots/pc-03-game-select.jpg"><img src="screenshots/pc-03-game-select.jpg" width="960" alt="PCのゲーム選択画面。Minecraft・Gamma・Stardew Valleyのタイル"></a>
+<a href="screenshots/pc-03-game-select.jpg"><img src="screenshots/pc-03-game-select.jpg" width="960" alt="PCのゲーム選択画面。Minecraft・Bongo Cat・Core Keeperなど、検出したゲームのタイル"></a>
 
-<sub>PC：ゲーム選択（一覧は試験用のデータです）</sub>
+<sub>PC：ゲーム選択（開発PCで動かしたPCアプリの画面。Steam・Epicのゲームを、ランチャーの画像付きで並べます）</sub>
 
 ## 3. 操作を分担する
 
