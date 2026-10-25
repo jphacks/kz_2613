@@ -17,12 +17,6 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
   ---
 
-  [![ギャラリー](https://img.shields.io/badge/ギャラリー-写真%20%26%20UI-green?style=for-the-badge)](./docs/gallery.md)
-  [![動作確認](https://img.shields.io/badge/動作確認-実機と検証状況-blue?style=for-the-badge)](./docs/verification.md)
-  [![技術仕様書](https://img.shields.io/badge/技術仕様書-詳細ドキュメント-blueviolet?style=for-the-badge)](./docs/README.md)
-
-  ---
-
   [![JPHACKS 2026](https://img.shields.io/badge/JPHACKS%202026-Hack%20Day%20Audience%20Award-gold?style=for-the-badge&logo=trophy)](https://github.com/jphacks/kz_2613)
 
   <p>🏆 <strong>JPHACKS 2026 金沢会場 Hack Day Audience Award 受賞</strong></p>
