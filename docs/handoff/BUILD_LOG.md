@@ -876,3 +876,5 @@
 - `cargo test --release --locked --offline --manifest-path apps/desktop/Cargo.toml` が成功（DLL不足と他の終了理由の区別1件）。CIにもこの試験を追加した。配布検証スクリプトの既定zip名はtauri.conf.jsonの版から作り、版更新時も検証対象を一致させる。
 - Microsoftの[公式ランタイム案内](https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist)で、対象アーキテクチャとビルドに使用したMSVC以上の版が必要なことを確認した。開発環境のないPCとランタイム未導入PCの実画面での試験、インストーラーでの必要条件チェック・導入は未実施で、#148を未完了として残す。
 - #145のCI（head 9f16919、run 40225280916）は、両exeのビルド・全試験・zip作成・展開後dry-run・成果物保存まで成功した。PR #146をmainへマージした（90c3900）。
+- 最終ローカル確認：ホストの `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` が成功（再試行19秒）。`cargo test` はホスト42件＋プローブ4件成功（手動の表出力1件を除外）、更新時刻を確認したexeで `protocol-sim.mjs` が50/50成功した。初回はビルド完了前に旧exeで試験を起動して更新を妨げたため、旧exeの49/50とビルド失敗は合格根拠に使用していない。OpenSSLのPDB不足の既知の警告は残る。
+- PCアプリの `cargo build --release --locked --offline --manifest-path apps/desktop/Cargo.toml` が成功。両exeを再ビルドした後に `package.ps1 -Out dist/issue148-final` でzipを作成し、`node scripts/sim/package-smoke.mjs dist/issue148-final/ReCooplay-0.1.0-windows-x64.zip` の全照合・欠落改変拒否・リポジトリ外での全静的画面配信と正常終了が成功。ローカルの既存記録が未コミットのためmanifestはdirty=true。
