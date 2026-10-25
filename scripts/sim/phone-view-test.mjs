@@ -48,6 +48,14 @@ assert.equal(el('waitHeading').textContent,'接続完了!!');
 update('P3',{phase:'coop'});
 assert.equal(el('v-P3').show,true);
 assert.equal(document.body.dataset.view,'v-P3');
+for (const role of ['P2','P3']) {
+  update('P1',{phase:'coop',participants:['P1','P2','P3'],roleOf:{P1:role,P2:'P1',P3:role==='P2'?'P3':'P2'}});
+  assert.equal(document.body.dataset.view,'v-'+role,'P1にも交換後の担当画面を出す');
+  assert.equal(el('fixedPause').hidden,false,'ホストは視点・アクション担当でもPAUSEできる');
+}
+update('P2',{phase:'coop',participants:['P1','P2','P3'],roleOf:{P1:'P2',P2:'P1',P3:'P3'}});
+assert.equal(document.body.dataset.view,'v-P1');
+assert.equal(el('fixedPause').hidden,true,'移動担当への交換でホスト権を渡さない');
 update('P3',{phase:'paused',reason:'host pause'});
 assert.equal(el('v-wait').show,true);
 assert.equal(el('waitHeading').textContent,'一時停止中');

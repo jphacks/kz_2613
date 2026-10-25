@@ -25,6 +25,8 @@
 </header>
 <!-- PC の入力先 (Minecraft) が前面にないとき: 押しても PC に届かない -->
 <div id="inputWarn">PCの画面がMinecraftになっていません。ホストがMinecraftを前面に戻すまで操作は届きません。</div>
+<!-- ホストが担当を入れ替えたとき (#47): 本人が確認するまで Ready・再開できない -->
+<div id="roleNotice" class="role-notice" role="alert" hidden><p id="roleNoticeText"></p><button id="roleOkBtn">新しい担当を確認しました</button></div>
 
 <main>
   <div class="connecting" id="connecting"><span class="mascot" aria-hidden="true">✦</span>PCホストへ接続しています…</div>
@@ -84,7 +86,6 @@
         </div>
       </div>
     </div>
-    <button class="cmd pause" data-cmd="PAUSE">一時停止・ホスト操作へ</button>
   </section>
 
   <!-- P2 視点 -->
@@ -113,6 +114,8 @@
       <button class="key" data-ctl="DROP">捨てる<small>Q</small></button>
     </div>
   </section>
+  <!-- ホストの停止操作は担当画面から独立させ、P1が視点・アクションへ交換しても表示する -->
+  <button class="cmd pause" data-cmd="PAUSE" id="fixedPause" hidden>一時停止・ホスト操作へ</button>
 </main>
 
 <dialog id="phoneDiagnostics" aria-labelledby="phoneDiagnosticsTitle"><h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection"></p><footer>

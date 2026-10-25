@@ -12,7 +12,7 @@ export function createVirtualCursor() {
     if (marker.parentElement !== layer) layer.append(marker);
   };
   const hit = () => document.elementFromPoint(x, y);
-  const click = () => { const el = hit()?.closest('button,a,summary,[data-game]'); if (el && !el.disabled) el.click(); syncLayer(); };
+  const click = () => { const el = hit()?.closest('button,a,summary,[data-game],[data-swap]'); if (el && !el.disabled) el.click(); syncLayer(); };
   const scroll = dy => {
     let el = hit();
     while (el && el !== document.documentElement && !(el.scrollHeight > el.clientHeight && ['auto','scroll'].includes(getComputedStyle(el).overflowY))) el = el.parentElement;

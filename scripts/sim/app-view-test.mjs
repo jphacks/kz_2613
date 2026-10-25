@@ -218,6 +218,20 @@ test('分担の画面: 準備中に参加者が変わったら、分担の画面
   assert.equal(desktopView({ screen: 'join' }, { phase: 'preparing', lineupOk: true, canReady: false }), 'preparing');
 });
 
+test('役割の入れ替え: 固定の分担は担当 (roleOf) で表示し、一時停止中は入れ替えの画面を開ける (#47)', () => {
+  const g = { phase: 'lobby', profile: mc, fixedControls: true, connected: ['P1', 'P2', 'P3'], roleOf: { P1: 'P1', P2: 'P3', P3: 'P2' } };
+  assert.equal(roleView(g, 'P2').title, 'アクション', 'P2 が P3 の担当になる');
+  assert.equal(roleView(g, 'P3').title, '視点');
+  assert.equal(roleView({ ...g, roleOf: undefined }, 'P2').title, '視点', '入れ替えなし');
+  const paused = { phase: 'paused', roleAck: ['P2', 'P3'] };
+  assert.equal(desktopView({ screen: 'join', swap: true }, paused), 'roles');
+  assert.equal(desktopView({ screen: 'join', swap: false }, paused), 'paused');
+  assert.equal(desktopView({ screen: 'join', swap: true }, { phase: 'coop' }), 'coop', '協力プレイ中は開かない');
+  const back = rolesAction(paused, gameList([]));
+  assert.equal(back.kind, 'back'); assert.match(back.note, /P2・P3のスマホで/);
+  assert.match(rolesAction({ phase: 'paused', roleAck: [] }, gameList([])).note, /再開/);
+});
+
 test('リモコン: 選択画面の上下で検出したゲームを含む一覧を巡回する', () => {
   const list = gameList(detected);
   let ui = { screen: 'game', game: 'minecraft-java' };

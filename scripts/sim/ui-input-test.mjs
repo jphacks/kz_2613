@@ -138,5 +138,15 @@ try {
     cursor.handle({control:'REMOTE_LEFT',state:'down'});assert.equal(clicked,1);
     opened=false;cursor.handle({kind:'move',dx:1,dy:1});assert.equal(marker.parentElement,body);
   });
+  await test('PC仮想カーソル: スマホの左クリックで役割交換の列を押せる',()=>{
+    let clicks=0;
+    const seat={click(){clicks++;}};
+    const body={append(el){el.parentElement=this;}};
+    globalThis.document={createElement:()=>({style:{},setAttribute(){}}),body,querySelector:()=>null,
+      elementFromPoint:()=>({closest:selector=>selector.split(',').includes('[data-swap]')?seat:null})};
+    const cursor=createVirtualCursor();
+    cursor.handle({control:'REMOTE_LEFT',state:'down'});
+    assert.equal(clicks,1,'articleで描いた交換列にも仮想カーソルからクリックを届ける');
+  });
   console.log(`${passed}/${passed} 合格（UI入力、OS入力なし）`);
 } finally { globalThis.setInterval=originalInterval; }
