@@ -453,8 +453,14 @@ async function main() {
       assert(!mon.msgs.slice(rm).some(m=>m.type==='remote_input'),'P2のメニュー操作を注入した');
       p1.send({type:'remote',kind:'move',dx:15,dy:5,rseq:3,epoch:p1.epoch});
       await mon.waitFor(m=>m.type==='remote_input' && m.entry.ok,{from:rm});
+      // 2本指のスクロール (#122): 量に合わせてホイールを 1〜3 段。下へのスクロールは負の向き
+      p1.send({type:'remote',kind:'scroll',dy:100,rseq:4,epoch:p1.epoch});
+      const wheel = await mon.waitFor(m=>m.type==='remote_input' && m.entry.kind==='scroll',{from:rm});
+      assert(wheel.entry.notches===-3 && wheel.entry.ok, JSON.stringify(wheel.entry));
+      p1.send({type:'remote',kind:'scroll',dy:-30,rseq:5,epoch:p1.epoch});
+      await mon.waitFor(m=>m.type==='remote_input' && m.entry.kind==='scroll' && m.entry.notches===1,{from:rm});
       p1.input('REMOTE_LEFT','down'); await injected(mon,'MOUSE_L','down',rm);
-      p1.send({type:'remote',kind:'release',rseq:4,epoch:p1.epoch});
+      p1.send({type:'remote',kind:'release',rseq:6,epoch:p1.epoch});
       await injected(mon,'MOUSE_L','up',rm);
       await p1.waitFor(m=>m.type==='game' && m.game.epoch>prepared.game.epoch,{from});
       from = p1.mark();

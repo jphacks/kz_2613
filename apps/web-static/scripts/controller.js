@@ -227,6 +227,8 @@ import { myActions } from './generated-controls.js';
     enabled: () => me === 'P1' && game?.phase !== 'coop' && game?.remoteRoute !== 'none' && controlsVisible(),
     send: (message) => { if (isOpen()) ws.send(JSON.stringify({...message, type:'remote', epoch:game?.epoch})); },
     tap: at => { ctlDown('REMOTE_LEFT', at); ctlUp('REMOTE_LEFT'); },
+    // 2本指のタップは右クリック (#122)
+    rightTap: at => { ctlDown('REMOTE_RIGHT', at); ctlUp('REMOTE_RIGHT'); },
   });
   const held = new Map(); // pointerId -> button element
   function releasePointer(pointerId) {
