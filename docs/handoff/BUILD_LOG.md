@@ -840,3 +840,10 @@
 - 実機テスト（Outlast）で、Minecraft以外のゲームでも「Minecraftを前面に」「ワールドを準備」と出ていた。PC画面の注意・準備中の案内・前面化ボタン・入力の説明、スマホのリモコンの案内・前面化ボタン・前面でないときの注意・Readyの説明、ホストの準備の案内を、選んだゲームの名前（`game.titleName`、なければ「ゲーム」）で出すようにした。「ワールドを準備」は「プレイ中の画面まで進める」にした。
 - Minecraftを選んだときは名前が「Minecraft」になり、意味は変わらない。権利表記、一覧のMinecraftの項目と手動起動の手順、試験用の`game.html`は残した。
 - `app-view-test.mjs` 25/25（Outlastの準備中・協力プレイ中の注意）、`phone-view-test.mjs`（Outlastを選んだときにスマホの案内へ「Minecraft」「ワールド」が出ないこと）、`controller-diagnostics-test.mjs`・`ui-input-test.mjs` 10/10・`check-static-pages.mjs`・`static-assets-sim.mjs`・`verify-ui-evidence.mjs`、`protocol-sim.mjs`（Rust dry-run）49/49が成功した。実機での表示は未確認。
+
+## 2026-10-26 — どのゲームでも移動をスティックに（Claude Code、#139）
+
+- 実機テスト（Outlast）で、Minecraft以外のゲームの移動が十字ボタンで、P1が前進を252回押し直していた。スティックの処理を共通の部品（`scripts/stick.js`）にし、操作定義から作る画面でも、前後左右の操作が2つ以上ある人には十字ボタンの代わりにスティックを出すようにした。斜めは2方向を同時に押し、定義にない方向（前進・後退だけのゲームの左右など）には反応しない。Minecraftの3人用の専用画面も同じ部品を使う。
+- 画面の作り直し・切断・一時停止・指のキャンセルでは、これまでのスティックと同じく押していた方向をすべて離す（作り直すときは前のスティックを離してから置き換える）。
+- `ui-input-test.mjs` 11/11（定義の画面でスティックを作り、方向ごとの操作を渡すこと、斜めの同時押し、ない方向に反応しないこと、作り直しで離すこと）、`phone-view-test.mjs`・`controller-diagnostics-test.mjs`・`check-static-pages.mjs`・`static-assets-sim.mjs`・`verify-ui-evidence.mjs`、`protocol-sim.mjs`（Rust dry-run）49/49が成功した。
+- dry-runのホストとヘッドレスChrome（スマホの大きさ）で、Outlastを選んだP1の画面にスティックが出ること、右上に倒すとホストに`act:forward`と`act:right`が同時に届き、離すと両方離れることを確認した。実機のスマホでの操作感は未確認。

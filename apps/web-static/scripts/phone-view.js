@@ -2,7 +2,7 @@ import { myActions, generatedKey, buildGenerated } from './generated-controls.js
 
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
 import {profileNotice,roleView,gameLabel,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS} from '../app-view.js';
-export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleText,bindControl,onRoleOk=()=>{}}) {
+export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleText,bindControl,bindStick=()=>{},onRoleOk=()=>{}}) {
   const $ = id => document.getElementById(id);
   let lastView = null, lastGen = '';
   // 視点のパッドと感度は、操作定義の画面で視点を担当するときだけそちらへ移す
@@ -47,7 +47,7 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleTex
       if (generated) {
         $('genTitle').textContent = `${game.profile.name}（${me}${isHost ? '・ホスト' : ''}）`;
         $('genPause').hidden = !isHost;
-        buildGenerated($('genControls'), game, me, { bindControl, lookParts });
+        buildGenerated($('genControls'), game, me, { bindControl, bindStick, lookParts });
       } else if (lookParts[0] && lookParts[0].parentElement !== lookHome) {
         lookHome.append(...lookParts);
       }
