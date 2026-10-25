@@ -1,7 +1,7 @@
 import { myActions, generatedKey, buildGenerated } from './generated-controls.js';
 
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
-import {profileNotice,roleView,gameLabel,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS} from '../app-view.js';
+import {profileNotice,roleView,gameLabel,outputKeyLabel,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS} from '../app-view.js';
 export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindControl,bindStick=()=>{},onRoleOk=()=>{}}) {
   const $ = id => document.getElementById(id);
   let lastView = null, lastGen = '';
@@ -82,6 +82,10 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
     if (phase === 'paused' && game.inputTarget && game.prepareStatus) $('remoteNote').textContent += `。${game.prepareStatus}`;
     $('waitRole').textContent = role.title;
     $('burst').style.display = phase === 'coop' ? 'none' : '';
+    document.querySelectorAll('[data-ctl="REMOTE_E"]').forEach(el => {
+      el.textContent = game.keys?.controls && Object.hasOwn(game.keys.controls, 'INV')
+        ? outputKeyLabel(game.keys.controls.INV) : 'Eキー';
+    });
     // ボタンのキー表示を、ゲームのキー設定に合わせた実際のキーにする (#101)
     for (const [control, out] of Object.entries(game.keys?.controls || {})) {
       document.querySelectorAll(`[data-ctl="${control}"] small`).forEach((el) => { el.textContent = out ? out.label : '送らない'; });
