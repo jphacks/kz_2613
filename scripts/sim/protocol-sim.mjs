@@ -59,10 +59,12 @@ function fakeGames(dir) {
 // ---------- ホストの起動 (必ず注入なし) ----------
 function startHost() {
   const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-sim-'));
+  const optionsFile = path.join(logDir, 'options.txt');
+  fs.copyFileSync(path.join(ROOT, 'scripts', 'sim', 'fixtures', 'minecraft-options.txt'), optionsFile);
   // config.json の影響を受けないよう、画面だけを持つ一時ルートを使う
   const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_FAKE_GAMES: fakeGames(logDir),
     // Minecraft のキー設定の試験用 (ダッシュ = Q、捨てる = R に変えた options.txt)。#101
-    RECOOPLAY_MINECRAFT_OPTIONS: path.join(ROOT, 'scripts', 'sim', 'fixtures', 'minecraft-options.txt') };
+    RECOOPLAY_MINECRAFT_OPTIONS: optionsFile };
   let cmd;
   let cmdArgs;
   if (target === 'node') {
@@ -78,7 +80,7 @@ function startHost() {
   let out = '';
   child.stdout.on('data', (d) => (out += d));
   child.stderr.on('data', (d) => (out += d));
-  return { child, output: () => out, logDir };
+  return { child, output: () => out, logDir, optionsFile };
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -484,6 +486,28 @@ async function main() {
       await injected(mon, 'KEY_R', 'up', from);
       assert(!mon.msgs.slice(from).some((m) => m.type === 'inject' && m.entry.out === 'KEY_Q'), '捨てるでダッシュ (Q) を送った');
     }, { rustOnly: true });
+
+    await check('キー再読込: 停止中の設定変更で旧キーを解放しepochを更新する', async () => {
+      let from = p1.mark();
+      p1.send({type:'command',cmd:'PAUSE'});
+      await phaseIs(p1,'paused',from);
+      const oldEpoch = p1.epoch;
+      const mfrom = mon.mark();
+      p1.input('REMOTE_E','down');
+      await injected(mon,'KEY_E','down',mfrom);
+      const original = fs.readFileSync(host.optionsFile,'utf8');
+      from = p1.mark();
+      fs.writeFileSync(host.optionsFile,original+'\nkey_key.inventory:key.keyboard.f\n');
+      await p1.waitFor(m=>m.type==='game' && m.game.keys?.controls.INV?.out==='KEY_F' && m.game.epoch>oldEpoch,{from,timeout:3000,what:'設定変更の通知'});
+      await injected(mon,'KEY_E','up',mfrom);
+      p1.input('REMOTE_E','up');
+      from = p1.mark();
+      fs.writeFileSync(host.optionsFile,original);
+      await p1.waitFor(m=>m.type==='game' && m.game.keys?.controls.INV?.out==='KEY_E',{from,timeout:3000});
+      from = p1.mark(); const f2=p2.mark(),f3=p3.mark();
+      p1.send({type:'command',cmd:'RESUME'});
+      await phaseIs(p1,'coop',from); await phaseIs(p2,'coop',f2); await phaseIs(p3,'coop',f3);
+    },{rustOnly:true});
 
     await check('入力: 同じ iseq の重複は 1 回だけ処理し、欠番は届くまで待つ', async () => {
       const from = p3.mark();

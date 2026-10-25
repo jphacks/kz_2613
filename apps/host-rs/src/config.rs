@@ -19,6 +19,8 @@ pub struct Config {
     pub target: Target,
     /// Minecraft のキー設定 (options.txt) の場所。ランチャーで .minecraft 以外を使う場合に指定する (#101)
     pub minecraft_options: Option<String>,
+    /// ゲームの操作定義のフォルダ (#97)
+    pub profiles_dir: std::path::PathBuf,
 }
 
 impl Config {
@@ -61,6 +63,7 @@ impl Config {
                 target
             },
             minecraft_options: v.get("minecraftOptions").and_then(Value::as_str).filter(|s| !s.is_empty()).map(str::to_string),
+            profiles_dir: std::env::var("RECOOPLAY_PROFILES_DIR").map(std::path::PathBuf::from).unwrap_or_else(|_| root.join("apps").join("game-profiles")),
         }
     }
 }

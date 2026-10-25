@@ -53,6 +53,7 @@ New-Item -ItemType Directory -Force (Join-Path $stage "apps") | Out-Null
 
 Copy-Item $desktop, $host_ $stage
 Copy-Item -Recurse (Join-Path $root "apps\web-static") (Join-Path $stage "apps\web-static")
+Copy-Item -Recurse (Join-Path $root "apps\game-profiles") (Join-Path $stage "apps\game-profiles")
 Copy-Item (Join-Path $root "config.example.json") $stage
 Copy-Item (Join-Path $root "scripts\windows\allow-firewall.ps1") $stage
 Copy-Item (Join-Path $root "LICENSE") $stage

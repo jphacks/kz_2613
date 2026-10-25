@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "id": "minecraft-java",
+  "name": "Minecraft: Java Edition",
+  "match": {
+    "ids": ["minecraft-java"],
+    "steamAppIds": [],
+    "processes": ["javaw.exe", "java.exe"],
+    "titleContains": "Minecraft"
+  },
+  "suitability": "good",
+  "userBindings": { "reader": "minecraft-options", "path": "%APPDATA%/.minecraft/options.txt" },
+  "groups": [
+    { "id": "movement", "label": "移動", "role": "P1" },
+    { "id": "look", "label": "視点", "role": "P2" },
+    { "id": "gameplay", "label": "攻撃・使う", "role": "P3" },
+    { "id": "inventory", "label": "持ち物", "role": "P3" },
+    { "id": "menu", "label": "メニュー", "role": "host" }
+  ],
+  "actions": [
+    { "id": "forward", "label": "前進", "group": "movement", "type": "button", "default": "KEY_W", "bind": "key.forward", "control": "FWD" },
+    { "id": "back", "label": "後退", "group": "movement", "type": "button", "default": "KEY_S", "bind": "key.back", "control": "BACK" },
+    { "id": "left", "label": "左", "group": "movement", "type": "button", "default": "KEY_A", "bind": "key.left", "control": "LEFT" },
+    { "id": "right", "label": "右", "group": "movement", "type": "button", "default": "KEY_D", "bind": "key.right", "control": "RIGHT" },
+    { "id": "jump", "label": "ジャンプ", "group": "movement", "type": "button", "default": "SPACE", "bind": "key.jump", "control": "JUMP" },
+    { "id": "sneak", "label": "スニーク", "group": "movement", "type": "button", "default": "LSHIFT", "bind": "key.sneak", "control": "SNEAK" },
+    { "id": "sprint", "label": "ダッシュ", "group": "movement", "type": "button", "default": "LCTRL", "bind": "key.sprint", "control": "SPRINT" },
+    { "id": "look", "label": "視点", "group": "look", "type": "mouseDelta" },
+    { "id": "attack", "label": "攻撃", "group": "gameplay", "type": "button", "default": "MOUSE_L", "bind": "key.attack", "control": "ATTACK" },
+    { "id": "use", "label": "使う", "group": "gameplay", "type": "button", "default": "MOUSE_R", "bind": "key.use", "control": "USE" },
+    { "id": "inventory", "label": "インベントリ", "group": "inventory", "type": "button", "default": "KEY_E", "bind": "key.inventory", "control": "INV" },
+    { "id": "drop", "label": "捨てる", "group": "inventory", "type": "button", "default": "KEY_Q", "bind": "key.drop", "control": "DROP" },
+    { "id": "hotbar", "label": "持ち物の切り替え", "group": "inventory", "type": "wheel" },
+    { "id": "pause", "label": "メニュー", "group": "menu", "type": "button", "default": "ESC" }
+  ],
+  "verification": {
+    "status": "device",
+    "date": "2026-10-25",
+    "gameVersion": "26.3",
+    "sources": ["実機（スマホ3台＋Minecraftでの協力プレイ）", "ゲーム本体の Options.class のキーとカテゴリ", "options.txt"]
+  }
+}

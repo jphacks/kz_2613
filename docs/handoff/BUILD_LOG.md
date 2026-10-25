@@ -567,3 +567,14 @@
 - `shutdown-sim.mjs`はquit・EOF両方成功。`static-assets-sim.mjs`は26ファイル・2,547,169 bytesのHTTP・MIME・キャッシュ・ローカル参照が成功。
 - Rust実バックエンドのdry-runに試験用options.txtを読み込ませ、1280×720のブラウザーでダッシュQ・捨てるRを確認。コンソール警告・エラー0。証拠は `docs/design/evidence/keybind-review/actual-keys-1280.jpg`。同時起動の検証ホストによる緊急停止キー登録不可の安全案内は隠していない。
 - Minecraft実入力・Tauri実窓・スマホ実タッチは今回未検証。#101の実機受入を完了扱いにせず、自動クローズ構文をPRから外した。
+
+## 2026-10-25 PR #103の修正・統合レビュー
+
+- 最新main（#95・#96・#102）を統合し、ゲーム検出・起動、安全停止、新UI、キー表示を保持。Minecraftの`game.keys.source=options`を維持し、他形式の読込成功だけ`user`とした。
+- Unreal配列の削除・追加・クリア・置換、Sourceの再bind・unbind・unbindall・引用符・命令区切り・空バインドを修正。修飾キー付きUE操作は未対応として送信しない。範囲外の旧Minecraftキー番号を拒否するmainの修正も保持した。
+- 停止中のキー設定更新では全解放・視点破棄・epoch更新後に再読込。キーを押したまま設定を変える通信回帰試験を追加。定義の重複、担当、split参照を検証し、提案メタデータだけでReadyできないようにした。
+- `cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml`成功。`cargo test`はホスト23件＋プローブ3件成功。`protocol-sim.mjs --bin .venv/runtime/recooplay-host.exe`は43/43、`--target node`は20/20成功。
+- `app-view-test.mjs`16/16、`ui-input-test.mjs`5/5、静的構文、構造30ファイル、差分空白検査成功。`profile-extract-test.mjs`は個人のゲームを読まない埋め込みJSON fixtureで静的抽出・下書き状態・未対応キーを確認し、CIにも追加。
+- `shutdown-sim.mjs`はquit・EOF両方成功。`static-assets-sim.mjs`は26ファイル成功。`package.ps1 -Out .venv/pr103-package`で約9.7MBのZIP作成成功、同梱Minecraft定義をソースとバイト照合した。
+- 本変更経路のMinecraft・スマホ実機は未検証。5タイトルの自動抽出の再照合、設定階層・動的alias等は受入未完了として#97・#99・#100を自動クローズしない。過去の作者の実機観測と今回のfixture/dry-runを区別する。
+- 追加の境界検証で、全解除だけのSource/Unreal設定が初期キーへ戻る問題を修正。全解除・置換・未記載操作のキー解除を重ねる際も解除を保持し、再bindした有効操作だけを復元する。並列単体試験のfixture名も一意化。追加後のRust単体はホスト24件＋プローブ3件、計27件成功。
