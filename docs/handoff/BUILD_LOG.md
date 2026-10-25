@@ -557,3 +557,13 @@
 - releaseビルド成功（依存ライブラリ再構築を含み約11分）。Rust単体はホスト12件＋入力プローブ3件成功。既存の未使用フィールドとOpenSSL PDBの警告は非致命的。
 - `protocol-sim.mjs --bin .venv/pr95-runtime/recooplay-host.exe`：41/41成功。押下中の対象消失でW・右ボタンを解放し、注入不可・再開不可になり、再検出後もpausedを維持する回帰試験を追加した。初回の試験はP3のepoch通知前に押したため失敗し、P3側の通知を待ってから押すよう試験を修正して再実行した。
 - `shutdown-sim.mjs`：quit・EOF両方成功。`app-view-test.mjs`：15/15成功。静的構文・差分空白検査も成功。今回の実ゲーム・スマホ実機の追試は行っていない。
+
+## 2026-10-25 PR #102の統合レビュー修正
+
+- マージ済みの#96の原案準拠UIと#95のゲーム検出・安全停止を取り込み、通信フィールドと画面機能を両方保持した。分担画面の「このPCのキー設定を確認」から操作設定を開き、担当別の実際のキーと警告を確認できる。
+- 旧形式の整数キーコードを1〜255に限定し、範囲外の値が16ビットへの変換で実キーへ折り返すことを防止。回帰試験を追加した。
+- 初回の統合通信試験は28/42成功。キー再読込が遷移途中のタイトル・旧epochを通知していたため、再読込内の通知を削除し、遷移完了後の通知へ統一した。試験もタイトルだけでなくlobbyへの到達を待つ。修正後は42/42成功。
+- releaseビルド成功。`cargo test --release --locked --manifest-path apps/host-rs/Cargo.toml`はホスト19件＋プローブ3件成功。`protocol-sim.mjs --bin .venv/pr102-runtime/recooplay-host.exe`は42/42、Node.js参照実装20/20、`app-view-test.mjs`16/16、`ui-input-test.mjs`5/5、静的構文・差分空白検査は成功。
+- `shutdown-sim.mjs`はquit・EOF両方成功。`static-assets-sim.mjs`は26ファイル・2,547,169 bytesのHTTP・MIME・キャッシュ・ローカル参照が成功。
+- Rust実バックエンドのdry-runに試験用options.txtを読み込ませ、1280×720のブラウザーでダッシュQ・捨てるRを確認。コンソール警告・エラー0。証拠は `docs/design/evidence/keybind-review/actual-keys-1280.jpg`。同時起動の検証ホストによる緊急停止キー登録不可の安全案内は隠していない。
+- Minecraft実入力・Tauri実窓・スマホ実タッチは今回未検証。#101の実機受入を完了扱いにせず、自動クローズ構文をPRから外した。
