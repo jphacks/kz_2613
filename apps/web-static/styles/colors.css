@@ -31,6 +31,23 @@
   --color-key-focus: #FF00DD;
   --color-key-arrow: #FFED62;
   --color-key-selected: #F8F8F6;
+  /* 改良後素材のベタ色を原寸PNGから採取。背景は提供済み画像を維持。 */
+  --color-brand-band: #8BF3FF;
+  --color-character-blue: #24C2FA;
+  --color-character-green: #5EFF5D;
+  --color-character-purple: #CB00EA;
+  --color-character-red: #FF1D00;
+  --color-phone-dots: #A4E9FF;
+  --color-phone-button: #FFDA79;
+  --color-phone-button-ink: #FFAF6D;
+  --color-panel-translucent: #FFFFFFCC;
+  --color-utility-surface: #FFFFFFF2;
+  --color-phone-surface: #FFFCF7F5;
+  --color-pad-surface: #FFFCF7EE;
+  --color-button-surface: #FFF9DF;
+  --color-button-ink: #A34D19;
+  --color-button-shadow: #B0A693;
+  --color-disabled-shadow: #AAAAAA;
   --bg: var(--color-cream); --panel: var(--color-surface); --panel2: var(--color-ice);
   --text: var(--color-ink); --muted: var(--color-muted); --line: var(--color-cyan);
   --ok: var(--color-success); --ng: var(--color-error); --warn: var(--color-warning);

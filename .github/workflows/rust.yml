@@ -49,6 +49,10 @@ jobs:
         run: node scripts/sim/protocol-sim.mjs --target node
       - name: PC 画面の表示ロジック
         run: node scripts/sim/app-view-test.mjs
+      - name: スマホのReady・待機・停止と診断前の解放
+        run: node scripts/sim/phone-view-test.mjs
+      - name: 改良後UIの撮影証拠の寸法と画面網羅
+        run: node scripts/sim/verify-ui-evidence.mjs
       - name: 操作定義の静的抽出
         run: node scripts/sim/profile-extract-test.mjs
       - name: カタログと操作定義の照合

@@ -7,11 +7,12 @@
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="/styles/colors.css"><link rel="stylesheet" href="/styles/tokens.css">
   <link rel="stylesheet" href="/styles/shared.css"><link rel="stylesheet" href="/styles/desktop.css">
+  <link rel="stylesheet" href="/styles/improved-desktop.css">
 </head>
 <body data-view="join">
 <div class="desktop-shell">
   <aside class="sidebar">
-    <a class="brand" href="/app" aria-label="Re:Cooplay 参加画面へ"><img class="brand-image" src="/assets/logo.png" width="3200" height="2400" alt="Re:Cooplay"></a>
+    <div class="brand-band"><a class="brand" href="/app" aria-label="Re:Cooplay 参加画面へ"><img class="brand-image" src="/assets/logo.png" width="3200" height="2400" alt="Re:Cooplay"></a><p class="brand-message"><strong>ひとり</strong>のゲームを<br>笑い、失敗し、協力し、<br><b>みんなの<br>冒険に。</b></p></div>
     <h1 id="screenTitle" class="page-title"></h1>
     <hr class="left-rule" id="leftRule" hidden>
     <p class="explanation" id="explanation"></p><p class="secondary" id="secondary"></p>
@@ -28,19 +29,21 @@
     <p class="action-note" id="actionNote" role="status"></p>
   </aside>
   <main class="workspace">
+    <div class="state-banner" id="stateBanner"><h2 id="stateTitle"></h2><p id="stateSubtitle"></p></div>
     <section id="playerStage" class="player-stage" aria-label="参加者と担当"><div id="players" class="players"></div></section>
     <section id="gameStage" class="game-stage" aria-label="ゲーム選択" hidden><div id="games" class="game-frame"></div></section>
     <section id="roleStage" class="role-stage" aria-label="固定の操作分担" hidden>
-      <div class="role-band"><h2>3人で、操作を分担！</h2><div class="key-samples" aria-label="操作の見本。分担は固定です"><span>使う <kbd>E</kbd></span><span>前進 <kbd>W</kbd></span><span>後退 <kbd>S</kbd></span><svg class="key-up" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 27H34L18 2Z"/></svg><svg class="key-down" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg></div></div>
+      <div class="role-band"><h2>3人で、操作を分担！</h2><div class="key-samples" aria-label="このゲームの操作とキー。分担は固定です"><span>持ち物 <kbd>E</kbd></span><span>前進 <kbd>W</kbd></span><span>後退 <kbd>S</kbd></span><svg class="key-up" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 27H34L18 2Z"/></svg><svg class="key-down" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg></div></div>
       <div id="roles" class="role-columns"></div>
       <button id="keyBindingsBtn" class="role-keys">このPCのキー設定を確認</button>
     </section>
     <p id="warning" class="safety-warning" role="alert" hidden></p>
   </main>
-  <footer class="utility-bar"><span id="hotkey">緊急停止：Ctrl+Alt+F12</span><nav id="steps" aria-label="画面の移動"></nav><button id="settingsBtn">操作設定</button></footer>
+  <footer class="utility-bar"><span id="hotkey">緊急停止：Ctrl+Alt+F12</span><button id="settingsBtn">操作設定</button></footer>
 </div>
 <dialog id="settings" aria-labelledby="settingsTitle">
   <h2 id="settingsTitle">操作設定</h2><p id="inputState" role="status"></p>
+  <nav id="steps" aria-label="画面の移動"></nav>
   <div class="seg" id="modeSeg"><button data-mode="off">入力OFF</button><button data-mode="on">入力ON</button></div>
   <details id="keyDetails"><summary>担当と実際に送るキー</summary><p id="keyWarnings" role="status"></p><div id="keyBindings"></div></details>
   <p id="inputSafety">Minecraftが前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。</p>

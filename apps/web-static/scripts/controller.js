@@ -37,7 +37,7 @@ import { myActions } from './generated-controls.js';
   let sent = 0;
 
   const isOpen = () => ws?.readyState === 1;
-  function setStatus(text, cls) { const el = $('status'); el.textContent = text; el.className = 'pill ' + cls; }
+  function setStatus(text, cls) { const el = $('status'); el.textContent = text; el.className = 'pill ' + cls; document.body.dataset.connection=cls; }
 
   function connect() {
     if (stopped) return;
@@ -114,7 +114,7 @@ import { myActions } from './generated-controls.js';
   function showVersionMismatch() {
     stopped = true;
     setStatus('版が不一致', 'ng');
-    $('full').textContent = 'PCのアプリと画面の版が合いません。ページを再読み込みしてください。';
+    $('fullMessage').textContent = 'PCのアプリと画面の版が合いません。ページを再読み込みしてください。';
     $('full').style.display = 'flex';
   }
 
@@ -122,7 +122,7 @@ import { myActions } from './generated-controls.js';
   function showBadToken() {
     stopped = true;
     setStatus('参加できません', 'ng');
-    $('full').textContent = 'この端末の参加情報をPCで確認できませんでした。PC側でリセットしてから再読み込みしてください。';
+    $('fullMessage').textContent = 'この端末の参加情報をPCで確認できませんでした。PC側でリセットしてから再読み込みしてください。';
     $('full').style.display = 'flex';
   }
 
@@ -192,7 +192,7 @@ import { myActions } from './generated-controls.js';
   }
   // 入力 (押下/解放): WebSocket (確実) と WebRTC (速い) の両方に同じ番号で送る
   const portrait = matchMedia('(orientation: portrait)');
-  const controlsVisible = () => portrait.matches && !document.hidden;
+  const controlsVisible = () => portrait.matches && !document.hidden && !$('phoneDiagnostics').open;
   function sendInput(obj) {
     if (obj.state === 'down' && !controlsVisible()) return false;
     if (!isOpen()) return false;

@@ -8,6 +8,12 @@ export function createPhoneView({releaseAll,roleText,bindControl}) {
   // 視点のパッドと感度は、操作定義の画面で視点を担当するときだけそちらへ移す
   const lookParts = [$('pad'), document.querySelector('#v-P2 .sens')].filter(Boolean);
   const lookHome = $('v-P2');
+  $('phoneSettingsBtn').addEventListener('click',()=>{
+    releaseAll();
+    $('phoneConnection').textContent=[$('status').textContent,$('phase').textContent,$('slot').textContent].join('・');
+    $('phoneDiagnostics').showModal();
+  });
+  $('closePhoneDiagnostics').addEventListener('click',()=>$('phoneDiagnostics').close());
   function render({me,isHost,game}) {
     if (!me || !game) return;
     const role=roleView(game,me), heading=document.createElement('b');
@@ -19,9 +25,14 @@ export function createPhoneView({releaseAll,roleText,bindControl}) {
     $('phase').textContent = label;
     $('connecting').hidden = true;
     $('phase').className = 'pill ' + phase;
-    $('inputWarn').style.display = game.inputTarget ? 'block' : 'none';
+    const notice=profileNotice(game.profile);
+    $('inputWarn').style.display = game.inputTarget || notice ? 'block' : 'none';
     const generated = phase === 'coop' && myActions(game, me);
     const view = phase === 'coop' ? (generated ? 'v-gen' : 'v-' + me) : isHost ? 'v-remote' : 'v-wait';
+    document.body.dataset.view=view;
+    const characterName={P1:'blue',P2:'green',P3:'purple'}[me];
+    $('waitCharacter').src=`/assets/characters/${characterName}.png`;
+    $('waitHeading').textContent=phase==='paused'?'一時停止中':'接続完了!!';
     const genKey = generated ? generatedKey(game, me) : '';
     if (view !== lastView || genKey !== lastGen) {
       releaseAll(); // 画面が変わる時は押しっぱなしを解除
@@ -39,9 +50,10 @@ export function createPhoneView({releaseAll,roleText,bindControl}) {
     const players = ['P1', 'P2', 'P3'].map((p) => `<span class="${game.connected.includes(p) ? 'on' : ''}">${p}${p === me ? '（自分）' : ''}</span>`).join('');
     $('players1').innerHTML = players;
     $('players2').innerHTML = players;
-    $('remoteRoute').textContent = {app:'操作先：PCアプリ（仮想カーソル）',game:generic?'操作先：選択したゲームのメニュー':'操作先：Minecraftのメニュー',none:'操作停止中：PCアプリまたは対象ゲームを前面にしてください'}[game.remoteRoute] || '';
+    $('remoteRoute').textContent = {app:'PCアプリを操作中',game:generic?'選んだゲームのメニューを操作中':'Minecraftのメニューを操作中',none:'PCアプリまたは対象ゲームを前面にしてください'}[game.remoteRoute] || '';
     $('openGameBtn').textContent=generic?'選んだゲームを前面にする':'Minecraftを前面にする';
     $('inputWarn').textContent=generic?'対象ゲームが前面ではありません。ホストが対象ゲームを前面に戻すまで操作は届きません。':'PCの画面がMinecraftになっていません。ホストがMinecraftを前面に戻すまで操作は届きません。';
+    $('inputWarn').textContent=[game.inputTarget?$('inputWarn').textContent:'',notice].filter(Boolean).join(' ');
     const startBtn = $('startBtn');
     $('openGameBtn').hidden = !['preparing','paused'].includes(phase);
     startBtn.textContent = phase === 'paused' ? '再開する' : phase === 'preparing' ? 'Ready・3人で操作を始める' : 'ゲームを開く・準備する';
@@ -57,9 +69,7 @@ export function createPhoneView({releaseAll,roleText,bindControl}) {
     $('waitTitle').textContent = phase === 'paused' ? (autoWait ? `${reasonText(game.reason)}。戻ると自動で再開します` : '一時停止中') : 'ホストの開始を待っています';
     if (phase === 'preparing') $('remoteNote').textContent = [game.prepareStatus, ...(game.readyReasons || []), '準備ができたらホストが明示Ready'].filter(Boolean).join('。');
     if (autoWait && isHost) $('remoteNote').textContent = `${reasonText(game.reason)}。戻ると自動で再開します（RESUME で手動再開も可）。`;
-    const notice=profileNotice(game.profile);
-    if(notice) $('remoteNote').textContent=notice+' '+$('remoteNote').textContent;
-    $('waitRole').textContent = `あなたの担当: ${roleText[me]}` + (notice ? '。'+notice : '');
+    $('waitRole').textContent = role.title;
     $('burst').style.display = phase === 'coop' ? 'none' : '';
     // ボタンのキー表示を、ゲームのキー設定に合わせた実際のキーにする (#101)
     for (const [control, out] of Object.entries(game.keys?.controls || {})) {
