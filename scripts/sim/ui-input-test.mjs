@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import {bindTouchpad} from '../../apps/web-static/scripts/touchpad.js';
 import {bindCooperativeInput} from '../../apps/web-static/scripts/cooperative-input.js';
+import {stickDirections} from '../../apps/web-static/scripts/stick.js';
 import {createFastChannel} from '../../apps/web-static/scripts/transport.js';
 import {createVirtualCursor} from '../../apps/web-static/scripts/virtual-cursor.js';
 import {myActions, generatedKey, buildGenerated} from '../../apps/web-static/scripts/generated-controls.js';
@@ -39,7 +40,7 @@ const GAME = {
 let passed=0;
 async function test(name,fn) { await fn();passed++;console.log(`合格: ${name}`); }
 try {
-  await test('操作定義の画面: 割り当てた操作だけをボタンにし、方向は十字、ホイールは前後、視点はパッドを移す。Minecraft は専用画面', () => {
+  await test('操作定義の画面: 割り当てた操作だけをボタンにし、方向はスティック、ホイールは前後、視点はパッドを移す。Minecraft は専用画面', () => {
     assert.equal(myActions({ ...GAME, profile: { ...GAME.profile, id: 'minecraft-java' } }, 'P1'), null);
     const minecraft = { ...GAME, profile: { ...GAME.profile, id: 'minecraft-java' }, fixedControls: false };
     assert.deepEqual(myActions(minecraft, 'P2').map((a) => a.id), ['jump'], '2人・4人のMinecraftでは固定画面に戻さず確定した担当を使う');
@@ -47,16 +48,21 @@ try {
     assert.equal(myActions({ ...GAME, assigned: {} }, 'P1'), null);
     assert.deepEqual(myActions(GAME, 'P2').map((a) => a.id), ['jump']);
     const box = new FakeNode(), bound = [], look = [new FakeNode()];
-    const hasLook = buildGenerated(box, GAME, 'P1', { bindControl: (el) => bound.push(el.ctl), lookParts: look });
+    const sticks = [];
+    const hasLook = buildGenerated(box, GAME, 'P1', { bindControl: (el) => bound.push(el.ctl), bindStick: (el, codes) => sticks.push([el?.className, codes]), lookParts: look });
     assert.equal(hasLook, true);
-    assert.deepEqual(bound, ['act:left', 'act:right', 'act:action', 'act:zoom:up', 'act:zoom:down']);
+    assert.deepEqual(bound, ['act:action', 'act:zoom:up', 'act:zoom:down']);
+    // 左・右の 2 方向 → スティック (#139)。ボタンとしては付けない
+    assert.deepEqual(sticks, [['stick gen-stick', { left: 'act:left', right: 'act:right' }]]);
     const html = box.innerHTML;
-    assert.match(html, /gen-dpad/); // 左・右の 2 方向 → 十字
+    assert.match(html, /gen-stick/);
     assert.match(html, /送らない/); // action は送れないキー
     assert.match(html, />D</); // 実際のキーの表示
     assert.ok(box.parts.some((g) => g.parts?.includes(look[0])), '視点のパッドを移していない');
     const p3 = new FakeNode();
-    buildGenerated(p3, GAME, 'P3', { bindControl() {}, lookParts: [] });
+    const none = [];
+    buildGenerated(p3, GAME, 'P3', { bindControl() {}, bindStick: (el) => none.push(el), lookParts: [] });
+    assert.deepEqual(none, [null], '担当がなければ前のスティックを外す');
     assert.match(p3.innerHTML, /担当する操作がありません/);
     assert.notEqual(generatedKey(GAME, 'P1'), generatedKey({ ...GAME, keys: { actions: { left: { label: 'Z' } } } }, 'P1'), 'キーが変わったら作り直す');
   });
@@ -131,6 +137,23 @@ try {
     elements.pad.fire('pointerdown');elements.pad.fire('pointermove',{clientX:105});timer.fn();
     assert.equal(packets[1].cx,10);assert.equal(packets[1].lseq,1);assert.equal(packets[1].epoch,9);
     elements.stick.fire('pointerdown',{clientY:0});assert(down.includes('FWD'));elements.stick.fire('lostpointercapture');assert(up.includes('FWD'));assert.equal(cancelled,2);
+  });
+  await test('スティック: 操作定義の画面でも斜めは2方向を同時に押し、ない方向には反応せず、作り直し・解放ですべて離す (#139)',()=>{
+    const elements=Object.fromEntries(['stick','pad','sens','sensVal'].map(id=>[id,new Element()]));
+    globalThis.document={getElementById:id=>elements[id]};
+    const down=[],up=[];
+    const input=bindCooperativeInput({getGame:()=>({phase:'coop',epoch:1}),getRole:()=>'P1',isOpen:()=>true,ctlDown:c=>down.push(c),ctlUp:c=>up.push(c),sendLook(){}});
+    const gen=new Element();
+    input.setGeneratedStick(gen,{up:'act:forward',right:'act:right'});
+    gen.fire('pointerdown',{clientX:190,clientY:10}); // 右上
+    assert.deepEqual(down.sort(),['act:forward','act:right']);
+    gen.fire('pointermove',{clientX:10,clientY:190}); // 左下: 定義にない方向は押さない
+    assert.deepEqual(up.sort(),['act:forward','act:right']);assert.equal(down.length,2);
+    gen.fire('pointermove',{clientX:100,clientY:5}); // 上
+    assert.equal(down.at(-1),'act:forward');
+    input.setGeneratedStick(new Element(),{up:'act:forward'}); // 画面の作り直し
+    assert.equal(up.at(-1),'act:forward','作り直しで押したままにしない');
+    assert.deepEqual([...stickDirections(0,0)],[]);assert.deepEqual([...stickDirections(0.7,-0.7)].sort(),['right','up']);
   });
   await test('WebRTC: 再送なし・STUNなしを維持し、文字列／バイナリ／Blobと旧接続を安全に扱う',async()=>{
     const peers=[],signaled=[],rtts=[];

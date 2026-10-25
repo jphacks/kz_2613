@@ -46,11 +46,18 @@ main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 #waitRole { font-size: 17px; font-weight: 800; margin: 14px 0; color: var(--color-purple); }
 #waitTitle { font-size: 13px; line-height: 1.7; margin-top: 18px; }
 .move { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; gap: 16px; }
-#stick { position: relative; touch-action: none; width: min(65vw, 34dvh, 280px); aspect-ratio: 1; border: 4px solid var(--color-cyan); border-radius: 50%; background: var(--color-paper); flex-shrink: 1; }
-#stick .knob { position: absolute; width: 38%; height: 38%; left: 50%; top: 50%; margin: -19% 0 0 -19%; border-radius: 50%; background: var(--color-ice); border: 3px solid var(--color-purple); pointer-events: none; }
-#stick.active .knob { background: var(--color-cyan); }
-#stick .dir { position: absolute; font-size: 14px; font-weight: 900; color: var(--color-purple); pointer-events: none; }
-#stick .dir.on { color: var(--ok); }
+.stick { position: relative; touch-action: none; width: min(65vw, 34dvh, 280px); aspect-ratio: 1; border: 4px solid var(--color-cyan); border-radius: 50%; background: var(--color-paper); flex-shrink: 1; }
+.stick .knob { position: absolute; width: 38%; height: 38%; left: 50%; top: 50%; margin: -19% 0 0 -19%; border-radius: 50%; background: var(--color-ice); border: 3px solid var(--color-purple); pointer-events: none; }
+.stick.active .knob { background: var(--color-cyan); }
+.stick .dir { position: absolute; font-size: 14px; font-weight: 900; color: var(--color-purple); pointer-events: none; text-align: center; line-height: 1.1; }
+.stick .dir small { display: block; font-size: 11px; font-weight: 700; }
+.stick .dir.up { top: 6%; left: 50%; transform: translateX(-50%); }
+.stick .dir.down { bottom: 6%; left: 50%; transform: translateX(-50%); }
+.stick .dir.left { left: 7%; top: 50%; transform: translateY(-50%); }
+.stick .dir.right { right: 7%; top: 50%; transform: translateY(-50%); }
+.stick .dir.on { color: var(--ok); }
+/* 操作定義から作る画面のスティック (#139) */
+.gen-stick { margin: 0 auto; }
 .move > .col { width: 100%; display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .move .key { min-height: 66px; }
@@ -81,6 +88,4 @@ footer button { min-height: 24px; padding: 0 8px; font-size: 9px; border-width: 
 .gen-group { display: flex; flex-direction: column; gap: 6px; }
 .gen-label { font-size: 12px; color: var(--muted); }
 .gen-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.gen-dpad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(56px, auto)); gap: 6px; max-width: 320px; margin: 0 auto; width: 100%; }
-.gen-dpad .up { grid-area: 1 / 2; } .gen-dpad .left { grid-area: 2 / 1; } .gen-dpad .right { grid-area: 2 / 3; } .gen-dpad .down { grid-area: 3 / 2; }
 .gen-empty { text-align: center; color: var(--muted); }

@@ -2,6 +2,7 @@
 // Minecraft は実機で確かめた専用の画面を使い、それ以外のゲームでこの画面を使う。
 // ボタンは "act:<操作ID>" を送る。ホストは割り当てた操作だけを、ゲームのキー設定に合わせて送る。
 
+// 方向の操作の見分け方 (スティックの上・左・右・下)
 const DIRS = [
   ['up', /(^|[/_ -])(forward|up|moveup|accelerate)$/i, '▲'],
   ['left', /(^|[/_ -])(left|moveleft|steer_left)$/i, '◀'],
@@ -27,10 +28,11 @@ export function generatedKey(game, me) {
 }
 
 /** container に操作画面を作る。lookParts は視点のパッドと感度 (担当するときだけ移す) */
-export function buildGenerated(container, game, me, { bindControl, lookParts }) {
+export function buildGenerated(container, game, me, { bindControl, bindStick = () => {}, lookParts }) {
   const acts = myActions(game, me) || [];
   const keyOf = (a) => game.keys?.actions?.[a.id]?.label ?? '送らない';
   container.innerHTML = '';
+  let stick = null;
   const groups = new Map();
   for (const a of acts) {
     const g = game.profile.groups.find((x) => x.id === a.group);
@@ -42,17 +44,19 @@ export function buildGenerated(container, game, me, { bindControl, lookParts }) 
     sec.className = 'gen-group';
     sec.innerHTML = `<div class="gen-label">${esc(label)}</div>`;
     const buttons = list.filter((a) => a.type === 'button');
-    // 方向の操作が 2 つ以上あれば十字に並べる
+    // 方向の操作が 2 つ以上あればスティックにする (#139。斜めは 2 方向を同時に押す)。1 人に 1 つまで
     const dir = DIRS.map(([name, rx, mark]) => [name, buttons.find((a) => rx.test(a.id)), mark]).filter(([, a]) => a);
     const used = new Set();
-    if (dir.length >= 2) {
-      const pad = document.createElement('div');
-      pad.className = 'gen-dpad';
+    if (dir.length >= 2 && !stick) {
+      stick = { el: document.createElement('div'), codes: {} };
+      stick.el.className = 'stick gen-stick';
       for (const [name, a, mark] of dir) {
         used.add(a.id);
-        pad.insertAdjacentHTML('beforeend', `<button class="key ${name}" data-ctl="act:${esc(a.id)}">${mark}<small>${esc(keyOf(a))}</small></button>`);
+        stick.codes[name] = `act:${a.id}`;
+        stick.el.insertAdjacentHTML('beforeend', `<span class="dir ${name}" data-d="${name}">${mark}<small>${esc(keyOf(a))}</small></span>`);
       }
-      sec.append(pad);
+      stick.el.insertAdjacentHTML('beforeend', '<div class="knob"></div>');
+      sec.append(stick.el);
     }
     const grid = document.createElement('div');
     grid.className = 'gen-grid';
@@ -70,5 +74,6 @@ export function buildGenerated(container, game, me, { bindControl, lookParts }) 
   }
   if (!acts.length) container.innerHTML = '<p class="gen-empty">この人数では担当する操作がありません</p>';
   container.querySelectorAll('[data-ctl]').forEach(bindControl);
+  bindStick(stick?.el || null, stick?.codes || {});
   return acts.some((a) => a.type === 'mouseDelta');
 }
