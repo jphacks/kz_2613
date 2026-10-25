@@ -8,7 +8,7 @@ let ui={screen:'join',game:GAMES[0].id,swap:false},swapPick=null;
 try{localStorage.removeItem('recooplay.app');}catch{}
 let state=null,game=null,inject=null,ws=null,online=false,gamesHtml='',shownGame='';
 // 選択画面の一覧。インストール済みのゲームはPC画面にだけ届く (state.games)
-const games=()=>gameList(state?.games);
+const games=()=>gameList(state?.games,state?.minecraft);
 const send=m=>{if(ws?.readyState===1)ws.send(JSON.stringify(m));};
 function setUi(next){
   if(next.game!==ui.game)send({type:'select_game',title:next.game});

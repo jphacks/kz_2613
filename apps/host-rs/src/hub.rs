@@ -72,7 +72,7 @@ pub enum Event {
     /// 試験用: PC アプリのウィンドウが前面になった・外れた (DRY_RUN のときだけ。実際は前面のプロセス名で判定する)
     FakeAppWindow(bool),
     /// インストール済みのゲームを探し終えた (別スレッドから)
-    GamesDetected(Vec<Entry>),
+    GamesDetected(games::Detected),
     /// ランチャーへの起動要求が終わった (別スレッドから。Err は理由)
     Launched { gen: u64, result: Result<(), String> },
     Shutdown,
@@ -339,6 +339,8 @@ pub struct Hub {
     games: Vec<Entry>,
     // 一覧のタイルの画像 (項目 ID → 場所)。HTTP の /api/game-image と共有する (#121)
     images: games::Images,
+    // Minecraft のランチャーを見つけたか (Some(画像があるか))。見つからなければ None (#128)
+    minecraft: Option<bool>,
     games_scanning: bool,
     launch: Option<Launch>,
     launch_gen: u64,
@@ -456,6 +458,7 @@ impl Hub {
             base_target: config.target.clone(),
             games: Vec::new(),
             images: games::Images::default(),
+            minecraft: None,
             games_scanning: false,
             launch: None,
             launch_gen: 0,
@@ -806,6 +809,8 @@ impl Hub {
             // インストール済みのゲーム一覧は PC 画面にだけ送る (スマホには選んだゲームしか出さない)
             "games": self.games.iter().map(Entry::snapshot).collect::<Vec<_>>(),
             "gamesScanning": self.games_scanning,
+            // Minecraft のランチャーを見つけたか・画像があるか (#128)。場所は送らない
+            "minecraft": { "detected": self.minecraft.is_some(), "image": self.minecraft == Some(true) },
         }));
     }
 
@@ -1459,13 +1464,19 @@ impl Hub {
         self.push_state();
     }
 
-    fn on_games_detected(&mut self, list: Vec<Entry>) {
+    fn on_games_detected(&mut self, detected: games::Detected) {
+        let list = detected.games;
+        // Minecraft のランチャー (#128)。一覧には混ぜず、画面の固定の項目に画像を付けるためだけに使う
+        self.minecraft = detected.minecraft.as_ref().map(|m| m.image.is_some());
         self.games_scanning = false;
         // ゲーム名・インストール先はログに残さない (件数だけ)
         let count = |src: &str| list.iter().filter(|g| g.source == src).count();
         self.log("games_detected", json!({ "steam": count("steam"), "epic": count("epic") }));
         if let Ok(mut images) = self.images.lock() {
             *images = list.iter().filter_map(|g| g.image.clone().map(|p| (g.id.clone(), p))).collect();
+            if let Some(p) = detected.minecraft.and_then(|m| m.image) {
+                images.insert("minecraft-java".into(), p);
+            }
         }
         let previous = self.games.iter().find(|g| g.id == self.game.title).map(|g| g.install_dir.clone());
         let next = list.iter().find(|g| g.id == self.game.title).map(|g| g.install_dir.clone());
