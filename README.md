@@ -11,14 +11,21 @@
 
   <p><sub>公開準備中。完成後、こちらに紹介動画を掲載します。</sub></p>
 
-  <!-- 動画公開後は、準備中の案内を以下の4DX@HOME式サムネイルと再生リンクへ置き換える。
-  VIDEO_IDは公開されたYouTube動画のIDに差し替える（公開前はリンクを表示しない）。
+  <!-- 動画公開時に使うひな型（公開前はリンクを表示しない）。
+  1. 上の「公開準備中」の一文を削除する。
+  2. このコメントの中身を取り出し、VIDEO_IDを公開動画のYouTube IDに置換する。
+  3. サムネイル画像と下記のリンクが同じ公開動画に遷移することを確認する。
+  サムネイルが提供されない動画では maxresdefault.jpg を hqdefault.jpg に変更する。
 
-  [![Re:Cooplay プロダクト紹介動画](https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg)](https://youtu.be/VIDEO_ID)
+  [![Re:Cooplay プロダクト紹介動画（クリックしてYouTubeで再生）](https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg)](https://youtu.be/VIDEO_ID)
 
-  **クリックして動画を再生**
+  **▶ サムネイルをクリックして動画を再生**
 
-  [![YouTube](https://img.shields.io/badge/▶%20YouTube-紹介動画を見る-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/VIDEO_ID)
+  [![YouTube](https://img.shields.io/badge/▶%20YouTube-紹介動画を再生-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/VIDEO_ID)
+
+  **[▶ YouTubeで紹介動画を直接見る](https://youtu.be/VIDEO_ID)**
+
+  <a href="https://youtu.be/VIDEO_ID">https://youtu.be/VIDEO_ID</a>
   -->
 
   ---
