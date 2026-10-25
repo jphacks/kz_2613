@@ -457,11 +457,11 @@ async function main() {
       mon.send({type:'inject_mode',mode:'on'});
       await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from});
       let gateFrom=p1.mark();
-      host.child.stdin.write('target off\n');
+      host.child.stdin.write('activate off\ntarget off\n');
       await p1.waitFor(m=>m.type==='game' && m.game.inputTarget,{from:gateFrom});
       p1.send({type:'command',cmd:'READY'});
       await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from:gateFrom});
-      gateFrom=p1.mark();host.child.stdin.write('target on\n');
+      gateFrom=p1.mark();host.child.stdin.write('activate on\ntarget on\n');
       await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from:gateFrom});
       // 2人でもReadyできる (#57)。1人ではReadyできず、PC画面から必要人数を減らしても迂回できない
       // 準備中に参加者が変わったら、決定し直すまで Ready できない (#109)
@@ -1556,6 +1556,78 @@ async function main() {
       const log = fs.readdirSync(host.logDir).filter((f) => f.endsWith('.jsonl')).map((f) => fs.readFileSync(path.join(host.logDir, f), 'utf8')).join('');
       assert(log.includes('"manual_game"') && !log.includes('SimGame') && !log.includes('シムゲーム') && !log.includes('Sim Manual Game'), 'ログに名前・場所が出た');
       app.close();
+    });
+
+    await check('前面化: Ready・再開で協力プレイに入るとき、対象ゲームが前面でなければ前面にし、一時停止中は奪わない (#138)', async () => {
+      const autoFocus = async () => {
+        await sleep(1200); // ログは 1 秒ごとに書き出される
+        return fs.readdirSync(host.logDir).filter((f) => f.endsWith('.jsonl')).map((f) => fs.readFileSync(path.join(host.logDir, f), 'utf8')).join('')
+          .split(String.fromCharCode(10)).filter((l) => l.includes('"auto_focus"')).length;
+      };
+      // 前提: ロビー (直前の END)。入力を ON に戻し、対象ゲームを前面から外す (PC アプリを操作している状態)
+      let from = p1.mark();
+      mon.send({ type: 'select_game', title: 'minecraft-java' });
+      await p1.waitFor(m => m.type === 'game' && m.game.title === 'minecraft-java', { from });
+      from = p1.mark();
+      mon.send({ type: 'inject_mode', mode: 'on' });
+      host.child.stdin.write('target off' + String.fromCharCode(10));
+      await p1.waitFor((m) => m.type === 'game' && m.game.inputTarget === true, { from, what: '前面でない' });
+      const before = await autoFocus();
+      // Ready で協力プレイに入ると前面化を要求する
+      await confirmLineup(mon, p1); p1.send({ type: 'command', cmd: 'PREPARE' });
+      await phaseIs(p1, 'preparing', from);
+      p1.send({ type: 'command', cmd: 'READY' });
+      await phaseIs(p1, 'coop', from);
+      assert((await autoFocus()) === before + 1, 'Readyで前面にしなかった');
+      // 一時停止中は、前面でなくても前面を奪わない
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'PAUSE' });
+      await phaseIs(p1, 'paused', from);
+      from = p1.mark();
+      host.child.stdin.write('target off\n');
+      await p1.waitFor(m => m.type === 'game' && m.game.inputTarget, { from });
+      await sleep(300);
+      assert((await autoFocus()) === before + 1, '一時停止中に前面を奪った');
+      // Windows相当の拒否ではpausedのまま入力を止め、手動切替の案内を出す。
+      host.child.stdin.write('activate off\n');
+      await sleep(100);
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await p1.waitFor(m => m.type === 'command_result' && m.cmd === 'RESUME' && !m.accepted, { from });
+      const failed = await p1.waitFor(m => m.type === 'game' && /手動で前面/.test(m.game.prepareStatus), { from });
+      assert(failed.game.phase === 'paused' && !failed.game.inputActive, '前面化失敗で開始した');
+      assert((await autoFocus()) === before + 2, '拒否の試験で前面化を要求しなかった');
+      host.child.stdin.write('activate on\n');
+      await sleep(100);
+      // 再開すると前面化を要求する
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', from);
+      assert((await autoFocus()) === before + 3, '再開で前面にしなかった');
+      // 既に前面なら要求しない
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'PAUSE' });
+      await phaseIs(p1, 'paused', from);
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', from);
+      assert((await autoFocus()) === before + 3, '前面なのに前面化を要求した');
+      // 切断後の自動復帰でも、参加者がそろうまで前面を奪わない。
+      mon.send({ type: 'auto_resume', on: true });
+      from = p1.mark();
+      p2.close();
+      await phaseIs(p1, 'paused', from);
+      from = p1.mark();
+      host.child.stdin.write('target off\n');
+      await p1.waitFor(m => m.type === 'game' && m.game.inputTarget, { from });
+      assert((await autoFocus()) === before + 3, '参加者が戻る前に前面を奪った');
+      from = p1.mark();
+      p2 = await join('P2'); await welcome(p2);
+      await phaseIs(p1, 'coop', from);
+      assert((await autoFocus()) === before + 4, '自動復帰で前面にしなかった');
+      // 後続の試験のためロビーへ戻す
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'END' });
+      await phaseIs(p1, 'lobby', from);
     });
 
     await check('切断: 4 秒受信がなければ切断扱いにする', async () => {
