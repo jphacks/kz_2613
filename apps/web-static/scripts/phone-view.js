@@ -1,7 +1,12 @@
+import { myActions, generatedKey, buildGenerated } from './generated-controls.js';
+
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
-export function createPhoneView({releaseAll,roleText}) {
+export function createPhoneView({releaseAll,roleText,bindControl}) {
   const $ = id => document.getElementById(id);
-  let lastView = null;
+  let lastView = null, lastGen = '';
+  // 視点のパッドと感度は、操作定義の画面で視点を担当するときだけそちらへ移す
+  const lookParts = [$('pad'), document.querySelector('#v-P2 .sens')].filter(Boolean);
+  const lookHome = $('v-P2');
   function render({me,isHost,game}) {
     if (!me || !game) return;
     const phase = game.phase;
@@ -10,11 +15,21 @@ export function createPhoneView({releaseAll,roleText}) {
     $('connecting').hidden = true;
     $('phase').className = 'pill ' + phase;
     $('inputWarn').style.display = game.inputTarget ? 'block' : 'none';
-    const view = phase === 'coop' ? 'v-' + me : isHost ? 'v-remote' : 'v-wait';
-    if (view !== lastView) {
+    const generated = phase === 'coop' && myActions(game, me);
+    const view = phase === 'coop' ? (generated ? 'v-gen' : 'v-' + me) : isHost ? 'v-remote' : 'v-wait';
+    const genKey = generated ? generatedKey(game, me) : '';
+    if (view !== lastView || genKey !== lastGen) {
       releaseAll(); // 画面が変わる時は押しっぱなしを解除
+      if (generated) {
+        $('genTitle').textContent = `${game.profile.name}（${me}${isHost ? '・ホスト' : ''}）`;
+        $('genPause').hidden = !isHost;
+        buildGenerated($('genControls'), game, me, { bindControl, lookParts });
+      } else if (lookParts[0] && lookParts[0].parentElement !== lookHome) {
+        lookHome.append(...lookParts);
+      }
       document.querySelectorAll('.view').forEach((el) => el.classList.toggle('show', el.id === view));
       lastView = view;
+      lastGen = genKey;
     }
     const players = ['P1', 'P2', 'P3'].map((p) => `<span class="${game.connected.includes(p) ? 'on' : ''}">${p}${p === me ? '（自分）' : ''}</span>`).join('');
     $('players1').innerHTML = players;

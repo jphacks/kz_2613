@@ -1,6 +1,6 @@
 
   import { createVirtualCursor } from './virtual-cursor.js';
-  import { SCREENS, SCREEN_TITLES, ROLES, GAMES, slotViews, startView, phaseView, navigate, joinUrl, screenOnGameUpdate, roleControls } from '../app-view.js';
+  import { SCREENS, SCREEN_TITLES, ROLES, GAMES, slotViews, startView, phaseView, navigate, joinUrl, screenOnGameUpdate, roleView } from '../app-view.js';
 
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -79,10 +79,11 @@
     // ③ 分担
     $('roles').innerHTML = ROLES.map((r) => {
       const s = slots.find((x) => x.slot === r.slot);
+      const v = roleView(game, r.slot); // 操作定義があれば参加人数に合わせた分担 (#105)
       return `<div class="card role slot ${s.state}" data-slot="${r.slot}">
-        <div class="mascot" aria-hidden="true"><span>${{P1:"↟",P2:"✥",P3:"✦"}[r.slot]}</span></div><div class="name">${r.slot}<span class="role-title">${esc(r.title)}</span>${r.host ? '<span class="host">ホスト管理</span>' : ''}</div>
+        <div class="mascot" aria-hidden="true"><span>${{P1:"↟",P2:"✥",P3:"✦"}[r.slot]}</span></div><div class="name">${r.slot}<span class="role-title">${esc(v.title)}</span>${r.host ? '<span class="host">ホスト管理</span>' : ''}</div>
         <div class="state">${esc(s.label)}</div>
-        <ul>${roleControls(r.slot, game?.keys).map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+        <ul>${v.lines.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
       </div>`;
     }).join('') + ((game?.keys?.warnings || []).length
       ? `<div class="card warn keys-warn">⚠ キー設定：${game.keys.warnings.map(esc).join('<br>')}</div>` : '');

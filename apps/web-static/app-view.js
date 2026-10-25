@@ -34,6 +34,34 @@ export function roleControls(slot, keys) {
   return (ROLE_ITEMS[slot] || []).map(([text, ids]) => ids ? `${text}（${ids.map((c) => keyLabel(keys, c)).join('/')}）` : text);
 }
 
+/**
+ * 分担の確認画面に出す担当の内容。Minecraft 以外で操作定義があれば、定義と分担 (#105) から作る。
+ * 協力プレイ中は決まった分担 (game.assigned)、それ以外は今の参加人数での案 (game.profile.assignment)
+ */
+export function roleView(game, slot) {
+  const p = game?.profile;
+  if (!p || p.id === 'minecraft-java') {
+    const r = ROLES.find((x) => x.slot === slot);
+    return { title: r?.title || '', lines: roleControls(slot, game?.keys) };
+  }
+  const assigned = game.assigned && Object.keys(game.assigned).length ? game.assigned : p.assignment || {};
+  const ids = assigned[slot] || [];
+  const byGroup = new Map();
+  for (const id of ids) {
+    const a = p.actions.find((x) => x.id === id);
+    if (!a) continue;
+    const g = p.groups.find((x) => x.id === a.group);
+    if (!byGroup.has(a.group)) byGroup.set(a.group, { label: g?.label || a.group, items: [] });
+    const key = a.type === 'mouseDelta' ? 'マウス移動' : a.type === 'wheel' ? 'ホイール' : (game.keys?.actions?.[id]?.label ?? '送らない');
+    byGroup.get(a.group).items.push(`${a.label}（${key}）`);
+  }
+  const groups = [...byGroup.values()];
+  return {
+    title: groups.map((g) => g.label).join('・') || (ids.length ? '' : '担当なし'),
+    lines: groups.map((g) => `${g.label}：${g.items.join('、')}`),
+  };
+}
+
 export const ROLES = [
   { slot: 'P1', title: '移動・ホスト', controls: roleControls('P1'), host: true },
   { slot: 'P2', title: '視点', controls: roleControls('P2') },

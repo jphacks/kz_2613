@@ -306,6 +306,8 @@ pub struct Hub {
     // ゲームの操作定義 (apps/game-profiles/*.json、#97)。起動時に読み、不正なものは理由をログに残して使わない
     profiles: Vec<Profile>,
     profile: Option<Profile>,
+    // 協力プレイで使う分担 (枠ごとの操作 ID、#105)。Ready・再開のときに参加人数から決め、協力プレイ中は組み直さない
+    assigned: Vec<Vec<String>>,
     app_focused: bool,           // PC アプリが前面か (手動復帰の判定に使う)
     // PC アプリ (デスクトップアプリ) から起動されたか。そのときは前面のプロセス名で PC アプリの前面を判定し、
     // 画面 (WebView2 は背面でも focused のまま) の知らせは使わない
@@ -401,6 +403,7 @@ impl Hub {
             minecraft_options: keybinds::minecraft_override(config.minecraft_options.as_deref()),
             profiles: Vec::new(),
             profile: None,
+            assigned: Vec::new(),
             fake_target: std::env::var("RECOOPLAY_FAKE_TARGET")
                 .ok()
                 .filter(|_| std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1"))
@@ -557,7 +560,9 @@ impl Hub {
             // 操作 → 実際に送るキー (ゲームのキー設定に合わせる)。スマホ・PC 画面のキー表示に使う
             "keys": self.keys_snapshot(),
             // 選んだゲームの操作定義の要約と分担の案 (#97)
-            "profile": self.profile.as_ref().map(profiles::snapshot),
+            "profile": self.profile.as_ref().map(|p| profiles::snapshot(p, self.connected_slots().len().max(1))),
+            // 今の協力プレイで使っている分担 (Ready・再開のときに決めたもの)
+            "assigned": self.assigned_snapshot(),
             "canPrepare": self.can_prepare(),
             "canReady": self.can_start(),
             "canResume": self.can_resume(),
@@ -732,10 +737,12 @@ impl Hub {
             }
             ("READY", Phase::Preparing) if self.can_start() => {
                 self.reload_keybinds();
+                self.fix_assignment();
                 self.game.host_ready = true;
                 self.set_phase(Phase::Coop, "host ready"); true
             }
-            ("RESUME", Phase::Paused) if self.can_resume() => { self.reload_keybinds(); self.set_phase(Phase::Coop, "host resume"); true }
+            // 再開はホストの確認なので、参加人数が変わっていればここで組み直す
+            ("RESUME", Phase::Paused) if self.can_resume() => { self.reload_keybinds(); self.fix_assignment(); self.set_phase(Phase::Coop, "host resume"); true }
             ("PAUSE", Phase::Coop | Phase::Paused) => {
                 self.game.auto_resume_until = 0;
                 self.game.reason = Some("host pause".into());
@@ -757,7 +764,10 @@ impl Hub {
 
     /// その操作を今このスロットが使えるか → 出力の番号
     fn resolve_control(&self, slot: usize, control: &str) -> Option<usize> {
-        let id = if self.game.phase == Phase::Coop {
+        let id = if self.game.phase == Phase::Coop && control.starts_with("act:") {
+            // 操作定義から生成した操作画面 (#60): 分担で割り当てた操作だけ、ゲームのキー設定に合わせて送る
+            self.action_output(slot, control)
+        } else if self.game.phase == Phase::Coop {
             // 担当の確認は固定の表で行い、送るキーはゲームのキー設定に合わせる (送れないキーは送らない)
             let default = controls::role_control(SLOT_NAMES[slot], control)?;
             self.keybinds.output_for(control).unwrap_or(Some(default))
@@ -796,7 +806,61 @@ impl Hub {
                 (c.to_string(), v)
             })
             .collect();
-        json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings, "controls": controls })
+        // 定義の操作 ID → 実際に送るキー (生成した操作画面のキー表示に使う)
+        let actions: Map<String, Value> = self
+            .keybinds
+            .actions
+            .iter()
+            .map(|(a, o)| (a.clone(), o.and_then(controls::output).map_or(Value::Null, |out| json!({ "out": out.id, "label": out.label }))))
+            .collect();
+        json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings, "controls": controls, "actions": actions })
+    }
+
+    /// 協力プレイの分担を、今の参加人数と操作定義から決める (#105)。定義がなければ空 (固定の表を使う)
+    fn fix_assignment(&mut self) {
+        let players = self.connected_slots().len().max(1);
+        self.assigned = match &self.profile {
+            Some(p) => profiles::assignment_for(p, players),
+            None => Vec::new(),
+        };
+        self.log("assignment", json!({ "players": players, "assigned": self.assigned }));
+    }
+
+    fn assigned_snapshot(&self) -> Value {
+        let m: Map<String, Value> = self.assigned.iter().enumerate().map(|(i, a)| (format!("P{}", i + 1), json!(a))).collect();
+        Value::Object(m)
+    }
+
+    /// この枠に割り当てた操作か
+    fn is_assigned(&self, slot: usize, action: &str) -> bool {
+        self.assigned.get(slot).is_some_and(|a| a.iter().any(|x| x == action))
+    }
+
+    /// この枠が視点 (マウス移動) を担当しているか。分担がなければ従来どおり P2
+    fn owns_look(&self, slot: usize) -> bool {
+        match (&self.profile, self.assigned.is_empty()) {
+            (Some(p), false) => p.actions.iter().any(|a| a.kind == "mouseDelta" && self.is_assigned(slot, &a.id)),
+            _ => slot == 1,
+        }
+    }
+
+    /// 生成した操作画面の入力 "act:<操作ID>" (ホイールは "act:<操作ID>:up|down") → 出力の ID。割り当てた操作だけ通す
+    fn action_output(&self, slot: usize, control: &str) -> Option<&'static str> {
+        let rest = control.strip_prefix("act:")?;
+        let (id, dir) = match rest.rsplit_once(':') {
+            Some((id, d)) if d == "up" || d == "down" => (id, Some(d)),
+            _ => (rest, None),
+        };
+        if !self.is_assigned(slot, id) {
+            return None;
+        }
+        let action = self.profile.as_ref()?.actions.iter().find(|a| a.id == id)?;
+        match (action.kind.as_str(), dir) {
+            ("wheel", Some("up")) => Some("WHEEL_UP"),
+            ("wheel", Some("down")) => Some("WHEEL_DOWN"),
+            ("button", None) => self.keybinds.actions.iter().find(|(a, _)| a == id).and_then(|(_, o)| *o),
+            _ => None,
+        }
     }
 
     // ---------- 入力注入 ----------
@@ -957,7 +1021,7 @@ impl Hub {
     }
 
     fn handle_look(&mut self, slot: usize, dx: f64, dy: f64) {
-        if self.game.phase != Phase::Coop || slot != 1 || !self.can_inject() {
+        if self.game.phase != Phase::Coop || !self.owns_look(slot) || !self.can_inject() {
             return;
         }
         let now = Instant::now();

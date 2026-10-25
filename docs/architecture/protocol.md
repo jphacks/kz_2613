@@ -31,7 +31,7 @@
 | `hello` | WS | `protocolVersion`（必須、現在は `4`）、`clientId`（端末のlocalStorageに保存、最大64文字）、`token`（再接続時。`welcome` で受け取った値）、`ua`、`nextIseq` | 参加・再接続する。同じ `clientId` は、`token` が一致した場合だけ元の枠へ戻る（なし・不一致は `error`（`bad_token`）を返して4006で閉じ、元の接続には影響しない）。版がない・違う場合は `error` を返して4005で閉じ、枠を割り当てない |
 | `ping` | WS | `t`、`stats`（RTTの平均・95%値・最大、`rtc`側の統計、`via`） | 1秒ごとに送る。サーバーは `pong` を返す |
 | `command` | WS | `cmd`: `PREPARE` / `READY` / `START` / `PAUSE` / `RESUME` / `END`、`epoch` | **P1のみ有効** |
-| `input` | **WSとWebRTCの両方** | `iseq`（通し番号）、`epoch`（押した時点の `game.epoch`）、`button`（操作名）、`state`（`down`/`up`）、`t`、`burst`（通信テスト） | サーバーは番号順に、先に届いたほうで1回だけ処理する。`epoch` が現在と違う（なしを含む）入力は番号だけ消費し、押下・解放とも処理しない。WS版には `seq` も付く |
+| `input` | **WSとWebRTCの両方** | `iseq`（通し番号）、`epoch`（押した時点の `game.epoch`）、`button`（操作名。操作定義から作った画面では `act:<操作ID>`、ホイールは `act:<操作ID>:up|down`、#60）、`state`（`down`/`up`）、`t`、`burst`（通信テスト） | サーバーは番号順に、先に届いたほうで1回だけ処理する。`epoch` が現在と違う（なしを含む）入力は番号だけ消費し、押下・解放とも処理しない。WS版には `seq` も付く |
 | `look` | WebRTC（つながらなければWS） | `lseq`、`epoch`、`cx`、`cy`（同じepoch内の累積移動量） | 30Hz、ACKなし。同じepoch内の欠落だけを次の値で取り戻す。P2・協力プレイ中、かつ `epoch` が現在と同じときだけ有効。別epochは順序番号・累積値の基準にも反映しない。スマホとホストはepoch変更時に `lseq`・`cx`・`cy` を0に戻し、スマホの未送信移動量も破棄する |
 | `ka` | WebRTC | `t` | 協力プレイ中に50msごとに送る。サーバーは `kpong` を返す |
 | `rtc-offer` / `rtc-cand` | WS | `sdp` / `cand`、`mid` | WebRTCのシグナリング。offerはスマホ側から送る |
@@ -59,7 +59,7 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | `kpong` | `t` | WebRTC経由で返す |
 | `rtc-answer` / `rtc-cand` | `sdp`、`sdpType` / `cand`、`mid` | |
 
-**`game` の内容：** `phase`（`lobby`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`、`inputActive`（入力がPCに届く状態か）、`inputTarget`（常時ONだが前面が入力先でない。スマホは「届かない」と表示する）、`epoch`（進行が変わるたび・リセットで1増える。初期値1）、`title`（PCアプリで選んだゲーム。Rust版）、`keys`（Rust版、#101：`source`＝`options`（Minecraftの `options.txt` を読んだ）/`default`/`unreadable`、`controls`＝操作名→実際に送るキー `{out, label}`。`null` は送らない（送れないキー・未設定）、`warnings`＝ずれ・重複・読めない場合の説明）
+**`game` の内容：** `phase`（`lobby`/`coop`/`paused`）、`reason`、`required`、`connected`（接続中の枠）、`canStart`、`autoResume`、`autoResumeMs`、`autoResumeUntil`、`inputActive`（入力がPCに届く状態か）、`inputTarget`（常時ONだが前面が入力先でない。スマホは「届かない」と表示する）、`epoch`（進行が変わるたび・リセットで1増える。初期値1）、`title`（PCアプリで選んだゲーム。Rust版）、`assigned`（Rust版、#105：協力プレイの分担。枠名→操作IDの一覧）、`profile`（選んだゲームの操作定義の要約。`assignment`＝今の参加人数での案、`assignments`＝1〜4人の案）、`keys`（Rust版、#101：`source`＝`options`（Minecraftの `options.txt` を読んだ）/`default`/`unreadable`、`controls`＝操作名→実際に送るキー `{out, label}`、`actions`＝定義の操作ID→実際に送るキー。`null` は送らない（送れないキー・未設定）、`warnings`＝ずれ・重複・読めない場合の説明）
 
 **WebSocketの終了コード：** 4000 = 同じ端末の別タブに置き換えられた、4001 = PCでリセットした、4002 = `clientId` なし、4003 = モニターはPCのみ、4004 = 満員、4005 = 通信契約の版が違う（スマホは再接続をやめ、再読み込みを案内する）、4006 = 再接続のトークンがない・一致しない（スマホは再接続をやめ、PCでのリセットを案内する）
 
