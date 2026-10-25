@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls } from '../../apps/web-static/app-view.js';
+import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -119,6 +119,32 @@ test('参加 URL: ホットスポットを優先する', () => {
 test('端末の種類', () => {
   assert.equal(device('Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X)'), 'iPhone');
   assert.equal(device('Mozilla/5.0 (Linux; Android 10; K)'), 'Android');
+});
+
+test('原案の5視覚状態: 3ページとサーバーの準備2状態を区別する',()=>{
+  for(const screen of SCREENS)assert.equal(desktopView({screen},{phase:'lobby'}),screen);
+  assert.equal(desktopView({screen:'roles'},{phase:'preparing',canReady:false,canStart:true}),'preparing');
+  assert.equal(desktopView({screen:'join'},{phase:'preparing',canReady:true,hostReady:false}),'ready');
+  assert.equal(desktopView({screen:'roles'},{phase:'preparing',hostReady:true}),'preparing');
+});
+test('進行の変化: 準備・Ready・協力・Pause・Endで古い状態を表示しない',()=>{
+  const ui={screen:'roles'};
+  assert.equal(desktopView(ui,{phase:'coop'}),'coop');
+  assert.equal(desktopView(ui,{phase:'paused'}),'paused');
+  assert.equal(desktopView(ui,{phase:'lobby'}),'roles');
+  for(let count=0;count<=3;count++)assert.equal(slotViews(Array.from({length:count},(_,i)=>slot('P'+(i+1),true))).filter(s=>s.state==='connected').length,count);
+});
+test('本番の安全案内: 切断・緊急停止・入力OFF・前面喪失とテストを隠さない',()=>{
+  const g={phase:'coop',connected:['P1','P2','P3']};
+  assert.match(desktopWarning(g,{mode:'on',active:false,target:{process:'secret.exe'}}),/Minecraftを前面/);
+  assert.doesNotMatch(desktopWarning(g,{mode:'on',active:false,target:{process:'secret.exe'}}),/secret\.exe/);
+  assert.match(desktopWarning(g,{mode:'off'}),/OFF/);
+  assert.match(desktopWarning(g,{mode:'test'}),/確認用/);
+  assert.match(desktopWarning(g,{mode:'on'},false),/接続が切れ/);
+  assert.match(desktopWarning({...g,reason:'emergency stop'},{mode:'off'}),/緊急停止/);
+  assert.match(desktopWarning({...g,phase:'paused',connected:['P1','P2']},{mode:'on'}),/3人全員/);
+  assert.match(desktopWarning(g,{emergencyHotkeyError:'失敗'}),/登録できません/);
+  assert.equal(desktopWarning(g,{mode:'on',active:true}),'');
 });
 
 const failed = results.filter((r) => !r).length;
