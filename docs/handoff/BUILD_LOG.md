@@ -770,3 +770,11 @@
 - 起動時は保存した画面を使わず参加画面（QR）から始め、以前の版が保存した値は消す。誰もつながっていないときは分担の画面に列を出さず「参加者を待っています」と表示し、HTMLの見出しの既定の文言からも「3人で」を消した。
 - `app-view-test.mjs` 21/21、`ui-input-test.mjs` 8/8、`phone-view-test.mjs`、`check-static-pages.mjs`が成功。起動中のホスト（作業中のファイルを配信）をヘッドレスChromeで開き、`recooplay.app`に`{screen:'roles'}`を保存してから読み直すと参加画面（`data-view=join`）から始まり保存値が消えること、誰もいない分担の画面の見出しが「参加者を待っています」で列が0であることを確認した。
 - 追記（#128の一部を先に対応）：東方風神録（appid 1100140）は、Steamの画像のキャッシュが言語名付きの名前（`library_600x900_japanese.jpg`・`header_japanese.jpg`）だけで見つからなかった。決まった名前がなければ`<名前>_<言語>.jpg`（言語は英小文字）を使うようにした。`cargo test`はホスト35件（言語名付きの試験を追加）成功。実際のSteamでの撮影で、画像の出る項目が12本中11本から12本になった（頭文字はMinecraftだけ）。
+
+## 2026-10-26 — 検出したゲームと画像をセットで取得し、Minecraftにも画像を付ける（Claude Code、#128）
+
+- PR #127（#126）の上に積んだ。画像の取得元を、ランチャーの画像（Steam、言語名付きを含む）→ Xbox・Store版のアプリのマニフェストのロゴ（最大の版、ハイコントラスト用は除く）→ 実行ファイルのアイコン（Windowsのシェルで最大256pxを取り出し、依存なしで無圧縮のPNGにして一時フォルダへ）→ 頭文字、の順にした。Epicはマニフェストの`LaunchExecutable`（インストール先の外を指す値は使わない）のアイコン。
+- Minecraftのランチャー（各ドライブの`XboxGames\Minecraft Launcher\Content\Minecraft.exe`、旧版の`Program Files (x86)\Minecraft Launcher`）を探し、見つけたら一覧の先頭のMinecraftに画像を付ける。一覧（`games`）には混ぜず（入力先・手動起動はそのまま）、`state.minecraft`（`detected`・`image`）で知らせる。見つからなくても「手動で起動」の項目として残す。
+- 最初はXbox版の`Minecraft.exe`のアイコンを取り出したが、汎用のアプリのアイコンになった（この実行ファイルはアイコンを持たない）。マニフェストのロゴを先に見るようにし、256pxのロゴになった。途中、撮影用のChromeの作業フォルダを使い回したため、10分間のキャッシュで前の画像が出続けたことがあった。再検出で画像が変わっても古い画像を出さないよう、`/api/game-image`を保存させない（`no-store`）にした。
+- `cargo test --release --locked`はホスト39件（PNGの構造、マニフェストのロゴの選び方、インストール先の外を指す実行ファイルの拒否、Windowsのアイコンの取り出し（explorer.exe）を追加）＋プローブ3件成功。`protocol-sim.mjs`（Rust dry-run）46/46：模擬のMinecraftランチャーの検出（`games`に入らず`minecraft.image`が真）、`id=minecraft-java`の画像（PNG・`no-store`）を追加した。`app-view-test.mjs` 21/21、`ui-input-test.mjs` 8/8、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`shutdown-sim.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`、`verify-ui-evidence.mjs`、`verify_overlay.py`が成功した。
+- 開発PC（Steam 12本・Xbox版のMinecraftランチャー）の実際の検出をヘッドレスChromeで撮影し、Minecraft（Creeperのロゴ）・東方風神録を含む13タイルすべてに画像が出ることを確認した。Epicのゲームがないため、Epicの実行ファイルのアイコンは実機で未確認。

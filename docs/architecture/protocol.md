@@ -81,11 +81,11 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | 画面 → ホスト | `refresh_games` | インストール済みのゲームを探し直す（Rust版） |
 | 画面 → ホスト | `auto_resume` / `phase` / `reset` | 自動復帰のON/OFF、進行の変更（`lobby`＝終了、`paused`＝一時停止のみ）、全枠の解放。人数は接続人数で決まり、`required` メッセージは #115 で廃止した |
 | 画面 → ホスト | `observe` | 疑似ゲーム画面の照合結果。ログに記録する |
-| ホスト → 画面 | `state` | 全枠の状態、`game`、`inject`（モード・有効かどうか・出力一覧・押下中の出力・緊急停止キー `emergencyHotkey` とその登録エラー `emergencyHotkeyError`、入力先 `target`（`ok`・`expect`・前面の `process`・`title`））、`games`（検出したゲーム：`id`・`name`・`source`（`steam`/`epic`）・`verified`（常に `false`）・`launchable`・`image`（タイルの画像があるか、#121）。インストール先・画像の場所は送らない）、`gamesScanning`。1秒ごとと変化時に送る。`games` はPC画面にだけ送り、スマホには送らない（Rust版） |
+| ホスト → 画面 | `state` | 全枠の状態、`game`、`inject`（モード・有効かどうか・出力一覧・押下中の出力・緊急停止キー `emergencyHotkey` とその登録エラー `emergencyHotkeyError`、入力先 `target`（`ok`・`expect`・前面の `process`・`title`））、`games`（検出したゲーム：`id`・`name`・`source`（`steam`/`epic`）・`verified`（常に `false`）・`launchable`・`image`（タイルの画像があるか、#121）。インストール先・画像の場所は送らない）、`gamesScanning`、`minecraft`（Minecraftのランチャーを見つけたか `detected`・画像があるか `image`。#128。Minecraftは `games` には入れない）。1秒ごとと変化時に送る。`games` はPC画面にだけ送り、スマホには送らない（Rust版） |
 | ホスト → 画面 | `inject` / `look` / `log` | 注入1件ごと、視点の100msごとの集計、イベントログ |
 | ホスト → 画面 | `remote` | `control`（`UP`/`DOWN`/`LEFT`/`RIGHT`/`ENTER`/`ESC`）、`state`。ロビー・一時停止中のP1のリモコン操作。PCアプリの画面は自分が前面（`document.hasFocus()`）のときだけ反応する。OSへの注入は前面がMinecraftのときだけなので、画面とゲームが同時に反応しない |
 
-**ゲーム一覧の画像（#121、Rust版）：** `GET /api/game-image?id=<項目ID>` は、検出した項目の画像（Steamがユーザーの PC に保存しているライブラリの画像）を返す。PC本体（ループバック）からの要求だけに応じ、項目IDだけを受け取ってホストの表から場所を引く。場所・パスは受け取らない。一覧にない・画像のない項目は404。
+**ゲーム一覧の画像（#121、Rust版）：** `GET /api/game-image?id=<項目ID>` は、検出した項目の画像（Steamがユーザーの PC に保存しているライブラリの画像）を返す。PC本体（ループバック）からの要求だけに応じ、項目IDだけを受け取ってホストの表から場所を引く。場所・パスは受け取らない。一覧にない・画像のない項目は404。`id=minecraft-java` はMinecraftのランチャーの画像。画像は保存させない（`no-store`）。
 
 ## 5. 順序・欠落・安全の規則
 

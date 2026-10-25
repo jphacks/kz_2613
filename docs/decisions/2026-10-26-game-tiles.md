@@ -4,10 +4,12 @@
 
 - **見た目：** 横3列の正方形のタイル。画像を大きく、その下に小さくタイトル、出所（Steam・Epic Games・手動で起動）と「未検証」の小さな印。選択中はタイルの枠で示す。件数が多いときは一覧の中だけをスクロールし、選んだタイルが見える位置に来る。
 - **画像[H]：** Steamがユーザーの PC に保存しているライブラリの画像（`appcache\librarycache\<appid>\`）を使う。縦長（`library_600x900.jpg`、新しいSteamでは1段下のフォルダの `library_capsule.jpg`）を優先し、なければ横長（`header.jpg`・`library_header.jpg`）。正方形にちょうどよい画像がないため、CSSで中央を正方形に切り抜く。Epic・Minecraftの画像の場所は未調査で、頭文字で代わりに表示する。
+- **画像の取得元（#128で追加）：** 検出したゲームと画像をセットで取る。順番は、①ランチャーが用意した画像（Steamのライブラリの画像。言語名付きの `<名前>_<言語>.jpg` も使う）、②Xbox・Microsoft Store版のアプリはマニフェスト（`appxmanifest.xml`）のロゴのうち最大の版（ハイコントラスト用は除く）、③実行ファイルのアイコン（Windowsのシェル `IShellItemImageFactory` で最大256pxを取り出し、PNGにして一時フォルダに置く。Epicはマニフェストの `LaunchExecutable`）、④頭文字。PNGは依存を増やさず無圧縮で書く。
+- **Minecraft（#128）：** ランチャー（各ドライブの `XboxGames\Minecraft Launcher\Content\Minecraft.exe`、旧版の `Program Files (x86)\Minecraft Launcher\MinecraftLauncher.exe`）を探し、見つけたらその画像を一覧の先頭のMinecraftに付ける。一覧（`games`）には混ぜない（入力先は `javaw.exe`、起動は手動のまま）。見つからなくても「手動で起動」の項目として残す。Xbox版の `Minecraft.exe` はアイコンを持たず、シェルからは汎用のアイコンしか取れないため、マニフェストのロゴを先に見る。
 - **安全：** 画像は `GET /api/game-image?id=<項目ID>` で、PC本体（ループバック）からの要求にだけ返す。ホストは検出時に場所を表に持ち、画面からは項目IDだけを受け取る（起動と同じ考え方）。画像の場所は画面・ログに出さない。ゲームの画像は各タイトルの権利物なので、リポジトリ・配布物・ログに含めない。
 - **キー操作：** 選択画面では左右で隣、上下で1行動く（端で止まる。下の行が短いときは最後の項目へ）。以前は左右で画面を行き来していたため、選択画面の前後はEnter（分担へ）とEsc（参加へ）で行う。ホストのリモコンも同じ。
 
 ## 未検証
 
-- 開発PCのSteam（12本中11本に画像）でだけ確かめた。古い・新しいSteamのキャッシュの形の違い、Epic・Minecraftの画像。
+- 開発PC（Steam 12本・Xbox版のMinecraftランチャー）でだけ確かめた。古い・新しいSteamのキャッシュの形の違い、Epicの実行ファイルのアイコン（Epicのゲームがない）、旧版のMinecraftランチャー。
 - PCアプリ（WebView2）での表示と、スマホのリモコンでの操作。
