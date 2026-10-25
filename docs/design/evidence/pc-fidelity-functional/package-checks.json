@@ -1,0 +1,120 @@
+{
+  "package": "ReCooplay-0.1.0-windows-x64.zip",
+  "sha256": "7ed049c0f2d8683a26758115e14299862d26f9baf3a5fd0247cf7df54080b4cc",
+  "uiFiles": 26,
+  "executables": 2,
+  "checks": [
+    {
+      "file": "apps/web-static/app-view.js",
+      "sha256": "40af07359fc35f4babd03394f1bba69717e1b56117979021456e9ec9a1051a74"
+    },
+    {
+      "file": "apps/web-static/app.html",
+      "sha256": "95c22bcaac374577bfd5a1333a2711380dc225c39e32aa126f3c8583b172a3d4"
+    },
+    {
+      "file": "apps/web-static/game.html",
+      "sha256": "7bf19c91707e202068de5afdc33e74ca6044328b77abb558b0acb9200446fe31"
+    },
+    {
+      "file": "apps/web-static/host.html",
+      "sha256": "4d846e6881cd506277cf56b461c5b7c8329dd8971764fb992819d71c0b13579c"
+    },
+    {
+      "file": "apps/web-static/index.html",
+      "sha256": "12b22915a7633900554a3e0133add3970ce9daa58020eaf17b0e37701868e8ad"
+    },
+    {
+      "file": "apps/web-static/assets/apple-touch-icon.png",
+      "sha256": "c4dffb976362487c369ade57f02bb0963e7ad3f24bbff8734b63abb3675a274f"
+    },
+    {
+      "file": "apps/web-static/assets/icon.png",
+      "sha256": "fba5f00912c7b30602a2e4611e403dd3305e1eeb49e8918e4848b1b028e7366f"
+    },
+    {
+      "file": "apps/web-static/assets/logo.png",
+      "sha256": "4534d328a5feb9eeacb32342bef486d8ffa4208b1a33a9fe0338c158a028c99d"
+    },
+    {
+      "file": "apps/web-static/assets/mobile-controls.png",
+      "sha256": "03931b5fb5285e970ad2ef3b68ba443157836dba4ea00bc030a0e07a1646725d"
+    },
+    {
+      "file": "apps/web-static/assets/mobile-stars.png",
+      "sha256": "6edba63cab3175cd04c9858ba5404639cb189113a7926743a71da352aa2a692a"
+    },
+    {
+      "file": "apps/web-static/assets/mobile-start.png",
+      "sha256": "8a7b75ea60d5a4f3910a9cdf0d080e595a7632f475d00bde9319dd6cca697bf2"
+    },
+    {
+      "file": "apps/web-static/assets/pc-sidebar.png",
+      "sha256": "2e835f2bcf3e1a7aee0d3c3cf8cdbe5b81c1254d38937250e245e440e1cf2167"
+    },
+    {
+      "file": "apps/web-static/assets/pc-stars.png",
+      "sha256": "c0f3b3ec29abe5cb98523bee6c10be72565255472dee23e688dddd51285818b5"
+    },
+    {
+      "file": "apps/web-static/scripts/controller.js",
+      "sha256": "037706fdad519dea48f65142ccc8e6506f482c2a2f04176cf0cec51ef899f1d9"
+    },
+    {
+      "file": "apps/web-static/scripts/cooperative-input.js",
+      "sha256": "0e767ac026e13bbcc3c5f8c5e016f36cc72eb2e1ba94de1e752df77dd24f6690"
+    },
+    {
+      "file": "apps/web-static/scripts/desktop.js",
+      "sha256": "9b8cc2776ed64042dd89e6fe56f1b5db187d1f76320107eb4d26c55478286b3a"
+    },
+    {
+      "file": "apps/web-static/scripts/phone-view.js",
+      "sha256": "21d9bb7167ba679436bbc575f60da3c788cc7c2010e380987e6c9607062afbd2"
+    },
+    {
+      "file": "apps/web-static/scripts/touchpad.js",
+      "sha256": "cd06c757fa3f7e940ab34dacbdc09e5e7edd7227a3a8a09a9abce7bc57d1c839"
+    },
+    {
+      "file": "apps/web-static/scripts/transport.js",
+      "sha256": "d0b25d213790bcfafc2d72df7796ec6718736ff6a2663847512c006e26097d99"
+    },
+    {
+      "file": "apps/web-static/scripts/ui-metrics.js",
+      "sha256": "25f89c95eee36835aaf5cea136770d367db1b37275c6681804171617902b0555"
+    },
+    {
+      "file": "apps/web-static/scripts/virtual-cursor.js",
+      "sha256": "65e10255a2144ac8883b01d51d8fda3b59c72058a1fd7bbd56005d48fb3ccc72"
+    },
+    {
+      "file": "apps/web-static/styles/colors.css",
+      "sha256": "d8576c4af015183e9cfb52d67d175e7291b2823f6c999efa6ecbcb846ded132d"
+    },
+    {
+      "file": "apps/web-static/styles/desktop.css",
+      "sha256": "e94cb946daa7a3da71d174fd5683e464f93ae05a8c607b0094203d87b1c4e24e"
+    },
+    {
+      "file": "apps/web-static/styles/mobile.css",
+      "sha256": "caccb8358338ca7a277d1d35d7e7461873cbb76a176ee17a9431e68a3a7b47f1"
+    },
+    {
+      "file": "apps/web-static/styles/shared.css",
+      "sha256": "e3d7d7e134e548cbce7fcfafe642a2fac0b0ae2789bccdbbbc9e0f4bd53ce693"
+    },
+    {
+      "file": "apps/web-static/styles/tokens.css",
+      "sha256": "ae74616627737d5ef323cdac51e750dc46769a8f08448d0ae14581fdc8ab3817"
+    },
+    {
+      "file": "recooplay-desktop.exe",
+      "sha256": "87e7cc911cc295d6ac396a58df6ffd79e77f4f6a3d11cd16aae4e22ff81eb02a"
+    },
+    {
+      "file": "recooplay-host.exe",
+      "sha256": "265dc9639a8ddc68b21d40989d9b90b07d87a22b23f7b826582c6945c6c35fd6"
+    }
+  ]
+}

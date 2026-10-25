@@ -1,59 +1,57 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Re:Cooplay</title>
-  <link rel="stylesheet" href="/styles/colors.css">
-  <link rel="stylesheet" href="/styles/tokens.css">
-  <link rel="stylesheet" href="/styles/shared.css">
-  <link rel="stylesheet" href="/styles/desktop.css">
+  <link rel="icon" type="image/png" href="/assets/icon.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="/styles/colors.css"><link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/shared.css"><link rel="stylesheet" href="/styles/desktop.css">
 </head>
-<body>
+<body data-view="join">
 <div class="desktop-shell">
   <aside class="sidebar">
-    <div><a class="brand" href="/app"><em>Re:</em>Cooplay</a><p>3人で、ひとつの冒険。</p></div>
-    <nav class="steps" id="steps" aria-label="準備の手順"></nav>
-    <div class="join-guide">
-      <h2>スマホで読み取って参加</h2>
-      <div class="qr" id="qr"><span class="muted">QRを読み込み中…</span></div>
-      <div class="url" id="url"></div>
-      <p class="muted" id="urlNote"></p>
-      <div id="wifi"></div>
-      <div class="participant-count"><span class="count" id="count">0/3</span><span>人が接続中</span></div>
+    <a class="brand" href="/app" aria-label="Re:Cooplay 参加画面へ"><img class="brand-image" src="/assets/logo.png" width="3200" height="2400" alt="Re:Cooplay"></a>
+    <h1 id="screenTitle" class="page-title"></h1>
+    <hr class="left-rule" id="leftRule" hidden>
+    <p class="explanation" id="explanation"></p><p class="secondary" id="secondary"></p>
+    <button class="main-cta" id="nextBtn" hidden>OK</button>
+    <button class="main-cta disabled-start" id="blockedStart" disabled hidden>START</button>
+    <div class="main-cta start-instruction" id="readyInstruction" role="note" hidden>START<span>ホストのスマホでReady</span></div>
+    <div class="join-guide" id="joinGuide">
+      <p class="qr-bubble">みんなのスマホで<br>読み取ろう！</p>
+      <svg class="qr-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg>
+      <div class="qr" id="qr"><span>QRを読み込み中…</span></div>
+      <button class="connection-help" id="connectionHelpBtn">接続方法・URLを確認</button>
     </div>
-    <p class="sidebar-tip">① PCと同じWi-Fiにつなぐ<br>② QRを順番に読み取る<br>③ 最初のスマホがホスト（P1）</p>
+    <button class="open-game" id="openGameBtn" hidden>Minecraftを前面にする</button>
+    <p class="action-note" id="actionNote" role="status"></p>
   </aside>
-  <div class="workspace">
-    <header>
-      <div><span class="eyebrow">RE:COOPLAY / LOCAL CO-OP</span><h1 id="screenTitle">みんなで集まろう！</h1></div>
-      <div class="status-pills"><span class="pill" id="phase">接続中…</span><span class="pill" id="conn">ホストに接続中…</span></div>
-    </header>
-    <div id="phaseBanner" role="status"><b id="phaseTitle"></b><span id="phaseDetail"></span></div>
-    <main>
-      <section class="screen" id="s-join" aria-label="参加">
-        <p class="intro">スマホを順番に接続すると、担当がひとつずつ決まります。<br>移動、視点、アクション。3人の力で、1人のキャラクターを動かそう。</p>
-        <div class="slots" id="slots"></div>
-        <div class="actions"><button class="primary" data-go="game">ゲームを選ぶ →</button></div>
-      </section>
-      <section class="screen" id="s-game" aria-label="ゲーム選択">
-        <p class="intro">今回遊べるゲームはMinecraft Java Edition。ゲームの改造は必要ありません。</p>
-        <div id="games"></div>
-        <div class="actions"><button data-go="join">← 参加に戻る</button><button class="primary" data-go="roles">このゲームで分担を確認 →</button></div>
-        <p class="legal">NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.<br>Re:CooplayはMinecraftの公式製品ではなく、Mojang・Microsoftの承認・提携はありません。</p>
-      </section>
-      <section class="screen" id="s-roles" aria-label="操作分担とゲーム準備">
-        <div class="roles" id="roles"></div>
-        <div class="start">
-          <div class="card"><h3>ゲームを準備しよう</h3><button id="prepareBtn">ゲームを開く・準備する</button><button id="openGameBtn" hidden>Minecraftを前面にする</button><div id="startState" role="status"></div></div>
-          <div class="card"><h3>ゲームへの入力</h3><div class="seg" id="modeSeg"><button data-mode="off">OFF</button><button data-mode="on">ON（Minecraftが前面のときだけ）</button></div><div class="muted" id="modeNote"></div></div>
-        </div>
-        <div class="actions"><button data-go="game">← ゲーム選択に戻る</button></div>
-      </section>
-    </main>
-    <footer><span id="target"></span><span id="hotkey"></span><a href="/host">診断画面</a></footer>
-  </div>
+  <main class="workspace">
+    <section id="playerStage" class="player-stage" aria-label="参加者と担当"><div id="players" class="players"></div></section>
+    <section id="gameStage" class="game-stage" aria-label="ゲーム選択" hidden><div id="games" class="game-frame"></div></section>
+    <section id="roleStage" class="role-stage" aria-label="固定の操作分担" hidden>
+      <div class="role-band"><h2>3人で、操作を分担！</h2><div class="key-samples" aria-label="操作の見本。分担は固定です"><span>使う <kbd>E</kbd></span><span>前進 <kbd>W</kbd></span><span>後退 <kbd>S</kbd></span><svg class="key-up" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 27H34L18 2Z"/></svg><svg class="key-down" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg></div></div>
+      <div id="roles" class="role-columns"></div>
+    </section>
+    <p id="warning" class="safety-warning" role="alert" hidden></p>
+  </main>
+  <footer class="utility-bar"><span id="hotkey">緊急停止：Ctrl+Alt+F12</span><nav id="steps" aria-label="画面の移動"></nav><button id="settingsBtn">操作設定</button></footer>
 </div>
+<dialog id="settings" aria-labelledby="settingsTitle">
+  <h2 id="settingsTitle">操作設定</h2><p id="inputState" role="status"></p>
+  <div class="seg" id="modeSeg"><button data-mode="off">入力OFF</button><button data-mode="on">入力ON</button></div>
+  <p>Minecraftが前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。</p>
+  <details><summary>手順・詳しい確認</summary><ol id="gameSteps"></ol><p id="gameStatus"></p><p><a href="/host">診断画面を開く</a></p></details>
+  <button id="settingsConnectionBtn">参加用QR・接続方法</button>
+  <details><summary>Minecraftについて</summary><p class="legal">NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.<br>Re:CooplayはMinecraftの公式製品ではなく、Mojang・Microsoftの承認・提携はありません。</p></details>
+  <button id="closeSettings">閉じる</button>
+</dialog>
+<dialog id="connectionHelp" aria-labelledby="connectionTitle">
+  <h2 id="connectionTitle">スマホを接続する</h2><p>PCと同じWi-Fiへ接続してから、QRをP1→P2→P3の順に読み取ってください。</p>
+  <div id="helpQr" class="help-qr"></div>
+  <p class="url" id="url"></p><p id="urlNote"></p><p id="wifi"></p>
+  <button id="reloadInfo">QRを取得し直す</button><button id="closeConnectionHelp">閉じる</button>
+</dialog>
 <script type="module" src="/scripts/desktop.js"></script>
-</body>
-</html>
+</body></html>

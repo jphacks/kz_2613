@@ -1,0 +1,1052 @@
+[
+  {
+    "screen": "join",
+    "width": 1920,
+    "height": 1080,
+    "metrics": [
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 1080,
+          "height": 1080,
+          "left": 0,
+          "right": 560.625,
+          "top": 0,
+          "width": 560.625,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "sidebar"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 690.5625,
+          "height": 250,
+          "left": 154.8125,
+          "right": 404.8125,
+          "top": 440.5625,
+          "width": 250,
+          "x": 154.8125,
+          "y": 440.5625
+        },
+        "selector": "qr"
+      },
+      {
+        "font": "46px",
+        "rect": {
+          "bottom": 137,
+          "height": 62,
+          "left": 608.625,
+          "right": 953.328125,
+          "top": 75,
+          "width": 344.703125,
+          "x": 608.625,
+          "y": 75
+        },
+        "selector": "screenTitle"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 555,
+          "height": 313,
+          "left": 608.625,
+          "right": 1872,
+          "top": 242,
+          "width": 1263.375,
+          "x": 608.625,
+          "y": 242
+        },
+        "selector": "slots"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "games"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "roles"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "start"
+      }
+    ]
+  },
+  {
+    "screen": "game",
+    "width": 1920,
+    "height": 1080,
+    "metrics": [
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 1080,
+          "height": 1080,
+          "left": 0,
+          "right": 560.625,
+          "top": 0,
+          "width": 560.625,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "sidebar"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 690.5625,
+          "height": 250,
+          "left": 154.8125,
+          "right": 404.8125,
+          "top": 440.5625,
+          "width": 250,
+          "x": 154.8125,
+          "y": 440.5625
+        },
+        "selector": "qr"
+      },
+      {
+        "font": "46px",
+        "rect": {
+          "bottom": 137,
+          "height": 62,
+          "left": 608.625,
+          "right": 941.28125,
+          "top": 75,
+          "width": 332.65625,
+          "x": 608.625,
+          "y": 75
+        },
+        "selector": "screenTitle"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "slots"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 596.875,
+          "height": 383.375,
+          "left": 608.625,
+          "right": 1872,
+          "top": 213.5,
+          "width": 1263.375,
+          "x": 608.625,
+          "y": 213.5
+        },
+        "selector": "games"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "roles"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "start"
+      }
+    ]
+  },
+  {
+    "screen": "roles",
+    "width": 1920,
+    "height": 1080,
+    "metrics": [
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 1080,
+          "height": 1080,
+          "left": 0,
+          "right": 560.625,
+          "top": 0,
+          "width": 560.625,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "sidebar"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 690.5625,
+          "height": 250,
+          "left": 154.8125,
+          "right": 404.8125,
+          "top": 440.5625,
+          "width": 250,
+          "x": 154.8125,
+          "y": 440.5625
+        },
+        "selector": "qr"
+      },
+      {
+        "font": "46px",
+        "rect": {
+          "bottom": 137,
+          "height": 62,
+          "left": 608.625,
+          "right": 985.96875,
+          "top": 75,
+          "width": 377.34375,
+          "x": 608.625,
+          "y": 75
+        },
+        "selector": "screenTitle"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "slots"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "games"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 542.234375,
+          "height": 381.234375,
+          "left": 608.625,
+          "right": 1872,
+          "top": 161,
+          "width": 1263.375,
+          "x": 608.625,
+          "y": 161
+        },
+        "selector": "roles"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 737.421875,
+          "height": 171.1875,
+          "left": 608.625,
+          "right": 1872,
+          "top": 566.234375,
+          "width": 1263.375,
+          "x": 608.625,
+          "y": 566.234375
+        },
+        "selector": "start"
+      }
+    ]
+  },
+  {
+    "screen": "preparing",
+    "width": 1920,
+    "height": 1080,
+    "metrics": [
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 1111.796875,
+          "height": 1111.796875,
+          "left": 0,
+          "right": 556.25,
+          "top": 0,
+          "width": 556.25,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "sidebar"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 706.46875,
+          "height": 250,
+          "left": 152.625,
+          "right": 402.625,
+          "top": 456.46875,
+          "width": 250,
+          "x": 152.625,
+          "y": 456.46875
+        },
+        "selector": "qr"
+      },
+      {
+        "font": "46px",
+        "rect": {
+          "bottom": 137,
+          "height": 62,
+          "left": 604.25,
+          "right": 927.65625,
+          "top": 75,
+          "width": 323.40625,
+          "x": 604.25,
+          "y": 75
+        },
+        "selector": "screenTitle"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "slots"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "games"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 663.828125,
+          "height": 381.234375,
+          "left": 604.25,
+          "right": 1857,
+          "top": 282.59375,
+          "width": 1252.75,
+          "x": 604.25,
+          "y": 282.59375
+        },
+        "selector": "roles"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 929.203125,
+          "height": 241.375,
+          "left": 604.25,
+          "right": 1857,
+          "top": 687.828125,
+          "width": 1252.75,
+          "x": 604.25,
+          "y": 687.828125
+        },
+        "selector": "start"
+      }
+    ]
+  },
+  {
+    "screen": "ready",
+    "width": 1920,
+    "height": 1080,
+    "metrics": [
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 1081.703125,
+          "height": 1081.703125,
+          "left": 0,
+          "right": 556.25,
+          "top": 0,
+          "width": 556.25,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "sidebar"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 691.421875,
+          "height": 250,
+          "left": 152.625,
+          "right": 402.625,
+          "top": 441.421875,
+          "width": 250,
+          "x": 152.625,
+          "y": 441.421875
+        },
+        "selector": "qr"
+      },
+      {
+        "font": "46px",
+        "rect": {
+          "bottom": 137,
+          "height": 62,
+          "left": 604.25,
+          "right": 927.65625,
+          "top": 75,
+          "width": 323.40625,
+          "x": 604.25,
+          "y": 75
+        },
+        "selector": "screenTitle"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "slots"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "games"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 663.828125,
+          "height": 381.234375,
+          "left": 604.25,
+          "right": 1857,
+          "top": 282.59375,
+          "width": 1252.75,
+          "x": 604.25,
+          "y": 282.59375
+        },
+        "selector": "roles"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 899.109375,
+          "height": 211.28125,
+          "left": 604.25,
+          "right": 1857,
+          "top": 687.828125,
+          "width": 1252.75,
+          "x": 604.25,
+          "y": 687.828125
+        },
+        "selector": "start"
+      }
+    ]
+  },
+  {
+    "screen": "join",
+    "width": 1280,
+    "height": 720,
+    "metrics": [
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 720,
+          "height": 720,
+          "left": 0,
+          "right": 373.75,
+          "top": 0,
+          "width": 373.75,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "sidebar"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 467.625,
+          "height": 165.59375,
+          "left": 103.578125,
+          "right": 269.171875,
+          "top": 302.03125,
+          "width": 165.59375,
+          "x": 103.578125,
+          "y": 302.03125
+        },
+        "selector": "qr"
+      },
+      {
+        "font": "33.28px",
+        "rect": {
+          "bottom": 103,
+          "height": 44,
+          "left": 405.75,
+          "right": 655.140625,
+          "top": 59,
+          "width": 249.390625,
+          "x": 405.75,
+          "y": 59
+        },
+        "selector": "screenTitle"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 499,
+          "height": 299,
+          "left": 405.75,
+          "right": 1248,
+          "top": 200,
+          "width": 842.25,
+          "x": 405.75,
+          "y": 200
+        },
+        "selector": "slots"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "games"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "roles"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "start"
+      }
+    ]
+  },
+  {
+    "screen": "game",
+    "width": 1280,
+    "height": 720,
+    "metrics": [
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 740.84375,
+          "height": 740.84375,
+          "left": 0,
+          "right": 369.375,
+          "top": 0,
+          "width": 369.375,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "sidebar"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 478.046875,
+          "height": 165.59375,
+          "left": 101.390625,
+          "right": 266.984375,
+          "top": 312.453125,
+          "width": 165.59375,
+          "x": 101.390625,
+          "y": 312.453125
+        },
+        "selector": "qr"
+      },
+      {
+        "font": "33.28px",
+        "rect": {
+          "bottom": 103,
+          "height": 44,
+          "left": 401.375,
+          "right": 642.046875,
+          "top": 59,
+          "width": 240.671875,
+          "x": 401.375,
+          "y": 59
+        },
+        "selector": "screenTitle"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "slots"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 520.25,
+          "height": 348.75,
+          "left": 401.375,
+          "right": 1233,
+          "top": 171.5,
+          "width": 831.625,
+          "x": 401.375,
+          "y": 171.5
+        },
+        "selector": "games"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "roles"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "start"
+      }
+    ]
+  },
+  {
+    "screen": "roles",
+    "width": 1280,
+    "height": 720,
+    "metrics": [
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 814.203125,
+          "height": 814.203125,
+          "left": 0,
+          "right": 369.375,
+          "top": 0,
+          "width": 369.375,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "sidebar"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 514.734375,
+          "height": 165.59375,
+          "left": 101.390625,
+          "right": 266.984375,
+          "top": 349.140625,
+          "width": 165.59375,
+          "x": 101.390625,
+          "y": 349.140625
+        },
+        "selector": "qr"
+      },
+      {
+        "font": "33.28px",
+        "rect": {
+          "bottom": 103,
+          "height": 44,
+          "left": 401.375,
+          "right": 674.375,
+          "top": 59,
+          "width": 273,
+          "x": 401.375,
+          "y": 59
+        },
+        "selector": "screenTitle"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "slots"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "games"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 458.234375,
+          "height": 339.234375,
+          "left": 401.375,
+          "right": 1233,
+          "top": 119,
+          "width": 831.625,
+          "x": 401.375,
+          "y": 119
+        },
+        "selector": "roles"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 655.609375,
+          "height": 173.375,
+          "left": 401.375,
+          "right": 1233,
+          "top": 482.234375,
+          "width": 831.625,
+          "x": 401.375,
+          "y": 482.234375
+        },
+        "selector": "start"
+      }
+    ]
+  },
+  {
+    "screen": "preparing",
+    "width": 1280,
+    "height": 720,
+    "metrics": [
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 995.796875,
+          "height": 995.796875,
+          "left": 0,
+          "right": 369.375,
+          "top": 0,
+          "width": 369.375,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "sidebar"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 605.53125,
+          "height": 165.59375,
+          "left": 101.390625,
+          "right": 266.984375,
+          "top": 439.9375,
+          "width": 165.59375,
+          "x": 101.390625,
+          "y": 439.9375
+        },
+        "selector": "qr"
+      },
+      {
+        "font": "33.28px",
+        "rect": {
+          "bottom": 103,
+          "height": 44,
+          "left": 401.375,
+          "right": 635.359375,
+          "top": 59,
+          "width": 233.984375,
+          "x": 401.375,
+          "y": 59
+        },
+        "selector": "screenTitle"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "slots"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "games"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 571.828125,
+          "height": 339.234375,
+          "left": 401.375,
+          "right": 1233,
+          "top": 232.59375,
+          "width": 831.625,
+          "x": 401.375,
+          "y": 232.59375
+        },
+        "selector": "roles"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 837.203125,
+          "height": 241.375,
+          "left": 401.375,
+          "right": 1233,
+          "top": 595.828125,
+          "width": 831.625,
+          "x": 401.375,
+          "y": 595.828125
+        },
+        "selector": "start"
+      }
+    ]
+  },
+  {
+    "screen": "ready",
+    "width": 1280,
+    "height": 720,
+    "metrics": [
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 992.890625,
+          "height": 992.890625,
+          "left": 0,
+          "right": 369.375,
+          "top": 0,
+          "width": 369.375,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "sidebar"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 604.078125,
+          "height": 165.59375,
+          "left": 101.390625,
+          "right": 266.984375,
+          "top": 438.484375,
+          "width": 165.59375,
+          "x": 101.390625,
+          "y": 438.484375
+        },
+        "selector": "qr"
+      },
+      {
+        "font": "33.28px",
+        "rect": {
+          "bottom": 103,
+          "height": 44,
+          "left": 401.375,
+          "right": 635.359375,
+          "top": 59,
+          "width": 233.984375,
+          "x": 401.375,
+          "y": 59
+        },
+        "selector": "screenTitle"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "slots"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "selector": "games"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 571.828125,
+          "height": 339.234375,
+          "left": 401.375,
+          "right": 1233,
+          "top": 232.59375,
+          "width": 831.625,
+          "x": 401.375,
+          "y": 232.59375
+        },
+        "selector": "roles"
+      },
+      {
+        "font": "16px",
+        "rect": {
+          "bottom": 834.296875,
+          "height": 238.46875,
+          "left": 401.375,
+          "right": 1233,
+          "top": 595.828125,
+          "width": 831.625,
+          "x": 401.375,
+          "y": 595.828125
+        },
+        "selector": "start"
+      }
+    ]
+  }
+]

@@ -74,5 +74,17 @@ try {
     cursor.handle({control:'REMOTE_WHEEL_DOWN',state:'down'});assert.equal(scrolled,120);
     assert.equal(cursor.handle({control:'RIGHT',state:'down'}),false);
   });
+  await test('PC仮想カーソル: 設定のトップレイヤーへ移り、summaryを押せて、閉じると本体へ戻る',()=>{
+    let opened=false,clicked=0;
+    const marker={style:{},setAttribute(){}};
+    const body={append(el){el.parentElement=this;}};
+    const dialog={append(el){el.parentElement=this;}};
+    globalThis.document={createElement:()=>marker,body,querySelector:()=>opened?dialog:null,elementFromPoint:()=>({closest(selector){assert(selector.includes('summary'));return {disabled:false,click(){clicked++;}};}})};
+    const cursor=createVirtualCursor();
+    cursor.handle({kind:'move',dx:0,dy:0});assert.equal(marker.parentElement,body);
+    opened=true;cursor.handle({kind:'move',dx:1,dy:1});assert.equal(marker.parentElement,dialog);
+    cursor.handle({control:'REMOTE_LEFT',state:'down'});assert.equal(clicked,1);
+    opened=false;cursor.handle({kind:'move',dx:1,dy:1});assert.equal(marker.parentElement,body);
+  });
   console.log(`${passed}/${passed} 合格（UI入力、OS入力なし）`);
 } finally { globalThis.setInterval=originalInterval; }

@@ -15,6 +15,22 @@
   --color-success: #205D49;
   --color-warning: #775218;
   --color-pink: #FFBFB4;
+  /* PC原案のベタ色。元PNGの採寸記録はpc-fidelity-reference.json。 */
+  --color-black: #000000;
+  --color-logo: #595959;
+  --color-stage-purple: #CC33FF;
+  --color-character: #D9D9D9;
+  --color-disabled: #E9E9E9;
+  --color-title-shadow: #BFBFBF;
+  --color-shadow: #00000040;
+  --color-role-band: #00000080;
+  --color-role-highlight: #86E8F1;
+  --color-role-outline: #E3FF11;
+  --color-key: #E5E3DD;
+  --color-key-ink: #666666;
+  --color-key-focus: #FF00DD;
+  --color-key-arrow: #FFED62;
+  --color-key-selected: #F8F8F6;
   --bg: var(--color-cream); --panel: var(--color-surface); --panel2: var(--color-ice);
   --text: var(--color-ink); --muted: var(--color-muted); --line: var(--color-cyan);
   --ok: var(--color-success); --ng: var(--color-error); --warn: var(--color-warning);

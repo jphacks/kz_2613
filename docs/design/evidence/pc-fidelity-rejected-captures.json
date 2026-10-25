@@ -1,0 +1,4005 @@
+[
+  {
+    "directory": "pc-fidelity-final-1",
+    "accepted": false,
+    "files": [
+      {
+        "file": "browser-errors.json",
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "record": []
+      },
+      {
+        "file": "game-1280.jpg",
+        "sha256": "7ab3b74d7b8044b43aa55dca09c3af9fbd1c70b444397c50c0b4c77a72f8ee16",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "game-1920.jpg",
+        "sha256": "c00310d15d59ec833240a1cb1715b6440189acd70b93001d0c7ec284f61176d3",
+        "size": [
+          1872,
+          1080
+        ]
+      },
+      {
+        "file": "join-1280.jpg",
+        "sha256": "97a38d4e11bd1d041ad65c0374498b96e89ad0a2ecd3bb12ac17b4bc0d54beea",
+        "size": [
+          1248,
+          720
+        ]
+      },
+      {
+        "file": "join-1920.jpg",
+        "sha256": "080a06db28481779c74d35dc2ace6e45ffe36ba98aa99e67af410af572aaaec0",
+        "size": [
+          1872,
+          1080
+        ]
+      },
+      {
+        "file": "metrics.json",
+        "sha256": "8111d2df0369f1897c8827fc4f6a3d6541971ed177e099dc5d1e30c2f9f080ab"
+      },
+      {
+        "file": "preparing-1280.jpg",
+        "sha256": "8108d4c741d36bacdc2f93c15a5830b05bd2ae025b35399ee382adff7379e827",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "preparing-1920.jpg",
+        "sha256": "b5171a9e4c52dbb3a92ecb96a9aa137a81d0aa418a79e0f969345d7031438cb7",
+        "size": [
+          1872,
+          1080
+        ]
+      },
+      {
+        "file": "ready-1280.jpg",
+        "sha256": "e38c6e60eec759a4aa188d66c168d4e711ac551e32e5de8f4779f65034127b37",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "ready-1920.jpg",
+        "sha256": "729a34d397310fe70e32552e91dbd357875cc11ece0ece0c439c4aab97f572e1",
+        "size": [
+          1872,
+          1080
+        ]
+      },
+      {
+        "file": "roles-1280.jpg",
+        "sha256": "fddbae6819e1bd8d6f82b60cc4a6a03482be98ddbb94121fe66eb89cc2bd49d5",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "roles-1920.jpg",
+        "sha256": "28f64d9f8c33758079aa0f86ae5496637b7cef1fa7564aac5d6e34221103d9d7",
+        "size": [
+          1872,
+          1080
+        ]
+      }
+    ]
+  },
+  {
+    "directory": "pc-fidelity-final-a",
+    "accepted": false,
+    "files": [
+      {
+        "file": "browser-errors.json",
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "record": []
+      },
+      {
+        "file": "game-1280.jpg",
+        "sha256": "4e88fc1ee613b4be9d8b555d93f20f37f1bed3ca757cc7c86a4e9d831288321b",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "game-1920.jpg",
+        "sha256": "a7ca3f33b3e88a34e996af83732f5115c3c013220d70ab993cc80a74ec835fa9",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "game-comparison.jpg",
+        "sha256": "c2cc2511a0ac5b5e9ef7374d254a89eba639c2ec9ceac8af6b46152a843c6b5c",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "game-difference.png",
+        "sha256": "d4b10a1b91d99a7ee4069ce69e83e160ef8503af604225a7523c3cf0aaa2a26a",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "geometry-audit.json",
+        "sha256": "695be5ff50d2e399bacb9da8bb620c17e440b85e1ee2209bf2ef1db04c9d33da",
+        "record": [
+          {
+            "screen": "join",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:16:43.312Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  646,
+                  140,
+                  781.0,
+                  230
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.51,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  646,
+                  436,
+                  781.0,
+                  644
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  136,
+                  376,
+                  288,
+                  102
+                ],
+                "actual": [
+                  136,
+                  376,
+                  288,
+                  102
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "qr",
+                "reference": [
+                  95,
+                  649,
+                  369,
+                  369
+                ],
+                "actual": [
+                  95,
+                  649,
+                  369,
+                  369
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 11.829,
+            "titleInk": {
+              "reference": [
+                99,
+                144,
+                342,
+                203
+              ],
+              "actual": [
+                100,
+                145,
+                339,
+                200
+              ],
+              "centerDelta": [
+                -0.5,
+                -0.5
+              ],
+              "sizeDeltaPercent": [
+                -0.88,
+                -1.48
+              ]
+            }
+          },
+          {
+            "screen": "game",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:16:48.837Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "panel",
+                "reference": [
+                  611,
+                  41,
+                  1274,
+                  982
+                ],
+                "actual": [
+                  611,
+                  41,
+                  1274,
+                  982
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  60,
+                  771,
+                  469,
+                  67
+                ],
+                "actual": [
+                  60,
+                  771,
+                  469,
+                  67
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "rule",
+                "reference": [
+                  60,
+                  386,
+                  438,
+                  1
+                ],
+                "actual": [
+                  60,
+                  386,
+                  438,
+                  0.67
+                ],
+                "centerDelta": [
+                  0.0,
+                  -0.17
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  -33.33
+                ],
+                "pass": false
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 5.979,
+            "titleInk": {
+              "reference": [
+                105,
+                228,
+                371,
+                135
+              ],
+              "actual": [
+                105,
+                229,
+                371,
+                135
+              ],
+              "centerDelta": [
+                0.0,
+                1.0
+              ],
+              "sizeDeltaPercent": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "screen": "roles",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:16:52.365Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "band",
+                "reference": [
+                  616,
+                  52,
+                  1274,
+                  244
+                ],
+                "actual": [
+                  616,
+                  52,
+                  1274,
+                  244
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  669,
+                  404,
+                  1153,
+                  536
+                ],
+                "actual": [
+                  669,
+                  404,
+                  1153,
+                  536
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "rule",
+                "reference": [
+                  59,
+                  396,
+                  438,
+                  1
+                ],
+                "actual": [
+                  60,
+                  396,
+                  438,
+                  0.67
+                ],
+                "centerDelta": [
+                  1.0,
+                  -0.17
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  -33.33
+                ],
+                "pass": false
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 12.526,
+            "titleInk": {
+              "reference": [
+                100,
+                304,
+                356,
+                59
+              ],
+              "actual": [
+                100,
+                304,
+                356,
+                59
+              ],
+              "centerDelta": [
+                0.0,
+                0.0
+              ],
+              "sizeDeltaPercent": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "screen": "preparing",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:16:55.850Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  646,
+                  140,
+                  781.0,
+                  230
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.51,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  646,
+                  436,
+                  781.0,
+                  644
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "actual": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 9.942,
+            "titleInk": {
+              "reference": [
+                112,
+                421,
+                356,
+                89
+              ],
+              "actual": [
+                110,
+                422,
+                360,
+                90
+              ],
+              "centerDelta": [
+                0.0,
+                1.5
+              ],
+              "sizeDeltaPercent": [
+                1.12,
+                1.12
+              ]
+            }
+          },
+          {
+            "screen": "ready",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:16:59.279Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  646,
+                  140,
+                  781.0,
+                  230
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.51,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  646,
+                  436,
+                  781.0,
+                  644
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "actual": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 8.757,
+            "titleInk": {
+              "reference": [
+                51,
+                421,
+                436,
+                89
+              ],
+              "actual": [
+                55,
+                422,
+                436,
+                89
+              ],
+              "centerDelta": [
+                4.0,
+                1.0
+              ],
+              "sizeDeltaPercent": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "screen": "join",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:17:02.380Z",
+            "checks": []
+          },
+          {
+            "screen": "game",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:17:06.854Z",
+            "checks": []
+          },
+          {
+            "screen": "roles",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:17:12.268Z",
+            "checks": []
+          },
+          {
+            "screen": "preparing",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:17:16.678Z",
+            "checks": []
+          },
+          {
+            "screen": "ready",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:17:20.131Z",
+            "checks": []
+          }
+        ]
+      },
+      {
+        "file": "index.html",
+        "sha256": "e654af9613f644fa506f07ff2cdaf11a9d248c9c63ecf79e29718e5b954b42cb"
+      },
+      {
+        "file": "join-1280.jpg",
+        "sha256": "7874f05782c203d5e2934d02aa1dd0458c28b72bcd93cea95ea7edb925f99c69",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "join-1920.jpg",
+        "sha256": "010518edb4849c985a959005d45e7358cd078a77bda7fc191a12d3b2844d3420",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "join-comparison.jpg",
+        "sha256": "ed2e2bca359182a9155a118b796850d3176aa675e87ed8c4043e8e7f0cd580ca",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "join-difference.png",
+        "sha256": "b3e0d6d46cefb7535e0b9450fcc9a0aebd54733120f64be8fa3be25abdbb5493",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "metrics.json",
+        "sha256": "2ca66984a06de4b5642dbfb3e486d5df6cc7605be52b3d0fa5fc3b83068e7173"
+      },
+      {
+        "file": "preparing-1280.jpg",
+        "sha256": "0783a467cba966a77fabedcb6892e593935cfe13aa1957dbbe3e6814f6660c5d",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "preparing-1920.jpg",
+        "sha256": "7b3f2bd5e4b2027800923b861e3dc567fd289d029e2772c09fdcafd2d3f55295",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "preparing-comparison.jpg",
+        "sha256": "3102c43e11723212a8156e81654363006bb841e72028dfb529b68574f2283454",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "preparing-difference.png",
+        "sha256": "ecd39b4d26bfd92b9b8548f50b7002adfc8d1f86e8c64715ac065d000e13987c",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "ready-1280.jpg",
+        "sha256": "86da57c04834ed4593fee82ff0d85457cbd76c35b5788a5e58507ea2fe2a3f14",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "ready-1920.jpg",
+        "sha256": "d7cbf055a8b70655a6620ae99e5c7bce58672f5e3afb08e8a404d7da683fe3d4",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "ready-comparison.jpg",
+        "sha256": "c1004334342c3c65b3feccf1618bfc007a77e3140ae687976c615889852a1805",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "ready-difference.png",
+        "sha256": "fdfd96c1f3d51cdafc4a18238166a4c63787bbd5c0099fa0cfbf122beb82afbd",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "roles-1280.jpg",
+        "sha256": "fddbae6819e1bd8d6f82b60cc4a6a03482be98ddbb94121fe66eb89cc2bd49d5",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "roles-1920.jpg",
+        "sha256": "f6dc40c0219af5be48a0a05ca509e537a7d00cce6f6b0f042efbfce2857831b0",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "roles-comparison.jpg",
+        "sha256": "50616eb0b12ff588c0f74327e52bc9ef6ce130757b627cb5c3b4f1b7796921f8",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "roles-difference.png",
+        "sha256": "8032978ef46ff1023beefed5ed0f238d618b15e46e4e13951269594bb10b4431",
+        "size": [
+          1920,
+          1080
+        ]
+      }
+    ]
+  },
+  {
+    "directory": "pc-fidelity-final-b",
+    "accepted": false,
+    "files": [
+      {
+        "file": "browser-errors.json",
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "record": []
+      },
+      {
+        "file": "game-1280.jpg",
+        "sha256": "24b5340ca64e75c4f6f987197923fdaffc2022d771749040f80109f33609dfb0",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "game-1920.jpg",
+        "sha256": "9ee8ce37853639f8926a6311e185f54c2e88b00d37256774224d1c6f181fb5e0",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "game-comparison.jpg",
+        "sha256": "304b2f50d986fd4b09f9a23648f6e8595f18f7303772c8bfc59ff362327a507b",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "game-difference.png",
+        "sha256": "d8f9f71e28df17dd93791c1147657da588b6808e340da4650947981dd1030d94",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "geometry-audit.json",
+        "sha256": "d2b020488aabaa28fc02f654b3e52fd56e48f15844633432ce60351a2b0c59d1",
+        "record": [
+          {
+            "screen": "join",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:21:22.692Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": false
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  430.67,
+                  93.33,
+                  520.67,
+                  153.33
+                ],
+                "centerDelta": [
+                  -345.5,
+                  -85.0
+                ],
+                "sizeDeltaPercent": [
+                  -32.99,
+                  -33.33
+                ],
+                "pass": false
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  430.67,
+                  290.67,
+                  520.67,
+                  429.33
+                ],
+                "centerDelta": [
+                  -345.5,
+                  -252.67
+                ],
+                "sizeDeltaPercent": [
+                  -33.33,
+                  -33.33
+                ],
+                "pass": false
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  136,
+                  376,
+                  288,
+                  102
+                ],
+                "actual": [
+                  90.67,
+                  250.67,
+                  192.0,
+                  68.0
+                ],
+                "centerDelta": [
+                  -93.33,
+                  -142.33
+                ],
+                "sizeDeltaPercent": [
+                  -33.33,
+                  -33.33
+                ],
+                "pass": false
+              },
+              {
+                "element": "qr",
+                "reference": [
+                  95,
+                  649,
+                  369,
+                  369
+                ],
+                "actual": [
+                  63.33,
+                  432.67,
+                  246.0,
+                  246.0
+                ],
+                "centerDelta": [
+                  -93.17,
+                  -277.83
+                ],
+                "sizeDeltaPercent": [
+                  -33.33,
+                  -33.33
+                ],
+                "pass": false
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 29.58,
+            "titleInk": {
+              "reference": [
+                99,
+                144,
+                342,
+                203
+              ],
+              "actual": [
+                68,
+                130,
+                224,
+                235
+              ],
+              "centerDelta": [
+                -90.0,
+                2.0
+              ],
+              "sizeDeltaPercent": [
+                -34.5,
+                15.76
+              ]
+            }
+          },
+          {
+            "screen": "game",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:21:25.270Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": false
+              },
+              {
+                "element": "panel",
+                "reference": [
+                  611,
+                  41,
+                  1274,
+                  982
+                ],
+                "actual": [
+                  407.33,
+                  27.33,
+                  849.33,
+                  654.67
+                ],
+                "centerDelta": [
+                  -416.0,
+                  -177.33
+                ],
+                "sizeDeltaPercent": [
+                  -33.33,
+                  -33.33
+                ],
+                "pass": false
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  60,
+                  771,
+                  469,
+                  67
+                ],
+                "actual": [
+                  40,
+                  514,
+                  312.67,
+                  44.67
+                ],
+                "centerDelta": [
+                  -98.17,
+                  -268.17
+                ],
+                "sizeDeltaPercent": [
+                  -33.33,
+                  -33.33
+                ],
+                "pass": false
+              },
+              {
+                "element": "rule",
+                "reference": [
+                  60,
+                  386,
+                  438,
+                  1
+                ],
+                "actual": [
+                  40,
+                  257.33,
+                  292,
+                  0.67
+                ],
+                "centerDelta": [
+                  -93.0,
+                  -128.83
+                ],
+                "sizeDeltaPercent": [
+                  -33.33,
+                  -33.33
+                ],
+                "pass": false
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 14.241,
+            "titleInk": {
+              "reference": [
+                105,
+                228,
+                371,
+                135
+              ],
+              "actual": [
+                68,
+                210,
+                250,
+                163
+              ],
+              "centerDelta": [
+                -97.5,
+                -4.0
+              ],
+              "sizeDeltaPercent": [
+                -32.61,
+                20.74
+              ]
+            }
+          },
+          {
+            "screen": "roles",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:21:34.337Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": false
+              },
+              {
+                "element": "band",
+                "reference": [
+                  616,
+                  52,
+                  1274,
+                  244
+                ],
+                "actual": [
+                  410.67,
+                  34.67,
+                  849.33,
+                  162.67
+                ],
+                "centerDelta": [
+                  -417.67,
+                  -58.0
+                ],
+                "sizeDeltaPercent": [
+                  -33.33,
+                  -33.33
+                ],
+                "pass": false
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  669,
+                  404,
+                  1153,
+                  536
+                ],
+                "actual": [
+                  446,
+                  269.33,
+                  768.67,
+                  357.33
+                ],
+                "centerDelta": [
+                  -415.17,
+                  -224.0
+                ],
+                "sizeDeltaPercent": [
+                  -33.33,
+                  -33.33
+                ],
+                "pass": false
+              },
+              {
+                "element": "rule",
+                "reference": [
+                  59,
+                  396,
+                  438,
+                  1
+                ],
+                "actual": [
+                  39.33,
+                  264,
+                  292.0,
+                  0.67
+                ],
+                "centerDelta": [
+                  -92.67,
+                  -132.17
+                ],
+                "sizeDeltaPercent": [
+                  -33.33,
+                  -33.33
+                ],
+                "pass": false
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 39.363,
+            "titleInk": {
+              "reference": [
+                100,
+                304,
+                356,
+                59
+              ],
+              "actual": [
+                94,
+                326,
+                178,
+                44
+              ],
+              "centerDelta": [
+                -95.0,
+                14.5
+              ],
+              "sizeDeltaPercent": [
+                -50.0,
+                -25.42
+              ]
+            }
+          },
+          {
+            "screen": "preparing",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:21:50.014Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": false,
+                "reason": "対応する色の見出しが撮影画像にありません"
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  430.67,
+                  93.33,
+                  520.67,
+                  153.33
+                ],
+                "centerDelta": [
+                  -345.5,
+                  -85.0
+                ],
+                "sizeDeltaPercent": [
+                  -32.99,
+                  -33.33
+                ],
+                "pass": false
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  430.67,
+                  290.67,
+                  520.67,
+                  429.33
+                ],
+                "centerDelta": [
+                  -345.5,
+                  -252.67
+                ],
+                "sizeDeltaPercent": [
+                  -33.33,
+                  -33.33
+                ],
+                "pass": false
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "actual": [
+                  92.67,
+                  385.33,
+                  192.0,
+                  68.0
+                ],
+                "centerDelta": [
+                  -94.33,
+                  -209.67
+                ],
+                "sizeDeltaPercent": [
+                  -33.33,
+                  -33.33
+                ],
+                "pass": false
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 26.448
+          },
+          {
+            "screen": "ready",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:21:53.673Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": false
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  430.67,
+                  93.33,
+                  520.67,
+                  153.33
+                ],
+                "centerDelta": [
+                  -345.5,
+                  -85.0
+                ],
+                "sizeDeltaPercent": [
+                  -32.99,
+                  -33.33
+                ],
+                "pass": false
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  430.67,
+                  290.67,
+                  520.67,
+                  429.33
+                ],
+                "centerDelta": [
+                  -345.5,
+                  -252.67
+                ],
+                "sizeDeltaPercent": [
+                  -33.33,
+                  -33.33
+                ],
+                "pass": false
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "actual": [
+                  92.67,
+                  385.33,
+                  192.0,
+                  68.0
+                ],
+                "centerDelta": [
+                  -94.33,
+                  -209.67
+                ],
+                "sizeDeltaPercent": [
+                  -33.33,
+                  -33.33
+                ],
+                "pass": false
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 26.819,
+            "titleInk": {
+              "reference": [
+                51,
+                421,
+                436,
+                89
+              ],
+              "actual": [
+                94,
+                404,
+                190,
+                48
+              ],
+              "centerDelta": [
+                -80.0,
+                -37.5
+              ],
+              "sizeDeltaPercent": [
+                -56.42,
+                -46.07
+              ]
+            }
+          },
+          {
+            "screen": "join",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:21:55.948Z",
+            "checks": []
+          },
+          {
+            "screen": "game",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:21:58.833Z",
+            "checks": []
+          },
+          {
+            "screen": "roles",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:22:01.361Z",
+            "checks": []
+          },
+          {
+            "screen": "preparing",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:22:03.188Z",
+            "checks": []
+          },
+          {
+            "screen": "ready",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:22:04.910Z",
+            "checks": []
+          }
+        ]
+      },
+      {
+        "file": "index.html",
+        "sha256": "e654af9613f644fa506f07ff2cdaf11a9d248c9c63ecf79e29718e5b954b42cb"
+      },
+      {
+        "file": "join-1280.jpg",
+        "sha256": "7874f05782c203d5e2934d02aa1dd0458c28b72bcd93cea95ea7edb925f99c69",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "join-1920.jpg",
+        "sha256": "692c1872209be738d00f97c60033796edfe75518f960e943cd948d9db539e18b",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "join-comparison.jpg",
+        "sha256": "51b18eb916f1b010e48cd5b88ee681022342b9eb594f196325267914fdff3b80",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "join-difference.png",
+        "sha256": "165e3d9af236761d47605db7010fd06a096086fe0d653d331deae2c7e5aac9a8",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "metrics.json",
+        "sha256": "bc769f5540b2debb0283a8a9b69acd0acbe3da9da7bb4e1ff2ba06a7775b459e"
+      },
+      {
+        "file": "preparing-1280.jpg",
+        "sha256": "01b7d1de420833484b3c9884a434f10716b688287b37dd26691895c78cc4bd6f",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "preparing-1920.jpg",
+        "sha256": "5ca3968f424c014ef219fafea297e1870d7e46049fd20736e49fd7f35c3beb65",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "preparing-comparison.jpg",
+        "sha256": "03b86595198b0db462688c92bd9b24516121abe098426f4d8ff364a3e2214a0d",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "preparing-difference.png",
+        "sha256": "d818532568f7a3f0fa283ee0e6682b01ad30ec976ad0b32ee5c4127f5ce53e1b",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "ready-1280.jpg",
+        "sha256": "86da57c04834ed4593fee82ff0d85457cbd76c35b5788a5e58507ea2fe2a3f14",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "ready-1920.jpg",
+        "sha256": "4afcf12d972803f20eac8859ceea58b647a081ae83b009296f05e84007f4a88f",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "ready-comparison.jpg",
+        "sha256": "3152105edb29e8651d9795fc90389394e123a5287cdf19b955022a8f59a1c8dc",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "ready-difference.png",
+        "sha256": "ed6b8377eb4400a913097f2aee6887747488631bb4a69390bdc2260d9ab5da3d",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "roles-1280.jpg",
+        "sha256": "fcc33b0c4b51d5ba9058a027888407e2c01676507a6e163543b8ff97d685c279",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "roles-1920.jpg",
+        "sha256": "ab3fd070b408f8bdfb762b36a2419d26b9b44c17660c90fe5d080aa5fe4624dd",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "roles-comparison.jpg",
+        "sha256": "7de46dc05b4a5cc5aeac768d5646744961f132f4f69cd4013f332385cc37c807",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "roles-difference.png",
+        "sha256": "7437e90fbd909d1353878f0cf3ae2e13d8bdd973e41d91776626330f3bb044d6",
+        "size": [
+          1920,
+          1080
+        ]
+      }
+    ]
+  },
+  {
+    "directory": "pc-fidelity-verify-1",
+    "accepted": false,
+    "files": [
+      {
+        "file": "browser-errors.json",
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "record": []
+      },
+      {
+        "file": "game-1280.jpg",
+        "sha256": "24b5340ca64e75c4f6f987197923fdaffc2022d771749040f80109f33609dfb0",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "game-1920.jpg",
+        "sha256": "304725833b3fc5d2935a37f2943c95ef99ff4b1728d177725b0a5dc9e770798b",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "game-comparison.jpg",
+        "sha256": "e47b217b4742feaf6ec3b4edd98380cde26f0d1fa2c064ddc11c0396216cc883",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "game-difference.png",
+        "sha256": "ce85b46e71108cee951efbd6ff93df496e89b6d824d55173a51120974ac4f4e7",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "geometry-audit.json",
+        "sha256": "1a7757d7a66ee06d2f8aec669932ad1a72741265599b8f9638488702d47794f6",
+        "record": [
+          {
+            "screen": "join",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:27:14.696Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  646,
+                  140,
+                  781.0,
+                  230
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.51,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  646,
+                  436,
+                  781.0,
+                  644
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  136,
+                  376,
+                  288,
+                  102
+                ],
+                "actual": [
+                  136,
+                  376,
+                  288,
+                  102
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "qr",
+                "reference": [
+                  95,
+                  649,
+                  369,
+                  369
+                ],
+                "actual": [
+                  95,
+                  649,
+                  369,
+                  369
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 11.829,
+            "titleInk": {
+              "reference": [
+                99,
+                144,
+                342,
+                203
+              ],
+              "actual": [
+                100,
+                145,
+                339,
+                200
+              ],
+              "centerDelta": [
+                -0.5,
+                -0.5
+              ],
+              "sizeDeltaPercent": [
+                -0.88,
+                -1.48
+              ]
+            }
+          },
+          {
+            "screen": "game",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:27:17.059Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "panel",
+                "reference": [
+                  611,
+                  41,
+                  1274,
+                  982
+                ],
+                "actual": [
+                  611,
+                  41,
+                  1274,
+                  982
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  60,
+                  771,
+                  469,
+                  67
+                ],
+                "actual": [
+                  60,
+                  771,
+                  469,
+                  67
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "rule",
+                "reference": [
+                  60,
+                  386,
+                  438,
+                  1
+                ],
+                "actual": [
+                  60,
+                  386,
+                  438,
+                  1
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 5.623,
+            "titleInk": {
+              "reference": [
+                105,
+                228,
+                371,
+                135
+              ],
+              "actual": [
+                105,
+                229,
+                371,
+                135
+              ],
+              "centerDelta": [
+                0.0,
+                1.0
+              ],
+              "sizeDeltaPercent": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "screen": "roles",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:27:19.177Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "band",
+                "reference": [
+                  616,
+                  52,
+                  1274,
+                  244
+                ],
+                "actual": [
+                  616,
+                  52,
+                  1274,
+                  244
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  669,
+                  404,
+                  1153,
+                  536
+                ],
+                "actual": [
+                  669,
+                  404,
+                  1153,
+                  536
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "rule",
+                "reference": [
+                  59,
+                  396,
+                  438,
+                  1
+                ],
+                "actual": [
+                  59,
+                  396,
+                  438,
+                  1
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 12.513,
+            "titleInk": {
+              "reference": [
+                100,
+                304,
+                356,
+                59
+              ],
+              "actual": [
+                100,
+                304,
+                356,
+                59
+              ],
+              "centerDelta": [
+                0.0,
+                0.0
+              ],
+              "sizeDeltaPercent": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "screen": "preparing",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:27:25.041Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  646,
+                  140,
+                  781.0,
+                  230
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.51,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  646,
+                  436,
+                  781.0,
+                  644
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "actual": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 10.143,
+            "titleInk": {
+              "reference": [
+                112,
+                421,
+                356,
+                89
+              ],
+              "actual": [
+                110,
+                422,
+                360,
+                90
+              ],
+              "centerDelta": [
+                0.0,
+                1.5
+              ],
+              "sizeDeltaPercent": [
+                1.12,
+                1.12
+              ]
+            }
+          },
+          {
+            "screen": "ready",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:27:28.446Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  646,
+                  140,
+                  781.0,
+                  230
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.51,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  646,
+                  436,
+                  781.0,
+                  644
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "actual": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 8.757,
+            "titleInk": {
+              "reference": [
+                51,
+                421,
+                436,
+                89
+              ],
+              "actual": [
+                55,
+                422,
+                436,
+                89
+              ],
+              "centerDelta": [
+                4.0,
+                1.0
+              ],
+              "sizeDeltaPercent": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "screen": "join",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:27:31.533Z",
+            "checks": []
+          },
+          {
+            "screen": "game",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:27:33.521Z",
+            "checks": []
+          },
+          {
+            "screen": "roles",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:27:37.210Z",
+            "checks": []
+          },
+          {
+            "screen": "preparing",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:27:39.905Z",
+            "checks": []
+          },
+          {
+            "screen": "ready",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:27:40.697Z",
+            "checks": []
+          }
+        ]
+      },
+      {
+        "file": "index.html",
+        "sha256": "e654af9613f644fa506f07ff2cdaf11a9d248c9c63ecf79e29718e5b954b42cb"
+      },
+      {
+        "file": "join-1280.jpg",
+        "sha256": "7874f05782c203d5e2934d02aa1dd0458c28b72bcd93cea95ea7edb925f99c69",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "join-1920.jpg",
+        "sha256": "010518edb4849c985a959005d45e7358cd078a77bda7fc191a12d3b2844d3420",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "join-comparison.jpg",
+        "sha256": "ed2e2bca359182a9155a118b796850d3176aa675e87ed8c4043e8e7f0cd580ca",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "join-difference.png",
+        "sha256": "b3e0d6d46cefb7535e0b9450fcc9a0aebd54733120f64be8fa3be25abdbb5493",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "metrics.json",
+        "sha256": "1578720f7e18514cf1083bba81f11e037ea9ed460c234e999c6874309fc9e73a"
+      },
+      {
+        "file": "preparing-1280.jpg",
+        "sha256": "01b7d1de420833484b3c9884a434f10716b688287b37dd26691895c78cc4bd6f",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "preparing-1920.jpg",
+        "sha256": "34d501b58f4daf1fa80823c9c3e1d013d74228759c1e4ac7001e10319a9d89f6",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "preparing-comparison.jpg",
+        "sha256": "22708d4d77babcfedd9c8a15393e00869e72ced96017116f7844bcd865b6689c",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "preparing-difference.png",
+        "sha256": "1e0fcfa3f036b170b7e89d5441b910fc8c9f04997f078089b2bf60005a9f0978",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "ready-1280.jpg",
+        "sha256": "86da57c04834ed4593fee82ff0d85457cbd76c35b5788a5e58507ea2fe2a3f14",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "ready-1920.jpg",
+        "sha256": "d7cbf055a8b70655a6620ae99e5c7bce58672f5e3afb08e8a404d7da683fe3d4",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "ready-comparison.jpg",
+        "sha256": "c1004334342c3c65b3feccf1618bfc007a77e3140ae687976c615889852a1805",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "ready-difference.png",
+        "sha256": "fdfd96c1f3d51cdafc4a18238166a4c63787bbd5c0099fa0cfbf122beb82afbd",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "roles-1280.jpg",
+        "sha256": "fcc33b0c4b51d5ba9058a027888407e2c01676507a6e163543b8ff97d685c279",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "roles-1920.jpg",
+        "sha256": "f15a67082b475bf9c28587a47938c549360d278aa93958247bbcb94f71275f4e",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "roles-comparison.jpg",
+        "sha256": "9a3c4c8b0da6a1f6480aea56f733e1e7fcb4f27fbd823d19d3e73f42b6531b1c",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "roles-difference.png",
+        "sha256": "820c8d07eef6267d106b47f90f4640ab06ff49d1d218df1deab8a60cbf6ef04b",
+        "size": [
+          1920,
+          1080
+        ]
+      }
+    ]
+  },
+  {
+    "directory": "pc-fidelity-verify-2",
+    "accepted": false,
+    "files": [
+      {
+        "file": "browser-errors.json",
+        "sha256": "519e4d0b018339264f684c2316acec7fbf3c4fe1a93be75c8aae61162e02b5e6",
+        "record": [
+          {
+            "level": "error",
+            "message": "Uncaught TypeError: Failed to execute 'observe' on 'MutationObserver': parameter 1 is not of type 'Node'.",
+            "timestamp": "2026-10-25T01:29:58.982Z"
+          }
+        ]
+      },
+      {
+        "file": "game-1280.jpg",
+        "sha256": "24b5340ca64e75c4f6f987197923fdaffc2022d771749040f80109f33609dfb0",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "game-1920.jpg",
+        "sha256": "304725833b3fc5d2935a37f2943c95ef99ff4b1728d177725b0a5dc9e770798b",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "game-comparison.jpg",
+        "sha256": "e47b217b4742feaf6ec3b4edd98380cde26f0d1fa2c064ddc11c0396216cc883",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "game-difference.png",
+        "sha256": "ce85b46e71108cee951efbd6ff93df496e89b6d824d55173a51120974ac4f4e7",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "geometry-audit.json",
+        "sha256": "597823590a755680bf0b467540587ad22830332ad18a29bcdd77277a16fd1149",
+        "record": [
+          {
+            "screen": "join",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:30:48.611Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  646,
+                  140,
+                  781.0,
+                  230
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.51,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  646,
+                  436,
+                  781.0,
+                  644
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  136,
+                  376,
+                  288,
+                  102
+                ],
+                "actual": [
+                  136,
+                  376,
+                  288,
+                  102
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "qr",
+                "reference": [
+                  95,
+                  649,
+                  369,
+                  369
+                ],
+                "actual": [
+                  95,
+                  649,
+                  369,
+                  369
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 11.829,
+            "titleInk": {
+              "reference": [
+                99,
+                144,
+                342,
+                203
+              ],
+              "actual": [
+                100,
+                145,
+                339,
+                200
+              ],
+              "centerDelta": [
+                -0.5,
+                -0.5
+              ],
+              "sizeDeltaPercent": [
+                -0.88,
+                -1.48
+              ]
+            }
+          },
+          {
+            "screen": "game",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:30:49.647Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "panel",
+                "reference": [
+                  611,
+                  41,
+                  1274,
+                  982
+                ],
+                "actual": [
+                  611,
+                  41,
+                  1274,
+                  982
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  60,
+                  771,
+                  469,
+                  67
+                ],
+                "actual": [
+                  60,
+                  771,
+                  469,
+                  67
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "rule",
+                "reference": [
+                  60,
+                  386,
+                  438,
+                  1
+                ],
+                "actual": [
+                  60,
+                  386,
+                  438,
+                  1
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 5.623,
+            "titleInk": {
+              "reference": [
+                105,
+                228,
+                371,
+                135
+              ],
+              "actual": [
+                105,
+                229,
+                371,
+                135
+              ],
+              "centerDelta": [
+                0.0,
+                1.0
+              ],
+              "sizeDeltaPercent": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "screen": "roles",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:30:50.624Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "band",
+                "reference": [
+                  616,
+                  52,
+                  1274,
+                  244
+                ],
+                "actual": [
+                  616,
+                  52,
+                  1274,
+                  244
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  669,
+                  404,
+                  1153,
+                  536
+                ],
+                "actual": [
+                  669,
+                  404,
+                  1153,
+                  536
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "rule",
+                "reference": [
+                  59,
+                  396,
+                  438,
+                  1
+                ],
+                "actual": [
+                  59,
+                  396,
+                  438,
+                  1
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 12.513,
+            "titleInk": {
+              "reference": [
+                100,
+                304,
+                356,
+                59
+              ],
+              "actual": [
+                100,
+                304,
+                356,
+                59
+              ],
+              "centerDelta": [
+                0.0,
+                0.0
+              ],
+              "sizeDeltaPercent": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "screen": "preparing",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:30:51.454Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  646,
+                  140,
+                  781.0,
+                  230
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.51,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  646,
+                  436,
+                  781.0,
+                  644
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "actual": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 10.143,
+            "titleInk": {
+              "reference": [
+                112,
+                421,
+                356,
+                89
+              ],
+              "actual": [
+                110,
+                422,
+                360,
+                90
+              ],
+              "centerDelta": [
+                0.0,
+                1.5
+              ],
+              "sizeDeltaPercent": [
+                1.12,
+                1.12
+              ]
+            }
+          },
+          {
+            "screen": "ready",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:30:52.169Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  646,
+                  140,
+                  781.0,
+                  230
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.51,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  646,
+                  436,
+                  781.0,
+                  644
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "actual": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 8.757,
+            "titleInk": {
+              "reference": [
+                51,
+                421,
+                436,
+                89
+              ],
+              "actual": [
+                55,
+                422,
+                436,
+                89
+              ],
+              "centerDelta": [
+                4.0,
+                1.0
+              ],
+              "sizeDeltaPercent": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "screen": "join",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:30:53.095Z",
+            "checks": []
+          },
+          {
+            "screen": "game",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:30:54.158Z",
+            "checks": []
+          },
+          {
+            "screen": "roles",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:30:55.151Z",
+            "checks": []
+          },
+          {
+            "screen": "preparing",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:30:56.073Z",
+            "checks": []
+          },
+          {
+            "screen": "ready",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:30:57.006Z",
+            "checks": []
+          }
+        ]
+      },
+      {
+        "file": "index.html",
+        "sha256": "e654af9613f644fa506f07ff2cdaf11a9d248c9c63ecf79e29718e5b954b42cb"
+      },
+      {
+        "file": "join-1280.jpg",
+        "sha256": "7874f05782c203d5e2934d02aa1dd0458c28b72bcd93cea95ea7edb925f99c69",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "join-1920.jpg",
+        "sha256": "010518edb4849c985a959005d45e7358cd078a77bda7fc191a12d3b2844d3420",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "join-comparison.jpg",
+        "sha256": "ed2e2bca359182a9155a118b796850d3176aa675e87ed8c4043e8e7f0cd580ca",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "join-difference.png",
+        "sha256": "b3e0d6d46cefb7535e0b9450fcc9a0aebd54733120f64be8fa3be25abdbb5493",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "metrics.json",
+        "sha256": "e6e37d7c090deabdd2027e5ecf91d3e7e7ac97b3d7e7a077b8824d13ae374a9d"
+      },
+      {
+        "file": "preparing-1280.jpg",
+        "sha256": "01b7d1de420833484b3c9884a434f10716b688287b37dd26691895c78cc4bd6f",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "preparing-1920.jpg",
+        "sha256": "34d501b58f4daf1fa80823c9c3e1d013d74228759c1e4ac7001e10319a9d89f6",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "preparing-comparison.jpg",
+        "sha256": "22708d4d77babcfedd9c8a15393e00869e72ced96017116f7844bcd865b6689c",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "preparing-difference.png",
+        "sha256": "1e0fcfa3f036b170b7e89d5441b910fc8c9f04997f078089b2bf60005a9f0978",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "ready-1280.jpg",
+        "sha256": "86da57c04834ed4593fee82ff0d85457cbd76c35b5788a5e58507ea2fe2a3f14",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "ready-1920.jpg",
+        "sha256": "d7cbf055a8b70655a6620ae99e5c7bce58672f5e3afb08e8a404d7da683fe3d4",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "ready-comparison.jpg",
+        "sha256": "c1004334342c3c65b3feccf1618bfc007a77e3140ae687976c615889852a1805",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "ready-difference.png",
+        "sha256": "fdfd96c1f3d51cdafc4a18238166a4c63787bbd5c0099fa0cfbf122beb82afbd",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "roles-1280.jpg",
+        "sha256": "fcc33b0c4b51d5ba9058a027888407e2c01676507a6e163543b8ff97d685c279",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "roles-1920.jpg",
+        "sha256": "f15a67082b475bf9c28587a47938c549360d278aa93958247bbcb94f71275f4e",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "roles-comparison.jpg",
+        "sha256": "9a3c4c8b0da6a1f6480aea56f733e1e7fcb4f27fbd823d19d3e73f42b6531b1c",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "roles-difference.png",
+        "sha256": "820c8d07eef6267d106b47f90f4640ab06ff49d1d218df1deab8a60cbf6ef04b",
+        "size": [
+          1920,
+          1080
+        ]
+      }
+    ]
+  },
+  {
+    "directory": "pc-fidelity-verify-3",
+    "accepted": false,
+    "files": []
+  },
+  {
+    "directory": "pc-fidelity-pass-1",
+    "accepted": false,
+    "files": [
+      {
+        "file": "browser-errors.json",
+        "sha256": "d48135c95fb67ae665d6fd7cb821fc20e2c24ff4a4c71161e444ad97b8e335d5",
+        "record": [
+          {
+            "level": "error",
+            "message": "Uncaught TypeError: Failed to execute 'observe' on 'MutationObserver': parameter 1 is not of type 'Node'.",
+            "timestamp": "2026-10-25T01:39:41.733Z"
+          }
+        ]
+      },
+      {
+        "file": "game-1280.jpg",
+        "sha256": "24b5340ca64e75c4f6f987197923fdaffc2022d771749040f80109f33609dfb0",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "game-1920.jpg",
+        "sha256": "304725833b3fc5d2935a37f2943c95ef99ff4b1728d177725b0a5dc9e770798b",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "game-comparison.jpg",
+        "sha256": "e47b217b4742feaf6ec3b4edd98380cde26f0d1fa2c064ddc11c0396216cc883",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "game-difference.png",
+        "sha256": "ce85b46e71108cee951efbd6ff93df496e89b6d824d55173a51120974ac4f4e7",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "geometry-audit.json",
+        "sha256": "3c91918379485635b535eb1bf359274d0466c5588159b2a3353d184ee090eed1",
+        "record": [
+          {
+            "screen": "join",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:39:59.247Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  646,
+                  140,
+                  781.0,
+                  230
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.51,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  646,
+                  436,
+                  781.0,
+                  644
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  136,
+                  376,
+                  288,
+                  102
+                ],
+                "actual": [
+                  136,
+                  376,
+                  288,
+                  102
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "qr",
+                "reference": [
+                  95,
+                  649,
+                  369,
+                  369
+                ],
+                "actual": [
+                  95,
+                  649,
+                  369,
+                  369
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 11.829,
+            "titleInk": {
+              "reference": [
+                99,
+                144,
+                342,
+                203
+              ],
+              "actual": [
+                100,
+                145,
+                339,
+                200
+              ],
+              "centerDelta": [
+                -0.5,
+                -0.5
+              ],
+              "sizeDeltaPercent": [
+                -0.88,
+                -1.48
+              ]
+            }
+          },
+          {
+            "screen": "game",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:40:00.606Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "panel",
+                "reference": [
+                  611,
+                  41,
+                  1274,
+                  982
+                ],
+                "actual": [
+                  611,
+                  41,
+                  1274,
+                  982
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  60,
+                  771,
+                  469,
+                  67
+                ],
+                "actual": [
+                  60,
+                  771,
+                  469,
+                  67
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "rule",
+                "reference": [
+                  60,
+                  386,
+                  438,
+                  1
+                ],
+                "actual": [
+                  60,
+                  386,
+                  438,
+                  1
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 5.623,
+            "titleInk": {
+              "reference": [
+                105,
+                228,
+                371,
+                135
+              ],
+              "actual": [
+                105,
+                229,
+                371,
+                135
+              ],
+              "centerDelta": [
+                0.0,
+                1.0
+              ],
+              "sizeDeltaPercent": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "screen": "roles",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:40:02.792Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "band",
+                "reference": [
+                  616,
+                  52,
+                  1274,
+                  244
+                ],
+                "actual": [
+                  616,
+                  52,
+                  1274,
+                  244
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  669,
+                  404,
+                  1153,
+                  536
+                ],
+                "actual": [
+                  669,
+                  404,
+                  1153,
+                  536
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "rule",
+                "reference": [
+                  59,
+                  396,
+                  438,
+                  1
+                ],
+                "actual": [
+                  59,
+                  396,
+                  438,
+                  1
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 12.513,
+            "titleInk": {
+              "reference": [
+                100,
+                304,
+                356,
+                59
+              ],
+              "actual": [
+                100,
+                304,
+                356,
+                59
+              ],
+              "centerDelta": [
+                0.0,
+                0.0
+              ],
+              "sizeDeltaPercent": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "screen": "preparing",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:40:04.091Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  646,
+                  140,
+                  781.0,
+                  230
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.51,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  646,
+                  436,
+                  781.0,
+                  644
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "actual": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 10.143,
+            "titleInk": {
+              "reference": [
+                112,
+                421,
+                356,
+                89
+              ],
+              "actual": [
+                110,
+                422,
+                360,
+                90
+              ],
+              "centerDelta": [
+                0.0,
+                1.5
+              ],
+              "sizeDeltaPercent": [
+                1.12,
+                1.12
+              ]
+            }
+          },
+          {
+            "screen": "ready",
+            "width": 1920,
+            "capturedAt": "2026-10-25T01:40:06.936Z",
+            "checks": [
+              {
+                "element": "見出しの着色画素",
+                "pass": true
+              },
+              {
+                "element": "info",
+                "reference": [
+                  648,
+                  140,
+                  777,
+                  230
+                ],
+                "actual": [
+                  646,
+                  140,
+                  781.0,
+                  230
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.51,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "characters",
+                "reference": [
+                  646,
+                  436,
+                  781,
+                  644
+                ],
+                "actual": [
+                  646,
+                  436,
+                  781.0,
+                  644
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              },
+              {
+                "element": "cta",
+                "reference": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "actual": [
+                  139,
+                  578,
+                  288,
+                  102
+                ],
+                "centerDelta": [
+                  0.0,
+                  0.0
+                ],
+                "sizeDeltaPercent": [
+                  0.0,
+                  0.0
+                ],
+                "pass": true
+              }
+            ],
+            "wholeImageMeanAbsoluteDifference": 8.757,
+            "titleInk": {
+              "reference": [
+                51,
+                421,
+                436,
+                89
+              ],
+              "actual": [
+                55,
+                422,
+                436,
+                89
+              ],
+              "centerDelta": [
+                4.0,
+                1.0
+              ],
+              "sizeDeltaPercent": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "screen": "join",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:40:08.820Z",
+            "checks": []
+          },
+          {
+            "screen": "game",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:40:09.554Z",
+            "checks": []
+          },
+          {
+            "screen": "roles",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:40:10.390Z",
+            "checks": []
+          },
+          {
+            "screen": "preparing",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:40:11.166Z",
+            "checks": []
+          },
+          {
+            "screen": "ready",
+            "width": 1280,
+            "capturedAt": "2026-10-25T01:40:12.032Z",
+            "checks": []
+          }
+        ]
+      },
+      {
+        "file": "index.html",
+        "sha256": "e654af9613f644fa506f07ff2cdaf11a9d248c9c63ecf79e29718e5b954b42cb"
+      },
+      {
+        "file": "join-1280.jpg",
+        "sha256": "7874f05782c203d5e2934d02aa1dd0458c28b72bcd93cea95ea7edb925f99c69",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "join-1920.jpg",
+        "sha256": "010518edb4849c985a959005d45e7358cd078a77bda7fc191a12d3b2844d3420",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "join-comparison.jpg",
+        "sha256": "ed2e2bca359182a9155a118b796850d3176aa675e87ed8c4043e8e7f0cd580ca",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "join-difference.png",
+        "sha256": "b3e0d6d46cefb7535e0b9450fcc9a0aebd54733120f64be8fa3be25abdbb5493",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "metrics.json",
+        "sha256": "cf6d689e31c4e5dc86291f69f8f6f4d97f990faa0d12cb16cdfa6b5d894c88e7"
+      },
+      {
+        "file": "preparing-1280.jpg",
+        "sha256": "01b7d1de420833484b3c9884a434f10716b688287b37dd26691895c78cc4bd6f",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "preparing-1920.jpg",
+        "sha256": "34d501b58f4daf1fa80823c9c3e1d013d74228759c1e4ac7001e10319a9d89f6",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "preparing-comparison.jpg",
+        "sha256": "22708d4d77babcfedd9c8a15393e00869e72ced96017116f7844bcd865b6689c",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "preparing-difference.png",
+        "sha256": "1e0fcfa3f036b170b7e89d5441b910fc8c9f04997f078089b2bf60005a9f0978",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "ready-1280.jpg",
+        "sha256": "86da57c04834ed4593fee82ff0d85457cbd76c35b5788a5e58507ea2fe2a3f14",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "ready-1920.jpg",
+        "sha256": "d7cbf055a8b70655a6620ae99e5c7bce58672f5e3afb08e8a404d7da683fe3d4",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "ready-comparison.jpg",
+        "sha256": "c1004334342c3c65b3feccf1618bfc007a77e3140ae687976c615889852a1805",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "ready-difference.png",
+        "sha256": "fdfd96c1f3d51cdafc4a18238166a4c63787bbd5c0099fa0cfbf122beb82afbd",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "roles-1280.jpg",
+        "sha256": "fcc33b0c4b51d5ba9058a027888407e2c01676507a6e163543b8ff97d685c279",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "roles-1920.jpg",
+        "sha256": "f15a67082b475bf9c28587a47938c549360d278aa93958247bbcb94f71275f4e",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "roles-comparison.jpg",
+        "sha256": "9a3c4c8b0da6a1f6480aea56f733e1e7fcb4f27fbd823d19d3e73f42b6531b1c",
+        "size": [
+          3840,
+          1080
+        ]
+      },
+      {
+        "file": "roles-difference.png",
+        "sha256": "820c8d07eef6267d106b47f90f4640ab06ff49d1d218df1deab8a60cbf6ef04b",
+        "size": [
+          1920,
+          1080
+        ]
+      }
+    ]
+  },
+  {
+    "directory": "pc-fidelity-accept-1",
+    "accepted": false,
+    "files": [
+      {
+        "file": "game-1280.jpg",
+        "sha256": "24b5340ca64e75c4f6f987197923fdaffc2022d771749040f80109f33609dfb0",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "game-1920.jpg",
+        "sha256": "304725833b3fc5d2935a37f2943c95ef99ff4b1728d177725b0a5dc9e770798b",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "join-1280.jpg",
+        "sha256": "7874f05782c203d5e2934d02aa1dd0458c28b72bcd93cea95ea7edb925f99c69",
+        "size": [
+          1280,
+          720
+        ]
+      },
+      {
+        "file": "join-1920.jpg",
+        "sha256": "010518edb4849c985a959005d45e7358cd078a77bda7fc191a12d3b2844d3420",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "preparing-1920.jpg",
+        "sha256": "34d501b58f4daf1fa80823c9c3e1d013d74228759c1e4ac7001e10319a9d89f6",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "ready-1920.jpg",
+        "sha256": "d7cbf055a8b70655a6620ae99e5c7bce58672f5e3afb08e8a404d7da683fe3d4",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "file": "roles-1920.jpg",
+        "sha256": "f15a67082b475bf9c28587a47938c549360d278aa93958247bbcb94f71275f4e",
+        "size": [
+          1920,
+          1080
+        ]
+      }
+    ]
+  },
+  {
+    "directory": "pc-fidelity-final-check-1",
+    "accepted": false,
+    "files": []
+  }
+]
