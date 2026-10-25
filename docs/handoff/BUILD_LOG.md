@@ -474,6 +474,14 @@
 
 - 最終レビューで、paused等の定期state更新により手動ナビゲーションが分担画面へ戻る問題を修正。進行の変化時だけ案内し、同じ進行の定期更新はユーザーの画面選択を保持する回帰試験を追加した。
 
+## 2026-10-25 — #101 Minecraftの送るキーをユーザーのキー設定に合わせる（Claude Code）
+- 事象：送るキーが固定（ダッシュ＝左Ctrl、捨てる＝Q）で、このPCのMinecraft（ダッシュ＝Q、捨てる＝R に変更済み）では、ダッシュが効かず「捨てる」がダッシュとして動いていた。
+- ホスト（`src/keybinds.rs`）：起動時・ゲームの選択・準備（PREPARE）・Ready・再開（RESUME）のたびに `options.txt` を読み、操作→送るキーの対応を作る。担当の確認は従来の固定の表で行い、送るキーだけを差し替える。新しい版の名前（`key.keyboard.q`）と1.12以前の番号（LWJGL2のキーコード）の両方に対応した。送れないキー（マウスの中ボタン・テンキー等）と未設定の操作は、初期のキーで代用すると別の操作が動くため送らず警告する。2つの操作が同じキーなら警告する。ファイルがない・読めない場合は初期設定のキーで送り、その旨を表示する。ファイルの場所はログに残さない。
+- 場所：`%APPDATA%\.minecraft\options.txt`。ランチャーで別のフォルダを使う場合は `config.json` の `minecraftOptions`（`RECOOPLAY_MINECRAFT_OPTIONS` でも可）。
+- 送れるキーを、英字・数字・F1〜F12・左右の修飾キー・記号・Insert等へ広げた（`controls.rs`）。
+- 画面：`game.keys` を配り、PCの分担確認の画面とスマホのボタンのキー表示を、実際に送るキーにした。警告は分担確認の画面に出す。
+- 検証：`cargo test --release --locked` **9件合格**（キー設定の読み取り6件：変更されたキー、送れない・未設定、重複、1.12以前の番号、ファイルなし、英字・数字・Fキー）。`protocol-sim.mjs` を3回連続で **41/41合格**（試験用の `options.txt`（ダッシュ＝Q、捨てる＝R）で、P1のダッシュがQ、P3の捨てるがRとして送られ、捨てるでQを送らないことを追加）。`--target node` **20/20合格**。`app-view-test` **13/13合格**、`ui-input-test` 4/4、`check-static-pages`・`shutdown-sim`・`static-assets-sim`・`input-probe-sim` 合格。
+- **未検証：** 実際のMinecraftでの動作（このPCの設定でダッシュ＝Q・捨てる＝Rが効くか）、スマホのボタン表示の見た目。
 ## 2026-10-25 #54・#93：Steam・Epicの検出と一覧からの起動（ホスト側）
 
 - `apps/host-rs/src/games.rs` を追加。Steam（レジストリの `SteamPath`、`libraryfolders.vdf`、`appmanifest_*.acf`）とEpic（`ProgramData\Epic\...\Manifests\*.item`）を読み、PC画面へ `state.games`（`verified: false`）を送る。スマホには送らない。ログは検出の件数と、選択・起動のIDだけ。再頒布パッケージ・Proton・未完了のインストール・DLC・ツールは除外する。
@@ -549,3 +557,13 @@
 - releaseビルド成功（依存ライブラリ再構築を含み約11分）。Rust単体はホスト12件＋入力プローブ3件成功。既存の未使用フィールドとOpenSSL PDBの警告は非致命的。
 - `protocol-sim.mjs --bin .venv/pr95-runtime/recooplay-host.exe`：41/41成功。押下中の対象消失でW・右ボタンを解放し、注入不可・再開不可になり、再検出後もpausedを維持する回帰試験を追加した。初回の試験はP3のepoch通知前に押したため失敗し、P3側の通知を待ってから押すよう試験を修正して再実行した。
 - `shutdown-sim.mjs`：quit・EOF両方成功。`app-view-test.mjs`：15/15成功。静的構文・差分空白検査も成功。今回の実ゲーム・スマホ実機の追試は行っていない。
+
+## 2026-10-25 PR #102の統合レビュー修正
+
+- マージ済みの#96の原案準拠UIと#95のゲーム検出・安全停止を取り込み、通信フィールドと画面機能を両方保持した。分担画面の「このPCのキー設定を確認」から操作設定を開き、担当別の実際のキーと警告を確認できる。
+- 旧形式の整数キーコードを1〜255に限定し、範囲外の値が16ビットへの変換で実キーへ折り返すことを防止。回帰試験を追加した。
+- 初回の統合通信試験は28/42成功。キー再読込が遷移途中のタイトル・旧epochを通知していたため、再読込内の通知を削除し、遷移完了後の通知へ統一した。試験もタイトルだけでなくlobbyへの到達を待つ。修正後は42/42成功。
+- releaseビルド成功。`cargo test --release --locked --manifest-path apps/host-rs/Cargo.toml`はホスト19件＋プローブ3件成功。`protocol-sim.mjs --bin .venv/pr102-runtime/recooplay-host.exe`は42/42、Node.js参照実装20/20、`app-view-test.mjs`16/16、`ui-input-test.mjs`5/5、静的構文・差分空白検査は成功。
+- `shutdown-sim.mjs`はquit・EOF両方成功。`static-assets-sim.mjs`は26ファイル・2,547,169 bytesのHTTP・MIME・キャッシュ・ローカル参照が成功。
+- Rust実バックエンドのdry-runに試験用options.txtを読み込ませ、1280×720のブラウザーでダッシュQ・捨てるRを確認。コンソール警告・エラー0。証拠は `docs/design/evidence/keybind-review/actual-keys-1280.jpg`。同時起動の検証ホストによる緊急停止キー登録不可の安全案内は隠していない。
+- Minecraft実入力・Tauri実窓・スマホ実タッチは今回未検証。#101の実機受入を完了扱いにせず、自動クローズ構文をPRから外した。

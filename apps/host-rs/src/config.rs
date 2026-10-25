@@ -17,6 +17,8 @@ pub struct Config {
     pub look_smooth_max_ms: f64,
     /// 常時 ON で注入してよい前面のウィンドウ ("target": { "processes": [...], "titleContains": "..." })
     pub target: Target,
+    /// Minecraft のキー設定 (options.txt) の場所。ランチャーで .minecraft 以外を使う場合に指定する (#101)
+    pub minecraft_options: Option<String>,
 }
 
 impl Config {
@@ -58,6 +60,7 @@ impl Config {
                 }
                 target
             },
+            minecraft_options: v.get("minecraftOptions").and_then(Value::as_str).filter(|s| !s.is_empty()).map(str::to_string),
         }
     }
 }
