@@ -2,15 +2,13 @@
 import { attachStick } from './stick.js';
 export function bindCooperativeInput({getGame,getRole,canLook=()=>getRole()==='P2',isOpen,ctlDown,ctlUp,sendLook,onCancel=()=>{}}) {
   const $ = id => document.getElementById(id);
-  // ---- P1: 移動スティック (8 方向 → W/A/S/D の組み合わせ、#139 で共通の部品に) ----
-  const fixedStick = attachStick($('stick'), { codes: { up: 'FWD', down: 'BACK', left: 'LEFT', right: 'RIGHT' }, isOpen, ctlDown, ctlUp, onCancel });
-  // 操作定義から作る画面のスティック。画面を作り直すたびに置き換える
+  // ---- 移動スティック (8 方向 → 前後左右の操作の組み合わせ、#139)。画面を作り直すたびに置き換える ----
   let genStick = null;
   function setGeneratedStick(el, codes) {
     genStick?.release();
     genStick = el ? attachStick(el, { codes, isOpen, ctlDown, ctlUp, onCancel }) : null;
   }
-  function stickRelease() { fixedStick.release(); genStick?.release(); }
+  function stickRelease() { genStick?.release(); }
 
   // ---- P2: 視点パッド (ドラッグ量をマウス相対移動として送る) ----
   const pad = $('pad');

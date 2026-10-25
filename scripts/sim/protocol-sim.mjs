@@ -22,6 +22,9 @@ const opt = (name, def) => {
 const PORT = Number(opt('--port', 18000 + Math.floor(Math.random() * 1000)));
 const BASE = `http://127.0.0.1:${PORT}`;
 const PROTOCOL_VERSION = 4;
+// Minecraft の操作の呼び名 → 操作定義 (apps/game-profiles/minecraft-java.json) の操作 ID
+const MINECRAFT_ACTS = { FWD: 'forward', BACK: 'back', LEFT: 'left', RIGHT: 'right', JUMP: 'jump', SNEAK: 'sneak', SPRINT: 'sprint',
+  ATTACK: 'attack', USE: 'use', INV: 'inventory', DROP: 'drop', SLOT_PREV: 'hotbar:up', SLOT_NEXT: 'hotbar:down' };
 
 // ブラウザと同じOrigin付きのハンドシェイクを送り、アップグレード前の拒否も確認する。
 function handshake(origin, host = `127.0.0.1:${PORT}`) {
@@ -116,7 +119,7 @@ class Client {
       this.ws.onerror = () => reject(new Error(`${this.name}: 接続できない`));
       this.ws.onmessage = (ev) => {
         const m = JSON.parse(ev.data);
-        if (m.type === 'game') this.epoch = m.game.epoch; // スマホ同様、最新の進行状態の番号を入力に付ける
+        if (m.type === 'game') { this.epoch = m.game.epoch; this.phase = m.game.phase; } // スマホ同様、最新の進行状態の番号を入力に付ける
         this.msgs.push(m);
         this.wake();
       };
@@ -183,7 +186,13 @@ class Client {
   mark() {
     return this.msgs.length;
   }
+  // 協力プレイ中は、どのゲームも操作定義の操作 (act:<ID>) を送る (#141)。試験では読みやすさのため、
+  // Minecraft の操作の呼び名 (FWD など) を書けば Minecraft の定義の操作に読み替える。raw で送るときは rawInput
   input(button, state, extra = {}) {
+    const act = this.phase === 'coop' ? MINECRAFT_ACTS[button] : null;
+    return this.rawInput(act ? `act:${act}` : button, state, extra);
+  }
+  rawInput(button, state, extra = {}) {
     this.iseq++;
     this.seq++;
     this.send({ type: 'input', iseq: this.iseq, seq: this.seq, epoch: this.epoch, button, state, t: Date.now(), ...extra });
@@ -577,12 +586,12 @@ async function main() {
       const from = p3.mark();
       const n = p3.iseq + 1;
       // n+1 (解放) が先、n (押下) が後に届いても押下→解放の順で処理する
-      p3.send({ type: 'input', iseq: n + 1, epoch: p3.epoch, button: 'USE', state: 'up', t: 0 });
+      p3.send({ type: 'input', iseq: n + 1, epoch: p3.epoch, button: 'act:use', state: 'up', t: 0 });
       await sleep(100);
       assert(!p3.msgs.slice(from).some((m) => m.type === 'ack' && m.iseq === n + 1), '欠番を待たずに処理した');
       const mfrom = mon.mark();
-      p3.send({ type: 'input', iseq: n, epoch: p3.epoch, button: 'USE', state: 'down', t: 0 });
-      p3.send({ type: 'input', iseq: n, epoch: p3.epoch, button: 'USE', state: 'down', t: 0 });
+      p3.send({ type: 'input', iseq: n, epoch: p3.epoch, button: 'act:use', state: 'down', t: 0 });
+      p3.send({ type: 'input', iseq: n, epoch: p3.epoch, button: 'act:use', state: 'down', t: 0 });
       p3.iseq = n + 1;
       await p3.waitFor((m) => m.type === 'ack' && m.iseq === n + 1, { from, what: 'ack' });
       await sleep(200);
@@ -732,18 +741,18 @@ async function main() {
     await check('入力先: フォーカス喪失前と対象外の間に届いた欠番待ち入力を、復帰後へ持ち越さない', async () => {
       const old = p1.epoch;
       const n = p1.iseq + 1;
-      p1.send({ type: 'input', iseq: n + 1, epoch: old, button: 'JUMP', state: 'down' });
+      p1.send({ type: 'input', iseq: n + 1, epoch: old, button: 'act:jump', state: 'down' });
       let from = p1.mark();
       host.child.stdin.write('target off\n');
       const off = await p1.waitFor(m => m.type === 'game' && m.game.inputTarget === true, { from });
       assert(off.game.epoch > old, '入力先から外れてもepochが変わらない');
-      p1.send({ type: 'input', iseq: n + 2, epoch: off.game.epoch, button: 'FWD', state: 'down' });
+      p1.send({ type: 'input', iseq: n + 2, epoch: off.game.epoch, button: 'act:forward', state: 'down' });
       from = p1.mark();
       host.child.stdin.write('target on\n');
       const on = await p1.waitFor(m => m.type === 'game' && m.game.inputActive, { from });
       assert(on.game.epoch > off.game.epoch, '入力先へ戻ってもepochが変わらない');
       const mfrom = mon.mark();
-      p1.send({ type: 'input', iseq: n, epoch: old, button: 'JUMP', state: 'up' });
+      p1.send({ type: 'input', iseq: n, epoch: old, button: 'act:jump', state: 'up' });
       p1.iseq = n + 2;
       const ack = await p1.waitFor(m => m.type === 'ack' && m.iseq === n + 2);
       assert(ack.stale, '対象外の入力を復帰後に処理した');
@@ -932,9 +941,9 @@ async function main() {
       p1.input('act:zoom:up', 'down'); await injected(mon, 'WHEEL_UP', 'down', mf); p1.input('act:zoom:up', 'up');
       // 割り当てていない操作・未知の操作・Minecraft 用の固定の操作は送らない
       mf = mon.mark();
-      p2.input('act:action', 'down'); p3.input('act:left', 'down'); p1.input('act:nothing', 'down'); p1.input('FWD', 'down'); p1.input('RIGHT', 'down'); p1.input('act:pause', 'down');
+      p2.input('act:action', 'down'); p3.input('act:left', 'down'); p1.input('act:nothing', 'down'); p1.rawInput('FWD', 'down'); p1.rawInput('RIGHT', 'down'); p1.input('act:pause', 'down');
       await noPress(mon, mf);
-      p2.input('act:action', 'up'); p3.input('act:left', 'up'); p1.input('act:nothing', 'up'); p1.input('FWD', 'up'); p1.input('RIGHT', 'up'); p1.input('act:pause', 'up');
+      p2.input('act:action', 'up'); p3.input('act:left', 'up'); p1.input('act:nothing', 'up'); p1.rawInput('FWD', 'up'); p1.rawInput('RIGHT', 'up'); p1.input('act:pause', 'up');
       // 視点は、視点 (aim) を割り当てた P1 だけ
       const lf = mon.mark();
       p2.send({ type: 'look', lseq: 1, epoch: p2.epoch, cx: 300, cy: 0 });
@@ -956,16 +965,16 @@ async function main() {
     });
 
     await check('人数: 2人・4人のMinecraftは操作定義の分担で遊び、Ready後に来た人は参加せず、参加者がそろうまで再開しない (#57・#105)', async () => {
-      // 前提: Minecraft の協力プレイ中 (P1〜P3)。3人は固定の画面
+      // 前提: Minecraft の協力プレイ中 (P1〜P3)。3人も操作定義の分担 (#141)
       let from = p1.mark();
       p1.send({ type: 'command', cmd: 'END' });
       const lobby3 = await phaseIs(p1, 'lobby', from);
-      assert(lobby3.game.fixedControls === true, '3人のMinecraftは固定の画面');
+      assert(!('fixedControls' in lobby3.game) && lobby3.game.profile.assignment.P3, '3人のMinecraftも操作定義の分担');
       // 2人: P1 移動 / P2 視点＋攻撃・持ち物
       from = p1.mark();
       p3.close();
       const two = await p1.waitFor((m) => m.type === 'game' && m.game.connected.join() === 'P1,P2', { from, what: '2人' });
-      assert(two.game.fixedControls === false && two.game.profile.assignment.P2 && !two.game.profile.assignment.P3, JSON.stringify(two.game.profile?.assignment));
+      assert(two.game.profile.assignment.P2 && !two.game.profile.assignment.P3, JSON.stringify(two.game.profile?.assignment));
       await confirmLineup(mon, p1); p1.send({ type: 'command', cmd: 'PREPARE' });
       await phaseIs(p1, 'preparing', from);
       const f2 = p2.mark();
@@ -979,17 +988,17 @@ async function main() {
       p1.input('act:forward', 'down'); await injected(mon, 'KEY_W', 'down', mf); p1.input('act:forward', 'up'); await injected(mon, 'KEY_W', 'up', mf);
       // 固定の操作名・割り当てていない操作は送らない
       mf = mon.mark();
-      p2.input('ATTACK', 'down'); p1.input('act:attack', 'down'); p1.input('FWD', 'down');
+      p2.rawInput('ATTACK', 'down'); p1.input('act:attack', 'down'); p1.rawInput('FWD', 'down');
       await noPress(mon, mf);
-      p2.input('ATTACK', 'up'); p1.input('act:attack', 'up'); p1.input('FWD', 'up');
+      p2.rawInput('ATTACK', 'up'); p1.input('act:attack', 'up'); p1.rawInput('FWD', 'up');
       // Ready の後に来た P3 は参加しない (入力を送らず、切断しても止めない)
       from = p1.mark();
       p3 = await join('P3'); await welcome(p3);
       await p1.waitFor((m) => m.type === 'game' && m.game.connected.length === 3, { from, what: 'P3 参加' });
       mf = mon.mark();
-      p3.input('act:attack', 'down'); p3.input('ATTACK', 'down');
+      p3.input('act:attack', 'down'); p3.rawInput('ATTACK', 'down');
       await noPress(mon, mf);
-      p3.input('act:attack', 'up'); p3.input('ATTACK', 'up');
+      p3.input('act:attack', 'up'); p3.rawInput('ATTACK', 'up');
       from = p1.mark();
       p3.close();
       await sleep(300);
@@ -1016,7 +1025,7 @@ async function main() {
       const c4 = await phaseIs(p1, 'coop', from);
       await phaseIs(p4, 'coop', f4);
       const a4 = c4.game.assigned;
-      assert(c4.game.fixedControls === false && a4.P2.join() === 'look' && a4.P3.includes('attack') && a4.P4.includes('drop') && !a4.P3.includes('drop'), JSON.stringify(a4));
+      assert(a4.P2.join() === 'look' && a4.P3.includes('attack') && a4.P4.includes('drop') && !a4.P3.includes('drop'), JSON.stringify(a4));
       mf = mon.mark();
       // 捨てるは試験用の options.txt で R
       p4.input('act:drop', 'down'); await injected(mon, 'KEY_R', 'down', mf); p4.input('act:drop', 'up'); await injected(mon, 'KEY_R', 'up', mf);
@@ -1030,11 +1039,13 @@ async function main() {
       await phaseIs(p1, 'preparing', from);
       p1.send({ type: 'command', cmd: 'READY' });
       const back = await phaseIs(p1, 'coop', from);
-      assert(back.game.fixedControls === true && back.game.participants.join() === 'P1,P2,P3', '3人の固定の画面に戻らない');
+      // 3人の分担は、これまでの固定の分担と同じ (P1 移動・P2 視点・P3 攻撃・使う・持ち物)
+      const a3 = back.game.assigned;
+      assert(back.game.participants.join() === 'P1,P2,P3' && a3.P1.includes('forward') && a3.P2.join() === 'look' && a3.P3.includes('attack') && a3.P3.includes('drop'), JSON.stringify(a3));
     });
 
     await check('役割の入れ替え: 開始前・一時停止中だけ 2 人の担当を交換し、本人の確認まで再開しない。再接続・終了後も保つ (#47・#62)', async () => {
-      // 前提: Minecraft の協力プレイ中 (P1〜P3、固定の画面)
+      // 前提: Minecraft の協力プレイ中 (P1〜P3)
       const lastGame = () => [...p1.msgs].reverse().find((m) => m.type === 'game').game;
       let from = p1.mark();
       mon.send({ type: 'swap_roles', a: 'P2', b: 'P3' });
@@ -1208,15 +1219,15 @@ async function main() {
       }
       // 定義のないゲームには汎用の定義を当て、Minecraft の固定の表は使わない (#123)
       const generic = await p1.waitFor(m=>m.type==='game' && m.game.phase==='preparing' && m.game.profile,{from,what:'汎用の定義'});
-      assert(!hasCatalogProfile || (generic.game.profile.id==='generic' && generic.game.profile.status==='template' && generic.game.fixedControls===false), JSON.stringify(generic.game.profile?.id));
+      assert(!hasCatalogProfile || (generic.game.profile.id==='generic' && generic.game.profile.status==='template'), JSON.stringify(generic.game.profile?.id));
       p1.send({ type: 'command', cmd: 'READY' });
       await phaseIs(p1, 'coop', from);
       await p3.waitFor(m => m.type === 'game' && m.game.phase === 'coop' && m.game.epoch === p1.epoch, { from: p3from, what: 'P3 current game epoch' });
       // Minecraft の操作名 (FWD・USE) は送らない
       let mfrom = mon.mark();
-      p1.input('FWD', 'down'); p3.input('USE', 'down');
+      p1.rawInput('FWD', 'down'); p3.rawInput('USE', 'down');
       await noPress(mon, mfrom, 150);
-      p1.input('FWD', 'up'); p3.input('USE', 'up');
+      p1.rawInput('FWD', 'up'); p3.rawInput('USE', 'up');
       // 汎用の定義の操作 (P1 前進＝W、P3 構える＝右クリック) を押したまま、対象を消す
       mfrom = mon.mark();
       p1.input('act:forward', 'down');

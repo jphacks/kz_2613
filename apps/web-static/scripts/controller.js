@@ -8,13 +8,6 @@ import { myActions } from './generated-controls.js';
 import { phoneAdvice } from '../app-view.js';
 (() => {
   const $ = (id) => document.getElementById(id);
-  const ROLE_TEXT = {
-    P1: '移動（WASD・ジャンプ・スニーク・ダッシュ）とホスト操作',
-    P2: '視点（画面をドラッグしてカメラを動かす）',
-    P3: 'アクション（攻撃・使う・持ち物の切り替え）',
-    // 4人目の担当は操作定義の分担で決まる (#105)
-    P4: '分担はReadyのときに決まります',
-  };
   const COLORS = { P1: 'var(--p1)', P2: 'var(--p2)', P3: 'var(--p3)', P4: 'var(--p4)' };
   // 通信契約の版 (docs/architecture/protocol.md)。PC のホストと合わなければ接続できない
   const PROTOCOL_VERSION = 4;
@@ -74,7 +67,7 @@ import { phoneAdvice } from '../app-view.js';
         isHost = msg.isHost;
         document.documentElement.style.setProperty('--me', COLORS[me]);
         $('slot').textContent = me;
-        $('role').innerHTML = `<b>${msg.role}${isHost ? '（ホスト）' : ''}</b>${ROLE_TEXT[me]}`;
+        $('role').innerHTML = `<b>${msg.role}${isHost ? '（ホスト）' : ''}</b>分担はPCの画面で決めます`;
         setStatus(msg.reconnected ? '再接続OK' : '接続OK', 'ok');
         render();
       } else if (msg.type === 'game') {
@@ -300,7 +293,7 @@ import { phoneAdvice } from '../app-view.js';
   });
 
   // ---- 画面の切り替え ----
-  const phoneView = createPhoneView({releaseAll,onDiagnosticsOpen:stopRemote,roleText:ROLE_TEXT,bindControl,bindStick:roleInput.setGeneratedStick,onRoleOk:()=>sendWs({type:'role_ok',epoch:game?.epoch})});
+  const phoneView = createPhoneView({releaseAll,onDiagnosticsOpen:stopRemote,bindControl,bindStick:roleInput.setGeneratedStick,onRoleOk:()=>sendWs({type:'role_ok',epoch:game?.epoch})});
   function render() { phoneView({me,isHost,game}); }
 
   // ---- 通信テスト: 20Hz で 10 秒送る (注入はされない) ----
