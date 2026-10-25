@@ -33,9 +33,6 @@
 
   **Hack Day Audience Award**
 
-  <p><sub>チーム「三人羽織」（kz_2613）</sub></p>
-</div>
-
 ---
 
 **Re:Cooplay（リコープレイ）**は、既存のPCゲームに、新しい協力プレイを後付けするツールです。
