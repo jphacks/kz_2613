@@ -646,3 +646,12 @@
 - `node scripts/sim/controller-diagnostics-test.mjs`を追加し、実際のcontroller・phone-viewに最小DOM・通信・タイマーのスタブを接続。診断表示前のupと`release_inputs`、現在epoch、診断中の通常押下・視点抑止、通信テスト200件の交互のdown/upと連番を確認した。同試験をCIに追加し、`protocol-sim.mjs`の停止試験も保留連打の破棄を含めた。
 - ローカルの`controller-diagnostics-test.mjs`、`phone-view-test.mjs`7観点、`ui-input-test.mjs`7/7、`app-view-test.mjs`18/18、`check-static-pages.mjs`が成功した。既存main `c14562d`のRust dry-runホストで、4回分の保留連打に`release_inputs`を送るとその後450msの保留押下が0件になることも別途確認した。これはPRの全通信試験や新UIと実ブラウザーの結合試験の代わりではない。
 - 画面構造とCSSを変更していないため、撮影画像・指紋は元コミット`3719777`の記録として保持した。Minecraft・スマホ実機・Tauriの新規受入は実施していない。
+
+## 2026-10-25 — 検出したゲームの選択画面と起動要求（Claude Code、#94）
+
+- PC画面の「② ゲーム選択」を、固定のMinecraft（手動起動）とホストの`state.games`（Steam・Epic）の一覧に変更した。検出しただけの項目（`verified`がtrueでない）に「未検証」、出所（Steam・Epic Games）を表示する。件数・探索中の表示と「探し直す」（`refresh_games`）を追加した。
+- クリック・上下キー（ホストのリモコンの上下）は`select_game`による選択だけとし、主ボタン・Enter（PCのキーボードとリモコンで同じ処理）で項目IDの`launch_game`を送る。`game.launch`は選んだ項目の分だけ「起動中…／起動しました／起動できませんでした／起動を確認できませんでした」とホストの案内文で表示し、失敗・確認不可では「手動で起動して次へ」と再要求のボタンを出す。ゲーム名は文字列として表示し、HTMLとして解釈しない。
+- `node scripts/sim/app-view-test.mjs` 22/22（一覧・未検証・起動表示・主ボタン・上下の巡回の4件を追加）、`ui-input-test.mjs` 7/7、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`verify-ui-evidence.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`、`protocol-sim.mjs`（Rust dry-run）44/44が成功した。
+- 既存の`recooplay-host.exe`（ホストは変更なし）をdry-run・`RECOOPLAY_FAKE_TARGET=1`・偽のSteam 2件／Epic 1件（名前に`<b>&`を含む）で起動し、ヘッドレスChromeをCDPで操作して1920×1080と1280×720で確認した。一覧・未検証の表示、↓キーでの選択（`select_game`）、Enterでの`launch_game`と「起動しました」・ホストの案内文、主ボタンの「次へ進む」への切替、ゲーム名のエスケープ、1280×720でページがはみ出さないことを確認した。右下の安全案内が起動の案内と重なったため、案内の表示中は一覧の枠の下を空けた。
+- 失敗・タイムアウトの表示と再要求のボタンは単体試験のみで、ブラウザでは確認していない。リモコン（スマホP1）経由の操作は、キーボードと同じ関数を通ることを確認しただけで実端末では未確認。保存済みのPC画面の撮影（`artifacts/improved-ui/final`）は撮り直していない。実際のSteam・Epicでの起動・Tauri・Minecraftは未検証。
+- 同日、ユーザーが開発PCで実機確認した（PCアプリ`recooplay-desktop.exe`を本ブランチのリポジトリから起動、ホストは既存ビルド・注入OFF）。Steamのゲーム12件・Epic 0件を検出し、ユーザーが選択画面の表示を目視で確認した。ログでは、Steam版Terrariaの選択（`select_game`）、`launch_game`、ランチャーへの要求成功、約9.5秒後の`launch_result: started`、前面の入力先判定`terraria.exe`への切替を確認した。検出したゲームへの入力（注入ON）、スマホのリモコン操作、起動失敗の表示、Epicは今回も未検証。
