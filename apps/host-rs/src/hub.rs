@@ -48,6 +48,7 @@ const RTC_TIMEOUT: Duration = Duration::from_secs(5);
 const FOCUS_CHECK: Duration = Duration::from_millis(100); // 前面のウィンドウを確認する間隔
 const LAUNCH_POLL: Duration = Duration::from_millis(500); // 起動したゲームのウィンドウを探す間隔
 const LAUNCH_TIMEOUT: Duration = Duration::from_secs(90); // ランチャーの更新などを待つ上限。過ぎたら手動起動を案内する
+const MINECRAFT_LAUNCH_TIMEOUT: Duration = Duration::from_secs(300); // ランチャーで「プレイ」を押すのを待つ上限 (#55)
 const FOCUS_WAIT: Duration = Duration::from_secs(5); // ウィンドウが現れてから前面になるのを待つ上限
 
 // ---------- 外部とのやり取り ----------
@@ -352,6 +353,8 @@ pub struct Hub {
     images: games::Images,
     // Minecraft のランチャーを見つけたか (Some(画像があるか))。見つからなければ None (#128)
     minecraft: Option<bool>,
+    /// 公式の Minecraft ランチャーを開く先 (#55)。見つからなければ None
+    minecraft_launch: Option<String>,
     // 通信の途切れへの対策 (#131): 協力プレイ中の Wi-Fi のメディアストリーミングモード、Bluetooth の音の出力
     // 手動登録のファイル選択の画面を出している途中か・探し直しを待っているか (#49)
     picking: bool,
@@ -485,6 +488,7 @@ impl Hub {
             bluetooth_audio: false,
             net_tick: 0,
             minecraft: None,
+            minecraft_launch: None,
             games_scanning: false,
             launch: None,
             launch_gen: 0,
@@ -746,7 +750,7 @@ impl Hub {
     fn can_launch(&self) -> bool {
         matches!(self.game.phase, Phase::Lobby | Phase::Preparing)
             && self.lineup_ok()
-            && self.games.iter().any(|g| g.id == self.game.title)
+            && (self.games.iter().any(|g| g.id == self.game.title) || self.minecraft_entry().is_some_and(|m| m.id == self.game.title))
             && !self.launch.as_ref().is_some_and(|l| l.id == self.game.title && l.state == "launching")
     }
 
@@ -895,7 +899,7 @@ impl Hub {
             // 通信の状態 (#131): Bluetooth で音を出しているか、Wi-Fi の低遅延の動作 (メディアストリーミングモード) が有効か
             "network": { "bluetoothAudio": self.bluetooth_audio, "lowLatency": self.low_latency },
             // Minecraft のランチャーを見つけたか・画像があるか (#128)。場所は送らない
-            "minecraft": { "detected": self.minecraft.is_some(), "image": self.minecraft == Some(true) },
+            "minecraft": { "detected": self.minecraft.is_some(), "image": self.minecraft == Some(true), "launchable": self.minecraft_launch.is_some() },
         }));
     }
 
@@ -1648,6 +1652,7 @@ impl Hub {
         let list = detected.games;
         // Minecraft のランチャー (#128)。一覧には混ぜず、画面の固定の項目に画像を付けるためだけに使う
         self.minecraft = detected.minecraft.as_ref().map(|m| m.image.is_some());
+        self.minecraft_launch = detected.minecraft.as_ref().map(|m| m.launch.clone());
         self.games_scanning = false;
         if std::mem::take(&mut self.rescan_pending) {
             self.scan_games();
@@ -1683,9 +1688,23 @@ impl Hub {
 
     /// 一覧の項目を起動する。画面からは id だけを受け取り、起動方法は検出時に確かめた値から組み立てる
     /// 起動はゲームの選択 → メンバー・分担の決定の後だけ (#109)。選んでいるゲームと違う id・決定前の要求は起動しない
+    /// Minecraft を一覧の起動と同じ流れで扱うための項目 (#55)。公式ランチャーを開くだけで、「プレイ」はランチャーで押す
+    fn minecraft_entry(&self) -> Option<games::Entry> {
+        self.minecraft_launch.as_ref().map(|launch| games::Entry {
+            id: "minecraft-java".into(),
+            name: "Minecraft".into(),
+            source: games::MINECRAFT_SOURCE,
+            install_dir: PathBuf::new(),
+            launch_uri: launch.clone(),
+            image: None,
+            icon_source: None,
+        })
+    }
+
     fn launch_game(&mut self, id: &str) {
-        let Some(entry) = self.games.iter().find(|g| g.id == id).cloned() else {
-            // Minecraft など、一覧のランチャー起動に対応していない項目や未知の id は起動しない
+        let found = self.games.iter().find(|g| g.id == id).cloned().or_else(|| self.minecraft_entry().filter(|m| m.id == id));
+        let Some(entry) = found else {
+            // ランチャーが見つからない Minecraft・疑似ゲーム画面・未知の id は起動しない
             let message = if TITLES.contains(&id) { "このゲームは自動で起動できません。手動で起動してください" } else { "一覧にないゲームです" };
             self.finish_launch(id, id, "failed", message.into());
             return;
@@ -1720,7 +1739,10 @@ impl Hub {
         }
         self.launch_gen += 1;
         let gen = self.launch_gen;
-        let message = if dry_run() { format!("dry-run：{}は起動しません", entry.name) } else { format!("{}を起動しています", entry.name) };
+        let minecraft = entry.source == games::MINECRAFT_SOURCE;
+        let message = if dry_run() { format!("dry-run：{}は起動しません", entry.name) }
+            else if minecraft { "Minecraftのランチャーを開きました。ランチャーで「プレイ」を押してください".into() }
+            else { format!("{}を起動しています", entry.name) };
         self.log("launch_game", json!({ "id": entry.id, "source": entry.source }));
         // ランチャーへの要求 (ShellExecuteW) は Steam の起動待ちで数秒かかる (実機で約5秒)。
         // このスレッドで待つと入力・生存確認が止まり切断扱いになるので、別スレッドで行う
@@ -1735,7 +1757,9 @@ impl Hub {
                 return;
             }
         }
-        self.launch = Some(Launch { id: entry.id, name: entry.name, state: "launching", message, gen, deadline: Instant::now() + LAUNCH_TIMEOUT, seen: None });
+        // Minecraft はランチャーで「プレイ」を押す (ログイン・更新もある) ので長めに待つ
+        let timeout = if minecraft { MINECRAFT_LAUNCH_TIMEOUT } else { LAUNCH_TIMEOUT };
+        self.launch = Some(Launch { id: entry.id, name: entry.name, state: "launching", message, gen, deadline: Instant::now() + timeout, seen: None });
         self.schedule(Instant::now() + LAUNCH_POLL, Timer::LaunchWatch(gen));
         self.push_game();
         self.push_state();
