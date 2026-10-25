@@ -123,6 +123,7 @@ v4ではOPEN_GAME（現在epoch必須）とPC画面のopen_gameを追加する�
 - `game.profile.assignment`は今接続している枠への案（枠名で示す。P3が空いてP4がいる場合はP4に付く）、`assignments`は1〜4人の案（P1から順の番号）。
 - `game.participants`はReadyで確定した参加者の枠（ロビー・準備中は空）、`game.assigned`は参加者の枠→操作ID。終了（END・ゲーム変更・リセット）まで固定し、再開でも組み直さない。参加者がそろうまで`canResume`は偽。参加者以外の入力は送らず、その切断では止めない（#57・#105）。
 - `game.lineup`はPC画面で決定したゲームとメンバー（`{title, members}`、なければnull）、`game.lineupOk`はそれが今の選択・接続者と一致しているか、`game.canLaunch`は起動を要求できるか。ゲームを選び直す・ロビーへ戻る・リセットで決定は消え、参加者が変わると無効になる。`canPrepare`と準備中の`canReady`は`lineupOk`を必要とする（#109）。
+- `canReady`・`canResume`は開始・再開を要求できるかを示す。入力ONで前面だけが不足している場合は要求を許可し、他の開始条件を満たすときだけ前面化を試みる（#138）。実際の対象照合で前面を確認してからcoopへ移る。失敗時はpreparing/pausedに留まり、`prepareStatus`と拒否した`command_result`で手動切替を案内する。疑似ゲームのTestモードでは実ウィンドウを切り替えない。
 - `game.roleOf`は枠→席順（入れ替えた人は入れ替えた先の席。分担は席順で配る）、`game.roleAck`は担当が変わり本人の確認待ちの枠、`game.canSwap`は入れ替えできるか。確認待ちの間はReady・再開できない。席順は終了しても保ち、リセットで戻す（#47・#62）。スマホは現在の`epoch`を付けた`role_ok`（WebSocketのみ）で確認を送る。epochなし・古いepochの確認は無視する。ホストのPAUSEボタンは交換後の担当に依存せずP1に表示する。
 - `game.maxPlayers`は枠の数（4）。以前の`game.fixedControls`（Minecraftの3人用の専用画面を使うか）は廃止した（#141、[決定](../decisions/2026-10-26-unify-controls.md)）。
 - どのゲーム・どの人数（Minecraftの3人を含む）も生成画面を使う。生成画面では`act:<ID>`、ホイールは`act:<ID>:up|down`を送り、現在epoch・coop・確定した割当・操作種類・実キーをサーバーで照合する。協力プレイ中は固定の操作名（`FWD`など）を受け付けない。視点は確定した分担で視点を割り当てた枠だけを許可する。

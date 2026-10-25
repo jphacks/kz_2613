@@ -70,6 +70,7 @@ pub enum Event {
     EmergencyStop { source: &'static str },
     /// 試験用: 前面のウィンドウが入力先かどうかを差し替える (DRY_RUN のときだけ)
     FakeTarget(bool),
+    FakeActivate(bool),
     /// 既定の音の出力先が Bluetooth か (#131)。実機では定期的に調べ、試験では標準入力の "bt on/off" で差し替える
     BluetoothAudio(bool),
     /// ファイル選択の画面で選ばれた実行ファイル (#49。キャンセルなら None)
@@ -365,6 +366,7 @@ pub struct Hub {
     target_fg: Option<Foreground>,
     target_ok: bool,
     fake_target: Option<bool>, // 試験用 (DRY_RUN のときだけ)。Some なら OS に問い合わせない
+    fake_activate: bool,
     // ゲームのキー設定に合わせた、操作 → 送るキーの対応 (#101)。準備・Ready・再開のたびに読み直す
     keybinds: Keybinds,
     minecraft_options: Option<std::path::PathBuf>,
@@ -488,6 +490,7 @@ impl Hub {
             launch_gen: 0,
             target_fg: None,
             target_ok: false,
+            fake_activate: true,
             keybinds: Keybinds::none(),
             minecraft_options: keybinds::minecraft_override(config.minecraft_options.as_deref()),
             profiles: Vec::new(),
@@ -677,7 +680,7 @@ impl Hub {
         (0..MAX_SLOTS).filter(|&i| self.slots[i].as_ref().is_some_and(|s| s.connected)).collect()
     }
 
-    fn ready_reasons(&self) -> Vec<String> {
+    fn ready_reasons(&self, require_focus: bool) -> Vec<String> {
         let mut reasons: Vec<String> = Vec::new();
         let connected = self.connected_slots();
         if self.game.phase == Phase::Paused && !self.participants.is_empty() {
@@ -708,7 +711,7 @@ impl Hub {
         if self.hotkey.is_err() && self.fake_target.is_none() { reasons.push("PCの緊急停止キーを登録してください".into()); }
         // 入力が OFF なのは緊急停止の後か、診断で切り替えたとき。PC の前で確かめてから再開させる (#114)
         if self.inject == InjectMode::Off { reasons.push("入力が止まっています（緊急停止など）。PCの画面で「入力を再開する」を押してください".into()); }
-        else if !self.can_inject() { reasons.push("対象のゲームを前面にしてください".into()); }
+        else if !self.can_inject() && (require_focus || self.inject != InjectMode::On) { reasons.push("対象のゲームを前面にしてください".into()); }
         reasons
     }
 
@@ -748,11 +751,11 @@ impl Hub {
     }
 
     fn can_ready(&self) -> bool {
-        self.game.phase == Phase::Preparing && self.ready_reasons().is_empty()
+        self.game.phase == Phase::Preparing && self.ready_reasons(false).is_empty()
     }
 
     fn can_resume(&self) -> bool {
-        self.game.phase == Phase::Paused && self.game.host_ready && self.ready_reasons().is_empty()
+        self.game.phase == Phase::Paused && self.game.host_ready && self.ready_reasons(false).is_empty()
     }
 
     fn game_snapshot(&self) -> Value {
@@ -794,7 +797,7 @@ impl Hub {
             "canReady": self.can_ready(),
             "canResume": self.can_resume(),
             "hostReady": self.game.host_ready,
-            "readyReasons": self.ready_reasons(),
+            "readyReasons": self.ready_reasons(false),
             "prepareStatus": self.game.prepare_status,
             "titleName": self.game_name(),
             "launch": self.launch.as_ref().map(|l| json!({ "id": l.id, "state": l.state, "message": l.message })),
@@ -928,7 +931,35 @@ impl Hub {
         self.push_game();
     }
 
+    /// 協力プレイに入るとき (Ready・再開・自動復帰)、対象ゲームが前面でなければ前面にする (#138)。
+    /// 切り替えるのは協力プレイに入る瞬間だけで、一時停止中に P1 が PC アプリを操作している間は前面を奪わない。
+    /// Windows が拒否したときは、これまでどおり手動で前面にする案内を出す
+    fn focus_for_coop(&mut self) -> bool {
+        // Testモードは疑似ゲーム画面のfocusのみで判定し、実ウィンドウを切り替えない。
+        if self.inject != InjectMode::On { return self.can_inject(); }
+        self.check_target();
+        if self.target_ok { return true; }
+        self.release_outputs(None);
+        self.reset_look();
+        let simulated = self.fake_target.is_some();
+        let result = if simulated {
+            if self.fake_activate { self.fake_target = Some(true); Ok(()) }
+            else { Err("シミュレーション：前面化を拒否しました".into()) }
+        } else if dry_run() {
+            Err("dry-run：実ウィンドウは操作しません".into())
+        } else { focus::activate(&self.target) };
+        self.check_target();
+        let ok = result.is_ok() && self.can_inject();
+        self.log("auto_focus", json!({ "ok": ok, "simulated": simulated || dry_run() }));
+        self.game.prepare_status = if ok { "対象ゲームを前面にしました".into() }
+            else { format!("{}。{}を手動で前面にしてください", result.err().unwrap_or("前面を確認できませんでした".into()), self.game_name()) };
+        self.push_game();
+        ok
+    }
+
     fn maybe_auto_resume(&mut self) {
+        // 再接続とPCアプリへの手動復帰が重なっても、前面の観測で復帰解除を先に確定する。
+        self.check_target();
         let by_disconnect = self.game.reason.as_deref().is_some_and(|r| r.ends_with("disconnected"));
         if self.game.phase != Phase::Paused || !by_disconnect || !self.game.auto_resume {
             return;
@@ -942,7 +973,8 @@ impl Hub {
             .into_iter()
             .all(|i| self.slots[i].as_ref().is_some_and(|s| s.rtc_state != "connecting"));
         if self.can_resume() && rtc_settled {
-            self.set_phase(Phase::Coop, "auto resume");
+            if self.focus_for_coop() { self.set_phase(Phase::Coop, "auto resume"); }
+            else { self.game.auto_resume_until = 0; self.push_game(); } // 拒否されたら繰り返し前面を奪わず、明示操作を待つ。
         }
     }
 
@@ -976,14 +1008,14 @@ impl Hub {
                 self.reload_keybinds();
                 self.set_phase(Phase::Preparing, "host prepare"); true
             }
-            ("READY", Phase::Preparing) if self.can_ready() => {
+            ("READY", Phase::Preparing) if self.can_ready() && self.focus_for_coop() => {
                 self.reload_keybinds();
                 self.fix_assignment();
                 self.game.host_ready = true;
                 self.set_phase(Phase::Coop, "host ready"); true
             }
             // 再開は Ready で決めた参加者・分担のまま (参加者がそろうまで再開できない)
-            ("RESUME", Phase::Paused) if self.can_resume() => { self.reload_keybinds(); self.set_phase(Phase::Coop, "host resume"); true }
+            ("RESUME", Phase::Paused) if self.can_resume() && self.focus_for_coop() => { self.reload_keybinds(); self.set_phase(Phase::Coop, "host resume"); true }
             ("PAUSE", Phase::Coop | Phase::Paused) => {
                 self.game.auto_resume_until = 0;
                 self.game.reason = Some("host pause".into());
@@ -999,7 +1031,7 @@ impl Hub {
         };
         self.send(self.slots[slot].as_ref().and_then(|s| s.conn), &json!({
             "type": "command_result", "cmd": cmd, "accepted": accepted,
-            "reasons": if accepted { vec![] } else { self.ready_reasons() },
+            "reasons": if accepted { vec![] } else { self.ready_reasons(true) },
         }));
     }
 
@@ -1980,6 +2012,9 @@ impl Hub {
                     self.fake_target = Some(ok);
                     self.check_target();
                 }
+            }
+            Event::FakeActivate(ok) => {
+                if self.fake_target.is_some() { self.fake_activate = ok; }
             }
             Event::FakeAppWindow(f) => {
                 // 試験では、この知らせが来たら PC アプリから起動された扱いにする
