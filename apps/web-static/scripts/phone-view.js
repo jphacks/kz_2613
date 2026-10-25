@@ -2,12 +2,12 @@ import { myActions, generatedKey, buildGenerated } from './generated-controls.js
 
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
 import {profileNotice,roleView,gameLabel,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS} from '../app-view.js';
-export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleText,bindControl,bindStick=()=>{},onRoleOk=()=>{}}) {
+export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindControl,bindStick=()=>{},onRoleOk=()=>{}}) {
   const $ = id => document.getElementById(id);
   let lastView = null, lastGen = '';
   // 視点のパッドと感度は、操作定義の画面で視点を担当するときだけそちらへ移す
-  const lookParts = [$('pad'), document.querySelector('#v-P2 .sens')].filter(Boolean);
-  const lookHome = $('v-P2');
+  const lookParts = [$('pad'), document.querySelector('#lookHome .sens')].filter(Boolean);
+  const lookHome = $('lookHome');
   $('phoneSettingsBtn').addEventListener('click',()=>{
     onDiagnosticsOpen();
     $('phoneConnection').textContent=[$('status').textContent,$('phase').textContent,$('slot').textContent].join('・');
@@ -17,12 +17,9 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleTex
   $('roleOkBtn')?.addEventListener('click',()=>onRoleOk());
   function render({me,isHost,game}) {
     if (!me || !game) return;
-    // 担当 (入れ替え後の席、#47)。Minecraft の固定の画面はこの担当の画面を出す
-    const roleKey=game.roleOf?.[me]||me;
     const role=roleView(game,me), heading=document.createElement('b');
     heading.textContent=role.title+(isHost?'（ホスト）':'');
-    const generic=game.profile && game.profile.id!=='minecraft-java';
-    $('role').replaceChildren(heading,document.createTextNode(generic?(game.phase==='coop'?'確定した分担の操作だけを送信します':game.phase==='paused'?'確定した分担（再開時に確認）':'分担案（Readyで確定）'):roleText[roleKey]));
+    $('role').replaceChildren(heading,document.createTextNode(game.phase==='coop'?'確定した分担の操作だけを送信します':game.phase==='paused'?'確定した分担（再開時に確認）':'分担案（Readyで確定）'));
     const ackPending=(game.roleAck||[]).includes(me);
     if($('roleNotice')){$('roleNotice').hidden=!ackPending;$('roleNoticeText').textContent=ackPending?`ホストが担当を入れ替えました。あなたの担当は「${role.title}」です。`:'';}
     const phase = game.phase;
@@ -34,9 +31,9 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleTex
     $('inputWarn').style.display = game.inputTarget || notice ? 'block' : 'none';
     // Ready の後に来た人は今回の協力プレイに参加しない (次の Ready から参加する、#57)
     const joined = !game.participants?.length || game.participants.includes(me);
-    const generated = phase === 'coop' && joined && myActions(game, me);
-    $('fixedPause').hidden = phase !== 'coop' || !joined || !isHost || !!generated;
-    const view = phase === 'coop' && joined ? (generated ? 'v-gen' : 'v-' + roleKey) : isHost ? 'v-remote' : 'v-wait';
+    // 協力プレイ中はどのゲームも操作定義から作った画面 (#141)
+    const generated = phase === 'coop' && joined;
+    const view = generated ? 'v-gen' : isHost ? 'v-remote' : 'v-wait';
     document.body.dataset.view=view;
     const characterName={P1:'blue',P2:'green',P3:'purple',P4:'red'}[me];
     $('waitCharacter').src=`/assets/characters/${characterName}.png`;

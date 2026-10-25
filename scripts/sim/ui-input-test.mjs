@@ -40,10 +40,10 @@ const GAME = {
 let passed=0;
 async function test(name,fn) { await fn();passed++;console.log(`合格: ${name}`); }
 try {
-  await test('操作定義の画面: 割り当てた操作だけをボタンにし、方向はスティック、ホイールは前後、視点はパッドを移す。Minecraft は専用画面', () => {
-    assert.equal(myActions({ ...GAME, profile: { ...GAME.profile, id: 'minecraft-java' } }, 'P1'), null);
-    const minecraft = { ...GAME, profile: { ...GAME.profile, id: 'minecraft-java' }, fixedControls: false };
-    assert.deepEqual(myActions(minecraft, 'P2').map((a) => a.id), ['jump'], '2人・4人のMinecraftでは固定画面に戻さず確定した担当を使う');
+  await test('操作定義の画面: 割り当てた操作だけをボタンにし、方向はスティック、ホイールは前後、視点はパッドを移す。Minecraft も同じ画面 (#141)', () => {
+    const minecraft = { ...GAME, profile: { ...GAME.profile, id: 'minecraft-java' } };
+    assert.deepEqual(myActions(minecraft, 'P1').map((a) => a.id), ['left', 'right', 'action', 'zoom', 'aim'], 'Minecraftも確定した担当を使う');
+    assert.deepEqual(myActions(minecraft, 'P2').map((a) => a.id), ['jump']);
     assert.deepEqual(myActions(minecraft, 'P4'), [], '担当外の枠へ操作を渡さない');
     assert.equal(myActions({ ...GAME, assigned: {} }, 'P1'), null);
     assert.deepEqual(myActions(GAME, 'P2').map((a) => a.id), ['jump']);
@@ -125,7 +125,7 @@ try {
     assert.equal(clicks,0);assert.equal(messages.at(-1).kind,'release');
   });
   await test('協力入力: 視点30Hz、epoch変更・キャンセルで累積値と未送信移動を初期化する',()=>{
-    const elements=Object.fromEntries(['stick','pad','sens','sensVal'].map(id=>[id,new Element()]));
+    const elements=Object.fromEntries(['pad','sens','sensVal'].map(id=>[id,new Element()]));
     globalThis.document={getElementById:id=>elements[id]};globalThis.localStorage={getItem:()=>null,setItem(){}};
     let game={phase:'coop',epoch:8},cancelled=0;const packets=[],down=[],up=[];
     const input=bindCooperativeInput({getGame:()=>game,getRole:()=> 'P2',isOpen:()=>true,ctlDown:c=>down.push(c),ctlUp:c=>up.push(c),sendLook:m=>packets.push(m),onCancel:()=>cancelled++});
@@ -136,10 +136,11 @@ try {
     game={phase:'coop',epoch:9}; input.resetEpoch();
     elements.pad.fire('pointerdown');elements.pad.fire('pointermove',{clientX:105});timer.fn();
     assert.equal(packets[1].cx,10);assert.equal(packets[1].lseq,1);assert.equal(packets[1].epoch,9);
-    elements.stick.fire('pointerdown',{clientY:0});assert(down.includes('FWD'));elements.stick.fire('lostpointercapture');assert(up.includes('FWD'));assert.equal(cancelled,2);
+    const stick=new Element();input.setGeneratedStick(stick,{up:'act:forward'});
+    stick.fire('pointerdown',{clientY:0});assert(down.includes('act:forward'));stick.fire('lostpointercapture');assert(up.includes('act:forward'));assert.equal(cancelled,2);
   });
   await test('スティック: 操作定義の画面でも斜めは2方向を同時に押し、ない方向には反応せず、作り直し・解放ですべて離す (#139)',()=>{
-    const elements=Object.fromEntries(['stick','pad','sens','sensVal'].map(id=>[id,new Element()]));
+    const elements=Object.fromEntries(['pad','sens','sensVal'].map(id=>[id,new Element()]));
     globalThis.document={getElementById:id=>elements[id]};
     const down=[],up=[];
     const input=bindCooperativeInput({getGame:()=>({phase:'coop',epoch:1}),getRole:()=>'P1',isOpen:()=>true,ctlDown:c=>down.push(c),ctlUp:c=>up.push(c),sendLook(){}});
