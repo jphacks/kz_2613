@@ -110,7 +110,7 @@ v4ではOPEN_GAME（現在epoch必須）とPC画面のopen_gameを追加する�
 
 `game.keys.source`はMinecraft読込成功時の`options`を維持し、他形式の成功を`user`、初期値を`default`、読込不可を`unreadable`、定義なしを`none`とする。設定ファイルの変更は協力中以外に検知し、全入力解放・視点破棄・epoch更新後に新設定を通知する。
 
-未検証（template／extracted／unverified）の定義、または現在のスマホ画面に結び付かない定義ではReadyを拒否する。ゲーム検出・起動と操作互換性を区別し、対応画面と認可を実装して検証するまでは分担の案だけで操作を開始させない。
+確認の状態（template／extracted／unverified）ではReadyを拒否しない（#123、[決定](../decisions/2026-10-26-start-any-game.md)）。`controllerSupported` が偽（分担できる操作がない・送れない種類の操作がある）の定義ではReadyを拒否する。定義のない検出したゲームの `game.profile` は汎用の定義（`id: generic`、`status: template`）になる。Minecraftの固定の表（`fixedControls`）はMinecraftの3人と診断用の疑似ゲームだけで使う。ゲーム検出・起動と操作互換性は区別し、未検証の表示を続ける。
 
 ## 生成操作画面の入力（#60・#105）
 

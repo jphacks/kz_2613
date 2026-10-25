@@ -71,6 +71,9 @@ el('closePhoneDiagnostics').handlers.click();
 assert.equal(el('phoneDiagnostics').open,false);
 update('P2',{profile:{id:'reference',name:'参考用',status:'unverified',controllerSupported:false}});
 assert.equal(el('inputWarn').style.display,'block');
-assert.match(el('inputWarn').textContent,/Readyできません/);
-assert.doesNotMatch(el('waitRole').textContent,/Readyできません/);
+// 分担できないゲーム (マウス操作だけ) の案内は警告欄に出し、担当の欄には混ぜない (#123)
+assert.match(el('inputWarn').textContent,/分担できる操作がありません/);
+assert.doesNotMatch(el('waitRole').textContent,/分担できる操作がありません/);
+update('P2',{profile:{id:'reference',name:'参考用',status:'unverified',controllerSupported:true}});
+assert.match(el('inputWarn').textContent,/未検証.*確かめながら/);
 console.log('合格: ホスト準備・Ready可否・参加者待機・担当画面・Pause・診断前解放・未検証案内（7観点、OS入力なし）');
