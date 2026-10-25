@@ -806,3 +806,11 @@
 - PR #134（#131）の上に積んだ。PCの「操作設定」に「通信の診断」を追加し、つながっているスマホごとに経路・往復時間（平均・95%）・受信の途切れ・再接続の回数と、状態（良好・注意・不安定）、対処の案内を出す（`slotDiagnosis`）。スマホの接続・診断の画面にも、自分の往復時間・未応答の数・経路から案内を出す（`phoneAdvice`）。設定は変えず、案内だけ。判定の閾値は[決定](../decisions/2026-10-26-network-stability.md)に記録した。
 - `app-view-test.mjs` 23/23（診断の判定と案内）、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`（`phoneAdvice`を試験の環境に追加）、`ui-input-test.mjs` 10/10、`check-static-pages.mjs`が成功した。
 - dry-runのホストに、往復時間の統計の違う模擬スマホ2台をつなぎ、`bt on`の状態でPC画面を撮影した。P1は「注意（WebRTCが使えていない）」、P2は「注意（応答の遅れ・WebRTC）」、Bluetoothの案内が出ることを確認した。案内の効果は端末ごとに実機で測る必要がある（未実施）。
+
+## 2026-10-26 — 参加画面で接続QRと参加QRを並べる（Claude Code、#133）
+
+- PR #135（#70）の上に積んだ。Wi-Fiの情報が取れるとき、参加画面に「① Wi-Fiにつなぐ」「② 参加する」の2つのQRを並べる。ホットスポットがOFFなら①の位置に「ホットスポットをONにする」ボタンを出す（[決定](../decisions/2026-10-26-join-qr-card.md)）。
+- ホストはWindowsのモバイルホットスポットの設定（SSID・パスフレーズ・ON/OFF）をWinRTで読み、読めなければ`config.json`の`wifi`を使う。Wi-Fiの情報は`/api/info`でPC本体にだけ返すようにした（以前はLANの端末にも返していた）。`POST /api/hotspot`を追加し、PC本体かつOriginがPCの画面と一致する要求だけでONにする。dry-runでは本物を読まず`RECOOPLAY_FAKE_HOTSPOT`を使う。
+- 開発PCで実際のホストを別のポートで起動し、PC本体からはホットスポットのSSIDとWi-FiのQRが取れ（OFF）、LANのアドレスからは`wifi`・`hotspot`が`null`、別のOriginからのON要求が403になることを確認した（パスフレーズは表示していない。ONにする操作はしていない）。
+- `protocol-sim.mjs`（Rust dry-run）48/48：PC本体へのWi-Fiの情報、LANのアドレスからの取得・ON要求の拒否、Originなし・別Originの拒否、PCの画面からのON要求の受け付けを追加した。`app-view-test.mjs` 24/24（案内の形）、`ui-input-test.mjs` 10/10、`check-static-pages.mjs`が成功した。模擬のホットスポットのON・OFFで参加画面を撮影し、ボタンの文字の折り返しと、押した結果が毎秒の再描画で消える問題を直した。
+- スマホが①→②で参加できるかは、スマホ実機で未確認。

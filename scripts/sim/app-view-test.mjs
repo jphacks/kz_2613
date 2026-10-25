@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView, networkNotice, slotDiagnosis, phoneAdvice, usesFixedRoles, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
+import { SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, slotDiagnosis, phoneAdvice, usesFixedRoles, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -74,6 +74,15 @@ test('通信の診断: 経路・往復時間・途切れ・再接続から状態
   assert.equal(phoneAdvice(null), '');
   assert.equal(phoneAdvice({ avg: 20, p95: 40, unacked: 0, path: 'rtc' }), '');
   assert.match(phoneAdvice({ avg: 150, p95: 500, unacked: 8, path: 'ws' }), /近づけ.*溜まって.*読み込み直して/);
+});
+
+test('参加の案内: ホットスポット・Wi-Fiの情報があれば ①Wi-Fi・②参加 の2つを並べる (#133)', () => {
+  assert.deepEqual([joinGuideView({ urls: [] }).two, joinGuideView(null).two], [false, false], 'Wi-Fiの情報がなければ従来の1つ');
+  const on = joinGuideView({ hotspot: { on: true }, wifi: { ssid: 'PC-1', qr: '<svg/>' } });
+  assert.deepEqual([on.two, on.wifiQr, on.button], [true, '<svg/>', false]); assert.match(on.note, /PC-1/);
+  const off = joinGuideView({ hotspot: { on: false }, wifi: { ssid: 'PC-1', qr: '<svg/>' } });
+  assert.deepEqual([off.two, off.wifiQr, off.button], [true, null, true], 'OFFならONにするボタン'); assert.match(off.note, /②だけで/);
+  assert.equal(joinGuideView({ hotspot: null, wifi: { ssid: 'X', qr: '<svg/>' } }).wifiQr, '<svg/>', 'config.json のWi-Fi');
 });
 
 test('人数: Minecraftは3人（P1〜P3）だけ固定の分担、2人・4人は操作定義の分担を表示する', () => {
