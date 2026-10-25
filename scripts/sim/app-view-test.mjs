@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView, networkNotice, usesFixedRoles, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
+import { SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView, networkNotice, slotDiagnosis, phoneAdvice, usesFixedRoles, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -61,6 +61,19 @@ test('通信の注意: BluetoothでPCの音を出しているとき・途切れ�
   const n = networkNotice({ bluetoothAudio: false }, [
     { name: 'P1', connected: true, net: { stalls: 3 } }, { name: 'P2', connected: false, net: { stalls: 9 } }, { name: 'P3', connected: true, net: { stalls: 5 } }]);
   assert.match(n, /^P1・P3の通信が途切れがちです/);
+});
+
+test('通信の診断: 経路・往復時間・途切れ・再接続から状態と対処を示す (#70)', () => {
+  const good = slotDiagnosis({ name: 'P1', rtcState: 'open', clientStats: { avg: 25, p95: 60 }, net: { stalls: 0 }, reconnects: 0 });
+  assert.deepEqual([good.level, good.path, good.hints.length], ['ok', 'WebRTC', 0]);
+  const bad = slotDiagnosis({ name: 'P2', rtcState: 'open', clientStats: { avg: 40, p95: 350 }, net: { stalls: 4 }, reconnects: 0 });
+  assert.equal(bad.level, 'bad'); assert.match(bad.hints.join(), /Bluetooth.*ホットスポット/); assert.match(bad.hints.join(), /近づけ/);
+  const ws = slotDiagnosis({ name: 'P3', rtcState: 'failed', clientStats: {}, net: { stalls: 0 }, reconnects: 5 });
+  assert.equal(ws.level, 'warn'); assert.equal(ws.path, 'WebSocket'); assert.equal(ws.rtt, null);
+  assert.match(ws.hints.join(), /読み込み直して/); assert.match(ws.hints.join(), /省電力/);
+  assert.equal(phoneAdvice(null), '');
+  assert.equal(phoneAdvice({ avg: 20, p95: 40, unacked: 0, path: 'rtc' }), '');
+  assert.match(phoneAdvice({ avg: 150, p95: 500, unacked: 8, path: 'ws' }), /近づけ.*溜まって.*読み込み直して/);
 });
 
 test('人数: Minecraftは3人（P1〜P3）だけ固定の分担、2人・4人は操作定義の分担を表示する', () => {
