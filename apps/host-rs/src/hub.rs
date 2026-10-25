@@ -16,6 +16,7 @@ use tokio::sync::mpsc::UnboundedSender;
 use crate::config::Config;
 use crate::controls::{self, Kind, OUTPUTS};
 use crate::keybinds::{self, Keybinds};
+use crate::profiles::{self, Profile};
 use crate::focus::{self, Foreground, Target};
 use crate::input::Input;
 use crate::rtc::{Peer, RtcSignal};
@@ -302,6 +303,9 @@ pub struct Hub {
     // ゲームのキー設定に合わせた、操作 → 送るキーの対応 (#101)。準備・Ready・再開のたびに読み直す
     keybinds: Keybinds,
     minecraft_options: Option<std::path::PathBuf>,
+    // ゲームの操作定義 (apps/game-profiles/*.json、#97)。起動時に読み、不正なものは理由をログに残して使わない
+    profiles: Vec<Profile>,
+    profile: Option<Profile>,
     app_focused: bool,           // PC アプリが前面か (手動復帰の判定に使う)
     // PC アプリ (デスクトップアプリ) から起動されたか。そのときは前面のプロセス名で PC アプリの前面を判定し、
     // 画面 (WebView2 は背面でも focused のまま) の知らせは使わない
@@ -393,8 +397,10 @@ impl Hub {
             target: Target { processes: config.target.processes.clone(), title_contains: config.target.title_contains.clone() },
             target_fg: None,
             target_ok: false,
-            keybinds: Keybinds::defaults("default"),
-            minecraft_options: keybinds::minecraft_options_path(config.minecraft_options.as_deref()),
+            keybinds: Keybinds::none(),
+            minecraft_options: keybinds::minecraft_override(config.minecraft_options.as_deref()),
+            profiles: Vec::new(),
+            profile: None,
             fake_target: std::env::var("RECOOPLAY_FAKE_TARGET")
                 .ok()
                 .filter(|_| std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1"))
@@ -402,6 +408,12 @@ impl Hub {
             app_focused: false,
             desktop: std::env::var("RECOOPLAY_DESKTOP").as_deref() == Ok("1"),
         };
+        let (mut list, errors) = profiles::load_dir(&config.profiles_dir);
+        if !list.iter().any(|p| p.id == "minecraft-java") {
+            list.push(profiles::builtin_minecraft()); // フォルダがない・壊れている場合も Minecraft は動かす
+        }
+        hub.log("profiles", json!({ "loaded": list.len(), "errors": errors }));
+        hub.profiles = list;
         hub.reload_keybinds();
         hub.schedule(now + LOOK_TICK, Timer::LookTick);
         hub.schedule(now + Duration::from_millis(100), Timer::LookReport);
@@ -544,6 +556,8 @@ impl Hub {
             "canStart": self.can_start(),
             // 操作 → 実際に送るキー (ゲームのキー設定に合わせる)。スマホ・PC 画面のキー表示に使う
             "keys": self.keys_snapshot(),
+            // 選んだゲームの操作定義の要約と分担の案 (#97)
+            "profile": self.profile.as_ref().map(profiles::snapshot),
             "canPrepare": self.can_prepare(),
             "canReady": self.can_start(),
             "canResume": self.can_resume(),
@@ -757,12 +771,15 @@ impl Hub {
         OUTPUTS.iter().position(|o| o.id == id)
     }
 
-    /// ゲームのキー設定を読み直す。Minecraft のときだけ options.txt を読み、ほかは初期のキー
+    /// 選んだゲームの操作定義を引き、ユーザーのキー設定を読み直して重ねる (#97・#99)。定義がなければ固定の表を使う
     fn reload_keybinds(&mut self) {
-        self.keybinds = if self.game.title == "minecraft-java" {
-            Keybinds::load_minecraft(self.minecraft_options.as_deref())
-        } else {
-            Keybinds::defaults("default")
+        self.profile = profiles::find(&self.profiles, &self.game.title).cloned();
+        self.keybinds = match &self.profile {
+            Some(p) => {
+                let over = if p.id == "minecraft-java" { self.minecraft_options.as_deref() } else { None };
+                Keybinds::build(p, over)
+            }
+            None => Keybinds::none(),
         };
         // ファイルの場所 (ユーザー名を含む) はログに残さない
         self.log("keybinds", json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings }));
@@ -1174,6 +1191,10 @@ impl Hub {
                 self.schedule(at + FOCUS_CHECK, Timer::FocusCheck);
             }
             Timer::Heartbeat => {
+                // 協力プレイ中以外は、ゲームのキー設定が変わっていたら読み直す (#99)
+                if self.game.phase != Phase::Coop && self.keybinds.changed() {
+                    self.reload_keybinds();
+                }
                 // Wi-Fi を切られた場合 TCP の close はすぐ来ないので、アプリ層の ping 途絶で切断を判定する
                 let now = now_ms();
                 for i in 0..3 {

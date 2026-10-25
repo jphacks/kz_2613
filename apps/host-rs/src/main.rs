@@ -11,6 +11,7 @@ mod hub;
 mod input;
 mod keybinds;
 mod netinfo;
+mod profiles;
 mod rtc;
 
 use std::net::SocketAddr;

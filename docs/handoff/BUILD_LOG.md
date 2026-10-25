@@ -482,3 +482,9 @@
 - 画面：`game.keys` を配り、PCの分担確認の画面とスマホのボタンのキー表示を、実際に送るキーにした。警告は分担確認の画面に出す。
 - 検証：`cargo test --release --locked` **9件合格**（キー設定の読み取り6件：変更されたキー、送れない・未設定、重複、1.12以前の番号、ファイルなし、英字・数字・Fキー）。`protocol-sim.mjs` を3回連続で **41/41合格**（試験用の `options.txt`（ダッシュ＝Q、捨てる＝R）で、P1のダッシュがQ、P3の捨てるがRとして送られ、捨てるでQを送らないことを追加）。`--target node` **20/20合格**。`app-view-test` **13/13合格**、`ui-input-test` 4/4、`check-static-pages`・`shutdown-sim`・`static-assets-sim`・`input-probe-sim` 合格。
 - **未検証：** 実際のMinecraftでの動作（このPCの設定でダッシュ＝Q・捨てる＝Rが効くか）、スマホのボタン表示の見た目。
+
+## 2026-10-25 — #97・#99・#100 ゲームの操作定義とユーザーのキー設定（Claude Code、テストは後で）
+- **#97：** 操作定義JSONの形式を `docs/architecture/game-profiles.md` に決めた。`apps/game-profiles/minecraft-java.json` を最初の1件にした（実機で確認済み）。ホスト（`src/profiles.rs`）は起動時にフォルダ内の定義を読み、形式を検証し、不正なものは理由をログに残す。Minecraftの定義はホストにも同梱した。分担の案（`assignment`）は、同じ系統の操作をグループごと1人に割り当てる。担当が3人分に足りないときは、`split` のあるグループ（移動の左・右・ジャンプ等）を分けて配る。`game.profile` で画面に配る。配布用zipに定義のフォルダを同梱した。
+- **#99：** `src/keybinds.rs` を定義駆動にした。読み方は `minecraft-options`・`terraria-input-profiles`・`es3-keybindings`（R.E.P.O.）・`unity-inputsystem-json`・`ue-input-ini`・`source-cfg`。キー名の表記ゆれ（XNA・Unreal・Source・Unity）をまとめて送れるキーへ対応させる。`%DOCUMENTS%`（OneDriveへ移したドキュメントを含む）などの場所を展開する。協力プレイ中以外は、設定ファイルの更新日時が変わったら読み直す。
+- **#100：** `scripts/profiles/extract.mjs`（読み取りのみ、ゲームのコードは実行しない）。Steamの `appinfo.vdf` の分類から向き不向きを付け、Unity Input Systemの埋め込み定義・.NETの列挙型・Minecraftの `Options.class`・設定ファイルから、下書き（状態は「自動抽出」）を作る。このPCで一度だけ動かし、Minecraft（40件）・Terraria・tModLoader（各31件）・R.E.P.O.（33件）・Goose Goose Duck（97件）が取れることを確かめた。
+- 検証：`cargo build --release --locked` 成功。**ユーザーの指示により、単体試験・シミュレーションの実行と追加は後で行う**（keybindsの既存の単体試験は新しい形へ書き直したが、まだ実行していない）。
