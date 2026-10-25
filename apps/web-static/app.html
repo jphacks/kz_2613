@@ -39,7 +39,7 @@
     <div class="state-banner" id="stateBanner"><h2 id="stateTitle"></h2><p id="stateSubtitle"></p></div>
     <section id="playerStage" class="player-stage" aria-label="参加者と担当"><div id="players" class="players"></div></section>
     <section id="gameStage" class="game-stage" aria-label="ゲーム選択" hidden><div id="games" class="game-frame">
-      <div class="game-list-head"><h2>ゲーム一覧</h2><p id="gamesCount" role="status"></p><button id="refreshGamesBtn">探し直す</button></div>
+      <div class="game-list-head"><h2>ゲーム一覧</h2><p id="gamesCount" role="status"></p><button id="renameGameBtn" hidden>名前を変更</button><button id="removeGameBtn" hidden>登録を解除</button><button id="addGameBtn">＋ 追加</button><button id="refreshGamesBtn">探し直す</button></div>
       <div id="gameList" class="game-list"></div>
     </div></section>
     <section id="roleStage" class="role-stage" aria-label="固定の操作分担" hidden>
@@ -63,6 +63,12 @@
   <button id="settingsConnectionBtn">参加用QR・接続方法</button>
   <details><summary>Minecraftについて</summary><p class="legal">NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.<br>Re:CooplayはMinecraftの公式製品ではなく、Mojang・Microsoftの承認・提携はありません。</p></details>
   <button id="closeSettings">閉じる</button>
+</dialog>
+<!-- 手動で登録したゲームの名前の変更 (#49) -->
+<dialog id="renameGame" aria-labelledby="renameTitle">
+  <h2 id="renameTitle">名前を変更</h2>
+  <form id="renameForm" method="dialog"><input id="renameInput" maxlength="60" aria-label="ゲームの名前" required>
+  <p><button id="renameSave" value="save">保存</button><button id="renameCancel" type="button">キャンセル</button></p></form>
 </dialog>
 <dialog id="connectionHelp" aria-labelledby="connectionTitle">
   <h2 id="connectionTitle">スマホを接続する</h2><p>PCと同じWi-Fiへ接続してから、QRをP1→P2→P3の順に読み取ってください。</p>
