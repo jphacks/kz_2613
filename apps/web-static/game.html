@@ -532,9 +532,9 @@
     $('lockHint').style.display = screen === 'world' && !locked ? 'block' : 'none';
   }
   function renderPlayers() {
-    $('players').innerHTML = ['P1', 'P2', 'P3'].map((n) => {
+    $('players').innerHTML = ['P1', 'P2', 'P3', 'P4'].map((n) => {
       const s = slots.find((x) => x.name === n) || {};
-      const role = { P1: '移動・ホスト', P2: '視点', P3: 'アクション' }[n];
+      const role = n === 'P1' ? 'ホスト' : '参加者'; // 分担は操作定義から決まる (#141)
       const held = (s.pressed || []).join(' ');
       const rtt = s.clientStats ? `${s.clientStats.avg}ms` : '';
       return `<div class="pl ${s.connected ? 'on' : ''}" style="color:${COLORS[n]}"><b>${n}</b> <span style="color:var(--muted)">${role}</span>

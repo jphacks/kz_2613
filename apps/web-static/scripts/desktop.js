@@ -1,5 +1,5 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,keyLabel,profileNotice,roleView,networkNotice,slotDiagnosis,usesFixedRoles,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,rolesAction} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,profileNotice,roleView,networkNotice,slotDiagnosis,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,rolesAction} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // swap: 一時停止中に担当を入れ替える画面を開いているか (#47)
@@ -24,7 +24,6 @@ function fit(){document.body.style.setProperty('--pc-scale',String(Math.min(inne
 window.addEventListener('resize',fit);fit();
 $('steps').innerHTML=SCREENS.map(s=>`<button data-go="${s}" aria-label="${SCREEN_TITLES[s]}">${{join:'参加',game:'選択',roles:'分担'}[s]}</button>`).join('');
 $('gameSteps').innerHTML=GAMES[0].steps.map(s=>`<li>${esc(s)}</li>`).join('');
-const shortRoles=['移動・ホスト','視点','アクション'];
 const character=(i)=>`<div class="character-art art-${i}" aria-hidden="true"><img src="/assets/characters/${['blue','green','purple','red'][i]}.png" alt=""></div>`;
 function openDialog(dialog){document.querySelectorAll('dialog[open]').forEach(d=>d.close());dialog.showModal();}
 $('settingsBtn').addEventListener('click',()=>openDialog($('settings')));
@@ -129,23 +128,16 @@ function render(){
   if(game?.phase!=='paused'&&ui.swap)ui={...ui,swap:false};
   const view=desktopView(ui,game),slots=slotViews(state?.slots),count=slots.filter(s=>s.state==='connected').length;
   document.body.dataset.view=view;document.body.dataset.phase=game?.phase||'lobby';
-  // generated: 固定の分担ではなく操作定義の分担を表示する (2人・4人のMinecraftを含む)
-  const generated=!usesFixedRoles(game);
-  document.querySelector('.key-samples').hidden=generated;
-  document.querySelectorAll('.key-samples kbd').forEach((el,i)=>{
-    const label=keyLabel(game?.keys,['INV','FWD','BACK'][i]);
-    el.textContent=label;el.title=label;el.classList.toggle('wide-key',label.length>3);
-  });
   const roleSlots=shownSlots(game);
   $('roles').style.setProperty('--role-count',String(roleSlots.length));
   $('roleHeading').textContent=!roleSlots.length?'参加者を待っています':game?.lineupOk?`${roleSlots.length}人で決定！`:`${roleSlots.length}人で、操作を分担！`;
   if(swapPick&&!roleSlots.includes(swapPick))swapPick=null;
   const pendingAck=game?.roleAck||[];
   $('roles').innerHTML=roleSlots.map(slot=>{
-    // i: その人の枠 (キャラクターの色)、ri: 担当 (入れ替え後の席。固定の分担の説明に使う)
-    const i=SLOT_NAMES.indexOf(slot),ri=SLOT_NAMES.indexOf(game?.roleOf?.[slot]||slot),role=roleView(game,slot);
+    // i: その人の枠 (キャラクターの色)。担当は操作定義の分担から (#141)
+    const i=SLOT_NAMES.indexOf(slot),role=roleView(game,slot);
     const swap=game?.canSwap?` data-swap="${slot}" role="button" tabindex="0" aria-pressed="${swapPick===slot}" aria-label="プレイヤー${i+1}の担当を入れ替える"`:'';
-    return `<article class="role-column${swapPick===slot?' picked':''}"${swap}><h3>プレイヤー${i+1}</h3>${character(i)}<div class="role-copy"><b>${esc(generated?role.title:shortRoles[ri])}</b><p>${generated?esc(role.lines[0]||'担当する操作なし'):esc(['歩く・跳ぶ','カメラを動かす','攻撃・使う'][ri]||'')}</p>${pendingAck.includes(slot)?'<span class="ack-wait">スマホで確認待ち</span>':''}</div></article>`;
+    return `<article class="role-column${swapPick===slot?' picked':''}"${swap}><h3>プレイヤー${i+1}</h3>${character(i)}<div class="role-copy"><b>${esc(role.title)}</b><p>${esc(role.lines[0]||'担当する操作なし')}</p>${pendingAck.includes(slot)?'<span class="ack-wait">スマホで確認待ち</span>':''}</div></article>`;
   }).join('');
   const titles={join:'',game:'ゲーム選択を<br>しよう！',roles:'分担しよう！',preparing:'準備中<span class="ellipsis">...</span>',ready:'準備完了！',coop:'協力プレイ中',paused:'一時停止中'};
   $('screenTitle').innerHTML=titles[view];

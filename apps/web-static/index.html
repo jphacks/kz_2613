@@ -67,55 +67,19 @@
     </div>
   </section>
 
-  <!-- P1 移動 -->
-  <section class="view" id="v-P1">
-    <h1 class="control-heading">移動・ホスト</h1>
-    <div class="move">
-      <div id="stick" class="stick">
-        <span class="dir up" data-d="up">W</span>
-        <span class="dir down" data-d="down">S</span>
-        <span class="dir left" data-d="left">A</span>
-        <span class="dir right" data-d="right">D</span>
-        <div class="knob"></div>
-      </div>
-      <div class="col">
-        <button class="key big" data-ctl="JUMP">ジャンプ<small>Space</small></button>
-        <div class="grid2">
-          <button class="key" data-ctl="SNEAK">スニーク<small>Shift</small></button>
-          <button class="key" data-ctl="SPRINT">ダッシュ<small>Ctrl</small></button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- P2 視点 -->
-  <section class="view" id="v-P2">
-    <h1 class="control-heading">視点</h1>
+  <!-- 視点のパッドと感度の置き場所。視点を担当する人の操作画面へ移す -->
+  <div id="lookHome" hidden>
     <div id="pad">ドラッグで視点を動かす<div class="dot"></div></div>
     <label class="sens">感度 <input type="range" id="sens" min="0.5" max="6" step="0.1" value="2"> <span id="sensVal">2.0</span></label>
-  </section>
+  </div>
 
-  <!-- 操作定義から作る画面 (Minecraft 以外のゲーム、#60) -->
+  <!-- 操作の画面。どのゲームも操作定義と分担から作る (#60・#141) -->
   <section class="view" id="v-gen">
     <div class="gen-title" id="genTitle"></div>
     <div id="genControls"></div>
     <button class="cmd pause" data-cmd="PAUSE" id="genPause" hidden>一時停止・ホスト操作へ</button>
   </section>
 
-  <!-- P3 アクション -->
-  <section class="view" id="v-P3">
-    <h1 class="control-heading">アクション</h1>
-    <div class="act">
-      <button class="key attack" data-ctl="ATTACK">攻撃<small>左クリック</small></button>
-      <button class="key attack" data-ctl="USE">使う / 置く<small>右クリック</small></button>
-      <button class="key" data-ctl="SLOT_PREV">◀ 持ち物<small>ホイール↑</small></button>
-      <button class="key" data-ctl="SLOT_NEXT">持ち物 ▶<small>ホイール↓</small></button>
-      <button class="key" data-ctl="INV">インベントリ<small>E</small></button>
-      <button class="key" data-ctl="DROP">捨てる<small>Q</small></button>
-    </div>
-  </section>
-  <!-- ホストの停止操作は担当画面から独立させ、P1が視点・アクションへ交換しても表示する -->
-  <button class="cmd pause" data-cmd="PAUSE" id="fixedPause" hidden>一時停止・ホスト操作へ</button>
 </main>
 
 <dialog id="phoneDiagnostics" aria-labelledby="phoneDiagnosticsTitle"><h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection"></p><footer>

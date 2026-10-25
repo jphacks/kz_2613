@@ -9,7 +9,6 @@ header .right #phase { display: none; }
 .phone-settings { position: absolute; right: max(8px,env(safe-area-inset-right)); top: calc(5px + env(safe-area-inset-top)); border: 0; width: 44px; height: 44px; min-height: 44px; padding: 0; box-shadow: none; background: transparent; color: var(--color-logo); font-size: 26px; }
 main { padding: 14px max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left)); }
 .view { gap: 10px; }
-.control-heading { margin: 0; padding: 12px; border: 3px solid var(--color-cyan); border-radius: 26px; background: var(--color-phone-surface); text-align: center; color: var(--color-cyan); font-size: 26px; line-height: 1.25; text-shadow: 1px 2px var(--color-paper),2px 3px var(--color-lemon); flex-shrink: 0; }
 .host-card { border-radius: 30px; background: var(--color-phone-surface); border-width: 4px; padding: 14px 12px; box-shadow: 0 4px 3px var(--color-shadow); }
 .host-card h1 { color: var(--color-cyan); font-weight: 800; font-size: clamp(22px,6.2vw,30px); text-shadow: 1px 2px var(--color-paper),2px 3px var(--color-lemon); }
 .host-card p { border-color: var(--color-phone-dots); font-weight: 500; color: var(--color-logo); }
@@ -46,7 +45,6 @@ body[data-slot=P3] .phone-character img { width: 157.851%; height: 128.546%; lef
 #pad { border-style: solid; background: var(--color-phone-surface); color: var(--color-cyan-ink); border-radius: 30px; }
 #pad::before { content: '↔'; color: var(--color-phone-dots); font-size: 80px; }
 .sens { border: 2px solid var(--color-cyan); background: var(--color-phone-surface); color: var(--color-logo); }
-.act .attack { background: var(--color-button-surface); border-color: var(--color-phone-button); }
 .gen-title { color: var(--color-black); background: var(--color-surface); border-radius: 24px; padding: 12px; border: 3px solid var(--color-cyan); }
 #genControls { min-height: 0; flex: 1; }
 .gen-label { color: var(--color-black); }

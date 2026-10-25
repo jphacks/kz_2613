@@ -56,7 +56,7 @@ async function check(mode) {
     await until(()=>current()?.phase==='preparing', '準備へ移れない');
     p1.sendJson({type:'command',cmd:'READY',epoch:current().epoch});
     const game = await until(() => p1.messages.find(m => m.type === 'game' && m.game.phase === 'coop'), '開始できない');
-    p1.sendJson({ type: 'input', iseq: 1, epoch: game.game.epoch, button: 'FWD', state: 'down' });
+    p1.sendJson({ type: 'input', iseq: 1, epoch: game.game.epoch, button: 'act:forward', state: 'down' });
     await until(() => mon.messages.some(m => m.type === 'inject' && m.entry.out === 'KEY_W' && m.entry.state === 'down'), 'dry-runの押下がない');
     if (mode === 'quit') child.stdin.write('quit\n'); else child.stdin.end();
     const code = await Promise.race([exited, sleep(4000).then(() => 'timeout')]);

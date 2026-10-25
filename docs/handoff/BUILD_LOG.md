@@ -847,3 +847,11 @@
 - 画面の作り直し・切断・一時停止・指のキャンセルでは、これまでのスティックと同じく押していた方向をすべて離す（作り直すときは前のスティックを離してから置き換える）。
 - `ui-input-test.mjs` 11/11（定義の画面でスティックを作り、方向ごとの操作を渡すこと、斜めの同時押し、ない方向に反応しないこと、作り直しで離すこと）、`phone-view-test.mjs`・`controller-diagnostics-test.mjs`・`check-static-pages.mjs`・`static-assets-sim.mjs`・`verify-ui-evidence.mjs`、`protocol-sim.mjs`（Rust dry-run）49/49が成功した。
 - dry-runのホストとヘッドレスChrome（スマホの大きさ）で、Outlastを選んだP1の画面にスティックが出ること、右上に倒すとホストに`act:forward`と`act:right`が同時に届き、離すと両方離れることを確認した。実機のスマホでの操作感は未確認。
+
+## 2026-10-26 — Minecraftの3人用の専用画面をやめる（Claude Code、#141）
+
+- ユーザーの判断で、Minecraftを3人で遊ぶときだけ使っていた専用のスマホ画面と固定の分担の表をやめ、どのゲーム・人数も操作定義から作る画面にそろえた（[決定](../decisions/2026-10-26-unify-controls.md)）。PR #143（#139）の上に積んだ。
+- ホスト：`fixed_controls`と`game.fixedControls`を廃止し、協力プレイ中は`act:<ID>`だけを受け付ける。視点は分担で割り当てた人だけ。疑似ゲーム画面にMinecraftと同じ定義を持たせた（`builtin_pseudo`）。分担できる条件のMinecraftの特別扱いをやめた。枠の呼び名は「ホスト」「参加者」。
+- 画面：スマホの`v-P1`〜`v-P3`と専用のスティック、PC画面の固定の分担の説明・キーの見本と`usesFixedRoles`・`keyLabel`・`roleControls`を削除した。視点のパッドと感度は置き場所（`#lookHome`）から担当者の画面へ移す。
+- `cargo test` 42件成功（Minecraftの3人の分担がこれまでの固定の分担と同じであることを追加）。`protocol-sim.mjs`（Rust dry-run）49/49：試験の送り口で、協力プレイ中はMinecraftの操作の呼び名を定義の操作に読み替え、固定の操作名を拒否する試験は読み替えずに送る。3人の分担が固定の分担と同じであることを追加した。`shutdown-sim.mjs`、`app-view-test.mjs` 25/25、`phone-view-test.mjs`、`ui-input-test.mjs` 11/11、`controller-diagnostics-test.mjs`、`profile-extract-test.mjs`、`profile-catalog-test.mjs`、`input-probe-sim.mjs` 12/12、`check-static-pages.mjs`、`static-assets-sim.mjs`、`verify-ui-evidence.mjs`、`verify_overlay.py`が成功した。
+- dry-runのホストとヘッドレスChrome 3台（スマホの大きさ）で、Minecraftの3人がそれぞれ移動（スティック・ジャンプ・スニーク・ダッシュ）、視点（パッド・感度）、攻撃・使う・持ち物の画面になることを撮影して確認した。実機のMinecraft・3人での操作は未確認。

@@ -203,6 +203,19 @@ pub fn builtin_minecraft() -> Profile {
     parse(&v).expect("minecraft-java.json の形式")
 }
 
+/// 診断用の疑似ゲーム画面 (game.html) の定義。Minecraft と同じキー・分担を使う (#141)
+pub fn builtin_pseudo() -> Profile {
+    let mut p = builtin_minecraft();
+    p.id = "pseudo-game".into();
+    p.name = "疑似ゲーム画面".into();
+    p.ids = vec!["pseudo-game".into()];
+    p.steam_app_ids.clear();
+    p.processes.clear();
+    p.title_contains = None;
+    p.user_bindings = None;
+    p
+}
+
 /// 操作定義のない検出したゲームに当てる汎用の定義 (#123)。主要500タイトルの 3D アクション型 (scripts/profiles/build-catalog.mjs の
 /// action3d) と同じ操作で、確認の状態は template (未検証)。Minecraft の固定の表を別のゲームへ送らないために使う
 pub fn generic(game_id: &str, name: &str) -> Profile {
@@ -330,19 +343,12 @@ pub fn snapshot(p: &Profile, players: usize) -> Value {
     })
 }
 
-/// スマホの画面 (Minecraft の専用画面、または定義から作る画面) で分担できる定義か。
+/// スマホの画面 (定義から作る画面) で分担できる定義か。
 /// 確認の状態 (未検証など) では制限しない (#123、画面に「未検証」と表示し続ける)。
 /// 分担できる操作がない (マウス操作だけの pointer 型など) か、送れない種類の操作があるときは false
 pub fn controller_supported(p: &Profile) -> bool {
-    if p.id != "minecraft-java" {
-        let playable: Vec<_>=p.actions.iter().filter(|a| p.groups.iter().any(|g| g.id==a.group && g.role.starts_with('P'))).collect();
-        return !playable.is_empty() && playable.iter().all(|a| matches!(a.kind.as_str(), "button" | "wheel" | "mouseDelta"));
-    }
-    true
-        && ["FWD","BACK","LEFT","RIGHT","JUMP","SNEAK","SPRINT","ATTACK","USE","INV","DROP"].iter()
-        .all(|c| p.actions.iter().any(|a| a.control.as_deref()==Some(*c)))
-        && p.actions.iter().any(|a| a.kind=="mouseDelta" && p.groups.iter().any(|g| g.id==a.group && g.role=="P2"))
-        && p.actions.iter().any(|a| a.kind=="wheel" && p.groups.iter().any(|g| g.id==a.group && g.role=="P3"))
+    let playable: Vec<_>=p.actions.iter().filter(|a| p.groups.iter().any(|g| g.id==a.group && g.role.starts_with('P'))).collect();
+    !playable.is_empty() && playable.iter().all(|a| matches!(a.kind.as_str(), "button" | "wheel" | "mouseDelta"))
 }
 
 #[cfg(test)]
@@ -438,8 +444,12 @@ mod review_tests {
     #[test]
     fn assignment_keeps_roles_and_splits_movement_without_duplicates() {
         let p=builtin_minecraft(); let a=assignment_for(&p,3);
-        assert!(a[0].contains(&"sprint".to_string()));
-        assert!(a[2].contains(&"attack".to_string()));
+        // 3人の分担は、これまでの固定の分担と同じ (P1 移動・P2 視点・P3 攻撃・使う・持ち物、#141)
+        assert_eq!(a, vec![
+            vec!["forward","back","left","right","jump","sneak","sprint"],
+            vec!["look"],
+            vec!["attack","use","inventory","drop","hotbar"],
+        ]);
         let mut v=fixture();
         v["groups"]=json!([{"id":"movement","role":"P1","split":[{"id":"left","actions":["left"]},{"id":"right","actions":["right"]}]}]);
         v["actions"].as_array_mut().unwrap().retain(|a| a["group"]=="movement");
@@ -478,7 +488,10 @@ mod review_tests {
         let mut p=builtin_minecraft(); assert!(controller_supported(&p));
         // 確認の状態では制限しない (#123)
         p.status="template".into(); assert!(controller_supported(&p)); p.status="device".into();
+        // Minecraft も他のゲームと同じ判定 (#141): 送れない種類の操作があれば分担できない
         p.actions.iter_mut().for_each(|a| a.control=None);
+        assert!(controller_supported(&p));
+        p.actions[0].kind="axis2d".into();
         assert!(!controller_supported(&p));
     }
 }

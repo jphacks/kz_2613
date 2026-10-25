@@ -45,7 +45,6 @@ main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .role-label { font-weight: 800; font-size: 14px; background: var(--color-lemon); border-radius: 6px; padding: 4px 12px; display: inline-block; }
 #waitRole { font-size: 17px; font-weight: 800; margin: 14px 0; color: var(--color-purple); }
 #waitTitle { font-size: 13px; line-height: 1.7; margin-top: 18px; }
-.move { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; gap: 16px; }
 .stick { position: relative; touch-action: none; width: min(65vw, 34dvh, 280px); aspect-ratio: 1; border: 4px solid var(--color-cyan); border-radius: 50%; background: var(--color-paper); flex-shrink: 1; }
 .stick .knob { position: absolute; width: 38%; height: 38%; left: 50%; top: 50%; margin: -19% 0 0 -19%; border-radius: 50%; background: var(--color-ice); border: 3px solid var(--color-purple); pointer-events: none; }
 .stick.active .knob { background: var(--color-cyan); }
@@ -58,18 +57,12 @@ main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .stick .dir.on { color: var(--ok); }
 /* 操作定義から作る画面のスティック (#139) */
 .gen-stick { margin: 0 auto; }
-.move > .col { width: 100%; display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.move .key { min-height: 66px; }
 #pad { touch-action: none; flex: 1; min-height: 120px; position: relative; overflow: hidden; border: 3px dashed var(--color-cyan); border-radius: 28px; background: color-mix(in srgb,var(--color-paper) 90%,transparent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; color: var(--color-purple); font-size: 18px; font-weight: 800; }
 #pad::before { content: '✥'; font-size: 68px; }
 #pad.active { border-style: solid; }
 #pad .dot { display: none; pointer-events: none; position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; background: var(--color-cyan); opacity: .6; }
 .sens { display: flex; gap: 10px; align-items: center; background: var(--color-surface); border-radius: 16px; padding: 8px 12px; min-height: 52px; font-size: 13px; }
 .sens input { flex: 1; min-width: 40px; height: 44px; accent-color: var(--color-cyan-ink); }
-.act { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 2fr 1fr 1fr; gap: 10px; }
-.act .key { min-height: 44px; }
-.act .attack { font-size: clamp(19px,6vw,28px); border-radius: 28px; }
 footer { display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 3px 7px; font-size: 9px; line-height: 1.5; color: var(--muted); background: color-mix(in srgb,var(--color-paper) 75%,transparent); border-radius: 8px; padding: 3px 6px; }
 footer button { min-height: 24px; padding: 0 8px; font-size: 9px; border-width: 1px; margin-left: auto; box-shadow: none; }
 #inputWarn { display: none; padding: 6px 10px; border: 2px solid var(--color-warning); border-radius: 12px; font-size: 11px; color: var(--warn); background: var(--color-surface); flex-shrink: 0; }
@@ -77,7 +70,7 @@ footer button { min-height: 24px; padding: 0 8px; font-size: 9px; border-width: 
 #rotatePrompt b { font-size: 28px; color: var(--color-purple); }
 .connecting { text-align: center; margin: auto; font-size: 18px; line-height: 2; }
 @media (max-height: 740px) and (orientation: portrait) { body { gap: 5px; padding-top: max(5px,env(safe-area-inset-top)); } header { padding: 2px 0; } .view { gap: 5px; } .host-card { padding: 7px 10px; border-radius: 18px; } .host-card h1 { font-size: 20px; } .host-card p { display: none; } #remoteNote { max-height: 46px; font-size: 11px; } .wait-scene { gap: 12px; } .wait-card { padding: 18px; } #remotePad::before { font-size: 24px; } }
-@media (max-height: 600px) and (orientation: portrait) { header .brand { display: none; } .host-card h1 { font-size: 17px; } #remotePad { min-height: 64px; font-size: 12px; } #remoteNote { max-height: 34px; } .move .key { min-height: 50px; } .wait-scene .mascot { width: 64px; height: 64px; font-size: 36px; } }
+@media (max-height: 600px) and (orientation: portrait) { header .brand { display: none; } .host-card h1 { font-size: 17px; } #remotePad { min-height: 64px; font-size: 12px; } #remoteNote { max-height: 34px; } .wait-scene .mascot { width: 64px; height: 64px; font-size: 36px; } }
 @media (max-width: 340px) { body { padding-left: 8px; padding-right: 8px; } #role { font-size: 9px; } #role b { font-size: 11px; } .remoteButtons .key { font-size: 9px; } }
 @media (orientation: landscape) { #rotatePrompt { display: flex; } main { visibility: hidden; } }
 /* 操作定義から作る画面 (#60) */
