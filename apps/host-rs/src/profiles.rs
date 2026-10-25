@@ -147,6 +147,15 @@ pub fn parse(v: &Value) -> Result<Profile, String> {
             Some(d) => Some(controls::output(&d).map(|o| o.id).ok_or_else(|| format!("action {aid} の default のキー {d} は送れません"))?),
             None => None,
         };
+        if let Some(control) = s(a, "control") {
+            if actions.iter().any(|a| a.control.as_deref() == Some(&control)) {
+                return Err(format!("control {control} が重複しています"));
+            }
+            let role = &groups.iter().find(|g| g.id == group).unwrap().role;
+            if kind != "button" || controls::role_control(role, &control).is_none() {
+                return Err(format!("control {control} の担当または種類が不正です"));
+            }
+        }
         // 視点・2軸は常に操作し続けるため重い。ホイールは補助
         let weight = a.get("weight").and_then(Value::as_f64).filter(|w| *w >= 0.0).unwrap_or(match kind.as_str() {
             "mouseDelta" | "axis2d" => 3.0,
@@ -156,9 +165,13 @@ pub fn parse(v: &Value) -> Result<Profile, String> {
         actions.push(Action { label: s(a, "label").unwrap_or_else(|| aid.clone()), id: aid, group, kind, default, bind: s(a, "bind"), control: s(a, "control"), weight });
     }
     for g in &groups {
+        let mut used = std::collections::HashSet::new();
         for p in &g.split {
-            if let Some(x) = p.actions.iter().find(|x| !actions.iter().any(|a| &a.id == *x)) {
+            if let Some(x) = p.actions.iter().find(|x| !actions.iter().any(|a| &a.id == *x && a.group == g.id)) {
                 return Err(format!("group {} の split {} の action {x} が定義されていません", g.id, p.id));
+            }
+            if p.id.is_empty() || p.actions.iter().any(|a| !used.insert(a)) {
+                return Err(format!("group {} のsplitが空または重複しています", g.id));
             }
         }
     }
@@ -278,6 +291,7 @@ pub fn snapshot(p: &Profile, players: usize) -> Value {
     let by_players: serde_json::Map<String, Value> = (1..=4).map(|n| (n.to_string(), Value::Object(named(n)))).collect();
     json!({
         "id": p.id, "name": p.name, "suitability": p.suitability, "status": p.status,
+        "controllerSupported": controller_supported(p),
         "verifiedDate": p.verified_date, "gameVersion": p.game_version,
         "match": { "processes": p.processes, "titleContains": p.title_contains },
         "groups": p.groups.iter().map(|g| json!({
@@ -289,6 +303,20 @@ pub fn snapshot(p: &Profile, players: usize) -> Value {
         "assignment": assign,
         "assignments": by_players,
     })
+}
+
+/// 現在の固定スマホ画面と通信認可で扱える定義か。分担の案だけで入力可能にしない。
+pub fn controller_supported(p: &Profile) -> bool {
+    if !matches!(p.status.as_str(), "reviewed" | "device") { return false; }
+    if p.id != "minecraft-java" {
+        let playable: Vec<_>=p.actions.iter().filter(|a| p.groups.iter().any(|g| g.id==a.group && g.role.starts_with('P'))).collect();
+        return !playable.is_empty() && playable.iter().all(|a| matches!(a.kind.as_str(), "button" | "wheel" | "mouseDelta"));
+    }
+    true
+        && ["FWD","BACK","LEFT","RIGHT","JUMP","SNEAK","SPRINT","ATTACK","USE","INV","DROP"].iter()
+        .all(|c| p.actions.iter().any(|a| a.control.as_deref()==Some(*c)))
+        && p.actions.iter().any(|a| a.kind=="mouseDelta" && p.groups.iter().any(|g| g.id==a.group && g.role=="P2"))
+        && p.actions.iter().any(|a| a.kind=="wheel" && p.groups.iter().any(|g| g.id==a.group && g.role=="P3"))
 }
 
 #[cfg(test)]
@@ -366,5 +394,45 @@ mod tests {
         // メニュー (host) と会話 (none) は分担しない
         let h = parse(&minimal(r#"{"id":"x","group":"m"},{"id":"esc","group":"h"},{"id":"t","group":"c"}"#, r#"{"id":"m","role":"P1"},{"id":"h","role":"host"},{"id":"c","role":"none"}"#)).unwrap();
         assert_eq!(assignment_for(&h, 3).concat(), vec!["x"]);
+    }
+}
+#[cfg(test)]
+mod review_tests {
+    use super::*;
+    fn fixture() -> Value { serde_json::from_str(include_str!("../../game-profiles/minecraft-java.json")).unwrap() }
+    #[test]
+    fn rejects_duplicate_actions_controls_and_foreign_split() {
+        let mut v=fixture(); v["actions"][1]["id"]=v["actions"][0]["id"].clone();
+        assert!(parse(&v).is_err());
+        let mut v=fixture(); v["actions"][1]["control"]=json!("FWD");
+        assert!(parse(&v).is_err());
+        let mut v=fixture(); v["groups"][0]["split"]=json!([{"id":"bad","actions":["attack"]}]);
+        assert!(parse(&v).is_err());
+    }
+    #[test]
+    fn assignment_keeps_roles_and_splits_movement_without_duplicates() {
+        let p=builtin_minecraft(); let a=assignment_for(&p,3);
+        assert!(a[0].contains(&"sprint".to_string()));
+        assert!(a[2].contains(&"attack".to_string()));
+        let mut v=fixture();
+        v["groups"]=json!([{"id":"movement","role":"P1","split":[{"id":"left","actions":["left"]},{"id":"right","actions":["right"]}]}]);
+        v["actions"].as_array_mut().unwrap().retain(|a| a["group"]=="movement");
+        let a=assignment_for(&parse(&v).unwrap(),3);
+        assert!(a.iter().all(|a| !a.is_empty()));
+        let flat:Vec<_>=a.iter().flat_map(|a|a).collect();
+        assert_eq!(flat.len(),flat.iter().collect::<std::collections::HashSet<_>>().len());
+    }
+    #[test]
+    fn all_repository_profiles_validate() {
+        let dir=Path::new(env!("CARGO_MANIFEST_DIR")).join("../game-profiles");
+        let (list,errors)=load_dir(&dir);
+        assert!(errors.is_empty(),"{errors:?}"); assert!(!list.is_empty());
+    }
+    #[test]
+    fn assignment_metadata_does_not_enable_an_unsupported_controller() {
+        let mut p=builtin_minecraft(); assert!(controller_supported(&p));
+        p.status="template".into(); assert!(!controller_supported(&p)); p.status="device".into();
+        p.actions.iter_mut().for_each(|a| a.control=None);
+        assert!(!controller_supported(&p));
     }
 }

@@ -9,6 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
+import {fileURLToPath} from 'node:url';
 import { execFileSync } from 'node:child_process';
 
 const args = process.argv.slice(2);
@@ -63,7 +64,7 @@ const ROLE = { movement: 'P1', look: 'P2', gameplay: 'P3', inventory: 'P3', menu
 const LABEL = { movement: '移動', look: '視点', gameplay: '攻撃・使う', inventory: '持ち物', menu: 'メニュー', communication: '会話', other: '未分類' };
 const groupOf = (name) => (GROUPS.find(([, rx]) => rx.test(name)) || ['other'])[0];
 
-function draft({ id, name, appid, engine, source, suitability, actions, userBindings }) {
+export function draft({ id, name, appid, engine, source, suitability, actions, userBindings }) {
   const used = [...new Set(actions.map((a) => a.group))];
   const groups = used.map((g) => ({ id: g, label: LABEL[g] || g, role: ROLE[g] || 'none' }));
   // 担当の付くグループが少ない (移動だけのゲーム等) ときは、移動を左・右・ジャンプに分けられるようにする
@@ -166,7 +167,7 @@ function engineOf(dir) {
 const dataDir = (dir) => { try { const d = fs.readdirSync(dir).find((n) => /_Data$/.test(n)); return d ? path.join(dir, d) : null; } catch { return null; } };
 
 // ---------- Unity Input System: 埋め込まれた .inputactions の JSON ----------
-function unityInputActions(dir) {
+export function unityInputActions(dir) {
   const dd = dataDir(dir); if (!dd) return null;
   const files = [];
   const meta = path.join(dd, 'il2cpp_data', 'Metadata', 'global-metadata.dat');
@@ -316,6 +317,7 @@ function minecraft() {
 }
 
 // ---------- 実行 ----------
+function main() {
 const results = [];
 const sp = steamPath();
 const games = sp ? steamGames(sp).filter((g) => g.appid !== '228980') : [];
@@ -355,3 +357,6 @@ for (const r of results) {
   }
 }
 if (OUT) console.log(`\n下書きを ${OUT} に書き出しました（状態は「自動抽出・未検証」）。人が確認してから apps/game-profiles/ へ入れてください。`);
+
+}
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

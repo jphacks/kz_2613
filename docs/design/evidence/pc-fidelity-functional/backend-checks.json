@@ -1,0 +1,58 @@
+[
+  {
+    "step": "参加0人",
+    "view": "0人\n参加中！"
+  },
+  {
+    "step": "P1の右キー",
+    "view": "ゲーム選択を\nしよう！"
+  },
+  {
+    "step": "P1の右キー2回目",
+    "view": "分担しよう！"
+  },
+  {
+    "step": "PCから準備開始・1人で入力OFF",
+    "view": "準備中...",
+    "readyEnabled": false
+  },
+  {
+    "step": "3人接続・入力ON・対象前面",
+    "view": "準備完了！",
+    "readyEnabled": true
+  },
+  {
+    "step": "P1だけのReadyから協力開始",
+    "PC": "coop",
+    "P1操作面": true,
+    "通信": "WebRTC+WS"
+  },
+  {
+    "step": "P1のPause",
+    "PC": "paused",
+    "P1リモコン": true
+  },
+  {
+    "step": "PCの前面化要求後もPauseを維持",
+    "PC": "paused"
+  },
+  {
+    "step": "P1の明示再開",
+    "PC": "coop"
+  },
+  {
+    "step": "stdin緊急停止",
+    "PC": "paused",
+    "警告": "緊急停止しました。入力はOFFです。再開前に操作設定を確認してください。",
+    "P1再開可能": false
+  },
+  {
+    "step": "緊急停止後の入力設定",
+    "入力": "ゲームへの入力はOFFです"
+  },
+  {
+    "step": "P1のEndで接続と固定担当を保持",
+    "PC": "roles",
+    "P1": "P1"
+  }
+]

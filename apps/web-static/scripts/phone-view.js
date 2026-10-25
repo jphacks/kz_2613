@@ -1,6 +1,7 @@
 import { myActions, generatedKey, buildGenerated } from './generated-controls.js';
 
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
+import {profileNotice} from '../app-view.js';
 export function createPhoneView({releaseAll,roleText,bindControl}) {
   const $ = id => document.getElementById(id);
   let lastView = null, lastGen = '';
@@ -50,7 +51,9 @@ export function createPhoneView({releaseAll,roleText,bindControl}) {
     $('waitTitle').textContent = phase === 'paused' ? (autoWait ? `${reasonText(game.reason)}。戻ると自動で再開します` : '一時停止中') : 'ホストの開始を待っています';
     if (phase === 'preparing') $('remoteNote').textContent = [game.prepareStatus, ...(game.readyReasons || []), '準備ができたらホストが明示Ready'].filter(Boolean).join('。');
     if (autoWait && isHost) $('remoteNote').textContent = `${reasonText(game.reason)}。戻ると自動で再開します（RESUME で手動再開も可）。`;
-    $('waitRole').textContent = `あなたの担当: ${roleText[me]}`;
+    const notice=profileNotice(game.profile);
+    if(notice) $('remoteNote').textContent=notice+' '+$('remoteNote').textContent;
+    $('waitRole').textContent = `あなたの担当: ${roleText[me]}` + (notice ? '。'+notice : '');
     $('burst').style.display = phase === 'coop' ? 'none' : '';
     // ボタンのキー表示を、ゲームのキー設定に合わせた実際のキーにする (#101)
     for (const [control, out] of Object.entries(game.keys?.controls || {})) {

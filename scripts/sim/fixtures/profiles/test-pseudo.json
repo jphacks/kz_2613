@@ -15,12 +15,12 @@
   ],
   "actions": [
     { "id": "left", "label": "左", "group": "movement", "type": "button", "default": "KEY_A" },
-    { "id": "right", "label": "右", "group": "movement", "type": "button", "default": "KEY_D" },
+    { "id": "right", "label": "右", "group": "movement", "type": "button", "default": "KEY_D", "control": "RIGHT" },
     { "id": "jump", "label": "ジャンプ", "group": "movement", "type": "button", "default": "SPACE" },
     { "id": "action", "label": "アクション", "group": "gameplay", "type": "button", "default": "KEY_X" },
     { "id": "zoom", "label": "ズーム", "group": "gameplay", "type": "wheel" },
     { "id": "aim", "label": "狙い", "group": "gameplay", "type": "mouseDelta" },
     { "id": "pause", "label": "メニュー", "group": "menu", "type": "button", "default": "ESC" }
   ],
-  "verification": { "status": "unverified", "date": "2026-10-25", "sources": ["シミュレーション用"] }
+  "verification": { "status": "reviewed", "date": "2026-10-25", "sources": ["シミュレーション用"] }
 }

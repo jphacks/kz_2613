@@ -6,6 +6,35 @@ export const SCREENS = ['join', 'game', 'roles'];
 
 export const SCREEN_TITLES = { join: '① 参加', game: '② ゲーム選択', roles: '③ 操作分担の確認' };
 
+export function profileNotice(profile) {
+  if (!profile || (profile.id === 'minecraft-java' && profile.status === 'device' && profile.controllerSupported)) return '';
+  const status = {template:'仮の定義（未検証）',extracted:'自動抽出（実機未検証）',unverified:'未検証',reviewed:'人による確認（実機未検証）',device:'過去の実機記録'}[profile.status] || '未検証';
+  return `${profile.name || '選択中のゲーム'}：${status}。` + (profile.controllerSupported ? '今回の端末での動作は別途確認してください。' : '分担案の参照用です。対応画面と検証が揃うまでReadyできません。');
+}
+
+// 移動可能な3ページと、サーバーで切り替わる準備・協力・停止の視覚状態を分ける。
+// canReady以外のローカル条件からReady可を推測しない。
+export function desktopView(ui, game) {
+  if (game?.phase === 'preparing') return game.canReady ? 'ready' : 'preparing';
+  if (game?.phase === 'coop' || game?.phase === 'paused') return game.phase;
+  return SCREENS.includes(ui.screen) ? ui.screen : 'join';
+}
+
+// 生のプロセス名や診断値ではなく、利用者に必要な復旧操作だけを示す。
+export function desktopWarning(game, inject, connected = true) {
+  if (!connected) return 'PCホストとの接続が切れました。再接続を待っています。';
+  if (inject?.emergencyHotkeyError) return '緊急停止キーを登録できません。操作設定で入力をOFFにしてください。';
+  if (game?.reason === 'emergency stop') return '緊急停止しました。入力はOFFです。再開前に操作設定を確認してください。';
+  if (['preparing','coop','paused'].includes(game?.phase)) {
+    if (inject?.mode === 'off') return '入力がOFFです。操作設定で入力をONにしてください。';
+    if (inject?.mode === 'test') return '確認用の入力先です。実ゲームで遊ぶ前に操作設定を確認してください。';
+    if (game?.connected?.length < 3) return '3人全員の接続を待っています。';
+    if (game?.phase === 'preparing' && !inject?.active) return 'Minecraftを前面にして、ワールドの準備を確認してください。';
+    if (game?.phase === 'coop' && !inject?.active) return '操作を停止しています。Minecraftを前面にしてください。';
+  }
+  return '';
+}
+
 // 定期スナップショットでは手動ナビゲーションを戻さない。進行の切替時だけ分担・準備へ案内する。
 export function screenOnGameUpdate(ui, previousPhase, game) {
   return {...ui, game:game?.title || ui.game,
@@ -44,7 +73,7 @@ export function roleView(game, slot) {
     const r = ROLES.find((x) => x.slot === slot);
     return { title: r?.title || '', lines: roleControls(slot, game?.keys) };
   }
-  const assigned = game.assigned && Object.keys(game.assigned).length ? game.assigned : p.assignment || {};
+  const assigned = ['coop','paused'].includes(game.phase) && game.assigned && Object.keys(game.assigned).length ? game.assigned : p.assignment || {};
   const ids = assigned[slot] || [];
   const byGroup = new Map();
   for (const id of ids) {
@@ -77,7 +106,7 @@ export const GAMES = [
     steps: [
       'Minecraft のランチャーから手動で起動し、ワールドに入っておく',
       'ホットバーに使うアイテムを並べておく（インベントリ操作はホストのリモコンでは限られます）',
-      '③ の画面で「ゲームへの入力」を「常時ON」にする',
+      'PCの「操作設定」でゲームへの入力をONにする',
       'Minecraftを開いてワールドを準備し、前面にした後にホストがReadyを押す',
     ],
   },

@@ -191,6 +191,7 @@ const md = [
   `- 作成日：${today}（\`scripts/profiles/build-catalog.mjs\` で生成。手で書き換えない）`,
   `- 選定：Steamの公開データ（売上上位1000・全期間の売上上位1000・最もプレイされている100・月ごとのトップリリース）の順位を合算し、ゲームだけを上位から ${games.filter((g) => g.rank).length} 本。個別の定義があるのに上位に入らなかった ${games.filter((g) => !g.rank).length} 本（このPCで抽出したもの等）と、Steam外の ${nonSteam.length} 本（ゲーム検出で見分けられるもの）を加えた計 ${catalog.length} 本。`,
   `- 定義：個別の定義（\`scripts/profiles/overrides/\`）がなければ、Steamのタグからジャンルの型を当てて作った**仮の定義（template）**。実機で確かめていない定義を確認済みとして扱わない。`,
+  '- 本一覧は操作対応済みの一覧ではない。仮・抽出・未検証の定義、または操作画面が未対応の定義はReadyできない。',
   `- 状態：device ${count('status', 'device')}／extracted ${count('status', 'extracted')}／unverified ${count('status', 'unverified')}／template ${count('status', 'template')}`,
   `- 向き：good ${count('suitability', 'good')}／limited ${count('suitability', 'limited')}／unsuitable ${count('suitability', 'unsuitable')}（unsuitable はマウス中心・ターン制等で、分担の対象外）`, '',
   '| 順位 | ゲーム | AppID | 型 | 向き | 状態 | コントローラー完全対応 |', '|---|---|---|---|---|---|---|',

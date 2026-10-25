@@ -482,6 +482,7 @@
 - 画面：`game.keys` を配り、PCの分担確認の画面とスマホのボタンのキー表示を、実際に送るキーにした。警告は分担確認の画面に出す。
 - 検証：`cargo test --release --locked` **9件合格**（キー設定の読み取り6件：変更されたキー、送れない・未設定、重複、1.12以前の番号、ファイルなし、英字・数字・Fキー）。`protocol-sim.mjs` を3回連続で **41/41合格**（試験用の `options.txt`（ダッシュ＝Q、捨てる＝R）で、P1のダッシュがQ、P3の捨てるがRとして送られ、捨てるでQを送らないことを追加）。`--target node` **20/20合格**。`app-view-test` **13/13合格**、`ui-input-test` 4/4、`check-static-pages`・`shutdown-sim`・`static-assets-sim`・`input-probe-sim` 合格。
 - **未検証：** 実際のMinecraftでの動作（このPCの設定でダッシュ＝Q・捨てる＝Rが効くか）、スマホのボタン表示の見た目。
+## 2026-10-25 #54・#93：Steam・Epicの検出と一覧からの起動（ホスト側）
 
 ## 2026-10-25 — #97・#99・#100 ゲームの操作定義とユーザーのキー設定（Claude Code、テストは後で）
 - **#97：** 操作定義JSONの形式を `docs/architecture/game-profiles.md` に決めた。`apps/game-profiles/minecraft-java.json` を最初の1件にした（実機で確認済み）。ホスト（`src/profiles.rs`）は起動時にフォルダ内の定義を読み、形式を検証し、不正なものは理由をログに残す。Minecraftの定義はホストにも同梱した。分担の案（`assignment`）は、同じ系統の操作をグループごと1人に割り当てる。担当が3人分に足りないときは、`split` のあるグループ（移動の左・右・ジャンプ等）を分けて配る。`game.profile` で画面に配る。配布用zipに定義のフォルダを同梱した。
@@ -510,3 +511,108 @@
 - 試験で見つけて直した不具合：(1) 操作定義の画面を使うゲームでも、Minecraft用の固定の操作（FWD等）が初期キーで送られていた → 送らないようにした。(2) 視点の移動の記録が常に「P2」になっていた → 実際に動かした枠を記録するようにした。(3) シミュレーションの期待値が、#99で変えた `source` の値（`options` → `user`）に追従していなかった。
 - 結果：`cargo test` 14件＋2件合格。`protocol-sim.mjs` を3回連続で **42/42合格**、`--target node` 20/20。`app-view-test` 14/14、`ui-input-test` 6/6、`check-static-pages`・`static-assets-sim`・`shutdown-sim`・`input-probe-sim`・`verify_overlay.py` 合格。
 - **未検証（実機が必要）：** Minecraftで、このPCのキー設定（ダッシュ＝Q・捨てる＝R）どおりに動くか。
+
+- `apps/host-rs/src/games.rs` を追加。Steam（レジストリの `SteamPath`、`libraryfolders.vdf`、`appmanifest_*.acf`）とEpic（`ProgramData\Epic\...\Manifests\*.item`）を読み、PC画面へ `state.games`（`verified: false`）を送る。スマホには送らない。ログは検出の件数と、選択・起動のIDだけ。再頒布パッケージ・Proton・未完了のインストール・DLC・ツールは除外する。
+- PC画面の `launch_game {id}` で、検出時に確かめた値だけから起動URLを組み立てて起動する（`ShellExecuteW`）。協力プレイ中・一覧にない値（パス・URL・Minecraft）は起動しない。起動前に全解放・epoch更新し、ウィンドウが現れたら前面化する。90秒で現れなければ手動起動を案内する。進行は変えず、P1の準備・Readyで開始する。
+- 一覧で選んだゲームの入力先は、前面の実行ファイルがインストール先フォルダ内にあることで判定する（`Target::install_dir`）。Minecraftの判定は従来どおり。
+- `cargo build --release --locked`：コンパイル・リンク成功（既知の警告3件）。実行中のホストが `target\release\recooplay-host.exe` を使用中のため最終コピーだけ失敗し、`target\release\deps\recooplay_host.exe` で試験した。`cargo test --release --locked`：単体12件成功（VDF・ACF・Epicマニフェスト・危険な値の拒否・偽フォルダでの検出・インストール先の入力先判定）。
+- `node scripts/sim/protocol-sim.mjs --bin <deps のホスト>`：41/41成功（偽のSteam・Epicフォルダ `RECOOPLAY_FAKE_GAMES` を使う「ゲーム一覧」項目を追加）。Node参照版：20/20成功。
+- 開発PCで dry-run のホストを起動し、実際のSteamから10件を検出（Epicは0件。その後の通常起動では12件）。画面（#94）は未実装。
+- 開発PCの実機確認（通常モード・注入OFF・PC画面の代わりにスクリプトで `launch_game` を送信、Terraria `steam:105600`）：
+  - 初回の実装では `ShellExecuteW` がハブのスレッドを約5.4秒止めた（切断判定4秒を超える）。起動要求を別スレッドへ移し、修正後は起動要求後もPC画面への `state` の最大間隔が1001〜1002ms（通常の1秒周期）。
+  - 未起動から：起動要求0.4秒、Steamの画面（`steamwebhelper.exe`）を経て3.4秒後に `terraria.exe` が前面、入力先の判定がok、0.1秒後に `started`。ランチャーの画面は入力先と判定しなかった。
+  - 起動済みから：Windowsが前面化を拒否した直後にSteamが前面へ出す挙動を観測。拒否されても5秒は前面になるのを待つよう修正し、誤った「手動で前面に」の案内を出さなくなった。起動後にSteam・エクスプローラーへ前面が移ると、入力先の判定もそれに追従した。
+  - ゲームへの入力（注入ON）・スマホからの一連の操作は未確認。
+  - Epicの実機テストは、2026-10-25のユーザー判断で本PRの対象外とする（使える見込みの状態で可）。起動URLは、Epicのランチャーが作るデスクトップのショートカットと同じ形式（名前空間・カタログID・アプリ名）を使い、それがなければアプリ名だけの形式（Lutrisの設定例と同じ）を使う。
+## 2026-10-25 PC原案5画面の反復監査・追加改修
+
+- 最新のローカル監査v2を全文読み、指定パス `docs/design/pc-fidelity-audit-2026-10-25.md` に原文を保持した。素材5枚を1920×1080原寸で確認し、SHA256・採色領域・外接矩形を `pc-fidelity-reference.json` に記録。
+- PCだけを参加／ゲーム選択／分担／準備中／準備可能の5構図へ変更。左561px・巨大コピー・楕円CTA・巨大半透明フレーム・横長操作帯・縦長仮キャラ枠を再現。3人固定とP1だけReadyを保持。開発情報は既存 `/host` と設定の詳細へ、ON/OFFとQRには常時到達可能。
+- フォントはローカルのNoto Sans JPを使用。正式フォントは未取得、再配布・CDN・新しい本番依存・React移行なし。仮想カーソルのdialog最上位レイヤーとsummary押下を修正。入力定数、Rust、通信契約は変更していない。
+- 反復撮影の途中で古いタブを閉じ込めた補助関数と画像寸法不一致を検出し、不採用として記録。DPR丸めの0.667px罫線は1pxの塗り線へ修正。最終製品コミットe2a4c7fでタブ25/26を別々に開き、10:44と10:45 JSTに5画面×2解像度をそれぞれ新規撮影・再計測。両回で主要矩形・ボタン画面内・ページスクロール・コンソール0件を確認。
+- 自己監査の最終点は参加96、選択97、分担96、準備中96、準備可能97。各観点の最低比率86.7%、重大P0/P1差分0。画素一致率や実機検証済みを意味しない。計測・比較・差分・採点根拠は `docs/design/evidence/pc-fidelity-progress.md` と `pc-fidelity-element-matrix.md`。
+
+### 実行した検証
+
+| コマンド・対象 | 結果 |
+| --- | --- |
+| `cargo test --release --locked --manifest-path apps/host-rs/Cargo.toml` | 単体5件成功 |
+| `cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml` | 成功 |
+| `cargo build --release --locked --manifest-path apps/desktop/Cargo.toml` | 成功 |
+| `node scripts/sim/protocol-sim.mjs --bin <新規releaseホスト>` | Rust通信40/40成功 |
+| `node scripts/sim/protocol-sim.mjs --target node` | Node参照20/20成功、Rust固有の項目は対象外 |
+| `node scripts/sim/input-probe-sim.mjs --bin <新規releaseプローブ>` | --mock 12/12成功、OS入力なし |
+| `node scripts/sim/shutdown-sim.mjs --bin <ホスト>` | quit・親stdin消失の2経路成功 |
+| `node scripts/sim/app-view-test.mjs` | 15/15成功 |
+| `node scripts/sim/ui-input-test.mjs` | 5/5成功、dialogとsummary・全解放・30Hz・旧接続を確認 |
+| `node scripts/sim/check-static-pages.mjs` / `node --check scripts/sim/ui-preview.mjs` | HTMLと外部JSの構文成功 |
+| `python scripts/verify_overlay.py` / `git diff --check` | 構造30ファイル成功、差分の空白エラーなし |
+| `node scripts/sim/static-assets-sim.mjs --bin <新規releaseホスト>` | 最終版23ファイル、1,166,959 bytesのHTTP/MIME/no-store/ローカル参照が成功 |
+| `scripts/windows/package.ps1 -Out .venv/pc-fidelity-final-dist` | 最終版ZIP約6.9MB作成。PythonでZIP内全UI23ファイル＋両exeがソース／新規ビルドとバイト一致 |
+| `audit-pc-fidelity.py pc-fidelity-accepted-1` と `pc-fidelity-accepted-2` | 2回とも10画像・主要矩形・見出しの画素寸法がPASS |
+| `report-pc-fidelity.py` | 2回のタブ・時刻・画像寸法・警告0・矩形・ZIP一致を再照合、要素対応表を生成 |
+
+ビルドは既存のVS/CMake/Strawberry Perl/libclangと `CARGO_TARGET_DIR=C:/Users/kumes/AppData/Local/ReCooplay/cargo-target` を使用。OpenSSLのデバッグPDB欠落警告と既存の未使用フィールド警告は非致命的。画像処理だけPillow入りの同梱Pythonを使用し、製品依存へ追加していない。
+
+### ブラウザとRustの機能確認・限界
+
+- `desktop-browser-harness.mjs` でRust実バックエンドをDRY_RUN＋FAKE_TARGETに限定して起動。ブラウザのPC/P1と模擬P2/P3で、P1リモコン画面移動、PC準備、入力ON、3人条件、P1だけReady、WebRTC+WS、Pause、前面化要求後のPause保持、明示再開、stdin緊急停止、入力OFF、Endで担当保持を確認。12件の観測を `pc-fidelity-functional/backend-checks.json` に記録。
+- 表示専用データで0/1/2/3人、キーボード遷移、入力設定、準備中QR、切断、対象外、緊急停止、QRなし／503／再取得、PC切断を確認。15件を `edge-checks.json` に保存。意図的な503等は最終正常画面のコンソール評価と分ける。
+- 未実施：変更後のTauri実窓・Minecraft実入力・Android/iPhone実タッチ・実ネットワーク切断・Alt+Tab解放・Ctrl+Alt+F12実キー・別PC起動。表示とdry-runの成功で実機受入を完了扱いにしない。
+- 公開直前に#92の履歴更新cc613fcを取り込んだが、72ef255からのファイル差分0、製品コードのe2a4c7fからの差分0を確認。baseは指定どおり#92のブランチ。main直接push・PRマージ・auto-merge・Issueクローズは行わない。
+
+## 2026-10-25 提供ロゴ・アイコンの反映
+
+- 指定されたrogo.png（3200×2400）とicon.png（1774×1774）を実画像で確認。原画像をそのまま保存し、ロゴはPC・スマホヘッダー・Tauri起動画面へ配置。アイコンはブラウザ全4ページ、Appleホーム画面用、TauriのWindows PNG/ICOへ反映。切り取り・背景除去・図案変更・本番依存追加なし。
+- `scripts/windows/prepare-brand-assets.py` でPillowを開発時だけ使い、縦横比を維持したアイコン各サイズを生成。原画像SHA256と用途は `docs/design/brand-assets.md`。
+- 最初の増分ビルドで旧アイコンがEXEに残ったことを、別名コピーから抽出して検出。build.rsに画像のrerun-if-changedを追加し、release再ビルド成功（1分24秒）。再抽出したEXEアイコンが提供図案へ変わったことを確認し、証拠PNGを保存。
+- PC5画面×2解像度を新しい独立タブ29/30で各10枚撮影。両回の監査は主要矩形失敗0、ブラウザ警告・エラー0。最新の最終画像と採寸を差替版へ更新。新しいロゴ以外のレイアウトは変更していない。
+- スマホ3担当＋ホスト準備／一時停止×縦6サイズの30条件を新規撮影。ページはみ出し・ゲーム操作ボタンの画面外・高さ44px未満なし。検証器のスマホ向けgame通知漏れを修正し、担当画面の表示後に測定。既存の小さい診断用通信テストボタンは44px判定の対象外。
+- `node scripts/sim/check-static-pages.mjs`：成功。`app-view-test.mjs`：15/15。`ui-input-test.mjs`：5/5。`node --check scripts/sim/ui-preview.mjs`：成功。`static-assets-sim.mjs --bin <releaseホスト>`：26ファイル・2,546,433 bytesのHTTP/MIME/no-store確認成功。入力・通信の製品実装は変更していない。
+- Windows配布ZIPを `.venv/branding-verified-dist/` へ新規作成（約9.5MB）。全UI26ファイル＋両exeをバイト照合する集約レポートを更新。Minecraft/Tauri実窓・Android/iPhone・ホーム画面追加・別PC起動は今回未検証。
+- 既存PR #96へ追加する。マージ・auto-merge・mainへの直接pushは行わない。
+
+## 2026-10-25 PR #96のマージ前レビュー対応
+
+- 新しいユーザー指示で、現在の全PRを確認し、問題がなければマージする権限が与えられた。以前のマージ禁止は今回の明示判断に従って更新する。
+- レビューの未対応条件だった重複・中間画像をGit追跡から外した。ローカル生画像・各回の採寸JSON・画像SHA256・監査履歴・最新PC/スマホ画像は保持。過去画像リンクには保存方針のREADMEを追加し、最終版へ案内する。
+- 最終ツリーだけをスカッシュマージし、中間画像のコミット履歴をmainへ持ち込まない。入力・描画コードの変更はない。最終画像・26素材の配信・入力/UI試験が成功済みの製品コードを保持する。
+
+## 2026-10-25 PR #95の安全レビュー修正
+
+- 再検出で選択中ゲームが消えると、入力先がMinecraftの条件へ戻る問題を修正。検出対象の消失・場所変更では全解放・視点破棄・epoch更新・起動待ち破棄を実施し、協力中なら一時停止する。未知の選択は注入不可とし、復帰後も自動再開しない。
+- #96を取り込み、BUILD_LOGの双方の記録を保持して競合を解消。ユーザーのmain作業は変更しない。
+- releaseビルド成功（依存ライブラリ再構築を含み約11分）。Rust単体はホスト12件＋入力プローブ3件成功。既存の未使用フィールドとOpenSSL PDBの警告は非致命的。
+- `protocol-sim.mjs --bin .venv/pr95-runtime/recooplay-host.exe`：41/41成功。押下中の対象消失でW・右ボタンを解放し、注入不可・再開不可になり、再検出後もpausedを維持する回帰試験を追加した。初回の試験はP3のepoch通知前に押したため失敗し、P3側の通知を待ってから押すよう試験を修正して再実行した。
+- `shutdown-sim.mjs`：quit・EOF両方成功。`app-view-test.mjs`：15/15成功。静的構文・差分空白検査も成功。今回の実ゲーム・スマホ実機の追試は行っていない。
+
+## 2026-10-25 PR #102の統合レビュー修正
+
+- マージ済みの#96の原案準拠UIと#95のゲーム検出・安全停止を取り込み、通信フィールドと画面機能を両方保持した。分担画面の「このPCのキー設定を確認」から操作設定を開き、担当別の実際のキーと警告を確認できる。
+- 旧形式の整数キーコードを1〜255に限定し、範囲外の値が16ビットへの変換で実キーへ折り返すことを防止。回帰試験を追加した。
+- 初回の統合通信試験は28/42成功。キー再読込が遷移途中のタイトル・旧epochを通知していたため、再読込内の通知を削除し、遷移完了後の通知へ統一した。試験もタイトルだけでなくlobbyへの到達を待つ。修正後は42/42成功。
+- releaseビルド成功。`cargo test --release --locked --manifest-path apps/host-rs/Cargo.toml`はホスト19件＋プローブ3件成功。`protocol-sim.mjs --bin .venv/pr102-runtime/recooplay-host.exe`は42/42、Node.js参照実装20/20、`app-view-test.mjs`16/16、`ui-input-test.mjs`5/5、静的構文・差分空白検査は成功。
+- `shutdown-sim.mjs`はquit・EOF両方成功。`static-assets-sim.mjs`は26ファイル・2,547,169 bytesのHTTP・MIME・キャッシュ・ローカル参照が成功。
+- Rust実バックエンドのdry-runに試験用options.txtを読み込ませ、1280×720のブラウザーでダッシュQ・捨てるRを確認。コンソール警告・エラー0。証拠は `docs/design/evidence/keybind-review/actual-keys-1280.jpg`。同時起動の検証ホストによる緊急停止キー登録不可の安全案内は隠していない。
+- Minecraft実入力・Tauri実窓・スマホ実タッチは今回未検証。#101の実機受入を完了扱いにせず、自動クローズ構文をPRから外した。
+
+## 2026-10-25 PR #103の修正・統合レビュー
+
+- 最新main（#95・#96・#102）を統合し、ゲーム検出・起動、安全停止、新UI、キー表示を保持。Minecraftの`game.keys.source=options`を維持し、他形式の読込成功だけ`user`とした。
+- Unreal配列の削除・追加・クリア・置換、Sourceの再bind・unbind・unbindall・引用符・命令区切り・空バインドを修正。修飾キー付きUE操作は未対応として送信しない。範囲外の旧Minecraftキー番号を拒否するmainの修正も保持した。
+- 停止中のキー設定更新では全解放・視点破棄・epoch更新後に再読込。キーを押したまま設定を変える通信回帰試験を追加。定義の重複、担当、split参照を検証し、提案メタデータだけでReadyできないようにした。
+- `cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml`成功。`cargo test`はホスト23件＋プローブ3件成功。`protocol-sim.mjs --bin .venv/runtime/recooplay-host.exe`は43/43、`--target node`は20/20成功。
+- `app-view-test.mjs`16/16、`ui-input-test.mjs`5/5、静的構文、構造30ファイル、差分空白検査成功。`profile-extract-test.mjs`は個人のゲームを読まない埋め込みJSON fixtureで静的抽出・下書き状態・未対応キーを確認し、CIにも追加。
+- `shutdown-sim.mjs`はquit・EOF両方成功。`static-assets-sim.mjs`は26ファイル成功。`package.ps1 -Out .venv/pr103-package`で約9.7MBのZIP作成成功、同梱Minecraft定義をソースとバイト照合した。
+- 本変更経路のMinecraft・スマホ実機は未検証。5タイトルの自動抽出の再照合、設定階層・動的alias等は受入未完了として#97・#99・#100を自動クローズしない。過去の作者の実機観測と今回のfixture/dry-runを区別する。
+- 追加の境界検証で、全解除だけのSource/Unreal設定が初期キーへ戻る問題を修正。全解除・置換・未記載操作のキー解除を重ねる際も解除を保持し、再bindした有効操作だけを復元する。並列単体試験のfixture名も一意化。追加後のRust単体はホスト24件＋プローブ3件、計27件成功。
+
+## 2026-10-25 PR #104の修正・統合レビュー
+
+- マージ済み#103と他担当のREADME更新・PR #104への追加コミットを統合。Minecraftの既存`options`契約を維持し、他形式の`user`と区別する。
+- 仮・自動抽出・未検証・過去の実機記録をPCとスマホで区別し、未対応定義のReady不可を明示。Rust側の拒否は#103で導入済み。カタログを操作成立済みの一覧として扱わない。
+- `cargo build --release --locked`成功、単体はホスト24件＋プローブ3件成功。Rustの形式検証で全502定義の読込エラー0。`profile-catalog-test.mjs`は一覧・識別条件・状態・出典を照合し、template488／extracted4／unverified9／device1を確認。CIにも追加した。
+- `protocol-sim.mjs --bin .venv/final-runtime/recooplay-host.exe`は43/43成功。未検証のStardew定義ではReadyと協力入力を拒否し、その後の模擬Epic対象消失では全解放・一時停止を確認した。
+- 画面17/17、UI入力5/5、静的構文と差分空白検査成功。終了時全解放はquit・EOF両方成功。素材配信26ファイル・2,548,146 bytesを確認。配布ZIPへ全502定義を同梱する。
+- Rust dry-runでPC2解像度・スマホ縦6サイズを撮影し、PC警告の画面内表示・スマホ横はみ出し0・操作ボタンの画面外配置0を確認。証拠は`docs/design/evidence/catalog-review/`。PC1920の初回寸法不一致は採用せず再撮影した。
+- 実ゲーム502本の互換性・スマホ実タッチは未検証。#98は開いたままとする。新しい本番依存は追加していない。

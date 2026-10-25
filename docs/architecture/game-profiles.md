@@ -17,7 +17,7 @@
   "suitability": "good",
   "userBindings": { "reader": "minecraft-options", "path": "%APPDATA%/.minecraft/options.txt" },
   "groups": [
-    { "id": "movement", "label": "移動", "role": "P1", "split": [ { "id": "left", "label": "左", "actions": ["left"] } ] }
+    { "id": "movement", "label": "移動", "role": "P1", "split": [ { "id": "left", "label": "左", "actions": ["sprint"] } ] }
   ],
   "actions": [
     { "id": "sprint", "label": "ダッシュ", "group": "movement", "type": "button", "default": "LCTRL", "bind": "key.sprint", "control": "SPRINT" }
@@ -72,3 +72,11 @@
 - 読み直すタイミング：起動時・ゲームの選択・準備（PREPARE）・Ready・再開（RESUME）。協力プレイ中以外は、設定ファイルの更新日時が変わっていたら読み直す（ゲームによっては終了時にしか書き出さないため、遊んでいる途中の変更は次の起動まで反映されないことがある）。
 - 送れないキー（マウスの中ボタン・テンキー等）や未設定の操作は、初期のキーで代用すると別の操作が動くため送らずに警告する。2つの操作が同じキーなら警告する。読めない・見つからないときは初期キーで送り、その旨を表示する（`game.keys`）。
 - Minecraftの `options.txt` の場所は、`config.json` の `minecraftOptions`（または `RECOOPLAY_MINECRAFT_OPTIONS`）で上書きできる（CurseForge・Prism等のランチャー用）。
+
+## 実装の適用範囲と検証の区別
+
+- Minecraftのdevice記録は過去の作者による実機観測を参照したもの。このJSON読込経路と変更後の入力を新たに実機検証した意味ではない。
+- assignmentは提案メタデータで、任意のゲームの操作画面生成は#60の対象。template・extracted・unverified、または固定画面と認可に結び付かない定義はReadyを拒否し、警告を表示する。検出・起動は可能でも協力操作の互換性を保証しない。
+- Unrealでは配列の追加・削除・クリア・置換を順序どおり処理する。修飾キー付きの組合せは未対応として送信しない。読み取るのは指定された単一ファイルで、エンジンの設定階層全体の再現は未対応。
+- Sourceではキー単位の再bind・unbind・unbindallを反映する。実行時のexecやaliasによる変更の評価は行わない。
+- 自動抽出は静的データの下書き作成。ゲームのコードを実行せず、実機互換性の合格にはしない。上書き設定の複合バインドやゲーム固有の設定階層は実ゲームで追加検証が必要。

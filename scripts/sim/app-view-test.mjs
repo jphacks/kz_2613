@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, roleView } from '../../apps/web-static/app-view.js';
+import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -19,6 +19,15 @@ function test(name, fn) {
 
 const slot = (name, connected, ua = '') => ({ name, assigned: true, connected, ua });
 const game = (connected, extra = {}) => ({ phase: 'lobby', required: 3, connected, canStart: connected.includes('P1') && connected.length >= 3, ...extra });
+
+test('操作定義: 仮・抽出・未検証とReady不可を区別し過去の記録を新規合格にしない',()=>{
+  for(const status of ['template','extracted','unverified']){
+    const note=profileNotice({name:'試験ゲーム',status,controllerSupported:false});
+    assert.match(note,/未検証/); assert.match(note,/Readyできません/);
+  }
+  assert.equal(profileNotice({id:'minecraft-java',status:'device',controllerSupported:true}), '');
+  assert.match(profileNotice({status:'device',controllerSupported:false}),/過去の実機記録/);
+});
 
 test('PC画面: 定期更新で手動移動を戻さず、準備・停止への遷移時だけ分担へ案内する',()=>{
   const ui={screen:'join',game:'minecraft-java'};
@@ -133,6 +142,32 @@ test('参加 URL: ホットスポットを優先する', () => {
 test('端末の種類', () => {
   assert.equal(device('Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X)'), 'iPhone');
   assert.equal(device('Mozilla/5.0 (Linux; Android 10; K)'), 'Android');
+});
+
+test('原案の5視覚状態: 3ページとサーバーの準備2状態を区別する',()=>{
+  for(const screen of SCREENS)assert.equal(desktopView({screen},{phase:'lobby'}),screen);
+  assert.equal(desktopView({screen:'roles'},{phase:'preparing',canReady:false,canStart:true}),'preparing');
+  assert.equal(desktopView({screen:'join'},{phase:'preparing',canReady:true,hostReady:false}),'ready');
+  assert.equal(desktopView({screen:'roles'},{phase:'preparing',hostReady:true}),'preparing');
+});
+test('進行の変化: 準備・Ready・協力・Pause・Endで古い状態を表示しない',()=>{
+  const ui={screen:'roles'};
+  assert.equal(desktopView(ui,{phase:'coop'}),'coop');
+  assert.equal(desktopView(ui,{phase:'paused'}),'paused');
+  assert.equal(desktopView(ui,{phase:'lobby'}),'roles');
+  for(let count=0;count<=3;count++)assert.equal(slotViews(Array.from({length:count},(_,i)=>slot('P'+(i+1),true))).filter(s=>s.state==='connected').length,count);
+});
+test('本番の安全案内: 切断・緊急停止・入力OFF・前面喪失とテストを隠さない',()=>{
+  const g={phase:'coop',connected:['P1','P2','P3']};
+  assert.match(desktopWarning(g,{mode:'on',active:false,target:{process:'secret.exe'}}),/Minecraftを前面/);
+  assert.doesNotMatch(desktopWarning(g,{mode:'on',active:false,target:{process:'secret.exe'}}),/secret\.exe/);
+  assert.match(desktopWarning(g,{mode:'off'}),/OFF/);
+  assert.match(desktopWarning(g,{mode:'test'}),/確認用/);
+  assert.match(desktopWarning(g,{mode:'on'},false),/接続が切れ/);
+  assert.match(desktopWarning({...g,reason:'emergency stop'},{mode:'off'}),/緊急停止/);
+  assert.match(desktopWarning({...g,phase:'paused',connected:['P1','P2']},{mode:'on'}),/3人全員/);
+  assert.match(desktopWarning(g,{emergencyHotkeyError:'失敗'}),/登録できません/);
+  assert.equal(desktopWarning(g,{mode:'on',active:true}),'');
 });
 
 const failed = results.filter((r) => !r).length;

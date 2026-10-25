@@ -65,12 +65,16 @@ impl Keybinds {
                     let text = text.trim_start_matches('\u{feff}');
                     match read(&ub.reader, text) {
                         Some(map) => {
-                            kb.source = "user";
+                            kb.source = if ub.reader == "minecraft-options" { "options" } else { "user" };
                             for (i, a) in p.actions.iter().enumerate() {
                                 if a.kind != "button" {
                                     continue; // 視点・ホイールは固定の出力
                                 }
-                                let Some(key) = a.bind.as_ref().and_then(|b| map.get(b)) else { continue };
+                                let Some(key) = a.bind.as_ref().and_then(|b| map.get(b).or_else(|| match ub.reader.as_str() {
+                                    "source-cfg" => map.get("*").or_else(|| a.default.and_then(|d| map.get(&format!("key:{d}")))),
+                                    "ue-input-ini" => map.get(if b.contains('/') { "AxisMappings/*" } else { "ActionMappings/*" }),
+                                    _ => None,
+                                })) else { continue };
                                 kb.actions[i].1 = match key {
                                     Key::Output(id) => Some(*id),
                                     Key::Unbound => {
@@ -244,13 +248,23 @@ fn unity_overrides(text: &str) -> Option<HashMap<String, Key>> {
 /// 軸は "名前/+" "名前/-" に分ける。ゲームパッドのキーは飛ばす
 fn ue_input_ini(text: &str) -> HashMap<String, Key> {
     let mut map = HashMap::new();
+    let mut active: Vec<(String, String, String, Key)> = Vec::new();
     let field = |line: &str, k: &str| -> Option<String> {
         let i = line.find(&format!("{k}="))? + k.len() + 1;
         let v: String = line[i..].trim_start_matches('"').chars().take_while(|c| !matches!(c, '"' | ',' | ')')).collect();
         Some(v)
     };
     for line in text.lines() {
-        let l = line.trim().trim_start_matches(['+', '-', '.']);
+        let line = line.trim();
+        let op = line.chars().next().unwrap_or(' ');
+        let l = line.trim_start_matches(['+', '-', '.', '!']);
+        let Some((array, row)) = l.split_once('=') else { continue };
+        if !matches!(array, "ActionMappings" | "AxisMappings") { continue; }
+        if op == '!' {
+            active.retain(|(a, _, _, _)| a != array);
+            map.insert(format!("{array}/*"), Key::Unbound);
+            continue;
+        }
         let Some(key) = field(l, "Key") else { continue };
         if key.starts_with("Gamepad") || key.starts_with("MotionController") {
             continue;
@@ -264,8 +278,25 @@ fn ue_input_ini(text: &str) -> HashMap<String, Key> {
             None
         };
         if let Some(n) = name {
-            map.entry(n).or_insert_with(|| name_key(&key));
+            // 削除された操作は初期キーへ戻さず、未割当として残す。
+            map.insert(n.clone(), Key::Unbound);
+            if op == '-' {
+                active.retain(|(a, r, _, _)| a != array || r != row);
+                continue;
+            }
+            if !matches!(op, '+' | '.') {
+                active.retain(|(a, _, _, _)| a != array);
+                map.insert(format!("{array}/*"), Key::Unbound);
+            }
+            let modified = ["bShift", "bCtrl", "bAlt", "bCmd"].iter().any(|f| field(l, f).is_some_and(|v| v.eq_ignore_ascii_case("true")));
+            let output = if modified { Key::Unsupported(format!("修飾キー付きの{key}")) } else { name_key(&key) };
+            if op != '+' || !active.iter().any(|(a, r, _, _)| a == array && r == row) {
+                active.push((array.into(), row.into(), n, output));
+            }
         }
+    }
+    for (_, _, name, key) in active {
+        if matches!(map.get(&name), Some(Key::Unbound)) { map.insert(name, key); }
     }
     map
 }
@@ -273,11 +304,43 @@ fn ue_input_ini(text: &str) -> HashMap<String, Key> {
 /// Source エンジンの config.cfg: bind "w" "+forward" → "+forward" の操作は W
 fn source_cfg(text: &str) -> HashMap<String, Key> {
     let mut map = HashMap::new();
-    for line in text.lines() {
-        let parts: Vec<&str> = line.split('"').collect();
-        if line.trim_start().starts_with("bind") && parts.len() >= 4 {
-            map.entry(parts[3].to_string()).or_insert_with(|| name_key(parts[1]));
+    let mut bound: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
+    // 引用符の外のセミコロンと改行だけが命令の区切り。
+    let mut commands = Vec::new(); let mut parts = Vec::new();
+    let mut token = String::new(); let mut quoted = false; let mut started = false;
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '/' && chars.peek() == Some(&'/') && !quoted {
+            for c in chars.by_ref() { if c == '\n' { break; } }
+            if started { parts.push(std::mem::take(&mut token)); started=false; }
+            commands.push(std::mem::take(&mut parts)); continue;
         }
+        if c == '"' { quoted = !quoted; started=true; }
+        else if !quoted && (c.is_whitespace() || c == ';') {
+            if started { parts.push(std::mem::take(&mut token)); started=false; }
+            if matches!(c,';'|'\n') { commands.push(std::mem::take(&mut parts)); }
+        } else { token.push(c); started=true; }
+    }
+    if started { parts.push(token); } commands.push(parts);
+    for parts in commands {
+        match parts.first().map(String::as_str) {
+            Some("bind") if parts.len() >= 3 => {
+                let command = parts[2].clone();
+                if let Key::Output(key)=name_key(&parts[1]) { map.insert(format!("key:{key}"),Key::Unbound); }
+                if command.is_empty() { bound.remove(&parts[1].to_ascii_lowercase()); continue; }
+                map.insert(command.clone(), Key::Unbound);
+                bound.insert(parts[1].to_ascii_lowercase(), command);
+            }
+            Some("unbind") if parts.len() >= 2 => {
+                bound.remove(&parts[1].to_ascii_lowercase());
+                if let Key::Output(key)=name_key(&parts[1]) { map.insert(format!("key:{key}"),Key::Unbound); }
+            }
+            Some("unbindall") => { bound.clear(); map.insert("*".into(),Key::Unbound); }
+            _ => {},
+        }
+    }
+    for (key, command) in bound {
+        if matches!(map.get(&command), Some(Key::Unbound)) { map.insert(command, name_key(&key)); }
     }
     map
 }
@@ -382,7 +445,7 @@ fn minecraft_key(value: &str) -> Key {
             0 => Key::Unbound,
             -100 => Key::Output("MOUSE_L"),
             -99 => Key::Output("MOUSE_R"),
-            n if n > 0 => {
+            n if (1..=255).contains(&n) => {
                 let (scan, ext) = if n >= 0x80 { ((n - 0x80) as u16, true) } else { (n as u16, false) };
                 controls::output_by_scan(scan, ext).map_or(Key::Unsupported(value.to_string()), |o| Key::Output(o.id))
             }
@@ -427,18 +490,39 @@ mod tests {
     }
 
     fn with_file(text: &str) -> Keybinds {
+        with_profile(&profiles::builtin_minecraft(), text)
+    }
+
+    fn with_profile(p: &Profile, text: &str) -> Keybinds {
+        static SEQ: std::sync::atomic::AtomicUsize=std::sync::atomic::AtomicUsize::new(0);
         let dir = std::env::temp_dir().join(format!("recooplay-kb-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        let f = dir.join(format!("options-{}.txt", text.len()));
+        let f = dir.join(format!("options-{}.txt", SEQ.fetch_add(1,std::sync::atomic::Ordering::Relaxed)));
         std::fs::write(&f, text).unwrap();
-        Keybinds::build(&profiles::builtin_minecraft(), Some(&f))
+        Keybinds::build(p, Some(&f))
+    }
+
+    #[test]
+    fn clear_only_configs_do_not_restore_profile_defaults() {
+        let mut p=profiles::builtin_minecraft();
+        p.user_bindings.as_mut().unwrap().reader="source-cfg".into();
+        for a in &mut p.actions { a.bind=match a.control.as_deref() {Some("FWD")=>Some("+forward".into()),Some("JUMP")=>Some("+jump".into()),_=>None}; }
+        for text in ["unbindall", "unbind w", "bind w +jump", "bind w \"\""] {
+            let kb=with_profile(&p,text); assert_eq!(out(&kb,"FWD"),None,"{text}");
+        }
+        let kb=with_profile(&p,"unbindall\nbind w +jump");
+        assert_eq!(out(&kb,"JUMP"),Some("KEY_W")); assert_eq!(out(&kb,"FWD"),None);
+        p.user_bindings.as_mut().unwrap().reader="ue-input-ini".into();
+        p.actions.iter_mut().find(|a|a.control.as_deref()==Some("JUMP")).unwrap().bind=Some("Jump".into());
+        assert_eq!(out(&with_profile(&p,"!ActionMappings=ClearArray"),"JUMP"),None);
+        assert_eq!(out(&with_profile(&p,"ActionMappings=(ActionName=\"Use\",Key=E)"),"JUMP"),None);
     }
 
     #[test]
     fn minecraft_rebound_keys() {
         // このPCで観測した設定: ダッシュ = Q、捨てる = R
         let kb = with_file("key_key.forward:key.keyboard.w\nkey_key.sprint:key.keyboard.q\nkey_key.drop:key.keyboard.r\nkey_key.attack:key.mouse.left\nkey_key.sneak:key.keyboard.left.shift\n");
-        assert_eq!(kb.source, "user");
+        assert_eq!(kb.source, "options");
         assert_eq!(out(&kb, "SPRINT"), Some("KEY_Q"));
         assert_eq!(out(&kb, "DROP"), Some("KEY_R"));
         assert_eq!(out(&kb, "SNEAK"), Some("LSHIFT"));
@@ -489,6 +573,39 @@ mod tests {
         assert_eq!(kb.source, "default");
         assert_eq!(out(&kb, "SPRINT"), Some("LCTRL"));
         assert_eq!(kb.warnings.len(), 1);
+    }
+
+    #[test]
+    fn invalid_legacy_codes_do_not_wrap() {
+        let kb = with_file("key_key.sprint:65693\nkey_key.drop:2147483647\n");
+        assert_eq!(out(&kb, "SPRINT"), None);
+        assert_eq!(out(&kb, "DROP"), None);
+        assert_eq!(kb.warnings.len(), 2);
+    }
+
+    #[test]
+    fn unreal_applies_array_removal_clear_and_replacement() {
+        let rows = "+ActionMappings=(ActionName=\"Jump\",Key=SpaceBar)\n-ActionMappings=(ActionName=\"Jump\",Key=SpaceBar)\n+ActionMappings=(ActionName=\"Jump\",Key=J)\n";
+        assert_eq!(ue_input_ini(rows)["Jump"], Key::Output("KEY_J"));
+        assert_eq!(ue_input_ini(&(rows.to_owned() + "!ActionMappings=ClearArray\n"))["Jump"], Key::Unbound);
+        let replace = rows.to_owned() + "ActionMappings=(ActionName=\"Use\",Key=E)\n";
+        let map = ue_input_ini(&replace);
+        assert_eq!(map["Jump"], Key::Unbound);
+        assert_eq!(map["Use"], Key::Output("KEY_E"));
+        assert!(matches!(ue_input_ini("+ActionMappings=(ActionName=\"Jump\",bShift=True,Key=J)")["Jump"], Key::Unsupported(_)));
+    }
+
+    #[test]
+    fn source_applies_rebind_unbind_and_unbindall() {
+        let rows = "bind \"w\" \"+forward\"\nbind \"W\" \"+jump\"\nbind MOUSE1 +attack\n";
+        let map = source_cfg(rows);
+        assert_eq!(map["+forward"], Key::Unbound);
+        assert_eq!(map["+jump"], Key::Output("KEY_W"));
+        assert_eq!(map["+attack"], Key::Output("MOUSE_L"));
+        assert_eq!(source_cfg(&(rows.to_owned() + "unbind w\n"))["+jump"], Key::Unbound);
+        assert!(source_cfg(&(rows.to_owned() + "unbindall\n")).values().all(|k| *k == Key::Unbound));
+        let map=source_cfg("bind w +forward; bind w +jump; // unbindall\nbind w \"\"");
+        assert_eq!(map["+forward"],Key::Unbound); assert_eq!(map["+jump"],Key::Unbound);
     }
 
     #[test]
