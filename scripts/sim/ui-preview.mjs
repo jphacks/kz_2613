@@ -56,7 +56,8 @@ wss.on('connection',(ws,req)=>{
   const send=m=>{if(ws.readyState===1)ws.send(JSON.stringify(m));};
   const game=()=>({phase,epoch,required:3,connected,title:'minecraft-java',hostReady:phase==='coop'||phase==='paused',canPrepare:phase==='lobby'&&count>0,canReady:canReady(),canStart:canReady(),canResume:phase==='paused'&&active()&&count===3,readyReasons:count<3?['3人全員の接続を待っています']:!active()?['入力を有効にし、対象ゲームを前面にしてください']:[],reason:scenario==='emergency'?'emergency stop':scenario==='lost'?'P3 disconnected':phase==='paused'?'host pause':'',autoResume:false,inputActive:active(),inputTarget:false,remoteRoute:phase==='coop'?'none':'app',prepareStatus:'表示検証：実ゲームは開いていません'});
   const state=()=>({type:'state',game:game(),slots:['P1','P2','P3'].map((name,i)=>({name,assigned:i<count||scenario==='lost',connected:i<count,ua:name==='P2'?'iPhone':'Android'})),inject:{mode,active:active(),available:true,emergencyHotkey:'Ctrl+Alt+F12',target:{ok:active()}}});
-  const push=()=>send(state());
+  // PCはstate、スマホはgameを描画する。表示検証でも両方の契約を送る。
+  const push=()=>{send(state());send({type:'game',game:game()});};
   let monitor=false;
   const periodic=setInterval(()=>{if(monitor)push();},1000);
   ws.on('close',()=>clearInterval(periodic));

@@ -9,7 +9,7 @@ refs=json.loads((ev/'pc-fidelity-reference.json').read_text(encoding='utf8'))
 names={'join':'参加','game':'ゲーム選択','roles':'分担','preparing':'準備中','ready':'準備可能'}
 scores={'join':[25,24,19,14,14],'game':[25,25,19,14,14],'roles':[25,25,19,14,13],'preparing':[25,25,18,14,14],'ready':[25,25,19,14,14]}
 rounds=[]
-for name in ['pc-fidelity-accepted-1','pc-fidelity-accepted-2']:
+for name in ['pc-branding-accepted-1','pc-branding-accepted-2']:
     d=ev/name
     metrics=json.loads((d/'metrics.json').read_text(encoding='utf8'))
     geometry=json.loads((d/'geometry-audit.json').read_text(encoding='utf8'))
@@ -23,8 +23,10 @@ assert rounds[0]['tabId']!=rounds[1]['tabId'] and rounds[0]['to']<rounds[1]['fro
 assert rounds[0]['commit']==rounds[1]['commit']
 final=ev/'pc-fidelity-final'
 final.mkdir(exist_ok=True)
-for f in (ev/'pc-fidelity-accepted-2').iterdir():
+for f in (ev/rounds[-1]['directory']).iterdir():
     if f.is_file():shutil.copyfile(f,final/f.name)
+for shot in rounds[-1]['screenshots']:
+    assert hashlib.sha256((final/shot['file']).read_bytes()).hexdigest()==shot['sha256']
 metrics=json.loads((final/'metrics.json').read_text(encoding='utf8'))
 geometry=json.loads((final/'geometry-audit.json').read_text(encoding='utf8'))
 manifest={'condition':'表示専用の模擬データ。100% zoom、製品ルート /app、同じタブのDOMと表示領域を撮影前後に照合。独立タブで毎回新規撮影。画像の後加工・差分マスクなし。実機動作の証拠ではない。','rounds':rounds,'scores':{s:{'criteria':v,'total':sum(v)} for s,v in scores.items()}}
@@ -61,11 +63,11 @@ for s,color,roi,label in samples:
 readme=['# 原案5画面との最終比較','','これは表示専用の模擬状態による新規撮影。Minecraft・スマホ・Tauri実機の動作証明ではない。左に提供PNG、右に製品HTMLの1920×1080描画を、縮小・切り取り・マスクなしで並べた。画像を開くと原寸3840×1080で確認できる。','','[比較ギャラリー](index.html) ／ [要素ごとの計測・差分](../pc-fidelity-element-matrix.md) ／ [監査履歴](../pc-fidelity-progress.md) ／ [2回の撮影来歴](audit-manifest.json)','','| 画面 | 構造25 | 位置25 | 文字20 | 形・色15 | 密度15 | 合計 |','| --- | ---: | ---: | ---: | ---: | ---: | ---: |']
 for s,n in names.items():
     readme.append('| '+n+' | '+' | '.join(map(str,scores[s]+[sum(scores[s])]))+' |')
-readme+=['','ルーブリックによる自己監査。点数は画素一致率・第三者評価ではない。正式フォント情報がないため完全一致は保証しない。各観点80%以上・全画面95点以上。最新製品コード e2a4c7f 以降、2回の監査間で製品コードを変更していない。','']
+readme+=['','ルーブリックによる自己監査。点数は画素一致率・第三者評価ではない。正式フォント情報がないため完全一致は保証しない。各観点80%以上・全画面95点以上。提供ロゴ反映後の製品コード '+rounds[0]['commit']+' で独立した2回の新規撮影を行い、その間に製品コードを変更していない。ロゴは追加の明示的ユーザー指定に従う差替で、原案の仮ロゴを再現対象にはしない。','']
 for s,n in names.items():readme +=[f'## {n}', '',f'![{n} 原案→実装]({s}-comparison.jpg)', '',f'[実装1920×1080]({s}-1920.jpg) ／ [実装1280×720]({s}-1280.jpg) ／ [無加工差分]({s}-difference.png)','']
 (final/'README.md').write_text('\n'.join(readme),encoding='utf8')
 # 配布ZIPを圧縮解除せず全UI・両実行ファイルと照合する。
-package=root/'.venv/pc-fidelity-final-dist/ReCooplay-0.1.0-windows-x64.zip'
+package=root/'.venv/branding-verified-dist/ReCooplay-0.1.0-windows-x64.zip'
 with zipfile.ZipFile(package) as z:
     prefix='ReCooplay-0.1.0-windows-x64/'
     checks=[]

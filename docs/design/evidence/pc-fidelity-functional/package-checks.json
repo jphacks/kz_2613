@@ -1,7 +1,7 @@
 {
   "package": "ReCooplay-0.1.0-windows-x64.zip",
-  "sha256": "bb86f5acf9054a1c4cb6b1dcad348e9222e770277d33c87122f83b490ef9a4f8",
-  "uiFiles": 23,
+  "sha256": "7ed049c0f2d8683a26758115e14299862d26f9baf3a5fd0247cf7df54080b4cc",
+  "uiFiles": 26,
   "executables": 2,
   "checks": [
     {
@@ -10,19 +10,31 @@
     },
     {
       "file": "apps/web-static/app.html",
-      "sha256": "6a022025a61c8e1122c8f31f8d083cdbee3fe5588d0c90b8404dec485425e320"
+      "sha256": "95c22bcaac374577bfd5a1333a2711380dc225c39e32aa126f3c8583b172a3d4"
     },
     {
       "file": "apps/web-static/game.html",
-      "sha256": "cf84ebdd9eb4647c51afa5bf3a463c44e9d402b5ca234c6c088145e591a1d740"
+      "sha256": "7bf19c91707e202068de5afdc33e74ca6044328b77abb558b0acb9200446fe31"
     },
     {
       "file": "apps/web-static/host.html",
-      "sha256": "c7d305b21d9fee78b3ddda29616f495b4ab937f1473195eba3d54f4d50c02593"
+      "sha256": "4d846e6881cd506277cf56b461c5b7c8329dd8971764fb992819d71c0b13579c"
     },
     {
       "file": "apps/web-static/index.html",
-      "sha256": "e9376a4dde792298a5d51df26c5cd460a7d74e4aaa9b2a10b6bdcd3f39bb39e3"
+      "sha256": "12b22915a7633900554a3e0133add3970ce9daa58020eaf17b0e37701868e8ad"
+    },
+    {
+      "file": "apps/web-static/assets/apple-touch-icon.png",
+      "sha256": "c4dffb976362487c369ade57f02bb0963e7ad3f24bbff8734b63abb3675a274f"
+    },
+    {
+      "file": "apps/web-static/assets/icon.png",
+      "sha256": "fba5f00912c7b30602a2e4611e403dd3305e1eeb49e8918e4848b1b028e7366f"
+    },
+    {
+      "file": "apps/web-static/assets/logo.png",
+      "sha256": "4534d328a5feb9eeacb32342bef486d8ffa4208b1a33a9fe0338c158a028c99d"
     },
     {
       "file": "apps/web-static/assets/mobile-controls.png",
@@ -82,15 +94,15 @@
     },
     {
       "file": "apps/web-static/styles/desktop.css",
-      "sha256": "d13df9c032fa0f93ed61966e49127fd1801208ad36e0c92ade1cc863b7b50b40"
+      "sha256": "e94cb946daa7a3da71d174fd5683e464f93ae05a8c607b0094203d87b1c4e24e"
     },
     {
       "file": "apps/web-static/styles/mobile.css",
-      "sha256": "5b859c458a3ed43be1809a1d05c72eb68e5e70ec773f73c852a40509a321df76"
+      "sha256": "caccb8358338ca7a277d1d35d7e7461873cbb76a176ee17a9431e68a3a7b47f1"
     },
     {
       "file": "apps/web-static/styles/shared.css",
-      "sha256": "4678281942028d17eb85efdea2bf82c47d1ce6b070023c78a91229859e6cdec7"
+      "sha256": "e3d7d7e134e548cbce7fcfafe642a2fac0b0ae2789bccdbbbc9e0f4bd53ce693"
     },
     {
       "file": "apps/web-static/styles/tokens.css",
@@ -98,7 +110,7 @@
     },
     {
       "file": "recooplay-desktop.exe",
-      "sha256": "339c72a27a6e37cacf5aa1ad653785f67a3549520d327edb3e1648b5832ef888"
+      "sha256": "87e7cc911cc295d6ac396a58df6ffd79e77f4f6a3d11cd16aae4e22ff81eb02a"
     },
     {
       "file": "recooplay-host.exe",

@@ -2,7 +2,7 @@
   {
     "screen": "join",
     "width": 1920,
-    "capturedAt": "2026-10-25T01:45:47.243Z",
+    "capturedAt": "2026-10-25T02:05:09.699Z",
     "checks": [
       {
         "element": "見出しの着色画素",
@@ -105,7 +105,7 @@
         "pass": true
       }
     ],
-    "wholeImageMeanAbsoluteDifference": 11.829,
+    "wholeImageMeanAbsoluteDifference": 12.149,
     "titleInk": {
       "reference": [
         99,
@@ -132,7 +132,7 @@
   {
     "screen": "game",
     "width": 1920,
-    "capturedAt": "2026-10-25T01:45:47.955Z",
+    "capturedAt": "2026-10-25T02:05:10.510Z",
     "checks": [
       {
         "element": "見出しの着色画素",
@@ -211,7 +211,7 @@
         "pass": true
       }
     ],
-    "wholeImageMeanAbsoluteDifference": 5.623,
+    "wholeImageMeanAbsoluteDifference": 5.947,
     "titleInk": {
       "reference": [
         105,
@@ -238,7 +238,7 @@
   {
     "screen": "roles",
     "width": 1920,
-    "capturedAt": "2026-10-25T01:45:48.705Z",
+    "capturedAt": "2026-10-25T02:05:11.434Z",
     "checks": [
       {
         "element": "見出しの着色画素",
@@ -317,7 +317,7 @@
         "pass": true
       }
     ],
-    "wholeImageMeanAbsoluteDifference": 12.513,
+    "wholeImageMeanAbsoluteDifference": 12.832,
     "titleInk": {
       "reference": [
         100,
@@ -344,7 +344,7 @@
   {
     "screen": "preparing",
     "width": 1920,
-    "capturedAt": "2026-10-25T01:45:49.241Z",
+    "capturedAt": "2026-10-25T02:05:12.144Z",
     "checks": [
       {
         "element": "見出しの着色画素",
@@ -423,7 +423,7 @@
         "pass": true
       }
     ],
-    "wholeImageMeanAbsoluteDifference": 10.143,
+    "wholeImageMeanAbsoluteDifference": 10.462,
     "titleInk": {
       "reference": [
         112,
@@ -450,7 +450,7 @@
   {
     "screen": "ready",
     "width": 1920,
-    "capturedAt": "2026-10-25T01:45:49.742Z",
+    "capturedAt": "2026-10-25T02:05:12.733Z",
     "checks": [
       {
         "element": "見出しの着色画素",
@@ -529,7 +529,7 @@
         "pass": true
       }
     ],
-    "wholeImageMeanAbsoluteDifference": 8.757,
+    "wholeImageMeanAbsoluteDifference": 9.076,
     "titleInk": {
       "reference": [
         51,
@@ -556,31 +556,31 @@
   {
     "screen": "join",
     "width": 1280,
-    "capturedAt": "2026-10-25T01:45:50.575Z",
+    "capturedAt": "2026-10-25T02:05:13.556Z",
     "checks": []
   },
   {
     "screen": "game",
     "width": 1280,
-    "capturedAt": "2026-10-25T01:45:51.338Z",
+    "capturedAt": "2026-10-25T02:05:14.406Z",
     "checks": []
   },
   {
     "screen": "roles",
     "width": 1280,
-    "capturedAt": "2026-10-25T01:45:52.175Z",
+    "capturedAt": "2026-10-25T02:05:15.253Z",
     "checks": []
   },
   {
     "screen": "preparing",
     "width": 1280,
-    "capturedAt": "2026-10-25T01:45:52.676Z",
+    "capturedAt": "2026-10-25T02:05:15.863Z",
     "checks": []
   },
   {
     "screen": "ready",
     "width": 1280,
-    "capturedAt": "2026-10-25T01:45:53.075Z",
+    "capturedAt": "2026-10-25T02:05:16.447Z",
     "checks": []
   }
 ]

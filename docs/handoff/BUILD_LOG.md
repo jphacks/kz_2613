@@ -510,3 +510,14 @@
 - 表示専用データで0/1/2/3人、キーボード遷移、入力設定、準備中QR、切断、対象外、緊急停止、QRなし／503／再取得、PC切断を確認。15件を `edge-checks.json` に保存。意図的な503等は最終正常画面のコンソール評価と分ける。
 - 未実施：変更後のTauri実窓・Minecraft実入力・Android/iPhone実タッチ・実ネットワーク切断・Alt+Tab解放・Ctrl+Alt+F12実キー・別PC起動。表示とdry-runの成功で実機受入を完了扱いにしない。
 - 公開直前に#92の履歴更新cc613fcを取り込んだが、72ef255からのファイル差分0、製品コードのe2a4c7fからの差分0を確認。baseは指定どおり#92のブランチ。main直接push・PRマージ・auto-merge・Issueクローズは行わない。
+
+## 2026-10-25 提供ロゴ・アイコンの反映
+
+- 指定されたrogo.png（3200×2400）とicon.png（1774×1774）を実画像で確認。原画像をそのまま保存し、ロゴはPC・スマホヘッダー・Tauri起動画面へ配置。アイコンはブラウザ全4ページ、Appleホーム画面用、TauriのWindows PNG/ICOへ反映。切り取り・背景除去・図案変更・本番依存追加なし。
+- `scripts/windows/prepare-brand-assets.py` でPillowを開発時だけ使い、縦横比を維持したアイコン各サイズを生成。原画像SHA256と用途は `docs/design/brand-assets.md`。
+- 最初の増分ビルドで旧アイコンがEXEに残ったことを、別名コピーから抽出して検出。build.rsに画像のrerun-if-changedを追加し、release再ビルド成功（1分24秒）。再抽出したEXEアイコンが提供図案へ変わったことを確認し、証拠PNGを保存。
+- PC5画面×2解像度を新しい独立タブ29/30で各10枚撮影。両回の監査は主要矩形失敗0、ブラウザ警告・エラー0。最新の最終画像と採寸を差替版へ更新。新しいロゴ以外のレイアウトは変更していない。
+- スマホ3担当＋ホスト準備／一時停止×縦6サイズの30条件を新規撮影。ページはみ出し・ゲーム操作ボタンの画面外・高さ44px未満なし。検証器のスマホ向けgame通知漏れを修正し、担当画面の表示後に測定。既存の小さい診断用通信テストボタンは44px判定の対象外。
+- `node scripts/sim/check-static-pages.mjs`：成功。`app-view-test.mjs`：15/15。`ui-input-test.mjs`：5/5。`node --check scripts/sim/ui-preview.mjs`：成功。`static-assets-sim.mjs --bin <releaseホスト>`：26ファイル・2,546,433 bytesのHTTP/MIME/no-store確認成功。入力・通信の製品実装は変更していない。
+- Windows配布ZIPを `.venv/branding-verified-dist/` へ新規作成（約9.5MB）。全UI26ファイル＋両exeをバイト照合する集約レポートを更新。Minecraft/Tauri実窓・Android/iPhone・ホーム画面追加・別PC起動は今回未検証。
+- 既存PR #96へ追加する。マージ・auto-merge・mainへの直接pushは行わない。

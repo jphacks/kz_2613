@@ -3,10 +3,10 @@
     "screen": "join",
     "width": 1920,
     "height": 1080,
-    "capturedAt": "2026-10-25T01:45:47.243Z",
-    "codeCommit": "e2a4c7f70ab402e0c1178f409a07cc197733c1ad",
-    "tabId": "26",
-    "capture": "引数で指定した同一タブの製品ルート。表示状態確定後、表示領域全体を直接キャプチャ。撮影前後のURL/状態/寸法を照合",
+    "capturedAt": "2026-10-25T02:05:09.699Z",
+    "codeCommit": "5cefdf9",
+    "tabId": "30",
+    "capture": "ロゴ差替後。独立タブの製品ルート、同一表示領域・状態・画像を照合して直接撮影",
     "buttons": [
       {
         "disabled": false,
@@ -119,7 +119,7 @@
           "lineHeight": "normal",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay\n3人\n参加中！\n\nOK\n\nみんなのスマホで\n読み取ろう！\n\n表示用・QRなし\n接続方法・URLを確認"
+        "text": "3人\n参加中！\n\nOK\n\nみんなのスマホで\n読み取ろう！\n\n表示用・QRなし\n接続方法・URLを確認"
       },
       {
         "rect": {
@@ -539,14 +539,14 @@
       },
       {
         "rect": {
-          "bottom": 96,
-          "height": 44,
+          "bottom": 116,
+          "height": 112,
           "left": 60,
           "right": 498,
-          "top": 52,
+          "top": 4,
           "width": 438,
           "x": 60,
-          "y": 52
+          "y": 4
         },
         "selector": ".brand",
         "style": {
@@ -561,7 +561,7 @@
           "lineHeight": "44px",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay"
+        "text": ""
       },
       {
         "rect": {
@@ -913,10 +913,10 @@
     "screen": "game",
     "width": 1920,
     "height": 1080,
-    "capturedAt": "2026-10-25T01:45:47.955Z",
-    "codeCommit": "e2a4c7f70ab402e0c1178f409a07cc197733c1ad",
-    "tabId": "26",
-    "capture": "引数で指定した同一タブの製品ルート。表示状態確定後、表示領域全体を直接キャプチャ。撮影前後のURL/状態/寸法を照合",
+    "capturedAt": "2026-10-25T02:05:10.510Z",
+    "codeCommit": "5cefdf9",
+    "tabId": "30",
+    "capture": "ロゴ差替後。独立タブの製品ルート、同一表示領域・状態・画像を照合して直接撮影",
     "buttons": [
       {
         "disabled": false,
@@ -1029,7 +1029,7 @@
           "lineHeight": "normal",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay\nゲーム選択を\nしよう！\n\n右側にあるゲーム一覧から\n遊びたいゲームを\n選択してください！\n\n今回遊べるのは\nMinecraft Java Editionです。\n選んだら次へ進もう！\n\nこのゲームで遊ぶ"
+        "text": "ゲーム選択を\nしよう！\n\n右側にあるゲーム一覧から\n遊びたいゲームを\n選択してください！\n\n今回遊べるのは\nMinecraft Java Editionです。\n選んだら次へ進もう！\n\nこのゲームで遊ぶ"
       },
       {
         "rect": {
@@ -1215,14 +1215,14 @@
       },
       {
         "rect": {
-          "bottom": 96,
-          "height": 44,
+          "bottom": 116,
+          "height": 112,
           "left": 60,
           "right": 498,
-          "top": 52,
+          "top": 4,
           "width": 438,
           "x": 60,
-          "y": 52
+          "y": 4
         },
         "selector": ".brand",
         "style": {
@@ -1237,7 +1237,7 @@
           "lineHeight": "44px",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay"
+        "text": ""
       }
     ],
     "overflow": [
@@ -1255,10 +1255,10 @@
     "screen": "roles",
     "width": 1920,
     "height": 1080,
-    "capturedAt": "2026-10-25T01:45:48.705Z",
-    "codeCommit": "e2a4c7f70ab402e0c1178f409a07cc197733c1ad",
-    "tabId": "26",
-    "capture": "引数で指定した同一タブの製品ルート。表示状態確定後、表示領域全体を直接キャプチャ。撮影前後のURL/状態/寸法を照合",
+    "capturedAt": "2026-10-25T02:05:11.434Z",
+    "codeCommit": "5cefdf9",
+    "tabId": "30",
+    "capture": "ロゴ差替後。独立タブの製品ルート、同一表示領域・状態・画像を照合して直接撮影",
     "buttons": [
       {
         "disabled": false,
@@ -1357,7 +1357,7 @@
           "lineHeight": "normal",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay\n分担しよう！\n\n操作をそれぞれの\nスマホに分けよう！\n\nゲームを準備してから\nスマホでスタート！\n\nゲームを開く・準備する"
+        "text": "分担しよう！\n\n操作をそれぞれの\nスマホに分けよう！\n\nゲームを準備してから\nスマホでスタート！\n\nゲームを開く・準備する"
       },
       {
         "rect": {
@@ -1569,14 +1569,14 @@
       },
       {
         "rect": {
-          "bottom": 96,
-          "height": 44,
+          "bottom": 116,
+          "height": 112,
           "left": 60,
           "right": 498,
-          "top": 52,
+          "top": 4,
           "width": 438,
           "x": 60,
-          "y": 52
+          "y": 4
         },
         "selector": ".brand",
         "style": {
@@ -1591,7 +1591,7 @@
           "lineHeight": "44px",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay"
+        "text": ""
       },
       {
         "rect": {
@@ -1945,10 +1945,10 @@
     "screen": "preparing",
     "width": 1920,
     "height": 1080,
-    "capturedAt": "2026-10-25T01:45:49.241Z",
-    "codeCommit": "e2a4c7f70ab402e0c1178f409a07cc197733c1ad",
-    "tabId": "26",
-    "capture": "引数で指定した同一タブの製品ルート。表示状態確定後、表示領域全体を直接キャプチャ。撮影前後のURL/状態/寸法を照合",
+    "capturedAt": "2026-10-25T02:05:12.144Z",
+    "codeCommit": "5cefdf9",
+    "tabId": "30",
+    "capture": "ロゴ差替後。独立タブの製品ルート、同一表示領域・状態・画像を照合して直接撮影",
     "buttons": [
       {
         "disabled": true,
@@ -2019,7 +2019,7 @@
           "lineHeight": "normal",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay\n準備中...\n\nSTART\nMinecraftを前面にする\n\nMinecraftでワールドを準備してください。"
+        "text": "準備中...\n\nSTART\nMinecraftを前面にする\n\nMinecraftでワールドを準備してください。"
       },
       {
         "rect": {
@@ -2439,14 +2439,14 @@
       },
       {
         "rect": {
-          "bottom": 96,
-          "height": 44,
+          "bottom": 116,
+          "height": 112,
           "left": 60,
           "right": 498,
-          "top": 52,
+          "top": 4,
           "width": 438,
           "x": 60,
-          "y": 52
+          "y": 4
         },
         "selector": ".brand",
         "style": {
@@ -2461,7 +2461,7 @@
           "lineHeight": "44px",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay"
+        "text": ""
       },
       {
         "rect": {
@@ -2788,10 +2788,10 @@
     "screen": "ready",
     "width": 1920,
     "height": 1080,
-    "capturedAt": "2026-10-25T01:45:49.742Z",
-    "codeCommit": "e2a4c7f70ab402e0c1178f409a07cc197733c1ad",
-    "tabId": "26",
-    "capture": "引数で指定した同一タブの製品ルート。表示状態確定後、表示領域全体を直接キャプチャ。撮影前後のURL/状態/寸法を照合",
+    "capturedAt": "2026-10-25T02:05:12.733Z",
+    "codeCommit": "5cefdf9",
+    "tabId": "30",
+    "capture": "ロゴ差替後。独立タブの製品ルート、同一表示領域・状態・画像を照合して直接撮影",
     "buttons": [
       {
         "disabled": false,
@@ -2848,7 +2848,7 @@
           "lineHeight": "normal",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay\n準備完了！\n\nSTART\nホストのスマホでReady\nMinecraftを前面にする"
+        "text": "準備完了！\n\nSTART\nホストのスマホでReady\nMinecraftを前面にする"
       },
       {
         "rect": {
@@ -3242,14 +3242,14 @@
       },
       {
         "rect": {
-          "bottom": 96,
-          "height": 44,
+          "bottom": 116,
+          "height": 112,
           "left": 60,
           "right": 498,
-          "top": 52,
+          "top": 4,
           "width": 438,
           "x": 60,
-          "y": 52
+          "y": 4
         },
         "selector": ".brand",
         "style": {
@@ -3264,7 +3264,7 @@
           "lineHeight": "44px",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay"
+        "text": ""
       },
       {
         "rect": {
@@ -3617,10 +3617,10 @@
     "screen": "join",
     "width": 1280,
     "height": 720,
-    "capturedAt": "2026-10-25T01:45:50.575Z",
-    "codeCommit": "e2a4c7f70ab402e0c1178f409a07cc197733c1ad",
-    "tabId": "26",
-    "capture": "引数で指定した同一タブの製品ルート。表示状態確定後、表示領域全体を直接キャプチャ。撮影前後のURL/状態/寸法を照合",
+    "capturedAt": "2026-10-25T02:05:13.556Z",
+    "codeCommit": "5cefdf9",
+    "tabId": "30",
+    "capture": "ロゴ差替後。独立タブの製品ルート、同一表示領域・状態・画像を照合して直接撮影",
     "buttons": [
       {
         "disabled": false,
@@ -3733,7 +3733,7 @@
           "lineHeight": "normal",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay\n3人\n参加中！\n\nOK\n\nみんなのスマホで\n読み取ろう！\n\n表示用・QRなし\n接続方法・URLを確認"
+        "text": "3人\n参加中！\n\nOK\n\nみんなのスマホで\n読み取ろう！\n\n表示用・QRなし\n接続方法・URLを確認"
       },
       {
         "rect": {
@@ -4153,14 +4153,14 @@
       },
       {
         "rect": {
-          "bottom": 64.00000190734863,
-          "height": 29.33333396911621,
+          "bottom": 77.33333849906921,
+          "height": 74.66667175292969,
           "left": 40,
           "right": 332,
-          "top": 34.66666793823242,
+          "top": 2.6666667461395264,
           "width": 292,
           "x": 40,
-          "y": 34.66666793823242
+          "y": 2.6666667461395264
         },
         "selector": ".brand",
         "style": {
@@ -4175,7 +4175,7 @@
           "lineHeight": "44px",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay"
+        "text": ""
       },
       {
         "rect": {
@@ -4527,10 +4527,10 @@
     "screen": "game",
     "width": 1280,
     "height": 720,
-    "capturedAt": "2026-10-25T01:45:51.338Z",
-    "codeCommit": "e2a4c7f70ab402e0c1178f409a07cc197733c1ad",
-    "tabId": "26",
-    "capture": "引数で指定した同一タブの製品ルート。表示状態確定後、表示領域全体を直接キャプチャ。撮影前後のURL/状態/寸法を照合",
+    "capturedAt": "2026-10-25T02:05:14.406Z",
+    "codeCommit": "5cefdf9",
+    "tabId": "30",
+    "capture": "ロゴ差替後。独立タブの製品ルート、同一表示領域・状態・画像を照合して直接撮影",
     "buttons": [
       {
         "disabled": false,
@@ -4643,7 +4643,7 @@
           "lineHeight": "normal",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay\nゲーム選択を\nしよう！\n\n右側にあるゲーム一覧から\n遊びたいゲームを\n選択してください！\n\n今回遊べるのは\nMinecraft Java Editionです。\n選んだら次へ進もう！\n\nこのゲームで遊ぶ"
+        "text": "ゲーム選択を\nしよう！\n\n右側にあるゲーム一覧から\n遊びたいゲームを\n選択してください！\n\n今回遊べるのは\nMinecraft Java Editionです。\n選んだら次へ進もう！\n\nこのゲームで遊ぶ"
       },
       {
         "rect": {
@@ -4829,14 +4829,14 @@
       },
       {
         "rect": {
-          "bottom": 64.00000190734863,
-          "height": 29.33333396911621,
+          "bottom": 77.33333849906921,
+          "height": 74.66667175292969,
           "left": 40,
           "right": 332,
-          "top": 34.66666793823242,
+          "top": 2.6666667461395264,
           "width": 292,
           "x": 40,
-          "y": 34.66666793823242
+          "y": 2.6666667461395264
         },
         "selector": ".brand",
         "style": {
@@ -4851,7 +4851,7 @@
           "lineHeight": "44px",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay"
+        "text": ""
       }
     ],
     "overflow": [
@@ -4869,10 +4869,10 @@
     "screen": "roles",
     "width": 1280,
     "height": 720,
-    "capturedAt": "2026-10-25T01:45:52.175Z",
-    "codeCommit": "e2a4c7f70ab402e0c1178f409a07cc197733c1ad",
-    "tabId": "26",
-    "capture": "引数で指定した同一タブの製品ルート。表示状態確定後、表示領域全体を直接キャプチャ。撮影前後のURL/状態/寸法を照合",
+    "capturedAt": "2026-10-25T02:05:15.253Z",
+    "codeCommit": "5cefdf9",
+    "tabId": "30",
+    "capture": "ロゴ差替後。独立タブの製品ルート、同一表示領域・状態・画像を照合して直接撮影",
     "buttons": [
       {
         "disabled": false,
@@ -4971,7 +4971,7 @@
           "lineHeight": "normal",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay\n分担しよう！\n\n操作をそれぞれの\nスマホに分けよう！\n\nゲームを準備してから\nスマホでスタート！\n\nゲームを開く・準備する"
+        "text": "分担しよう！\n\n操作をそれぞれの\nスマホに分けよう！\n\nゲームを準備してから\nスマホでスタート！\n\nゲームを開く・準備する"
       },
       {
         "rect": {
@@ -5183,14 +5183,14 @@
       },
       {
         "rect": {
-          "bottom": 64.00000190734863,
-          "height": 29.33333396911621,
+          "bottom": 77.33333849906921,
+          "height": 74.66667175292969,
           "left": 40,
           "right": 332,
-          "top": 34.66666793823242,
+          "top": 2.6666667461395264,
           "width": 292,
           "x": 40,
-          "y": 34.66666793823242
+          "y": 2.6666667461395264
         },
         "selector": ".brand",
         "style": {
@@ -5205,7 +5205,7 @@
           "lineHeight": "44px",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay"
+        "text": ""
       },
       {
         "rect": {
@@ -5559,10 +5559,10 @@
     "screen": "preparing",
     "width": 1280,
     "height": 720,
-    "capturedAt": "2026-10-25T01:45:52.676Z",
-    "codeCommit": "e2a4c7f70ab402e0c1178f409a07cc197733c1ad",
-    "tabId": "26",
-    "capture": "引数で指定した同一タブの製品ルート。表示状態確定後、表示領域全体を直接キャプチャ。撮影前後のURL/状態/寸法を照合",
+    "capturedAt": "2026-10-25T02:05:15.863Z",
+    "codeCommit": "5cefdf9",
+    "tabId": "30",
+    "capture": "ロゴ差替後。独立タブの製品ルート、同一表示領域・状態・画像を照合して直接撮影",
     "buttons": [
       {
         "disabled": true,
@@ -5633,7 +5633,7 @@
           "lineHeight": "normal",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay\n準備中...\n\nSTART\nMinecraftを前面にする\n\nMinecraftでワールドを準備してください。"
+        "text": "準備中...\n\nSTART\nMinecraftを前面にする\n\nMinecraftでワールドを準備してください。"
       },
       {
         "rect": {
@@ -6053,14 +6053,14 @@
       },
       {
         "rect": {
-          "bottom": 64.00000190734863,
-          "height": 29.33333396911621,
+          "bottom": 77.33333849906921,
+          "height": 74.66667175292969,
           "left": 40,
           "right": 332,
-          "top": 34.66666793823242,
+          "top": 2.6666667461395264,
           "width": 292,
           "x": 40,
-          "y": 34.66666793823242
+          "y": 2.6666667461395264
         },
         "selector": ".brand",
         "style": {
@@ -6075,7 +6075,7 @@
           "lineHeight": "44px",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay"
+        "text": ""
       },
       {
         "rect": {
@@ -6402,10 +6402,10 @@
     "screen": "ready",
     "width": 1280,
     "height": 720,
-    "capturedAt": "2026-10-25T01:45:53.075Z",
-    "codeCommit": "e2a4c7f70ab402e0c1178f409a07cc197733c1ad",
-    "tabId": "26",
-    "capture": "引数で指定した同一タブの製品ルート。表示状態確定後、表示領域全体を直接キャプチャ。撮影前後のURL/状態/寸法を照合",
+    "capturedAt": "2026-10-25T02:05:16.447Z",
+    "codeCommit": "5cefdf9",
+    "tabId": "30",
+    "capture": "ロゴ差替後。独立タブの製品ルート、同一表示領域・状態・画像を照合して直接撮影",
     "buttons": [
       {
         "disabled": false,
@@ -6462,7 +6462,7 @@
           "lineHeight": "normal",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay\n準備完了！\n\nSTART\nホストのスマホでReady\nMinecraftを前面にする"
+        "text": "準備完了！\n\nSTART\nホストのスマホでReady\nMinecraftを前面にする"
       },
       {
         "rect": {
@@ -6856,14 +6856,14 @@
       },
       {
         "rect": {
-          "bottom": 64.00000190734863,
-          "height": 29.33333396911621,
+          "bottom": 77.33333849906921,
+          "height": 74.66667175292969,
           "left": 40,
           "right": 332,
-          "top": 34.66666793823242,
+          "top": 2.6666667461395264,
           "width": 292,
           "x": 40,
-          "y": 34.66666793823242
+          "y": 2.6666667461395264
         },
         "selector": ".brand",
         "style": {
@@ -6878,7 +6878,7 @@
           "lineHeight": "44px",
           "textShadow": "none"
         },
-        "text": "Re:Cooplay"
+        "text": ""
       },
       {
         "rect": {
