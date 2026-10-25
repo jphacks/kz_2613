@@ -925,3 +925,11 @@
 - 試験：`cargo build --release --locked` 成功（13分、既知のLNK4099警告のみ）。`cargo test --release --locked` はホスト43件（1件は手動用で除外）＋プローブ4件成功。開き方の判定の単体試験を追加。`protocol-sim.mjs` は再ビルドしたexe（06:41）で50/50成功（検出時の `launchable` と開き方の非公開を追加確認）。`app-view-test.mjs` 25/25（起動可否・「公式ランチャー」表示の確認を追加）、`ui-input-test.mjs` 12/12、`phone-view-test.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`（34ファイル）、`git diff --check` 成功。
 - 文書の配置換えを含む最新main（3da12f0）へ載せ直した後、再ビルドして `cargo test` 43件＋4件、`target/release/deps/recooplay_host.exe`（06:44、起動中のホストが `recooplay-host.exe` をロックしていたため）での `protocol-sim.mjs` 50/50、画面系の試験を再度すべて成功させた。
 - 実機は未検証：Store版・インストーラー版のランチャーが実際に開くか、「プレイ」の後にウィンドウを見つけて起動済みになるか、ランチャーのログインや更新で失敗したときの案内は確認していない。
+
+## 2026-10-26 — 前面化してもゲームが前面に来ないことがある問題（Claude Code、#138）
+
+- ユーザーの報告：前面化を選んでも、ゲームが前面に来ないことがある。
+- 原因の見立て：ホストは裏で動くプロセスなので、PCアプリやブラウザーが前面のとき、Windowsは `SetForegroundWindow` だけでは前面化を拒むことがある。また、要求した直後に1回だけ前面を確かめていたので、切り替わりが遅れると失敗扱いになっていた。さらに毎回 `SW_RESTORE` をかけていたため、最大化しているウィンドウが元の大きさに戻っていた。
+- 修正（`focus.rs`）：いまの前面のウィンドウの入力に一時的につないで（`AttachThreadInput`）から `BringWindowToTop`・`SetForegroundWindow` を呼び、すぐに切り離す。`SW_RESTORE` は最小化しているときだけにした。前面になったかは30msごとに最大7回確かめ、だめなら1回だけやり直す（最大約0.4秒）。対象のウィンドウは、持ち主のいる補助のウィンドウやツールウィンドウより本体のウィンドウを優先する。キー入力の注入は使っていない。手動の前面化・準備・Ready・再開・自動の再開は、すべてこの処理を通る。
+- 試験：`cargo build --release --locked` 成功。`cargo test --release --locked` はホスト43件（手動用の1件は除外）＋プローブ4件成功。`protocol-sim.mjs` は再ビルドしたexe（07:04）で50/50成功。`git diff --check` 成功。
+- 実機は未検証：dry-runとシミュレーションでは実際のウィンドウを操作しないので、PCアプリ・ブラウザー・スマホ操作の後に、Minecraftや検出したゲームが実際に前面に来るかは確認していない。
