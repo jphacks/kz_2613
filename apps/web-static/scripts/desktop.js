@@ -1,10 +1,12 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,screenOnGameUpdate,desktopView,desktopWarning,keyLabel,profileNotice,roleView,usesFixedRoles,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,screenOnGameUpdate,desktopView,desktopWarning,keyLabel,profileNotice,roleView,usesFixedRoles,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,launchView} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let ui={screen:'join',game:GAMES[0].id};
 try{const saved=JSON.parse(localStorage.getItem('recooplay.app')||'{}');if(SCREENS.includes(saved.screen))ui.screen=saved.screen;}catch{}
-let state=null,game=null,inject=null,ws=null,online=false;
+let state=null,game=null,inject=null,ws=null,online=false,gamesHtml='',shownGame='';
+// 選択画面の一覧。インストール済みのゲームはPC画面にだけ届く (state.games)
+const games=()=>gameList(state?.games);
 const send=m=>{if(ws?.readyState===1)ws.send(JSON.stringify(m));};
 function setUi(next){
   if(next.game!==ui.game)send({type:'select_game',title:next.game});
@@ -18,7 +20,6 @@ window.addEventListener('focus',sendFocus);window.addEventListener('blur',sendFo
 function fit(){document.body.style.setProperty('--pc-scale',String(Math.min(innerWidth/1920,innerHeight/1080)));}
 window.addEventListener('resize',fit);fit();
 $('steps').innerHTML=SCREENS.map(s=>`<button data-go="${s}" aria-label="${SCREEN_TITLES[s]}">${{join:'参加',game:'選択',roles:'分担'}[s]}</button>`).join('');
-$('games').innerHTML=`<button class="game-choice" data-game="minecraft-java" aria-label="Minecraft Java Editionを選択"><h2>Minecraft<br>Java Edition</h2><p>3人で、ひとつの冒険へ。</p><span class="selection">選択中</span></button>`;
 $('gameSteps').innerHTML=GAMES[0].steps.map(s=>`<li>${esc(s)}</li>`).join('');
 const shortRoles=['移動・ホスト','視点','アクション'];
 const character=(i)=>`<div class="character-art art-${i}" aria-hidden="true"><img src="/assets/characters/${['blue','green','purple','red'][i]}.png" alt=""></div>`;
@@ -31,10 +32,23 @@ $('settingsConnectionBtn').addEventListener('click',()=>openDialog($('connection
 $('closeConnectionHelp').addEventListener('click',()=>$('connectionHelp').close());
 $('reloadInfo').addEventListener('click',loadInfo);
 $('openGameBtn').addEventListener('click',()=>send({type:'open_game'}));
+$('refreshGamesBtn').addEventListener('click',()=>send({type:'refresh_games'}));
+$('retryLaunchBtn').addEventListener('click',()=>send({type:'launch_game',id:ui.game}));
+// 選択画面の主ボタン・Enter。検出したゲームは項目IDだけを送って起動を要求する (起動方法はホストが決める)
+function gameMain(){
+  const action=gameAction(ui,game,games());
+  if(action.kind==='launch')send({type:'launch_game',id:action.id});
+  else if(action.kind==='next')setUi({...ui,screen:'roles'});
+}
+// ホストのリモコンとPCのキーボードで同じ動作にする
+function remoteControl(c){
+  if(c==='ENTER'&&desktopView(ui,game)==='game')gameMain();
+  else setUi(navigate(ui,c,games()));
+}
 $('nextBtn').addEventListener('click',()=>{
   const view=desktopView(ui,game);
   if(view==='join')setUi({...ui,screen:'game'});
-  else if(view==='game')setUi({...ui,screen:'roles'});
+  else if(view==='game')gameMain();
   else if(view==='roles'&&game?.canPrepare)send({type:'prepare'});
 });
 document.addEventListener('click',e=>{
@@ -56,7 +70,7 @@ document.addEventListener('keydown',e=>{
   if(document.querySelector('dialog[open]'))return;
   const control={ArrowLeft:'LEFT',ArrowRight:'RIGHT',ArrowUp:'UP',ArrowDown:'DOWN',Enter:'ENTER',Escape:'ESC'}[e.key];
   // 矢印は補助ナビにフォーカスがあっても移動する。Enterはボタン本来の実行を優先する。
-  if(control&&(control!=='ENTER'||!e.target.closest('button,a,summary'))){e.preventDefault();setUi(navigate(ui,control));}
+  if(control&&(control!=='ENTER'||!e.target.closest('button,a,summary'))){e.preventDefault();remoteControl(control);}
 });
 function render(){
   const view=desktopView(ui,game),slots=slotViews(state?.slots),count=slots.filter(s=>s.state==='connected').length;
@@ -84,10 +98,12 @@ function render(){
   if(view==='paused'&&!game?.canResume)$('stateSubtitle').textContent='再開前に、接続と操作設定を確認してください';
   $('leftRule').hidden=!['game','roles'].includes(view);
   $('explanation').innerHTML=view==='join'?`${MIN_PLAYERS}〜${MAX_PLAYERS}人がそろったら、<br>OKボタンを押そう！！`:view==='game'?'右側にあるゲーム一覧から<br>遊びたいゲームを<br>選択してください！':view==='roles'?'操作をそれぞれの<br>スマホに分けよう！':'';
-  $('secondary').innerHTML=view==='game'?'今回遊べるのは<br>Minecraft Java Editionです。<br>選んだら次へ進もう！':view==='roles'?'ゲームを準備してから<br>スマホでスタート！':'';
+  $('secondary').innerHTML=view==='game'?'Steam・Epicで見つけたゲームは<br>選ぶと起動できます。<br>「未検証」は操作が届くか未確認です。':view==='roles'?'ゲームを準備してから<br>スマホでスタート！':'';
   $('nextBtn').hidden=!['join','game','roles'].includes(view);
-  $('nextBtn').textContent={join:'OK',game:'このゲームで遊ぶ',roles:'ゲームを開く・準備する'}[view]||'';
-  $('nextBtn').disabled=view==='roles'&&!game?.canPrepare;
+  const action=gameAction(ui,game,games());
+  $('nextBtn').textContent={join:'OK',game:action.label,roles:'ゲームを開く・準備する'}[view]||'';
+  $('nextBtn').disabled=(view==='roles'&&!game?.canPrepare)||(view==='game'&&action.kind==='none');
+  renderGames(action);
   $('blockedStart').hidden=view!=='preparing';$('readyInstruction').hidden=view!=='ready';
   $('joinGuide').hidden=view!=='join';$('gameStage').hidden=view!=='game';$('roleStage').hidden=view!=='roles';
   $('playerStage').hidden=['game','roles'].includes(view);
@@ -109,6 +125,25 @@ function render(){
   $('gameStatus').textContent=game?.prepareStatus||'';
   document.querySelectorAll('#modeSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===inject?.mode)));
   $('hotkey').textContent=inject?.emergencyHotkeyError?'緊急停止キーを登録できません':`緊急停止：${inject?.emergencyHotkey||'Ctrl+Alt+F12'}`;
+}
+function renderGames(action){
+  const list=games(),scanning=!!state?.gamesScanning;
+  const html=list.map(g=>{
+    const c=gameCard(g,ui.game,game?.launch);
+    return `<button class="game-choice${c.selected?' selected':''}${c.unverified?' unverified':''}" data-game="${esc(c.id)}" aria-pressed="${c.selected}" aria-label="${esc(c.name)}を選択${c.unverified?'（未検証）':''}"><h2>${esc(c.name)}</h2><span class="game-badges">${c.badges.map(b=>`<span class="badge${b==='未検証'?' badge-unverified':''}">${esc(b)}</span>`).join('')}</span>${c.launch?`<span class="game-launch" data-state="${c.launch.state}">${esc(c.launch.title)}</span>`:''}<span class="selection">選択中</span></button>`;
+  }).join('');
+  // 1秒ごとの状態更新で一覧を作り直すとフォーカスが外れるため、変わったときだけ描き直す
+  if(html!==gamesHtml){$('gameList').innerHTML=html;gamesHtml=html;}
+  if(shownGame!==ui.game){shownGame=ui.game;document.querySelector('.game-choice.selected')?.scrollIntoView({block:'nearest'});}
+  const detected=list.length-1;
+  $('gamesCount').textContent=scanning?'インストール済みのゲームを探しています…':detected?`Steam・Epicで ${detected} 件見つかりました`:'Steam・Epicのゲームは見つかりませんでした';
+  $('refreshGamesBtn').disabled=scanning;
+  const launch=launchView(game?.launch,ui.game);
+  $('launchStatus').hidden=!launch;
+  $('launchStatus').dataset.state=launch?.state||'';
+  $('launchTitle').textContent=launch?.title||'';
+  $('launchMessage').textContent=launch?.message||'';
+  $('retryLaunchBtn').hidden=!action.retry;
 }
 async function loadInfo(){
   try{
@@ -133,7 +168,7 @@ function connect(){
     if(m.type==='state'||m.type==='game'){ui=screenOnGameUpdate(ui,previousPhase,game);render();}
     else if(m.type==='remote'&&m.route==='app'&&m.epoch===game?.epoch){
       if(m.state==='down'&&dialogRemote(m.control))return;
-      if(!cursor.handle(m)&&m.state==='down')setUi(navigate(ui,m.control));
+      if(!cursor.handle(m)&&m.state==='down')remoteControl(m.control);
     }
   };
 }

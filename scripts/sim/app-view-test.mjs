@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView, usesFixedRoles, shownSlots } from '../../apps/web-static/app-view.js';
+import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView, usesFixedRoles, shownSlots, gameList, gameCard, gameAction, launchView } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -154,6 +154,57 @@ test('リモコン: 右・Enter で次、左・Esc で前の画面へ。端で�
   assert.equal(navigate(navigate(ui, 'ESC'), 'LEFT').screen, 'join');
   assert.equal(navigate({ screen: 'join' }, 'ESC').screen, 'join');
   assert.deepEqual(SCREENS, ['join', 'game', 'roles']);
+});
+
+const detected = [
+  { id: 'steam:413150', name: 'Stardew Valley', source: 'steam', verified: false, launchable: true },
+  { id: 'epic:Gamma', name: 'Gamma', source: 'epic', verified: false, launchable: true },
+];
+
+test('ゲーム一覧: 固定のMinecraftの後に検出したゲームを並べ、検出しただけの項目は未検証にする', () => {
+  const list = gameList(detected);
+  assert.deepEqual(list.map((g) => g.id), ['minecraft-java', 'steam:413150', 'epic:Gamma']);
+  assert.equal(list[0].launchable, false, 'Minecraftは手動起動');
+  assert.deepEqual(gameList(undefined).map((g) => g.id), ['minecraft-java'], '一覧が届く前・スマホ向けでない状態でもMinecraftは選べる');
+  assert.equal(gameList([{ id: 'x', name: 'X', source: 'steam', verified: 'yes', launchable: true }])[1].verified, false, 'true以外は未検証');
+  const card = gameCard(list[1], 'steam:413150', null);
+  assert.deepEqual(card.badges, ['Steam', '未検証']);
+  assert.equal(card.selected, true);
+  assert.equal(gameCard(list[0], 'steam:413150', null).badges.includes('未検証'), false);
+});
+
+test('ゲーム一覧: 起動の状態は選んだ項目への要求だけを表示する', () => {
+  const launch = { id: 'steam:413150', state: 'launching', message: 'Stardew Valleyを起動しています' };
+  assert.equal(launchView(launch, 'steam:413150').title, '起動中…');
+  assert.equal(launchView(launch, 'epic:Gamma'), null);
+  assert.equal(launchView({ ...launch, state: 'failed' }, 'steam:413150').title, '起動できませんでした');
+  assert.equal(launchView({ ...launch, state: 'timeout' }, 'steam:413150').title, '起動を確認できませんでした');
+  assert.equal(launchView({ ...launch, state: 'unknown' }, 'steam:413150'), null);
+  assert.equal(launchView(null, 'steam:413150'), null);
+});
+
+test('ゲーム一覧: 主ボタンは検出したゲームを項目IDで起動し、要求後・失敗後は次へ進む', () => {
+  const list = gameList(detected), ui = { screen: 'game', game: 'steam:413150' };
+  assert.deepEqual(gameAction(ui, { launch: null }, list), { kind: 'launch', label: 'このゲームを起動する', id: 'steam:413150' });
+  assert.equal(gameAction(ui, { launch: { id: 'epic:Gamma', state: 'started' } }, list).kind, 'launch', '別の項目の起動結果を流用しない');
+  assert.equal(gameAction(ui, { launch: { id: 'steam:413150', state: 'launching' } }, list).kind, 'next');
+  assert.equal(gameAction(ui, { launch: { id: 'steam:413150', state: 'started' } }, list).kind, 'next');
+  const failed = gameAction(ui, { launch: { id: 'steam:413150', state: 'failed' } }, list);
+  assert.equal(failed.kind, 'next'); assert.equal(failed.retry, true); assert.match(failed.label, /手動で起動/);
+  assert.equal(gameAction({ ...ui, game: 'minecraft-java' }, null, list).kind, 'next', 'Minecraftは起動要求を送らない');
+  assert.equal(gameAction({ ...ui, game: 'pseudo-game' }, null, list).kind, 'none', '一覧にない選択では起動も前進もしない');
+});
+
+test('リモコン: 選択画面の上下で検出したゲームを含む一覧を巡回する', () => {
+  const list = gameList(detected);
+  let ui = { screen: 'game', game: 'minecraft-java' };
+  ui = navigate(ui, 'DOWN', list); assert.equal(ui.game, 'steam:413150');
+  ui = navigate(ui, 'DOWN', list); assert.equal(ui.game, 'epic:Gamma');
+  ui = navigate(ui, 'DOWN', list); assert.equal(ui.game, 'minecraft-java');
+  ui = navigate(ui, 'UP', list); assert.equal(ui.game, 'epic:Gamma');
+  assert.equal(navigate({ screen: 'game', game: 'gone' }, 'DOWN', list).game, 'minecraft-java');
+  assert.equal(navigate({ screen: 'game', game: 'gone' }, 'UP', list).game, 'epic:Gamma');
+  assert.equal(navigate({ screen: 'join', game: 'minecraft-java' }, 'DOWN', list).game, 'minecraft-java', '選択画面以外では変えない');
 });
 
 test('参加 URL: ホットスポットを優先する', () => {

@@ -656,3 +656,19 @@
 - 試験の追加中、P1の状態だけを待ってP2から送った入力がホストに古いepochとして捨てられた（`stale_input`）。ホストの挙動は正しく、試験で入力する端末にも新しい状態が届くのを待つように直した。
 - dry-runホストと模擬スマホ、ヘッドレスChromeで、PC画面の2人・3人・4人の参加と分担（1920×1080、横はみ出しなし）、2人のMinecraftでのP2のスマホ画面（視点パッド・攻撃・使う・持ち物、402×874）を撮影して確認した。
 - スマホ実機・Minecraft・Tauriでの2人・4人の試験は未実施。保存済みの画面撮影（`artifacts/improved-ui/final`）は撮り直していない。PR #108（#94）と`desktop.js`・`app-view-test.mjs`が隣接行で衝突するため、後からマージする側で取り込み直す。
+
+## 2026-10-25 — 検出したゲームの選択画面と起動要求（Claude Code、#94）
+
+- PC画面の「② ゲーム選択」を、固定のMinecraft（手動起動）とホストの`state.games`（Steam・Epic）の一覧に変更した。検出しただけの項目（`verified`がtrueでない）に「未検証」、出所（Steam・Epic Games）を表示する。件数・探索中の表示と「探し直す」（`refresh_games`）を追加した。
+- クリック・上下キー（ホストのリモコンの上下）は`select_game`による選択だけとし、主ボタン・Enter（PCのキーボードとリモコンで同じ処理）で項目IDの`launch_game`を送る。`game.launch`は選んだ項目の分だけ「起動中…／起動しました／起動できませんでした／起動を確認できませんでした」とホストの案内文で表示し、失敗・確認不可では「手動で起動して次へ」と再要求のボタンを出す。ゲーム名は文字列として表示し、HTMLとして解釈しない。
+- `node scripts/sim/app-view-test.mjs` 22/22（一覧・未検証・起動表示・主ボタン・上下の巡回の4件を追加）、`ui-input-test.mjs` 7/7、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`verify-ui-evidence.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`、`protocol-sim.mjs`（Rust dry-run）44/44が成功した。
+- 既存の`recooplay-host.exe`（ホストは変更なし）をdry-run・`RECOOPLAY_FAKE_TARGET=1`・偽のSteam 2件／Epic 1件（名前に`<b>&`を含む）で起動し、ヘッドレスChromeをCDPで操作して1920×1080と1280×720で確認した。一覧・未検証の表示、↓キーでの選択（`select_game`）、Enterでの`launch_game`と「起動しました」・ホストの案内文、主ボタンの「次へ進む」への切替、ゲーム名のエスケープ、1280×720でページがはみ出さないことを確認した。右下の安全案内が起動の案内と重なったため、案内の表示中は一覧の枠の下を空けた。
+- 失敗・タイムアウトの表示と再要求のボタンは単体試験のみで、ブラウザでは確認していない。リモコン（スマホP1）経由の操作は、キーボードと同じ関数を通ることを確認しただけで実端末では未確認。保存済みのPC画面の撮影（`artifacts/improved-ui/final`）は撮り直していない。実際のSteam・Epicでの起動・Tauri・Minecraftは未検証。
+- 同日、ユーザーが開発PCで実機確認した（PCアプリ`recooplay-desktop.exe`を本ブランチのリポジトリから起動、ホストは既存ビルド・注入OFF）。Steamのゲーム12件・Epic 0件を検出し、ユーザーが選択画面の表示を目視で確認した。ログでは、Steam版Terrariaの選択（`select_game`）、`launch_game`、ランチャーへの要求成功、約9.5秒後の`launch_result: started`、前面の入力先判定`terraria.exe`への切替を確認した。検出したゲームへの入力（注入ON）、スマホのリモコン操作、起動失敗の表示、Epicは今回も未検証。
+
+## 2026-10-25 — PR #110のレビューとmain取り込み（Codex）
+
+- ユーザーのレビュー・問題がなければマージする依頼に基づき、`4276fe5`を確認した。最新main `714a331`を取り込み、`desktop.js`、`app-view-test.mjs`、BUILD_LOGの競合を両方の変更を保持して解消した。#108のゲーム一覧・起動案内と、#110の2〜4人の表示・分担を統合した。既存の未コミットBUILD_LOGは専用stashへ保存し、コミット後に復元する。
+- Ready時の参加者・分担の固定、途中参加者の操作拒否、元の参加者が戻るまで再開不可、ホスト権限と全解放経路をレビューした。スマホの2人・4人のReady表示、途中参加P4の待機・赤キャラクター、2人・4人のMinecraftの生成操作と担当外の枠を回帰試験へ追加した。
+- 統合後の`node scripts/sim/app-view-test.mjs`は24/24、`node scripts/sim/ui-input-test.mjs`は7/7、`node scripts/sim/phone-view-test.mjs`、`node scripts/sim/controller-diagnostics-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`node scripts/sim/verify-ui-evidence.mjs`、`node scripts/sim/static-assets-sim.mjs`（33ファイル）、`node scripts/sim/profile-catalog-test.mjs`（502定義）、`node scripts/sim/profile-extract-test.mjs`が成功。Node参照実装の`node scripts/sim/protocol-sim.mjs --target node`は20/20成功。`git diff --check`も成功した。
+- Rustの再ビルド・単体試験・dry-run試験は別途結果を記録する。今回のレビューでは新しいスマホ実機・Minecraft・Tauriの受入を実施していない。#109の起動順序変更は本PRに含めない。

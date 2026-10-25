@@ -423,36 +423,167 @@ body {
   background: color-mix(in srgb,var(--color-paper) 80%,transparent);
   box-shadow: 0 5px 0 var(--color-shadow);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.game-choice {
-  cursor: pointer;
-  border: 0;
-  box-shadow: none;
-  background: transparent;
-  padding: 32px;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px 32px;
   color: var(--color-black);
 }
 
-.game-choice h2 {
-  margin: 16px 0;
-  font-size: 54px;
+.game-list-head {
+  display: flex;
+  align-items: center;
+  gap: 24px;
 }
 
-.game-choice p {
-  font-size: 26px;
+.game-list-head h2 {
+  margin: 0;
+  font-size: 40px;
+}
+
+.game-list-head p {
+  flex: 1;
+  margin: 0;
+  font-size: 22px;
+  color: var(--color-muted);
+}
+
+.game-list-head button,
+.launch-status button {
+  min-height: 52px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 26px;
+  background: var(--color-utility-surface);
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* 検出件数が多くても枠からはみ出さず、一覧の中だけをスクロールする */
+.game-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  align-content: start;
+  gap: 18px;
+  padding: 6px;
+}
+
+.game-choice {
+  position: relative;
+  cursor: pointer;
+  min-height: 150px;
+  padding: 22px 26px;
+  border: 3px solid transparent;
+  border-radius: 24px;
+  background: var(--color-panel-translucent);
+  box-shadow: 0 4px 0 var(--color-shadow);
+  color: var(--color-black);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.game-choice.selected {
+  border-color: var(--color-cyan);
+}
+
+.game-choice h2 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .game-choice:focus-visible {
-  outline-offset: 8px;
+  outline-offset: 4px;
+}
+
+.game-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.badge {
+  padding: 4px 14px;
+  border-radius: 16px;
+  background: var(--color-utility-surface);
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.badge-unverified {
+  background: var(--color-warning);
+  color: var(--color-paper);
+}
+
+.game-launch {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--color-cyan-ink);
+}
+
+.game-launch[data-state=failed],
+.game-launch[data-state=timeout] {
+  color: var(--color-error);
 }
 
 .game-choice .selection {
+  display: none;
+  position: absolute;
+  top: 18px;
+  right: 22px;
   color: var(--color-cyan-ink);
-  font-size: 22px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.game-choice.selected .selection {
+  display: block;
+}
+
+.launch-status {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 24px;
+  padding: 16px 24px;
+  border-radius: 20px;
+  background: var(--color-panel-translucent);
+  border-left: 8px solid var(--color-cyan);
+}
+
+/* 右下の安全案内と起動の案内・一覧の末尾が重ならないよう、案内の表示中は枠の下を空ける */
+[data-view=game] .workspace:has(#warning:not([hidden])) .game-frame {
+  padding-bottom: 200px;
+}
+
+.launch-status[hidden] {
+  display: none;
+}
+
+.launch-status[data-state=failed],
+.launch-status[data-state=timeout] {
+  border-left-color: var(--color-error);
+}
+
+.launch-status b {
+  font-size: 26px;
+}
+
+.launch-status p {
+  grid-column: 1;
+  margin: 0;
+  font-size: 21px;
+}
+
+.launch-status button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
 }
 
 .role-band {
