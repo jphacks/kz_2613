@@ -7,6 +7,22 @@
 
   ---
 
+  <p>🎬 <strong>プロダクト紹介動画</strong></p>
+
+  <p><sub>公開準備中。完成後、こちらに紹介動画を掲載します。</sub></p>
+
+  <!-- 動画公開後は、準備中の案内を以下の4DX@HOME式サムネイルと再生リンクへ置き換える。
+  VIDEO_IDは公開されたYouTube動画のIDに差し替える（公開前はリンクを表示しない）。
+
+  [![Re:Cooplay プロダクト紹介動画](https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg)](https://youtu.be/VIDEO_ID)
+
+  **クリックして動画を再生**
+
+  [![YouTube](https://img.shields.io/badge/▶%20YouTube-紹介動画を見る-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/VIDEO_ID)
+  -->
+
+  ---
+
   <p>🎮 <strong>プレイ風景</strong></p>
 
   <p>移動・視点・攻撃を3人で分担し、声を掛け合いながら1つのキャラクターを操作する様子をご覧ください。</p>
