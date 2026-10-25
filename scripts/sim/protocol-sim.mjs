@@ -257,7 +257,7 @@ async function main() {
     });
 
     await check('版: protocolVersion がない・違う hello は理由を返して 4005 で閉じ、枠を割り当てない', async () => {
-      for (const extra of [{ protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }, { protocolVersion: 1 }, { protocolVersion: 2 }]) {
+      for (const extra of [...(target === 'rust' ? [{protocolVersion:3}] : []), { protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }, { protocolVersion: 1 }, { protocolVersion: 2 }]) {
         const c = new Client('V');
         await c.open();
         c.send({ type: 'hello', clientId: 'sim-old-page', ...extra });
@@ -340,6 +340,10 @@ async function main() {
     });
 
     await check('PC画面: ロビーでは P1 のリモコン操作だけを PC 画面へ remote で知らせる', async () => {
+      const app = new Client('認可されたPC画面'); await app.open(); app.send({type:'monitor',page:'app'});
+      await app.waitFor(m=>m.type==='state');
+      const efrom = p1.mark(); app.send({type:'focus',focused:true});
+      await p1.waitFor(m=>m.type==='game' && m.game.remoteRoute==='app',{from:efrom});
       const from = mon.mark();
       p1.input('RIGHT', 'down');
       const r = await mon.waitFor((m) => m.type === 'remote', { from, what: 'remote' });
@@ -355,6 +359,20 @@ async function main() {
       p2.input('UP', 'up');
       p3.input('ENTER', 'up');
       p1.input('JUMP', 'up');
+      const rfrom = mon.mark();
+      p2.send({type:'remote',kind:'move',dx:40,dy:20,rseq:1,epoch:p2.epoch});
+      p1.send({type:'remote',kind:'move',dx:30,dy:10,rseq:1,epoch:0});
+      await sleep(100);
+      assert(!mon.msgs.slice(rfrom).some(m=>m.type==='remote' && m.kind==='move'),'P2または旧epochを認可した');
+      p1.send({type:'remote',kind:'move',dx:5000,dy:-5000,rseq:2,epoch:p1.epoch});
+      const move = await mon.waitFor(m=>m.type==='remote' && m.kind==='move',{from:rfrom});
+      assert(move.dx===120 && move.dy===-120 && move.route==='app',JSON.stringify(move));
+      const duplicate = mon.mark();
+      p1.send({type:'remote',kind:'move',dx:20,dy:10,rseq:2,epoch:p1.epoch});
+      await sleep(100); assert(!mon.msgs.slice(duplicate).some(m=>m.type==='remote'),'重複を処理した');
+      app.send({type:'focus',focused:false});
+      await p1.waitFor(m=>m.type==='game' && m.game.remoteRoute==='none',{from:efrom});
+      app.close();
     }, { rustOnly: true });
 
     await check('進行: P1だけが準備と明示Readyを実行でき、旧START・PC画面から迂回できない', async () => {
@@ -374,6 +392,31 @@ async function main() {
         await p1.waitFor(m=>m.type==='command_result' && m.cmd==='READY' && !m.accepted,{from});
         mon.send({type:'inject_mode',mode:'on'});
         await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from});
+        let gateFrom=p1.mark();
+        host.child.stdin.write('target off\n');
+        await p1.waitFor(m=>m.type==='game' && m.game.inputTarget,{from:gateFrom});
+        p1.send({type:'command',cmd:'READY'});
+        await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from:gateFrom});
+        gateFrom=p1.mark();host.child.stdin.write('target on\n');
+        await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from:gateFrom});
+        gateFrom=p1.mark();p3.close();
+        await p1.waitFor(m=>m.type==='game' && m.game.connected.length===2,{from:gateFrom});
+        mon.send({type:'required',required:1});
+        p1.send({type:'command',cmd:'READY'});
+        await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from:gateFrom});
+        gateFrom=p1.mark();p3=await join('P3');await welcome(p3);
+        await p1.waitFor(m=>m.type==='game' && m.game.canReady && m.game.required===3,{from:gateFrom});
+        const rm = mon.mark();
+        p2.input('FWD','down'); p3.input('ATTACK','down');
+        p2.send({type:'remote',kind:'move',dx:15,dy:5,rseq:1,epoch:p2.epoch});
+        await noPress(mon,rm,100);
+        assert(!mon.msgs.slice(rm).some(m=>m.type==='remote_input'),'P2のメニュー操作を注入した');
+        p1.send({type:'remote',kind:'move',dx:15,dy:5,rseq:3,epoch:p1.epoch});
+        await mon.waitFor(m=>m.type==='remote_input' && m.entry.ok,{from:rm});
+        p1.input('REMOTE_LEFT','down'); await injected(mon,'MOUSE_L','down',rm);
+        p1.send({type:'remote',kind:'release',rseq:4,epoch:p1.epoch});
+        await injected(mon,'MOUSE_L','up',rm);
+        await p1.waitFor(m=>m.type==='game' && m.game.epoch>prepared.game.epoch,{from});
         from = p1.mark();
         p1.send({type:'command',cmd:'READY',epoch:0});
         await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from});
@@ -384,7 +427,7 @@ async function main() {
     });
 
     // 以降の注入はモニターで観測する (DRY_RUN なので OS には送られない)
-    mon.send({ type: 'inject_mode', mode: 'on' });
+    { const nextState = p1.mark(); mon.send({ type: 'inject_mode', mode: 'on' }); if (target === 'rust') await p1.waitFor(m=>m.type==='game',{from:nextState}); }
     await mon.waitFor((m) => m.type === 'state' && m.inject.mode === 'on' && m.inject.active, { what: 'inject on' });
 
     await check('入力: 役割の操作だけを注入し、担当外の操作名は無視する', async () => {
@@ -435,6 +478,20 @@ async function main() {
       const held = u.entry.t - d.entry.t;
       assert(held >= 55, `押下時間 ${held}ms`);
     });
+
+    await check('キャンセル: 端末の非表示・回転要求で全参加者の押下と旧入力を即時破棄する', async () => {
+      p1.input('FWD','up'); p3.input('ATTACK','up'); await sleep(150);
+      const from = mon.mark(), playerFrom = p1.mark(), old = p1.epoch;
+      p1.input('FWD','down'); p3.input('ATTACK','down');
+      await injected(mon,'KEY_W','down',from); await injected(mon,'MOUSE_L','down',from);
+      p2.send({type:'release_inputs',epoch:p2.epoch});
+      await injected(mon,'KEY_W','up',from); await injected(mon,'MOUSE_L','up',from);
+      await p1.waitFor(m=>m.type==='game' && m.game.epoch>old,{from:playerFrom});
+      const staleFrom = mon.mark();
+      p1.input('FWD','down',{epoch:old});
+      await noPress(mon,staleFrom,100);
+      p1.input('FWD','up'); p3.input('ATTACK','up');
+    }, {rustOnly:true});
 
     await check('視点: P2 の look だけを相対移動にする', async () => {
       const from = mon.mark();
@@ -528,7 +585,7 @@ async function main() {
       mon.send({ type: 'inject_mode', mode: 'off' });
       await p1.waitFor(m => m.type === 'game' && !m.game.inputActive && !m.game.inputTarget, { from: notifyFrom });
       notifyFrom = p1.mark();
-      mon.send({ type: 'inject_mode', mode: 'on' });
+      { const nextState = p1.mark(); mon.send({ type: 'inject_mode', mode: 'on' }); if (target === 'rust') await p1.waitFor(m=>m.type==='game',{from:nextState}); }
       await p1.waitFor(m => m.type === 'game' && !m.game.inputActive && m.game.inputTarget, { from: notifyFrom });
       p1.input('FWD', 'up');
       mfrom = mon.mark();
@@ -681,7 +738,9 @@ async function main() {
       assert(!p1.msgs.slice(from).some(m => m.type === 'game' && m.game.phase === 'coop'), 'PC画面へ戻ったのに自動復帰した');
       mon.send({ type: 'auto_resume', on: false });
       await mon.waitFor(m => m.type === 'game' && !m.game.autoResume, { what: 'autoResume off' });
+      const blurFrom = p1.mark();
       host.child.stdin.write('app blur\n');
+      await p1.waitFor(m=>m.type==='game' && m.game.remoteRoute==='game',{from:blurFrom});
       from = p1.mark();
       p1.send({ type: 'command', cmd: 'RESUME' });
       await phaseIs(p1, 'coop', from);
@@ -872,8 +931,17 @@ async function main() {
       p1.input('ESC', 'down');
       await noInject(mon, from);
       p1.input('ESC', 'up');
-      mon.send({ type: 'inject_mode', mode: 'on' });
+      { const nextState = p1.mark(); mon.send({ type: 'inject_mode', mode: 'on' }); if (target === 'rust') await p1.waitFor(m=>m.type==='game',{from:nextState}); }
     });
+
+    await check('ゲーム切替: 対象の前面化要求は準備・一時停止中のP1だけで、Readyや入力ONを代行しない',async()=>{
+      const before = p1.epoch, from = p1.mark();
+      p2.send({type:'command',cmd:'OPEN_GAME'});await sleep(50);
+      assert(!p1.msgs.slice(from).some(m=>m.type==='game'),'P2が前面化した');
+      p1.send({type:'command',cmd:'OPEN_GAME'});
+      const g=await p1.waitFor(m=>m.type==='game' && m.game.prepareStatus.includes('dry-run'),{from});
+      assert(g.game.phase==='paused' && g.game.epoch===before,'前面化で開始状態を変更した');
+    },{rustOnly:true});
 
     await check('緊急停止: 全員の押下を即座に解放し、注入を OFF にして一時停止する (自動復帰しない)', async () => {
       let from = p1.mark();
@@ -903,7 +971,7 @@ async function main() {
       p1.input('UP', 'down');
       await noInject(mon, mfrom);
       p1.input('UP', 'up');
-      mon.send({ type: 'inject_mode', mode: 'on' });
+      { const nextState = p1.mark(); mon.send({ type: 'inject_mode', mode: 'on' }); if (target === 'rust') await p1.waitFor(m=>m.type==='game',{from:nextState}); }
       await mon.waitFor((m) => m.type === 'state' && m.inject.mode === 'on', { what: 'inject on' });
     }, { rustOnly: true });
 

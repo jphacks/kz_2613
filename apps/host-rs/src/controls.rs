@@ -64,6 +64,11 @@ pub fn remote_control(control: &str) -> Option<&'static str> {
         "RIGHT" => "ARROW_RIGHT",
         "ENTER" => "ENTER",
         "ESC" => "ESC",
+        "REMOTE_LEFT" => "MOUSE_L",
+        "REMOTE_RIGHT" => "MOUSE_R",
+        "REMOTE_E" => "KEY_E",
+        "REMOTE_WHEEL_UP" => "WHEEL_UP",
+        "REMOTE_WHEEL_DOWN" => "WHEEL_DOWN",
         _ => return None,
     })
 }

@@ -140,6 +140,7 @@ struct Slot {
     via_ws: u64,
     via_rtc: u64,
     look_seq: i64,
+    remote_seq: u64,
     look_cx: f64, // 視点の累積移動量 (パケットが欠けても次のパケットで取り戻せる)
     look_cy: f64,
     look_lost: u64,
@@ -171,6 +172,7 @@ impl Slot {
             via_ws: 0,
             via_rtc: 0,
             look_seq: 0,
+            remote_seq: 0,
             look_cx: 0.0,
             look_cy: 0.0,
             look_lost: 0,
@@ -355,7 +357,7 @@ impl Hub {
                 phase: Phase::Lobby,
                 host_ready: false,
                 prepare_status: String::new(),
-                required: config.required_players,
+                required: 3,
                 reason: None,
                 auto_resume: config.auto_resume,
                 auto_resume_ms: config.auto_resume_ms,
@@ -539,6 +541,7 @@ impl Hub {
             "hostReady": self.game.host_ready,
             "readyReasons": self.ready_reasons(),
             "prepareStatus": self.game.prepare_status,
+            "remoteRoute": if self.remote_app_active() { "app" } else if self.remote_game_active() { "game" } else { "none" },
             // 入力が PC に届く状態か (注入モード・入力先のウィンドウ)。スマホに「届いていない」ことを知らせる
             "inputActive": self.can_inject(),
             "inputTarget": self.inject == InjectMode::On && !self.target_ok,
@@ -680,6 +683,15 @@ impl Hub {
             return;
         }
         let accepted = match (cmd, self.game.phase) {
+            ("OPEN_GAME", Phase::Preparing | Phase::Paused) => {
+                self.game.prepare_status = if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
+                    "dry-run：実ウィンドウは操作しません".into()
+                } else { match crate::focus::activate(&self.target) {
+                    Ok(()) => "対象ゲームを前面にしました".into(),
+                    Err(reason) => format!("{}。Minecraftを手動で前面にしてください",reason),
+                }};
+                self.push_game(); true
+            }
             ("PREPARE" | "START", Phase::Lobby) if self.can_prepare() => {
                 self.game.host_ready = false;
                 self.game.prepare_status = if self.fake_target.is_some() {
@@ -722,7 +734,7 @@ impl Hub {
     fn resolve_control(&self, slot: usize, control: &str) -> Option<usize> {
         let id = if self.game.phase == Phase::Coop {
             controls::role_control(SLOT_NAMES[slot], control)
-        } else if slot == 0 {
+        } else if slot == 0 && self.remote_game_active() {
             controls::remote_control(control)
         } else {
             None
@@ -824,10 +836,10 @@ impl Hub {
     }
 
     fn handle_control(&mut self, slot: usize, control: &str, state: &str) {
-        // ロビー・一時停止中のホストのリモコン (矢印・Enter・Esc) は PC アプリの画面にも知らせる。
-        // 画面側は自分が前面のときだけ反応する (前面が Minecraft のときは OS 入力として届き、画面は反応しない)
-        if slot == 0 && self.game.phase != Phase::Coop && controls::remote_control(control).is_some() {
-            self.broadcast_monitors(&json!({ "type": "remote", "control": control, "state": state }));
+        // 経路はサーバーの前面判定で排他的に決める。WebViewのhasFocusだけでは決めない。
+        if slot == 0 && self.game.phase != Phase::Coop && controls::remote_control(control).is_some() && self.remote_app_active() {
+            self.broadcast_monitors(&json!({ "type": "remote", "route":"app", "epoch":self.game.epoch, "control": control, "state": state }));
+            return;
         }
         let Some(idx) = self.resolve_control(slot, control) else { return };
         let down = state == "down";
@@ -849,6 +861,42 @@ impl Hub {
             return;
         }
         self.set_output(idx, SLOT_NAMES[slot], down);
+    }
+
+    fn remote_app_active(&self) -> bool {
+        if self.game.phase == Phase::Coop { return false; }
+        if self.desktop { return self.app_focused; }
+        let page = self.conns.values().any(|c| matches!(c.role, Role::Monitor {page:Page::App,focused:true}));
+        page && (self.fake_target.is_some() || crate::focus::foreground().is_some_and(|f|
+            ["msedge.exe", "chrome.exe", "firefox.exe"].contains(&f.process.as_str()) && f.title.contains("Re:Cooplay")))
+    }
+
+    fn remote_game_active(&self) -> bool {
+        matches!(self.game.phase, Phase::Preparing | Phase::Paused) && !self.remote_app_active() && self.can_inject()
+            && (self.hotkey.is_ok() || self.fake_target.is_some())
+    }
+
+    fn remote_message(&mut self, idx: usize, msg: &Value) {
+        if idx != 0 || self.game.phase == Phase::Coop || msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) { return; }
+        let seq = msg.get("rseq").and_then(Value::as_u64).unwrap_or(0);
+        let slot = self.slots[idx].as_mut().unwrap();
+        if seq <= slot.remote_seq { return; }
+        slot.remote_seq = seq;
+        let kind = s(msg, "kind").unwrap_or_default();
+        if kind == "release" {
+            self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); return;
+        }
+        let x = msg.get("dx").and_then(Value::as_f64).filter(|n| n.is_finite()).unwrap_or(0.0).clamp(-120.0,120.0);
+        let y = msg.get("dy").and_then(Value::as_f64).filter(|n| n.is_finite()).unwrap_or(0.0).clamp(-120.0,120.0);
+        if !matches!(kind.as_str(), "move" | "scroll") { return; }
+        if self.remote_app_active() {
+            self.broadcast_monitors(&json!({"type":"remote","route":"app","epoch":self.game.epoch,"kind":kind,"dx":x,"dy":y}));
+        } else if self.remote_game_active() {
+            let ok = if kind == "move" { self.input.mouse_move(x.round() as i32,y.round() as i32) }
+                else { self.input.wheel(if y > 0.0 { -1 } else if y < 0.0 { 1 } else { 0 }) };
+            let entry = self.record("remote_input",json!({"kind":kind,"dx":x,"dy":y,"ok":ok}));
+            self.broadcast_monitors(&json!({"type":"remote_input","entry":entry}));
+        }
     }
 
     fn handle_look(&mut self, slot: usize, dx: f64, dy: f64) {
@@ -974,11 +1022,8 @@ impl Hub {
     }
 
     fn set_inject_mode(&mut self, mode: InjectMode) {
-        let before = self.can_inject();
+        if self.inject != mode { self.release_outputs(None); self.reset_look(); self.advance_epoch(); }
         self.inject = mode;
-        if before && !self.can_inject() {
-            self.release_outputs(None);
-        }
         self.log("inject_mode", json!({ "mode": mode.name() }));
         self.push_game();
         self.push_state();
@@ -1016,7 +1061,9 @@ impl Hub {
         if f == self.app_focused {
             return;
         }
+        self.release_outputs(None); self.reset_look(); self.advance_epoch();
         self.app_focused = f;
+        self.push_game();
         self.record("app_focus", json!({ "focused": f }));
         if f {
             self.pause_for_app_return();
@@ -1268,6 +1315,7 @@ impl Hub {
                 let f = msg.get("focused").and_then(Value::as_bool).unwrap_or(false);
                 if f != focused {
                     self.conns.get_mut(&id).unwrap().role = Role::Monitor { page, focused: f };
+                    if !self.desktop { self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); }
                     // ブラウザで /app を開いた場合の知らせ。PC アプリから起動されたときは前面のプロセス名で判定する
                     if !self.desktop && f {
                         // ブラウザは接続ごとのfalse→trueを使う。閉じた接続のfocusを新しい画面へ持ち越さない。
@@ -1276,6 +1324,7 @@ impl Hub {
                 }
             }
             "prepare" => { if self.can_prepare() { self.command(0, "PREPARE"); } }
+            "open_game" => { if self.connected_slots().contains(&0) { self.command(0, "OPEN_GAME"); } }
             "select_game" => {
                 let Some(t) = s(msg, "title").filter(|t| TITLES.contains(&t.as_str())) else { return };
                 if t == self.game.title {
@@ -1303,7 +1352,7 @@ impl Hub {
                 }
             }
             "required" => {
-                if let Some(r) = msg.get("required").and_then(Value::as_u64).filter(|r| (1..=3).contains(r)) {
+                if let Some(r) = msg.get("required").and_then(Value::as_u64).filter(|r| *r == 3) {
                     self.game.required = r;
                     self.log("required", json!({ "required": r }));
                     self.push_game();
@@ -1481,7 +1530,7 @@ impl Hub {
             "command" if via == Via::Ws => {
                 let cmd = s(&msg, "cmd").unwrap_or_default();
                 self.log("command", json!({ "slot": SLOT_NAMES[idx], "cmd": cmd }));
-                if matches!(cmd.as_str(), "READY" | "RESUME" | "PREPARE" | "START")
+                if matches!(cmd.as_str(), "READY" | "RESUME" | "PREPARE" | "START" | "OPEN_GAME")
                     && msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
                     self.send(self.slots[idx].as_ref().and_then(|s| s.conn), &json!({"type":"command_result","cmd":cmd,"accepted":false,"reasons":["画面の状態が古くなっています。更新を待ってください"]}));
                     return;
@@ -1495,6 +1544,12 @@ impl Hub {
                     peer.candidate(&s(&msg, "cand").unwrap_or_default(), &mid);
                 }
             }
+            "release_inputs" if via == Via::Ws => {
+                if msg.get("epoch").and_then(Value::as_u64) == Some(self.game.epoch) {
+                    self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game();
+                }
+            }
+            "remote" if via == Via::Ws => self.remote_message(idx, &msg),
             "input" => self.accept_input(idx, msg, via),
             "look" => self.accept_look(idx, &msg),
             _ => {}
@@ -1611,6 +1666,7 @@ impl Hub {
         // 送信側と同じくepochごとに累積値と順序番号を0から始める。
         for slot in self.slots.iter_mut().flatten() {
             slot.look_seq = 0;
+            slot.remote_seq = 0;
             slot.look_cx = 0.0;
             slot.look_cy = 0.0;
         }
