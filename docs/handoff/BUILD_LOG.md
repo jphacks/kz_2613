@@ -639,3 +639,10 @@
 - 表示専用環境で準備→明示Ready→担当操作→Pause→再開→診断開閉を確認、確認画面のコンソール警告・エラー0。追加のRust＋ブラウザー環境の起動は自動承認レビューの利用上限で未実行。既存Rust通信試験と模擬表示を、今回の実機結合試験と混同しない。
 - 証拠は `artifacts/improved-ui/README.md` と比較ギャラリー。正式フォントの完全一致、新UIの実端末タッチ・ノッチ・Minecraft・Tauriは未検証。関連Issueを実機完了扱いで閉じない。React移行は今回不要と評価した。
 - 最終レビューで、PC見本帯の「使う E」をMinecraftの「持ち物」へ修正し、3キーの表示もホストの実キー設定へ追従。長い名称は縮小・省略表示し、操作設定で全文を確認できる。変更した分担画面は両PC解像度で再撮影した。
+
+## 2026-10-25 — PR #107の診断開始・通信テストをマージ前に修正（Codex）
+
+- レビューで診断開始後の保留連打と、通信テストのdownが抑止され100件のupだけになる問題を確認した。診断を開く専用コールバックから既存の`stopRemote()`を呼び、`release_inputs`で保持・保留入力を破棄する。非注入の`burst`だけは診断内で送信を許可し、非表示・横向きでの押下抑止と通常操作・視点の診断中抑止は維持した。
+- `node scripts/sim/controller-diagnostics-test.mjs`を追加し、実際のcontroller・phone-viewに最小DOM・通信・タイマーのスタブを接続。診断表示前のupと`release_inputs`、現在epoch、診断中の通常押下・視点抑止、通信テスト200件の交互のdown/upと連番を確認した。同試験をCIに追加し、`protocol-sim.mjs`の停止試験も保留連打の破棄を含めた。
+- ローカルの`controller-diagnostics-test.mjs`、`phone-view-test.mjs`7観点、`ui-input-test.mjs`7/7、`app-view-test.mjs`18/18、`check-static-pages.mjs`が成功した。既存main `c14562d`のRust dry-runホストで、4回分の保留連打に`release_inputs`を送るとその後450msの保留押下が0件になることも別途確認した。これはPRの全通信試験や新UIと実ブラウザーの結合試験の代わりではない。
+- 画面構造とCSSを変更していないため、撮影画像・指紋は元コミット`3719777`の記録として保持した。Minecraft・スマホ実機・Tauriの新規受入は実施していない。

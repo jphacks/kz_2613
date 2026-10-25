@@ -2,14 +2,14 @@ import { myActions, generatedKey, buildGenerated } from './generated-controls.js
 
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
 import {profileNotice,roleView} from '../app-view.js';
-export function createPhoneView({releaseAll,roleText,bindControl}) {
+export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,roleText,bindControl}) {
   const $ = id => document.getElementById(id);
   let lastView = null, lastGen = '';
   // 視点のパッドと感度は、操作定義の画面で視点を担当するときだけそちらへ移す
   const lookParts = [$('pad'), document.querySelector('#v-P2 .sens')].filter(Boolean);
   const lookHome = $('v-P2');
   $('phoneSettingsBtn').addEventListener('click',()=>{
-    releaseAll();
+    onDiagnosticsOpen();
     $('phoneConnection').textContent=[$('status').textContent,$('phase').textContent,$('slot').textContent].join('・');
     $('phoneDiagnostics').showModal();
   });

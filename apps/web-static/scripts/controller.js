@@ -194,7 +194,9 @@ import { myActions } from './generated-controls.js';
   const portrait = matchMedia('(orientation: portrait)');
   const controlsVisible = () => portrait.matches && !document.hidden && !$('phoneDiagnostics').open;
   function sendInput(obj) {
-    if (obj.state === 'down' && !controlsVisible()) return false;
+    // 非注入の通信テストは診断内でも送る。非表示・横向きでの押下抑止は維持する。
+    const visible = obj.burst ? portrait.matches && !document.hidden : controlsVisible();
+    if (obj.state === 'down' && !visible) return false;
     if (!isOpen()) return false;
     // epoch: 押した時点の進行状態。PC は状態が変わった後に届いた古い入力を処理しない
     const msg = { type: 'input', ...obj, iseq: ++iseq, epoch: game?.epoch, t: performance.now() };
@@ -290,7 +292,7 @@ import { myActions } from './generated-controls.js';
   });
 
   // ---- 画面の切り替え ----
-  const phoneView = createPhoneView({releaseAll,roleText:ROLE_TEXT,bindControl});
+  const phoneView = createPhoneView({releaseAll,onDiagnosticsOpen:stopRemote,roleText:ROLE_TEXT,bindControl});
   function render() { phoneView({me,isHost,game}); }
 
   // ---- 通信テスト: 20Hz で 10 秒送る (注入はされない) ----
