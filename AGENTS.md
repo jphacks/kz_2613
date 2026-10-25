@@ -7,12 +7,12 @@
 - コミットメッセージの例：`開発環境を初期構築する`、`参加者の再接続処理を修正する`。
 - 製品名、API名、コード識別子、ファイル名・パス、URL、要件ID、実行コマンドは正確な原表記を維持する。
 - `Closes #123` など、GitHubが解釈する構文はそのまま使用してよい。
-- CodexとClaude Codeの両方に適用する。詳細な運用は `docs/handoff/DEVELOPMENT_WORKFLOW.md` を参照する。
+- CodexとClaude Codeの両方に適用する。詳細な運用は `docs/develop/handoff/DEVELOPMENT_WORKFLOW.md` を参照する。
 
 ## 目的・情報の優先順位
 
 - 製品は**改造していない既存PCゲームへローカルの協力操作を追加する仕組み**。最初の対象は**Windows 11のMinecraft Java Edition**。スマホ3台で1キャラクターを操作する（P1移動、P2視点、P3アクション）。
-- 計画前に `docs/requirements/requirements-v0.3.md` を読む。観測事実と採用判断の区別は `docs/decisions/2026-10-24-prototype-validated.md`、技術構成は `docs/decisions/tech-stack.md`、通信契約は `docs/architecture/protocol.md` を参照する。
+- 計画前に `docs/develop/requirements/requirements-v0.3.md` を読む。観測事実と採用判断の区別は `docs/develop/decisions/2026-10-24-prototype-validated.md`、技術構成は `docs/develop/decisions/tech-stack.md`、通信契約は `docs/protocol-specification.md` を参照する。
 - 情報の優先順位は**今後を含む新しい明示的なユーザー判断 > ユーザー確定事項 > チームのアイデア議事録 > 仮の実装提案**。[E]は試作品での観測事実を示す区分で、指示の優先順位ではない。観測記録は保持し、採用する仕様は最新のユーザー判断に従う。
 - 開発上の優先順位は**実際に動くこと・再現可能なデモ > UIの自由度 > 開発速度 > 拡張性**。
 
@@ -26,7 +26,7 @@
 - Pause・切断・対象フォーカス喪失・セッションやepochの変更・終了時は、入力送信を停止して合成した全キーとマウスボタンを解放する。安全性が不明なら入力を許可しない。
 - P0では外部クラウド中継・アカウント・テレメトリー・インターネットCDN・MinecraftのMOD・特権ドライバーを導入しない。スマホへのゲーム映像配信も行わない。
 
-## 技術構成（試作品の実機検証に基づく。詳細は `docs/decisions/tech-stack.md`）
+## 技術構成（試作品の実機検証に基づく。詳細は `docs/develop/decisions/tech-stack.md`）
 
 - Windows入力：Win32 `SendInput`（スキャンコードのキー、相対マウス移動、左右ボタン、ホイール）、`timeBeginPeriod(1)`。疑似ゲーム画面で検証済み、Minecraftでは**未検証**。
 - PCホスト：**Rust**（tokio＋axum、状態はhubスレッド1本、`windows` crate、WebRTCは `datachannel`＝libdatachannel）。Rust版はPC上のシミュレーションのみ実施済みで、Rust実機・Minecraft・Tauriは未検証。
@@ -57,18 +57,18 @@
 1. リポジトリと既存の変更を確認する。他の人の作業を破棄しない。
 2. 複雑な変更では短い計画と未検証の前提を示す。
 3. 最小限の一連の処理を実装し、対象を絞ったテストを追加する。
-4. テストを実行し、コマンドと結果を `docs/handoff/BUILD_LOG.md` に記録する。実行できなければ理由を明示する。
+4. テストを実行し、コマンドと結果を `docs/develop/handoff/BUILD_LOG.md` に記録する。実行できなければ理由を明示する。
 5. 技術判断と根拠を記録する。要件の変更はユーザーが確認した場合だけ行う。
 
 ## 初期構築後のコマンド
 
-- ホスト：`cd apps/host-rs && cargo build --release --locked && cargo test --release --locked`（ビルド環境は `docs/handoff/SETUP_WINDOWS.md`）
+- ホスト：`cd apps/host-rs && cargo build --release --locked && cargo test --release --locked`（ビルド環境は `docs/develop/handoff/SETUP_WINDOWS.md`）
 - PCアプリ：`cd apps/desktop && cargo build --release --locked`
 - 通信契約：`node scripts/sim/protocol-sim.mjs`（Rust版ホストをdry-runで起動する）
 - 画面：`node scripts/sim/app-view-test.mjs`、`node scripts/sim/check-static-pages.mjs`
 - 構造確認：`python scripts/verify_overlay.py`
-- Windowsの構築手順は `docs/handoff/SETUP_WINDOWS.md`、Issue・ブランチ・PRの共通運用は `docs/handoff/DEVELOPMENT_WORKFLOW.md` に従う。
+- Windowsの構築手順は `docs/develop/handoff/SETUP_WINDOWS.md`、Issue・ブランチ・PRの共通運用は `docs/develop/handoff/DEVELOPMENT_WORKFLOW.md` に従う。
 
 ## 2026-10-25の開始手順
 
-開始はP1によるゲーム準備（preparing）と明示Readyの二段階。接続人数とReadyを混同しない。詳細は docs/decisions/2026-10-25-two-stage-ready.md を参照する。
+開始はP1によるゲーム準備（preparing）と明示Readyの二段階。接続人数とReadyを混同しない。詳細は docs/develop/decisions/2026-10-25-two-stage-ready.md を参照する。

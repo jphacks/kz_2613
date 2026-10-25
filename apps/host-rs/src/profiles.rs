@@ -1,5 +1,5 @@
 // ゲームの操作定義 (apps/game-profiles/*.json) を読み込み、検証し、分担の案を作る (#97)。
-// 形式は docs/architecture/game-profiles.md。定義は人が確認した主な情報源で、ユーザーが変えたキーは keybinds が重ねる (#99)。
+// 形式は docs/game-profile-specification.md。定義は人が確認した主な情報源で、ユーザーが変えたキーは keybinds が重ねる (#99)。
 
 use std::path::Path;
 
@@ -496,7 +496,7 @@ mod review_tests {
     }
 }
 
-/// 代表的な型の分担 (#105)。主要500タイトルの定義 (docs/data/top500-games.json の template) から各型 1 本を選び、
+/// 代表的な型の分担 (#105)。主要500タイトルの定義 (docs/develop/data/top500-games.json の template) から各型 1 本を選び、
 /// 1〜4人の分担が規則どおりで、負担 (重みの合計) が偏らないことを確かめる。
 /// 表は `cargo test --release representative_assignment_table -- --ignored --nocapture` で出力する
 #[cfg(test)]

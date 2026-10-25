@@ -6,18 +6,20 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 required = [
-    "README.md", "LICENSE", "AGENTS.md", "CLAUDE.md", "docs/requirements/requirements-v0.3.md",
-    "docs/decisions/tech-stack.md", "docs/architecture/system-design.md",
-    "docs/architecture/protocol.md", "docs/architecture/game-profiles.md",
+    "docs/README.md", "docs/frontend-specification.md", "docs/host-specification.md",
+    "docs/getting-started.md", "docs/usage.md", "docs/troubleshooting.md", "docs/develop/README.md",
+    "README.md", "LICENSE", "AGENTS.md", "CLAUDE.md", "docs/develop/requirements/requirements-v0.3.md",
+    "docs/develop/decisions/tech-stack.md", "docs/develop/architecture/system-design.md",
+    "docs/protocol-specification.md", "docs/game-profile-specification.md",
     "apps/host-rs/Cargo.toml", "apps/host-rs/Cargo.lock", "apps/host-rs/src/main.rs", "apps/host-rs/src/hub.rs",
     "apps/desktop/Cargo.toml", "apps/desktop/Cargo.lock", "apps/desktop/src/main.rs",
     "apps/web-static/index.html", "apps/web-static/app.html", "apps/web-static/host.html", "apps/web-static/game.html",
-    "apps/game-profiles/minecraft-java.json", "docs/data/top500-games.json",
+    "apps/game-profiles/minecraft-java.json", "docs/develop/data/top500-games.json",
     "scripts/sim/protocol-sim.mjs", "scripts/sim/shutdown-sim.mjs",
     "scripts/sim/app-view-test.mjs", "scripts/sim/check-static-pages.mjs", "apps/web-static/app-view.js",
     ".github/workflows/checks.yml", ".github/workflows/rust.yml",
-    "docs/handoff/SETUP_WINDOWS.md", "docs/handoff/DEVELOPMENT_WORKFLOW.md",
-    "docs/handoff/ISSUE_PLAN.md",
+    "docs/develop/handoff/SETUP_WINDOWS.md", "docs/develop/handoff/DEVELOPMENT_WORKFLOW.md",
+    "docs/develop/handoff/ISSUE_PLAN.md",
 ]
 missing = [str(p) for p in required if not (root / p).is_file()]
 if missing:

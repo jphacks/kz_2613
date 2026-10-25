@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../../',import.meta.url));
-const catalog=JSON.parse(fs.readFileSync(path.join(root,'docs/data/top500-games.json'),'utf8'));
+const catalog=JSON.parse(fs.readFileSync(path.join(root,'docs/develop/data/top500-games.json'),'utf8'));
 const files=fs.readdirSync(path.join(root,'apps/game-profiles')).filter(f=>f.endsWith('.json'));
 assert.equal(catalog.total,catalog.games.length); assert.equal(files.length,catalog.total);
 const ids=new Set(),matches=new Set(),counts={};

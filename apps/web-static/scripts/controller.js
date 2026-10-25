@@ -9,7 +9,7 @@ import { phoneAdvice } from '../app-view.js';
 (() => {
   const $ = (id) => document.getElementById(id);
   const COLORS = { P1: 'var(--p1)', P2: 'var(--p2)', P3: 'var(--p3)', P4: 'var(--p4)' };
-  // 通信契約の版 (docs/architecture/protocol.md)。PC のホストと合わなければ接続できない
+  // 通信契約の版 (docs/protocol-specification.md)。PC のホストと合わなければ接続できない
   const PROTOCOL_VERSION = 4;
 
   // 端末ごとの ID。再接続時に同じスロットへ戻るために保存する

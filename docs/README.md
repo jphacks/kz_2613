@@ -1,37 +1,175 @@
-# Re:Cooplay 資料一覧
+# Re:Cooplay システム仕様書
 
-このページは、製品を**知る・試す・技術を確認する**ための入口です。[製品README](../README.md)はJPHACKSの公式テンプレート構成を保っています。
+**バージョン**: 0.1.0　**更新日**: 2026-10-26
 
-## 最初に読む
+[製品紹介](../README.md) ／ [利用手順](usage.md) ／ [動作確認](verification.md)
 
-| 目的 | 資料 | 内容 |
+---
+
+## 📑 目次
+
+1. [概要](#概要)
+2. [システム概要](#システム概要)
+3. [仕様書構成](#仕様書構成)
+4. [技術的特徴](#技術的特徴)
+5. [開発・配布](#開発配布)
+6. [API一覧](#api一覧)
+7. [パフォーマンス指標](#パフォーマンス指標)
+8. [トラブルシューティング](#トラブルシューティング)
+9. [関連ドキュメント](#関連ドキュメント)
+10. [動作条件・制約](#動作条件制約)
+
+---
+
+## 概要
+
+Re:Cooplayは、複数のスマートフォンから届く操作をWindows PCで統合し、既存のPCゲームへキーボード・マウス入力として送るシステムです。
+
+---
+
+## システム概要
+
+```mermaid
+flowchart LR
+    subgraph Phones[スマートフォン]
+        Host[ホスト P1]
+        Players[参加者 P2〜P4]
+    end
+    subgraph PC[Windows PC]
+        Tauri[Tauri / WebView2]
+        Rust[Rustホスト<br/>認可・状態管理・入力統合]
+        Input[Windows API SendInput]
+        Game[既存のPCゲーム]
+        Profiles[操作定義・キー設定]
+    end
+    Host <-->|WebSocket / WebRTC| Rust
+    Players <-->|WebSocket / WebRTC| Rust
+    Tauri <-->|ループバック WebSocket| Rust
+    Profiles --> Rust
+    Rust --> Input --> Game
+```
+
+PCアプリはRustホストを子プロセスとして起動し、ホストが配信する画面を表示します。ゲーム映像はスマートフォンへ配信せず、全員がPCのゲーム画面を見ながら操作します。ゲーム本体のMOD、外部クラウド中継、STUN/TURNは使用しません。
+
+| 構成要素 | 責務 | 技術 |
 |:--|:--|:--|
-| 製品の概要 | [製品README](../README.md) | コンセプト、機能、受賞、開発技術 |
-| 写真・画面 | [ギャラリー](gallery.md) | Hack Dayの実プレイ、PCとスマホの画面 |
-| 実際の動作 | [動作・検証状況](verification.md) | 実機、シミュレーション、未検証の区別 |
-| 動かしてみる | [Windowsセットアップ](handoff/SETUP_WINDOWS.md) | 必要な環境とビルド・起動 |
-| 仕組みを知る | [システム設計](architecture/system-design.md) | 通信、操作統合、Windows入力 |
+| スマホ画面 | 参加、ホストのリモコン、担当操作の入力 | HTML / CSS / JavaScript、Pointer Events |
+| PC画面 | 接続、ゲーム選択、分担、準備、診断 | 静的HTML / JavaScript |
+| PCアプリ | ホストの起動・終了と画面表示 | Tauri 2 / WebView2 |
+| PCホスト | 接続認可、セッション、役割、入力統合 | Rust / Tokio / axum |
+| 高速入力経路 | 視点・入力の速達 | WebRTC DataChannel / libdatachannel |
+| Windows入力 | キー・ボタン・相対移動・ホイール | Win32 SendInput |
 
-**動画の公開リンクはREADMEに未掲載です。** 新しいリンクを推測して追加せず、実プレイ写真と検証記録を案内しています。
+### セッションの状態
 
-## 技術・設計・開発資料
+最初に参加した端末がホスト兼P1です。サーバーがP1〜P4の枠を割り当て、端末自身はホスト権や枠を指定できません。役割を交換してもP1の管理権は移りません。
 
-| 分類 | 主な資料 |
+```mermaid
+stateDiagram-v2
+    [*] --> lobby
+    lobby --> preparing: 分担決定後にPREPARE
+    preparing --> coop: P1のREADY・条件成立
+    coop --> paused: PAUSE・参加者切断・PC画面への復帰
+    paused --> coop: RESUME・条件成立
+    paused --> coop: 通信切断からの自動復帰条件成立
+    preparing --> lobby: END
+    coop --> lobby: END
+    paused --> lobby: END
+    lobby --> [*]: アプリ終了
+```
+
+ゲームの準備と共同操作の開始は別です。Ready時点の参加者と分担を固定し、人数を変更する場合は一度終了して組み直します。対象ゲームのフォーカス喪失は入力を止めますが、進行状態が常にpausedへ変わるわけではありません。
+
+---
+
+## 仕様書構成
+
+| 仕様書 | 内容 |
 |:--|:--|
-| **システム・通信** | [全体設計](architecture/system-design.md) ／ [通信仕様](architecture/protocol.md) ／ [入力・ホスト操作](architecture/host-remote.md) |
-| **ゲーム別操作** | [操作定義](architecture/game-profiles.md) ／ [操作定義の実装](../apps/game-profiles/) |
-| **PC・スマホ画面** | [PC画面仕様](architecture/pc-screens.md) ／ [デザイン・UI資料](design/README.md) |
-| **要件** | [要件 v0.3](requirements/requirements-v0.3.md) ／ [旧版 v0.2](requirements/requirements-v0.2.md) |
-| **開発・検証の履歴** | [開発記録の案内](handoff/README.md) ／ [当日の開発ログ](handoff/BUILD_LOG.md) |
-| **意思決定** | [判断記録](decisions/) ／ [2〜4人に拡張した判断](decisions/2026-10-25-variable-players.md) |
-| **参考データ** | [ゲーム一覧](data/top500-games.md) ／ [ゲーム操作定義](../apps/game-profiles/) |
-| **実装** | [Rustホスト](../apps/host-rs/README.md) ／ [PCアプリ](../apps/desktop/README.md) ／ [スマホ・PC画面](../apps/web-static/) |
+| [PC・スマホ画面](frontend-specification.md) | 画面遷移、操作可否、分担と入力表示 |
+| [Rustホスト・Windows入力](host-specification.md) | プロセス、hub、入力処理、停止、配布 |
+| [通信](protocol-specification.md) | HTTP、WebSocket、DataChannel、認可、順序制御 |
+| [ゲーム操作定義](game-profile-specification.md) | ゲーム検出、設定読取り、割当、操作画面生成 |
 
-## 読むときの注意
+---
 
-- **現行の実装と過去の設計は別です。** 古い仕様書の「未実装」「未検証」は、その文書の作成時点の記述です。日付の新しい[開発ログ](handoff/BUILD_LOG.md)と[検証状況](verification.md)を併せて確認してください。
-- **3人でのMinecraftの実プレイ記録**と、2026年10月25日のPR #110で追加された**2〜4人の人数別分担の実装**を区別します。2人・4人の実機受入は未実施です。
-- `artifacts/improved-ui/`の**104画面はブラウザの表示検証資料**です。写真や実タッチの証拠ではありません。操作定義502件も動作確認済みのゲーム数ではありません。
-- 設計・経緯はGitHubの履歴を壊さないよう保存し、**閲覧の入口と当時の作業記録を分離**します。
+## 技術的特徴
 
-[製品READMEに戻る](../README.md)
+### リアルタイム入力
+
+WebSocketを本経路とし、WebRTC DataChannelを速達に使います。二重到着は入力番号で排除し、視点は累積値と補間で処理します。
+
+### 人数別の分担
+
+2〜4人へ操作定義のグループを割り当て、各端末に担当の入力画面を生成します。
+
+### 安全・信頼性
+
+接続・役割・進行をサーバーで認可し、入力先の確認、緊急停止、旧入力の破棄を組み合わせます。
+
+---
+
+## 開発・配布
+
+### システム要件
+
+- **PC**: Windows 11 x64、WebView2、Visual C++ v14 Redistributable（x64）
+- **スマホ**: 同じローカルネットワーク上のブラウザ、参加2〜4台
+- **開発**: Rust MSVC、C++ビルドツール、CMake、Perl、libclang。試験はNode.js 22以上・Python 3.10以上
+
+### ビルドと配布
+
+PCホストとTauriアプリをRustでビルドし、静的画面・操作定義をWindows x64用zipへまとめます。
+
+[Windows構築](develop/handoff/SETUP_WINDOWS.md) ／ [配布手順](../apps/desktop/README.md) ／ [導入・配布状況](getting-started.md)
+
+---
+
+## API一覧
+
+| 経路 | 用途 |
+|:--|:--|
+| HTTP | 画面、参加情報・QR、ゲーム画像、PCのホットスポット要求 |
+| WebSocket | 参加・認可、管理命令、状態、操作入力、RTCシグナリング |
+| DataChannel fast | 操作入力、視点、生存確認 |
+
+[エンドポイント・メッセージ形式](protocol-specification.md)を参照してください。
+
+---
+
+## パフォーマンス指標
+
+| 処理 | 設定値・方式 |
+|:--|:--|
+| 視点送信 | 30Hz、累積値 |
+| ホスト補間 | 4ms周期、時定数30〜120ms |
+| 最低押下・解放 | 60ms・50ms。安全停止では即時解放 |
+| 無受信時の切断判定 | ホスト4秒 |
+
+これらは処理の設定値です。エンドツーエンドの実測遅延とは異なります。実機での確認条件と試作品の測定は[動作確認](verification.md)を参照してください。
+
+---
+
+## トラブルシューティング
+
+接続できない場合はネットワークと参加URL、入力が届かない場合は前面のゲーム・入力モード・実キーを確認します。
+
+[症状別の確認と対処](troubleshooting.md)
+
+---
+
+## 関連ドキュメント
+
+- [導入・接続](getting-started.md)：必要環境、入手、起動、QR参加
+- [使い方](usage.md)：ゲーム選択、分担、準備、開始・停止・終了
+- [困ったとき](troubleshooting.md)：起動・接続・通信・入力の対処
+- [動作確認の範囲](verification.md)：実機記録、自動試験、未確認条件
+- [開発資料](develop/README.md)：ソース構成、構築、要件、意思決定、開発履歴
+
+---
+
+## 動作条件・制約
+
+操作定義やゲームの検出は、実際にそのゲームへ入力が届くことを保証しません。ゲームのキー設定、実行権限、前面ウィンドウ、入力方式によって挙動が異なります。Windows以外のPCホスト、遠隔プレイ、ゲーム映像の配信は対象外です。
+
+実装：[ホスト](../apps/host-rs/src/main.rs) ／ [入力統合](../apps/host-rs/src/hub.rs) ／ [PCアプリ](../apps/desktop/src/main.rs)

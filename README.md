@@ -104,7 +104,7 @@ Re:Cooplay（リコープレイ）は、既存のPCゲームに新しい協力�
 6. **みんなで協力プレイ！**  
    準備ができたら、ホストがスマホから「Ready」を押します。各自のスマホが担当する操作画面に切り替わり、みんなで1つのキャラクターを操作できるようになります。
 
-スマートフォンへの専用アプリのインストールは不要。1つのPCゲーム画面を共有しながら、複数人で協力プレイを楽しめます。PC側のセットアップについては[Windows構築・起動手順](docs/handoff/SETUP_WINDOWS.md)をご覧ください。
+スマートフォンへの専用アプリのインストールは不要。1つのPCゲーム画面を共有しながら、複数人で協力プレイを楽しめます。PC側のセットアップについては[導入・接続手順](docs/getting-started.md)をご覧ください。
 
 ---
 
@@ -234,6 +234,8 @@ Re:Cooplayは、**ゲームや参加人数に合わせて、もっと自然に�
 
 ### 独自技術
 
+[総合技術仕様](docs/README.md) ／ [画面仕様](docs/frontend-specification.md) ／ [ホスト仕様](docs/host-specification.md) ／ [通信仕様](docs/protocol-specification.md) ／ [操作定義仕様](docs/game-profile-specification.md)
+
 #### ハッカソンで開発した独自機能・技術
 
 Re:Cooplayでは、複数人で1つのキャラクターを共同操作するために、役割分担と入力統合、通信の整合性、ゲームごとの操作変換、開始・停止の制御などを独自に実装しました。以下では、その仕組みと対応するコードを紹介します。
@@ -244,24 +246,24 @@ Re:Cooplayでは、複数人で1つのキャラクターを共同操作するた
 
 - **遅延や通信の乱れを考慮した入力処理**  
   WebSocketによる通信に加え、操作入力をWebRTC DataChannelでも送信します。ボタン操作は通し番号で重複処理を防ぎ、プレイ状態が切り替わる前の古い入力は無効化します。視点操作は移動量を累積して送ることで通信の欠落に備え、PC側で細かく補間してマウス操作へ変換します。  
-  [WebRTC通信](apps/host-rs/src/rtc.rs) ／ [入力処理](apps/host-rs/src/hub.rs) ／ [通信仕様・検証](docs/architecture/protocol.md)
+  [WebRTC通信](apps/host-rs/src/rtc.rs) ／ [入力処理](apps/host-rs/src/hub.rs) ／ [通信仕様・検証](docs/protocol-specification.md)
 
 - **ゲームの操作設定に合わせたコントローラー生成**  
   ゲームごとの操作定義と、読み取りに対応したゲームのキー設定を組み合わせ、各プレイヤーに割り当てた操作だけをスマホ画面に生成します。移動はスティック、視点はタッチ操作など、操作の種類に応じてUIを作り分け、ボタンには実際に送信するキー名を表示します。  
-  [ゲームごとの操作定義](docs/architecture/game-profiles.md) ／ [定義の読み込み・分担生成](apps/host-rs/src/profiles.rs) ／ [操作画面の生成](apps/web-static/scripts/generated-controls.js)
+  [ゲームごとの操作定義](docs/game-profile-specification.md) ／ [定義の読み込み・分担生成](apps/host-rs/src/profiles.rs) ／ [操作画面の生成](apps/web-static/scripts/generated-controls.js)
 
 - **誤操作を防ぐ開始・停止と入力先の制御**  
   ゲームと参加メンバー・分担を確認したうえで、ホストが明示的にReadyを操作したときだけ共同操作を開始します。PCで対象ゲームのウィンドウを判定して入力先を制限し、一時停止・切断・緊急停止などでは、押下中のキーや未処理の視点移動を解放・破棄する仕組みを実装しています。  
-  [入力先の判定](apps/host-rs/src/focus.rs) ／ [状態管理・入力解放](apps/host-rs/src/hub.rs) ／ [開始手順の設計](docs/decisions/2026-10-25-launch-after-roles.md)
+  [入力先の判定](apps/host-rs/src/focus.rs) ／ [状態管理・入力解放](apps/host-rs/src/hub.rs) ／ [開始手順の設計](docs/develop/decisions/2026-10-25-launch-after-roles.md)
 
 - **ホスト操作と共同プレイをつなぐ画面・状態連携**  
   QRコードで参加したスマホのうち、ホスト端末はPC画面を操作するリモコンとしても使えます。ゲーム選択や分担確認などの準備操作と、開始後の担当別コントローラーへの切り替えをプレイ状態に連動させ、準備中と共同操作中で使える操作を切り分けています。  
   [PC画面の状態・操作](apps/web-static/app-view.js) ／ [ホスト側の操作切替](apps/host-rs/src/hub.rs) ／ [UI検証記録](artifacts/improved-ui/README.md)
 
-[開発開始前のコミット](https://github.com/jphacks/kz_2613/tree/5acb0049e6) ／ [GitHub上の変更差分](https://github.com/jphacks/kz_2613/compare/5acb0049e6...main) ／ [Hack Day開発ログ](docs/handoff/BUILD_LOG.md) ／ [システム設計](docs/architecture/system-design.md)
+[開発開始前のコミット](https://github.com/jphacks/kz_2613/tree/5acb0049e6) ／ [GitHub上の変更差分](https://github.com/jphacks/kz_2613/compare/5acb0049e6...main) ／ [Hack Day開発ログ](docs/develop/handoff/BUILD_LOG.md) ／ [システム設計](docs/README.md)
 
-<sub>比較リンクにはREADMEの編集も含まれます。実装内容はコミット履歴と開発ログを参照してください。ゲームの検出・操作定義の登録は、すべてのゲームでの動作を保証するものではありません。</sub>
+<sub>ゲームの検出・操作定義の登録は、すべてのゲームでの動作を保証するものではありません。</sub>
 
 ---
 
-<sub>Re:Cooplayは独立した非公式ツールであり、Minecraftのゲーム本体・素材を同梱していません。Minecraftの公式製品ではなく、Mojang Studios・Microsoftの承認・提携を受けていません。NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. [Minecraftの利用条件に関する確認記録](docs/decisions/2026-10-25-minecraft-usage-terms.md)</sub>
+<sub>Re:Cooplayは独立した非公式ツールであり、Minecraftのゲーム本体・素材を同梱していません。Minecraftの公式製品ではなく、Mojang Studios・Microsoftの承認・提携を受けていません。NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. [Minecraftの利用条件に関する確認記録](docs/develop/decisions/2026-10-25-minecraft-usage-terms.md)</sub>

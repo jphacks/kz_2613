@@ -4,7 +4,7 @@ from PIL import Image
 import json, hashlib, sys
 
 source = Path(sys.argv[1] if len(sys.argv) > 1 else 'C:/Users/kumes/Downloads/Recooplay素材')
-out = Path(__file__).resolve().parents[2] / 'docs/design/evidence/pc-fidelity-reference.json'
+out = Path(__file__).resolve().parents[2] / 'docs/develop/design/evidence/pc-fidelity-reference.json'
 cyan = (23,193,255)
 purple = (204,51,255)
 black = (0,0,0)

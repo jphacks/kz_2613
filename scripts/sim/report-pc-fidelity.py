@@ -4,7 +4,7 @@ from PIL import Image
 import hashlib, json, shutil, zipfile
 
 root=Path(__file__).resolve().parents[2]
-ev=root/'docs/design/evidence'
+ev=root/'docs/develop/design/evidence'
 refs=json.loads((ev/'pc-fidelity-reference.json').read_text(encoding='utf8'))
 names={'join':'参加','game':'ゲーム選択','roles':'分担','preparing':'準備中','ready':'準備可能'}
 scores={'join':[25,24,19,14,14],'game':[25,25,19,14,14],'roles':[25,25,19,14,13],'preparing':[25,25,18,14,14],'ready':[25,25,19,14,14]}
