@@ -4,6 +4,7 @@ import {bindTouchpad} from '../../apps/web-static/scripts/touchpad.js';
 import {bindCooperativeInput} from '../../apps/web-static/scripts/cooperative-input.js';
 import {createFastChannel} from '../../apps/web-static/scripts/transport.js';
 import {createVirtualCursor} from '../../apps/web-static/scripts/virtual-cursor.js';
+import {myActions, generatedKey, buildGenerated} from '../../apps/web-static/scripts/generated-controls.js';
 const intervals = [];
 const originalInterval = globalThis.setInterval;
 globalThis.setInterval = (fn,ms) => { intervals.push({fn,ms}); return intervals.length; };
@@ -16,9 +17,57 @@ class Element {
   getBoundingClientRect() { return {left:0,top:0,width:200,height:200}; }
   fire(name,extra={}) { for (const fn of this.handlers.get(name)||[]) fn({type:name,pointerId:1,clientX:100,clientY:100,timeStamp:performance.now(),preventDefault(){},...extra}); }
 }
+// 操作定義の画面を作る試験用の、最小の DOM (HTML 文字列を集める)
+class FakeNode {
+  constructor() { this.parts = []; this.className = ''; }
+  set innerHTML(v) { this.parts = v ? [v] : []; }
+  get innerHTML() { return this.parts.map((p) => (typeof p === 'string' ? p : `<div class="${p.className}">${p.innerHTML}</div>`)).join(''); }
+  insertAdjacentHTML(_, html) { this.parts.push(html); }
+  append(...nodes) { this.parts.push(...nodes); }
+  get children() { return this.parts; }
+  querySelectorAll() { return [...this.innerHTML.matchAll(/data-ctl="([^"]+)"/g)].map((m) => ({ ctl: m[1] })); }
+}
+globalThis.document = { createElement: () => new FakeNode() };
+const GAME = {
+  phase: 'coop',
+  profile: { id: 'test-pseudo', name: '試験', groups: [{ id: 'movement', label: '移動' }, { id: 'gameplay', label: 'アクション' }],
+    actions: [{ id: 'left', label: '左', group: 'movement', type: 'button' }, { id: 'right', label: '右', group: 'movement', type: 'button' }, { id: 'jump', label: 'ジャンプ', group: 'movement', type: 'button' },
+      { id: 'action', label: 'アクション', group: 'gameplay', type: 'button' }, { id: 'zoom', label: 'ズーム', group: 'gameplay', type: 'wheel' }, { id: 'aim', label: '狙い', group: 'gameplay', type: 'mouseDelta' }] },
+  assigned: { P1: ['left', 'right', 'action', 'zoom', 'aim'], P2: ['jump'], P3: [] },
+  keys: { actions: { left: { label: 'A' }, right: { label: 'D' }, jump: { label: 'Space' }, action: null } },
+};
 let passed=0;
 async function test(name,fn) { await fn();passed++;console.log(`合格: ${name}`); }
 try {
+  await test('操作定義の画面: 割り当てた操作だけをボタンにし、方向は十字、ホイールは前後、視点はパッドを移す。Minecraft は専用画面', () => {
+    assert.equal(myActions({ ...GAME, profile: { ...GAME.profile, id: 'minecraft-java' } }, 'P1'), null);
+    assert.equal(myActions({ ...GAME, assigned: {} }, 'P1'), null);
+    assert.deepEqual(myActions(GAME, 'P2').map((a) => a.id), ['jump']);
+    const box = new FakeNode(), bound = [], look = [new FakeNode()];
+    const hasLook = buildGenerated(box, GAME, 'P1', { bindControl: (el) => bound.push(el.ctl), lookParts: look });
+    assert.equal(hasLook, true);
+    assert.deepEqual(bound, ['act:left', 'act:right', 'act:action', 'act:zoom:up', 'act:zoom:down']);
+    const html = box.innerHTML;
+    assert.match(html, /gen-dpad/); // 左・右の 2 方向 → 十字
+    assert.match(html, /送らない/); // action は送れないキー
+    assert.match(html, />D</); // 実際のキーの表示
+    assert.ok(box.parts.some((g) => g.parts?.includes(look[0])), '視点のパッドを移していない');
+    const p3 = new FakeNode();
+    buildGenerated(p3, GAME, 'P3', { bindControl() {}, lookParts: [] });
+    assert.match(p3.innerHTML, /担当する操作がありません/);
+    assert.notEqual(generatedKey(GAME, 'P1'), generatedKey({ ...GAME, keys: { actions: { left: { label: 'Z' } } } }, 'P1'), 'キーが変わったら作り直す');
+  });
+  await test('視点: 操作定義の分担があれば、視点を割り当てた人だけが look を送る', () => {
+    const pad = new Element(), sent = [];
+    let role = 'P1', look = true;
+    globalThis.document.getElementById = (id) => (id === 'pad' ? pad : new Element());
+    bindCooperativeInput({ getGame: () => ({ phase: 'coop', epoch: 1 }), getRole: () => role, canLook: () => look, isOpen: () => true, ctlDown() {}, ctlUp() {}, sendLook: (m) => sent.push(m) });
+    const tick = intervals.at(-1).fn;
+    pad.fire('pointerdown'); pad.fire('pointermove', { clientX: 130 }); tick();
+    assert.equal(sent.length, 1, 'P1 (視点の担当) の look を送らない');
+    look = false; pad.fire('pointermove', { clientX: 160 }); tick();
+    assert.equal(sent.length, 1, '担当でないのに look を送った');
+  });
   await test('タッチパッド: キャンセル・無効化で未送信移動を捨て、解放を1回通知する',()=>{
     const pad = new Element(), messages=[]; let enabled=true,taps=0;
     bindTouchpad(pad,{enabled:()=>enabled,send:m=>messages.push(m),tap:()=>taps++});
