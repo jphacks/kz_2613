@@ -1,6 +1,6 @@
 ﻿# Re:Cooplay 通信テスト用: Windows Defender Firewall で受信を許可する
 # 管理者 PowerShell で実行:  powershell -ExecutionPolicy Bypass -File scripts\windows\allow-firewall.ps1 [-Program <ホストの exe>]
-#   Rust 版は -Program apps\host-rs\target\release\recooplay-host.exe (省略時は Node 参照実装の node.exe)
+#   -Program 省略時は Rust 版ホスト (apps\host-rs\target\release\recooplay-host.exe)
 # 削除:                       Remove-NetFirewallRule -DisplayName "Re:Cooplay test*"
 param([int]$Port = 8080, [string]$Program = "")
 
@@ -13,12 +13,10 @@ New-NetFirewallRule -DisplayName "Re:Cooplay test (TCP $Port)" -Direction Inboun
   -RemoteAddress LocalSubnet -Action Allow -Profile Any | Out-Null
 
 # WebRTC データチャネル (UDP, ポートは毎回変わるので実行ファイル単位で許可)
-if ($Program) {
-  $exe = Get-Item $Program
-} else {
-  $exe = (Get-Item (Get-Command node).Source).ResolveLinkTarget($true)
-  if (-not $exe) { $exe = Get-Item (Get-Command node).Source }
+if (-not $Program) {
+  $Program = Join-Path $PSScriptRoot "..\..\apps\host-rs\target\release\recooplay-host.exe"
 }
+$exe = Get-Item $Program
 New-NetFirewallRule -DisplayName "Re:Cooplay test (UDP $($exe.Name))" -Direction Inbound -Protocol UDP -Program $exe.FullName `
   -RemoteAddress LocalSubnet -Action Allow -Profile Any | Out-Null
 
