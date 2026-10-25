@@ -30,13 +30,16 @@
 
   ---
 
-  <p>🎮 <strong>プレイ風景</strong></p>
+  <details>
+    <summary>🎮 <strong>プレイ風景を見る</strong>（クリックで開く）</summary>
 
   <p>移動・視点・攻撃を3人で分担し、声を掛け合いながら1つのキャラクターを操作する様子をご覧ください。</p>
 
 https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
   <p><sub>Hack Dayの開発中に撮影した実プレイ風景：3人がスマートフォンから1つのキャラクターを共同操作</sub></p>
+
+  </details>
 
   ---
 
