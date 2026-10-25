@@ -19,7 +19,7 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
   [![ギャラリー](https://img.shields.io/badge/ギャラリー-写真%20%26%20UI-green?style=for-the-badge)](./docs/gallery.md)
   [![動作確認](https://img.shields.io/badge/動作確認-実機と検証状況-blue?style=for-the-badge)](./docs/verification.md)
-  [![資料一覧](https://img.shields.io/badge/資料一覧-ドキュメント-blueviolet?style=for-the-badge)](./docs/README.md)
+  [![技術仕様書](https://img.shields.io/badge/技術仕様書-詳細ドキュメント-blueviolet?style=for-the-badge)](./docs/README.md)
 
   ---
 
@@ -193,6 +193,28 @@ Re:Cooplayは、**ゲームや参加人数に合わせて、もっと自然に�
 
 ---
 
+## 技術仕様書
+
+- **[総合仕様書](docs/README.md)** — システム構成、技術的特徴、動作環境、各仕様書への入口
+- **[フロントエンド仕様書](docs/frontend-specification.md)** — PC・スマホの画面構成、参加から開始までの流れ、担当別コントローラー
+- **[ホスト仕様書](docs/host-specification.md)** — Rustホスト、入力統合、Windows入力、入力先の制御、安全停止
+- **[通信仕様書](docs/protocol-specification.md)** — HTTP・WebSocket・WebRTC、メッセージ形式、接続認可、順序制御
+- **[ゲーム操作定義仕様書](docs/game-profile-specification.md)** — ゲーム検出、キー設定の読取り、人数別の分担、操作画面の生成
+
+## 利用ガイド
+
+- **[導入・接続](docs/getting-started.md)** — 必要な環境、配布状況、PCアプリの起動、QRコードでの参加
+- **[使い方](docs/usage.md)** — ゲーム選択、分担、準備、Ready、一時停止・再開・終了
+- **[困ったとき](docs/troubleshooting.md)** — 起動・接続・通信・入力の症状別の確認と対処
+
+## ギャラリー・関連資料
+
+- **[ギャラリー](docs/gallery.md)** — 実プレイ動画・写真、参加方法、PCとスマホの操作画面
+- **[動作確認の範囲](docs/verification.md)** — 実機記録、自動試験、ゲーム対応の区別、未確認の条件
+- **[開発資料](docs/develop/README.md)** — ビルド・テスト手順、要件、設計判断、開発履歴
+
+---
+
 ## 開発技術
 
 **システム構成**
@@ -233,8 +255,6 @@ Re:Cooplayは、**ゲームや参加人数に合わせて、もっと自然に�
 | ![Wi-Fi](https://img.shields.io/badge/Wi--Fi-ローカル接続-yellow) | PCとスマホを同じネットワークに接続。通常の共同操作に外部クラウドサーバーは不要 |
 
 ### 独自技術
-
-[総合技術仕様](docs/README.md) ／ [画面仕様](docs/frontend-specification.md) ／ [ホスト仕様](docs/host-specification.md) ／ [通信仕様](docs/protocol-specification.md) ／ [操作定義仕様](docs/game-profile-specification.md)
 
 #### ハッカソンで開発した独自機能・技術
 

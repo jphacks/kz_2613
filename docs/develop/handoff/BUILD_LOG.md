@@ -912,3 +912,8 @@
 - node scripts/sim/profile-catalog-test.mjs：502定義の照合成功。node scripts/sim/verify-ui-evidence.mjs：104画面の照合成功。python scripts/verify_overlay.py：39項目成功。node scripts/sim/app-view-test.mjs：25/25成功。node scripts/sim/phone-view-test.mjs：8観点成功。node --check scripts/profiles/build-catalog.mjs、git diff --checkも成功。
 - Release一覧は0件を再確認し、一般向け配布版が公開済みとは案内していない。資料・パス以外の製品動作変更はなく、実機試験・OS入力試験・Rust再ビルドは実施していない。過去の実機観測を現行版全体の合格へ読み替えていない。
 - Push後のGitHubで総合仕様・4冊の専門仕様を開き、全12図の読込み完了と描画エラーなしを確認した。公開表示で読みづらかったPC管理メッセージの長い表は、メッセージ表・認可条件・state項目・HTTP応答へ分け、旧履歴番号の除去で残った不自然な表現も修正した。図と通信処理の意味は変更していない。再度、全75資料・455参照とgit diff --checkが成功した。
+
+## 2026-10-26 — READMEから各資料へ直接案内
+
+- 4DX@HOMEのREADMEと同じく、開発技術の前に「技術仕様書」「利用ガイド」「ギャラリー・関連資料」を置き、総合仕様と専門4冊、利用案内3件、ギャラリー、検証要約、開発資料の計11件へ内容説明付きでリンクした。冒頭の資料バッジも技術仕様書の表記へ合わせ、独自技術にあった重複リンク行を整理した。既存の紹介本文・画像・動画は変更していない。
+- python scripts/check-public-docs.py --all：75資料・相対参照461件のリンク・画像・アンカー確認に成功。git diff --checkも成功。製品コード・図は変更していない。
