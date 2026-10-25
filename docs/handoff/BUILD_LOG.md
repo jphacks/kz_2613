@@ -855,3 +855,9 @@
 - 画面：スマホの`v-P1`〜`v-P3`と専用のスティック、PC画面の固定の分担の説明・キーの見本と`usesFixedRoles`・`keyLabel`・`roleControls`を削除した。視点のパッドと感度は置き場所（`#lookHome`）から担当者の画面へ移す。
 - `cargo test` 42件成功（Minecraftの3人の分担がこれまでの固定の分担と同じであることを追加）。`protocol-sim.mjs`（Rust dry-run）49/49：試験の送り口で、協力プレイ中はMinecraftの操作の呼び名を定義の操作に読み替え、固定の操作名を拒否する試験は読み替えずに送る。3人の分担が固定の分担と同じであることを追加した。`shutdown-sim.mjs`、`app-view-test.mjs` 25/25、`phone-view-test.mjs`、`ui-input-test.mjs` 11/11、`controller-diagnostics-test.mjs`、`profile-extract-test.mjs`、`profile-catalog-test.mjs`、`input-probe-sim.mjs` 12/12、`check-static-pages.mjs`、`static-assets-sim.mjs`、`verify-ui-evidence.mjs`、`verify_overlay.py`が成功した。
 - dry-runのホストとヘッドレスChrome 3台（スマホの大きさ）で、Minecraftの3人がそれぞれ移動（スティック・ジャンプ・スニーク・ダッシュ）、視点（パッド・感度）、攻撃・使う・持ち物の画面になることを撮影して確認した。実機のMinecraft・3人での操作は未確認。
+
+## 2026-10-26 — Windows配布zipの自動検証（Codex、#145）
+
+- 配布物に版・commit・未コミット変更の有無と全ファイルのSHA-256を記録し、zipの照合値を出力する。Windows CIで同じチェックアウトから両exeをビルドし、梱包・検証後に成果物として保存する。利用者向けの安全案内も選択したゲームに合わせた。
+- `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/package.ps1 -Out dist/issue145-local` が成功（10.3MB）。`node scripts/sim/package-smoke.mjs dist/issue145-local/ReCooplay-0.1.0-windows-x64.zip` は、全同梱物・画面・操作定義・ハッシュ照合、欠落と改変の拒否、リポジトリ外の展開先ホストによる全静的ファイルの配信と正常終了・終了ログ確認が成功した。既存のローカルexeを使用し、OS入力はdry-runで無効にした。
+- 開発環境のないPC・Tauri実画面・スマホ3台の受入は未実施（#41）。PCの無線・ファイアウォール設定は変更していない。通信設定を変更・復元するインストーラーは #132 に残す。
