@@ -224,7 +224,8 @@ async fn game_image(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Socke
         _ => "image/jpeg",
     };
     match tokio::fs::read(&path).await {
-        Ok(data) => ([(header::CONTENT_TYPE, mime), (header::CACHE_CONTROL, "private, max-age=600")], data).into_response(),
+        // 再検出で画像が変わっても古い画像を出さないよう、保存させない (画面は一覧が変わったときだけ読み直す)
+        Ok(data) => ([(header::CONTENT_TYPE, mime), (header::CACHE_CONTROL, "no-store")], data).into_response(),
         Err(_) => StatusCode::NOT_FOUND.into_response(),
     }
 }

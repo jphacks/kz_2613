@@ -122,6 +122,10 @@ test('ゲーム一覧: 固定のMinecraftの後に検出したゲームを並べ
   const list = gameList(detected);
   assert.deepEqual(list.map((g) => g.id), ['minecraft-java', 'steam:413150', 'epic:Gamma']);
   assert.equal(list[0].launchable, false, 'Minecraftは手動起動');
+  // ランチャーを見つけたら Minecraft にも画像を付ける。見つからなくても項目は残す (#128)
+  assert.equal(gameList([], { detected: true, image: true })[0].image, true);
+  assert.equal(gameList([], { detected: false, image: false })[0].image, false);
+  assert.equal(gameCard(gameList([], { detected: true, image: true })[0], null, null).image, '/api/game-image?id=minecraft-java');
   assert.deepEqual(gameList(undefined).map((g) => g.id), ['minecraft-java'], '一覧が届く前・スマホ向けでない状態でもMinecraftは選べる');
   assert.equal(gameList([{ id: 'x', name: 'X', source: 'steam', verified: 'yes', launchable: true }])[1].verified, false, 'true以外は未検証');
   const card = gameCard(list[1], 'steam:413150', null);

@@ -21,6 +21,21 @@ pub struct Entry {
     /// 一覧のタイルに出す画像 (#121)。ランチャーがユーザーの PC に保存している画像の場所で、PC 画面にだけ配る。
     /// 場所は画面へ送らず、項目 ID で引く (/api/game-image)
     pub image: Option<PathBuf>,
+    /// ランチャーの画像がないときにアイコンを取り出す実行ファイル (#128。Epic のマニフェストの LaunchExecutable)
+    pub icon_source: Option<PathBuf>,
+}
+
+/// Minecraft のランチャー (#128)。一覧 (`games`) には混ぜない (入力先は javaw.exe、起動は手動のまま)。
+/// 画面の固定の項目に画像を付けるためだけに使う
+pub struct Minecraft {
+    pub image: Option<PathBuf>,
+}
+
+/// 検出の結果
+pub struct Detected {
+    pub games: Vec<Entry>,
+    /// Minecraft のランチャーが見つかったか (見つからなければ None)
+    pub minecraft: Option<Minecraft>,
 }
 
 /// 項目 ID → 画像の場所。ホスト (検出) が書き、HTTP の /api/game-image が読む
@@ -36,6 +51,10 @@ impl Entry {
 pub struct Roots {
     pub steam: Option<PathBuf>,
     pub epic_manifests: Option<PathBuf>,
+    /// Minecraft のランチャーの実行ファイルの候補 (#128)
+    pub minecraft: Vec<PathBuf>,
+    /// 取り出したアイコン (PNG) を置くフォルダ
+    pub icons: PathBuf,
 }
 
 impl Roots {
@@ -44,17 +63,36 @@ impl Roots {
             steam: imp::steam_path(),
             epic_manifests: std::env::var_os("PROGRAMDATA")
                 .map(|p| PathBuf::from(p).join(r"Epic\EpicGamesLauncher\Data\Manifests")),
+            minecraft: minecraft_candidates(),
+            icons: std::env::temp_dir().join("recooplay-icons"),
         }
     }
 
     /// 試験用: <dir>/steam を Steam のフォルダ、<dir>/epic を Epic のマニフェストのフォルダとみなす
     pub fn fake(dir: &Path) -> Roots {
-        Roots { steam: Some(dir.join("steam")), epic_manifests: Some(dir.join("epic")) }
+        Roots {
+            steam: Some(dir.join("steam")),
+            epic_manifests: Some(dir.join("epic")),
+            minecraft: vec![dir.join(r"minecraft\Minecraft.exe")],
+            icons: dir.join("icons"),
+        }
     }
 }
 
-/// インストール済みのゲームを探す。読めないファイルは飛ばす (一部が壊れていても残りは出す)
-pub fn detect(roots: &Roots) -> Vec<Entry> {
+/// Minecraft のランチャーの候補: Xbox・Microsoft Store 版 (各ドライブの XboxGames) と旧版 (Program Files)
+fn minecraft_candidates() -> Vec<PathBuf> {
+    let mut v: Vec<PathBuf> = (b'C'..=b'Z').map(|d| PathBuf::from(format!(r"{}:\XboxGames\Minecraft Launcher\Content\Minecraft.exe", d as char))).collect();
+    for var in ["ProgramFiles(x86)", "ProgramFiles"] {
+        if let Some(p) = std::env::var_os(var) {
+            v.push(PathBuf::from(p).join(r"Minecraft Launcher\MinecraftLauncher.exe"));
+        }
+    }
+    v
+}
+
+/// インストール済みのゲームを探す。読めないファイルは飛ばす (一部が壊れていても残りは出す)。
+/// 画像は、ランチャーの画像 → 実行ファイルのアイコン (#128) の順に探し、どちらもなければ画面が頭文字で代わりに表示する
+pub fn detect(roots: &Roots) -> Detected {
     let mut list = Vec::new();
     if let Some(steam) = &roots.steam {
         list.extend(detect_steam(steam));
@@ -64,7 +102,121 @@ pub fn detect(roots: &Roots) -> Vec<Entry> {
     }
     list.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()).then(a.id.cmp(&b.id)));
     list.dedup_by(|a, b| a.id == b.id);
-    list
+    for e in list.iter_mut().filter(|e| e.image.is_none()) {
+        if let Some(exe) = e.icon_source.clone() {
+            e.image = app_image(&exe, &roots.icons, &e.id);
+        }
+    }
+    let minecraft = roots.minecraft.iter().find(|p| p.is_file()).map(|exe| Minecraft { image: app_image(exe, &roots.icons, "minecraft-java") });
+    Detected { games: list, minecraft }
+}
+
+/// アプリの画像: Xbox・Microsoft Store 版のアプリ (実行ファイルの隣に appxmanifest.xml がある) はマニフェストのロゴ、
+/// それ以外は実行ファイルのアイコン。Xbox 版の Minecraft ランチャーの Minecraft.exe はアイコンを持たず、
+/// シェルからは汎用のアプリのアイコンしか取れないため、ロゴを先に見る (#128)
+fn app_image(exe: &Path, icons: &Path, id: &str) -> Option<PathBuf> {
+    exe.parent().and_then(appx_logo).or_else(|| icon_file(exe, icons, id))
+}
+
+/// appxmanifest.xml のロゴ (Square150x150Logo・Square44x44Logo・Logo) のうち、いちばん大きい版の PNG。
+/// 版はファイル名の後ろに付く (例: SmallLogo.altform-unplated_targetsize-256.png)。ハイコントラスト用 (contrast) は使わない
+fn appx_logo(dir: &Path) -> Option<PathBuf> {
+    let manifest = std::fs::read_to_string(dir.join("appxmanifest.xml")).ok()?;
+    let mut best: Option<(u32, PathBuf)> = None;
+    for attr in ["Square150x150Logo", "Square44x44Logo", "Logo"] {
+        let mut rest = manifest.as_str();
+        while let Some(i) = rest.find(&format!(" {attr}=\"")) {
+            rest = &rest[i + attr.len() + 3..];
+            let Some(end) = rest.find('"') else { break };
+            let rel = Path::new(&rest[..end]);
+            if !rel.components().all(|c| matches!(c, std::path::Component::Normal(_))) {
+                continue;
+            }
+            let folder = dir.join(rel.parent().unwrap_or(Path::new("")));
+            let Some(stem) = rel.file_stem().and_then(|s| s.to_str()) else { continue };
+            let Ok(files) = std::fs::read_dir(&folder) else { continue };
+            for f in files.flatten() {
+                let name = f.file_name().to_string_lossy().to_string();
+                if !(name.starts_with(stem) && name.ends_with(".png")) || name.contains("contrast") {
+                    continue;
+                }
+                let width = png_width(&f.path()).unwrap_or(0);
+                if best.as_ref().map_or(true, |(w, p)| width > *w || (width == *w && f.path() < *p)) {
+                    best = Some((width, f.path()));
+                }
+            }
+        }
+    }
+    best.filter(|(w, _)| *w > 0).map(|(_, p)| p)
+}
+
+/// PNG の幅 (IHDR)
+fn png_width(path: &Path) -> Option<u32> {
+    use std::io::Read;
+    let mut head = [0u8; 24];
+    std::fs::File::open(path).ok()?.read_exact(&mut head).ok()?;
+    (&head[..8] == b"\x89PNG\r\n\x1a\n" && &head[12..16] == b"IHDR").then(|| u32::from_be_bytes([head[16], head[17], head[18], head[19]]))
+}
+
+/// 実行ファイルのアイコン (Windows がエクスプローラー・スタートメニューで出すもの、最大 256px) を PNG にして置く
+fn icon_file(exe: &Path, dir: &Path, id: &str) -> Option<PathBuf> {
+    let data = imp::icon_png(exe)?;
+    std::fs::create_dir_all(dir).ok()?;
+    let name: String = id.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '_' }).collect();
+    let path = dir.join(format!("{name}.png"));
+    std::fs::write(&path, data).ok()?;
+    Some(path)
+}
+
+/// RGBA の画像を PNG にする (依存を増やさないため、無圧縮の deflate で書く)
+pub fn png(width: u32, height: u32, rgba: &[u8]) -> Vec<u8> {
+    fn crc(data: &[u8]) -> u32 {
+        let mut c = 0xffff_ffffu32;
+        for &b in data {
+            c ^= b as u32;
+            for _ in 0..8 {
+                c = if c & 1 != 0 { 0xedb8_8320 ^ (c >> 1) } else { c >> 1 };
+            }
+        }
+        !c
+    }
+    fn chunk(out: &mut Vec<u8>, kind: &[u8; 4], data: &[u8]) {
+        out.extend((data.len() as u32).to_be_bytes());
+        let start = out.len();
+        out.extend(kind);
+        out.extend(data);
+        let c = crc(&out[start..]);
+        out.extend(c.to_be_bytes());
+    }
+    let row = width as usize * 4;
+    let mut raw = Vec::with_capacity((row + 1) * height as usize);
+    for y in 0..height as usize {
+        raw.push(0); // 行ごとのフィルタ: なし
+        raw.extend_from_slice(&rgba[y * row..(y + 1) * row]);
+    }
+    let mut z = vec![0x78, 0x01];
+    let blocks: Vec<&[u8]> = if raw.is_empty() { vec![&[][..]] } else { raw.chunks(65535).collect() };
+    for (i, b) in blocks.iter().enumerate() {
+        z.push((i + 1 == blocks.len()) as u8);
+        z.extend((b.len() as u16).to_le_bytes());
+        z.extend((!(b.len() as u16)).to_le_bytes());
+        z.extend_from_slice(b);
+    }
+    let (mut a, mut b) = (1u32, 0u32);
+    for &x in &raw {
+        a = (a + x as u32) % 65521;
+        b = (b + a) % 65521;
+    }
+    z.extend(((b << 16) | a).to_be_bytes());
+    let mut ihdr = Vec::new();
+    ihdr.extend(width.to_be_bytes());
+    ihdr.extend(height.to_be_bytes());
+    ihdr.extend([8, 6, 0, 0, 0]); // 8 ビット・RGBA
+    let mut out = b"\x89PNG\r\n\x1a\n".to_vec();
+    chunk(&mut out, b"IHDR", &ihdr);
+    chunk(&mut out, b"IDAT", &z);
+    chunk(&mut out, b"IEND", &[]);
+    out
 }
 
 /// ランチャーのプロトコルで起動する。dry-run では呼ばない
@@ -173,6 +325,7 @@ fn steam_entry(acf: &Vdf, library: &Path) -> Option<Entry> {
         install_dir,
         launch_uri: format!("steam://rungameid/{appid}"),
         image: None,
+        icon_source: None,
     })
 }
 
@@ -218,15 +371,26 @@ fn epic_entry(v: &Value) -> Option<Entry> {
     if !install_dir.is_absolute() {
         return None;
     }
+    let install_dir_for_icon = install_dir.clone();
     Some(Entry {
         id: format!("epic:{app}"),
         name: name.to_string(),
         source: "epic",
         install_dir,
         launch_uri: format!("com.epicgames.launcher://apps/{target}?action=launch&silent=true"),
-        // Epic の画像の場所は未調査 (#121)。画面は頭文字で代わりに表示する
+        // Epic のランチャーの画像は手元にないため、実行ファイルのアイコンを使う (#128)
         image: None,
+        icon_source: launch_exe(&install_dir_for_icon, text("LaunchExecutable")),
     })
+}
+
+/// インストール先の中の実行ファイル (`..` などで外へ出る値は使わない)
+fn launch_exe(dir: &Path, rel: Option<&str>) -> Option<PathBuf> {
+    let rel = Path::new(rel?);
+    if !rel.components().all(|c| matches!(c, std::path::Component::Normal(_))) {
+        return None;
+    }
+    Some(dir.join(rel)).filter(|p| p.is_file())
 }
 
 /// URL に埋め込む値は英数字と . _ - だけを許す (それ以外の文字で URL や引数を組み替えられないように)
@@ -395,6 +559,54 @@ mod imp {
         // 32 以下は失敗 (ランチャーが入っていない・プロトコルが登録されていないなど)
         if r.0 as isize > 32 { Ok(()) } else { Err("ランチャーを起動できませんでした".into()) }
     }
+
+    /// 実行ファイルのアイコン (最大 256px) を Windows のシェルで取り出し、PNG にする (#128)
+    pub fn icon_png(path: &std::path::Path) -> Option<Vec<u8>> {
+        use windows::Win32::Foundation::SIZE;
+        use windows::Win32::Graphics::Gdi::{CreateCompatibleDC, DeleteDC, DeleteObject, GetDIBits, GetObjectW, BITMAP, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, HGDIOBJ};
+        use windows::Win32::System::Com::{CoInitializeEx, COINIT_APARTMENTTHREADED};
+        use windows::Win32::UI::Shell::{IShellItemImageFactory, SHCreateItemFromParsingName, SIIGBF_BIGGERSIZEOK, SIIGBF_ICONONLY};
+        unsafe {
+            // 検出のスレッドで使う。既に初期化済みでも続ける
+            let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+            let factory: IShellItemImageFactory = SHCreateItemFromParsingName(&HSTRING::from(path.as_os_str()), None).ok()?;
+            let bitmap = factory.GetImage(SIZE { cx: 256, cy: 256 }, SIIGBF_ICONONLY | SIIGBF_BIGGERSIZEOK).ok()?;
+            let object = HGDIOBJ(bitmap.0);
+            let mut bm = BITMAP::default();
+            GetObjectW(object, std::mem::size_of::<BITMAP>() as i32, Some((&mut bm as *mut BITMAP).cast()));
+            let (w, h) = (bm.bmWidth, bm.bmHeight);
+            let mut info = BITMAPINFO::default();
+            info.bmiHeader = BITMAPINFOHEADER {
+                biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                biWidth: w,
+                biHeight: -h, // 上から下へ
+                biPlanes: 1,
+                biBitCount: 32,
+                biCompression: BI_RGB.0,
+                ..Default::default()
+            };
+            let mut px = vec![0u8; (w.max(0) * h.max(0) * 4) as usize];
+            let dc = CreateCompatibleDC(None);
+            let lines = GetDIBits(dc, bitmap, 0, h as u32, Some(px.as_mut_ptr().cast()), &mut info, DIB_RGB_COLORS);
+            let _ = DeleteDC(dc);
+            let _ = DeleteObject(object);
+            if lines == 0 || w <= 0 || h <= 0 {
+                return None;
+            }
+            // BGRA (透明度を掛けた値) → RGBA。透明度の情報がない画像は不透明にする
+            let has_alpha = px.chunks(4).any(|p| p[3] != 0);
+            for p in px.chunks_mut(4) {
+                let a = if has_alpha { p[3] } else { 255 };
+                let un = |c: u8| if a == 0 || a == 255 { c } else { ((c as u32 * 255 + a as u32 / 2) / a as u32).min(255) as u8 };
+                let (b, g, r) = (p[0], p[1], p[2]);
+                p[0] = un(r);
+                p[1] = un(g);
+                p[2] = un(b);
+                p[3] = a;
+            }
+            Some(super::png(w as u32, h as u32, &px))
+        }
+    }
 }
 
 #[cfg(not(windows))]
@@ -404,6 +616,9 @@ mod imp {
     }
     pub fn open_uri(_: &str) -> Result<(), String> {
         Err("Windows以外では起動できません".into())
+    }
+    pub fn icon_png(_: &std::path::Path) -> Option<Vec<u8>> {
+        None
     }
 }
 
@@ -480,6 +695,55 @@ mod tests {
     }
 
     #[test]
+    fn png_has_valid_structure() {
+        let data = png(2, 1, &[255, 0, 0, 255, 0, 0, 255, 128]);
+        assert_eq!(&data[..8], b"\x89PNG\r\n\x1a\n");
+        assert_eq!(&data[12..16], b"IHDR");
+        assert_eq!(&data[16..24], &[0, 0, 0, 2, 0, 0, 0, 1]);
+        // IEND の CRC は常に AE426082
+        assert_eq!(&data[data.len() - 8..], &[0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82]);
+    }
+
+    #[test]
+    fn appx_logo_picks_largest_non_contrast_variant() {
+        let dir = std::env::temp_dir().join(format!("recooplay-appx-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("Assets")).unwrap();
+        std::fs::write(dir.join("appxmanifest.xml"), r#"<VisualElements Square150x150Logo="GraphicsLogo.png" Square44x44Logo="Assets\SmallLogo.png" />"#).unwrap();
+        let png_of = |w: u32| png(w, 1, &vec![0; w as usize * 4]);
+        std::fs::write(dir.join("GraphicsLogo.png"), png_of(150)).unwrap();
+        std::fs::write(dir.join(r"Assets\SmallLogo.png"), png_of(44)).unwrap();
+        std::fs::write(dir.join(r"Assets\SmallLogo.altform-unplated_targetsize-256.png"), png_of(256)).unwrap();
+        std::fs::write(dir.join(r"Assets\SmallLogo.contrast-black_targetsize-400.png"), png_of(400)).unwrap();
+        let logo = appx_logo(&dir).map(|p| p.file_name().unwrap().to_string_lossy().to_string());
+        let none = appx_logo(&dir.join("Assets"));
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(logo.as_deref(), Some("SmallLogo.altform-unplated_targetsize-256.png"));
+        assert!(none.is_none(), "マニフェストがなければ使わない");
+    }
+
+    #[test]
+    fn launch_exe_stays_inside_install_dir() {
+        let dir = std::env::temp_dir().join(format!("recooplay-exe-{}", std::process::id()));
+        std::fs::create_dir_all(dir.join("bin")).unwrap();
+        std::fs::write(dir.join(r"bin\game.exe"), b"x").unwrap();
+        let ok = launch_exe(&dir, Some(r"bin\game.exe"));
+        let outside = launch_exe(&dir, Some(r"..\other.exe"));
+        let absolute = launch_exe(&dir, Some(r"C:\Windows\explorer.exe"));
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(ok.is_some() && outside.is_none() && absolute.is_none());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn icon_png_reads_windows_icon() {
+        let exe = std::path::PathBuf::from(std::env::var("SystemRoot").unwrap_or_else(|_| r"C:\Windows".into())).join("explorer.exe");
+        let data = imp::icon_png(&exe).expect("explorer.exe のアイコン");
+        assert_eq!(&data[..8], b"\x89PNG\r\n\x1a\n");
+        assert!(data.len() > 1000);
+    }
+
+    #[test]
     fn steam_image_uses_localized_names() {
         // 東方風神録のように、Steam の表示言語に合わせた名前だけがある場合 (#128)
         let dir = std::env::temp_dir().join(format!("recooplay-images-{}", std::process::id()));
@@ -522,7 +786,7 @@ mod tests {
         std::fs::create_dir_all(steam.join(r"appcache\librarycache\2\def")).unwrap();
         std::fs::write(steam.join(r"appcache\librarycache\2\abc\library_header.jpg"), b"h").unwrap();
         std::fs::write(steam.join(r"appcache\librarycache\2\def\library_capsule.jpg"), b"c").unwrap();
-        let found = detect(&Roots::fake(&dir));
+        let found = detect(&Roots::fake(&dir)).games;
         let _ = std::fs::remove_dir_all(&dir);
         let ids: Vec<&str> = found.iter().map(|e| e.id.as_str()).collect();
         assert_eq!(ids, vec!["steam:1", "steam:2", "epic:Gamma"]);
