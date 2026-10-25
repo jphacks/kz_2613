@@ -1136,6 +1136,8 @@ async function main() {
       assert(img.status === 200 && img.headers.get('content-type') === 'image/jpeg' && (await img.arrayBuffer()).byteLength === 4, `画像 ${img.status}`);
       // Minecraft のランチャーを見つけ、一覧 (games) には混ぜずに画像だけ付ける (#128)
       assert(st.minecraft?.detected === true && st.minecraft.image === true && !st.games.some((g) => g.id === 'minecraft-java'), JSON.stringify(st.minecraft));
+      // 見つけたランチャーは開ける (#55)。開き方 (場所・アプリの ID) は画面へ送らない
+      assert(st.minecraft.launchable === true && !JSON.stringify(st.minecraft).includes('Minecraft.exe') && !JSON.stringify(st.minecraft).includes('shell:'), JSON.stringify(st.minecraft));
       const mc = await fetch(`${BASE}/api/game-image?id=minecraft-java`);
       assert(mc.status === 200 && mc.headers.get('content-type') === 'image/png' && mc.headers.get('cache-control') === 'no-store', `Minecraft の画像 ${mc.status}`);
       for (const id of ['epic:Gamma', 'steam:999', '..\..\config.json', 'C:\Windows\win.ini']) {

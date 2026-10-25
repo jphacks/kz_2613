@@ -29,6 +29,28 @@ pub struct Entry {
 /// 画面の固定の項目に画像を付けるためだけに使う
 pub struct Minecraft {
     pub image: Option<PathBuf>,
+    /// 公式ランチャーを開く先 (#55)。Xbox・Microsoft Store 版はアプリの ID (shell:AppsFolder\...)、
+    /// 旧来のインストーラー版は実行ファイルの場所。ゲーム本体は起動せず、ランチャーを開くだけ (認証はランチャーに任せる)
+    pub launch: String,
+}
+
+/// Xbox・Microsoft Store 版の公式 Minecraft ランチャーのパッケージ名とアプリの ID
+const MINECRAFT_PACKAGE: &str = "Microsoft.4297127D64EC6";
+const MINECRAFT_AUMID: &str = r"shell:AppsFolder\Microsoft.4297127D64EC6_8wekyb3d8bbwe!Minecraft";
+
+/// 見つけたランチャーの開き方。パッケージのアプリは中の実行ファイルを直接開かず、アプリの ID で開く
+fn minecraft_launch(exe: &Path) -> String {
+    let packaged = exe
+        .parent()
+        .and_then(|d| std::fs::read_to_string(d.join("appxmanifest.xml")).ok())
+        .is_some_and(|m| m.contains(&format!("Name=\"{MINECRAFT_PACKAGE}\"")));
+    if packaged { MINECRAFT_AUMID.into() } else { exe.to_string_lossy().to_string() }
+}
+
+/// 公式の Minecraft ランチャーを開く (#55)。dry-run では呼ばない
+pub fn open_minecraft_launcher(launch: &str) -> Result<(), String> {
+    if launch.starts_with("shell:") { imp::open_uri(launch) } else { imp::open_exe(Path::new(launch)) }
+        .map_err(|_| "Minecraftのランチャーを開けませんでした".into())
 }
 
 /// 検出の結果
@@ -114,7 +136,7 @@ pub fn detect(roots: &Roots) -> Detected {
             e.image = app_image(&exe, &roots.icons, &e.id);
         }
     }
-    let minecraft = roots.minecraft.iter().find(|p| p.is_file()).map(|exe| Minecraft { image: app_image(exe, &roots.icons, "minecraft-java") });
+    let minecraft = roots.minecraft.iter().find(|p| p.is_file()).map(|exe| Minecraft { image: app_image(exe, &roots.icons, "minecraft-java"), launch: minecraft_launch(exe) });
     Detected { games: list, minecraft }
 }
 
@@ -226,8 +248,15 @@ pub fn png(width: u32, height: u32, rgba: &[u8]) -> Vec<u8> {
     out
 }
 
-/// ランチャーのプロトコルで起動する。手動で登録したアプリは、その実行ファイルを引数なしで起動する。dry-run では呼ばない
+/// 一覧での出所: 公式の Minecraft ランチャー (#55)
+pub const MINECRAFT_SOURCE: &str = "minecraft";
+
+/// ランチャーのプロトコルで起動する。手動で登録したアプリは、その実行ファイルを引数なしで起動する。
+/// Minecraft は公式ランチャーを開くだけ。dry-run では呼ばない
 pub fn launch(entry: &Entry) -> Result<(), String> {
+    if entry.source == MINECRAFT_SOURCE {
+        return open_minecraft_launcher(&entry.launch_uri);
+    }
     if entry.source == MANUAL_SOURCE {
         return imp::open_exe(Path::new(&entry.launch_uri));
     }
@@ -845,6 +874,23 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         assert_eq!(logo.as_deref(), Some("SmallLogo.altform-unplated_targetsize-256.png"));
         assert!(none.is_none(), "マニフェストがなければ使わない");
+    }
+
+    #[test]
+    fn minecraft_launcher_opens_packaged_app_by_id() {
+        let dir = std::env::temp_dir().join(format!("recooplay-mc-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("xbox")).unwrap();
+        std::fs::create_dir_all(dir.join("classic")).unwrap();
+        let xbox = dir.join(r"xbox\Minecraft.exe");
+        std::fs::write(&xbox, b"x").unwrap();
+        std::fs::write(dir.join(r"xbox\appxmanifest.xml"), r#"<Identity Name="Microsoft.4297127D64EC6" Publisher="CN=Microsoft Corporation" />"#).unwrap();
+        let classic = dir.join(r"classic\MinecraftLauncher.exe");
+        std::fs::write(&classic, b"x").unwrap();
+        let (a, b) = (minecraft_launch(&xbox), minecraft_launch(&classic));
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(a, MINECRAFT_AUMID);
+        assert_eq!(b, classic.to_string_lossy());
     }
 
     #[test]

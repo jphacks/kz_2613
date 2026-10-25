@@ -160,6 +160,13 @@ test('ゲーム一覧: 固定のMinecraftの後に検出したゲームを並べ
   // ランチャーを見つけたら Minecraft にも画像を付ける。見つからなくても項目は残す (#128)
   assert.equal(gameList([], { detected: true, image: true })[0].image, true);
   assert.equal(gameList([], { detected: false, image: false })[0].image, false);
+  // ランチャーを開けるときは起動でき、出所を「公式ランチャー」にする。見つからなければ手動起動のまま (#55)
+  const mc = gameList([], { detected: true, image: false, launchable: true })[0];
+  assert.equal(mc.launchable, true);
+  assert.equal(mc.source, 'minecraft');
+  assert.ok(gameCard(mc, null, null).badges.includes('公式ランチャー'), JSON.stringify(gameCard(mc, null, null).badges));
+  assert.equal(gameList([], { detected: false, image: false, launchable: false })[0].launchable, false);
+  assert.equal(gameList([], { detected: false, image: false, launchable: false })[0].source, 'manual');
   assert.equal(gameCard(gameList([], { detected: true, image: true })[0], null, null).image, '/api/game-image?id=minecraft-java');
   assert.deepEqual(gameList(undefined).map((g) => g.id), ['minecraft-java'], '一覧が届く前・スマホ向けでない状態でもMinecraftは選べる');
   assert.equal(gameList([{ id: 'x', name: 'X', source: 'steam', verified: 'yes', launchable: true }])[1].verified, false, 'true以外は未検証');

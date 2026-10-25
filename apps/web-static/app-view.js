@@ -167,7 +167,7 @@ export const ROLES = [
   { slot: 'P4', title: '参加者' },
 ];
 
-// Minecraft は公式ランチャーで「プレイ」を押す必要があるため手動起動 (#55)。Steam・Epic の検出・起動はホストの state.games (#54・#93)
+// Minecraft は公式ランチャーを開き、ランチャーで「プレイ」を押す (#55)。Steam・Epic の検出・起動はホストの state.games (#54・#93)
 export const GAMES = [
   {
     id: 'minecraft-java',
@@ -175,14 +175,14 @@ export const GAMES = [
     // 操作設定の「手順」(#109・#114 の後の開始手順)
     steps: [
       'PCの画面でゲームを選び、メンバーと分担を決定する',
-      'Minecraft のランチャーから手動で起動し、ワールドに入っておく',
+      '「ゲームを起動する」で公式ランチャーを開き、「プレイ」を押してワールドに入る（ランチャーが見つからないときは手動で起動する）',
       'ホットバーに使うアイテムを並べておく（インベントリ操作はホストのリモコンでは限られます）',
       '「ゲームを準備する」の後、Minecraftを前面にしてホストがスマホでReadyを押す',
     ],
   },
 ];
 
-const SOURCE_LABELS = { steam: 'Steam', epic: 'Epic Games', manual: '手動で起動', registered: '手動登録' };
+const SOURCE_LABELS = { steam: 'Steam', epic: 'Epic Games', manual: '手動で起動', registered: '手動登録', minecraft: '公式ランチャー' };
 
 /** 手動で登録したゲーム (#49・#56)。名前の変更・登録の解除ができる */
 export const isRegistered = (id) => typeof id === 'string' && id.startsWith('manual:');
@@ -202,8 +202,9 @@ const LAUNCH_TITLES = { launching: '起動中…', started: '起動しました'
  * 検出は入力が届くことを意味しないので、verified でない項目には「未検証」を出す (要件11章5項)
  */
 export function gameList(games, minecraft) {
-  // Minecraft は常に先頭に出す (起動は手動)。ランチャーを見つけたら、その画像を付ける (#128)
-  const fixed = { id: GAMES[0].id, name: GAMES[0].name, source: 'manual', verified: true, launchable: false, image: minecraft?.image === true };
+  // Minecraft は常に先頭に出す。ランチャーを見つけたら、その画像を付け、起動 (ランチャーを開く) できるようにする (#128・#55)
+  const launcher = minecraft?.launchable === true;
+  const fixed = { id: GAMES[0].id, name: GAMES[0].name, source: launcher ? 'minecraft' : 'manual', verified: true, launchable: launcher, image: minecraft?.image === true };
   const detected = (games || []).filter((g) => g?.id && g.id !== fixed.id)
     .map((g) => ({ id: g.id, name: g.name || g.id, source: g.source, verified: g.verified === true, launchable: !!g.launchable, image: g.image === true }));
   return [fixed, ...detected];
