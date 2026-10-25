@@ -46,6 +46,9 @@ function fakeGames(dir) {
   fs.mkdirSync(path.join(steam, 'common', 'Stardew Valley'), { recursive: true });
   fs.mkdirSync(path.join(steam, 'common', 'Steamworks Shared'), { recursive: true });
   fs.writeFileSync(path.join(steam, 'appmanifest_413150.acf'), '"AppState" { "appid" "413150" "name" "Stardew Valley" "StateFlags" "4" "installdir" "Stardew Valley" }');
+  // Minecraft のランチャー (#128)。中身のない実行ファイルでも、Windows の汎用のアイコンを取り出せる
+  fs.mkdirSync(path.join(root, 'minecraft'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'minecraft', 'Minecraft.exe'), '');
   // 一覧のタイルの画像 (#121)。Steam のライブラリの画像のキャッシュを模す
   fs.mkdirSync(path.join(root, 'steam', 'appcache', 'librarycache', '413150'), { recursive: true });
   fs.writeFileSync(path.join(root, 'steam', 'appcache', 'librarycache', '413150', 'library_600x900.jpg'), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
@@ -1085,6 +1088,10 @@ async function main() {
       assert(st.games.find((g) => g.id === 'steam:413150').image === true && st.games.find((g) => g.id === 'epic:Gamma').image === false, JSON.stringify(st.games));
       const img = await fetch(`${BASE}/api/game-image?id=${encodeURIComponent('steam:413150')}`);
       assert(img.status === 200 && img.headers.get('content-type') === 'image/jpeg' && (await img.arrayBuffer()).byteLength === 4, `画像 ${img.status}`);
+      // Minecraft のランチャーを見つけ、一覧 (games) には混ぜずに画像だけ付ける (#128)
+      assert(st.minecraft?.detected === true && st.minecraft.image === true && !st.games.some((g) => g.id === 'minecraft-java'), JSON.stringify(st.minecraft));
+      const mc = await fetch(`${BASE}/api/game-image?id=minecraft-java`);
+      assert(mc.status === 200 && mc.headers.get('content-type') === 'image/png' && mc.headers.get('cache-control') === 'no-store', `Minecraft の画像 ${mc.status}`);
       for (const id of ['epic:Gamma', 'steam:999', '..\..\config.json', 'C:\Windows\win.ini']) {
         const r = await fetch(`${BASE}/api/game-image?id=${encodeURIComponent(id)}`);
         assert(r.status === 404, `${id}: ${r.status}`);

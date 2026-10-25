@@ -13,11 +13,13 @@ export function bindTouchpad(element, { enabled, send, tap, rightTap = () => {} 
   element.addEventListener('pointerdown', e => {
     e.preventDefault();
     if (!enabled() || pointers.size >= 2 || pointers.has(e.pointerId)) return;
+    const newGesture = pointers.size === 0;
     pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
     element.setPointerCapture(e.pointerId); element.classList.add('down');
-    if (pointers.size === 1) { mode = 'move'; distance = 0; startedAt = e.timeStamp; }
+    if (newGesture) { mode = 'move'; distance = 0; startedAt = e.timeStamp; }
     // 2本目が触れたらスクロールに切り替え、送っていないカーソル移動は捨てる
-    else { mode = 'scroll'; dx = dy = sy = 0; distance = 0; startedAt = e.timeStamp; }
+    else if (mode === 'move') { mode = 'scroll'; dx = dy = sy = 0; distance = 0; startedAt = e.timeStamp; }
+    // スクロール中に片指を置き直しても同じ操作を継続する。距離と開始時刻を消すと、最後の解放が右クリックになってしまう。
   });
   element.addEventListener('pointermove', e => {
     const p = pointers.get(e.pointerId);

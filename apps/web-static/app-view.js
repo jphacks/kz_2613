@@ -156,8 +156,9 @@ const LAUNCH_TITLES = { launching: '起動中…', started: '起動しました'
  * 選択画面の一覧: 固定の Minecraft (手動起動) と、ホストが検出したゲーム (state.games)。
  * 検出は入力が届くことを意味しないので、verified でない項目には「未検証」を出す (要件11章5項)
  */
-export function gameList(games) {
-  const fixed = { id: GAMES[0].id, name: GAMES[0].name, source: 'manual', verified: true, launchable: false };
+export function gameList(games, minecraft) {
+  // Minecraft は常に先頭に出す (起動は手動)。ランチャーを見つけたら、その画像を付ける (#128)
+  const fixed = { id: GAMES[0].id, name: GAMES[0].name, source: 'manual', verified: true, launchable: false, image: minecraft?.image === true };
   const detected = (games || []).filter((g) => g?.id && g.id !== fixed.id)
     .map((g) => ({ id: g.id, name: g.name || g.id, source: g.source, verified: g.verified === true, launchable: !!g.launchable, image: g.image === true }));
   return [fixed, ...detected];

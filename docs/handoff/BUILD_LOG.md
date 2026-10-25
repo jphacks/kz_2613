@@ -776,3 +776,18 @@
 - スマホのタッチパッドが1本目の指だけを追っていたため、2本目の指を受け付けるようにした。2本指を動かすと`kind:scroll`（ナチュラルな向き、最大30Hz）を送り、操作中はカーソルを動かさない（2本目が触れたら未送信の移動は捨てる）。2本指で軽くタップすると右クリック。3本目以降は無視する。
 - ホストは、ゲームが前面のときスクロール量に合わせてホイールを1〜3段（40pxで1段）送るようにした（以前は量に関係なく1段）。記録（`remote_input`）に段数を残す。PC画面が前面のときは従来どおりPC画面をスクロールする。
 - `ui-input-test.mjs` 9/9（2本指のスクロールの向き・量、1本離しても両方離すまでスクロール、動かした後はクリックしない、2本指タップで右クリック、3本目の無視）、`protocol-sim.mjs`（Rust dry-run）46/46（ゲームが前面のときのスクロール100px→-3段、-30px→1段）、`app-view-test.mjs` 21/21、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`check-static-pages.mjs`が成功した。スマホ実機での操作感は未確認。
+
+## 2026-10-26 — 検出したゲームと画像をセットで取得し、Minecraftにも画像を付ける（Claude Code、#128）
+
+- PR #127（#126）の上に積んだ。画像の取得元を、ランチャーの画像（Steam、言語名付きを含む）→ Xbox・Store版のアプリのマニフェストのロゴ（最大の版、ハイコントラスト用は除く）→ 実行ファイルのアイコン（Windowsのシェルで最大256pxを取り出し、依存なしで無圧縮のPNGにして一時フォルダへ）→ 頭文字、の順にした。Epicはマニフェストの`LaunchExecutable`（インストール先の外を指す値は使わない）のアイコン。
+- Minecraftのランチャー（各ドライブの`XboxGames\Minecraft Launcher\Content\Minecraft.exe`、旧版の`Program Files (x86)\Minecraft Launcher`）を探し、見つけたら一覧の先頭のMinecraftに画像を付ける。一覧（`games`）には混ぜず（入力先・手動起動はそのまま）、`state.minecraft`（`detected`・`image`）で知らせる。見つからなくても「手動で起動」の項目として残す。
+- 最初はXbox版の`Minecraft.exe`のアイコンを取り出したが、汎用のアプリのアイコンになった（この実行ファイルはアイコンを持たない）。マニフェストのロゴを先に見るようにし、256pxのロゴになった。途中、撮影用のChromeの作業フォルダを使い回したため、10分間のキャッシュで前の画像が出続けたことがあった。再検出で画像が変わっても古い画像を出さないよう、`/api/game-image`を保存させない（`no-store`）にした。
+- `cargo test --release --locked`はホスト39件（PNGの構造、マニフェストのロゴの選び方、インストール先の外を指す実行ファイルの拒否、Windowsのアイコンの取り出し（explorer.exe）を追加）＋プローブ3件成功。`protocol-sim.mjs`（Rust dry-run）46/46：模擬のMinecraftランチャーの検出（`games`に入らず`minecraft.image`が真）、`id=minecraft-java`の画像（PNG・`no-store`）を追加した。`app-view-test.mjs` 21/21、`ui-input-test.mjs` 8/8、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`shutdown-sim.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`、`verify-ui-evidence.mjs`、`verify_overlay.py`が成功した。
+- 開発PC（Steam 12本・Xbox版のMinecraftランチャー）の実際の検出をヘッドレスChromeで撮影し、Minecraft（Creeperのロゴ）・東方風神録を含む13タイルすべてに画像が出ることを確認した。Epicのゲームがないため、Epicの実行ファイルのアイコンは実機で未確認。
+
+## 2026-10-26 — PR #129・#130のレビューと誤クリック修正（Codex）
+
+- #129の画像取得・画像配信のパス制限と、#130の2本指の状態遷移・キャンセル・P1の認可・epoch照合をレビューした。#129のhead `a47c6b7`に対するCI（40209837404／40209837393）は全項目成功。ローカルの `node scripts/sim/app-view-test.mjs`21/21と `check-static-pages.mjs`、既存の `recooplay_host-570d8e9e803d4f7e.exe games::tests`13件（ロゴ・PNG・外部パス拒否・Windowsアイコン等）も成功し、#129をmainへsquashマージした（`f29893a`、GitHubのmerged: trueを確認）。新しいゲーム実機・WebView2確認はしていない。
+- #130で、スクロール後に片指を残してもう片方を置き直すと、distanceと開始時刻がリセットされ、最後の解放で意図しない右クリックが1回発生することをNodeのPointer Events模擬検証で再現した。2本指スクロールを継続中は履歴を保持し、両指を離した後だけ新しい操作として初期化するよう修正した。置き直しと2本指キャンセルでクリックしない回帰試験を追加した。
+- #129マージ後のmainを#130へ取り込み、BUILD_LOGの両方の記録を保持して競合を解消した。修正後の `node scripts/sim/ui-input-test.mjs`10/10、`app-view-test.mjs`21/21、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`（33ファイル）、`git diff --check`が成功した。
+- 修正前の#130で `node scripts/sim/protocol-sim.mjs`46/46も成功していたが、#129との統合後のRustビルド・単体・通信の根拠は修正後のCIで別途確認する。ローカルでRustは再ビルドしていない。作業開始時の未コミットBUILD_LOGはstashへ保持している。

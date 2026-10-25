@@ -103,6 +103,21 @@ try {
     at('pointerdown',6,100);at('pointerdown',7,100);at('pointerdown',8,100);at('pointermove',8,0);tick();
     assert.equal(messages.length,2);
   });
+  await test('タッチパッド: スクロール中の指の置き直しとキャンセルで右クリックしない',()=>{
+    const pad=new Element(),messages=[];let clicks=0;
+    bindTouchpad(pad,{enabled:()=>true,send:m=>messages.push(m),tap:()=>clicks++,rightTap:()=>clicks++});
+    const tick=intervals.at(-1).fn;
+    const at=(name,id,y,t)=>pad.fire(name,{pointerId:id,clientX:100,clientY:y,timeStamp:t});
+    at('pointerdown',1,100,0);at('pointerdown',2,100,10);
+    at('pointermove',1,60,60);at('pointermove',2,60,60);tick();
+    at('pointerup',1,60,100);at('pointerdown',3,60,120);
+    at('pointerup',2,60,150);at('pointerup',3,60,170);
+    assert.equal(clicks,0,'片指を残して置き直しても、既に動かしたスクロールをタップと扱わない');
+    assert.deepEqual(messages.map(m=>[m.kind,m.dy]),[['scroll',40]]);
+    at('pointerdown',4,100,300);at('pointerdown',5,100,310);
+    at('pointercancel',4,100,320);at('pointerup',5,100,330);
+    assert.equal(clicks,0);assert.equal(messages.at(-1).kind,'release');
+  });
   await test('協力入力: 視点30Hz、epoch変更・キャンセルで累積値と未送信移動を初期化する',()=>{
     const elements=Object.fromEntries(['stick','pad','sens','sensVal'].map(id=>[id,new Element()]));
     globalThis.document={getElementById:id=>elements[id]};globalThis.localStorage={getItem:()=>null,setItem(){}};
