@@ -236,27 +236,27 @@ Re:Cooplayは、**ゲームや参加人数に合わせて、もっと自然に�
 
 #### ハッカソンで開発した独自機能・技術
 
-Hack Day中に共同操作の基盤を開発し、その後も対応人数やゲーム別の操作画面などを拡張しました。以下は、現在の実装に基づく主な機能・技術です。
+Re:Cooplayでは、複数人で1つのキャラクターを共同操作するために、役割分担と入力統合、通信の整合性、ゲームごとの操作変換、開始・停止の制御などを独自に実装しました。以下では、その仕組みと対応するコードを紹介します。
 
-- **複数人の入力統合と役割分担**  
-  スマートフォンから届く操作を各プレイヤーの担当と照合し、1つのPCゲームに対する入力へ統合します。参加人数に応じた2〜4人の操作分担と、開始前・一時停止中の担当交換に対応しています。  
-  [入力統合](apps/host-rs/src/hub.rs) ／ [入力変換](apps/host-rs/src/controls.rs) ／ [Windows入力](apps/host-rs/src/input.rs)
+- **複数人の操作を1つにまとめる入力統合・役割分担**  
+  各ゲームの操作定義から参加人数（2〜4人）に応じた分担を作り、PCホスト側で担当者以外の入力を受け付けないようにしています。異なるスマホから届く操作を1つのキーボード・マウス入力に統合し、開始前や一時停止中には担当を入れ替えることもできます。  
+  [分担の生成](apps/host-rs/src/profiles.rs) ／ [入力の統合・担当確認](apps/host-rs/src/hub.rs) ／ [Windows入力](apps/host-rs/src/input.rs)
 
-- **リアルタイム通信と入力の整合性**  
-  WebSocketで参加・状態管理を行い、操作入力にはWebRTC DataChannelも併用します。ボタン入力の重複処理や古い状態の入力を防ぎ、視点移動や長押し・連打を扱う仕組みを実装しています。  
-  [WebRTC実装](apps/host-rs/src/rtc.rs) ／ [通信仕様](docs/architecture/protocol.md) ／ [通信の自動試験](scripts/sim/protocol-sim.mjs)
+- **遅延や通信の乱れを考慮した入力処理**  
+  WebSocketによる通信に加え、操作入力をWebRTC DataChannelでも送信します。ボタン操作は通し番号で重複処理を防ぎ、プレイ状態が切り替わる前の古い入力は無効化します。視点操作は移動量を累積して送ることで通信の欠落に備え、PC側で細かく補間してマウス操作へ変換します。  
+  [WebRTC通信](apps/host-rs/src/rtc.rs) ／ [入力処理](apps/host-rs/src/hub.rs) ／ [通信仕様・検証](docs/architecture/protocol.md)
 
-- **ゲーム別の操作定義と役割別コントローラー**  
-  ゲームごとの操作定義や、対応する形式のキー設定を参照して入力を変換し、担当者に必要な操作だけをスマートフォンに表示します。Steam・Epicのインストール済みゲームの検出と、実行ファイルの手動登録にも対応しています。  
-  [操作定義](docs/architecture/game-profiles.md) ／ [ゲーム検出・手動登録](apps/host-rs/src/games.rs) ／ [操作画面の生成](apps/web-static/scripts/generated-controls.js)
+- **ゲームの操作設定に合わせたコントローラー生成**  
+  ゲームごとの操作定義と、読み取りに対応したゲームのキー設定を組み合わせ、各プレイヤーに割り当てた操作だけをスマホ画面に生成します。移動はスティック、視点はタッチ操作など、操作の種類に応じてUIを作り分け、ボタンには実際に送信するキー名を表示します。  
+  [ゲームごとの操作定義](docs/architecture/game-profiles.md) ／ [定義の読み込み・分担生成](apps/host-rs/src/profiles.rs) ／ [操作画面の生成](apps/web-static/scripts/generated-controls.js)
 
-- **開始・停止と入力先の制御**  
-  ホストの明示的なReady操作で共同操作を開始し、対象ゲームのウィンドウが前面にあるかを確認して入力を送ります。一時停止・切断・緊急停止時には、押下中のキーやマウスボタンを解放する処理を備えています。  
-  [入力先の判定](apps/host-rs/src/focus.rs) ／ [セッション・停止処理](apps/host-rs/src/hub.rs) ／ [起動から開始までの設計](docs/decisions/2026-10-25-launch-after-roles.md)
+- **誤操作を防ぐ開始・停止と入力先の制御**  
+  ゲームと参加メンバー・分担を確認したうえで、ホストが明示的にReadyを操作したときだけ共同操作を開始します。PCで対象ゲームのウィンドウを判定して入力先を制限し、一時停止・切断・緊急停止などでは、押下中のキーや未処理の視点移動を解放・破棄する仕組みを実装しています。  
+  [入力先の判定](apps/host-rs/src/focus.rs) ／ [状態管理・入力解放](apps/host-rs/src/hub.rs) ／ [開始手順の設計](docs/decisions/2026-10-25-launch-after-roles.md)
 
-- **QRコード参加から共同操作までのUI**  
-  スマートフォンでQRコードを読み取り、ホストのスマホからゲーム選択などの準備を進められます。Ready後は、参加者それぞれに割り当てられた操作画面へ切り替わります。  
-  [PC・スマホUI](apps/web-static/) ／ [表示検証記録](artifacts/improved-ui/README.md)
+- **ホスト操作と共同プレイをつなぐ画面・状態連携**  
+  QRコードで参加したスマホのうち、ホスト端末はPC画面を操作するリモコンとしても使えます。ゲーム選択や分担確認などの準備操作と、開始後の担当別コントローラーへの切り替えをプレイ状態に連動させ、準備中と共同操作中で使える操作を切り分けています。  
+  [PC画面の状態・操作](apps/web-static/app-view.js) ／ [ホスト側の操作切替](apps/host-rs/src/hub.rs) ／ [UI検証記録](artifacts/improved-ui/README.md)
 
 [開発開始前のコミット](https://github.com/jphacks/kz_2613/tree/5acb0049e6) ／ [GitHub上の変更差分](https://github.com/jphacks/kz_2613/compare/5acb0049e6...main) ／ [Hack Day開発ログ](docs/handoff/BUILD_LOG.md) ／ [システム設計](docs/architecture/system-design.md)
 
