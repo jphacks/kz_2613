@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView, usesFixedRoles, shownSlots, gameList, gameCard, gameAction, launchView } from '../../apps/web-static/app-view.js';
+import { SCREENS, slotViews, startView, phaseView, navigate, joinUrl, device, screenOnGameUpdate, keyLabel, roleControls, desktopView, desktopWarning, profileNotice, roleView, usesFixedRoles, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -183,16 +183,39 @@ test('ゲーム一覧: 起動の状態は選んだ項目への要求だけを表
   assert.equal(launchView(null, 'steam:413150'), null);
 });
 
-test('ゲーム一覧: 主ボタンは検出したゲームを項目IDで起動し、要求後・失敗後は次へ進む', () => {
+test('ゲーム一覧: 主ボタンは選ぶだけで起動せず、メンバー・分担の画面へ進む (#109)', () => {
   const list = gameList(detected), ui = { screen: 'game', game: 'steam:413150' };
-  assert.deepEqual(gameAction(ui, { launch: null }, list), { kind: 'launch', label: 'このゲームを起動する', id: 'steam:413150' });
-  assert.equal(gameAction(ui, { launch: { id: 'epic:Gamma', state: 'started' } }, list).kind, 'launch', '別の項目の起動結果を流用しない');
-  assert.equal(gameAction(ui, { launch: { id: 'steam:413150', state: 'launching' } }, list).kind, 'next');
-  assert.equal(gameAction(ui, { launch: { id: 'steam:413150', state: 'started' } }, list).kind, 'next');
-  const failed = gameAction(ui, { launch: { id: 'steam:413150', state: 'failed' } }, list);
-  assert.equal(failed.kind, 'next'); assert.equal(failed.retry, true); assert.match(failed.label, /手動で起動/);
-  assert.equal(gameAction({ ...ui, game: 'minecraft-java' }, null, list).kind, 'next', 'Minecraftは起動要求を送らない');
-  assert.equal(gameAction({ ...ui, game: 'pseudo-game' }, null, list).kind, 'none', '一覧にない選択では起動も前進もしない');
+  assert.deepEqual(gameAction(ui, { launch: null }, list), { kind: 'next', label: 'このゲームで遊ぶ' });
+  assert.equal(gameAction({ ...ui, game: 'minecraft-java' }, null, list).kind, 'next');
+  assert.equal(gameAction({ ...ui, game: 'pseudo-game' }, null, list).kind, 'none', '一覧にない選択では前進しない');
+});
+
+test('分担の画面: 決定 → 起動 → 準備の順に案内し、失敗時は再起動と手動準備を出す (#109)', () => {
+  const list = gameList(detected);
+  const base = { phase: 'lobby', title: 'steam:413150', connected: ['P1', 'P2'], lineupOk: false, canLaunch: false, canPrepare: false, launch: null };
+  assert.equal(rolesAction(null, list).disabled, true);
+  assert.deepEqual([rolesAction(base, list).kind, rolesAction(base, list).disabled], ['confirm', false]);
+  const alone = rolesAction({ ...base, connected: ['P1'] }, list);
+  assert.equal(alone.disabled, true); assert.match(alone.note, /2人以上/);
+  assert.equal(rolesAction({ ...base, connected: ['P2', 'P3'] }, list).disabled, true, 'P1 がいなければ決定できない');
+  const ok = { ...base, lineupOk: true, canLaunch: true };
+  assert.deepEqual(rolesAction(ok, list), { kind: 'launch', label: 'ゲームを起動する', id: 'steam:413150', disabled: false });
+  assert.equal(rolesAction({ ...ok, launch: { id: 'epic:Gamma', state: 'started' } }, list).kind, 'launch', '別の項目の起動結果を流用しない');
+  const launching = rolesAction({ ...ok, canLaunch: false, launch: { id: 'steam:413150', state: 'launching', message: '起動しています' } }, list);
+  assert.equal(launching.kind, 'wait'); assert.equal(launching.disabled, true, '起動中は押せない');
+  const failed = rolesAction({ ...ok, launch: { id: 'steam:413150', state: 'timeout', message: '手動で起動してください' } }, list);
+  assert.equal(failed.kind, 'launch'); assert.match(failed.label, /もう一度/); assert.equal(failed.alt.kind, 'prepare'); assert.match(failed.note, /確認できません/);
+  const started = rolesAction({ ...ok, canPrepare: true, launch: { id: 'steam:413150', state: 'started', message: '前面にしました' } }, list);
+  assert.deepEqual([started.kind, started.disabled, started.note], ['prepare', false, '前面にしました']);
+  const mc = rolesAction({ ...ok, title: 'minecraft-java', canPrepare: true }, list);
+  assert.equal(mc.kind, 'prepare'); assert.match(mc.note, /手動で起動/);
+  assert.equal(rolesAction({ ...ok, phase: 'preparing' }, list).kind, 'none', '準備中は起動・準備ボタンを出さない');
+});
+
+test('分担の画面: 準備中に参加者が変わったら、分担の画面で決定し直す (#109)', () => {
+  assert.equal(desktopView({ screen: 'join' }, { phase: 'preparing', lineupOk: false }), 'roles');
+  assert.equal(desktopView({ screen: 'join' }, { phase: 'preparing', lineupOk: true, canReady: true }), 'ready');
+  assert.equal(desktopView({ screen: 'join' }, { phase: 'preparing', lineupOk: true, canReady: false }), 'preparing');
 });
 
 test('リモコン: 選択画面の上下で検出したゲームを含む一覧を巡回する', () => {

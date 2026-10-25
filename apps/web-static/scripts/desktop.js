@@ -1,5 +1,5 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,screenOnGameUpdate,desktopView,desktopWarning,keyLabel,profileNotice,roleView,usesFixedRoles,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,launchView} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,screenOnGameUpdate,desktopView,desktopWarning,keyLabel,profileNotice,roleView,usesFixedRoles,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,rolesAction} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let ui={screen:'join',game:GAMES[0].id};
@@ -10,6 +10,8 @@ const games=()=>gameList(state?.games);
 const send=m=>{if(ws?.readyState===1)ws.send(JSON.stringify(m));};
 function setUi(next){
   if(next.game!==ui.game)send({type:'select_game',title:next.game});
+  // 分担の画面から戻ったら決定を取り消す (戻った後の古い決定で起動・準備しない、#109)
+  if(ui.screen==='roles'&&next.screen!=='roles'&&game?.lineupOk&&game.phase==='lobby')send({type:'unconfirm_lineup'});
   ui={...next,game:game?.title||next.game};
   try{localStorage.setItem('recooplay.app',JSON.stringify({screen:ui.screen}));}catch{}
   render();
@@ -33,23 +35,31 @@ $('closeConnectionHelp').addEventListener('click',()=>$('connectionHelp').close(
 $('reloadInfo').addEventListener('click',loadInfo);
 $('openGameBtn').addEventListener('click',()=>send({type:'open_game'}));
 $('refreshGamesBtn').addEventListener('click',()=>send({type:'refresh_games'}));
-$('retryLaunchBtn').addEventListener('click',()=>send({type:'launch_game',id:ui.game}));
-// 選択画面の主ボタン・Enter。検出したゲームは項目IDだけを送って起動を要求する (起動方法はホストが決める)
+// 選択画面の主ボタン・Enter。選ぶだけで起動せず、メンバー・分担の画面へ進む (#109)
 function gameMain(){
-  const action=gameAction(ui,game,games());
-  if(action.kind==='launch')send({type:'launch_game',id:action.id});
-  else if(action.kind==='next')setUi({...ui,screen:'roles'});
+  if(gameAction(ui,game,games()).kind==='next')setUi({...ui,screen:'roles'});
+}
+// 分担の画面の主ボタン・補助ボタン・Enter。決定は画面が見ているゲーム・メンバーを添えて送り、ホストが今と照合する。
+// 起動は選んだ項目のIDだけを送る (起動方法はホストが決める)
+function rolesRun(action){
+  if(!action||action.disabled)return;
+  if(action.kind==='confirm')send({type:'confirm_lineup',title:game.title,members:game.connected});
+  else if(action.kind==='launch')send({type:'launch_game',id:action.id});
+  else if(action.kind==='prepare')send({type:'prepare'});
 }
 // ホストのリモコンとPCのキーボードで同じ動作にする
 function remoteControl(c){
-  if(c==='ENTER'&&desktopView(ui,game)==='game')gameMain();
+  const view=desktopView(ui,game);
+  if(c==='ENTER'&&view==='game')gameMain();
+  else if(c==='ENTER'&&view==='roles')rolesRun(rolesAction(game,games()));
   else setUi(navigate(ui,c,games()));
 }
+$('subBtn').addEventListener('click',()=>rolesRun(rolesAction(game,games()).alt));
 $('nextBtn').addEventListener('click',()=>{
   const view=desktopView(ui,game);
   if(view==='join')setUi({...ui,screen:'game'});
   else if(view==='game')gameMain();
-  else if(view==='roles'&&game?.canPrepare)send({type:'prepare'});
+  else if(view==='roles')rolesRun(rolesAction(game,games()));
 });
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-go],[data-game],[data-mode]');if(!el)return;
@@ -84,7 +94,7 @@ function render(){
   });
   const roleSlots=shownSlots(game);
   $('roles').style.setProperty('--role-count',String(roleSlots.length));
-  $('roleHeading').textContent=`${roleSlots.length}人で、操作を分担！`;
+  $('roleHeading').textContent=game?.lineupOk?`${roleSlots.length}人で決定！`:`${roleSlots.length}人で、操作を分担！`;
   $('roles').innerHTML=roleSlots.map(slot=>{
     const i=SLOT_NAMES.indexOf(slot),role=roleView(game,slot);
     return `<article class="role-column"><h3>プレイヤー${i+1}</h3>${character(i)}<div class="role-copy"><b>${esc(generated?role.title:shortRoles[i])}</b><p>${generated?esc(role.lines[0]||'担当する操作なし'):esc(['歩く・跳ぶ','カメラを動かす','攻撃・使う'][i])}</p></div></article>`;
@@ -97,19 +107,22 @@ function render(){
   $('stateSubtitle').textContent={join:count>=MIN_PLAYERS?`みんながそろったら、OKボタンを押そう！（${MIN_PLAYERS}〜${MAX_PLAYERS}人）`:`参加者を待っています……（${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べます）`,preparing:'ホストがゲームを準備しています……',ready:'ホストのスマホでReadyを押してください！',coop:'止めるときはホストのスマホでPAUSE',paused:'ホストのスマホで再開できます'}[view]||'';
   if(view==='paused'&&!game?.canResume)$('stateSubtitle').textContent='再開前に、接続と操作設定を確認してください';
   $('leftRule').hidden=!['game','roles'].includes(view);
-  $('explanation').innerHTML=view==='join'?`${MIN_PLAYERS}〜${MAX_PLAYERS}人がそろったら、<br>OKボタンを押そう！！`:view==='game'?'右側にあるゲーム一覧から<br>遊びたいゲームを<br>選択してください！':view==='roles'?'操作をそれぞれの<br>スマホに分けよう！':'';
-  $('secondary').innerHTML=view==='game'?'Steam・Epicで見つけたゲームは<br>選ぶと起動できます。<br>「未検証」は操作が届くか未確認です。':view==='roles'?'ゲームを準備してから<br>スマホでスタート！':'';
+  $('explanation').innerHTML=view==='join'?`${MIN_PLAYERS}〜${MAX_PLAYERS}人がそろったら、<br>OKボタンを押そう！！`:view==='game'?'右側にあるゲーム一覧から<br>遊びたいゲームを<br>選択してください！':view==='roles'?(game?.lineupOk?'メンバーと分担を<br>決定しました！':'操作をそれぞれの<br>スマホに分けよう！'):'';
+  $('secondary').innerHTML=view==='game'?'Steam・Epicで見つけたゲームは<br>分担を決めた後に起動できます。<br>「未検証」は操作が届くか未確認です。':view==='roles'?(game?.lineupOk?'ゲームを起動・準備して<br>スマホでReady！':'メンバーと分担を確認して<br>決定しよう！'):'';
   $('nextBtn').hidden=!['join','game','roles'].includes(view);
-  const action=gameAction(ui,game,games());
-  $('nextBtn').textContent={join:'OK',game:action.label,roles:'ゲームを開く・準備する'}[view]||'';
-  $('nextBtn').disabled=(view==='roles'&&!game?.canPrepare)||(view==='game'&&action.kind==='none');
-  renderGames(action);
+  const action=gameAction(ui,game,games()),roleAction=rolesAction(game,games());
+  $('nextBtn').textContent={join:'OK',game:action.label,roles:roleAction.label}[view]||'';
+  $('nextBtn').disabled=(view==='roles'&&!!roleAction.disabled)||(view==='game'&&action.kind==='none');
+  $('subBtn').hidden=view!=='roles'||!roleAction.alt;
+  $('subBtn').textContent=roleAction.alt?.label||'';
+  $('subBtn').disabled=!!roleAction.alt?.disabled;
+  renderGames();
   $('blockedStart').hidden=view!=='preparing';$('readyInstruction').hidden=view!=='ready';
   $('joinGuide').hidden=view!=='join';$('gameStage').hidden=view!=='game';$('roleStage').hidden=view!=='roles';
   $('playerStage').hidden=['game','roles'].includes(view);
   $('openGameBtn').hidden=!['preparing','ready','paused'].includes(view);
   const notes={preparing:'Minecraftでワールドを準備してください。'};
-  $('actionNote').textContent=view==='preparing'&&otherGame?'選んだゲームで準備してください。':notes[view]||'';
+  $('actionNote').textContent=view==='roles'?roleAction.note||'':view==='preparing'&&otherGame?'選んだゲームで準備してください。':notes[view]||'';
   $('openGameBtn').textContent=otherGame?'選んだゲームを前面にする':'Minecraftを前面にする';
   $('inputSafety').textContent=(otherGame?'選択したゲーム':'Minecraft')+'が前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。';
   const keyWarnings=game?.keys?.warnings||[];
@@ -126,7 +139,7 @@ function render(){
   document.querySelectorAll('#modeSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===inject?.mode)));
   $('hotkey').textContent=inject?.emergencyHotkeyError?'緊急停止キーを登録できません':`緊急停止：${inject?.emergencyHotkey||'Ctrl+Alt+F12'}`;
 }
-function renderGames(action){
+function renderGames(){
   const list=games(),scanning=!!state?.gamesScanning;
   const html=list.map(g=>{
     const c=gameCard(g,ui.game,game?.launch);
@@ -138,12 +151,6 @@ function renderGames(action){
   const detected=list.length-1;
   $('gamesCount').textContent=scanning?'インストール済みのゲームを探しています…':detected?`Steam・Epicで ${detected} 件見つかりました`:'Steam・Epicのゲームは見つかりませんでした';
   $('refreshGamesBtn').disabled=scanning;
-  const launch=launchView(game?.launch,ui.game);
-  $('launchStatus').hidden=!launch;
-  $('launchStatus').dataset.state=launch?.state||'';
-  $('launchTitle').textContent=launch?.title||'';
-  $('launchMessage').textContent=launch?.message||'';
-  $('retryLaunchBtn').hidden=!action.retry;
 }
 async function loadInfo(){
   try{

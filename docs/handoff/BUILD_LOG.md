@@ -672,3 +672,13 @@
 - Ready時の参加者・分担の固定、途中参加者の操作拒否、元の参加者が戻るまで再開不可、ホスト権限と全解放経路をレビューした。スマホの2人・4人のReady表示、途中参加P4の待機・赤キャラクター、2人・4人のMinecraftの生成操作と担当外の枠を回帰試験へ追加した。
 - 統合後の`node scripts/sim/app-view-test.mjs`は24/24、`node scripts/sim/ui-input-test.mjs`は7/7、`node scripts/sim/phone-view-test.mjs`、`node scripts/sim/controller-diagnostics-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`node scripts/sim/verify-ui-evidence.mjs`、`node scripts/sim/static-assets-sim.mjs`（33ファイル）、`node scripts/sim/profile-catalog-test.mjs`（502定義）、`node scripts/sim/profile-extract-test.mjs`が成功。Node参照実装の`node scripts/sim/protocol-sim.mjs --target node`は20/20成功。`git diff --check`も成功した。
 - Rustの再ビルド・単体試験・dry-run試験は別途結果を記録する。今回のレビューでは新しいスマホ実機・Minecraft・Tauriの受入を実施していない。#109の起動順序変更は本PRに含めない。
+
+## 2026-10-25 — ゲームの起動を、メンバー・分担の決定の後に移す（Claude Code、#109）
+
+- PR #108・#110のマージ後のmain `27b615f`で、Rust版の再ビルド（約11分）と`protocol-sim.mjs` 45/45、`app-view-test.mjs` 24/24、`ui-input-test.mjs` 7/7、`phone-view-test.mjs`、`check-static-pages.mjs`の成功を確認してから着手した。
+- 順序をゲーム選択 → メンバー・分担の決定 → 起動 → 準備 → P1のReadyに変えた（[起動を分担決定の後に移す](../decisions/2026-10-25-launch-after-roles.md)）。選択画面は選ぶだけで、分担の画面の主ボタン（PCのクリックとリモコンのEnter）を「この分担で決定」→「ゲームを起動する」→「起動中…」→「ゲームを準備する」と切り替え、失敗時は「もう一度起動する」と「手動で起動して準備へ」を出す。
+- ホストは決定（ゲームと接続中のメンバー）を`confirm_lineup`で受け、画面が見ていた内容が今と一致するときだけ記録する。`launch_game`・準備・準備中のReadyは決定が今の選択・接続者と一致するときだけ受け付け、選択と違うid・一時停止中の起動も拒否する。選び直し・ロビーへの移行・リセット・分担の画面からの戻り（`unconfirm_lineup`）で決定を消す。起動中の同じ要求は無視し、すでにウィンドウがあれば起動し直さず前面にする（実機の経路のみ）。
+- `cargo test --release --locked`はホスト31件＋プローブ3件成功。`protocol-sim.mjs`（Rust dry-run）45/45：準備の前にPC画面の決定を挟み、起動の試験を「一時停止中の起動拒否、選んだだけでは起動しない、決定前の起動・準備の拒否、古い画面の決定の拒否、戻ると取り消し、連打してもepochが1つだけ進む（起動要求1回）」に書き換え、準備中に参加者が変わると決定し直すまでReadyできないことを加えた。`--target node` 20/20、`shutdown-sim.mjs`（決定を追加）、`app-view-test.mjs` 26/26（分担の画面のボタンの切り替えと準備中の戻りを追加）、`ui-input-test.mjs` 7/7、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`verify-ui-evidence.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`が成功した。
+- 試験の書き換え中、起動要求の回数をホストのログで数えたが、ログがすぐに書き出されず0回と出た。ログではなくepochの進み方で数えるように直した。
+- dry-runホスト・模擬スマホ2台・偽のSteamゲームに対し、ヘッドレスChromeでPC画面を操作した。Terrariaを選ぶ（起動しない）→ 分担の画面でEnterにより決定（「2人で決定！」）→ 選択画面へ戻ると取り消し → 決定し直して起動（「起動中…」で押せない）→「起動しました」の案内と「ゲームを準備する」→ 準備中、の順に進み、ホストのログで決定・取り消し・起動1回・準備を確認した。
+- 起動の失敗・タイムアウト時の補助ボタン、起動済みのゲームを前面にする経路、実機（PCアプリ・実際のSteam/Epic・スマホのリモコン）は未確認。
