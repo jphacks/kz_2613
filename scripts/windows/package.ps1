@@ -84,6 +84,12 @@ Minecraft の公式製品ではありません。Mojang・Microsoft の承認・
 
 ■ 必要なもの
   Windows 11 x64 (WebView2 ランタイム)。遊ぶゲームは各自で用意する。
+  ホストの起動には Microsoft Visual C++ v14 Redistributable (x64) も必要。
+  MSVCP140.dll・VCRUNTIME140.dll 等がない、または 0xC0000135 でホストが終了する場合は、
+  Microsoft公式の案内で x64 版を確認する (ビルドに使ったMSVCと同じか新しい版が必要):
+    https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist
+  オフラインのPCでは、接続できるPCで公式の導入用ファイルを準備してから持ち込む。
+  このアプリはランタイムを自動ダウンロード・自動インストールしない。
 
 ■ 検証状況
   Minecraft・スマホ実機との組み合わせ、開発環境のない PC での起動は検証中。詳しくは
