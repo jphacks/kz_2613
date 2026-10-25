@@ -203,6 +203,31 @@ pub fn builtin_minecraft() -> Profile {
     parse(&v).expect("minecraft-java.json の形式")
 }
 
+/// 操作定義のない検出したゲームに当てる汎用の定義 (#123)。主要500タイトルの 3D アクション型 (scripts/profiles/build-catalog.mjs の
+/// action3d) と同じ操作で、確認の状態は template (未検証)。Minecraft の固定の表を別のゲームへ送らないために使う
+pub fn generic(game_id: &str, name: &str) -> Profile {
+    let b = |id: &str, label: &str, group: &str, key: &str| json!({ "id": id, "label": label, "group": group, "type": "button", "default": key });
+    let v = json!({
+        "schema": SCHEMA, "id": "generic", "name": name,
+        "match": { "ids": [game_id] },
+        "verification": { "status": "template", "sources": ["汎用の型（3Dアクション）"] },
+        "groups": [
+            { "id": "movement", "label": "移動", "role": "P1" }, { "id": "look", "label": "視点", "role": "P2" },
+            { "id": "gameplay", "label": "攻撃・使う", "role": "P3" }, { "id": "inventory", "label": "持ち物", "role": "P3" },
+            { "id": "menu", "label": "メニュー", "role": "host" }
+        ],
+        "actions": [
+            b("forward", "前進", "movement", "KEY_W"), b("back", "後退", "movement", "KEY_S"), b("left", "左", "movement", "KEY_A"), b("right", "右", "movement", "KEY_D"),
+            b("jump", "ジャンプ", "movement", "SPACE"), b("sprint", "走る・回避", "movement", "LSHIFT"), b("crouch", "しゃがむ", "movement", "LCTRL"),
+            { "id": "look", "label": "視点", "group": "look", "type": "mouseDelta" },
+            b("attack", "攻撃", "gameplay", "MOUSE_L"), b("aim", "構える・防御", "gameplay", "MOUSE_R"), b("interact", "使う・調べる", "gameplay", "KEY_E"),
+            b("item1", "アイテム1", "inventory", "DIGIT_1"), b("item2", "アイテム2", "inventory", "DIGIT_2"), b("inventory", "持ち物", "inventory", "TAB"),
+            b("map", "マップ", "menu", "KEY_M"), b("pause", "メニュー", "menu", "ESC")
+        ]
+    });
+    parse(&v).expect("汎用の定義の形式")
+}
+
 /// フォルダ内の定義をすべて読む。読めない・不正なものは理由を返して飛ばす
 pub fn load_dir(dir: &Path) -> (Vec<Profile>, Vec<String>) {
     let mut list = Vec::new();
@@ -305,9 +330,10 @@ pub fn snapshot(p: &Profile, players: usize) -> Value {
     })
 }
 
-/// 現在の固定スマホ画面と通信認可で扱える定義か。分担の案だけで入力可能にしない。
+/// スマホの画面 (Minecraft の専用画面、または定義から作る画面) で分担できる定義か。
+/// 確認の状態 (未検証など) では制限しない (#123、画面に「未検証」と表示し続ける)。
+/// 分担できる操作がない (マウス操作だけの pointer 型など) か、送れない種類の操作があるときは false
 pub fn controller_supported(p: &Profile) -> bool {
-    if !matches!(p.status.as_str(), "reviewed" | "device") { return false; }
     if p.id != "minecraft-java" {
         let playable: Vec<_>=p.actions.iter().filter(|a| p.groups.iter().any(|g| g.id==a.group && g.role.starts_with('P'))).collect();
         return !playable.is_empty() && playable.iter().all(|a| matches!(a.kind.as_str(), "button" | "wheel" | "mouseDelta"));
@@ -429,9 +455,29 @@ mod review_tests {
         assert!(errors.is_empty(),"{errors:?}"); assert!(!list.is_empty());
     }
     #[test]
+    fn generic_profile_is_valid_and_supported() {
+        let p = generic("steam:1", "試験");
+        assert_eq!(p.id, "generic");
+        assert_eq!(p.status, "template");
+        assert!(controller_supported(&p));
+        assert_eq!(find(std::slice::from_ref(&p), "steam:1").map(|x| x.name.as_str()), Some("試験"));
+        let a = assignment_for(&p, 3);
+        assert!(a[0].contains(&"forward".to_string()) && a[1].contains(&"look".to_string()) && a[2].contains(&"attack".to_string()));
+    }
+
+    #[test]
+    fn pointer_only_profile_is_not_supported() {
+        let p = parse(&serde_json::from_str::<Value>(r#"{"schema":1,"id":"pt","name":"PT","match":{"ids":["x"]},"verification":{"status":"template"},
+            "groups":[{"id":"pointer","label":"マウス操作","role":"none"},{"id":"menu","label":"メニュー","role":"host"}],
+            "actions":[{"id":"select","group":"pointer","default":"MOUSE_L"},{"id":"pause","group":"menu","default":"ESC"}]}"#).unwrap()).unwrap();
+        assert!(!controller_supported(&p));
+    }
+
+    #[test]
     fn assignment_metadata_does_not_enable_an_unsupported_controller() {
         let mut p=builtin_minecraft(); assert!(controller_supported(&p));
-        p.status="template".into(); assert!(!controller_supported(&p)); p.status="device".into();
+        // 確認の状態では制限しない (#123)
+        p.status="template".into(); assert!(controller_supported(&p)); p.status="device".into();
         p.actions.iter_mut().for_each(|a| a.control=None);
         assert!(!controller_supported(&p));
     }

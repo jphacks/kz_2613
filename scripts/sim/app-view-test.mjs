@@ -20,13 +20,15 @@ function test(name, fn) {
 const slot = (name, connected, ua = '') => ({ name, assigned: true, connected, ua });
 const game = (connected, extra = {}) => ({ phase: 'lobby', required: 3, connected, canReady: connected.includes('P1') && connected.length >= 2, ...extra });
 
-test('操作定義: 仮・抽出・未検証とReady不可を区別し過去の記録を新規合格にしない',()=>{
+test('操作定義: 未検証でも開始できることと、確かめながら遊ぶ案内・分担できないゲームを区別する (#123)',()=>{
   for(const status of ['template','extracted','unverified']){
-    const note=profileNotice({name:'試験ゲーム',status,controllerSupported:false});
-    assert.match(note,/未検証/); assert.match(note,/Readyできません/);
+    const note=profileNotice({name:'試験ゲーム',status,controllerSupported:true});
+    assert.match(note,/未検証/); assert.match(note,/確かめながら/); assert.doesNotMatch(note,/Readyできません/);
   }
   assert.equal(profileNotice({id:'minecraft-java',status:'device',controllerSupported:true}), '');
-  assert.match(profileNotice({status:'device',controllerSupported:false}),/過去の実機記録/);
+  assert.match(profileNotice({status:'device',controllerSupported:true}),/過去の実機記録/);
+  assert.match(profileNotice({id:'generic',name:'Gamma',status:'template',controllerSupported:true}),/操作定義がないため.*WASD/);
+  assert.match(profileNotice({name:'カードゲーム',status:'template',controllerSupported:false}),/マウス操作が中心/);
 });
 
 test('PC画面: 定期更新で手動移動を戻さず、準備・停止への遷移時だけ分担へ案内する',()=>{

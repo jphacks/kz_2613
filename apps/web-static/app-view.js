@@ -32,8 +32,12 @@ export const SCREEN_TITLES = { join: '① 参加', game: '② ゲーム選択', 
 
 export function profileNotice(profile) {
   if (!profile || (profile.id === 'minecraft-java' && profile.status === 'device' && profile.controllerSupported)) return '';
+  const name = profile.name || '選択中のゲーム';
+  if (!profile.controllerSupported) return `${name}：マウス操作が中心のため、スマホで分担できる操作がありません。`;
+  // 定義のないゲームには汎用の 3D アクションの操作を当てる (#123)
+  if (profile.id === 'generic') return `${name}：操作定義がないため、一般的な操作（WASD・マウス）で試します。操作が届くか確かめながら遊んでください。`;
   const status = {template:'仮の定義（未検証）',extracted:'自動抽出（実機未検証）',unverified:'未検証',reviewed:'人による確認（実機未検証）',device:'過去の実機記録'}[profile.status] || '未検証';
-  return `${profile.name || '選択中のゲーム'}：${status}。` + (profile.controllerSupported ? '今回の端末での動作は別途確認してください。' : '分担案の参照用です。対応画面と検証が揃うまでReadyできません。');
+  return `${name}：${status}。操作が届くか確かめながら遊んでください。`;
 }
 
 // 移動可能な3ページと、サーバーで切り替わる準備・協力・停止の視覚状態を分ける。

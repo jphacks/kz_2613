@@ -611,7 +611,7 @@ impl Hub {
         }
         if !self.title_known(&self.game.title) { reasons.push("ゲームを選択してください".into()); }
         if self.profile.as_ref().is_some_and(|p| !profiles::controller_supported(p)) {
-            reasons.push("この操作定義に対応するスマホ画面は未実装です。協力操作は開始できません".into());
+            reasons.push("このゲームはマウス操作が中心のため、スマホで分担できる操作がありません".into());
         }
         if !self.input.available() { reasons.push("入力ドライバーが利用できません".into()); }
         if self.hotkey.is_err() && self.fake_target.is_none() { reasons.push("PCの緊急停止キーを登録してください".into()); }
@@ -935,7 +935,10 @@ impl Hub {
 
     /// 選んだゲームの操作定義を引き、ユーザーのキー設定を読み直して重ねる (#97・#99)。定義がなければ固定の表を使う
     fn reload_keybinds(&mut self) {
-        self.profile = profiles::find(&self.profiles, &self.game.title).cloned();
+        // 定義のない検出したゲームには汎用の定義を当てる (#123)。Minecraft の固定の表を別のゲームへ送らない
+        self.profile = profiles::find(&self.profiles, &self.game.title).cloned().or_else(|| {
+            self.games.iter().find(|g| g.id == self.game.title).map(|g| profiles::generic(&g.id, &g.name))
+        });
         self.keybinds = match &self.profile {
             Some(p) => {
                 let over = if p.id == "minecraft-java" { self.minecraft_options.as_deref() } else { None };
@@ -944,7 +947,7 @@ impl Hub {
             None => Keybinds::none(),
         };
         if self.profile.as_ref().is_some_and(|p| !profiles::controller_supported(p)) {
-            self.keybinds.warnings.push("操作定義と分担は参考情報です。この定義に対応するスマホ画面は未実装のため、Readyできません".into());
+            self.keybinds.warnings.push("このゲームはマウス操作が中心のため、スマホで分担できる操作がありません".into());
         }
         // ファイルの場所 (ユーザー名を含む) はログに残さない
         self.log("keybinds", json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings }));
@@ -1057,7 +1060,8 @@ impl Hub {
     fn fixed_controls(&self, players: &[usize]) -> bool {
         let three = players == [0, 1, 2];
         match &self.profile {
-            None => three,
+            // 定義がないのは診断用の疑似ゲーム画面だけ (検出したゲームには汎用の定義を当てる)
+            None => three && self.game.title == "pseudo-game",
             Some(p) => p.id == "minecraft-java" && three,
         }
     }
