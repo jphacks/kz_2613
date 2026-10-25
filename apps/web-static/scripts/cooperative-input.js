@@ -1,52 +1,16 @@
 // 移動スティックと30Hzの協力視点。画面の再描画・通信の再生成から独立させる。
+import { attachStick } from './stick.js';
 export function bindCooperativeInput({getGame,getRole,canLook=()=>getRole()==='P2',isOpen,ctlDown,ctlUp,sendLook,onCancel=()=>{}}) {
   const $ = id => document.getElementById(id);
-  // ---- P1: 移動スティック (8 方向 → W/A/S/D の組み合わせ) ----
-  const stick = $('stick');
-  const knob = stick.querySelector('.knob');
-  let stickId = null;
-  const stickOn = new Set();
-  function stickUpdate(e) {
-    const r = stick.getBoundingClientRect();
-    let x = (e.clientX - r.left) / r.width * 2 - 1;
-    let y = (e.clientY - r.top) / r.height * 2 - 1;
-    const len = Math.hypot(x, y);
-    if (len > 1) { x /= len; y /= len; }
-    knob.style.transform = `translate(${x * 62}%, ${y * 62}%)`;
-    const want = new Set();
-    if (Math.hypot(x, y) > 0.3) {
-      const a = Math.atan2(y, x) * 180 / Math.PI; // 右 0°, 下 90°
-      if (a > -157.5 && a < -22.5) want.add('FWD');
-      if (a > 22.5 && a < 157.5) want.add('BACK');
-      if (a > 112.5 || a < -112.5) want.add('LEFT');
-      if (a > -67.5 && a < 67.5) want.add('RIGHT');
-    }
-    for (const d of [...stickOn]) if (!want.has(d)) { stickOn.delete(d); ctlUp(d); }
-    for (const d of want) if (!stickOn.has(d)) { stickOn.add(d); ctlDown(d, e.timeStamp); }
-    stick.querySelectorAll('.dir').forEach((el) => el.classList.toggle('on', stickOn.has(el.dataset.d)));
+  // ---- P1: 移動スティック (8 方向 → W/A/S/D の組み合わせ、#139 で共通の部品に) ----
+  const fixedStick = attachStick($('stick'), { codes: { up: 'FWD', down: 'BACK', left: 'LEFT', right: 'RIGHT' }, isOpen, ctlDown, ctlUp, onCancel });
+  // 操作定義から作る画面のスティック。画面を作り直すたびに置き換える
+  let genStick = null;
+  function setGeneratedStick(el, codes) {
+    genStick?.release();
+    genStick = el ? attachStick(el, { codes, isOpen, ctlDown, ctlUp, onCancel }) : null;
   }
-  function stickRelease() {
-    stickId = null;
-    stick.classList.remove('active');
-    knob.style.transform = '';
-    for (const d of [...stickOn]) { stickOn.delete(d); ctlUp(d); }
-    stick.querySelectorAll('.dir').forEach((el) => el.classList.remove('on'));
-  }
-  stick.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    if (!isOpen()) return;
-    if (stickId != null) return;
-    stickId = e.pointerId;
-    stick.setPointerCapture?.(e.pointerId);
-    stick.classList.add('active');
-    stickUpdate(e);
-  });
-  stick.addEventListener('pointermove', (e) => { if (e.pointerId === stickId) stickUpdate(e); });
-  for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) stick.addEventListener(t, (e) => {
-    if (e.pointerId !== stickId) return;
-    if (t !== 'pointerup') onCancel();
-    stickRelease();
-  });
+  function stickRelease() { fixedStick.release(); genStick?.release(); }
 
   // ---- P2: 視点パッド (ドラッグ量をマウス相対移動として送る) ----
   const pad = $('pad');
@@ -107,5 +71,5 @@ export function bindCooperativeInput({getGame,getRole,canLook=()=>getRole()==='P
 
   function release() { stickRelease(); padId = null; accX = accY = 0; moveAt = null; pad.classList.remove('active'); dot.style.display = 'none'; }
   function resetEpoch() { release(); look.seq = look.cx = look.cy = 0; }
-  return {release, resetEpoch};
+  return {release, resetEpoch, setGeneratedStick};
 }
