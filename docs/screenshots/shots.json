@@ -1,0 +1,30 @@
+{
+  "captured": "2026-10-25T22:14:52.283Z",
+  "pc": "1920x1080",
+  "phone": "402x874@2x",
+  "files": [
+    "pc-01-join-waiting.jpg",
+    "pc-02-join-ready.jpg",
+    "phone-p1-01-host-lobby.jpg",
+    "phone-p2-01-waiting.jpg",
+    "phone-p3-01-waiting.jpg",
+    "pc-03-game-select.jpg",
+    "pc-04-roles.jpg",
+    "pc-05-roles-confirmed.jpg",
+    "pc-06-ready.jpg",
+    "phone-p1-02-host-ready.jpg",
+    "phone-p2-02-preparing.jpg",
+    "pc-07-coop.jpg",
+    "phone-p1-03-coop-move.jpg",
+    "phone-p2-03-coop-look.jpg",
+    "phone-p3-02-coop-action.jpg",
+    "pc-08-paused.jpg",
+    "phone-p1-04-host-paused.jpg",
+    "phone-p2-04-paused.jpg",
+    "pc-09-settings.jpg",
+    "pc-10-connection-help.jpg",
+    "phone-p2-05-diagnostics.jpg",
+    "pc-11-emergency-stop.jpg",
+    "phone-p1-05-emergency-stop.jpg"
+  ]
+}
