@@ -51,5 +51,5 @@
   --bg: var(--color-cream); --panel: var(--color-surface); --panel2: var(--color-ice);
   --text: var(--color-ink); --muted: var(--color-muted); --line: var(--color-cyan);
   --ok: var(--color-success); --ng: var(--color-error); --warn: var(--color-warning);
-  --accent: var(--color-cyan-ink); --p1: var(--color-cyan-ink); --p2: var(--color-purple); --p3: var(--color-warning);
+  --accent: var(--color-cyan-ink); --p1: var(--color-cyan-ink); --p2: var(--color-purple); --p3: var(--color-warning); --p4: var(--color-character-red);
 }
