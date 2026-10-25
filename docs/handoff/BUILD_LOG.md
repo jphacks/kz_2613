@@ -473,3 +473,40 @@
 - 追加の機能修正（既存ゲームへ戻るOPEN_GAME、固定3人、実入力の緊急停止登録必須）は機能PR #91側へ分離した。mainは更新せず、マージ・auto-merge・Issueクローズは行わない。
 
 - 最終レビューで、paused等の定期state更新により手動ナビゲーションが分担画面へ戻る問題を修正。進行の変化時だけ案内し、同じ進行の定期更新はユーザーの画面選択を保持する回帰試験を追加した。
+
+## 2026-10-25 PC原案5画面の反復監査・追加改修
+
+- 最新のローカル監査v2を全文読み、指定パス `docs/design/pc-fidelity-audit-2026-10-25.md` に原文を保持した。素材5枚を1920×1080原寸で確認し、SHA256・採色領域・外接矩形を `pc-fidelity-reference.json` に記録。
+- PCだけを参加／ゲーム選択／分担／準備中／準備可能の5構図へ変更。左561px・巨大コピー・楕円CTA・巨大半透明フレーム・横長操作帯・縦長仮キャラ枠を再現。3人固定とP1だけReadyを保持。開発情報は既存 `/host` と設定の詳細へ、ON/OFFとQRには常時到達可能。
+- フォントはローカルのNoto Sans JPを使用。正式フォントは未取得、再配布・CDN・新しい本番依存・React移行なし。仮想カーソルのdialog最上位レイヤーとsummary押下を修正。入力定数、Rust、通信契約は変更していない。
+- 反復撮影の途中で古いタブを閉じ込めた補助関数と画像寸法不一致を検出し、不採用として記録。DPR丸めの0.667px罫線は1pxの塗り線へ修正。最終製品コミットe2a4c7fでタブ25/26を別々に開き、10:44と10:45 JSTに5画面×2解像度をそれぞれ新規撮影・再計測。両回で主要矩形・ボタン画面内・ページスクロール・コンソール0件を確認。
+- 自己監査の最終点は参加96、選択97、分担96、準備中96、準備可能97。各観点の最低比率86.7%、重大P0/P1差分0。画素一致率や実機検証済みを意味しない。計測・比較・差分・採点根拠は `docs/design/evidence/pc-fidelity-progress.md` と `pc-fidelity-element-matrix.md`。
+
+### 実行した検証
+
+| コマンド・対象 | 結果 |
+| --- | --- |
+| `cargo test --release --locked --manifest-path apps/host-rs/Cargo.toml` | 単体5件成功 |
+| `cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml` | 成功 |
+| `cargo build --release --locked --manifest-path apps/desktop/Cargo.toml` | 成功 |
+| `node scripts/sim/protocol-sim.mjs --bin <新規releaseホスト>` | Rust通信40/40成功 |
+| `node scripts/sim/protocol-sim.mjs --target node` | Node参照20/20成功、Rust固有の項目は対象外 |
+| `node scripts/sim/input-probe-sim.mjs --bin <新規releaseプローブ>` | --mock 12/12成功、OS入力なし |
+| `node scripts/sim/shutdown-sim.mjs --bin <ホスト>` | quit・親stdin消失の2経路成功 |
+| `node scripts/sim/app-view-test.mjs` | 15/15成功 |
+| `node scripts/sim/ui-input-test.mjs` | 5/5成功、dialogとsummary・全解放・30Hz・旧接続を確認 |
+| `node scripts/sim/check-static-pages.mjs` / `node --check scripts/sim/ui-preview.mjs` | HTMLと外部JSの構文成功 |
+| `python scripts/verify_overlay.py` / `git diff --check` | 構造30ファイル成功、差分の空白エラーなし |
+| `node scripts/sim/static-assets-sim.mjs --bin <新規releaseホスト>` | 最終版23ファイル、1,166,959 bytesのHTTP/MIME/no-store/ローカル参照が成功 |
+| `scripts/windows/package.ps1 -Out .venv/pc-fidelity-final-dist` | 最終版ZIP約6.9MB作成。PythonでZIP内全UI23ファイル＋両exeがソース／新規ビルドとバイト一致 |
+| `audit-pc-fidelity.py pc-fidelity-accepted-1` と `pc-fidelity-accepted-2` | 2回とも10画像・主要矩形・見出しの画素寸法がPASS |
+| `report-pc-fidelity.py` | 2回のタブ・時刻・画像寸法・警告0・矩形・ZIP一致を再照合、要素対応表を生成 |
+
+ビルドは既存のVS/CMake/Strawberry Perl/libclangと `CARGO_TARGET_DIR=C:/Users/kumes/AppData/Local/ReCooplay/cargo-target` を使用。OpenSSLのデバッグPDB欠落警告と既存の未使用フィールド警告は非致命的。画像処理だけPillow入りの同梱Pythonを使用し、製品依存へ追加していない。
+
+### ブラウザとRustの機能確認・限界
+
+- `desktop-browser-harness.mjs` でRust実バックエンドをDRY_RUN＋FAKE_TARGETに限定して起動。ブラウザのPC/P1と模擬P2/P3で、P1リモコン画面移動、PC準備、入力ON、3人条件、P1だけReady、WebRTC+WS、Pause、前面化要求後のPause保持、明示再開、stdin緊急停止、入力OFF、Endで担当保持を確認。12件の観測を `pc-fidelity-functional/backend-checks.json` に記録。
+- 表示専用データで0/1/2/3人、キーボード遷移、入力設定、準備中QR、切断、対象外、緊急停止、QRなし／503／再取得、PC切断を確認。15件を `edge-checks.json` に保存。意図的な503等は最終正常画面のコンソール評価と分ける。
+- 未実施：変更後のTauri実窓・Minecraft実入力・Android/iPhone実タッチ・実ネットワーク切断・Alt+Tab解放・Ctrl+Alt+F12実キー・別PC起動。表示とdry-runの成功で実機受入を完了扱いにしない。
+- 公開直前に#92の履歴更新cc613fcを取り込んだが、72ef255からのファイル差分0、製品コードのe2a4c7fからの差分0を確認。baseは指定どおり#92のブランチ。main直接push・PRマージ・auto-merge・Issueクローズは行わない。

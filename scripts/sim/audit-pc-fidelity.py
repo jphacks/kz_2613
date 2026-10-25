@@ -47,6 +47,8 @@ for record in metrics:
             dimensions=[round((rect[i]/target[i]-1)*100,2) for i in [2,3]]
             result['titleInk']={'reference':target,'actual':rect,'centerDelta':center,'sizeDeltaPercent':dimensions}
             result['checks'].append({'element':'見出しの着色画素','pass':all(abs(v)<=24 for v in center) and all(abs(v)<=5 for v in dimensions)})
+        else:
+            result['checks'].append({'element':'見出しの着色画素','pass':False,'reason':'対応する色の見出しが撮影画像にありません'})
         mapping={'panel':'.game-frame','band':'.role-band','info':'.player-info','characters':'.role-columns' if name=='roles' else '.character','cta':'#nextBtn' if name in ['join','game'] else '#blockedStart' if name=='preparing' else '#readyInstruction','qr':'.qr','rule':'.left-rule'}
         for key,selector in mapping.items():
             elements=[v for v in visible if v['selector']==selector]
@@ -67,3 +69,4 @@ html.append('<p>原案と現在の文字内容・人数・QR・安全導線の�
 (directory/'index.html').write_text('\n'.join(html),encoding='utf8')
 failures=[{'screen':r['screen'],'element':c['element']} for r in results for c in r['checks'] if not c['pass']]
 print(json.dumps({'cycle':args.cycle,'images':len(metrics),'geometryFailures':failures},ensure_ascii=False))
+raise SystemExit(1 if failures else 0)
