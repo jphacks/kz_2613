@@ -2,9 +2,9 @@
 
 **版：** `protocolVersion = 4`（Rust版ホスト `apps/host-rs`・スマホ画面 `apps/web-static/index.html` に実装）。v2の再接続トークンに続き、v3ではepoch必須と視点のepoch単位の累積値を導入する。古い画面は版不一致で拒否する。
 
-**変更の規則：** 契約（メッセージの型・項目・終了コード・順序の規則）を変えるときは、同じPRで①この文書、②`scripts/sim/protocol-sim.mjs`（契約のテスト）、③必要なら `protocolVersion` を更新する。互換性のない変更では版を上げる。シミュレーションは `node scripts/sim/protocol-sim.mjs` で実行し、結果をBUILD_LOGへ記録する。Node参照実装（`apps/node-ref`）は試作品のまま比較の基準として残し、Rust版で追加した契約は対象外とする。
+**変更の規則：** 契約（メッセージの型・項目・終了コード・順序の規則）を変えるときは、同じPRで①この文書、②`scripts/sim/protocol-sim.mjs`（契約のテスト）、③必要なら `protocolVersion` を更新する。互換性のない変更では版を上げる。シミュレーションは `node scripts/sim/protocol-sim.mjs` で実行し、結果をBUILD_LOGへ記録する。試験はRust版ホストだけを対象にする（比較に使ったNode参照実装は #86 で削除した）。
 
-**状況：** Node.js試作品は疑似ゲーム画面とスマホ実機で確認済み。Rust版はPC上のシミュレーションとブラウザ接続を確認し、Tauriはビルド・終了制御を確認している。Minecraft、Rust版の実入力・スマホ3台・Tauriとの実機連携は未検証。以下はNode.js参照実装を基準に整えた通信形式と安全要件。旧Python/Reactひな形は #68 で削除した。
+**状況：** Node.js試作品は疑似ゲーム画面とスマホ実機で確認済み。Rust版はPC上のシミュレーションとブラウザ接続を確認し、Tauriはビルド・終了制御を確認している。Minecraft、Rust版の実入力・スマホ3台・Tauriとの実機連携は未検証。以下は試作品のNode.js参照実装を基準に整え、Rust版で拡張した通信形式と安全要件（参照実装は #86 で削除し、試験はRust版だけで行う）。旧Python/Reactひな形は #68 で削除した。
 
 ## v4の開始契約
 

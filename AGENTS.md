@@ -21,7 +21,7 @@
 - JPHACKSの `README.md` と `LICENSE` は置き換えない。既存内容を保持し、指示がある場合にREADMEを慎重に追記する。
 - ユーザーから明示的な依頼がない限り、GitHub・共有ドライブ・Slackへの書き込みや外部への提出は行わない。依頼されたローカル編集・テストは実施してよい。
 - 実機試験と証拠なしに、ハードウェアやMinecraftとの互換性を検証済みと報告しない。
-- 初期環境のPython/Reactひな形は #68 で削除した。Node.js参照実装は `apps/node-ref/`、移植先のRust版ホストは `apps/host-rs/` に取り込んだ。Node.jsでの過去の実機観測を、Rust版の実機検証済みという意味に読み替えない。未実装処理は明確に失敗させ、何もしない入力ドライバーを成功扱いしない。
+- 初期環境のPython/Reactひな形は #68 で削除した。Rust版ホストは `apps/host-rs/` にある。比較に使ったNode.js参照実装は #86 で削除した（Rust版だけの構成）。Node.jsでの過去の実機観測を、Rust版の実機検証済みという意味に読み替えない。未実装処理は明確に失敗させ、何もしない入力ドライバーを成功扱いしない。
 - 接続と操作の認可はサーバーで行う。スマホ自身がホストや役割を指定できるようにしない。MVPでは最初の接続端末がホスト兼P1。
 - Pause・切断・対象フォーカス喪失・セッションやepochの変更・終了時は、入力送信を停止して合成した全キーとマウスボタンを解放する。安全性が不明なら入力を許可しない。
 - P0では外部クラウド中継・アカウント・テレメトリー・インターネットCDN・MinecraftのMOD・特権ドライバーを導入しない。スマホへのゲーム映像配信も行わない。
@@ -29,7 +29,7 @@
 ## 技術構成（試作品の実機検証に基づく。詳細は `docs/decisions/tech-stack.md`）
 
 - Windows入力：Win32 `SendInput`（スキャンコードのキー、相対マウス移動、左右ボタン、ホイール）、`timeBeginPeriod(1)`。疑似ゲーム画面で検証済み、Minecraftでは**未検証**。
-- PCホスト：**Rust**（tokio＋axum、状態はhubスレッド1本、`windows` crate、WebRTCは `datachannel`＝libdatachannel）。Node.js参照実装を比較対象とする。Rust版はPC上のシミュレーションのみ実施済みで、Rust実機・Minecraft・Tauriは未検証。
+- PCホスト：**Rust**（tokio＋axum、状態はhubスレッド1本、`windows` crate、WebRTCは `datachannel`＝libdatachannel）。Rust版はPC上のシミュレーションのみ実施済みで、Rust実機・Minecraft・Tauriは未検証。
 - 通信：ローカルWi-Fi。**WebSocket（JSON、本体）＋WebRTC DataChannel（順序保証・再送なしの速達便）**。STUN/TURNとインターネットは使わない。Windowsモバイルホットスポットを使い、代替はローカルAP。
 - 画面：ビルド不要の静的HTML/CSS/JavaScript（スマホ、参加・ゲーム選択・分担確認、診断、疑似ゲーム画面）、Pointer Events。React化は任意で、行う場合も通信契約を守る。PCアプリの枠はTauriで実装・ビルド済みだが、スマホ実機連携・Minecraft・配布は未検証。代替はブラウザ。
 - 入力処理の定数（最低押下60ms・最低解放50ms・視点30Hz・補間4ms・切断判定4秒など）は実測に基づくため、根拠なく変えない。
@@ -45,7 +45,6 @@
 - `apps/host-rs/`：Rust版PCホスト。今後の実装先。
 - `apps/desktop/`：TauriのPCアプリ。Rustホストの子プロセスを起動・終了する。
 - `apps/web-static/`：MVPのスマホ画面・PC管理画面・疑似ゲーム画面。
-- `apps/node-ref/`：Node.js参照実装。通信・入力の比較対象。
 - `scripts/sim/`：通信契約のシミュレーションと画面の試験（OS入力なし）。
 - 旧Python（FastAPI）・Reactのひな形は #68 で削除した。
 - `docs/`：共有要件、判断、設計、検証の証拠。
@@ -65,7 +64,7 @@
 
 - ホスト：`cd apps/host-rs && cargo build --release --locked && cargo test --release --locked`（ビルド環境は `docs/handoff/SETUP_WINDOWS.md`）
 - PCアプリ：`cd apps/desktop && cargo build --release --locked`
-- 通信契約：`node scripts/sim/protocol-sim.mjs`（Rust版）、`node scripts/sim/protocol-sim.mjs --target node`（`apps/node-ref` で `npm ci` 後）
+- 通信契約：`node scripts/sim/protocol-sim.mjs`（Rust版ホストをdry-runで起動する）
 - 画面：`node scripts/sim/app-view-test.mjs`、`node scripts/sim/check-static-pages.mjs`
 - 構造確認：`python scripts/verify_overlay.py`
 - Windowsの構築手順は `docs/handoff/SETUP_WINDOWS.md`、Issue・ブランチ・PRの共通運用は `docs/handoff/DEVELOPMENT_WORKFLOW.md` に従う。

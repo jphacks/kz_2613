@@ -1,11 +1,11 @@
 // 表示専用のローカル検証器。Rustの認可・実入力の合格根拠には使わない。
-// npm ci --prefix apps/node-ref 後: node scripts/sim/ui-preview.mjs
+// node scripts/sim/ui-preview.mjs (依存なし。WebSocket は mini-ws.mjs)
 // http://127.0.0.1:18082/ を開く。終了はCtrl+C。OS入力は一切行わない。
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {WebSocketServer} from '../../apps/node-ref/node_modules/ws/wrapper.mjs';
+import {WebSocketServer} from './mini-ws.mjs';
 const root=fileURLToPath(new URL('../../apps/web-static/',import.meta.url));
 const port=Number(process.env.UI_PREVIEW_PORT || 18082);
 const generatedFixture=JSON.parse(await fs.readFile(new URL('./fixtures/profiles/test-pseudo.json',import.meta.url),'utf8'));
