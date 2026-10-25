@@ -1,5 +1,5 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,screenOnGameUpdate,desktopView,desktopWarning,keyLabel,profileNotice,roleView,networkNotice,slotDiagnosis,usesFixedRoles,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,rolesAction} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,keyLabel,profileNotice,roleView,networkNotice,slotDiagnosis,usesFixedRoles,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,rolesAction} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // swap: 一時停止中に担当を入れ替える画面を開いているか (#47)
@@ -34,6 +34,17 @@ $('connectionHelpBtn').addEventListener('click',()=>openDialog($('connectionHelp
 $('settingsConnectionBtn').addEventListener('click',()=>openDialog($('connectionHelp')));
 $('closeConnectionHelp').addEventListener('click',()=>$('connectionHelp').close());
 $('reloadInfo').addEventListener('click',loadInfo);
+// ホットスポットを ON にする (#133)。押したときだけ。PC 本体の画面からだけ受け付ける
+// 結果は QR の下の案内に出す (失敗したときは、次に成功するまで出し続ける)
+let hotspotMessage='';
+$('hotspotBtn').addEventListener('click',async()=>{
+  $('hotspotBtn').disabled=true;$('qrNote').hidden=false;$('qrNote').textContent='ホットスポットをONにしています…';
+  try{
+    const r=await (await fetch('/api/hotspot',{method:'POST'})).json();
+    hotspotMessage=r.ok?'':r.error||'ホットスポットをONにできませんでした';
+  }catch{hotspotMessage='ホットスポットをONにできませんでした';}
+  $('hotspotBtn').disabled=false;loadInfo();
+});
 $('openGameBtn').addEventListener('click',()=>send({type:'open_game'}));
 $('refreshGamesBtn').addEventListener('click',()=>send({type:'refresh_games'}));
 // 選択画面の主ボタン・Enter。選ぶだけで起動せず、メンバー・分担の画面へ進む (#109)
@@ -191,6 +202,15 @@ async function loadInfo(){
     $('url').textContent=u?.url||'';
     $('urlNote').textContent=!u?'PCのWi-Fiとモバイルホットスポットを確認してください。':u.hotspot?'PCのモバイルホットスポットへ接続してください。':'PCと同じWi-Fiへ接続してください。';
     $('wifi').textContent=info.wifi?`Wi-Fi：${info.wifi.ssid}`:'';
+    // ① ホットスポット・② 参加 の 2 つの QR を並べる (#133)
+    const g=joinGuideView(info);
+    document.body.toggleAttribute('data-two-qr',g.two);
+    $('qrBubble').innerHTML=g.bubble;
+    $('wifiLabel').hidden=$('joinLabel').hidden=!g.two;
+    $('wifiQr').hidden=!g.wifiQr;$('wifiQr').innerHTML=g.wifiQr||'';
+    $('hotspotBtn').hidden=!g.button;
+    const note=hotspotMessage||g.note;
+    $('qrNote').hidden=!note;$('qrNote').textContent=note;
   }catch{$('qr').innerHTML='<span>QRを取得できません<br>接続方法をご確認ください</span>';$('helpQr').innerHTML=$('qr').innerHTML;$('url').textContent='';$('urlNote').textContent='PCホストとネットワークを確認し、QRを取得し直してください。';}
 }
 const cursor=createVirtualCursor();

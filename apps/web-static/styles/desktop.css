@@ -290,6 +290,64 @@ body {
   text-align: center;
 }
 
+/* ① Wi-Fi・② 参加 の 2 つの QR を並べる (#133) */
+.qr-step-label {
+  position: absolute;
+  top: 652px;
+  width: 230px;
+  margin: 0;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-cyan-ink);
+}
+
+.wifi-label { left: 35px; }
+.join-label { left: 296px; }
+
+.wifi-qr,
+.hotspot-btn {
+  left: 35px;
+  top: 694px;
+  width: 230px;
+  height: 230px;
+}
+
+.hotspot-btn {
+  position: absolute;
+  border: 3px dashed var(--color-cyan);
+  border-radius: 20px;
+  background: var(--color-paper);
+  color: var(--color-cyan-ink);
+  padding: 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+body[data-two-qr] #qr {
+  left: 296px;
+  top: 694px;
+  width: 230px;
+  height: 230px;
+}
+
+body[data-two-qr] .qr-arrow { display: none; }
+
+.qr-note {
+  position: absolute;
+  left: 35px;
+  top: 936px;
+  width: 491px;
+  margin: 0;
+  text-align: center;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
 .connection-help {
   position: absolute;
   left: 95px;

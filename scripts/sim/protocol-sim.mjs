@@ -70,6 +70,8 @@ function startHost() {
   fs.copyFileSync(path.join(ROOT,'scripts/sim/fixtures/profiles/test-pseudo.json'),path.join(profilesDir,'test-pseudo.json'));
   // config.json の影響を受けないよう、画面だけを持つ一時ルートを使う
   const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_FAKE_GAMES: fakeGames(logDir),
+    // 模擬のホットスポット (#133。dry-run では本物を読まない)
+    RECOOPLAY_FAKE_HOTSPOT: 'SimSpot|sim-pass-1|on',
     // Minecraft のキー設定の試験用 (ダッシュ = Q、捨てる = R に変えた options.txt)。#101
     RECOOPLAY_MINECRAFT_OPTIONS: optionsFile, RECOOPLAY_PROFILES_DIR: profilesDir };
   const exe = process.platform === 'win32' ? 'recooplay-host.exe' : 'recooplay-host';
@@ -275,6 +277,23 @@ async function main() {
       }
       const r = await fetch(BASE + '/../config.json');
       assert(r.status !== 200, 'ルート外のファイルを返した');
+    });
+
+    await check('参加の案内: Wi-Fi・ホットスポットの情報は PC 本体にだけ返し、ON にする要求は PC の画面からだけ受け付ける (#133)', async () => {
+      const local = await (await fetch(`${BASE}/api/info`)).json();
+      assert(local.wifi?.ssid === 'SimSpot' && local.wifi.qr.includes('<svg') && local.hotspot?.on === true, JSON.stringify({ wifi: local.wifi?.ssid, hotspot: local.hotspot }));
+      const lan = local.urls.find((u) => !u.address.startsWith('127.'));
+      if (lan) {
+        const remote = await (await fetch(`http://${lan.address}:${PORT}/api/info`)).json();
+        assert(remote.wifi === null && remote.hotspot === null && remote.urls.length > 0, 'LAN の端末に Wi-Fi の情報を返した');
+        const fromLan = await fetch(`http://${lan.address}:${PORT}/api/hotspot`, { method: 'POST', headers: { Origin: `http://${lan.address}:${PORT}` } });
+        assert(fromLan.status === 403, `LAN からの ON 要求 ${fromLan.status}`);
+      }
+      const foreign = await fetch(`${BASE}/api/hotspot`, { method: 'POST', headers: { Origin: 'http://evil.example' } });
+      const noOrigin = await fetch(`${BASE}/api/hotspot`, { method: 'POST' });
+      assert(foreign.status === 403 && noOrigin.status === 403, `別の Origin ${foreign.status} / Origin なし ${noOrigin.status}`);
+      const ok = await fetch(`${BASE}/api/hotspot`, { method: 'POST', headers: { Origin: BASE } });
+      assert(ok.status === 200 && (await ok.json()).ok === true, `PC の画面からの ON 要求 ${ok.status}`);
     });
 
     await check('版: protocolVersion がない・違う hello は理由を返して 4005 で閉じ、枠を割り当てない', async () => {
