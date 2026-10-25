@@ -55,6 +55,8 @@ pub struct Roots {
     pub minecraft: Vec<PathBuf>,
     /// 取り出したアイコン (PNG) を置くフォルダ
     pub icons: PathBuf,
+    /// 手動で登録したアプリの一覧 (#49・#56)。ユーザーのフォルダに置き、リポジトリには置かない
+    pub manual: Option<PathBuf>,
 }
 
 impl Roots {
@@ -65,6 +67,7 @@ impl Roots {
                 .map(|p| PathBuf::from(p).join(r"Epic\EpicGamesLauncher\Data\Manifests")),
             minecraft: minecraft_candidates(),
             icons: std::env::temp_dir().join("recooplay-icons"),
+            manual: manual_file(),
         }
     }
 
@@ -75,6 +78,7 @@ impl Roots {
             epic_manifests: Some(dir.join("epic")),
             minecraft: vec![dir.join(r"minecraft\Minecraft.exe")],
             icons: dir.join("icons"),
+            manual: Some(dir.join("manual-games.json")),
         }
     }
 }
@@ -99,6 +103,9 @@ pub fn detect(roots: &Roots) -> Detected {
     }
     if let Some(dir) = &roots.epic_manifests {
         list.extend(detect_epic(dir));
+    }
+    if let Some(file) = &roots.manual {
+        list.extend(load_manual(file).into_iter().filter_map(manual_entry));
     }
     list.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()).then(a.id.cmp(&b.id)));
     list.dedup_by(|a, b| a.id == b.id);
@@ -219,9 +226,92 @@ pub fn png(width: u32, height: u32, rgba: &[u8]) -> Vec<u8> {
     out
 }
 
-/// ランチャーのプロトコルで起動する。dry-run では呼ばない
+/// ランチャーのプロトコルで起動する。手動で登録したアプリは、その実行ファイルを引数なしで起動する。dry-run では呼ばない
 pub fn launch(entry: &Entry) -> Result<(), String> {
+    if entry.source == MANUAL_SOURCE {
+        return imp::open_exe(Path::new(&entry.launch_uri));
+    }
     imp::open_uri(&entry.launch_uri)
+}
+
+// ---------- 手動で登録したアプリ (#49・#56) ----------
+
+/// Windows のファイル選択の画面で .exe を選ばせる (PC の前の人が選ぶ)
+pub fn pick_exe() -> Option<PathBuf> {
+    imp::pick_exe()
+}
+
+/// 一覧での出所 (Steam・Epic と区別して「手動登録」と表示する)
+pub const MANUAL_SOURCE: &str = "registered";
+
+/// 手動で登録したアプリ 1 件。起動は実行ファイルを引数なしで行う (引数・コマンドは受け付けない)
+#[derive(Clone, PartialEq, Debug)]
+pub struct ManualGame {
+    pub id: String,
+    pub name: String,
+    pub exe: PathBuf,
+}
+
+/// 保存先: %LOCALAPPDATA%\Re-Cooplay\manual-games.json
+fn manual_file() -> Option<PathBuf> {
+    std::env::var_os("LOCALAPPDATA").map(|p| PathBuf::from(p).join("Re-Cooplay").join("manual-games.json"))
+}
+
+pub fn load_manual(file: &Path) -> Vec<ManualGame> {
+    let Ok(text) = std::fs::read_to_string(file) else { return vec![] };
+    let Ok(Value::Array(items)) = serde_json::from_str::<Value>(text.trim_start_matches('\u{feff}')) else { return vec![] };
+    items
+        .iter()
+        .filter_map(|v| {
+            let id = v.get("id")?.as_str()?.to_string();
+            let name = v.get("name")?.as_str()?.to_string();
+            let exe = PathBuf::from(v.get("exe")?.as_str()?);
+            Some(ManualGame { id, name, exe })
+        })
+        .collect()
+}
+
+pub fn save_manual(file: &Path, list: &[ManualGame]) -> Result<(), String> {
+    let items: Vec<Value> = list.iter().map(|g| json!({ "id": g.id, "name": g.name, "exe": g.exe })).collect();
+    if let Some(dir) = file.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
+    std::fs::write(file, serde_json::to_string_pretty(&items).unwrap_or_default()).map_err(|e| e.to_string())
+}
+
+/// 登録できる実行ファイルか: 絶対パスで、存在する .exe。ほかの種類 (.bat・.cmd・.lnk など) は受け付けない
+pub fn manual_exe_ok(exe: &Path) -> Result<(), &'static str> {
+    if !exe.is_absolute() || !exe.extension().is_some_and(|e| e.eq_ignore_ascii_case("exe")) {
+        return Err("登録できるのはゲームの実行ファイル（.exe）だけです");
+    }
+    if !exe.is_file() {
+        return Err("実行ファイルが見つかりません");
+    }
+    Ok(())
+}
+
+/// 実行ファイルの場所から決める ID (同じ実行ファイルは同じ ID)
+pub fn manual_id(exe: &Path) -> String {
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+    for b in exe.to_string_lossy().to_lowercase().bytes() {
+        h ^= b as u64;
+        h = h.wrapping_mul(0x0100_0000_01b3);
+    }
+    format!("{h:016x}")
+}
+
+fn manual_entry(g: ManualGame) -> Option<Entry> {
+    manual_exe_ok(&g.exe).ok()?;
+    Some(Entry {
+        id: format!("manual:{}", g.id),
+        name: g.name,
+        source: MANUAL_SOURCE,
+        // 入力先は実行ファイルのフォルダ内のプロセス (Steam・Epic のインストール先と同じ扱い)
+        install_dir: g.exe.parent()?.to_path_buf(),
+        launch_uri: g.exe.to_string_lossy().to_string(),
+        image: None,
+        icon_source: Some(g.exe),
+    })
 }
 
 // ---------- Steam ----------
@@ -560,6 +650,35 @@ mod imp {
         if r.0 as isize > 32 { Ok(()) } else { Err("ランチャーを起動できませんでした".into()) }
     }
 
+    /// 実行ファイルを引数なしで、そのフォルダを作業フォルダーにして起動する (#49)
+    pub fn open_exe(exe: &std::path::Path) -> Result<(), String> {
+        let dir = exe.parent().map(|d| HSTRING::from(d.as_os_str())).unwrap_or_default();
+        let r = unsafe { ShellExecuteW(None, w!("open"), &HSTRING::from(exe.as_os_str()), PCWSTR::null(), &dir, SW_SHOWNORMAL) };
+        if r.0 as isize > 32 { Ok(()) } else { Err("起動できませんでした".into()) }
+    }
+
+    /// Windows のファイル選択の画面で .exe を 1 つ選ばせる (#49)。PC の前の人が選ぶ。キャンセルなら None
+    pub fn pick_exe() -> Option<std::path::PathBuf> {
+        use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED};
+        use windows::Win32::UI::Shell::Common::COMDLG_FILTERSPEC;
+        use windows::Win32::UI::Shell::{FileOpenDialog, IFileOpenDialog, FOS_FILEMUSTEXIST, FOS_FORCEFILESYSTEM, SIGDN_FILESYSPATH};
+        use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
+        unsafe {
+            let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+            let dialog: IFileOpenDialog = CoCreateInstance(&FileOpenDialog, None, CLSCTX_INPROC_SERVER).ok()?;
+            let filter = [COMDLG_FILTERSPEC { pszName: w!("ゲームの実行ファイル (*.exe)"), pszSpec: w!("*.exe") }];
+            dialog.SetFileTypes(&filter).ok()?;
+            dialog.SetTitle(w!("Re:Cooplay に登録するゲームの実行ファイルを選ぶ")).ok()?;
+            dialog.SetOptions(FOS_FILEMUSTEXIST | FOS_FORCEFILESYSTEM).ok()?;
+            dialog.Show(Some(GetForegroundWindow())).ok()?;
+            let item = dialog.GetResult().ok()?;
+            let path = item.GetDisplayName(SIGDN_FILESYSPATH).ok()?;
+            let text = path.to_string().ok();
+            windows::Win32::System::Com::CoTaskMemFree(Some(path.0 as *const _));
+            text.map(std::path::PathBuf::from)
+        }
+    }
+
     /// 実行ファイルのアイコン (最大 256px) を Windows のシェルで取り出し、PNG にする (#128)
     pub fn icon_png(path: &std::path::Path) -> Option<Vec<u8>> {
         use windows::Win32::Foundation::SIZE;
@@ -618,6 +737,12 @@ mod imp {
         Err("Windows以外では起動できません".into())
     }
     pub fn icon_png(_: &std::path::Path) -> Option<Vec<u8>> {
+        None
+    }
+    pub fn open_exe(_: &std::path::Path) -> Result<(), String> {
+        Err("Windows以外では起動できません".into())
+    }
+    pub fn pick_exe() -> Option<std::path::PathBuf> {
         None
     }
 }
@@ -720,6 +845,30 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         assert_eq!(logo.as_deref(), Some("SmallLogo.altform-unplated_targetsize-256.png"));
         assert!(none.is_none(), "マニフェストがなければ使わない");
+    }
+
+    #[test]
+    fn manual_games_round_trip_and_reject_non_exe() {
+        let dir = std::env::temp_dir().join(format!("recooplay-manual-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("Game")).unwrap();
+        let exe = dir.join(r"Game\MyGame.exe");
+        std::fs::write(&exe, b"x").unwrap();
+        std::fs::write(dir.join("run.bat"), b"x").unwrap();
+        assert!(manual_exe_ok(&exe).is_ok());
+        assert!(manual_exe_ok(&dir.join("run.bat")).is_err(), ".bat は受け付けない");
+        assert!(manual_exe_ok(Path::new(r"Game\MyGame.exe")).is_err(), "相対パスは受け付けない");
+        assert!(manual_exe_ok(&dir.join(r"Game\Nope.exe")).is_err(), "存在しない");
+        assert_eq!(manual_id(&exe), manual_id(Path::new(&exe.to_string_lossy().to_uppercase())), "大文字小文字で別にしない");
+        let file = dir.join("manual-games.json");
+        let list = vec![ManualGame { id: manual_id(&exe), name: "My Game".into(), exe: exe.clone() }];
+        save_manual(&file, &list).unwrap();
+        assert_eq!(load_manual(&file), list);
+        let found = detect(&Roots { steam: None, epic_manifests: None, minecraft: vec![], icons: dir.join("icons"), manual: Some(file) }).games;
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].source, MANUAL_SOURCE);
+        assert!(found[0].id.starts_with("manual:") && found[0].install_dir.ends_with("Game"));
     }
 
     #[test]

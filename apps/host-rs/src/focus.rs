@@ -18,18 +18,25 @@ pub struct Target {
     pub processes: Vec<String>,
     pub title_contains: String,
     pub dir: Option<String>,
+    /// 手動登録した実行ファイル。共有フォルダー内の別プログラムを入力先にしない。
+    pub executable: Option<String>,
 }
 
 impl Default for Target {
     fn default() -> Self {
         // Minecraft Java Edition は javaw.exe (ランチャーの設定によっては java.exe) で動き、タイトルに "Minecraft" を含む
-        Target { processes: vec!["javaw.exe".into(), "java.exe".into()], title_contains: "Minecraft".into(), dir: None }
+        Target { processes: vec!["javaw.exe".into(), "java.exe".into()], title_contains: "Minecraft".into(), dir: None, executable: None }
     }
 }
 
 /// 比べるためにパスをそろえる (区切りを \ に、小文字に)
 fn norm(path: &str) -> String {
-    path.replace('/', "\\").to_lowercase()
+    let path = path.replace('/', "\\").to_lowercase();
+    if let Some(rest) = path.strip_prefix(r"\\?\unc\") {
+        format!(r"\\{rest}")
+    } else {
+        path.strip_prefix(r"\\?\").unwrap_or(&path).to_string()
+    }
 }
 
 impl Target {
@@ -37,10 +44,18 @@ impl Target {
     pub fn install_dir(dir: &Path) -> Target {
         let mut d = norm(&dir.to_string_lossy()).trim_end_matches('\\').to_string();
         d.push('\\');
-        Target { processes: vec![], title_contains: String::new(), dir: Some(d) }
+        Target { processes: vec![], title_contains: String::new(), dir: Some(d), executable: None }
+    }
+
+    pub fn executable(exe: &Path) -> Target {
+        let path = std::fs::canonicalize(exe).unwrap_or_else(|_| exe.to_path_buf());
+        Target { processes: vec![], title_contains: String::new(), dir: None, executable: Some(norm(&path.to_string_lossy())) }
     }
 
     pub fn matches(&self, fg: &Foreground) -> bool {
+        if let Some(executable) = &self.executable {
+            return norm(&fg.path) == *executable;
+        }
         if let Some(dir) = &self.dir {
             return norm(&fg.path).starts_with(dir.as_str());
         }
@@ -50,6 +65,9 @@ impl Target {
     }
 
     pub fn describe(&self) -> String {
+        if self.executable.is_some() {
+            return "手動登録した実行ファイル".into();
+        }
         match &self.dir {
             Some(dir) => format!("{dir} 内のプログラム"),
             None => format!("{}（タイトルに「{}」）", self.processes.join(" / "), self.title_contains),
@@ -155,6 +173,20 @@ mod tests {
 
     fn fg(process: &str, title: &str) -> Foreground {
         Foreground { process: process.into(), path: format!(r"c:\program files\java\bin\{process}").to_lowercase(), title: title.into() }
+    }
+
+    #[test]
+    fn manual_target_matches_only_the_selected_executable() {
+        let t = Target::executable(Path::new(r"C:\Windows\System32\notepad.exe"));
+        let at = |path: &str| Foreground { process: "notepad.exe".into(), path: path.into(), title: String::new() };
+        // 同じフォルダーでも、別のexeは許可しない。別の場所の同名exeも許可しない。
+        assert!(!t.matches(&at(r"C:\Windows\System32\cmd.exe")));
+        assert!(!t.matches(&at(r"C:\Other\notepad.exe")));
+        // Windowsが存在するファイルを正規化した結果に合わせて比較する。
+        let selected = t.executable.as_ref().unwrap();
+        assert!(t.matches(&at(selected)));
+        assert!(t.matches(&at(&format!(r"\\?\{selected}"))));
+        assert!(!t.describe().to_lowercase().contains("windows"));
     }
 
     #[test]

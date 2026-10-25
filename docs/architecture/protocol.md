@@ -79,6 +79,8 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | 画面 → ホスト | `unconfirm_lineup` | 分担の画面から戻ったときに、ロビーでの決定を取り消す（Rust版） |
 | 画面 → ホスト | `swap_roles` | `a`・`b`（枠名）。開始前（接続中の人）と一時停止中（参加者）に、2人の担当（席順）を入れ替える。全解放・epoch更新の後、2人の確認待ち（`game.roleAck`）にする。協力プレイ中は無視する（#47、Rust版） |
 | 画面 → ホスト | `refresh_games` | インストール済みのゲームを探し直す（Rust版） |
+| 画面 → ホスト | `add_game` | ゲームを手動で登録する（#49・#56、Rust版）。ホストがPC上にWindowsのファイル選択の画面を出し、PCの前の人が `.exe` を選ぶ。場所は画面から受け取らない。結果は `manual_result`（`ok`・`message`） |
+| 画面 → ホスト | `rename_game`（`id`・`name`）／`remove_game`（`id`） | 手動登録したゲーム（`id` が `manual:` で始まる）の名前の変更・登録の解除。名前は制御文字を除いて60文字まで |
 | 画面 → ホスト | `auto_resume` / `phase` / `reset` | 自動復帰のON/OFF、進行の変更（`lobby`＝終了、`paused`＝一時停止のみ）、全枠の解放。人数は接続人数で決まり、`required` メッセージは #115 で廃止した |
 | 画面 → ホスト | `observe` | 疑似ゲーム画面の照合結果。ログに記録する |
 | ホスト → 画面 | `state` | 全枠の状態、`game`、`inject`（モード・有効かどうか・出力一覧・押下中の出力・緊急停止キー `emergencyHotkey` とその登録エラー `emergencyHotkeyError`、入力先 `target`（`ok`・`expect`・前面の `process`・`title`））、`games`（検出したゲーム：`id`・`name`・`source`（`steam`/`epic`）・`verified`（常に `false`）・`launchable`・`image`（タイルの画像があるか、#121）。インストール先・画像の場所は送らない）、`gamesScanning`、`network`（`bluetoothAudio`：既定の音の出力先がBluetoothか、`lowLatency`：Wi-Fiのメディアストリーミングモードが有効か。#131）、各枠の `net`（直近10秒の受信の途切れの回数 `stalls` と最大の空白 `maxStallMs`）、`minecraft`（Minecraftのランチャーを見つけたか `detected`・画像があるか `image`。#128。Minecraftは `games` には入れない）。1秒ごとと変化時に送る。`games` はPC画面にだけ送り、スマホには送らない（Rust版） |

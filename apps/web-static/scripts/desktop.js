@@ -1,5 +1,5 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,keyLabel,profileNotice,roleView,networkNotice,slotDiagnosis,usesFixedRoles,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,rolesAction} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,keyLabel,profileNotice,roleView,networkNotice,slotDiagnosis,usesFixedRoles,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,rolesAction} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // swap: 一時停止中に担当を入れ替える画面を開いているか (#47)
@@ -47,6 +47,23 @@ $('hotspotBtn').addEventListener('click',async()=>{
 });
 $('openGameBtn').addEventListener('click',()=>send({type:'open_game'}));
 $('refreshGamesBtn').addEventListener('click',()=>send({type:'refresh_games'}));
+// 手動で登録するゲーム (#49・#56)。実行ファイルは PC の前の人が Windows のファイル選択の画面で選ぶ
+let manualMessage='';
+$('addGameBtn').addEventListener('click',()=>{manualMessage='ファイルを選ぶ画面を開きました（PCの画面で選んでください）';send({type:'add_game'});renderGames();});
+$('renameGameBtn').addEventListener('click',()=>{
+  const g=games().find(x=>x.id===ui.game);if(!g)return;
+  $('renameInput').value=g.name;openDialog($('renameGame'));$('renameInput').select();
+});
+$('renameCancel').addEventListener('click',()=>$('renameGame').close());
+$('renameForm').addEventListener('submit',()=>{
+  const name=$('renameInput').value.trim();
+  if(name&&isRegistered(ui.game))send({type:'rename_game',id:ui.game,name});
+});
+$('removeGameBtn').addEventListener('click',()=>{
+  const g=games().find(x=>x.id===ui.game);if(!g)return;
+  if(!confirm(`「${g.name}」の登録を解除しますか？（ゲーム本体は削除しません）`))return;
+  send({type:'remove_game',id:g.id});ui={...ui,game:null};manualMessage='';
+});
 // 選択画面の主ボタン・Enter。選ぶだけで起動せず、メンバー・分担の画面へ進む (#109)
 function gameMain(){
   if(gameAction(ui,game,games()).kind==='next')setUi({...ui,screen:'roles'});
@@ -139,7 +156,7 @@ function render(){
   if(view==='paused'&&!game?.canResume)$('stateSubtitle').textContent=inject?.mode==='off'?'安全を確かめてから「入力を再開する」を押してください':'再開前に、接続とゲームの画面を確認してください';
   $('leftRule').hidden=!['game','roles'].includes(view);
   $('explanation').innerHTML=view==='join'?`${MIN_PLAYERS}〜${MAX_PLAYERS}人がそろったら、<br>OKボタンを押そう！！`:view==='game'?'右側にあるゲーム一覧から<br>遊びたいゲームを<br>選択してください！':view==='roles'?(game?.lineupOk?'メンバーと分担を<br>決定しました！':'操作をそれぞれの<br>スマホに分けよう！'):'';
-  $('secondary').innerHTML=view==='game'?'Steam・Epicで見つけたゲームは<br>分担を決めた後に起動できます。<br>「未検証」は操作が届くか未確認です。':view==='roles'?(game?.lineupOk?'ゲームを起動・準備して<br>スマホでReady！':'メンバーと分担を確認して<br>決定しよう！'):'';
+  $('secondary').innerHTML=view==='game'?'Steam・Epic・手動登録のゲームは<br>分担を決めた後に起動できます。<br>「未検証」は操作が届くか未確認です。':view==='roles'?(game?.lineupOk?'ゲームを起動・準備して<br>スマホでReady！':'メンバーと分担を確認して<br>決定しよう！'):'';
   const stopped=inputStopped(view);
   $('nextBtn').hidden=!stopped&&!['join','game','roles'].includes(view);
   $('nextBtn').classList.toggle('resume-input',stopped);
@@ -189,9 +206,9 @@ function renderGames(){
   // 1秒ごとの状態更新で一覧を作り直すとフォーカスが外れるため、変わったときだけ描き直す
   if(html!==gamesHtml){$('gameList').innerHTML=html;gamesHtml=html;}
   if(shownGame!==ui.game){shownGame=ui.game;document.querySelector('.game-choice.selected')?.scrollIntoView({block:'nearest'});}
-  const detected=list.length-1;
-  $('gamesCount').textContent=scanning?'インストール済みのゲームを探しています…':detected?`Steam・Epicで ${detected} 件見つかりました`:'Steam・Epicのゲームは見つかりませんでした';
+  $('gamesCount').textContent=manualMessage||gamesCountText(list,scanning);
   $('refreshGamesBtn').disabled=scanning;
+  $('renameGameBtn').hidden=$('removeGameBtn').hidden=!isRegistered(ui.game)||!list.some(g=>g.id===ui.game);
 }
 async function loadInfo(){
   try{
@@ -222,6 +239,7 @@ function connect(){
     const m=JSON.parse(ev.data),previousPhase=game?.phase;
     if(m.type==='state'){state=m;game=m.game;inject=m.inject;}
     else if(m.type==='game')game=m.game;
+    else if(m.type==='manual_result'){manualMessage=m.message||'';renderGames();setTimeout(()=>{if(manualMessage===m.message){manualMessage='';renderGames();}},6000);}
     if(m.type==='state'||m.type==='game'){ui=screenOnGameUpdate(ui,previousPhase,game);render();}
     else if(m.type==='remote'&&m.route==='app'&&m.epoch===game?.epoch){
       if(m.state==='down'&&dialogRemote(m.control))return;
