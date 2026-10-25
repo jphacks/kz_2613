@@ -41,8 +41,8 @@ body[data-slot=P3] .phone-character img { width: 157.851%; height: 128.546%; lef
 .wait-continue { margin-top: auto; min-height: 56px; padding: 7px 16px; font-size: clamp(15px,4.9vw,22px); border: 3px solid var(--color-phone-button); background: var(--color-disabled); color: var(--color-paper); box-shadow: 1px 3px 0 var(--color-button-shadow); text-shadow: 1px 2px var(--color-disabled-shadow); white-space: nowrap; }
 .wait-continue:disabled { color: var(--color-paper); border-color: var(--color-phone-button); box-shadow: 1px 3px 0 var(--color-button-shadow); }
 #waitTitle { margin-top: 36px; color: var(--color-logo); font-size: 12px; line-height: 1.4; }
-#stick { border-width: 4px; background: var(--color-phone-surface); box-shadow: 0 4px 0 var(--color-shadow); }
-#stick .knob { border-color: var(--color-cyan); background: var(--color-phone-dots); }
+.stick { border-width: 4px; background: var(--color-phone-surface); box-shadow: 0 4px 0 var(--color-shadow); }
+.stick .knob { border-color: var(--color-cyan); background: var(--color-phone-dots); }
 #pad { border-style: solid; background: var(--color-phone-surface); color: var(--color-cyan-ink); border-radius: 30px; }
 #pad::before { content: '↔'; color: var(--color-phone-dots); font-size: 80px; }
 .sens { border: 2px solid var(--color-cyan); background: var(--color-phone-surface); color: var(--color-logo); }
