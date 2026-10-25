@@ -41,11 +41,26 @@ function handshake(origin, host = `127.0.0.1:${PORT}`) {
   });
 }
 
+// 手元の PC の Steam・Epic を読まないよう、偽のランチャー情報を作る (Rust 版。dry-run のときだけ読む)
+function fakeGames(dir) {
+  const root = path.join(dir, 'games');
+  const steam = path.join(root, 'steam', 'steamapps');
+  fs.mkdirSync(path.join(steam, 'common', 'Stardew Valley'), { recursive: true });
+  fs.mkdirSync(path.join(steam, 'common', 'Steamworks Shared'), { recursive: true });
+  fs.writeFileSync(path.join(steam, 'appmanifest_413150.acf'), '"AppState" { "appid" "413150" "name" "Stardew Valley" "StateFlags" "4" "installdir" "Stardew Valley" }');
+  fs.writeFileSync(path.join(steam, 'appmanifest_228980.acf'), '"AppState" { "appid" "228980" "name" "Steamworks Common Redistributables" "StateFlags" "4" "installdir" "Steamworks Shared" }');
+  const gamma = path.join(root, 'epic-install', 'Gamma');
+  fs.mkdirSync(gamma, { recursive: true });
+  fs.mkdirSync(path.join(root, 'epic'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'epic', 'gamma.item'), JSON.stringify({ AppName: 'Gamma', DisplayName: 'Gamma', InstallLocation: gamma, AppCategories: ['games'] }));
+  return root;
+}
+
 // ---------- ホストの起動 (必ず注入なし) ----------
 function startHost() {
   const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-sim-'));
   // config.json の影響を受けないよう、画面だけを持つ一時ルートを使う
-  const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1' };
+  const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_FAKE_GAMES: fakeGames(logDir) };
   let cmd;
   let cmdArgs;
   if (target === 'node') {
@@ -773,6 +788,53 @@ async function main() {
       from = p1.mark();
       p1.send({ type: 'command', cmd: 'START' });
       if (target === 'rust') { await phaseIs(p1, 'preparing', from); p1.send({type:'command',cmd:'READY'}); }
+      await phaseIs(p1, 'coop', from);
+      app.close();
+    }, { rustOnly: true });
+
+    await check('ゲーム一覧: Steam・Epic を検出して PC 画面にだけ送り、選ぶと全解放して起動を見届ける。一覧にない id・協力プレイ中は起動しない', async () => {
+      const app = new Client('app');
+      await app.open();
+      app.send({ type: 'monitor', page: 'app' });
+      const st = await app.waitFor((m) => m.type === 'state' && m.games?.length, { what: 'games' });
+      assert(st.games.map((g) => g.id).join() === 'epic:Gamma,steam:413150', JSON.stringify(st.games));
+      assert(st.games.every((g) => g.verified === false && !('installDir' in g)), '未検証の表示・インストール先の非公開');
+      assert(!p1.msgs.some((m) => JSON.stringify(m).includes('Stardew')), 'スマホに一覧が送られた');
+      // 協力プレイ中・一覧にない値 (パスや URL を含む) では起動も選択もしない
+      let afrom = app.mark();
+      app.send({ type: 'launch_game', id: 'steam:413150' });
+      let s = await app.waitFor((m) => m.type === 'state' && m.game.launch?.state === 'failed', { from: afrom, what: 'coop reject' });
+      assert(s.game.phase === 'coop' && s.game.title === 'minecraft-java', JSON.stringify(s.game));
+      for (const id of ['C:\\Windows\\System32\\calc.exe', 'steam://rungameid/1', 'steam:228980', 'minecraft-java']) {
+        afrom = app.mark();
+        app.send({ type: 'launch_game', id });
+        s = await app.waitFor((m) => m.type === 'state' && m.game.launch?.id === id && m.game.launch.state === 'failed', { from: afrom, what: `reject ${id}` });
+        assert(s.game.title === 'minecraft-java' && s.game.phase === 'coop', `${id}: ${JSON.stringify(s.game)}`);
+      }
+      // 一時停止してから選ぶ: ゲームが変わって lobby へ戻り (全解放)、ウィンドウが現れるまで launching
+      let from = p1.mark();
+      p1.send({ type: 'command', cmd: 'PAUSE' });
+      await phaseIs(p1, 'paused', from);
+      host.child.stdin.write('target off\n');
+      await mon.waitFor((m) => m.type === 'state' && !m.inject.target.ok, { what: 'target off' });
+      from = p1.mark();
+      afrom = app.mark();
+      app.send({ type: 'launch_game', id: 'steam:413150' });
+      const g = await phaseIs(p1, 'lobby', from);
+      assert(g.game.title === 'steam:413150' && g.game.titleName === 'Stardew Valley' && g.game.reason === 'game change', JSON.stringify(g.game));
+      s = await app.waitFor((m) => m.type === 'state' && m.game.launch?.state === 'launching', { from: afrom, what: 'launching' });
+      assert(s.inject.target.expect.includes('stardew valley'), s.inject.target.expect);
+      host.child.stdin.write('target on\n');
+      s = await app.waitFor((m) => m.type === 'state' && m.game.launch?.state === 'started', { from: afrom, what: 'started' });
+      assert(s.game.phase === 'lobby', '起動しただけで進行が変わった');
+      // 検出したゲームでも準備・Ready の流れで開始できる。戻して再開
+      from = p1.mark();
+      app.send({ type: 'select_game', title: 'minecraft-java' });
+      await p1.waitFor((m) => m.type === 'game' && m.game.title === 'minecraft-java' && !m.game.launch, { from, what: 'title back' });
+      from = p1.mark();
+      p1.send({ type: 'command', cmd: 'START' });
+      await phaseIs(p1, 'preparing', from);
+      p1.send({ type: 'command', cmd: 'READY' });
       await phaseIs(p1, 'coop', from);
       app.close();
     }, { rustOnly: true });

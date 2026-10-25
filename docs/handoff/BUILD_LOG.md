@@ -473,3 +473,12 @@
 - 追加の機能修正（既存ゲームへ戻るOPEN_GAME、固定3人、実入力の緊急停止登録必須）は機能PR #91側へ分離した。mainは更新せず、マージ・auto-merge・Issueクローズは行わない。
 
 - 最終レビューで、paused等の定期state更新により手動ナビゲーションが分担画面へ戻る問題を修正。進行の変化時だけ案内し、同じ進行の定期更新はユーザーの画面選択を保持する回帰試験を追加した。
+
+## 2026-10-25 #54・#93：Steam・Epicの検出と一覧からの起動（ホスト側）
+
+- `apps/host-rs/src/games.rs` を追加。Steam（レジストリの `SteamPath`、`libraryfolders.vdf`、`appmanifest_*.acf`）とEpic（`ProgramData\Epic\...\Manifests\*.item`）を読み、PC画面へ `state.games`（`verified: false`）を送る。スマホには送らず、ログは件数だけ。再頒布パッケージ・Proton・未完了のインストール・DLC・ツールは除外する。
+- PC画面の `launch_game {id}` で、検出時に確かめた値だけから起動URLを組み立てて起動する（`ShellExecuteW`）。協力プレイ中・一覧にない値（パス・URL・Minecraft）は起動しない。起動前に全解放・epoch更新し、ウィンドウが現れたら前面化する。90秒で現れなければ手動起動を案内する。進行は変えず、P1の準備・Readyで開始する。
+- 一覧で選んだゲームの入力先は、前面の実行ファイルがインストール先フォルダ内にあることで判定する（`Target::install_dir`）。Minecraftの判定は従来どおり。
+- `cargo build --release --locked`：コンパイル・リンク成功（既知の警告3件）。実行中のホストが `target\release\recooplay-host.exe` を使用中のため最終コピーだけ失敗し、`target\release\deps\recooplay_host.exe` で試験した。`cargo test --release --locked`：単体12件成功（VDF・ACF・Epicマニフェスト・危険な値の拒否・偽フォルダでの検出・インストール先の入力先判定）。
+- `node scripts/sim/protocol-sim.mjs --bin <deps のホスト>`：41/41成功（偽のSteam・Epicフォルダ `RECOOPLAY_FAKE_GAMES` を使う「ゲーム一覧」項目を追加）。Node参照版：20/20成功。
+- 開発PCで dry-run のホストを起動し、実際のSteamから10件を検出（Epicは0件）。起動・前面化・ゲームへの入力は実機未検証。画面（#94）は未実装。
