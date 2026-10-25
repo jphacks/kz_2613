@@ -1,5 +1,13 @@
 # Issue駆動開発の共通ルール
 
+## ローカルの作業場所
+
+通常の編集・検証は `C:\Users\kumes\Documents\kz_2613` で行う。
+ユーザーから別作業ツリーの指定がない限り、tmpや`.venv`配下に作業用のチェックアウトを作らない。
+過去の未反映ファイルをローカル保管する場合は、Git対象外の `data/local/` を使用する。
+
+## 開発の流れ
+
 CodexとClaude Codeは同じ `docs/requirements/requirements-v0.3.md` と
 `docs/decisions/` を参照する。後の明示的なユーザー判断を優先し、提案を確定扱いしない。
 

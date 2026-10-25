@@ -14,6 +14,7 @@
 
 ## 開発・検証の履歴
 
+- [PR #92時点のPC画面監査・改修計画（過去資料）](recooplay_pc_visual_fidelity_audit_2026-10-25_v2.md)
 - [最終104画面の採寸・撮影結果](../../artifacts/improved-ui/README.md)
 - [UIの比較ギャラリー](../../artifacts/improved-ui/index.html)
 - [PC画面の比較記録](evidence/pc-fidelity-final/README.md)

@@ -709,3 +709,12 @@
 - Minecraftの固定画面でP1を視点・アクションへ交換するとPAUSEボタンが消えるため、ホストの停止ボタンを担当のsectionから独立させた。移動担当になった非ホストには表示しない。P1の仮想カーソルがarticleの交換列をクリックできなかったため、`data-swap`をクリック対象へ追加し、PCキーボードのEnter・Spaceも列の交換として処理した。
 - 担当確認`role_ok`に現在のepochを必須とし、古い担当の確認を流用して再開できないようにした。古いepoch・epochなしの確認拒否、交換後のP1のPAUSE表示、非ホストへの非表示、仮想カーソルから交換列へのクリックの回帰試験を追加した。
 - `node scripts/sim/app-view-test.mjs`27/27、`node scripts/sim/ui-input-test.mjs`8/8、`node scripts/sim/phone-view-test.mjs`、`node scripts/sim/controller-diagnostics-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`node scripts/sim/verify-ui-evidence.mjs`、`node scripts/sim/static-assets-sim.mjs`（33ファイル）、`git diff --check`が成功。Rustのビルド・単体・通信・終了試験は修正後のCIで確認する。新しい実機・ブラウザーの受入は実施していない。
+
+## 2026-10-25 — Documentsの作業場所への集約と未反映資料の整理
+
+- ユーザーの依頼により、通常の作業場所を `C:\Users\kumes\Documents\kz_2613` に統一し、開発手順へ記載した。mainをリモート最新へ早送りし、先のREADMEサムネイル変更も取り込んだ。
+- 未コミットの実機記録と未追跡の実装計画は、mainに同じ内容があることを照合して重複を解消した。未追跡のPC画面監査は、当時の計画である旨と現行資料への参照を追加して保存した。
+- 旧画面ギャラリーとZIPは、作業環境固有の参照を含む旧資料のため公開せず、Git対象外の `data/local/cleanup-2026-10-25/` へ移動した。
+- `.venv`配下の旧作業ツリー7件を整理した。未反映ファイル618件（335件・283件）はコピー後のバイト一致を確認し、差分・元コミット・ブランチ・ファイル一覧とともに同じローカル保管先に退避した。古い版の製品コードを現行mainへ上書きせず、既存ブランチとコミット履歴は保持した。旧プレビューサーバーと専用起動シェルは終了した。
+- 先のREADME差し替え用の管理作業ツリーもアーカイブし、`git worktree list` でDocumentsの主作業ツリーのみになったことを確認した。
+- `node scripts/sim/check-static-pages.mjs`：4画面すべて構文OK。`python scripts/verify_overlay.py`：必須30ファイルの確認に成功。`git diff --check`：成功。製品コードの追加編集・新しい実機試験は行っていない。
