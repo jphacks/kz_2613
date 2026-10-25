@@ -1,0 +1,155 @@
+{
+  "condition": "表示専用の模擬データ。100% zoom、製品ルート /app、同じタブのDOMと表示領域を撮影前後に照合。独立タブで毎回新規撮影。画像の後加工・差分マスクなし。実機動作の証拠ではない。",
+  "rounds": [
+    {
+      "directory": "pc-branding-accepted-1",
+      "tabId": "29",
+      "from": "2026-10-25T02:04:48.149Z",
+      "to": "2026-10-25T02:04:57.011Z",
+      "commit": "5cefdf9",
+      "screenshots": [
+        {
+          "file": "join-1920.jpg",
+          "sha256": "5f0c8b8d5318de9c286644d710fae187cf0c47af9bfdbe8970ce23152a007d0e"
+        },
+        {
+          "file": "join-1280.jpg",
+          "sha256": "d701a4589fa2dab5c9275308a061aed15ab0d28cbf20f483395d8b960a2fd29c"
+        },
+        {
+          "file": "game-1920.jpg",
+          "sha256": "d2392f85414d9656c1e483437261b594d2ee6b18870613fd7b33ed9f3a114dd5"
+        },
+        {
+          "file": "game-1280.jpg",
+          "sha256": "8bcdfa2aa8dbeb35bfcc3acd397b3b83a15d109d84849a59d77951c38c7db86f"
+        },
+        {
+          "file": "roles-1920.jpg",
+          "sha256": "c4a950fd60868221157708fed49080a60e8fc8bdef5344ed912ae7668e0f8235"
+        },
+        {
+          "file": "roles-1280.jpg",
+          "sha256": "4fb6845df3f1e88ab9707896e7d0663e875b93a7bbc2211f5604767965a41a4a"
+        },
+        {
+          "file": "preparing-1920.jpg",
+          "sha256": "b22991cd773e314038f0b4c1b352a5931974a55f469fe5a0328c8e0a186e8f41"
+        },
+        {
+          "file": "preparing-1280.jpg",
+          "sha256": "3774a3d9fcf13756e50c429e8bc82123a7e4d3f6ad43c4d3af573d594b409940"
+        },
+        {
+          "file": "ready-1920.jpg",
+          "sha256": "d1cd8e84e733131224f98371e1e5964804741ff5c24bfe580a465b209d56065b"
+        },
+        {
+          "file": "ready-1280.jpg",
+          "sha256": "bbc21e90181e0f277157bb1118b1b1ce1fc5fccb4c59b8cf9eb58d09344226c0"
+        }
+      ]
+    },
+    {
+      "directory": "pc-branding-accepted-2",
+      "tabId": "30",
+      "from": "2026-10-25T02:05:09.699Z",
+      "to": "2026-10-25T02:05:16.447Z",
+      "commit": "5cefdf9",
+      "screenshots": [
+        {
+          "file": "join-1920.jpg",
+          "sha256": "5f0c8b8d5318de9c286644d710fae187cf0c47af9bfdbe8970ce23152a007d0e"
+        },
+        {
+          "file": "join-1280.jpg",
+          "sha256": "d701a4589fa2dab5c9275308a061aed15ab0d28cbf20f483395d8b960a2fd29c"
+        },
+        {
+          "file": "game-1920.jpg",
+          "sha256": "d2392f85414d9656c1e483437261b594d2ee6b18870613fd7b33ed9f3a114dd5"
+        },
+        {
+          "file": "game-1280.jpg",
+          "sha256": "8bcdfa2aa8dbeb35bfcc3acd397b3b83a15d109d84849a59d77951c38c7db86f"
+        },
+        {
+          "file": "roles-1920.jpg",
+          "sha256": "c4a950fd60868221157708fed49080a60e8fc8bdef5344ed912ae7668e0f8235"
+        },
+        {
+          "file": "roles-1280.jpg",
+          "sha256": "4fb6845df3f1e88ab9707896e7d0663e875b93a7bbc2211f5604767965a41a4a"
+        },
+        {
+          "file": "preparing-1920.jpg",
+          "sha256": "b22991cd773e314038f0b4c1b352a5931974a55f469fe5a0328c8e0a186e8f41"
+        },
+        {
+          "file": "preparing-1280.jpg",
+          "sha256": "3774a3d9fcf13756e50c429e8bc82123a7e4d3f6ad43c4d3af573d594b409940"
+        },
+        {
+          "file": "ready-1920.jpg",
+          "sha256": "d1cd8e84e733131224f98371e1e5964804741ff5c24bfe580a465b209d56065b"
+        },
+        {
+          "file": "ready-1280.jpg",
+          "sha256": "bbc21e90181e0f277157bb1118b1b1ce1fc5fccb4c59b8cf9eb58d09344226c0"
+        }
+      ]
+    }
+  ],
+  "scores": {
+    "join": {
+      "criteria": [
+        25,
+        24,
+        19,
+        14,
+        14
+      ],
+      "total": 96
+    },
+    "game": {
+      "criteria": [
+        25,
+        25,
+        19,
+        14,
+        14
+      ],
+      "total": 97
+    },
+    "roles": {
+      "criteria": [
+        25,
+        25,
+        19,
+        14,
+        13
+      ],
+      "total": 96
+    },
+    "preparing": {
+      "criteria": [
+        25,
+        25,
+        18,
+        14,
+        14
+      ],
+      "total": 96
+    },
+    "ready": {
+      "criteria": [
+        25,
+        25,
+        19,
+        14,
+        14
+      ],
+      "total": 97
+    }
+  }
+}

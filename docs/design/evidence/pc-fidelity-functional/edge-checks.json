@@ -1,0 +1,77 @@
+[
+  {
+    "case": "接続0人",
+    "title": "0人\n参加中！",
+    "connected": 0
+  },
+  {
+    "case": "接続1人",
+    "title": "1人\n参加中！",
+    "connected": 1
+  },
+  {
+    "case": "接続2人",
+    "title": "2人\n参加中！",
+    "connected": 2
+  },
+  {
+    "case": "接続3人",
+    "title": "3人\n参加中！",
+    "connected": 3
+  },
+  {
+    "case": "PC矢印キー",
+    "view": "game"
+  },
+  {
+    "case": "PC矢印キー2回目",
+    "view": "roles"
+  },
+  {
+    "case": "設定でOFF",
+    "input": "ゲームへの入力はOFFです",
+    "view": "preparing"
+  },
+  {
+    "case": "準備中もQRに到達",
+    "QR": true
+  },
+  {
+    "case": "lost",
+    "view": "paused",
+    "warning": "3人全員の接続を待っています。",
+    "lost": 1
+  },
+  {
+    "case": "off",
+    "view": "coop",
+    "warning": "入力がOFFです。操作設定で入力をONにしてください。",
+    "lost": 0
+  },
+  {
+    "case": "target",
+    "view": "coop",
+    "warning": "操作を停止しています。Minecraftを前面にしてください。",
+    "lost": 0
+  },
+  {
+    "case": "emergency",
+    "view": "paused",
+    "warning": "緊急停止しました。入力はOFFです。再開前に操作設定を確認してください。",
+    "lost": 0
+  },
+  {
+    "case": "QR-missing",
+    "text": "接続先が見つかりません"
+  },
+  {
+    "case": "QR-error",
+    "text": "QRを取得できません\n接続方法をご確認ください"
+  },
+  {
+    "case": "PC切断",
+    "view": "roles",
+    "canPrepare": false,
+    "readyInstruction": false
+  }
+]
