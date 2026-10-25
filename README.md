@@ -7,7 +7,7 @@
 
   ---
 
-  ### 🎮 プレイ風景
+  <p>🎮 <strong>プレイ風景</strong></p>
 
   <p>移動・視点・攻撃を3人で分担し、声を掛け合いながら1つのキャラクターを操作する様子をご覧ください。</p>
 
@@ -17,8 +17,6 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
   ---
 
-  ### クイックリンク
-
   [![ギャラリー](https://img.shields.io/badge/ギャラリー-写真%20%26%20UI-green?style=for-the-badge)](./docs/gallery.md)
   [![動作確認](https://img.shields.io/badge/動作確認-実機と検証状況-blue?style=for-the-badge)](./docs/verification.md)
   [![資料一覧](https://img.shields.io/badge/資料一覧-ドキュメント-blueviolet?style=for-the-badge)](./docs/README.md)
@@ -27,11 +25,7 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
   [![JPHACKS 2026](https://img.shields.io/badge/JPHACKS%202026-Hack%20Day%20Audience%20Award-gold?style=for-the-badge&logo=trophy)](https://github.com/jphacks/kz_2613)
 
-  ## 🎉 JPHACKS 2026 受賞結果 🎉
-
-  ### 🏆 Hack Day（金沢会場）
-
-  **Hack Day Audience Award**
+  <p>🏆 <strong>JPHACKS 2026 金沢会場 Hack Day Audience Award 受賞</strong></p>
 
 </div>
 
@@ -44,26 +38,6 @@ Re:Cooplay（リコープレイ）は、**既存のPCゲームに、新しい協
 移動する人、視点を動かす人、攻撃する人。**全員が操作の当事者になることで、いつものゲームに新しい協力体験が生まれます。**
 
 ゲーム本体を改造することなく、手元のスマートフォンから新しい遊び方を楽しめます。
-
----
-
-## 目次
-
-- [製品概要](#製品概要)
-  - [背景](#背景製品開発のきっかけ課題等)
-  - [製品説明](#製品説明具体的な製品の説明)
-  - [特長](#特長)
-  - [解決出来ること](#解決出来ること)
-  - [今後の展望](#今後の展望)
-  - [注力したこと](#注力したことこだわり等)
-- [開発技術](#開発技術)
-  - [活用した技術](#活用した技術)
-  - [独自技術](#独自技術)
-- [Hack Dayでの実装差分](#hack-dayでの実装差分)
-- [動作確認の範囲](#動作確認の範囲)
-- [試してみるには](#試してみるには)
-- [起動・開発手順](#起動開発手順)
-- [権利・利用上の注意](#権利利用上の注意)
 
 ---
 
@@ -91,7 +65,7 @@ Re:Cooplay（リコープレイ）は、既存のPCゲームに新しい協力�
 
 参加者はそれぞれのスマートフォンをコントローラーとして使い、1つのキャラクターの操作を分担します。移動や視点、攻撃など、それぞれの操作を組み合わせることで、みんなで1つのキャラクターを動かします。
 
-#### 例えば、3人でMinecraftを遊ぶ場合
+例えば、**3人でMinecraftを遊ぶ場合**、次のように担当します。
 
 | プレイヤー | 担当する操作 |
 |---|---|
@@ -105,7 +79,7 @@ Re:Cooplay（リコープレイ）は、既存のPCゲームに新しい協力�
 
 <br>
 
-#### 遊び方
+参加から共同操作までの流れは、次のとおりです。
 
 1. **デスクトップアプリを起動する**  
    PCでRe:Cooplayを起動すると、参加用のQRコードが表示されます。
@@ -125,7 +99,9 @@ Re:Cooplay（リコープレイ）は、既存のPCゲームに新しい協力�
 6. **みんなで協力プレイ！**  
    準備ができたら、ホストがスマホから「Ready」を押します。各自のスマホが担当する操作画面に切り替わり、みんなで1つのキャラクターを操作できるようになります。
 
-スマートフォンへの専用アプリのインストールは不要。1つのPCゲーム画面を共有しながら、複数人で協力プレイを楽しめます。
+スマートフォンへの専用アプリのインストールは不要。1つのPCゲーム画面を共有しながら、複数人で協力プレイを楽しめます。PC側のセットアップについては[Windows構築・起動手順](docs/handoff/SETUP_WINDOWS.md)をご覧ください。
+
+<sub>Re:Cooplayは独立した非公式ツールであり、Minecraftのゲーム本体・素材を同梱していません。Minecraftの公式製品ではなく、Mojang Studios・Microsoftの承認・提携を受けていません。NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. [Minecraftの利用条件に関する確認記録](docs/decisions/2026-10-25-minecraft-usage-terms.md)</sub>
 
 ---
 
@@ -230,6 +206,8 @@ Re:Cooplayが目指すのは、**既存ゲームの数だけ、みんなで遊�
 
 #### ハッカソンで開発した独自機能・技術
 
+Hack Day（2026年10月24〜25日）に、複数台のスマートフォンで1つのPCゲームを動かすためのシステムを開発しました。[開発開始前のコミット](https://github.com/jphacks/kz_2613/tree/5acb0049e6)と[実装の差分](https://github.com/jphacks/kz_2613/compare/5acb0049e6...main)、[Hack Day開発ログ](docs/handoff/BUILD_LOG.md)で実装の根拠を確認できます。
+
 * **複数人の入力統合と役割分担：** スマホから届いた操作を参加者の担当に応じて受け付け、1つのキャラクターへの入力に統合します。2〜4人に応じた分担と、プレイ開始前・一時停止中の役割交換にも対応しています。  
   [入力・セッション統合](apps/host-rs/src/hub.rs) ／ [操作の対応](apps/host-rs/src/controls.rs) ／ [Windows入力](apps/host-rs/src/input.rs) ／ [人数別の分担設計](docs/decisions/2026-10-25-variable-players.md)
 
@@ -242,7 +220,7 @@ Re:Cooplayが目指すのは、**既存ゲームの数だけ、みんなで遊�
 * **安全な開始・停止と入力先の制御：** 参加・ゲーム選択・役割決定・準備の後にホストがReadyを押す方式を採用。対象ゲーム以外への誤入力を防ぎ、切断・一時停止・緊急停止の際にはキーやマウスボタンの入力を解放します。  
   [入力先の確認](apps/host-rs/src/focus.rs) ／ [役割交換](docs/decisions/2026-10-25-role-swap.md) ／ [開始手順](docs/decisions/2026-10-25-launch-after-roles.md)
 
-**システム構成**
+操作入力は次の構成でPCゲームに伝わります。
 
 ```mermaid
 flowchart LR
@@ -265,71 +243,4 @@ flowchart LR
 
 ---
 
-## Hack Dayでの実装差分
-
-**Hack Day：2026年10月24〜25日。** 開発開始前の基準コミットにあったのは`README.md`と`LICENSE`のみで、そこから共同操作のためのシステムを開発しました。
-
-**[開発開始前の基準コミット](https://github.com/jphacks/kz_2613/tree/5acb0049e6) ／ [Hack Dayの実装差分](https://github.com/jphacks/kz_2613/compare/5acb0049e6...main)**
-
-| Hack Day中に開発したもの | 実装・記録 |
-|:--|:--|
-| 複数スマホからの入力をまとめるWindowsホスト | [セッション・入力統合](apps/host-rs/src/hub.rs)・[Windows入力](apps/host-rs/src/input.rs) |
-| 参加・ゲーム選択・役割分担を行うPC/スマホ画面 | [UIソース](apps/web-static/)・[UI検証](artifacts/improved-ui/README.md) |
-| 操作の送受信とゲームに合わせた入力変換 | [通信実装](apps/host-rs/src/rtc.rs)・[操作定義](apps/host-rs/src/profiles.rs) |
-| 明示的な開始・一時停止・緊急停止・誤入力防止 | [ホスト実装](apps/host-rs/src/hub.rs)・[検証ログ](docs/handoff/BUILD_LOG.md) |
-| ゲームの検出と操作定義による対応タイトルの拡張 | [ゲーム検出](apps/host-rs/src/games.rs)・[操作定義](apps/game-profiles/) |
-
-開発・検証の経緯は[Hack Day開発ログ](docs/handoff/BUILD_LOG.md)にまとめています。
-
----
-
-## 動作確認の範囲
-
-| 確認の種類 | 内容 |
-|:--|:--|
-| **実際のゲームでのプレイ** | **Minecraft：** Hack Dayのライブデモと懇親会で、Windows PCとスマホ3台（Android 2台、iPhone 1台）を使って共同操作。**ホラーゲーム：** チームメンバー2人で短時間の共同操作を試遊。 |
-| **機能・自動試験** | 2〜4人の人数に応じた操作分担と役割交換に対応。Rustホストの状態遷移、通信、認可、安全停止などを、自動テストやシミュレーションでも確認しています。 |
-| **引き続き確認が必要な範囲** | ほかのタイトルへの幅広い互換性、長時間の安定性、異なるPC環境への配布・再現性、遠隔接続など。操作定義を登録しただけのタイトルで動作を保証するものではありません。 |
-
-[検証記録の詳細](docs/verification.md) ／ [Hack Day開発ログ](docs/handoff/BUILD_LOG.md) ／ [ギャラリー](docs/gallery.md)
-
----
-
-## 試してみるには
-
-1. **Windows PCを用意する。** Re:Cooplayと、遊びたい対応PCゲームを準備します。
-2. **スマホで参加する。** 同じローカルネットワークに2〜4台のスマートフォンを接続し、PCアプリに表示されたQRコードを読み取ります。
-3. **ゲームと役割を決める。** PCアプリでゲームを選び、参加メンバーと分担を確認して、ゲームを起動・準備します。
-4. **共同操作を始める。** ホストがスマホからReadyを押すと、担当に応じた画面で操作できるようになります。
-
-[Windowsセットアップ](docs/handoff/SETUP_WINDOWS.md) ／ [PCアプリの使い方](apps/desktop/README.md)
-
----
-
-## 起動・開発手順
-
-Windowsでのセットアップ、PCアプリやRustホストの起動・開発方法は、以下にまとめています。
-
-- [Windowsセットアップ](docs/handoff/SETUP_WINDOWS.md)
-- [PCアプリの使い方](apps/desktop/README.md)
-- [Rustホストのビルドと検証](apps/host-rs/README.md)
-
----
-
-## 権利・利用上の注意
-
-Re:Cooplayは独立した非公式ツールです。**Minecraftの公式製品ではなく、Mojang StudiosおよびMicrosoftの承認・提携を受けたものではありません。**
-
-**NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.**
-
-Minecraftのゲーム本体やゲーム素材は同梱していません。画像・動画・名称の扱いについては[確認記録](docs/decisions/2026-10-25-minecraft-usage-terms.md)を参照してください。デモ素材の使用条件と公開用の連絡先は引き続き確認事項です。
-
----
-
-<div align="center">
-
-**ゲームはそのまま。操作はみんなで。**
-
-**Re:Cooplay**
-
-</div>
+Hack Dayのライブデモと懇親会では、Minecraftをスマートフォン3台で共同操作しました。2人によるホラーゲームのチーム内試遊も行っています。対応ゲームの範囲や検証条件は[動作確認の詳細](docs/verification.md)にまとめています。
