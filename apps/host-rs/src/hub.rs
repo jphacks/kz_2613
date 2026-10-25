@@ -617,10 +617,11 @@ impl Hub {
     }
 
     /// PC 画面の「この分担で決定」。画面が見ていたゲーム・メンバーが今と一致するときだけ受け付ける
-    fn confirm_lineup(&mut self, title: Option<String>, members: Vec<String>) {
+    fn confirm_lineup(&mut self, title: Option<String>, members: Vec<String>, epoch: Option<u64>) {
         let connected = self.connected_slots();
         let names: Vec<&str> = connected.iter().map(|&i| SLOT_NAMES[i]).collect();
         let accepted = matches!(self.game.phase, Phase::Lobby | Phase::Preparing)
+            && epoch == Some(self.game.epoch)
             && title.as_deref() == Some(self.game.title.as_str())
             && self.title_known(&self.game.title)
             && members == names
@@ -1426,6 +1427,10 @@ impl Hub {
             self.log("launch_duplicate", json!({ "id": entry.id }));
             return;
         }
+        // 起動済みの前面化も含め、対象を切り替える前に全解放して旧入力・視点を破棄する。
+        self.release_outputs(None);
+        self.reset_look();
+        self.advance_epoch();
         // すでに起動している (ウィンドウがある) ときは、起動し直さず前面にする
         if !dry_run() && (self.target_ok || focus::exists(&self.target)) {
             let message = match focus::activate(&self.target) {
@@ -1436,10 +1441,6 @@ impl Hub {
             self.finish_launch(&entry.id, &entry.name, "started", message);
             return;
         }
-        // 起動の前に全解放し、旧状態の入力・視点を持ち越さない (要件 11 章 6 項)
-        self.release_outputs(None);
-        self.reset_look();
-        self.advance_epoch();
         self.launch_gen += 1;
         let gen = self.launch_gen;
         let message = if dry_run() { format!("dry-run：{}は起動しません", entry.name) } else { format!("{}を起動しています", entry.name) };
@@ -1844,7 +1845,7 @@ impl Hub {
             }
             "confirm_lineup" => {
                 let members = msg.get("members").and_then(Value::as_array).map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect()).unwrap_or_default();
-                self.confirm_lineup(s(msg, "title"), members);
+                self.confirm_lineup(s(msg, "title"), members, msg.get("epoch").and_then(Value::as_u64));
             }
             // 分担の画面から戻ったら、決定を取り消す (戻った後の古い決定で起動・準備しない)
             "unconfirm_lineup" => {
