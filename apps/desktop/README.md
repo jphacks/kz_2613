@@ -27,6 +27,8 @@ cargo build --release
 - ホストは `RECOOPLAY_HOST_EXE` → アプリと同じフォルダ → `apps/host-rs/target/release/` の順に探す。
 - ポートはホストと同じ規則（環境変数 `PORT` → `config.json` の `port` → 8080）。
 - WebView2 ランタイムが必要（Windows 11 には標準で入っている）。
+- ホストには Microsoft Visual C++ v14 Redistributable（x64）も必要（#148）。[Microsoft公式の案内](https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist)から、ビルドに使ったMSVCと同じか新しい版を用意する。オフラインのPCへは公式の導入用ファイルを事前に持ち込む。アプリは自動ダウンロード・自動導入しない。
+- `MSVCP140.dll`・`VCRUNTIME140.dll`等の不足やホストの終了コード`0xC0000135`では、ランタイムと配布ファイルの不足を確認する。PCアプリにもDLL不足の案内を表示する。開発PCのDLLを手作業でコピーせず、公式の導入用ファイルを使う。未導入の別PCでの受入は #148 に残す。
 
 ## 配布パッケージ（#41）
 

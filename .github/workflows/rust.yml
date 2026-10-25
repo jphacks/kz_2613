@@ -67,6 +67,8 @@ jobs:
           key: package-desktop-${{ runner.os }}-${{ hashFiles('apps/desktop/Cargo.lock') }}
       - name: 同じソースから配布用PCアプリをビルド
         run: cargo build --release --locked --manifest-path apps/desktop/Cargo.toml
+      - name: PCアプリの起動失敗時の案内
+        run: cargo test --release --locked --manifest-path apps/desktop/Cargo.toml
       - name: Windows配布zipを作成
         shell: powershell
         run: ./scripts/windows/package.ps1
