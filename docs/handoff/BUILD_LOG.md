@@ -791,3 +791,12 @@
 - #130で、スクロール後に片指を残してもう片方を置き直すと、distanceと開始時刻がリセットされ、最後の解放で意図しない右クリックが1回発生することをNodeのPointer Events模擬検証で再現した。2本指スクロールを継続中は履歴を保持し、両指を離した後だけ新しい操作として初期化するよう修正した。置き直しと2本指キャンセルでクリックしない回帰試験を追加した。
 - #129マージ後のmainを#130へ取り込み、BUILD_LOGの両方の記録を保持して競合を解消した。修正後の `node scripts/sim/ui-input-test.mjs`10/10、`app-view-test.mjs`21/21、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`（33ファイル）、`git diff --check`が成功した。
 - 修正前の#130で `node scripts/sim/protocol-sim.mjs`46/46も成功していたが、#129との統合後のRustビルド・単体・通信の根拠は修正後のCIで別途確認する。ローカルでRustは再ビルドしていない。作業開始時の未コミットBUILD_LOGはstashへ保持している。
+
+## 2026-10-26 — 協力プレイ中の低遅延の動作とBluetoothの注意（Claude Code、#131）
+
+- ユーザーの切り分け：PC・スマホともBluetooth OFFは問題なし、PCのBluetoothイヤホンで音を流すと途切れる。ログ（`session-2026-10-25T15-01-40-315Z`）では、ホストのタッチパッドの移動（通常約30msごと）が約0.4秒ごとに200〜400ms止まってまとめて届き（540件中200件が同時着、最大1.3秒）、P1のWebRTCの`failed`も最大の空白の最中だった。開発PCのWi-FiとBluetoothは一体の部品（MediaTek MT7922）、Wi-Fiの受信39%。
+- 準備〜一時停止の間だけWi-Fiのメディアストリーミングモードを有効にし、ロビーで戻すようにした（`netwatch.rs`、PCの設定は書き換えない）。既定の音の出力先がBluetoothかを5秒ごとに調べ、PC画面に注意を出す。受信の途切れ（150ms以上の空白の直後に3件以上が10ms以内）を数え、10秒ごとに往復時間とともにログ（`net`）に残し、直近10秒に3回以上のスマホがあればPC画面に注意を出す（[決定](../decisions/2026-10-26-network-stability.md)）。
+- 開発PCで、メディアストリーミングモードの有効化・解除が管理者権限なしに成功すること、既定の出力先「ヘッドホン (COTSUBU Patra BK)」を列挙元`BTHENUM`からBluetoothと判定することを確認した（一時的な試験。確認後に削除）。dry-runではない実際のホストを別のポートで起動し、起動後数秒で`network.bluetoothAudio`が真になりログに`bluetooth_audio`が残ることを確認した（ロビーのまま、入力は送っていない）。
+- `cargo test --release --locked`はホスト40件（途切れの数え方の試験を追加）＋プローブ3件成功。`protocol-sim.mjs`（Rust dry-run）47/47：ロビーでは低遅延の動作が無効・協力プレイで有効、試験用の`bt on/off`でPC画面への知らせが切り替わる、枠ごとの途切れの数がある、を追加した。`app-view-test.mjs` 22/22（通信の注意）、`check-static-pages.mjs`が成功した。
+- 途中、シェルのヒアドキュメント経由でスクリプトに書いた`\n`が実際の改行になり、試験のファイルが構文エラーになった。Writeツールで書いた修正スクリプトで直した。
+- メディアストリーミングモードで途切れがどれだけ減るかは、実機での比較が必要（未確認）。
