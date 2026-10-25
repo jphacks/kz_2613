@@ -970,8 +970,8 @@ impl Hub {
                     format!("dry-run：{}を手動で開いてください", name)
                 } else {
                     match crate::focus::activate(&self.target) {
-                        Ok(()) => format!("{}のウィンドウを前面にしました。ワールドを準備してください", name),
-                        Err(reason) => format!("{}。{}を手動で開き、ワールドを準備してください", reason, name),
+                        Ok(()) => format!("{}のウィンドウを前面にしました。プレイ中の画面まで進めてください", name),
+                        Err(reason) => format!("{}。{}を手動で開き、プレイ中の画面まで進めてください", reason, name),
                     }
                 };
                 self.reload_keybinds();

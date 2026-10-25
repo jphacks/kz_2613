@@ -102,6 +102,9 @@ export function phoneAdvice(stats) {
   return hints.join(' ');
 }
 
+/** 案内に出す、選んだゲームの名前 (#140)。ホストの game.titleName。分からなければ「ゲーム」 */
+export const gameLabel = (game) => game?.titleName || 'ゲーム';
+
 export function desktopWarning(game, inject, connected = true) {
   if (!connected) return 'PCホストとの接続が切れました。再接続を待っています。';
   if (inject?.emergencyHotkeyError) return '緊急停止キーを登録できません。操作設定で入力をOFFにしてください。';
@@ -112,8 +115,8 @@ export function desktopWarning(game, inject, connected = true) {
     const missing = (game?.participants || []).filter((p) => !game.connected?.includes(p));
     if (missing.length) return `${missing.join('・')}の再接続を待っています。`;
     if ((game?.connected?.length || 0) < (game?.required || MIN_PLAYERS)) return `${MIN_PLAYERS}人以上の接続を待っています。`;
-    if (game?.phase === 'preparing' && !inject?.active) return 'Minecraftを前面にして、ワールドの準備を確認してください。';
-    if (game?.phase === 'coop' && !inject?.active) return '操作を停止しています。Minecraftを前面にしてください。';
+    if (game?.phase === 'preparing' && !inject?.active) return `${gameLabel(game)}を前面にして、プレイ中の画面まで進めてください。`;
+    if (game?.phase === 'coop' && !inject?.active) return `操作を停止しています。${gameLabel(game)}を前面にしてください。`;
   }
   return '';
 }

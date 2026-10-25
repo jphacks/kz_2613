@@ -1,5 +1,5 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,keyLabel,profileNotice,roleView,networkNotice,slotDiagnosis,usesFixedRoles,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,rolesAction} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,keyLabel,profileNotice,roleView,networkNotice,slotDiagnosis,usesFixedRoles,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,rolesAction} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // swap: 一時停止中に担当を入れ替える画面を開いているか (#47)
@@ -129,8 +129,8 @@ function render(){
   if(game?.phase!=='paused'&&ui.swap)ui={...ui,swap:false};
   const view=desktopView(ui,game),slots=slotViews(state?.slots),count=slots.filter(s=>s.state==='connected').length;
   document.body.dataset.view=view;document.body.dataset.phase=game?.phase||'lobby';
-  // otherGame: Minecraft 以外を選んだ (案内の文言)。generated: 固定の分担ではなく操作定義の分担を表示する (2人・4人のMinecraftを含む)
-  const otherGame=!!game?.profile&&game.profile.id!=='minecraft-java',generated=!usesFixedRoles(game);
+  // generated: 固定の分担ではなく操作定義の分担を表示する (2人・4人のMinecraftを含む)
+  const generated=!usesFixedRoles(game);
   document.querySelector('.key-samples').hidden=generated;
   document.querySelectorAll('.key-samples kbd').forEach((el,i)=>{
     const label=keyLabel(game?.keys,['INV','FWD','BACK'][i]);
@@ -173,11 +173,11 @@ function render(){
   $('joinGuide').hidden=view!=='join';$('gameStage').hidden=view!=='game';$('roleStage').hidden=view!=='roles';
   $('playerStage').hidden=['game','roles'].includes(view);
   $('openGameBtn').hidden=!['preparing','ready','paused'].includes(view);
-  const notes={preparing:'Minecraftでワールドを準備してください。'};
+  const name=gameLabel(game);
   const swapHint=game?.canSwap?(swapPick?`${swapPick}と入れ替える人の列を押してください`:'担当を入れ替えるときは、2人の列を順に押してください'):'';
-  $('actionNote').textContent=view==='roles'?(swapPick?swapHint:roleAction.note||swapHint):view==='preparing'&&otherGame?'選んだゲームで準備してください。':notes[view]||'';
-  $('openGameBtn').textContent=otherGame?'選んだゲームを前面にする':'Minecraftを前面にする';
-  $('inputSafety').textContent=(otherGame?'選択したゲーム':'Minecraft')+'が前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。';
+  $('actionNote').textContent=view==='roles'?(swapPick?swapHint:roleAction.note||swapHint):view==='preparing'?`${name}をプレイ中の画面まで進めてください。`:'';
+  $('openGameBtn').textContent=`${name}を前面にする`;
+  $('inputSafety').textContent=`${name}が前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。`;
   const keyWarnings=game?.keys?.warnings||[];
   const warning=desktopWarning(game,inject,online||!state)||(keyWarnings.length?'キー設定に注意が必要です。「操作設定」で実際に送るキーを確認してください。':'');
   const notices=[warning,networkNotice(state?.network,state?.slots),profileNotice(game?.profile)].filter(Boolean).join(' ');
@@ -185,7 +185,7 @@ function render(){
   $('steps').hidden=!['join','game','roles'].includes(view);
   document.querySelectorAll('#steps button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===ui.screen?'page':'false'));
   $('players').innerHTML=slots.map((s,i)=>`<article class="player ${s.state}${view==='preparing'&&s.host&&s.state==='connected'?' pending':''}" data-slot="${s.slot}"><div class="player-badge">${s.state==='empty'?'参加待ち':s.state==='lost'?'切断中':view==='ready'?'接続完了！':view==='preparing'?(s.host?'準備中！':'接続完了！'):'接続完了！'}</div><div class="player-info"><p>プレイヤー${i+1}</p><p>${esc(roleView(game,s.slot).title)}</p><p class="player-device">機種：${esc(s.device||'未接続')}</p></div><svg class="player-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg><div class="character">${character(i)}</div></article>`).join('');
-  $('inputState').textContent=inject?.mode==='off'?'ゲームへの入力はOFFです':inject?.mode==='test'?'診断用の入力先です':inject?.active?'ゲームへの入力はONです（'+(otherGame?'選択したゲーム':'Minecraft')+'が前面のときだけ）':'ゲームへの入力を停止しています';
+  $('inputState').textContent=inject?.mode==='off'?'ゲームへの入力はOFFです':inject?.mode==='test'?'診断用の入力先です':inject?.active?`ゲームへの入力はONです（${name}が前面のときだけ）`:'ゲームへの入力を停止しています';
   $('keyWarnings').textContent=keyWarnings.join('。');
   $('keyBindings').innerHTML=roleSlots.map(slot=>`<h3>${esc(slot)}：${esc(roleView(game,slot).title)}</h3><ul>${roleView(game,slot).lines.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`).join('');
   $('gameStatus').textContent=game?.prepareStatus||'';

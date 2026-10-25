@@ -281,7 +281,10 @@ test('進行の変化: 準備・Ready・協力・Pause・Endで古い状態を�
 });
 test('本番の安全案内: 切断・緊急停止・入力OFF・前面喪失とテストを隠さない',()=>{
   const g={phase:'coop',connected:['P1','P2','P3']};
-  assert.match(desktopWarning(g,{mode:'on',active:false,target:{process:'secret.exe'}}),/Minecraftを前面/);
+  assert.match(desktopWarning(g,{mode:'on',active:false,target:{process:'secret.exe'}}),/ゲームを前面/);
+  // 選んだゲームの名前で案内する (#140)
+  assert.equal(desktopWarning({...g,titleName:'Outlast'},{mode:'on',active:false}),'操作を停止しています。Outlastを前面にしてください。');
+  assert.equal(desktopWarning({...g,phase:'preparing',titleName:'Outlast'},{mode:'on',active:false}),'Outlastを前面にして、プレイ中の画面まで進めてください。');
   assert.doesNotMatch(desktopWarning(g,{mode:'on',active:false,target:{process:'secret.exe'}}),/secret\.exe/);
   assert.match(desktopWarning(g,{mode:'off'}),/入力が止まっています.*入力を再開する/);
   assert.match(desktopWarning(g,{mode:'test'}),/確認用/);

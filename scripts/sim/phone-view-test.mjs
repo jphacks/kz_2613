@@ -76,4 +76,10 @@ assert.match(el('inputWarn').textContent,/分担できる操作がありませ�
 assert.doesNotMatch(el('waitRole').textContent,/分担できる操作がありません/);
 update('P2',{profile:{id:'reference',name:'参考用',status:'unverified',controllerSupported:true}});
 assert.match(el('inputWarn').textContent,/未検証.*確かめながら/);
-console.log('合格: ホスト準備・Ready可否・参加者待機・担当画面・Pause・診断前解放・未検証案内（7観点、OS入力なし）');
+// 案内は選んだゲームの名前で出し、Minecraft・ワールドの文言を残さない (#140)
+update('P1',{phase:'preparing',canReady:true,titleName:'Outlast',remoteRoute:'game',inputTarget:true,profile:{id:'steam:238320',name:'Outlast',status:'unverified',controllerSupported:true}});
+const shown=['remoteRoute','openGameBtn','inputWarn','remoteNote'].map((id)=>el(id).textContent).join(' ');
+assert.match(shown,/Outlastのメニューを操作中/);
+assert.match(shown,/Outlastを前面にする/);
+assert.doesNotMatch(shown,/Minecraft|ワールド/);
+console.log('合格: ホスト準備・Ready可否・参加者待機・担当画面・Pause・診断前解放・未検証案内・ゲーム名の案内（8観点、OS入力なし）');
