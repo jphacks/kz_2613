@@ -911,3 +911,4 @@
 - Mermaid 11.17.2のparseで外向け12図すべて成功。検証用ライブラリとHTMLはGit対象外のdata/localだけへ配置し、製品依存やpackage-lockは追加していない。ローカルのブラウザで通常幅8ページ・幅390pxの11ページを確認し、全12図のSVG描画、ローカル画像の欠落なし、ページ全体の横はみ出しなしを確認した。
 - node scripts/sim/profile-catalog-test.mjs：502定義の照合成功。node scripts/sim/verify-ui-evidence.mjs：104画面の照合成功。python scripts/verify_overlay.py：39項目成功。node scripts/sim/app-view-test.mjs：25/25成功。node scripts/sim/phone-view-test.mjs：8観点成功。node --check scripts/profiles/build-catalog.mjs、git diff --checkも成功。
 - Release一覧は0件を再確認し、一般向け配布版が公開済みとは案内していない。資料・パス以外の製品動作変更はなく、実機試験・OS入力試験・Rust再ビルドは実施していない。過去の実機観測を現行版全体の合格へ読み替えていない。
+- Push後のGitHubで総合仕様・4冊の専門仕様を開き、全12図の読込み完了と描画エラーなしを確認した。公開表示で読みづらかったPC管理メッセージの長い表は、メッセージ表・認可条件・state項目・HTTP応答へ分け、旧履歴番号の除去で残った不自然な表現も修正した。図と通信処理の意味は変更していない。再度、全75資料・455参照とgit diff --checkが成功した。

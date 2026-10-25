@@ -218,28 +218,70 @@ sequenceDiagram
 
 ## PC画面とホスト
 
-| 方向 | type | 内容 |
-|---|---|---|
-| 画面 → ホスト | `monitor` | `page`: `host`/`game`/`app`（PCアプリの画面） |
-| 画面 → ホスト | `inject_mode` | `mode`: `off`/`test`/`on` |
-| 画面 → ホスト | `focus` | `focused`。疑似ゲーム画面（`game`）では選択状態（`test` モードの条件になる）。ブラウザで開いたPCアプリ（`app`）では前面になったこと：協力プレイ中に前面へ戻ると、ホストは全解放して `paused`（`reason: app focus`、自動復帰しない）へ移し、P1をリモコンに戻す。**デスクトップアプリから起動したホスト（`RECOOPLAY_DESKTOP=1`）はこの知らせを使わず、前面のプロセス名（`recooplay-desktop.exe`）で判定する**（WebView2の画面は背面になっても `blur` を受け取らないため） |
-| 画面 → ホスト | `select_game` | `title`（`minecraft-java`、診断用の `pseudo-game`、検出したゲームの `id`）。選んだゲームはホストが保持し `game.title` で配る。ロビー以外で別のゲームに変えると、全解放して `lobby`（`reason: game change`）へ戻す。参加者・役割は保つ。同じ・未知の値は無視する |
-| 画面 → ホスト | `launch_game` | `id`（`state.games` の項目）。ホストは手元の一覧から起動方法を引き、検出時に確かめた値だけで起動する（Steam：`steam://rungameid/<appid>`、Epic：`com.epicgames.launcher://apps/...`）。パス・URLは受け取らない。**選択中のゲーム（`game.title`）で、メンバー・分担の決定（`game.lineupOk`）が有効なときだけ**、ロビー・準備中に、全解放・epoch更新の後に起動し、ウィンドウが現れたら前面にする。起動中の同じ要求は無視する。すでにウィンドウがあれば起動し直さず前面にする。協力プレイ中・一時停止中・決定前・選択と違うid・一覧にない値は起動せず `game.launch.state: failed` を返す。dry-runでは起動しない |
-| 画面 → ホスト | `confirm_lineup` | `title`・`members`・`epoch`（画面が見ていたゲーム・接続中の枠・状態の世代）。ロビー・準備中に、今の選択・接続者・epochと一致し、P1を含む2人以上なら、メンバーと分担を決定する。一致しなければ無視する |
-| 画面 → ホスト | `unconfirm_lineup` | 分担の画面から戻ったときに、ロビーでの決定を取り消す |
-| 画面 → ホスト | `swap_roles` | `a`・`b`（枠名）。開始前（接続中の人）と一時停止中（参加者）に、2人の担当（席順）を入れ替える。全解放・epoch更新の後、2人の確認待ち（`game.roleAck`）にする。協力プレイ中は無視する |
-| 画面 → ホスト | `refresh_games` | インストール済みのゲームを探し直す |
-| 画面 → ホスト | `add_game` | ゲームを手動で登録する。ホストがPC上にWindowsのファイル選択の画面を出し、PCの前の人が `.exe` を選ぶ。場所は画面から受け取らない。結果は `manual_result`（`ok`・`message`） |
-| 画面 → ホスト | `rename_game`（`id`・`name`）／`remove_game`（`id`） | 手動登録したゲーム（`id` が `manual:` で始まる）の名前の変更・登録の解除。名前は制御文字を除いて60文字まで |
-| 画面 → ホスト | `auto_resume` / `phase` / `reset` | 自動復帰のON/OFF、進行の変更（`lobby`＝終了、`paused`＝一時停止のみ）、全枠の解放。人数は接続人数で決まり、`required` メッセージは  で廃止した |
-| 画面 → ホスト | `observe` | 疑似ゲーム画面の照合結果。ログに記録する |
-| ホスト → 画面 | `state` | 全枠の状態、`game`、`inject`（モード・有効かどうか・出力一覧・押下中の出力・緊急停止キー `emergencyHotkey` とその登録エラー `emergencyHotkeyError`、入力先 `target`（`ok`・`expect`・前面の `process`・`title`））、`games`（検出したゲーム：`id`・`name`・`source`（`steam`/`epic`/`manual`）・`verified`（常に `false`）・`launchable`・`image`（タイルの画像があるか、）。インストール先・画像の場所は送らない）、`gamesScanning`、`network`（`bluetoothAudio`：既定の音の出力先がBluetoothか、`lowLatency`：Wi-Fiのメディアストリーミングモードが有効か。）、各枠の `net`（直近10秒の受信の途切れの回数 `stalls` と最大の空白 `maxStallMs`）、`minecraft`（Minecraftのランチャーを見つけたか `detected`・画像があるか `image`。。Minecraftは `games` には入れない）。1秒ごとと変化時に送る。`games` はPC画面にだけ送り、スマホには送らない |
-| ホスト → 画面 | `inject` / `look` / `log` | 注入1件ごと、視点の100msごとの集計、イベントログ |
-| ホスト → 画面 | `remote` | `control`（`UP`/`DOWN`/`LEFT`/`RIGHT`/`ENTER`/`ESC`）、`state`。ロビー・一時停止中のP1のリモコン操作。PCアプリの画面は自分が前面（`document.hasFocus()`）のときだけ反応する。OSへの注入は前面がMinecraftのときだけなので、画面とゲームが同時に反応しない |
+### 管理メッセージ
 
-**参加の案内：** `GET /api/info` は参加用のURL・QR（`urls`）を返す。Wi-Fiの接続QR（`wifi`：`ssid`・パスフレーズを含む `qr`）とホットスポットの状態（`hotspot`：`on`）は**PC本体（ループバック）からの要求にだけ**含め、LANの端末には `null` を返す。Wi-Fiはモバイルホットスポットの設定（Windowsの `NetworkOperatorTetheringManager`）を優先し、読めなければ `config.json` の `wifi` を使う。`POST /api/hotspot` はホットスポットをONにする（PC画面のボタンを押したときだけ）。PC本体からで、Origin がPCの画面と一致する要求だけを受け付ける（Origin なし・別の Origin は403）。SSID・パスフレーズはログに残さない。
+| 方向 | type | 主な項目・処理 |
+|:--|:--|:--|
+| 画面 → ホスト | `monitor` | `page:app/host/game`。ループバックから管理接続を登録 |
+| 画面 → ホスト | `inject_mode` | `mode:on/off/test` |
+| 画面 → ホスト | `focus` | `focused`。疑似ゲームとブラウザ版PC画面のフォーカス |
+| 画面 → ホスト | `select_game` | `title`。ホストの一覧にあるゲームを選択 |
+| 画面 → ホスト | `confirm_lineup` | `title`, `members`, `epoch`。現在のゲーム・接続者と一致する分担を決定 |
+| 画面 → ホスト | `unconfirm_lineup` | ロビーで分担の決定を取り消す |
+| 画面 → ホスト | `launch_game` | `id`。決定済み・選択中のゲームを起動 |
+| 画面 → ホスト | `prepare / open_game` | 準備への移行・対象ゲームの前面化 |
+| 画面 → ホスト | `swap_roles` | `a`, `b`。開始前・一時停止中の席順を交換 |
+| 画面 → ホスト | `refresh_games` | インストール済みゲームの再検出 |
+| 画面 → ホスト | `add_game` | PCでファイル選択画面を開き、ゲームを手動登録 |
+| 画面 → ホスト | `rename_game / remove_game` | `id`、変更時は`name`。手動登録項目の変更・解除 |
+| 画面 → ホスト | `auto_resume` | 自動復帰の有効・無効 |
+| 画面 → ホスト | `phase` | `lobby`への終了、`paused`への停止。coopの強制は禁止 |
+| 画面 → ホスト | `reset` | 全枠・セッションをリセット |
+| 画面 → ホスト | `observe` | 疑似ゲームで受信した入力の照合結果 |
+| ホスト → 画面 | `state` | 枠、game、入力先、ゲーム一覧、通信診断 |
+| ホスト → 画面 | `manual_result` | `ok`, `message`。手動登録の結果 |
+| ホスト → 画面 | `inject / look / log` | 注入イベント、視点の100ms集計、ログ |
+| ホスト → 画面 | `remote` | P1のPC画面向けリモコン。`route`, `epoch`, `control/state`または`kind/dx/dy` |
 
-**ゲーム一覧の画像：** `GET /api/game-image?id=<項目ID>` は、検出した項目の画像（Steamがユーザーの PC に保存しているライブラリの画像）を返す。PC本体（ループバック）からの要求だけに応じ、項目IDだけを受け取ってホストの表から場所を引く。場所・パスは受け取らない。一覧にない・画像のない項目は404。`id=minecraft-java` はMinecraftのランチャーの画像。画像は保存させない（`no-store`）。
+### ゲーム選択・起動の条件
+
+`confirm_lineup`はロビー・準備中だけ受け付けます。ゲーム・接続者・epochが一致し、P1を含む2人以上が必要です。ゲームを変更すると旧割当を解放し、ロビーへ戻ります。参加枠と役割の席順は保持します。
+
+`launch_game`は決定済みメンバーと選択ゲームが一致するロビー・準備中に限ります。ホストの一覧から起動方法を引き、端末から任意のパス・URLを受け取りません。Steamは検出済みAppID、Epicは検出済み起動情報、手動登録はPCで選んだ実行ファイルを使います。起動前に全解放・epoch更新を行い、既存ウィンドウがあれば新規起動せず前面化します。
+
+共同操作中・一時停止中・分担未決定・選択と異なるIDの起動は拒否します。`game.launch.state`は`launching / started / failed / timeout`です。dry-runでは実ゲームを起動しません。
+
+手動登録の`add_game`はPC上のファイル選択を使います。`manual:`項目だけを名前変更・解除でき、名前は制御文字を除いて60文字までです。
+
+### stateの構成
+
+| 項目 | 内容 |
+|:--|:--|
+| 枠の状態 | 接続、UA、再接続回数、押下、通信統計、RTC状態 |
+| `game` | スマホにも配る進行・割当・入力状態 |
+| `inject` | モード、入力可能か、出力・押下中一覧 |
+| `inject.emergencyHotkey / emergencyHotkeyError` | 緊急停止キーと登録エラー |
+| `inject.target` | 対象照合の`ok / expect`、前面の`process / title` |
+| `games / gamesScanning` | 検出一覧と再検出状態 |
+| `network.bluetoothAudio / lowLatency` | Bluetooth音声とWi-Fi低遅延モードの状態 |
+| 各枠の`net` | 直近10秒の受信途切れ`stalls`と最大空白`maxStallMs` |
+| `minecraft` | ランチャーの`detected`と画像の有無`image` |
+
+stateは変化時と1秒ごとに通知します。`games`の項目は`id / name / source / verified / launchable / image`を持ち、sourceは`steam / epic / manual`です。検出項目のverifiedはfalseで、インストール先や画像のファイルパスは送りません。Minecraftは独立した情報として扱い、gamesには含めません。一覧はPC画面にだけ送り、スマホへは送りません。
+
+### フォーカスとリモコン
+
+デスクトップ起動（`RECOOPLAY_DESKTOP=1`）では前面プロセス名でPCアプリへの復帰を検出します。ブラウザ代替では接続ごとのfocus変化を使い、閉じた画面のfocusを引き継ぎません。復帰時はpausedへ移し、自動復帰を解除します。
+
+P1のリモコンはPC画面と対象ゲームへ排他的に送ります。PC側の仮想カーソルはOSカーソルを動かしません。共同操作の視点とリモコン移動は別の経路・順序番号で扱います。
+
+### 参加情報・ゲーム画像のHTTP応答
+
+`GET /api/info`の`urls`は参加URL・QRです。Wi-Fi接続情報`wifi`（ssid・接続QR）と`hotspot.on`はループバックだけに返し、LAN端末にはnullを返します。Wi-Fi情報はWindowsのモバイルホットスポット設定を優先し、読めない場合にconfig.jsonのwifiを使います。SSID・パスフレーズはログへ残しません。
+
+`POST /api/hotspot`はPCのボタン操作から有効化を要求します。PC本体かつPC画面と同じOriginのみ許可し、Originなし・不一致は403です。
+
+`GET /api/game-image?id=<項目ID>`はホストの一覧から画像を解決し、ループバックだけに返します。ID以外のパスを受け取らず、不明・画像なしは404、応答はno-storeです。`id=minecraft-java`はランチャーの画像です。
 
 ---
 
