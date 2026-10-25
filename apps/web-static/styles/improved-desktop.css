@@ -1,0 +1,46 @@
+/* 改良後5原案（1920×1080）の実測座標。操作や状態判定は既存モジュールが担当。 */
+.desktop-shell { overflow: hidden; }
+.brand-band { position: absolute; top: 0; left: 0; width: 561px; height: 190px; background: var(--color-brand-band); border-bottom: 9px double var(--color-paper); box-shadow: 0 4px 4px var(--color-shadow); }
+.brand-band .brand { left: 27px; top: 9px; width: 215px; height: 164px; }
+.brand-message { position: absolute; top: 13px; left: 278px; width: 225px; margin: 0; text-align: center; font-size: 18px; line-height: 1.65; font-weight: 800; }
+.brand-message strong { font-size: 32px; color: var(--color-stage-purple); text-shadow: 1px 3px 2px var(--color-shadow); }
+.brand-message b { display: block; color: var(--color-cyan); font-size: 31px; line-height: 1.35; -webkit-text-stroke: 4px var(--color-paper); paint-order: stroke fill; text-shadow: 2px 3px 2px var(--color-shadow); }
+[data-view=join] .explanation { top: 269px; left: 70px; width: 430px; font-size: 32px; font-weight: 700; }
+.state-banner { position: absolute; left: 139px; top: 49px; width: 1034px; height: 269px; border-radius: 31px; background: var(--color-panel-translucent); box-shadow: 0 5px 3px var(--color-shadow); text-align: center; padding: 19px 18px; }
+.state-banner h2 { margin: 0; color: var(--color-cyan); font-family: Arial,'Yu Gothic',sans-serif; font-size: 124px; line-height: 1.45; font-weight: 800; white-space: nowrap; -webkit-text-stroke: 7px var(--color-paper); paint-order: stroke fill; text-shadow: 4px 6px var(--color-title-shadow); }
+.state-banner p { margin: 1px 0 0; font-size: 32px; font-weight: 700; }
+[data-view=preparing] .state-banner,[data-view=ready] .state-banner { left: 126px; top: 61px; width: 1102px; }
+[data-view=preparing] .state-banner h2,[data-view=ready] .state-banner h2 { font-size: 112px; }
+[data-view=coop] .state-banner h2,[data-view=paused] .state-banner h2 { font-size: 105px; }
+.player-stage { left: 36px; top: 359px; width: 1290px; height: 721px; }
+.players { gap: 28px; }
+.player-info { font-size: 39px; }
+.player-info .player-device { font-size: 34px; margin-top: 0; }
+.player-badge { width: 194px; }
+.character { top: 348px; left: 50%; width: 280px; height: 441px; transform: translateX(-50%); background: transparent; border-radius: 0; display: block; }
+.character .character-art { width: 100%; }
+[data-view=preparing] .player-stage,[data-view=ready] .player-stage { top: 371px; }
+.role-columns { left: 47px; top: 380px; width: 1274px; height: 565px; gap: 40px; }
+.role-column { position: relative; display: block; background: transparent; border-radius: 0; box-shadow: none; }
+.role-column:nth-child(2) { background: transparent; border: 0; }
+.role-column h3 { height: 94px; margin: 0; display: grid; place-items: center; border: 3px solid var(--color-cyan); border-radius: 20px; background: var(--color-panel-translucent); font-size: 40px; box-shadow: 0 5px 0 var(--color-shadow); }
+.role-column h3::after { content: ''; position: absolute; top: 83px; left: calc(50% - 10px); width: 20px; height: 20px; background: var(--color-paper); border: solid var(--color-cyan); border-width: 0 3px 3px 0; transform: rotate(45deg); }
+.role-column .character-art { position: absolute; top: 118px; left: 50%; transform: translateX(-50%); width: 280px; }
+.role-copy { position: absolute; top: 360px; left: 50%; transform: translateX(-50%); width: 200px; color: var(--color-paper); }
+.role-copy b { font-size: 25px; }
+.role-copy p { font-size: 19px; line-height: 1.5; margin-top: 8px; }
+.role-column:nth-child(2) h3 { border-color: var(--color-cyan); }
+.role-band h2 { font-size: 58px; }
+.key-samples kbd { min-width: 50px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+.key-samples kbd.wide-key { font-size: 26px; }
+.utility-bar { width: auto; right: 20px; bottom: 12px; min-height: 42px; font-size: 21px; }
+.utility-bar #hotkey { padding: 8px 14px; border-radius: 24px; background: var(--color-utility-surface); }
+.utility-bar button { min-height: 42px; font-size: 21px; border: 0; background: var(--color-utility-surface); }
+#steps { display: flex; flex-wrap: wrap; gap: 8px; }
+.role-keys { left: 47px; top: 975px; border: 0; background: var(--color-panel-translucent); font-size: 20px; box-shadow: none; }
+.start-instruction span { font-size: 20px; }
+.safety-warning { width: 620px; bottom: 62px; font-size: 20px; }
+.game-choice { max-width: 80%; border: 3px solid var(--color-cyan); border-radius: 28px; background: var(--color-panel-translucent); }
+.game-choice h2 { font-size: 48px; }
+/* 極端な横長・縦長でも原案比率を保ち、余剰領域には同じ背景色を使う。 */
+@media (max-width: 1000px) { .utility-bar button { min-height: 60px; font-size: 22px; } }

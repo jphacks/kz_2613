@@ -1,0 +1,98 @@
+/* 接続完了原案402×874を基準に、操作画面にも同じ白いカード・点線・暖色ボタンを使う。 */
+body { padding: 0; gap: 0; color: var(--color-black); font-family: Arial,'Yu Gothic',sans-serif; }
+header { position: relative; height: calc(54px + env(safe-area-inset-top)); min-height: calc(54px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 0 0; background: var(--color-paper); box-shadow: 0 3px 4px var(--color-shadow); z-index: 2; flex-wrap: nowrap; }
+header .brand { flex: 1; }
+header .brand .brand-image { width: 64px; height: 48px; margin: 0 auto; }
+header #slot,header #role,header .right { display: none; }
+body[data-connection=warn] header .right,body[data-connection=ng] header .right { display: flex; position: absolute; left: max(12px,env(safe-area-inset-left)); top: calc(16px + env(safe-area-inset-top)); }
+header .right #phase { display: none; }
+.phone-settings { position: absolute; right: max(8px,env(safe-area-inset-right)); top: calc(5px + env(safe-area-inset-top)); border: 0; width: 44px; height: 44px; min-height: 44px; padding: 0; box-shadow: none; background: transparent; color: var(--color-logo); font-size: 26px; }
+main { padding: 14px max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left)); }
+.view { gap: 10px; }
+.control-heading { margin: 0; padding: 12px; border: 3px solid var(--color-cyan); border-radius: 26px; background: var(--color-phone-surface); text-align: center; color: var(--color-cyan); font-size: 26px; line-height: 1.25; text-shadow: 1px 2px var(--color-paper),2px 3px var(--color-lemon); flex-shrink: 0; }
+.host-card { border-radius: 30px; background: var(--color-phone-surface); border-width: 4px; padding: 14px 12px; box-shadow: 0 4px 3px var(--color-shadow); }
+.host-card h1 { color: var(--color-cyan); font-weight: 800; font-size: clamp(22px,6.2vw,30px); text-shadow: 1px 2px var(--color-paper),2px 3px var(--color-lemon); }
+.host-card p { border-color: var(--color-phone-dots); font-weight: 500; color: var(--color-logo); }
+.players { display: none; }
+.key { border: 2px solid var(--color-cyan); color: var(--color-black); background: var(--color-phone-surface); border-radius: 20px; box-shadow: 0 3px 0 var(--color-shadow); }
+.key small { color: var(--color-logo); }
+.remote .col { flex-basis: 32%; grid-template-columns: repeat(2,minmax(44px,1fr)); }
+.cmd { border: 3px solid var(--color-phone-button); background: var(--color-button-surface); color: var(--color-button-ink); box-shadow: 1px 3px 0 var(--color-shadow); font-size: 17px; }
+.cmd.pause { border-color: var(--color-cyan); color: var(--color-cyan-ink); background: var(--color-paper); }
+.cmd.sub { min-height: 44px; color: var(--color-logo); background: var(--color-surface); font-size: 12px; }
+.cmd:disabled { border-color: var(--color-phone-button); background: var(--color-character); color: var(--color-logo); }
+#remotePad { min-height: 90px; border-style: solid; background: var(--color-pad-surface); border-radius: 30px; color: var(--color-cyan-ink); }
+#remotePad::before { content: ''; width: 42px; height: 26px; border: 3px solid var(--color-phone-dots); border-radius: 10px; }
+#remoteRoute { font-size: 11px; color: var(--color-logo); }
+#remoteNote { font-size: 11px; max-height: 55px; color: var(--color-logo); }
+body[data-view=v-wait] main { padding: 0; }
+#v-wait { position: relative; }
+.wait-scene { position: relative; display: block; width: 100%; height: 100%; }
+.phone-character { position: absolute; left: 50%; top: calc(28.3% - 29.4vw); transform: translateX(-50%); width: 34.6%; max-width: 164px; aspect-ratio: 372 / 585; overflow: hidden; }
+.phone-character img { position: absolute; width: 156.989%; height: 114.701%; left: -28.495%; top: -8.376%; max-width: none; }
+body[data-slot=P2] .phone-character img { width: 149.451%; height: 112.937%; left: -25.549%; top: -6.993%; }
+body[data-slot=P3] .phone-character img { width: 157.851%; height: 128.546%; left: -23.416%; top: -15.937%; }
+.wait-card { position: absolute; left: 50%; top: 28.3%; transform: translateX(-50%); width: 78%; max-width: 370px; height: clamp(320px,46dvh,440px); border: 4px solid var(--color-cyan); border-radius: 30px; padding: 48px 14px 16px; background: var(--color-phone-surface); box-shadow: 0 5px 3px var(--color-shadow); display: flex; flex-direction: column; align-items: center; }
+.wait-card h1 { color: var(--color-cyan); margin: 0; width: 100%; font-size: clamp(30px,10.4vw,46px); line-height: 1.25; font-weight: 800; letter-spacing: .03em; text-shadow: 1px 3px var(--color-paper),2px 5px var(--color-lemon); }
+.wait-card h1 { -webkit-text-stroke: 4px var(--color-paper); paint-order: stroke fill; }
+.wait-card .dotted { border-bottom: 10px dotted var(--color-phone-dots); padding-bottom: 33px; }
+.role-label { margin-top: 21px; border-radius: 0; padding: 1px 16px; background: var(--color-phone-button); box-shadow: 2px 3px 0 var(--color-button-shadow); font-size: 21px; line-height: 1.5; color: var(--color-paper); text-shadow: 1px 2px var(--color-phone-button-ink); }
+#waitRole { margin: 10px 0 0; font-size: 15px; color: var(--color-logo); }
+.wait-continue { margin-top: auto; min-height: 56px; padding: 7px 16px; font-size: clamp(15px,4.9vw,22px); border: 3px solid var(--color-phone-button); background: var(--color-disabled); color: var(--color-paper); box-shadow: 1px 3px 0 var(--color-button-shadow); text-shadow: 1px 2px var(--color-disabled-shadow); white-space: nowrap; }
+.wait-continue:disabled { color: var(--color-paper); border-color: var(--color-phone-button); box-shadow: 1px 3px 0 var(--color-button-shadow); }
+#waitTitle { margin-top: 36px; color: var(--color-logo); font-size: 12px; line-height: 1.4; }
+#stick { border-width: 4px; background: var(--color-phone-surface); box-shadow: 0 4px 0 var(--color-shadow); }
+#stick .knob { border-color: var(--color-cyan); background: var(--color-phone-dots); }
+#pad { border-style: solid; background: var(--color-phone-surface); color: var(--color-cyan-ink); border-radius: 30px; }
+#pad::before { content: '↔'; color: var(--color-phone-dots); font-size: 80px; }
+.sens { border: 2px solid var(--color-cyan); background: var(--color-phone-surface); color: var(--color-logo); }
+.act .attack { background: var(--color-button-surface); border-color: var(--color-phone-button); }
+.gen-title { color: var(--color-black); background: var(--color-surface); border-radius: 24px; padding: 12px; border: 3px solid var(--color-cyan); }
+#genControls { min-height: 0; flex: 1; }
+.gen-label { color: var(--color-black); }
+#inputWarn { margin: 10px 12px 0; }
+#phoneDiagnostics { border: 3px solid var(--color-cyan); border-radius: 26px; background: var(--color-surface); max-width: min(92vw,440px); max-height: 85dvh; overflow: auto; padding: 20px; }
+#phoneDiagnostics::backdrop { background: var(--color-role-band); }
+#full,#rotatePrompt { background: var(--color-peach) url('../assets/mobile-stars.png') center / cover; }
+.phone-message { width: 100%; max-width: 370px; padding: 35px 20px; border: 4px solid var(--color-cyan); border-radius: 30px; background: var(--color-phone-surface); box-shadow: 0 5px 3px var(--color-shadow); color: var(--color-black); font-size: 17px; }
+.connecting { padding: 32px 20px; border: 4px solid var(--color-cyan); border-radius: 30px; background: var(--color-phone-surface); box-shadow: 0 5px 3px var(--color-shadow); font-size: 17px; }
+.connecting .mascot { border: 0; border-radius: 0; width: 110px; height: 110px; background: url('../assets/characters/blue.png') center 12% / 173px auto no-repeat; color: transparent; transform: none; }
+.connecting .mascot::before { display: none; }
+#full::before { content: ''; width: 80px; height: 60px; background: url('../assets/logo.png') center / contain no-repeat; margin-bottom: 24px; }
+#phoneDiagnostics footer { display: flex; gap: 12px; flex-direction: column; font-size: 13px; padding: 12px 0; }
+#phoneDiagnostics footer button { font-size: 14px; min-height: 44px; margin: 0; }
+/* 短い画面は入力の44pxを守り、待機カードの余白を段階的に減らす。 */
+@media (max-width:340px) { body { padding-left: 0; padding-right: 0; } .remote .key { font-size: 14px; } }
+@media (max-height:740px) and (orientation:portrait) {
+  main { padding-top: 10px; padding-bottom: 10px; }
+  .view { gap: 7px; }
+  .host-card { padding: 8px; }
+  .host-card p { display: none; }
+  .wait-card { top: 26%; height: 62%; max-height: 402px; min-height: 300px; padding-top: 30px; }
+  .phone-character { top: calc(26% - 29.4vw); }
+  .wait-card .dotted { padding-bottom: 22px; }
+  .role-label { margin-top: 18px; font-size: 18px; }
+  #waitTitle { margin-top: 24px; }
+  #remotePad { min-height: 72px; }
+  #remoteNote { max-height: 40px; }
+}
+@media (max-height:600px) and (orientation:portrait) {
+  header,header .brand { display: flex; }
+  header { height: calc(48px + env(safe-area-inset-top)); min-height: calc(48px + env(safe-area-inset-top)); }
+  header .brand .brand-image { height: 42px; }
+  main { padding: 8px; }
+  .view { gap: 5px; }
+  .host-card h1 { font-size: 20px; }
+  .remote .key,.remoteButtons .key { min-height: 44px; }
+  #remotePad { min-height: 64px; padding: 5px; }
+  #remotePad::before { display: none; }
+  #remoteRoute { line-height: 1.2; }
+  #remoteNote { max-height: 30px; min-height: 20px; }
+  .wait-card { top: 25%; height: 66%; padding-top: 25px; }
+  .phone-character { top: calc(25% - 29.4vw); }
+  .wait-card h1 { font-size: 30px; }
+  .wait-card .dotted { padding-bottom: 20px; }
+  .wait-continue { min-height: 48px; }
+  #waitTitle { margin-top: 20px; }
+  #v-remote { overflow-y: auto; }
+}
