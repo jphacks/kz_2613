@@ -3,21 +3,17 @@
 <div align="center">
   <br>
 
-  <img src="assets/images/recooplay-thumbnail.png" alt="Re:Cooplay 製品紹介サムネイル" width="960">
+  <a href="https://youtu.be/a8uhU2ymsuQ">
+    <img src="assets/images/recooplay-thumbnail.png" alt="Re:Cooplay 製品紹介動画（クリックしてYouTubeで再生）" width="960">
+  </a>
 
-  ---
+  <p>🎬 <strong>画像をクリックしてプロダクト紹介動画を再生</strong></p>
 
-  <p>🎬 <strong>プロダクト紹介動画</strong></p>
-
-  [![Re:Cooplay プロダクト紹介動画（画像をクリックするとYouTubeで再生）](https://img.youtube.com/vi/a8uhU2ymsuQ/hqdefault.jpg)](https://youtu.be/a8uhU2ymsuQ)
-
-  **▶ サムネイルをクリックして動画を再生**
-
-  [![YouTube](https://img.shields.io/badge/▶%20YouTube-紹介動画を再生-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/a8uhU2ymsuQ)
-
-  **[▶ YouTubeで紹介動画を直接見る](https://youtu.be/a8uhU2ymsuQ)**
-
-  <a href="https://youtu.be/a8uhU2ymsuQ">https://youtu.be/a8uhU2ymsuQ</a>
+  <p>
+    <a href="https://youtu.be/a8uhU2ymsuQ">
+      <img src="https://img.shields.io/badge/▶%20YouTube-紹介動画を見る-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="▶ YouTubeで紹介動画を見る">
+    </a>
+  </p>
 
   ---
 
