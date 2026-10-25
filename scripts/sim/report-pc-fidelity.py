@@ -91,4 +91,4 @@ for name in ['pc-fidelity-final-1','pc-fidelity-final-a','pc-fidelity-final-b','
             files.append(item)
     rejected.append({'directory':name,'accepted':False,'files':files})
 (ev/'pc-fidelity-rejected-captures.json').write_text(json.dumps(rejected,ensure_ascii=False,indent=2),encoding='utf8')
-print(json.dumps({'independentRounds':rounds,'geometry':'PASS','packageFiles':len(checks)},ensure_ascii=False))
+print(json.dumps({'independentRounds':len(rounds),'tabs':[r['tabId'] for r in rounds],'geometry':'PASS','packageFiles':len(checks)},ensure_ascii=False))

@@ -10,7 +10,7 @@
 
 ## 基準資料
 
-指定名の資料はmain/#92に存在せず、ローカルの `recooplay_pc_visual_fidelity_audit_2026-10-25_v2.md` が最新版だった。全文を読み、内容を変更せず `../pc-fidelity-audit-2026-10-25.md` に収録した。
+指定名の資料はmain/#92に存在せず、ローカルの `recooplay_pc_visual_fidelity_audit_2026-10-25_v2.md` が最新版だった。全文を読み、内容を変更せず `../pc-fidelity-audit-2026-10-25.md` に収録した（文例1行の末尾空白だけ正規化）。
 
 ## Cycle 00：修正前
 
