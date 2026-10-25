@@ -97,7 +97,7 @@ export const ROLES = [
   { slot: 'P3', title: 'アクション', controls: roleControls('P3') },
 ];
 
-// P0 はゲームの手動起動を前提にする。自動検出・自動起動は P2
+// Minecraft は公式ランチャーで「プレイ」を押す必要があるため手動起動 (#55)。Steam・Epic の検出・起動はホストの state.games (#54・#93)
 export const GAMES = [
   {
     id: 'minecraft-java',
@@ -111,6 +111,47 @@ export const GAMES = [
     ],
   },
 ];
+
+const SOURCE_LABELS = { steam: 'Steam', epic: 'Epic Games', manual: '手動で起動' };
+const LAUNCH_TITLES = { launching: '起動中…', started: '起動しました', failed: '起動できませんでした', timeout: '起動を確認できませんでした' };
+
+/**
+ * 選択画面の一覧: 固定の Minecraft (手動起動) と、ホストが検出したゲーム (state.games)。
+ * 検出は入力が届くことを意味しないので、verified でない項目には「未検証」を出す (要件11章5項)
+ */
+export function gameList(games) {
+  const fixed = { id: GAMES[0].id, name: GAMES[0].name, source: 'manual', verified: true, launchable: false };
+  const detected = (games || []).filter((g) => g?.id && g.id !== fixed.id)
+    .map((g) => ({ id: g.id, name: g.name || g.id, source: g.source, verified: g.verified === true, launchable: !!g.launchable }));
+  return [fixed, ...detected];
+}
+
+/** 起動要求の表示 (game.launch)。選んだ項目への要求でなければ出さない */
+export function launchView(launch, id) {
+  if (!launch || launch.id !== id || !LAUNCH_TITLES[launch.state]) return null;
+  return { state: launch.state, title: LAUNCH_TITLES[launch.state], message: launch.message || '' };
+}
+
+/** 一覧の1項目の表示 */
+export function gameCard(entry, selectedId, launch) {
+  const badges = [SOURCE_LABELS[entry.source] || entry.source];
+  if (!entry.verified) badges.push('未検証');
+  return { id: entry.id, name: entry.name, badges, unverified: !entry.verified, selected: entry.id === selectedId, launch: launchView(launch, entry.id) };
+}
+
+/**
+ * 選択画面の主ボタン (クリック・Enter) の動作。検出したゲームは項目 ID で起動を要求し、
+ * 要求後は (起動中・失敗でも) 次へ進める。自動起動できない Minecraft は手動起動の前提で次へ進む
+ */
+export function gameAction(ui, game, list) {
+  const entry = list.find((g) => g.id === ui.game);
+  if (!entry) return { kind: 'none', label: 'ゲームを選んでください' };
+  if (!entry.launchable) return { kind: 'next', label: 'このゲームで遊ぶ' };
+  const launch = launchView(game?.launch, entry.id);
+  if (!launch) return { kind: 'launch', label: 'このゲームを起動する', id: entry.id };
+  if (launch.state === 'failed' || launch.state === 'timeout') return { kind: 'next', label: '手動で起動して次へ', retry: true, id: entry.id };
+  return { kind: 'next', label: '次へ進む' };
+}
 
 export function device(ua) {
   if (!ua) return '';
@@ -176,15 +217,16 @@ export function phaseView(game, inject) {
 }
 
 /** ホストのリモコン (矢印・Enter・Esc) による画面の移動。ui = { screen, game }。
- *  選んだゲーム (game) はホストが保持する。変わったら画面から select_game で知らせる */
-export function navigate(ui, control) {
+ *  選んだゲーム (game) はホストが保持する。変わったら画面から select_game で知らせる。
+ *  list は選択画面の一覧 (gameList)。上下で一覧を巡回する */
+export function navigate(ui, control, list = GAMES) {
   const i = SCREENS.indexOf(ui.screen);
-  if (control === 'RIGHT' || control === 'ENTER') return { ...ui, screen: SCREENS[Math.min(i + 1, SCREENS.length - 1)], game: ui.game || GAMES[0].id };
+  if (control === 'RIGHT' || control === 'ENTER') return { ...ui, screen: SCREENS[Math.min(i + 1, SCREENS.length - 1)], game: ui.game || list[0].id };
   if (control === 'LEFT' || control === 'ESC') return { ...ui, screen: SCREENS[Math.max(i - 1, 0)] };
-  if ((control === 'UP' || control === 'DOWN') && ui.screen === 'game') {
-    const j = GAMES.findIndex((g) => g.id === ui.game);
-    const k = (j + (control === 'DOWN' ? 1 : GAMES.length - 1)) % GAMES.length;
-    return { ...ui, game: GAMES[k].id };
+  if ((control === 'UP' || control === 'DOWN') && ui.screen === 'game' && list.length) {
+    const j = list.findIndex((g) => g.id === ui.game);
+    const k = j < 0 ? (control === 'DOWN' ? 0 : list.length - 1) : (j + (control === 'DOWN' ? 1 : list.length - 1)) % list.length;
+    return { ...ui, game: list[k].id };
   }
   return ui;
 }

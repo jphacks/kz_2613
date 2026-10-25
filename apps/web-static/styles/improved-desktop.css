@@ -40,7 +40,5 @@
 .role-keys { left: 47px; top: 975px; border: 0; background: var(--color-panel-translucent); font-size: 20px; box-shadow: none; }
 .start-instruction span { font-size: 20px; }
 .safety-warning { width: 620px; bottom: 62px; font-size: 20px; }
-.game-choice { max-width: 80%; border: 3px solid var(--color-cyan); border-radius: 28px; background: var(--color-panel-translucent); }
-.game-choice h2 { font-size: 48px; }
 /* 極端な横長・縦長でも原案比率を保ち、余剰領域には同じ背景色を使う。 */
 @media (max-width: 1000px) { .utility-bar button { min-height: 60px; font-size: 22px; } }
