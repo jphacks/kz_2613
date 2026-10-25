@@ -69,6 +69,8 @@ pub enum Event {
     EmergencyStop { source: &'static str },
     /// 試験用: 前面のウィンドウが入力先かどうかを差し替える (DRY_RUN のときだけ)
     FakeTarget(bool),
+    /// 既定の音の出力先が Bluetooth か (#131)。実機では定期的に調べ、試験では標準入力の "bt on/off" で差し替える
+    BluetoothAudio(bool),
     /// 試験用: PC アプリのウィンドウが前面になった・外れた (DRY_RUN のときだけ。実際は前面のプロセス名で判定する)
     FakeAppWindow(bool),
     /// インストール済みのゲームを探し終えた (別スレッドから)
@@ -162,6 +164,9 @@ struct Slot {
     lost: u64,
     out_of_order: u64,
     client_stats: Value,
+    // 受信の途切れの観測 (#131)。net_recent は直近 10 秒の (途切れの回数, 最大の空白 ms)
+    arrivals: crate::netwatch::Arrivals,
+    net_recent: (u32, u64),
     rtc: Option<Peer>,
     rtc_gen: u64,
     rtc_state: &'static str,
@@ -194,6 +199,8 @@ impl Slot {
             lost: 0,
             out_of_order: 0,
             client_stats: Value::Null,
+            arrivals: crate::netwatch::Arrivals::default(),
+            net_recent: (0, 0),
             rtc: None,
             rtc_gen: 0,
             rtc_state: "none",
@@ -341,6 +348,11 @@ pub struct Hub {
     images: games::Images,
     // Minecraft のランチャーを見つけたか (Some(画像があるか))。見つからなければ None (#128)
     minecraft: Option<bool>,
+    // 通信の途切れへの対策 (#131): 協力プレイ中の Wi-Fi のメディアストリーミングモード、Bluetooth の音の出力
+    streaming: crate::netwatch::StreamingMode,
+    low_latency: bool,
+    bluetooth_audio: bool,
+    net_tick: u64,
     games_scanning: bool,
     launch: Option<Launch>,
     launch_gen: u64,
@@ -458,6 +470,10 @@ impl Hub {
             base_target: config.target.clone(),
             games: Vec::new(),
             images: games::Images::default(),
+            streaming: crate::netwatch::StreamingMode::new(),
+            low_latency: false,
+            bluetooth_audio: false,
+            net_tick: 0,
             minecraft: None,
             games_scanning: false,
             launch: None,
@@ -497,11 +513,67 @@ impl Hub {
 
     /// イベントループ。次のタイマーまでイベントを待ち、期限が来たタイマーを処理する
     /// 一覧のタイルの画像の表 (HTTP の /api/game-image と共有する)
+/// 準備・協力プレイ・一時停止の間だけ Wi-Fi のメディアストリーミングモードを有効にする (#131)。
+    /// dry-run では Windows の機能を呼ばず、状態とログだけ切り替える
+    fn update_low_latency(&mut self) {
+        let want = self.game.phase != Phase::Lobby;
+        if want == self.low_latency {
+            return;
+        }
+        let ok = if dry_run() {
+            true
+        } else if want {
+            self.streaming.enable()
+        } else {
+            self.streaming.disable();
+            true
+        };
+        // 使えない環境 (Wi-Fi がない・拒否された) では有効にしたことにせず、次の機会にまた試す
+        if want && !ok {
+            return;
+        }
+        self.low_latency = want;
+        self.log("low_latency", json!({ "on": want }));
+        self.push_state();
+    }
+
+    /// 10 秒ごとに、スマホごとの受信の途切れと往復時間をログに残す (#131)。IP・端末の識別子は残さない
+    fn report_net(&mut self) {
+        let mut rows = Vec::new();
+        for i in 0..MAX_SLOTS {
+            let Some(s) = self.slots[i].as_mut().filter(|s| s.connected) else { continue };
+            let (stalls, max_stall) = s.arrivals.take();
+            s.net_recent = (stalls, max_stall);
+            let st = &s.client_stats;
+            rows.push(json!({ "slot": SLOT_NAMES[i], "stalls": stalls, "maxStallMs": max_stall,
+                "rttAvg": st.get("avg"), "rttMax": st.get("max"), "path": st.get("path") }));
+        }
+        if !rows.is_empty() {
+            self.log("net", json!({ "slots": rows, "bluetoothAudio": self.bluetooth_audio, "lowLatency": self.low_latency }));
+        }
+    }
+
     pub fn images(&self) -> games::Images {
         self.images.clone()
     }
 
     pub fn run(mut self, rx: Receiver<Event>, port: u16) {
+        if !dry_run() {
+            let tx = self.tx.clone();
+            let _ = std::thread::Builder::new().name("bluetooth-audio".into()).spawn(move || {
+                let mut last = None;
+                loop {
+                    let on = crate::netwatch::bluetooth_audio().unwrap_or(false);
+                    if last != Some(on) {
+                        last = Some(on);
+                        if tx.send(Event::BluetoothAudio(on)).is_err() {
+                            break;
+                        }
+                    }
+                    std::thread::sleep(std::time::Duration::from_secs(5));
+                }
+            });
+        }
         self.log("server_start", json!({ "port": port }));
         loop {
             let now = Instant::now();
@@ -750,6 +822,8 @@ impl Hub {
                         "rtcState": s.rtc_state,
                         "via": { "ws": s.via_ws, "rtc": s.via_rtc },
                         "lookLost": s.look_lost,
+                        // 直近 10 秒の受信の途切れ (#131)
+                        "net": { "stalls": s.net_recent.0, "maxStallMs": s.net_recent.1 },
                     }),
                 })
                 .collect(),
@@ -809,6 +883,8 @@ impl Hub {
             // インストール済みのゲーム一覧は PC 画面にだけ送る (スマホには選んだゲームしか出さない)
             "games": self.games.iter().map(Entry::snapshot).collect::<Vec<_>>(),
             "gamesScanning": self.games_scanning,
+            // 通信の状態 (#131): Bluetooth で音を出しているか、Wi-Fi の低遅延の動作 (メディアストリーミングモード) が有効か
+            "network": { "bluetoothAudio": self.bluetooth_audio, "lowLatency": self.low_latency },
             // Minecraft のランチャーを見つけたか・画像があるか (#128)。場所は送らない
             "minecraft": { "detected": self.minecraft.is_some(), "image": self.minecraft == Some(true) },
         }));
@@ -842,6 +918,7 @@ impl Hub {
         self.game.reason = Some(reason.to_string());
         self.advance_epoch();
         self.log("phase", json!({ "phase": phase.name(), "reason": reason, "epoch": self.game.epoch }));
+        self.update_low_latency();
         self.push_game();
     }
 
@@ -1751,6 +1828,11 @@ impl Hub {
                         }
                     }
                 }
+                self.update_low_latency();
+                self.net_tick += 1;
+                if self.net_tick % 10 == 0 {
+                    self.report_net();
+                }
                 self.push_state();
                 let _ = self.log_file.flush();
                 self.schedule(at + Duration::from_secs(1), Timer::Heartbeat);
@@ -1812,6 +1894,13 @@ impl Hub {
                 }
             }
             Event::EmergencyStop { source } => self.emergency_stop(source),
+            Event::BluetoothAudio(on) => {
+                if self.bluetooth_audio != on {
+                    self.bluetooth_audio = on;
+                    self.log("bluetooth_audio", json!({ "on": on }));
+                    self.push_state();
+                }
+            }
             Event::FakeTarget(ok) => {
                 if self.fake_target.is_some() {
                     self.fake_target = Some(ok);
@@ -2108,6 +2197,7 @@ impl Hub {
         let kind = s(&msg, "type").unwrap_or_default();
         let slot = self.slots[idx].as_mut().unwrap();
         slot.last_seen = now_ms();
+        slot.arrivals.observe(slot.last_seen);
 
         if via == Via::Ws && (kind == "input" || kind == "look") {
             // WebSocket 経路の欠落・順序検知 (WebRTC は再送なしなので対象外)

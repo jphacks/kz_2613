@@ -12,6 +12,7 @@ mod hub;
 mod input;
 mod keybinds;
 mod netinfo;
+mod netwatch;
 mod profiles;
 mod rtc;
 
@@ -164,6 +165,13 @@ async fn main() {
                         }
                         Ok("app blur") => {
                             let _ = tx.send(Event::FakeAppWindow(false));
+                        }
+                        // 試験用: 既定の音の出力先が Bluetooth になった・外れた (#131。実機では定期的に調べる)
+                        Ok("bt on") if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") => {
+                            let _ = tx.send(Event::BluetoothAudio(true));
+                        }
+                        Ok("bt off") if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") => {
+                            let _ = tx.send(Event::BluetoothAudio(false));
                         }
                         _ => {}
                     }
