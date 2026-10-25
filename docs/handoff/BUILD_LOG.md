@@ -868,3 +868,13 @@
 - 配布物に版・commit・未コミット変更の有無と全ファイルのSHA-256を記録し、zipの照合値を出力する。Windows CIで同じチェックアウトから両exeをビルドし、梱包・検証後に成果物として保存する。利用者向けの安全案内も選択したゲームに合わせた。
 - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/package.ps1 -Out dist/issue145-local` が成功（10.3MB）。`node scripts/sim/package-smoke.mjs dist/issue145-local/ReCooplay-0.1.0-windows-x64.zip` は、全同梱物・画面・操作定義・ハッシュ照合、欠落と改変の拒否、リポジトリ外の展開先ホストによる全静的ファイルの配信と正常終了・終了ログ確認が成功した。既存のローカルexeを使用し、OS入力はdry-runで無効にした。
 - 開発環境のないPC・Tauri実画面・スマホ3台の受入は未実施（#41）。PCの無線・ファイアウォール設定は変更していない。通信設定を変更・復元するインストーラーは #132 に残す。
+
+## 2026-10-26 — 配布時のVC++ランタイム案内（Codex、#148）
+
+- 既存のホストexeをMSVCの `dumpbin /dependents` で読み取り、`MSVCP140.dll`・`VCRUNTIME140.dll`・`VCRUNTIME140_1.dll`への依存を確認した。配布READMEにVC++ v14 x64ランタイムと公式の導入先、オフラインPCへの事前準備を追記した。ランタイムの自動導入やPC設定の変更は行わない。
+- PCアプリはホストの終了コード`0xC0000135`（DLL不足）をポート使用中から区別し、VC++ランタイムと配布ファイルの不足を案内する。起動直後に別プロセスのポートへ接続した場合も同じ終了理由を表示する。
+- `cargo test --release --locked --offline --manifest-path apps/desktop/Cargo.toml` が成功（DLL不足と他の終了理由の区別1件）。CIにもこの試験を追加した。配布検証スクリプトの既定zip名はtauri.conf.jsonの版から作り、版更新時も検証対象を一致させる。
+- Microsoftの[公式ランタイム案内](https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist)で、対象アーキテクチャとビルドに使用したMSVC以上の版が必要なことを確認した。開発環境のないPCとランタイム未導入PCの実画面での試験、インストーラーでの必要条件チェック・導入は未実施で、#148を未完了として残す。
+- #145のCI（head 9f16919、run 40225280916）は、両exeのビルド・全試験・zip作成・展開後dry-run・成果物保存まで成功した。PR #146をmainへマージした（90c3900）。
+- 最終ローカル確認：ホストの `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` が成功（再試行19秒）。`cargo test` はホスト42件＋プローブ4件成功（手動の表出力1件を除外）、更新時刻を確認したexeで `protocol-sim.mjs` が50/50成功した。初回はビルド完了前に旧exeで試験を起動して更新を妨げたため、旧exeの49/50とビルド失敗は合格根拠に使用していない。OpenSSLのPDB不足の既知の警告は残る。
+- PCアプリの `cargo build --release --locked --offline --manifest-path apps/desktop/Cargo.toml` が成功。両exeを再ビルドした後に `package.ps1 -Out dist/issue148-final` でzipを作成し、`node scripts/sim/package-smoke.mjs dist/issue148-final/ReCooplay-0.1.0-windows-x64.zip` の全照合・欠落改変拒否・リポジトリ外での全静的画面配信と正常終了が成功。ローカルの既存記録が未コミットのためmanifestはdirty=true。
