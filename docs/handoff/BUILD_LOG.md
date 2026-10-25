@@ -481,4 +481,9 @@
 - 一覧で選んだゲームの入力先は、前面の実行ファイルがインストール先フォルダ内にあることで判定する（`Target::install_dir`）。Minecraftの判定は従来どおり。
 - `cargo build --release --locked`：コンパイル・リンク成功（既知の警告3件）。実行中のホストが `target\release\recooplay-host.exe` を使用中のため最終コピーだけ失敗し、`target\release\deps\recooplay_host.exe` で試験した。`cargo test --release --locked`：単体12件成功（VDF・ACF・Epicマニフェスト・危険な値の拒否・偽フォルダでの検出・インストール先の入力先判定）。
 - `node scripts/sim/protocol-sim.mjs --bin <deps のホスト>`：41/41成功（偽のSteam・Epicフォルダ `RECOOPLAY_FAKE_GAMES` を使う「ゲーム一覧」項目を追加）。Node参照版：20/20成功。
-- 開発PCで dry-run のホストを起動し、実際のSteamから10件を検出（Epicは0件）。起動・前面化・ゲームへの入力は実機未検証。画面（#94）は未実装。
+- 開発PCで dry-run のホストを起動し、実際のSteamから10件を検出（Epicは0件。その後の通常起動では12件）。画面（#94）は未実装。
+- 開発PCの実機確認（通常モード・注入OFF・PC画面の代わりにスクリプトで `launch_game` を送信、Terraria `steam:105600`）：
+  - 初回の実装では `ShellExecuteW` がハブのスレッドを約5.4秒止めた（切断判定4秒を超える）。起動要求を別スレッドへ移し、修正後は起動要求後もPC画面への `state` の最大間隔が1001〜1002ms（通常の1秒周期）。
+  - 未起動から：起動要求0.4秒、Steamの画面（`steamwebhelper.exe`）を経て3.4秒後に `terraria.exe` が前面、入力先の判定がok、0.1秒後に `started`。ランチャーの画面は入力先と判定しなかった。
+  - 起動済みから：Windowsが前面化を拒否した直後にSteamが前面へ出す挙動を観測。拒否されても5秒は前面になるのを待つよう修正し、誤った「手動で前面に」の案内を出さなくなった。起動後にSteam・エクスプローラーへ前面が移ると、入力先の判定もそれに追従した。
+  - ゲームへの入力（注入ON）・Epic・スマホからの一連の操作は未確認。

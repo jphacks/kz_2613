@@ -41,6 +41,7 @@ const RTC_TIMEOUT: Duration = Duration::from_secs(5);
 const FOCUS_CHECK: Duration = Duration::from_millis(100); // 前面のウィンドウを確認する間隔
 const LAUNCH_POLL: Duration = Duration::from_millis(500); // 起動したゲームのウィンドウを探す間隔
 const LAUNCH_TIMEOUT: Duration = Duration::from_secs(90); // ランチャーの更新などを待つ上限。過ぎたら手動起動を案内する
+const FOCUS_WAIT: Duration = Duration::from_secs(5); // ウィンドウが現れてから前面になるのを待つ上限
 
 // ---------- 外部とのやり取り ----------
 
@@ -66,6 +67,8 @@ pub enum Event {
     FakeAppWindow(bool),
     /// インストール済みのゲームを探し終えた (別スレッドから)
     GamesDetected(Vec<Entry>),
+    /// ランチャーへの起動要求が終わった (別スレッドから。Err は理由)
+    Launched { gen: u64, result: Result<(), String> },
     Shutdown,
 }
 
@@ -97,6 +100,7 @@ struct Launch {
     message: String,
     gen: u64,
     deadline: Instant,
+    seen: Option<Instant>, // ゲームのウィンドウを最初に見つけた時刻
 }
 
 // ---------- 状態 ----------
@@ -1147,31 +1151,41 @@ impl Hub {
         self.release_outputs(None);
         self.reset_look();
         self.advance_epoch();
-        let result = if dry_run() { Ok(()) } else { games::launch(&entry) };
-        self.log("launch_game", json!({ "id": entry.id, "source": entry.source, "ok": result.is_ok() }));
-        match result {
-            Ok(()) => {
-                self.launch_gen += 1;
-                let message = if dry_run() { format!("dry-run：{}は起動しません", entry.name) } else { format!("{}を起動しています", entry.name) };
-                self.launch = Some(Launch {
-                    id: entry.id,
-                    name: entry.name,
-                    state: "launching",
-                    message,
-                    gen: self.launch_gen,
-                    deadline: Instant::now() + LAUNCH_TIMEOUT,
-                });
-                self.schedule(Instant::now() + LAUNCH_POLL, Timer::LaunchWatch(self.launch_gen));
-                self.push_game();
-                self.push_state();
+        self.launch_gen += 1;
+        let gen = self.launch_gen;
+        let message = if dry_run() { format!("dry-run：{}は起動しません", entry.name) } else { format!("{}を起動しています", entry.name) };
+        self.log("launch_game", json!({ "id": entry.id, "source": entry.source }));
+        // ランチャーへの要求 (ShellExecuteW) は Steam の起動待ちで数秒かかる (実機で約5秒)。
+        // このスレッドで待つと入力・生存確認が止まり切断扱いになるので、別スレッドで行う
+        if !dry_run() {
+            let tx = self.tx.clone();
+            let target = entry.clone();
+            let spawned = std::thread::Builder::new().name("launch".into()).spawn(move || {
+                let _ = tx.send(Event::Launched { gen, result: games::launch(&target) });
+            });
+            if spawned.is_err() {
+                self.finish_launch(&entry.id, &entry.name, "failed", format!("起動できませんでした。{}を手動で起動してください", entry.name));
+                return;
             }
-            Err(reason) => self.finish_launch(&entry.id, &entry.name, "failed", format!("{}。{}を手動で起動してください", reason, entry.name)),
+        }
+        self.launch = Some(Launch { id: entry.id, name: entry.name, state: "launching", message, gen, deadline: Instant::now() + LAUNCH_TIMEOUT, seen: None });
+        self.schedule(Instant::now() + LAUNCH_POLL, Timer::LaunchWatch(gen));
+        self.push_game();
+        self.push_state();
+    }
+
+    fn on_launched(&mut self, gen: u64, result: Result<(), String>) {
+        let Some(l) = self.launch.as_ref().filter(|l| l.gen == gen && l.state == "launching") else { return };
+        let (id, name) = (l.id.clone(), l.name.clone());
+        self.log("launch_request", json!({ "id": id, "ok": result.is_ok() }));
+        if let Err(reason) = result {
+            self.finish_launch(&id, &name, "failed", format!("{}。{}を手動で起動してください", reason, name));
         }
     }
 
     fn finish_launch(&mut self, id: &str, name: &str, state: &'static str, message: String) {
         self.launch_gen += 1;
-        self.launch = Some(Launch { id: id.into(), name: name.into(), state, message, gen: self.launch_gen, deadline: Instant::now() });
+        self.launch = Some(Launch { id: id.into(), name: name.into(), state, message, gen: self.launch_gen, deadline: Instant::now(), seen: None });
         self.push_game();
         self.push_state();
     }
@@ -1183,12 +1197,20 @@ impl Hub {
         // 試験 (dry-run) では前面の判定の差し替え (target on) を「ウィンドウが現れた」とみなす
         let appeared = match self.fake_target {
             Some(ok) => ok,
-            None => !dry_run() && focus::exists(&self.target),
+            None => !dry_run() && (self.target_ok || focus::exists(&self.target)),
         };
         let (state, message) = if appeared {
-            let result = if self.fake_target.is_some() { Ok(()) } else { focus::activate(&self.target) };
+            // 既に前面ならそのまま (ゲームは自分で前面に出ることが多い)。背面なら前面にする。
+            // Windows は背面のプログラムからの前面化を拒むことがあるが、直後にゲームやランチャーが自分で前面に出ることが
+            // 多い (実機で観測)。拒否されても FOCUS_WAIT の間は待ち、それでも前面にならなければ手動を案内する
+            let result = if self.fake_target.is_some() || self.target_ok { Ok(()) } else { focus::activate(&self.target) };
+            let seen = *self.launch.as_mut().unwrap().seen.get_or_insert_with(Instant::now);
             match result {
                 Ok(()) => ("started", format!("{}を前面にしました。ホストが準備してReadyを押すと開始します", name)),
+                Err(_) if seen.elapsed() < FOCUS_WAIT => {
+                    self.schedule(Instant::now() + LAUNCH_POLL, Timer::LaunchWatch(gen));
+                    return;
+                }
                 Err(reason) => ("started", format!("{}は起動しましたが、{}。手動で前面にしてください", name, reason)),
             }
         } else if Instant::now() >= deadline {
@@ -1409,6 +1431,7 @@ impl Hub {
                 }
             }
             Event::GamesDetected(list) => self.on_games_detected(list),
+            Event::Launched { gen, result } => self.on_launched(gen, result),
             Event::Shutdown => {}
         }
     }
