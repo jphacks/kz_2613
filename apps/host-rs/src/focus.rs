@@ -94,11 +94,17 @@ mod imp {
     use windows::core::{PWSTR, BOOL};
     use windows::Win32::Foundation::{CloseHandle, HWND, LPARAM};
     use windows::Win32::System::Threading::{
-        OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
+        AttachThreadInput, GetCurrentThreadId, OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
     };
-    use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowTextW, GetWindowThreadProcessId, EnumWindows, IsWindowVisible, SetForegroundWindow, ShowWindow, SW_RESTORE};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        BringWindowToTop, EnumWindows, GetForegroundWindow, GetWindow, GetWindowLongW, GetWindowTextW, GetWindowThreadProcessId, IsIconic,
+        IsWindowVisible, SetForegroundWindow, ShowWindow, GWL_EXSTYLE, GW_OWNER, SW_RESTORE, WS_EX_TOOLWINDOW,
+    };
 
     use super::Foreground;
+
+    const FOCUS_CHECKS: u32 = 7;
+    const FOCUS_CHECK_INTERVAL: std::time::Duration = std::time::Duration::from_millis(30);
 
     pub fn foreground() -> Option<Foreground> {
         describe(unsafe { GetForegroundWindow() })
@@ -131,28 +137,64 @@ mod imp {
         }
     }
 
-    struct Search<'a> { target: &'a super::Target, found: Option<HWND> }
-    unsafe extern "system" fn visit(hwnd: HWND, param: LPARAM) -> BOOL {
-        let search = unsafe { &mut *(param.0 as *mut Search<'_>) };
-        if unsafe { IsWindowVisible(hwnd) }.as_bool() && describe(hwnd).is_some_and(|f| search.target.matches(&f)) {
-            search.found = Some(hwnd);
-            BOOL(0)
-        } else { BOOL(1) }
+    /// ゲームの本体のウィンドウか。持ち主のいる補助のウィンドウ・ツールウィンドウは前面にしても操作の画面にならない
+    fn is_main(hwnd: HWND) -> bool {
+        let owned = unsafe { GetWindow(hwnd, GW_OWNER) }.is_ok_and(|o| !o.is_invalid());
+        let tool = unsafe { GetWindowLongW(hwnd, GWL_EXSTYLE) } as u32 & WS_EX_TOOLWINDOW.0 != 0;
+        !owned && !tool
     }
 
+    struct Search<'a> { target: &'a super::Target, found: Option<HWND>, fallback: Option<HWND> }
+    unsafe extern "system" fn visit(hwnd: HWND, param: LPARAM) -> BOOL {
+        let search = unsafe { &mut *(param.0 as *mut Search<'_>) };
+        if !(unsafe { IsWindowVisible(hwnd) }.as_bool() && describe(hwnd).is_some_and(|f| search.target.matches(&f))) {
+            return BOOL(1);
+        }
+        if is_main(hwnd) {
+            search.found = Some(hwnd);
+            return BOOL(0);
+        }
+        search.fallback.get_or_insert(hwnd);
+        BOOL(1)
+    }
+
+    /// 対象のウィンドウを探す。本体のウィンドウを優先し、なければ補助のウィンドウを返す
     pub fn find(target: &super::Target) -> Option<HWND> {
-        let mut search = Search { target, found: None };
+        let mut search = Search { target, found: None, fallback: None };
         unsafe { let _ = EnumWindows(Some(visit), LPARAM(&mut search as *mut _ as isize)); }
-        search.found
+        search.found.or(search.fallback)
+    }
+
+    /// 前面にする。ホストは裏で動くので、Windows は SetForegroundWindow だけでは拒むことがある
+    /// (PC アプリやブラウザーが前面のとき)。いまの前面のウィンドウの入力に一時的につないでから切り替える
+    fn bring_to_front(hwnd: HWND) {
+        unsafe {
+            // 最大化・全画面のウィンドウを元の大きさに戻さないよう、元に戻すのは最小化しているときだけ
+            if IsIconic(hwnd).as_bool() { let _ = ShowWindow(hwnd, SW_RESTORE); }
+            let fg = GetForegroundWindow();
+            let fg_thread = if fg.is_invalid() { 0 } else { GetWindowThreadProcessId(fg, None) };
+            let me = GetCurrentThreadId();
+            let attached = fg_thread != 0 && fg_thread != me && AttachThreadInput(me, fg_thread, true).as_bool();
+            let _ = BringWindowToTop(hwnd);
+            let _ = SetForegroundWindow(hwnd);
+            if attached { let _ = AttachThreadInput(me, fg_thread, false); }
+        }
     }
 
     pub fn activate(target: &super::Target) -> Result<(), String> {
         let hwnd = find(target).ok_or("起動済みのゲームのウィンドウが見つかりません")?;
         // 列挙後にも対象を照合する。成功は前面化を実際に確認した場合だけ返す。
         if !describe(hwnd).is_some_and(|f| target.matches(&f)) { return Err("入力先が変わりました".into()); }
-        unsafe { let _ = ShowWindow(hwnd, SW_RESTORE); let _ = SetForegroundWindow(hwnd); }
-        if foreground().is_some_and(|f| target.matches(&f)) { Ok(()) }
-        else { Err("Windowsが前面化を許可しませんでした".into()) }
+        // 切り替えは少し遅れて反映されることがあるので、短い間だけ確かめ直し、途中で 1 回だけやり直す (最大約 0.4 秒)
+        for attempt in 0..2 {
+            bring_to_front(hwnd);
+            for _ in 0..FOCUS_CHECKS {
+                if foreground().is_some_and(|f| target.matches(&f)) { return Ok(()); }
+                std::thread::sleep(FOCUS_CHECK_INTERVAL);
+            }
+            if attempt == 0 && !describe(hwnd).is_some_and(|f| target.matches(&f)) { return Err("入力先が変わりました".into()); }
+        }
+        Err("Windowsが前面化を許可しませんでした".into())
     }
 }
 
