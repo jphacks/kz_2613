@@ -733,3 +733,10 @@
 - `cargo build --release --locked`成功。`protocol-sim.mjs`（Rust dry-run）46/46：「進行」の試験を、初期値がONで手動のONなしに準備後のReadyができること、OFFにするとReadyできず理由が「入力を再開する」を案内し、ONに戻すとReadyできることに書き換えた。`--target node` 20/20、`app-view-test.mjs` 27/27、`ui-input-test.mjs` 8/8、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`shutdown-sim.mjs`、`static-assets-sim.mjs`、`verify-ui-evidence.mjs`、`check-static-pages.mjs`が成功した。
 - 撮影用のスクリプトからdry-runホストを起動し、模擬スマホ3台で協力プレイにして標準入力から緊急停止を送った。PC画面が一時停止になり「入力を再開する」と案内が出て、押すと`canResume`が真になりボタンが消えることを、ヘッドレスChromeで確認した。マージ後のmainでは`confirm_lineup`に`epoch`が必要（6e2ba09）で、付けずに送った最初の撮影は決定が受け付けられなかった（ホストの挙動は正しい）。
 - PCアプリ・Minecraftでの実機確認は未実施。
+
+## 2026-10-25 — Node参照実装を削除し、Rust版だけの構成にする（Claude Code、#86）
+
+- `apps/node-ref/`を削除した（手元の`node_modules`も削除）。`protocol-sim.mjs`から`--target node`と`rustOnly`の区別を外し、Node版との分岐はRust版の側だけを残した（試験の件数は46件のまま）。`rust.yml`からNode参照実装の準備と比較の手順を外し、`setup-node`の依存キャッシュ（`apps/node-ref/package-lock.json`）もやめた。試験スクリプトは依存なしのNodeで動く（製品には含まれない）。
+- `ui-preview.mjs`がNode参照実装の`ws`パッケージを借りていたため、依存なしの最小のWebSocketサーバー`scripts/sim/mini-ws.mjs`（テキスト・バイナリのフレーム、ping/pong、close）に置き換えた。起動して接続し、`welcome`・`state`・`game`・`pong`の受信を確認した。
+- `allow-firewall.ps1`の`-Program`省略時の既定をRust版ホストに、`verify_overlay.py`の必須ファイルからNode参照実装を外した。`AGENTS.md`・`tech-stack.md`・`protocol.md`・`SETUP_WINDOWS.md`・`apps/host-rs/README.md`・`artifacts/improved-ui/README.md`を更新した（過去の記録のBUILD_LOG・判断記録は当時のまま）。
+- `protocol-sim.mjs`（Rust dry-run）46/46、`shutdown-sim.mjs`、`app-view-test.mjs` 27/27、`ui-input-test.mjs` 8/8、`phone-view-test.mjs`、`controller-diagnostics-test.mjs`、`check-static-pages.mjs`、`static-assets-sim.mjs`、`verify-ui-evidence.mjs`、`profile-extract-test.mjs`、`profile-catalog-test.mjs`、`input-probe-sim.mjs` 12/12、`python scripts/verify_overlay.py`が成功した。

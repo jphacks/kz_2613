@@ -4,7 +4,6 @@
 // 入力注入は行わないので、ゲームや実機の合格の代わりにはならない。
 //
 //   node scripts/sim/protocol-sim.mjs            # Rust 版 (apps/host-rs/target/release/recooplay-host.exe)
-//   node scripts/sim/protocol-sim.mjs --target node
 //   node scripts/sim/protocol-sim.mjs --bin <path-to-exe>
 
 import { spawn } from 'node:child_process';
@@ -20,10 +19,9 @@ const opt = (name, def) => {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : def;
 };
-const target = opt('--target', 'rust');
 const PORT = Number(opt('--port', 18000 + Math.floor(Math.random() * 1000)));
 const BASE = `http://127.0.0.1:${PORT}`;
-const PROTOCOL_VERSION = target === 'node' ? 3 : 4;
+const PROTOCOL_VERSION = 4;
 
 // ブラウザと同じOrigin付きのハンドシェイクを送り、アップグレード前の拒否も確認する。
 function handshake(origin, host = `127.0.0.1:${PORT}`) {
@@ -68,18 +66,10 @@ function startHost() {
   const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_FAKE_GAMES: fakeGames(logDir),
     // Minecraft のキー設定の試験用 (ダッシュ = Q、捨てる = R に変えた options.txt)。#101
     RECOOPLAY_MINECRAFT_OPTIONS: optionsFile, RECOOPLAY_PROFILES_DIR: profilesDir };
-  let cmd;
-  let cmdArgs;
-  if (target === 'node') {
-    cmd = process.execPath;
-    cmdArgs = [path.join(ROOT, 'apps', 'node-ref', 'server.js')];
-  } else {
-    const exe = process.platform === 'win32' ? 'recooplay-host.exe' : 'recooplay-host';
-    cmd = opt('--bin', path.join(ROOT, 'apps', 'host-rs', 'target', 'release', exe));
-    cmdArgs = [];
-  }
-  // 標準入力: Rust 版は "stop" で緊急停止 (ホットキーと同じ処理) を受け付ける
-  const child = spawn(cmd, cmdArgs, { env, stdio: ['pipe', 'pipe', 'pipe'] });
+  const exe = process.platform === 'win32' ? 'recooplay-host.exe' : 'recooplay-host';
+  const cmd = opt('--bin', path.join(ROOT, 'apps', 'host-rs', 'target', 'release', exe));
+  // 標準入力: "stop" で緊急停止 (ホットキーと同じ処理) を受け付ける
+  const child = spawn(cmd, [], { env, stdio: ['pipe', 'pipe', 'pipe'] });
   let out = '';
   child.stdout.on('data', (d) => (out += d));
   child.stderr.on('data', (d) => (out += d));
@@ -131,7 +121,7 @@ class Client {
     for (const w of [...this.waiters]) w();
   }
   send(m) {
-    if (target === 'rust' && (m.type === 'command' || m.type === 'role_ok') && !('epoch' in m)) m = {...m, epoch: this.epoch};
+    if ((m.type === 'command' || m.type === 'role_ok') && !('epoch' in m)) m = {...m, epoch: this.epoch};
     this.ws.send(JSON.stringify(m));
   }
   // スマホ同様 1 秒ごとに ping (4 秒の切断判定に掛からないように)
@@ -197,12 +187,7 @@ class Client {
 
 // ---------- 試験 ----------
 const results = [];
-// rustOnly: 試作品の後に Rust 版へ追加した契約 (Node 参照実装は試作品のまま比較の基準として残す)
-async function check(name, fn, { rustOnly = false } = {}) {
-  if (rustOnly && target === 'node') {
-    console.log(`  skip ${name} (Rust 版で追加した契約)`);
-    return;
-  }
+async function check(name, fn) {
   const t0 = Date.now();
   try {
     await fn();
@@ -227,9 +212,8 @@ async function join(key, extra = {}) {
   return c;
 }
 
-// PC 画面の「この分担で決定」(#109、Rust版)。P1 に届いた最新のゲーム・接続者で決定する
+// PC 画面の「この分担で決定」(#109)。P1 に届いた最新のゲーム・接続者で決定する
 async function confirmLineup(c, p1) {
-  if (target === 'node') return;
   const g = [...p1.msgs].reverse().find((m) => m.type === 'game')?.game;
   const from = p1.mark();
   c.send({ type: 'confirm_lineup', title: g.title, members: g.connected, epoch: g.epoch });
@@ -266,7 +250,7 @@ const phaseIs = (c, phase, from, timeout = 2000) =>
   c.waitFor((m) => m.type === 'game' && m.game.phase === phase, { from, timeout, what: `phase ${phase}` });
 
 async function main() {
-  console.log(`protocol-sim: target=${target} port=${PORT} (RECOOPLAY_DRY_RUN=1)`);
+  console.log(`protocol-sim: port=${PORT} (RECOOPLAY_DRY_RUN=1)`);
   const host = startHost();
   let exitCode = 1;
   try {
@@ -288,7 +272,7 @@ async function main() {
     });
 
     await check('版: protocolVersion がない・違う hello は理由を返して 4005 で閉じ、枠を割り当てない', async () => {
-      for (const extra of [...(target === 'rust' ? [{protocolVersion:3}] : []), { protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }, { protocolVersion: 1 }, { protocolVersion: 2 }]) {
+      for (const extra of [ {protocolVersion:3}, { protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }, { protocolVersion: 1 }, { protocolVersion: 2 }]) {
         const c = new Client('V');
         await c.open();
         c.send({ type: 'hello', clientId: 'sim-old-page', ...extra });
@@ -298,7 +282,7 @@ async function main() {
       }
       const g = await mon.waitFor((m) => m.type === 'state', { from: mon.mark() - 1, what: 'state' });
       assert(g.slots.every((x) => !x.assigned), '版不一致の端末に枠を割り当てた');
-    }, { rustOnly: true });
+    });
 
     await check('認可: 同じOriginとPC内の検証接続だけを受け付け、別Origin・null・不正Hostを拒否する', async () => {
       assert(await handshake(BASE) === 101, '同じOriginを拒否した');
@@ -333,14 +317,14 @@ async function main() {
       assert(w2.slot === 'P2' && w2.isHost === false, `P2: ${JSON.stringify(w2)}`);
       assert(w3.slot === 'P3' && w3.isHost === false, `P3: ${JSON.stringify(w3)}`);
       assert(!w1.reconnected, '初回なのに reconnected');
-      if (target !== 'node') assert(w1.protocolVersion === PROTOCOL_VERSION, `welcome の protocolVersion=${w1.protocolVersion}`);
+      assert(w1.protocolVersion === PROTOCOL_VERSION, `welcome の protocolVersion=${w1.protocolVersion}`);
     });
 
     await check('トークン: welcome で枠ごとに 128bit 以上の推測困難な値を発行する', async () => {
       const t = [tokens.P1, tokens.P2, tokens.P3];
       assert(t.every((x) => /^[0-9a-f]{32,}$/.test(x || '')), `トークンの形式: ${t.join(',')}`);
       assert(new Set(t).size === 3, '枠どうしでトークンが重複した');
-    }, { rustOnly: true });
+    });
 
     await check('トークン: clientId が同じでもトークンなし・不一致の再接続は 4006 で拒否し、元の接続を奪わない', async () => {
       for (const token of [undefined, '0'.repeat(32), tokens.P3]) {
@@ -353,29 +337,20 @@ async function main() {
       }
       await sleep(100);
       assert(p2.closed === null, '元の P2 の接続が切られた');
-    }, { rustOnly: true });
+    });
 
-    await check('役割: 満員 (Rust版は 5 台目、#57。Node参照実装は 4 台目) は full で拒否し 4004 で閉じる', async () => {
-      let extra = 'P4';
-      if (target === 'rust') {
-        // 4 台目は P4 として参加できる (ホスト権はない)。この試験の後は切断したまま枠を保つ
-        const p4 = await join('P4');
-        const w4 = await welcome(p4);
-        assert(w4.type === 'welcome' && w4.slot === 'P4' && !w4.isHost, JSON.stringify(w4));
-        extra = 'P5';
-        const c = await join(extra);
-        const w = await c.waitFor((m) => m.type === 'full', { what: 'full' });
-        assert(w, 'full が来ない');
-        assert((await c.waitClose()) === 4004, '終了コードが 4004 でない');
-        const from = mon.mark();
-        p4.close();
-        await mon.waitFor((m) => m.type === 'state' && m.slots.find((s) => s.name === 'P4')?.connected === false, { from, what: 'P4 切断' });
-        return;
-      }
-      const p4 = await join(extra);
-      const w = await p4.waitFor((m) => m.type === 'full', { what: 'full' });
+    await check('役割: 満員 (5 台目、#57) は full で拒否し 4004 で閉じる', async () => {
+      // 4 台目は P4 として参加できる (ホスト権はない)。この試験の後は切断したまま枠を保つ
+      const p4 = await join('P4');
+      const w4 = await welcome(p4);
+      assert(w4.type === 'welcome' && w4.slot === 'P4' && !w4.isHost, JSON.stringify(w4));
+      const c = await join('P5');
+      const w = await c.waitFor((m) => m.type === 'full', { what: 'full' });
       assert(w, 'full が来ない');
-      assert((await p4.waitClose()) === 4004, '終了コードが 4004 でない');
+      assert((await c.waitClose()) === 4004, '終了コードが 4004 でない');
+      const from = mon.mark();
+      p4.close();
+      await mon.waitFor((m) => m.type === 'state' && m.slots.find((s) => s.name === 'P4')?.connected === false, { from, what: 'P4 切断' });
     });
 
     await check('認可: スマホが hello で枠・ホスト権を指定しても無視する', async () => {
@@ -420,77 +395,75 @@ async function main() {
       app.send({type:'focus',focused:false});
       await p1.waitFor(m=>m.type==='game' && m.game.remoteRoute==='none',{from:efrom});
       app.close();
-    }, { rustOnly: true });
+    });
 
     await check('進行: P1だけが準備と明示Readyを実行でき、旧START・PC画面から迂回できない', async () => {
       let from = p1.mark();
       p2.send({type:'command',cmd:'START'}); p3.send({type:'command',cmd:'READY'});
-      if (target === 'rust') mon.send({type:'phase',phase:'coop'});
+      mon.send({type:'phase',phase:'coop'});
       await sleep(100);
       assert(!p1.msgs.slice(from).some(m=>m.type==='game' && m.game.phase==='coop'), '管理画面/P2/P3から開始した');
-      if (target === 'rust') {
-        p1.send({type:'command',cmd:'READY'});
-        await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from});
-        // 入力の初期値は on (#114)。手動で ON にしなくても、準備の後に Ready できる
-        const initial=[...mon.msgs].reverse().find(m=>m.type==='state');
-        assert(initial.inject.mode==='on', `入力の初期値=${initial.inject.mode}`);
-        await confirmLineup(mon, p1); p1.send({type:'command',cmd:'START'});
-        const prepared = await phaseIs(p1,'preparing',from);
-        assert(prepared.game.canReady && !prepared.game.hostReady, '入力の初期値でReadyできない');
-        // 入力を止めると (緊急停止・診断) Ready できず、PC 画面で再開すると Ready できる
-        from = p1.mark();
-        mon.send({type:'inject_mode',mode:'off'});
-        const off = await p1.waitFor(m=>m.type==='game' && !m.game.canReady,{from});
-        assert(off.game.readyReasons.some(r=>r.includes('入力を再開する')), JSON.stringify(off.game.readyReasons));
-        p1.send({type:'command',cmd:'READY'});
-        await p1.waitFor(m=>m.type==='command_result' && m.cmd==='READY' && !m.accepted,{from});
-        mon.send({type:'inject_mode',mode:'on'});
-        await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from});
-        let gateFrom=p1.mark();
-        host.child.stdin.write('target off\n');
-        await p1.waitFor(m=>m.type==='game' && m.game.inputTarget,{from:gateFrom});
-        p1.send({type:'command',cmd:'READY'});
-        await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from:gateFrom});
-        gateFrom=p1.mark();host.child.stdin.write('target on\n');
-        await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from:gateFrom});
-        // 2人でもReadyできる (#57)。1人ではReadyできず、PC画面から必要人数を減らしても迂回できない
-        // 準備中に参加者が変わったら、決定し直すまで Ready できない (#109)
-        gateFrom=p1.mark();p3.close();
-        const changed=await p1.waitFor(m=>m.type==='game' && m.game.connected.length===2,{from:gateFrom});
-        assert(!changed.game.canReady && !changed.game.lineupOk,'参加者が変わったのに古い決定でReadyできる');
-        await confirmLineup(mon,p1);
-        await p1.waitFor(m=>m.type==='game' && m.game.connected.length===2 && m.game.canReady,{from:gateFrom});
-        gateFrom=p1.mark();p2.close();
-        await p1.waitFor(m=>m.type==='game' && m.game.connected.length===1,{from:gateFrom});
-        mon.send({type:'required',required:1});
-        p1.send({type:'command',cmd:'READY'});
-        await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from:gateFrom});
-        gateFrom=p1.mark();p2=await join('P2');await welcome(p2);p3=await join('P3');await welcome(p3);
-        await p1.waitFor(m=>m.type==='game' && m.game.connected.length===3,{from:gateFrom});
-        await confirmLineup(mon,p1);
-        await p1.waitFor(m=>m.type==='game' && m.game.canReady && m.game.required===2 && m.game.connected.length===3,{from:gateFrom});
-        const rm = mon.mark();
-        p2.input('FWD','down'); p3.input('ATTACK','down');
-        p2.send({type:'remote',kind:'move',dx:15,dy:5,rseq:1,epoch:p2.epoch});
-        await noPress(mon,rm,100);
-        assert(!mon.msgs.slice(rm).some(m=>m.type==='remote_input'),'P2のメニュー操作を注入した');
-        p1.send({type:'remote',kind:'move',dx:15,dy:5,rseq:3,epoch:p1.epoch});
-        await mon.waitFor(m=>m.type==='remote_input' && m.entry.ok,{from:rm});
-        p1.input('REMOTE_LEFT','down'); await injected(mon,'MOUSE_L','down',rm);
-        p1.send({type:'remote',kind:'release',rseq:4,epoch:p1.epoch});
-        await injected(mon,'MOUSE_L','up',rm);
-        await p1.waitFor(m=>m.type==='game' && m.game.epoch>prepared.game.epoch,{from});
-        from = p1.mark();
-        p1.send({type:'command',cmd:'READY',epoch:0});
-        await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from});
-        p1.send({type:'command',cmd:'READY'});
-      } else p1.send({type:'command',cmd:'START'});
+      p1.send({type:'command',cmd:'READY'});
+      await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from});
+      // 入力の初期値は on (#114)。手動で ON にしなくても、準備の後に Ready できる
+      const initial=[...mon.msgs].reverse().find(m=>m.type==='state');
+      assert(initial.inject.mode==='on', `入力の初期値=${initial.inject.mode}`);
+      await confirmLineup(mon, p1); p1.send({type:'command',cmd:'START'});
+      const prepared = await phaseIs(p1,'preparing',from);
+      assert(prepared.game.canReady && !prepared.game.hostReady, '入力の初期値でReadyできない');
+      // 入力を止めると (緊急停止・診断) Ready できず、PC 画面で再開すると Ready できる
+      from = p1.mark();
+      mon.send({type:'inject_mode',mode:'off'});
+      const off = await p1.waitFor(m=>m.type==='game' && !m.game.canReady,{from});
+      assert(off.game.readyReasons.some(r=>r.includes('入力を再開する')), JSON.stringify(off.game.readyReasons));
+      p1.send({type:'command',cmd:'READY'});
+      await p1.waitFor(m=>m.type==='command_result' && m.cmd==='READY' && !m.accepted,{from});
+      mon.send({type:'inject_mode',mode:'on'});
+      await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from});
+      let gateFrom=p1.mark();
+      host.child.stdin.write('target off\n');
+      await p1.waitFor(m=>m.type==='game' && m.game.inputTarget,{from:gateFrom});
+      p1.send({type:'command',cmd:'READY'});
+      await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from:gateFrom});
+      gateFrom=p1.mark();host.child.stdin.write('target on\n');
+      await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from:gateFrom});
+      // 2人でもReadyできる (#57)。1人ではReadyできず、PC画面から必要人数を減らしても迂回できない
+      // 準備中に参加者が変わったら、決定し直すまで Ready できない (#109)
+      gateFrom=p1.mark();p3.close();
+      const changed=await p1.waitFor(m=>m.type==='game' && m.game.connected.length===2,{from:gateFrom});
+      assert(!changed.game.canReady && !changed.game.lineupOk,'参加者が変わったのに古い決定でReadyできる');
+      await confirmLineup(mon,p1);
+      await p1.waitFor(m=>m.type==='game' && m.game.connected.length===2 && m.game.canReady,{from:gateFrom});
+      gateFrom=p1.mark();p2.close();
+      await p1.waitFor(m=>m.type==='game' && m.game.connected.length===1,{from:gateFrom});
+      mon.send({type:'required',required:1});
+      p1.send({type:'command',cmd:'READY'});
+      await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from:gateFrom});
+      gateFrom=p1.mark();p2=await join('P2');await welcome(p2);p3=await join('P3');await welcome(p3);
+      await p1.waitFor(m=>m.type==='game' && m.game.connected.length===3,{from:gateFrom});
+      await confirmLineup(mon,p1);
+      await p1.waitFor(m=>m.type==='game' && m.game.canReady && m.game.required===2 && m.game.connected.length===3,{from:gateFrom});
+      const rm = mon.mark();
+      p2.input('FWD','down'); p3.input('ATTACK','down');
+      p2.send({type:'remote',kind:'move',dx:15,dy:5,rseq:1,epoch:p2.epoch});
+      await noPress(mon,rm,100);
+      assert(!mon.msgs.slice(rm).some(m=>m.type==='remote_input'),'P2のメニュー操作を注入した');
+      p1.send({type:'remote',kind:'move',dx:15,dy:5,rseq:3,epoch:p1.epoch});
+      await mon.waitFor(m=>m.type==='remote_input' && m.entry.ok,{from:rm});
+      p1.input('REMOTE_LEFT','down'); await injected(mon,'MOUSE_L','down',rm);
+      p1.send({type:'remote',kind:'release',rseq:4,epoch:p1.epoch});
+      await injected(mon,'MOUSE_L','up',rm);
+      await p1.waitFor(m=>m.type==='game' && m.game.epoch>prepared.game.epoch,{from});
+      from = p1.mark();
+      p1.send({type:'command',cmd:'READY',epoch:0});
+      await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from});
+      p1.send({type:'command',cmd:'READY'});
       const c = await phaseIs(p1,'coop',from);
-      assert(c.game.reason === (target === 'rust' ? 'host ready' : 'host start'), `reason=${c.game.reason}`);
+      assert(c.game.reason === 'host ready', `reason=${c.game.reason}`);
     });
 
     // 以降の注入はモニターで観測する (DRY_RUN なので OS には送られない)
-    { const nextState = p1.mark(); mon.send({ type: 'inject_mode', mode: 'on' }); if (target === 'rust') await p1.waitFor(m=>m.type==='game',{from:nextState}); }
+    { const nextState = p1.mark(); mon.send({ type: 'inject_mode', mode: 'on' }); await p1.waitFor(m=>m.type==='game',{from:nextState}); }
     await mon.waitFor((m) => m.type === 'state' && m.inject.mode === 'on' && m.inject.active, { what: 'inject on' });
 
     await check('入力: 役割の操作だけを注入し、担当外の操作名は無視する', async () => {
@@ -529,7 +502,7 @@ async function main() {
       p3.input('DROP', 'up');
       await injected(mon, 'KEY_R', 'up', from);
       assert(!mon.msgs.slice(from).some((m) => m.type === 'inject' && m.entry.out === 'KEY_Q'), '捨てるでダッシュ (Q) を送った');
-    }, { rustOnly: true });
+    });
 
     await check('キー再読込: 停止中の設定変更で旧キーを解放しepochを更新する', async () => {
       let from = p1.mark();
@@ -551,7 +524,7 @@ async function main() {
       from = p1.mark(); const f2=p2.mark(),f3=p3.mark();
       p1.send({type:'command',cmd:'RESUME'});
       await phaseIs(p1,'coop',from); await phaseIs(p2,'coop',f2); await phaseIs(p3,'coop',f3);
-    },{rustOnly:true});
+    });
 
     await check('入力: 同じ iseq の重複は 1 回だけ処理し、欠番は届くまで待つ', async () => {
       const from = p3.mark();
@@ -597,7 +570,7 @@ async function main() {
       p1.input('FWD','down',{epoch:old});
       await noPress(mon,staleFrom,500);
       p1.input('FWD','up'); p3.input('ATTACK','up');
-    }, {rustOnly:true});
+    });
 
     await check('視点: P2 の look だけを相対移動にする', async () => {
       const from = mon.mark();
@@ -646,7 +619,7 @@ async function main() {
       await injected(mon, 'SPACE', 'down', from);
       p1.input('JUMP', 'up');
       await injected(mon, 'SPACE', 'up', from);
-    }, { rustOnly: true });
+    });
 
     await check('epoch: 旧視点の欠落・遅延が新epochの累積値と順序番号へ混ざらない', async () => {
       const old = p2.epoch;
@@ -671,7 +644,7 @@ async function main() {
       await sleep(1000);
       dx = mon.msgs.slice(from).filter(m => m.type === 'look').reduce((sum, m) => sum + m.entry.dx, 0);
       assert(Math.abs(dx - 5) <= 1, `遅延パケットが基準を変更した: dx=${dx}`);
-    }, { rustOnly: true });
+    });
 
     await check('入力先: 常時 ON でも前面が入力先でなくなったら全解放し、押下を注入しない。PC 画面とスマホに知らせる', async () => {
       p1.input('FWD', 'up');
@@ -691,7 +664,7 @@ async function main() {
       mon.send({ type: 'inject_mode', mode: 'off' });
       await p1.waitFor(m => m.type === 'game' && !m.game.inputActive && !m.game.inputTarget, { from: notifyFrom });
       notifyFrom = p1.mark();
-      { const nextState = p1.mark(); mon.send({ type: 'inject_mode', mode: 'on' }); if (target === 'rust') await p1.waitFor(m=>m.type==='game',{from:nextState}); }
+      { const nextState = p1.mark(); mon.send({ type: 'inject_mode', mode: 'on' }); await p1.waitFor(m=>m.type==='game',{from:nextState}); }
       await p1.waitFor(m => m.type === 'game' && !m.game.inputActive && m.game.inputTarget, { from: notifyFrom });
       p1.input('FWD', 'up');
       mfrom = mon.mark();
@@ -707,7 +680,7 @@ async function main() {
       await injected(mon, 'SPACE', 'down', mfrom);
       p1.input('JUMP', 'up');
       await injected(mon, 'SPACE', 'up', mfrom);
-    }, { rustOnly: true });
+    });
 
     await check('入力先: フォーカス喪失前と対象外の間に届いた欠番待ち入力を、復帰後へ持ち越さない', async () => {
       const old = p1.epoch;
@@ -732,7 +705,7 @@ async function main() {
       await injected(mon, 'SPACE', 'down', mfrom);
       p1.input('JUMP', 'up');
       await injected(mon, 'SPACE', 'up', mfrom);
-    }, { rustOnly: true });
+    });
 
     await check('PCアプリ: coop 中に PC アプリへ手動で戻ると全解放して paused、P1 はリモコンに戻り役割は変わらない', async () => {
       const app = new Client('app');
@@ -769,7 +742,7 @@ async function main() {
       p1.send({ type: 'command', cmd: 'RESUME' });
       await phaseIs(p1, 'coop', rfrom);
       app.close();
-    }, { rustOnly: true });
+    });
 
     await check('PCアプリ: 前面のブラウザ接続を閉じた後も、新しいPC画面への復帰で一時停止する', async () => {
       const app = new Client('app-before-close');
@@ -795,7 +768,7 @@ async function main() {
       from = p1.mark();
       p1.send({ type: 'command', cmd: 'RESUME' });
       await phaseIs(p1, 'coop', from);
-    }, { rustOnly: true });
+    });
 
     await check('PCアプリ: PC アプリから起動したホストは前面のウィンドウ (試験では標準入力で差し替え) で手動復帰を判定し、画面の focus を使わない', async () => {
       host.child.stdin.write('app blur\n'); // Minecraft を前面にした
@@ -825,7 +798,7 @@ async function main() {
       await sleep(300);
       assert(!p1.msgs.slice(from).some((m) => m.type === 'game' && m.game.phase === 'paused'), '画面の focus で止めた');
       app.close();
-    }, { rustOnly: true });
+    });
 
     await check('PCアプリ: 通信切断待ちにPC画面へ戻ったら自動復帰を解除し、全員戻っても明示RESUMEまで再開しない', async () => {
       mon.send({ type: 'auto_resume', on: true });
@@ -850,7 +823,7 @@ async function main() {
       from = p1.mark();
       p1.send({ type: 'command', cmd: 'RESUME' });
       await phaseIs(p1, 'coop', from);
-    }, { rustOnly: true });
+    });
 
     await check('PCアプリ: coop 中にゲームを変えると全解放して lobby へ戻り、参加と役割は保つ。同じゲーム・未知のゲームは無視する', async () => {
       const app = new Client('app');
@@ -878,10 +851,10 @@ async function main() {
       await p1.waitFor((m) => m.type === 'game' && m.game.title === 'minecraft-java', { from, what: 'title back' });
       from = p1.mark();
       await confirmLineup(mon, p1); p1.send({ type: 'command', cmd: 'START' });
-      if (target === 'rust') { await phaseIs(p1, 'preparing', from); p1.send({type:'command',cmd:'READY'}); }
+      await phaseIs(p1, 'preparing', from); p1.send({type:'command',cmd:'READY'});
       await phaseIs(p1, 'coop', from);
       app.close();
-    }, { rustOnly: true });
+    });
 
     await check('操作定義: 人数に応じた分担 (移動を左・右・ジャンプに分ける) と、生成画面の入力 (割り当てた操作だけ) を通す', async () => {
       const app = new Client('app');
@@ -933,7 +906,7 @@ async function main() {
       await phaseIs(p1, 'coop', from);
       assert(coop.game.title === 'pseudo-game', 'title');
       app.close();
-    }, { rustOnly: true });
+    });
 
     await check('人数: 2人・4人のMinecraftは操作定義の分担で遊び、Ready後に来た人は参加せず、参加者がそろうまで再開しない (#57・#105)', async () => {
       // 前提: Minecraft の協力プレイ中 (P1〜P3)。3人は固定の画面
@@ -1011,7 +984,7 @@ async function main() {
       p1.send({ type: 'command', cmd: 'READY' });
       const back = await phaseIs(p1, 'coop', from);
       assert(back.game.fixedControls === true && back.game.participants.join() === 'P1,P2,P3', '3人の固定の画面に戻らない');
-    }, { rustOnly: true });
+    });
 
     await check('役割の入れ替え: 開始前・一時停止中だけ 2 人の担当を交換し、本人の確認まで再開しない。再接続・終了後も保つ (#47・#62)', async () => {
       // 前提: Minecraft の協力プレイ中 (P1〜P3、固定の画面)
@@ -1089,7 +1062,7 @@ async function main() {
       p1.send({ type: 'command', cmd: 'READY' });
       const again = await phaseIs(p1, 'coop', from);
       assert(again.game.roleOf.P2 === 'P2' && again.game.roleOf.P3 === 'P3', JSON.stringify(again.game.roleOf));
-    }, { rustOnly: true });
+    });
 
     await check('ゲーム一覧: Steam・Epic を検出して PC 画面にだけ送り、選ぶと全解放して起動を見届ける。一覧にない id・協力プレイ中は起動しない', async () => {
       const app = new Client('app');
@@ -1216,7 +1189,7 @@ async function main() {
       p1.send({ type: 'command', cmd: 'READY' });
       await phaseIs(p1, 'coop', from);
       app.close();
-    }, { rustOnly: true });
+    });
 
     await check('切断: coop 中の切断で paused、切断者以外の押下も全解放する', async () => {
       p1.input('FWD', 'up'); // 前の試験の押下が残っていれば離す (既に離れていれば何もしない)
@@ -1280,7 +1253,7 @@ async function main() {
       p1.send({ type: 'command', cmd: 'RESUME' });
       await phaseIs(p1, 'coop', pfrom);
       mon.send({ type: 'auto_resume', on: true });
-    }, { rustOnly: true });
+    });
 
     await check('復帰: ホストの PAUSE は自動復帰の対象外', async () => {
       let from = p1.mark();
@@ -1332,7 +1305,7 @@ async function main() {
       assert(!p1.msgs.slice(from).some((m) => m.type === 'game' && m.game.phase === 'coop'), '期限後に自動復帰した');
       const last = p1.msgs.slice(from).filter((m) => m.type === 'game').pop();
       assert(!last || last.game.autoResumeUntil < Date.now(), `期限が延びた: ${last && last.game.autoResumeUntil}`);
-      // Node参照実装は置き換えで切断処理を呼ばない。別参加者の新しい切断も期限を復活させないことを確かめる。
+      // 接続の置き換えに加え、別参加者の新しい切断でも期限を復活させないことを確かめる。
       from = p1.mark();
       p2.close();
       await sleep(200);
@@ -1372,7 +1345,7 @@ async function main() {
       p1.input('ESC', 'down');
       await noInject(mon, from);
       p1.input('ESC', 'up');
-      { const nextState = p1.mark(); mon.send({ type: 'inject_mode', mode: 'on' }); if (target === 'rust') await p1.waitFor(m=>m.type==='game',{from:nextState}); }
+      { const nextState = p1.mark(); mon.send({ type: 'inject_mode', mode: 'on' }); await p1.waitFor(m=>m.type==='game',{from:nextState}); }
     });
 
     await check('ゲーム切替: 対象の前面化要求は準備・一時停止中のP1だけで、Readyや入力ONを代行しない',async()=>{
@@ -1382,7 +1355,7 @@ async function main() {
       p1.send({type:'command',cmd:'OPEN_GAME'});
       const g=await p1.waitFor(m=>m.type==='game' && m.game.prepareStatus.includes('dry-run'),{from});
       assert(g.game.phase==='paused' && g.game.epoch===before,'前面化で開始状態を変更した');
-    },{rustOnly:true});
+    });
 
     await check('緊急停止: 全員の押下を即座に解放し、注入を OFF にして一時停止する (自動復帰しない)', async () => {
       let from = p1.mark();
@@ -1412,9 +1385,9 @@ async function main() {
       p1.input('UP', 'down');
       await noInject(mon, mfrom);
       p1.input('UP', 'up');
-      { const nextState = p1.mark(); mon.send({ type: 'inject_mode', mode: 'on' }); if (target === 'rust') await p1.waitFor(m=>m.type==='game',{from:nextState}); }
+      { const nextState = p1.mark(); mon.send({ type: 'inject_mode', mode: 'on' }); await p1.waitFor(m=>m.type==='game',{from:nextState}); }
       await mon.waitFor((m) => m.type === 'state' && m.inject.mode === 'on', { what: 'inject on' });
-    }, { rustOnly: true });
+    });
 
     await check('緊急停止: 切断待ちのpaused中でも自動復帰を解除し、全員戻っても再開しない', async () => {
       let from = p1.mark();
@@ -1433,7 +1406,7 @@ async function main() {
       await welcome(p2);
       await sleep(350);
       assert(!p1.msgs.slice(from).some(m => m.type === 'game' && m.game.phase === 'coop'), '緊急停止後に自動復帰した');
-    }, { rustOnly: true });
+    });
 
     await check('進行: P1 の END で lobby', async () => {
       const from = p1.mark();
@@ -1457,7 +1430,7 @@ async function main() {
       assert(files.length > 0, 'ログファイルがない');
       const log = files.map((f) => fs.readFileSync(path.join(host.logDir, f), 'utf8')).join('');
       for (const k of ['P1', 'P2', 'P3']) assert(!log.includes(tokens[k]), `${k} のトークンがログに出た`);
-    }, { rustOnly: true });
+    });
 
     await check('ログ: IP・User-Agent・clientId を記録せず、枠名と端末の種類だけを残す', async () => {
       await sleep(1200); // ログは 1 秒ごとに書き出される
@@ -1471,11 +1444,11 @@ async function main() {
       }
       const joins = log.split(/\r?\n/).filter(Boolean).map((l) => JSON.parse(l)).filter((e) => e.kind === 'join');
       assert(joins.length >= 3 && joins.every((e) => e.slot && e.device), `join の記録: ${JSON.stringify(joins[0])}`);
-    }, { rustOnly: true });
+    });
 
     for (const c of [p1, p2, p3, mon]) c?.close();
     const failed = results.filter((r) => !r.ok);
-    console.log(`\n${results.length - failed.length}/${results.length} 合格 (target=${target})`);
+    console.log(`\n${results.length - failed.length}/${results.length} 合格 (Rust 版、dry-run)`);
     exitCode = failed.length ? 1 : 0;
   } catch (e) {
     console.error('シミュレーションを実行できません:', e.message);
