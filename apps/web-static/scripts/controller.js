@@ -282,7 +282,8 @@ import { myActions } from './generated-controls.js';
   const roleInput = bindCooperativeInput({
     getGame: () => game, getRole: () => me, isOpen: () => isOpen() && controlsVisible(), ctlDown, ctlUp, onCancel: stopRemote,
     // 視点の担当: 操作定義の分担があればそれに従い、なければ P2 (#105)
-    canLook: () => { const acts = myActions(game, me); return acts ? acts.some((a) => a.type === 'mouseDelta') : me === 'P2'; },
+    // 固定の画面では、担当 (入れ替え後の席、#47) が視点 (P2 の表) の人
+    canLook: () => { const acts = myActions(game, me); return acts ? acts.some((a) => a.type === 'mouseDelta') : (game?.roleOf?.[me] || me) === 'P2'; },
     sendLook: (msg, at) => {
       if (!fast.send(msg)) sendWs(msg);
       sent++;
@@ -294,7 +295,7 @@ import { myActions } from './generated-controls.js';
   });
 
   // ---- 画面の切り替え ----
-  const phoneView = createPhoneView({releaseAll,onDiagnosticsOpen:stopRemote,roleText:ROLE_TEXT,bindControl});
+  const phoneView = createPhoneView({releaseAll,onDiagnosticsOpen:stopRemote,roleText:ROLE_TEXT,bindControl,onRoleOk:()=>sendWs({type:'role_ok'})});
   function render() { phoneView({me,isHost,game}); }
 
   // ---- 通信テスト: 20Hz で 10 秒送る (注入はされない) ----

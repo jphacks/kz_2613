@@ -77,6 +77,7 @@ P2は `look` だけを送る。役割・状態と合わない操作名はサー�
 | 画面 → ホスト | `launch_game` | `id`（`state.games` の項目）。ホストは手元の一覧から起動方法を引き、検出時に確かめた値だけで起動する（Steam：`steam://rungameid/<appid>`、Epic：`com.epicgames.launcher://apps/...`）。パス・URLは受け取らない。**選択中のゲーム（`game.title`）で、メンバー・分担の決定（`game.lineupOk`）が有効なときだけ**、ロビー・準備中に、全解放・epoch更新の後に起動し、ウィンドウが現れたら前面にする（#109）。起動中の同じ要求は無視する。すでにウィンドウがあれば起動し直さず前面にする。協力プレイ中・一時停止中・決定前・選択と違うid・一覧にない値は起動せず `game.launch.state: failed` を返す。dry-runでは起動しない（Rust版） |
 | 画面 → ホスト | `confirm_lineup` | `title`・`members`（画面が見ていたゲームと接続中の枠）。ロビー・準備中に、今の選択・接続者と一致し、P1を含む2人以上なら、メンバーと分担を決定する（#109、Rust版）。一致しなければ無視する |
 | 画面 → ホスト | `unconfirm_lineup` | 分担の画面から戻ったときに、ロビーでの決定を取り消す（Rust版） |
+| 画面 → ホスト | `swap_roles` | `a`・`b`（枠名）。開始前（接続中の人）と一時停止中（参加者）に、2人の担当（席順）を入れ替える。全解放・epoch更新の後、2人の確認待ち（`game.roleAck`）にする。協力プレイ中は無視する（#47、Rust版） |
 | 画面 → ホスト | `refresh_games` | インストール済みのゲームを探し直す（Rust版） |
 | 画面 → ホスト | `required` / `auto_resume` / `phase` / `reset` | 必要人数（Rust版は最低人数2のみ受け付け、人数は接続人数で決まる）、自動復帰のON/OFF、進行の強制変更、全枠の解放 |
 | 画面 → ホスト | `observe` | 疑似ゲーム画面の照合結果。ログに記録する |
@@ -116,6 +117,7 @@ v4ではOPEN_GAME（現在epoch必須）とPC画面のopen_gameを追加する�
 - `game.profile.assignment`は今接続している枠への案（枠名で示す。P3が空いてP4がいる場合はP4に付く）、`assignments`は1〜4人の案（P1から順の番号）。
 - `game.participants`はReadyで確定した参加者の枠（ロビー・準備中は空）、`game.assigned`は参加者の枠→操作ID。終了（END・ゲーム変更・リセット）まで固定し、再開でも組み直さない。参加者がそろうまで`canResume`は偽。参加者以外の入力は送らず、その切断では止めない（#57・#105）。
 - `game.lineup`はPC画面で決定したゲームとメンバー（`{title, members}`、なければnull）、`game.lineupOk`はそれが今の選択・接続者と一致しているか、`game.canLaunch`は起動を要求できるか。ゲームを選び直す・ロビーへ戻る・リセットで決定は消え、参加者が変わると無効になる。`canPrepare`と準備中の`canReady`は`lineupOk`を必要とする（#109）。
+- `game.roleOf`は枠→担当（席順。Minecraftの固定の画面はこの担当の画面を出す）、`game.roleAck`は担当が変わり本人の確認待ちの枠、`game.canSwap`は入れ替えできるか。確認待ちの間はReady・再開できない。席順は終了しても保ち、リセットで戻す（#47・#62）。スマホは`role_ok`（WebSocketのみ）で確認を送る。
 - `game.fixedControls`は、Minecraftの専用画面と固定の表を使うか。Minecraftを3人（P1〜P3）で遊ぶときだけ真。`game.maxPlayers`は枠の数（4）。
 - Minecraftは3人では従来の操作名と専用画面を維持し、2人・4人では生成画面を使う。生成画面では`act:<ID>`、ホイールは`act:<ID>:up|down`を送り、現在epoch・coop・確定した割当・操作種類・実キーをサーバーで照合する。固定操作名による迂回を拒否する。
 - `game.keys.actions`は操作ID→実出力の`{out,label}`またはnull。視点は確定分担に含む枠だけを許可する。

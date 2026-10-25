@@ -242,6 +242,7 @@ impl Phase {
 #[derive(Clone, PartialEq)]
 struct Lineup {
     title: String,
+    // 席順に並べたメンバー (入れ替えると一致しなくなる)
     members: Vec<usize>,
 }
 
@@ -355,6 +356,11 @@ pub struct Hub {
     participants: Vec<usize>,
     // PC 画面でホストが決定したメンバーと分担 (#109)。今の選択・接続と一致するときだけ起動・準備・Ready を受け付ける
     lineup: Option<Lineup>,
+    // 枠ごとの席順 (#47・#62)。分担の束 (移動・視点…) を席順の早い人から配る。初期値は枠の順。
+    // ホストが入れ替えると束ごと交換される。終了してもリセットするまで保つ (入れ替えたまま再挑戦できる)
+    seats: [usize; MAX_SLOTS],
+    // 担当が変わり、本人がスマホで「確認しました」を押していない枠。押すまで Ready・再開できない
+    role_ack: Vec<usize>,
     app_focused: bool,           // PC アプリが前面か (手動復帰の判定に使う)
     // PC アプリ (デスクトップアプリ) から起動されたか。そのときは前面のプロセス名で PC アプリの前面を判定し、
     // 画面 (WebView2 は背面でも focused のまま) の知らせは使わない
@@ -459,6 +465,8 @@ impl Hub {
             assigned: Vec::new(),
             participants: Vec::new(),
             lineup: None,
+            seats: [0, 1, 2, 3],
+            role_ack: Vec::new(),
             fake_target: std::env::var("RECOOPLAY_FAKE_TARGET")
                 .ok()
                 .filter(|_| std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1"))
@@ -594,6 +602,10 @@ impl Hub {
                 reasons.push("この人数に対応する操作定義がありません。3人（P1〜P3）で遊んでください".into());
             }
         }
+        let unacked: Vec<&str> = self.role_ack.iter().filter(|i| self.role_slots().contains(i)).map(|&i| SLOT_NAMES[i]).collect();
+        if !unacked.is_empty() {
+            reasons.push(format!("{}が新しい担当をスマホで確認していません", unacked.join("・")));
+        }
         if self.game.phase != Phase::Paused && !self.lineup_ok() {
             reasons.push("PCの画面でメンバーと分担を決定してください（参加者やゲームが変わった場合は決定し直してください）".into());
         }
@@ -613,7 +625,7 @@ impl Hub {
 
     /// 決定したメンバーと分担が、今の選択と接続者に一致しているか
     fn lineup_ok(&self) -> bool {
-        self.lineup.as_ref().is_some_and(|l| l.title == self.game.title && l.members == self.connected_slots())
+        self.lineup.as_ref().is_some_and(|l| l.title == self.game.title && l.members == self.ranked(&self.connected_slots()))
     }
 
     /// PC 画面の「この分担で決定」。画面が見ていたゲーム・メンバーが今と一致するときだけ受け付ける
@@ -628,7 +640,7 @@ impl Hub {
             && connected.len() >= MIN_PLAYERS;
         self.log("lineup", json!({ "accepted": accepted, "title": self.game.title, "members": names }));
         if accepted {
-            self.lineup = Some(Lineup { title: self.game.title.clone(), members: connected });
+            self.lineup = Some(Lineup { title: self.game.title.clone(), members: self.ranked(&connected) });
         }
         self.push_game();
     }
@@ -662,6 +674,10 @@ impl Hub {
             // PC 画面で決定したメンバーと分担 (#109)。lineupOk は今の選択・接続と一致しているか
             "lineup": self.lineup.as_ref().map(|l| json!({ "title": l.title, "members": l.members.iter().map(|&i| SLOT_NAMES[i]).collect::<Vec<_>>() })),
             "lineupOk": self.lineup_ok(),
+            // 枠 → 担当 (席順の番号を P1〜 で表す。Minecraft の固定の画面はこの担当の画面を出す、#47)
+            "roleOf": self.role_slots().iter().filter_map(|&i| self.role_rank(i).map(|k| (SLOT_NAMES[i].to_string(), json!(SLOT_NAMES[k])))).collect::<Map<String, Value>>(),
+            "roleAck": self.role_ack.iter().map(|&i| SLOT_NAMES[i]).collect::<Vec<_>>(),
+            "canSwap": matches!(self.game.phase, Phase::Lobby | Phase::Preparing) || (self.game.phase == Phase::Paused && !self.participants.is_empty()),
             "canLaunch": self.can_launch(),
             "fixedControls": self.fixed_controls(if self.participants.is_empty() { &connected_idx } else { &self.participants }),
             "reason": self.game.reason,
@@ -902,7 +918,8 @@ impl Hub {
             }
             // 担当の確認は固定の表で行い、送るキーはゲームのキー設定に合わせる (送れないキーは送らない)
             if !self.participants.contains(&slot) { return None; }
-            let default = controls::role_control(SLOT_NAMES[slot], control)?;
+            // 固定の表は担当 (席順) で引く。入れ替えた人は入れ替えた先の操作を送る
+            let default = controls::role_control(SLOT_NAMES[self.role_rank(slot)?], control)?;
             self.keybinds.output_for(control).unwrap_or(Some(default))
         } else if slot == 0 && self.remote_game_active() {
             let default = controls::remote_control(control)?;
@@ -953,13 +970,63 @@ impl Hub {
 
     /// 今接続している枠に、参加人数と操作定義から分担の案を作る (#105)。枠の番号ごと (参加していない枠は空)
     fn proposal(&self, p: &Profile) -> Vec<Vec<String>> {
-        let slots = self.connected_slots();
+        self.proposal_for(p, &self.connected_slots())
+    }
+
+    /// slots の人に分担を配る。席順の早い人から、優先度の高い操作 (移動・視点…) の束を配る
+    fn proposal_for(&self, p: &Profile, slots: &[usize]) -> Vec<Vec<String>> {
+        let ranked = self.ranked(slots);
         let mut out = vec![Vec::new(); MAX_SLOTS];
-        // P1 (ホスト) から順に、優先度の高い操作 (移動・視点…) を配る
-        for (k, a) in profiles::assignment_for(p, slots.len().max(1)).into_iter().enumerate() {
-            if let Some(&i) = slots.get(k) { out[i] = a; }
+        for (k, a) in profiles::assignment_for(p, ranked.len().max(1)).into_iter().enumerate() {
+            if let Some(&i) = ranked.get(k) { out[i] = a; }
         }
         out
+    }
+
+    /// 枠を席順に並べる
+    fn ranked(&self, slots: &[usize]) -> Vec<usize> {
+        let mut v = slots.to_vec();
+        v.sort_by_key(|&i| self.seats[i]);
+        v
+    }
+
+    /// 担当を決める対象の枠 (協力プレイの参加者、なければ接続中の枠)
+    fn role_slots(&self) -> Vec<usize> {
+        if self.participants.is_empty() { self.connected_slots() } else { self.participants.clone() }
+    }
+
+    /// その枠の担当の番号 (席順で何番目か)。Minecraft の固定の表では 0 = 移動 (P1 の表)、1 = 視点、2 = アクション
+    fn role_rank(&self, slot: usize) -> Option<usize> {
+        self.ranked(&self.role_slots()).iter().position(|&i| i == slot)
+    }
+
+    /// 2 人の担当を入れ替える (#47)。開始前 (ロビー・準備中) と一時停止中だけ。全解放して epoch を進め、
+    /// 2 人がスマホで新しい担当を確認するまで Ready・再開できない。ロビーでは分担の決定もやり直しになる
+    fn swap_roles(&mut self, a: usize, b: usize) {
+        let set = match self.game.phase {
+            Phase::Lobby | Phase::Preparing => self.connected_slots(),
+            Phase::Paused if !self.participants.is_empty() => self.participants.clone(),
+            _ => return,
+        };
+        if a == b || !set.contains(&a) || !set.contains(&b) {
+            return;
+        }
+        self.seats.swap(a, b);
+        self.release_outputs(None);
+        self.reset_look();
+        self.advance_epoch();
+        if self.game.phase == Phase::Paused {
+            if let Some(p) = self.profile.clone() {
+                self.assigned = self.proposal_for(&p, &self.participants.clone());
+            }
+            self.game.auto_resume_until = 0;
+        }
+        for i in [a, b] {
+            if !self.role_ack.contains(&i) { self.role_ack.push(i); }
+        }
+        self.log("swap_roles", json!({ "a": SLOT_NAMES[a], "b": SLOT_NAMES[b], "phase": self.game.phase.name() }));
+        self.push_game();
+        self.push_state();
     }
 
     /// Ready の時点の参加者と分担を確定する。定義がなければ分担は空 (固定の表を使う)
@@ -1007,7 +1074,7 @@ impl Hub {
     fn owns_look(&self, slot: usize) -> bool {
         match (&self.profile, self.assigned.is_empty()) {
             (Some(p), false) => p.actions.iter().any(|a| a.kind == "mouseDelta" && self.is_assigned(slot, &a.id)),
-            _ => slot == 1,
+            _ => self.role_rank(slot) == Some(1),
         }
     }
 
@@ -1842,6 +1909,10 @@ impl Hub {
             "launch_game" => {
                 if let Some(id) = s(msg, "id") { self.launch_game(&id); }
             }
+            "swap_roles" => {
+                let slot = |k: &str| s(msg, k).and_then(|n| SLOT_NAMES.iter().position(|x| *x == n));
+                if let (Some(a), Some(b)) = (slot("a"), slot("b")) { self.swap_roles(a, b); }
+            }
             "confirm_lineup" => {
                 let members = msg.get("members").and_then(Value::as_array).map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect()).unwrap_or_default();
                 self.confirm_lineup(s(msg, "title"), members);
@@ -1898,6 +1969,8 @@ impl Hub {
                 self.game.phase = Phase::Lobby;
                 self.game.host_ready = false;
                 self.lineup = None;
+                self.seats = [0, 1, 2, 3];
+                self.role_ack.clear();
                 self.advance_epoch();
                 self.log("reset", json!({}));
                 self.push_game();
@@ -2065,6 +2138,15 @@ impl Hub {
                 }
             }
             "remote" if via == Via::Ws => self.remote_message(idx, &msg),
+            // 新しい担当をスマホで確認した (#47)
+            "role_ok" if via == Via::Ws => {
+                if let Some(k) = self.role_ack.iter().position(|&i| i == idx) {
+                    self.role_ack.remove(k);
+                    self.log("role_ok", json!({ "slot": SLOT_NAMES[idx] }));
+                    self.push_game();
+                    self.maybe_auto_resume();
+                }
+            }
             "input" => self.accept_input(idx, msg, via),
             "look" => self.accept_look(idx, &msg),
             _ => {}

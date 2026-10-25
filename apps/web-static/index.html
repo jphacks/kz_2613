@@ -25,6 +25,8 @@
 </header>
 <!-- PC の入力先 (Minecraft) が前面にないとき: 押しても PC に届かない -->
 <div id="inputWarn">PCの画面がMinecraftになっていません。ホストがMinecraftを前面に戻すまで操作は届きません。</div>
+<!-- ホストが担当を入れ替えたとき (#47): 本人が確認するまで Ready・再開できない -->
+<div id="roleNotice" class="role-notice" role="alert" hidden><p id="roleNoticeText"></p><button id="roleOkBtn">新しい担当を確認しました</button></div>
 
 <main>
   <div class="connecting" id="connecting"><span class="mascot" aria-hidden="true">✦</span>PCホストへ接続しています…</div>
