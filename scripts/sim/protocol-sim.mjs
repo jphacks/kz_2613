@@ -541,17 +541,20 @@ async function main() {
       assert(held >= 55, `押下時間 ${held}ms`);
     });
 
-    await check('キャンセル: 端末の非表示・回転要求で全参加者の押下と旧入力を即時破棄する', async () => {
+    await check('キャンセル: 非表示・回転・診断の停止要求で全参加者の押下・保留連打・旧入力を即時破棄する', async () => {
       p1.input('FWD','up'); p3.input('ATTACK','up'); await sleep(150);
       const from = mon.mark(), playerFrom = p1.mark(), old = p1.epoch;
       p1.input('FWD','down'); p3.input('ATTACK','down');
       await injected(mon,'KEY_W','down',from); await injected(mon,'MOUSE_L','down',from);
+      p3.input('ATTACK','up');p3.input('ATTACK','down');
+      const queuedUp=p3.input('ATTACK','up');
+      await p3.waitFor(m=>m.type==='ack'&&m.iseq===queuedUp);
       p2.send({type:'release_inputs',epoch:p2.epoch});
       await injected(mon,'KEY_W','up',from); await injected(mon,'MOUSE_L','up',from);
       await p1.waitFor(m=>m.type==='game' && m.game.epoch>old,{from:playerFrom});
       const staleFrom = mon.mark();
       p1.input('FWD','down',{epoch:old});
-      await noPress(mon,staleFrom,100);
+      await noPress(mon,staleFrom,500);
       p1.input('FWD','up'); p3.input('ATTACK','up');
     }, {rustOnly:true});
 

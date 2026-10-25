@@ -1,0 +1,134 @@
+[
+  {
+    "path": "apps/web-static/app-view.js",
+    "sha256": "7712ad0af93d4dcbb74ca97bb23e61786256bf049ad47e5934b1dad28c057f53"
+  },
+  {
+    "path": "apps/web-static/app.html",
+    "sha256": "9e99483809bb295171b0f496ea2eb061d80eb3fb73e9c556968d0abf2c8b9f00"
+  },
+  {
+    "path": "apps/web-static/assets/apple-touch-icon.png",
+    "sha256": "c4dffb976362487c369ade57f02bb0963e7ad3f24bbff8734b63abb3675a274f"
+  },
+  {
+    "path": "apps/web-static/assets/characters/blue.png",
+    "sha256": "67166e71ff3b23d1ebc1cc051f29127c4499efa3d7799638980f7546fc2c64f5"
+  },
+  {
+    "path": "apps/web-static/assets/characters/green.png",
+    "sha256": "8006094ee85364a2c860de3873e72a853e8da8aed40d53e4a1d430542548c3b7"
+  },
+  {
+    "path": "apps/web-static/assets/characters/purple.png",
+    "sha256": "c62fc5e0f7d5cccdc21a5988f42fee28a6950c75a1e7cf52d2177d408924231c"
+  },
+  {
+    "path": "apps/web-static/assets/characters/red.png",
+    "sha256": "ad510bf796e63692c15a5563dbe1172cba0802e45f05a191930b4f94169fbaec"
+  },
+  {
+    "path": "apps/web-static/assets/icon.png",
+    "sha256": "fba5f00912c7b30602a2e4611e403dd3305e1eeb49e8918e4848b1b028e7366f"
+  },
+  {
+    "path": "apps/web-static/assets/logo.png",
+    "sha256": "4534d328a5feb9eeacb32342bef486d8ffa4208b1a33a9fe0338c158a028c99d"
+  },
+  {
+    "path": "apps/web-static/assets/mobile-controls.png",
+    "sha256": "03931b5fb5285e970ad2ef3b68ba443157836dba4ea00bc030a0e07a1646725d"
+  },
+  {
+    "path": "apps/web-static/assets/mobile-stars.png",
+    "sha256": "6edba63cab3175cd04c9858ba5404639cb189113a7926743a71da352aa2a692a"
+  },
+  {
+    "path": "apps/web-static/assets/mobile-start.png",
+    "sha256": "8a7b75ea60d5a4f3910a9cdf0d080e595a7632f475d00bde9319dd6cca697bf2"
+  },
+  {
+    "path": "apps/web-static/assets/pc-sidebar.png",
+    "sha256": "2e835f2bcf3e1a7aee0d3c3cf8cdbe5b81c1254d38937250e245e440e1cf2167"
+  },
+  {
+    "path": "apps/web-static/assets/pc-stars.png",
+    "sha256": "c0f3b3ec29abe5cb98523bee6c10be72565255472dee23e688dddd51285818b5"
+  },
+  {
+    "path": "apps/web-static/game.html",
+    "sha256": "7bf19c91707e202068de5afdc33e74ca6044328b77abb558b0acb9200446fe31"
+  },
+  {
+    "path": "apps/web-static/host.html",
+    "sha256": "4d846e6881cd506277cf56b461c5b7c8329dd8971764fb992819d71c0b13579c"
+  },
+  {
+    "path": "apps/web-static/index.html",
+    "sha256": "d82ead6f10b3d833fa36c125a034d1cf59665b690964a06730038f2ef3f72793"
+  },
+  {
+    "path": "apps/web-static/scripts/controller.js",
+    "sha256": "d7bdd338c6d8763dfd28c7b8e01bf7b3d695be99a5159ccfaabfa51580f8291e"
+  },
+  {
+    "path": "apps/web-static/scripts/cooperative-input.js",
+    "sha256": "706c8a9b88aa1c352f34a2dd082d991c3c37394e3b268c04da52ca42a2a89b3f"
+  },
+  {
+    "path": "apps/web-static/scripts/desktop.js",
+    "sha256": "30e9d9ba55e301de28c65c91f326e0119bf29ed565cb9b1bfbf593f7ba9a6227"
+  },
+  {
+    "path": "apps/web-static/scripts/generated-controls.js",
+    "sha256": "ac661221f47adf3c156d74649515839892e08e373f9ed54522c55dafd017f179"
+  },
+  {
+    "path": "apps/web-static/scripts/phone-view.js",
+    "sha256": "bb98f497631c76c1373362247e786fd30d16305c1cdf5c6ae81157b5cc36bc5e"
+  },
+  {
+    "path": "apps/web-static/scripts/touchpad.js",
+    "sha256": "cd06c757fa3f7e940ab34dacbdc09e5e7edd7227a3a8a09a9abce7bc57d1c839"
+  },
+  {
+    "path": "apps/web-static/scripts/transport.js",
+    "sha256": "d0b25d213790bcfafc2d72df7796ec6718736ff6a2663847512c006e26097d99"
+  },
+  {
+    "path": "apps/web-static/scripts/ui-metrics.js",
+    "sha256": "25f89c95eee36835aaf5cea136770d367db1b37275c6681804171617902b0555"
+  },
+  {
+    "path": "apps/web-static/scripts/virtual-cursor.js",
+    "sha256": "65e10255a2144ac8883b01d51d8fda3b59c72058a1fd7bbd56005d48fb3ccc72"
+  },
+  {
+    "path": "apps/web-static/styles/colors.css",
+    "sha256": "17fa9703ace3cc7b5352dfe0797ff9dde7eb43f02c2aa5477943388748a53faf"
+  },
+  {
+    "path": "apps/web-static/styles/desktop.css",
+    "sha256": "010dc395f3e96305006bece8fd6e9e10145fefdfc452cd160fcb6abcdb9c9ffb"
+  },
+  {
+    "path": "apps/web-static/styles/improved-desktop.css",
+    "sha256": "27e21d58e1f005ad402f6a4463f513310203bd83ae2c6a73d46cdf4d604de784"
+  },
+  {
+    "path": "apps/web-static/styles/improved-mobile.css",
+    "sha256": "0da54479144f987faabeb3388791d6080be69c252fbdcbfc76940ee99df0cfb0"
+  },
+  {
+    "path": "apps/web-static/styles/mobile.css",
+    "sha256": "a797dbdeaa7e2835a24edbda43fe41ebc8a380615362573994bc74e4f16840bf"
+  },
+  {
+    "path": "apps/web-static/styles/shared.css",
+    "sha256": "e4ea9b15e28ee4cbd13b7a37efe0d4379c890e3ec43daf902532da2156de9cbc"
+  },
+  {
+    "path": "apps/web-static/styles/tokens.css",
+    "sha256": "ae74616627737d5ef323cdac51e750dc46769a8f08448d0ae14581fdc8ab3817"
+  }
+]

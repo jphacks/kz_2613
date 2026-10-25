@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="/styles/tokens.css">
 <link rel="stylesheet" href="/styles/shared.css">
 <link rel="stylesheet" href="/styles/mobile.css">
+<link rel="stylesheet" href="/styles/improved-mobile.css">
 </head>
 <body>
 <header>
@@ -20,6 +21,7 @@
     <span class="pill warn" id="status">接続中</span>
     <span class="pill" id="phase">-</span>
   </div>
+  <button class="phone-settings" id="phoneSettingsBtn" aria-label="接続・診断を確認">⋯</button>
 </header>
 <!-- PC の入力先 (Minecraft) が前面にないとき: 押しても PC に届かない -->
 <div id="inputWarn">PCの画面がMinecraftになっていません。ホストがMinecraftを前面に戻すまで操作は届きません。</div>
@@ -58,13 +60,14 @@
   <section class="view" id="v-wait">
     <div class="players" id="players2"></div>
     <div class="wait-scene">
-      <div class="mascot" aria-hidden="true"><span>✦</span></div>
-      <div class="card wait-card"><h1 class="dotted">接続完了!!</h1><div class="role-label">あなたの担当</div><div id="waitRole"></div><div id="waitTitle">ホストの準備を待っています</div></div>
+      <div class="phone-character" aria-hidden="true"><img id="waitCharacter" src="/assets/characters/blue.png" alt=""></div>
+      <div class="card wait-card"><h1 class="dotted" id="waitHeading">接続完了!!</h1><div class="role-label">あなたの担当</div><div id="waitRole"></div><button class="wait-continue" disabled>操作画面へ進む →</button><div id="waitTitle">ホストの準備を待っています</div></div>
     </div>
   </section>
 
   <!-- P1 移動 -->
   <section class="view" id="v-P1">
+    <h1 class="control-heading">移動・ホスト</h1>
     <div class="move">
       <div id="stick">
         <span class="dir" data-d="FWD" style="top:6%; left:50%; transform:translateX(-50%)">W</span>
@@ -86,6 +89,7 @@
 
   <!-- P2 視点 -->
   <section class="view" id="v-P2">
+    <h1 class="control-heading">視点</h1>
     <div id="pad">ドラッグで視点を動かす<div class="dot"></div></div>
     <label class="sens">感度 <input type="range" id="sens" min="0.5" max="6" step="0.1" value="2"> <span id="sensVal">2.0</span></label>
   </section>
@@ -99,6 +103,7 @@
 
   <!-- P3 アクション -->
   <section class="view" id="v-P3">
+    <h1 class="control-heading">アクション</h1>
     <div class="act">
       <button class="key attack" data-ctl="ATTACK">攻撃<small>左クリック</small></button>
       <button class="key attack" data-ctl="USE">使う / 置く<small>右クリック</small></button>
@@ -110,7 +115,7 @@
   </section>
 </main>
 
-<footer>
+<dialog id="phoneDiagnostics" aria-labelledby="phoneDiagnosticsTitle"><h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection"></p><footer>
   <span>RTT <b id="rtt">-</b></span>
   <span>平均/最大 <b id="rttAvg">-</b></span>
   <span>送信 <b id="sent">0</b></span>
@@ -118,10 +123,10 @@
   <span>経路 <b id="path">-</b></span>
   <button id="burst">通信テスト</button>
   <output id="inputMetrics" hidden aria-hidden="true"></output>
-</footer>
+</footer><button id="closePhoneDiagnostics">閉じる</button></dialog>
 
 <div id="rotatePrompt" role="status"><b>スマホを縦にしてください</b><p>操作を停止し、押していたキーを離しました。<br>縦向きに戻して、新しい押下から再開します。</p></div>
-<div id="full" role="alert">部屋が満員です（3人まで）。<br>PC側でリセットしてから再読み込みしてください。</div>
+<div id="full" role="alert"><div class="phone-message" id="fullMessage">部屋が満員です（3人まで）。<br>PC側でリセットしてから再読み込みしてください。</div></div>
 
 <script type="module" src="/scripts/controller.js"></script>
 </body>

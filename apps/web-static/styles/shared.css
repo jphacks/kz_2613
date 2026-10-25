@@ -9,6 +9,13 @@ a { color: var(--color-cyan-ink); }
 .brand { font-weight: 950; letter-spacing: -.045em; color: var(--color-purple); text-decoration: none; }
 .brand em { font-style: normal; color: var(--color-cyan-ink); }
 .brand-image { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* 支給キャラクターPNGは加工せず、透明な外周だけ表示枠で除く。 */
+.character-art { position: relative; aspect-ratio: 372 / 585; overflow: hidden; }
+.character-art img { position: absolute; width: 156.989%; height: 114.701%; left: -28.495%; top: -8.376%; max-width: none; }
+.art-1 { aspect-ratio: 364 / 572; }
+.art-1 img { width: 149.451%; height: 112.937%; left: -25.549%; top: -6.993%; }
+.art-2 { aspect-ratio: 363 / 571; }
+.art-2 img { width: 157.851%; height: 128.546%; left: -23.416%; top: -15.937%; }
 .eyebrow { font-size: 12px; letter-spacing: .16em; font-weight: 800; color: var(--color-purple); }
 .muted, .note { color: var(--muted); }
 .ok { color: var(--ok); } .ng { color: var(--ng); } .warn { color: var(--warn); }
