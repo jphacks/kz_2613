@@ -718,3 +718,10 @@
 - `.venv`配下の旧作業ツリー7件を整理した。未反映ファイル618件（335件・283件）はコピー後のバイト一致を確認し、差分・元コミット・ブランチ・ファイル一覧とともに同じローカル保管先に退避した。古い版の製品コードを現行mainへ上書きせず、既存ブランチとコミット履歴は保持した。旧プレビューサーバーと専用起動シェルは終了した。
 - 先のREADME差し替え用の管理作業ツリーもアーカイブし、`git worktree list` でDocumentsの主作業ツリーのみになったことを確認した。
 - `node scripts/sim/check-static-pages.mjs`：4画面すべて構文OK。`python scripts/verify_overlay.py`：必須30ファイルの確認に成功。`git diff --check`：成功。製品コードの追加編集・新しい実機試験は行っていない。
+
+## 2026-10-25 — 代表的な型での分担の確認（Claude Code、#105の残り）
+
+- #105の完了条件のうち「代表的な型で1〜4人の分担が規則どおりに作られる」「操作の数・重みの表で偏りを確かめる」が残っていたため、主要500タイトルの定義から型ごとに「good」の1本を選んで確かめた：FPS（Apex Legends）、3Dアクション（Marvel Rivals）、プラットフォーマー（Cuphead）、見下ろし型（The Binding of Isaac: Rebirth）、レース（Forza Horizon 6）。いずれも`template`（未検証の定義）。
+- `profiles::representative_tests`を追加した。規則（人数分の担当、重複・漏れなし、メニューを配らない、操作が人数以上なら全員に担当、最初の単位がP1）と、偏り（最も重い人が分けられない単位1つだけを持つか、平均の1.5倍以下）を5本×1〜4人で確かめる。表は`cargo test --release --locked representative_assignment_table -- --ignored --nocapture`で出力し、`docs/architecture/game-profiles.md`に載せた。
+- `cargo test --release --locked`はホスト32件成功（表の出力1件は手動実行のため除外）＋プローブ3件成功。5本×1〜4人のすべてで規則と偏りの判定を満たした。分担の算出（`assignment_for`）は変えていない。
+- 観察：4人のプラットフォーマーでは定義が1つの部分とした「ジャンプ・上下」が、FPS・3Dアクションの3〜4人では分け方のない移動が最も重い。移動を分けるかは実機の負担を見て決める（#58）。分担の案の確認であり、操作の互換性の検証ではない。
