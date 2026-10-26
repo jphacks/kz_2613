@@ -941,3 +941,13 @@
 - QR・URLの実際のIPは、撮影時に `/api/info` の応答を説明用のアドレス（192.0.2.10、RFC 5737）へ差し替えた。QRはホストと同じ `qrcode` クレートで `http://192.0.2.10:8080/` から作った（`scripts/sim/fixtures/demo-join-qr.svg`）。Wi-Fiは偽のホットスポット「ReCooplay-Demo」。撮影時に画面の文字に127.0.0.1と説明用以外のIPがないことを検査し、全23枚を目で確認した。
 - 疑似の入力先は Ready のときに前面にできる（#138の自動前面化）ので、準備の後すぐにReadyを押せる状態になり、「準備中」の画面は単独では撮れなかった。Minecraftのタイルの画像は、空の実行ファイルから取り出したWindowsの汎用のアイコンになっている。
 - `python scripts/check-public-docs.py`（16ファイル）と `--all`（76ファイル・512参照）、`python scripts/verify_overlay.py`、`node --check scripts/sim/capture-screens.mjs`、`git diff --check` が成功。画像は24ファイル・約3.9MB。シミュレーションでの撮影で、実機での動作確認ではない。
+
+## 2026-10-26 — 最新READMEと実装に合わせた技術仕様書の更新
+
+- 作業開始時はmain・未コミット変更なし。origin/mainを68df99bへ早送りし、この時点のREADMEを製品説明・採用仕様の基準として照合した。README自体は変更していない。
+- 総合仕様と4冊の専門仕様で、ゲーム固有・汎用定義、対応形式のキー設定読取り、2〜4人の自動分担、担当別画面生成のつながりを補った。分担は現在のグループ・重みに基づき、操作頻度による最適化、自由な画面カスタマイズ、遠隔参加を実装済みとしない。4DX@HOMEを参考にした既存の章立て・表・図を保持した。
+- 673c49c以降の製品コード差分を確認。Minecraft公式ランチャーの起動、Store・Xbox版と従来版の開き方、300秒の起動待ち、minecraft.launchable、前面化の対象選択・再試行を仕様へ反映した。既存のstate.games.sourceのmanualという誤記を実装のregisteredへ修正。キー設定の記載なしと、明示的な未割当・非対応キーの違いも明記した。
+- 利用手順へMinecraftランチャー操作を反映し、検証ページにはREADMEのOutlast・Terrariaの実演を追加した。画面一覧のdry-runと実ゲーム操作、旧観測と更新後コードの受入範囲を区別した。動画のゲーム版や未記載の端末条件を推測で補っていない。
+- python scripts/check-public-docs.py --all：76資料・511参照、外向けMermaid12図（シーケンス6図）を含む全13図の構造確認成功。Mermaid 11.17.2で外向け12図のparse成功。ローカルプレビューの総合・ホスト仕様を1280px、総合と専門4冊を390pxで確認し、SVG全12図の描画とページ全体の横はみ出しなしを確認した。
+- python scripts/verify_overlay.py：39項目成功。node scripts/sim/profile-catalog-test.mjs：502定義成功。node scripts/sim/profile-extract-test.mjs：抽出・未検証下書き・非対応キーの確認成功。node scripts/sim/app-view-test.mjs：25/25成功。node scripts/sim/phone-view-test.mjs：8観点成功。node scripts/sim/verify-ui-evidence.mjs：104画面の照合成功。git diff --check成功。
+- 変更対象は文書のみ。製品コード・通信契約・操作定義・画像は変更していない。実機・実ゲーム試験およびRustの再ビルドは実施しておらず、ランチャー起動や前面化の実機受入が未完了であることを維持した。

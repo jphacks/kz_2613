@@ -28,6 +28,8 @@
 
 スマートフォンとPCホストはWebSocketで参加・状態・操作を交換し、WebRTC DataChannelを入力の速達経路として併用します。
 
+ゲームと人数に応じた分担はホストが決定し、端末へアクションID・実キー・担当を通知します。端末から任意のOSキーコードを送る形式にはせず、受信時に現在の担当と操作種類を照合します。
+
 ---
 
 ## 接続情報
@@ -249,6 +251,8 @@ sequenceDiagram
 
 `launch_game`は決定済みメンバーと選択ゲームが一致するロビー・準備中に限ります。ホストの一覧から起動方法を引き、端末から任意のパス・URLを受け取りません。Steamは検出済みAppID、Epicは検出済み起動情報、手動登録はPCで選んだ実行ファイルを使います。起動前に全解放・epoch更新を行い、既存ウィンドウがあれば新規起動せず前面化します。
 
+Minecraftは検出済みの公式ランチャーを開き、利用者がランチャーで「プレイ」を押します。ランチャーの場所・アプリIDは画面へ送りません。ウィンドウの出現待ちはMinecraftが300秒、それ以外が90秒です。ランチャー未検出時は自動起動できませんが、手動でゲームを起動して準備できます。
+
 共同操作中・一時停止中・分担未決定・選択と異なるIDの起動は拒否します。`game.launch.state`は`launching / started / failed / timeout`です。dry-runでは実ゲームを起動しません。
 
 手動登録の`add_game`はPC上のファイル選択を使います。`manual:`項目だけを名前変更・解除でき、名前は制御文字を除いて60文字までです。
@@ -265,9 +269,9 @@ sequenceDiagram
 | `games / gamesScanning` | 検出一覧と再検出状態 |
 | `network.bluetoothAudio / lowLatency` | Bluetooth音声とWi-Fi低遅延モードの状態 |
 | 各枠の`net` | 直近10秒の受信途切れ`stalls`と最大空白`maxStallMs` |
-| `minecraft` | ランチャーの`detected`と画像の有無`image` |
+| `minecraft` | ランチャーの`detected`、画像の有無`image`、起動先があるか`launchable` |
 
-stateは変化時と1秒ごとに通知します。`games`の項目は`id / name / source / verified / launchable / image`を持ち、sourceは`steam / epic / manual`です。検出項目のverifiedはfalseで、インストール先や画像のファイルパスは送りません。Minecraftは独立した情報として扱い、gamesには含めません。一覧はPC画面にだけ送り、スマホへは送りません。
+stateは変化時と1秒ごとに通知します。`games`の項目は`id / name / source / verified / launchable / image`を持ち、sourceは`steam / epic / registered`です。`registered`はPCで手動登録したゲームを表します。検出項目のverifiedはfalseで、インストール先や画像のファイルパスは送りません。Minecraftは独立した情報として扱い、gamesには含めません。PC画面は`minecraft.launchable`から公式ランチャーの起動可否を表示します。一覧はPC画面にだけ送り、スマホへは送りません。
 
 ### フォーカスとリモコン
 
