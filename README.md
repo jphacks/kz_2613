@@ -98,7 +98,7 @@ Re:Cooplayは、ゲームの内容を変えずに、**操作を分担するこ�
 
 🎮 **『Outlast（アウトラスト）』の実プレイ動画：** [2人で操作を分担する様子（約3分18秒）](https://drive.google.com/file/d/1ZdPi9M9zD87YS8cdn4fIGKjNNi-r7Ewt/view) ／ [驚いた場面の切り抜き（約11秒）](https://drive.google.com/file/d/1HzBcDEd4Hm6iXMjvd6CHqWi29Rwi6NfX/view)
 
-Minecraft以外の実演として、**製品紹介動画ではTerrariaでの共同操作**も紹介しています。
+その他実演として、**プロダクト紹介動画ではTerrariaでの共同操作**も紹介しています。
 
 ### 今後の展望
 
