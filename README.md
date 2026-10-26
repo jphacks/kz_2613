@@ -94,9 +94,9 @@ Re:Cooplayは、既存のゲームにそんな新しい遊び方を加えたい�
 Re:Cooplayは、ゲームの内容を変えずに、**操作を分担することで生まれる新しい協力の楽しさ**を提供します。
 
 - **Minecraft：** 移動・視点・攻撃を3人で分担し、声を掛け合いながら1体のキャラクターを動かす。思うように動けないハプニングも、息が合った達成感もみんなの体験になります。
-- **ホラーゲーム：** 移動や視点を友達と分担し、怖い場面でも声を掛け合って進む。思わぬ操作や連携によって、いつものゲームに新しい緊張感と楽しさが生まれます。
+- **ホラーゲーム『Outlast（アウトラスト）』：** 移動や視点を友達と分担し、怖い場面でも声を掛け合って進む。思わぬ操作や連携によって、いつものゲームに新しい緊張感と楽しさが生まれます。
 
-🎮 **ホラーゲームの実プレイ動画：** [2人で操作を分担する様子（約3分18秒）](https://drive.google.com/file/d/1ZdPi9M9zD87YS8cdn4fIGKjNNi-r7Ewt/view) ／ [驚いた場面の切り抜き（約11秒）](https://drive.google.com/file/d/1HzBcDEd4Hm6iXMjvd6CHqWi29Rwi6NfX/view)
+🎮 **『Outlast（アウトラスト）』の実プレイ動画：** [2人で操作を分担する様子（約3分18秒）](https://drive.google.com/file/d/1ZdPi9M9zD87YS8cdn4fIGKjNNi-r7Ewt/view) ／ [驚いた場面の切り抜き（約11秒）](https://drive.google.com/file/d/1HzBcDEd4Hm6iXMjvd6CHqWi29Rwi6NfX/view)
 
 Minecraft以外の実演として、**製品紹介動画ではTerrariaでの共同操作**も紹介しています。
 
