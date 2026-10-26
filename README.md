@@ -7,7 +7,7 @@
     <img src="assets/images/recooplay-thumbnail.png" alt="Re:Cooplay 製品紹介動画（クリックしてYouTubeで再生）" width="960">
   </a>
 
-  <p>🎬 <strong>画像をクリックしてプロダクト紹介動画を再生</strong>（Terrariaでの共同操作も紹介）</p>
+  <p>🎬 <strong>画像をクリックしてプロダクト紹介動画を再生</strong></p>
 
   <p>
     <a href="https://youtu.be/a8uhU2ymsuQ">
