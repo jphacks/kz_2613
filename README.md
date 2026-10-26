@@ -38,7 +38,7 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
 ---
 
-Re:Cooplay（リコープレイ）は、**既存のPCゲームに、新しい協力プレイを後付けするツール**です。
+Re:Cooplay（リコープレイ）は、**既存のPCゲームに、新しい協力プレイを後付けするシステム**です。
 
 普段は1人で操作するゲームのキャラクターを、2〜4人で分担して動かします。
 
@@ -68,7 +68,7 @@ Re:Cooplayは、既存のゲームにそんな新しい遊び方を加えたい�
 
 > **ゲーム体験 × Tech：1つのキャラクターを、みんなで動かす**
 
-Re:Cooplay（リコープレイ）は、既存のPCゲームに新しい協力プレイを後付けするツールです。
+Re:Cooplay（リコープレイ）は、既存のPCゲームに新しい協力プレイを後付けするシステムです。
 
 参加者はそれぞれのスマートフォンをコントローラーとして使い、1つのキャラクターの操作を分担します。移動や視点、攻撃など、それぞれの操作を組み合わせることで、みんなで1つのキャラクターを動かします。
 
@@ -280,4 +280,4 @@ Re:Cooplayでは、複数人で1つのキャラクターを共同操作するた
 
 ---
 
-<sub>Re:Cooplayは独立した非公式ツールであり、Minecraftのゲーム本体・素材を同梱していません。Minecraftの公式製品ではなく、Mojang Studios・Microsoftの承認・提携を受けていません。NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. [Minecraftの利用条件に関する確認記録](docs/develop/decisions/2026-10-25-minecraft-usage-terms.md)</sub>
+<sub>Re:Cooplayは独立した非公式システムであり、Minecraftのゲーム本体・素材を同梱していません。Minecraftの公式製品ではなく、Mojang Studios・Microsoftの承認・提携を受けていません。NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. [Minecraftの利用条件に関する確認記録](docs/develop/decisions/2026-10-25-minecraft-usage-terms.md)</sub>
