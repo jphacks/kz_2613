@@ -117,6 +117,7 @@ Re:Cooplayは、ゲームの内容を変えずに、**操作を分担するこ�
 ## 技術仕様書
 
 - [総合仕様書](docs/README.md) — システム構成・動作環境と詳細仕様への入口
+- [技術選定の理由](docs/technology-selection.md) — 低遅延・操作の確実性を重視した採用理由と代替案の比較
 - [ゲーム操作定義仕様書](docs/game-profile-specification.md) — ゲーム別の操作・キー設定・人数別分担
 - [画面一覧](docs/screenshots.md) — PC・スマホの画面と使用の流れ
 - 詳細：[フロントエンド](docs/frontend-specification.md) ／ [ホスト](docs/host-specification.md) ／ [通信](docs/protocol-specification.md)

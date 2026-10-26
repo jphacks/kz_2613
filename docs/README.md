@@ -93,6 +93,7 @@ stateDiagram-v2
 | [Rustホスト・Windows入力](host-specification.md) | プロセス、hub、入力処理、停止、配布 |
 | [通信](protocol-specification.md) | HTTP、WebSocket、DataChannel、認可、順序制御 |
 | [ゲーム操作定義](game-profile-specification.md) | ゲーム検出、設定読取り、割当、操作画面生成 |
+| [技術選定の理由](technology-selection.md) | 採用技術と代替案の比較、通信試作品での検証結果 |
 
 ---
 
