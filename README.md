@@ -129,7 +129,7 @@ Minecraft以外の実演として、**製品紹介動画ではTerrariaでの共�
 
 <div align="center">
   <a href="assets/images/recooplay-system-architecture.webp"><img src="assets/images/recooplay-system-architecture.webp" width="960" alt="スマートフォンの操作をRustホストで統合し、既存PCゲームへ送るシステム構成図"></a>
-  <p><sub>3人で共同操作する場合のシステム構成例</sub>
+  <p><sub>3人で共同操作する場合のシステム構成例</sub></p>
 </div>
 
 ### 活用した技術
