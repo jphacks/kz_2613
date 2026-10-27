@@ -153,7 +153,7 @@ Windows PC（ホスト・ゲーム実行）＋ Android／iPhone（ブラウザ�
 
 #### ハッカソンで開発した独自機能・技術
 
-**Hack Dayの2日間で、アイデア出し・開発環境の構築から、実際に動くプロダクトの実装まで行いました。**
+**Hack Dayの2日間で、アイデア決定・開発環境の構築から、実際に動くプロダクトの実装まで行いました。**
 
 - **ゲームごとの操作を共通の仕組みで扱う：** ゲーム別の操作定義を読み込み、対応する設定ファイルから変更済みのキーを取得。定義がないゲームには汎用定義を使い、担当に合った画面を生成します。  
   [ゲーム操作定義](docs/game-profile-specification.md) ／ [キー設定の取得](apps/host-rs/src/keybinds.rs) ／ [画面生成](apps/web-static/scripts/generated-controls.js)
