@@ -983,8 +983,8 @@
 
 - #171の重複作業確認と着手コメント投稿後、検証済み#170 head `5a9d819` から `codex/171-input-manager` を作成した。新しいユーザー判断のStacked PR許可を優先し、親は#181、baseは `codex/170-input-adapter` とする。
 - `OutputState` と所有者・交互キュー・最低時間・タイマー世代の処理を `input_manager.rs` へ分離した。coreは明示時刻を受け、Emit/Wait/Idleを1件ずつ返し、OS・Hub・通信・タイマー実行器・ログへ依存しない。Hubには認可済み操作の伝達、送出・ログ・予約・診断が残る。
-- 押下60ms/解放50ms、上限8辺・古い2辺単位の破棄、複数所有者保持、停止優先の解放、旧世代Pump拒否を維持。#169/#170の既存62テストはアサーションを変えず保持し、独立core試験6件を追加した。設計と副作用順序、3段で区切るStacked運用は[判断記録](../decisions/2026-11-05-input-manager.md)へ記録した。
-- `RECOOPLAY_DRY_RUN=1`、既存SETUP_WINDOWSのPATH/LIBCLANG_PATH/CARGO_TARGET_DIRを用い、`cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` はホスト68件＋プローブ4件成功（既存手動1件除外）。利用上限による自動承認レビュー停止を挟んだが、再開時に成功ログと未コミット変更を確認し、破棄せず継続した。
+- 押下60ms/解放50ms、上限8辺・古い2辺単位の破棄、複数所有者保持、停止優先の解放、旧世代Pump拒否を維持。#169/#170の既存62テストはアサーションを変えず保持し、独立core試験6件を追加した。設計と副作用順序、有限のStacked運用は[判断記録](../decisions/2026-11-05-input-manager.md)へ記録した。
+- `RECOOPLAY_DRY_RUN=1`、既存SETUP_WINDOWSのPATH/LIBCLANG_PATH/CARGO_TARGET_DIRを用い、`cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` はホスト68件＋プローブ4件成功（既存手動1件除外）。サブエージェントの利用上限による作業停止を挟んだが、再開時に成功ログと未コミット変更を確認し、破棄せず継続した。
 - `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` 成功（32.45秒、既知のOpenSSL PDB不足LNK4099警告）。新しいexeをGit対象外の `data/local/issue171/recooplay-host.exe` へコピーし、共有キャッシュと分離して試験した。`node scripts/sim/shutdown-sim.mjs --bin <専用exe>` はquit/EOFの全解放後正常終了が成功。構造39項目・差分検査も成功。
 - #170で内部再現したup失敗後の再送なし等の既知挙動は保持し、安全修正を混ぜていない。実OS入力・Windows設定変更は行わず、実機の押下/解放・Minecraftの操作感・Alt+Tab・実ホットキーは未確認。
 - `node scripts/sim/protocol-sim.mjs --bin <専用exe>` は55/55成功。公開文書検査は80資料・533参照、`git diff --check`も成功。親担当の一次独立レビューで修正必須指摘なし。最終headの独立レビューとCI結果はPRへ記録する。
