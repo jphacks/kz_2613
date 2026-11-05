@@ -1,4 +1,5 @@
 // ローカルWebRTCの速達便。入力のiseq/epochとWSの先着1回処理は呼び出し側で維持する。
+import { decodeServerMessage } from './protocol.js';
 export function createFastChannel({signal,enabled,getPhase,onRtt,onPath}) {
   let pc = null, channel = null;
   const isOpen = () => channel?.readyState === 'open';
@@ -25,8 +26,8 @@ export function createFastChannel({signal,enabled,getPhase,onRtt,onPath}) {
             : event.data instanceof ArrayBuffer ? new TextDecoder().decode(event.data)
             : await event.data.text();
           if (channel !== dc) return;
-          const message = JSON.parse(text);
-          if (message.type === 'kpong' && Number.isFinite(message.t)) onRtt(performance.now() - message.t);
+          const message = decodeServerMessage(text);
+          if (message?.type === 'kpong') onRtt(performance.now() - message.t);
         } catch { /* 未知・壊れたフレームは入力や接続状態に反映しない。 */ }
       };
       connection.onicecandidate = event => {

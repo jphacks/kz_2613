@@ -14,6 +14,7 @@ use serde_json::{json, Map, Value};
 use tokio::sync::mpsc::UnboundedSender;
 
 use crate::config::Config;
+use crate::protocol::{self, s, num, InputMessage, LookMessage, CommandMessage, RemoteMessage};
 use crate::session::{self, Phase, InjectMode, MIN_PLAYERS, SLOT_NAMES};
 use crate::controls::{self, Kind, OUTPUTS};
 use crate::keybinds::{self, Keybinds};
@@ -175,7 +176,7 @@ struct Slot {
     rtc_gen: u64,
     rtc_state: &'static str,
     next_iseq: i64, // 次に処理する入力番号 (WebSocket / WebRTC のどちらで届いても番号順に 1 回だけ処理する)
-    ibuf: BTreeMap<i64, (Value, Via)>,
+    ibuf: BTreeMap<i64, (InputMessage, Via)>,
     via_ws: u64,
     via_rtc: u64,
     look_seq: i64,
@@ -309,10 +310,6 @@ pub struct Hub {
     desktop: bool,
 }
 
-fn s(v: &Value, key: &str) -> Option<String> {
-    v.get(key).and_then(Value::as_str).map(str::to_string)
-}
-
 /// ログに残す端末の種類。IP・User-Agent・clientId はログに書かない (ダッシュボードの表示は PC 本体のみ)
 fn device_kind(ua: &str) -> &'static str {
     if ua.contains("iPhone") || ua.contains("iPad") {
@@ -336,14 +333,6 @@ fn new_token() -> Option<String> {
 /// 比較にかかる時間から一致した長さを推測されないよう、全体を比べてから判定する
 fn token_eq(a: &str, b: &str) -> bool {
     a.len() == b.len() && a.bytes().zip(b.bytes()).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
-}
-
-fn num(v: &Value, key: &str) -> Option<f64> {
-    match v.get(key) {
-        Some(Value::Number(n)) => n.as_f64(),
-        Some(Value::String(t)) => t.trim().parse().ok(),
-        _ => None,
-    }
 }
 
 impl Hub {
@@ -1168,17 +1157,18 @@ impl Hub {
     }
 
     fn remote_message(&mut self, idx: usize, msg: &Value) {
-        if idx != 0 || self.game.phase == Phase::Coop || msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) { return; }
-        let seq = msg.get("rseq").and_then(Value::as_u64).unwrap_or(0);
+        let msg = RemoteMessage::decode(msg);
+        if idx != 0 || self.game.phase == Phase::Coop || msg.epoch != Some(self.game.epoch) { return; }
+        let seq = msg.seq;
         let slot = self.slots[idx].as_mut().unwrap();
         if seq <= slot.remote_seq { return; }
         slot.remote_seq = seq;
-        let kind = s(msg, "kind").unwrap_or_default();
+        let kind = msg.kind;
         if kind == "release" {
             self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); return;
         }
-        let x = msg.get("dx").and_then(Value::as_f64).filter(|n| n.is_finite()).unwrap_or(0.0).clamp(-120.0,120.0);
-        let y = msg.get("dy").and_then(Value::as_f64).filter(|n| n.is_finite()).unwrap_or(0.0).clamp(-120.0,120.0);
+        let x = msg.x;
+        let y = msg.y;
         if !matches!(kind.as_str(), "move" | "scroll") { return; }
         if self.remote_app_active() {
             self.broadcast_monitors(&json!({"type":"remote","route":"app","epoch":self.game.epoch,"kind":kind,"dx":x,"dy":y}));
@@ -1765,7 +1755,7 @@ impl Hub {
                 self.conns.insert(id, Conn { tx, ip, loopback, role: Role::Unknown });
             }
             Event::WsText { id, text } => {
-                if let Ok(msg) = serde_json::from_str::<Value>(&text) {
+                if let Some(msg) = protocol::parse_json(&text) {
                     self.on_ws_message(id, msg);
                 }
             }
@@ -1783,7 +1773,7 @@ impl Hub {
             Event::RtcState { slot, gen, state } => self.on_rtc_state(slot, gen, state),
             Event::RtcMessage { slot, gen, text } => {
                 if self.rtc_owner(slot, gen).is_some() {
-                    if let Ok(msg) = serde_json::from_str::<Value>(&text) {
+                    if let Some(msg) = protocol::parse_json(&text) {
                         self.handle_player_message(slot, msg, Via::Rtc);
                     }
                 }
@@ -2135,9 +2125,10 @@ impl Hub {
                 }
             }
             "command" if via == Via::Ws => {
-                let cmd = s(&msg, "cmd").unwrap_or_default();
+                let decoded = CommandMessage::decode(&msg);
+                let cmd = decoded.cmd;
                 self.log("command", json!({ "slot": SLOT_NAMES[idx], "cmd": cmd }));
-                if !session::command_epoch_valid(&cmd, msg.get("epoch").and_then(Value::as_u64), self.game.epoch) {
+                if !session::command_epoch_valid(&cmd, decoded.epoch, self.game.epoch) {
                     self.send(self.slots[idx].as_ref().and_then(|s| s.conn), &json!({"type":"command_result","cmd":cmd,"accepted":false,"reasons":["画面の状態が古くなっています。更新を待ってください"]}));
                     return;
                 }
@@ -2197,7 +2188,8 @@ impl Hub {
     /// 入力は同じものが WebSocket と WebRTC の両方から届く。番号順に、先に届いた方で 1 回だけ処理する。
     /// 番号が飛んだら (WebRTC で欠けた) WebSocket の到着を待つので、押下と解放の順番が入れ替わることはない。
     fn accept_input(&mut self, idx: usize, msg: Value, via: Via) {
-        let Some(iseq) = num(&msg, "iseq").map(|n| n as i64) else { return };
+        let Some(msg) = InputMessage::decode(msg) else { return };
+        let iseq = msg.iseq;
         let slot = self.slots[idx].as_mut().unwrap();
         if iseq < slot.next_iseq || slot.ibuf.contains_key(&iseq) {
             return;
@@ -2214,16 +2206,16 @@ impl Hub {
         }
     }
 
-    fn process_input(&mut self, idx: usize, msg: Value, via: Via) {
-        let button = s(&msg, "button").unwrap_or_default();
-        let state = s(&msg, "state").unwrap_or_default();
-        let burst = msg.get("burst").and_then(Value::as_bool).unwrap_or(false);
-        let epoch = msg.get("epoch").and_then(Value::as_u64);
+    fn process_input(&mut self, idx: usize, msg: InputMessage, via: Via) {
+        let button = msg.button;
+        let state = msg.state;
+        let burst = msg.burst;
+        let epoch = msg.epoch;
         if epoch != Some(self.game.epoch) {
             // 前の進行状態で押された入力 (PAUSE / RESUME の直前に送られて遅れて届いたもの)。
             // 状態の変更時に全出力を解放済みなので、押下も解放も新しい状態では処理しない。番号は消費して ACK だけ返す
             let conn = self.slots[idx].as_ref().unwrap().conn;
-            self.send(conn, &json!({ "type": "ack", "iseq": msg.get("iseq"), "t": msg.get("t"), "via": via.name(), "stale": true }));
+            self.send(conn, &json!({ "type": "ack", "iseq": msg.raw.get("iseq"), "t": msg.raw.get("t"), "via": via.name(), "stale": true }));
             let current = self.game.epoch;
             self.record(
                 "stale_input",
@@ -2243,10 +2235,10 @@ impl Hub {
             slot.pressed.remove(&button);
         }
         let conn = slot.conn;
-        self.send(conn, &json!({ "type": "ack", "iseq": msg.get("iseq"), "t": msg.get("t"), "via": via.name() }));
+        self.send(conn, &json!({ "type": "ack", "iseq": msg.raw.get("iseq"), "t": msg.raw.get("t"), "via": via.name() }));
         let entry = self.record(
             "input",
-            json!({ "slot": SLOT_NAMES[idx], "button": button, "state": state, "iseq": msg.get("iseq"), "via": via.name(), "burst": burst }),
+            json!({ "slot": SLOT_NAMES[idx], "button": button, "state": state, "iseq": msg.raw.get("iseq"), "via": via.name(), "burst": burst }),
         );
         if !burst {
             self.handle_control(idx, &button, &state);
@@ -2257,11 +2249,12 @@ impl Hub {
 
     /// 視点は累積値で届くので、欠けたパケットの分も次のパケットで取り戻せる。古いパケットは捨てる
     fn accept_look(&mut self, idx: usize, msg: &Value) {
+        let Some(msg) = LookMessage::decode(msg) else { return };
         // 別epochの累積値は現在の基準にも混ぜない。
-        if msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
+        if msg.epoch != Some(self.game.epoch) {
             return;
         }
-        let Some(lseq) = num(msg, "lseq").map(|n| n as i64) else { return };
+        let lseq = msg.lseq;
         let slot = self.slots[idx].as_mut().unwrap();
         if lseq <= slot.look_seq {
             return;
@@ -2270,8 +2263,8 @@ impl Hub {
             slot.look_lost += (lseq - slot.look_seq - 1) as u64;
         }
         slot.look_seq = lseq;
-        let cx = num(msg, "cx").unwrap_or(0.0);
-        let cy = num(msg, "cy").unwrap_or(0.0);
+        let cx = msg.cx;
+        let cy = msg.cy;
         let (dx, dy) = (cx - slot.look_cx, cy - slot.look_cy);
         slot.look_cx = cx;
         slot.look_cy = cy;
@@ -2574,6 +2567,55 @@ mod tests {
         h.command(0, "PAUSE");
         assert_eq!(h.game.epoch, old_epoch + 2); // 同phaseのホスト停止も失効処理を省略しない。
         assert_eq!(h.game.auto_resume_until, 0);
+    }
+
+    #[test]
+    fn decoded_non_finite_look_cannot_poison_the_next_valid_cumulative_input() {
+        let (mut h, _rx) = fixture();
+        for field in ["lseq", "cx", "cy"] {
+            let mut msg = json!({"epoch":1,"lseq":1,"cx":10,"cy":4});
+            msg[field] = json!("NaN"); h.accept_look(1, &msg);
+            assert_eq!(h.slots[1].as_ref().unwrap().look_seq, 0);
+            assert_eq!((h.look.px, h.look.py), (0.0, 0.0));
+        }
+        h.accept_look(1, &json!({"epoch":1,"lseq":"1.9","cx":"10","cy":4}));
+        assert_eq!((h.look.px, h.look.py), (10.0, 4.0));
+        h.accept_look(1, &json!({"epoch":0,"lseq":2,"cx":100,"cy":400}));
+        assert_eq!((h.look.px, h.look.py), (10.0, 4.0));
+    }
+
+    #[test]
+    fn decoded_input_keeps_ack_wire_values_and_does_not_consume_invalid_sequence() {
+        let (mut h, _rx) = fixture();
+        h.keybinds = Keybinds::build(h.profile.as_ref().unwrap(), None);
+        let (tx, mut rx) = unbounded_channel();
+        h.conns.insert(90, Conn { tx, ip: String::new(), loopback: false, role: Role::Player { slot: 0 } });
+        h.slots[0].as_mut().unwrap().conn = Some(90);
+        h.accept_input(0, json!({"iseq":"NaN","epoch":1,"button":"act:forward","state":"down"}), Via::Rtc);
+        assert_eq!(h.slots[0].as_ref().unwrap().next_iseq, 1);
+        assert!(h.slots[0].as_ref().unwrap().ibuf.is_empty());
+        h.accept_input(0, json!({"iseq":"1.9","epoch":1,"button":"act:forward","state":"down","t":"wire-time"}), Via::Ws);
+        let Out::Text(text) = rx.try_recv().unwrap() else { panic!("ACKが必要") };
+        let ack: Value = serde_json::from_str(&text).unwrap();
+        assert_eq!(ack["iseq"], "1.9"); assert_eq!(ack["t"], "wire-time");
+        assert!(h.outputs[index("KEY_W")].physical);
+        h.accept_input(0, json!({"iseq":1,"epoch":1,"button":"act:forward","state":"up"}), Via::Rtc);
+        assert!(h.outputs[index("KEY_W")].physical); // 後着重複は解放しない。
+        h.release_outputs(None);
+    }
+
+    #[test]
+    fn unauthenticated_json_cannot_enter_input_or_management_handlers() {
+        let recorder = crate::input::testing::RecordingInput::default();
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        let (tx, _rx) = unbounded_channel();
+        h.on_event(Event::WsOpen { id: 90, tx, ip: String::new(), loopback: false });
+        let epoch = h.game.epoch;
+        for msg in [json!({"type":"input","iseq":1,"epoch":epoch,"button":"act:forward","state":"down"}),
+            json!({"type":"inject_mode","mode":"off"}), json!({"type":"reset"}), json!({"type":"command","cmd":"PAUSE"})] {
+            h.on_event(Event::WsText { id:90, text:msg.to_string() });
+        }
+        assert!(recorder.calls().is_empty()); assert_eq!(h.game.epoch, epoch); assert!(h.game.phase == Phase::Coop);
     }
 
     #[test]
