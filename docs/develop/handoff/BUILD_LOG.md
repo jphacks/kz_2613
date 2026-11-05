@@ -999,6 +999,17 @@
 - 実OS入力・Windows設定変更なし。実機の操作感・Raw Input/感度・Android/iPhone・フォーカス喪失・実ホットキー・SendInput失敗は未確認。後続#173以降の認可/副作用をまたぐ実装はスタックを増やさず、設計監査へ渡す。
 - `node scripts/sim/protocol-sim.mjs --bin <専用exe>` は55/55成功。公開資料検査は81資料・535参照、差分検査も成功。親担当の最終差分レビューとCI結果をPRへ記録する。
 
+## 2026-11-05 — ホスト内部の再現可能な負荷計測（Codex、#174）
+
+- 重複するopen PR/着手コメントなしを確認した親担当が#174へ着手コメントを投稿し、PR #175/head `2e82eaa`から `codex/174-host-measurement` を分離。製品処理を変えず、cfg(test)の独立計測ハーネスと実行脚本を追加した。
+- `cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml`：ホスト56成功/2 ignored（既存手動表1件・opt-in長計測1件）、プローブ4成功。5負荷条件の40ms smokeを通常CIに含める。`cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` も成功。既知のOpenSSL PDB不足LNK4099警告のみ。
+- テストexe/製品exeはGit対象外の専用コピーへ保存し共有ビルドキャッシュのロックを解放した。`node scripts/sim/host-load-measure.mjs --test-bin data/local/issue174/host-measure-test.exe --duration-ms 1000 --repeats 3 --out data/local/issue174/initial.json`：15条件成功。待機/処理/停止/tick/通知キューを計測し、各条件で全解放・未処理視点破棄・旧入力非復元・キュー消化をアサートした。
+- 初期観測は受信キュー最大1,686件・停滞監視キュー最大1,008件、停止完了最大7,148µs。有限負荷の内部観測であり、製品上限/実ゲーム遅延ではない。詳細・再現手順・未測定条件は [判断記録](../decisions/2026-11-05-host-load-measurement.md) と個人パス/IP/tokenを含まないJSONへ残す。長計測は続けて実行する。
+- 初回head `04118b3` のCIはPR Rust/PCアプリ（run 41981601106）・構造（41981601121）、push Rust/PCアプリ（41981553682）・構造（41981553515）が全成功。通信55/55、既存の終了・画面・プローブ・配布zip/展開後dry-runも通過した。
+- 長計測の初回実行は利用上限停止後にセッション/実プロセス/結果ファイルが存在しないことを確認し、合格として数えず再実行。専用試験名と結果markerをバイナリ内で起動前に確認するrunnerへ更新し、製品exeの誤指定が実行開始前に拒否される負例と、40ms×5条件のrunner smokeを確認した。共有Rustキャッシュは使わず、既に構築した非注入テストexeの専用コピーを使用した。
+- `node scripts/sim/host-load-measure.mjs --test-bin data/local/issue174/host-measure-test.exe --duration-ms 30000 --repeats 3 --out data/local/issue174/long.json`：30秒×5条件×3反復、15条件・計27,975処理で全アサーション成功。対象ソース315b06c、開始時dirty=false、ソース4ファイルと実行したテストexeのSHA-256を結果に記録。個人パス/IP/tokenなしの長結果を `docs/develop/data/host-load/long.json` へ保存した。
+- 長計測の観測最大：受信キュー1,773件、停滞監視キュー1,008件、停止enqueue→内部停止完了8,775µs、tick間隔20,587µs。fixtureはtimeBeginPeriodを呼ばず受信待ちも本番と異なるため、製品の停止上限/4ms周期や実ゲームの遅延へ読み替えない。冒頭バースト/監視キュー蓄積は再現したが、本番ループ・実ソケット・ディスク/標準出力停滞・slow writerは未測定。最適化は実施していない。
+
 ## 2026-11-05 — スマホ入力ライフサイクルの回帰試験（Codex、#176）
 
 - 最新main `b3c0e88`、作業ツリーclean、PR #175は未マージ・CI成功を確認。対象Issue・既存PR・コメントを照合し、#176への着手コメント後に `codex/176-phone-regression` をmainから作成した。最新ユーザー判断に従い、Rust側とは独立して進める。
