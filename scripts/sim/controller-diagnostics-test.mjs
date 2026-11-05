@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import {createPhoneView} from '../../apps/web-static/scripts/phone-view.js';
 import {phoneAdvice} from '../../apps/web-static/app-view.js';
+import {createInputOwners} from '../../apps/web-static/scripts/input-owners.js';
 
 class Element {
   constructor(id='') {
@@ -40,7 +41,7 @@ try {
     matchMedia:()=>portrait,WebSocket:Socket,
     setInterval:(fn,ms)=>{const timer={fn,ms};intervals.push(timer);return timer;},clearInterval(){},
     setTimeout(){},alert(){},confirm:()=>true,
-    createPhoneView,phoneAdvice,bindTouchpad:()=>({reset(){}}),
+    createPhoneView,phoneAdvice,createInputOwners,bindTouchpad:()=>({reset(){}}),
     bindCooperativeInput:options=>{cooperative=options;return {release(){},resetEpoch(){}};},
     myActions:()=>null,recordInputMetric(){},inputMetrics:{summary:()=>({})},
     createFastChannel:()=>({isOpen:()=>false,start(){},close(){},signal(){},send:()=>false}),

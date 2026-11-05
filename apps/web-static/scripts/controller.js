@@ -1,6 +1,7 @@
 import { createPhoneView } from './phone-view.js';
 import { bindCooperativeInput } from './cooperative-input.js';
 import { createFastChannel } from './transport.js';
+import { createInputOwners } from './input-owners.js';
 import { recordInputMetric, inputMetrics } from './ui-metrics.js';
 
 import { bindTouchpad } from './touchpad.js';
@@ -207,39 +208,39 @@ import { phoneAdvice } from '../app-view.js';
   }
 
   // ---- 操作の押下 / 解放 ----
-  // サーバーに down を送れたものだけ記録し、up はそれに対してだけ送る（再接続中の押下で片割れの up を送らない）
-  const sentDown = new Set();
-  function ctlDown(ctl, at) {
-    if (sentDown.has(ctl)) return;
-    if (sendInput({ button: ctl, state: 'down' })) { sentDown.add(ctl); recordInputMetric('pointerdown',at); }
-    if (navigator.vibrate) navigator.vibrate(8);
-  }
-  function ctlUp(ctl) {
-    if (!sentDown.delete(ctl)) return;
-    sendInput({ button: ctl, state: 'up' });
-  }
+  const owners = createInputOwners({
+    down: (ctl, at) => {
+      const sent = sendInput({ button: ctl, state: 'down' });
+      if (sent) recordInputMetric('pointerdown', at);
+      if (navigator.vibrate) navigator.vibrate(8);
+      return sent;
+    },
+    up: ctl => sendInput({ button: ctl, state: 'up' }),
+  });
+  function ctlDown(ctl, at, owner = ctl) { owners.press(owner, ctl, at); }
+  function ctlUp(ctl, owner = ctl) { owners.release(owner, ctl); }
+  const tapOwner = Symbol('remote tap');
 
   const touchpad = bindTouchpad($('remotePad'), {
     enabled: () => me === 'P1' && game?.phase !== 'coop' && game?.remoteRoute !== 'none' && controlsVisible(),
     send: (message) => { if (isOpen()) ws.send(JSON.stringify({...message, type:'remote', epoch:game?.epoch})); },
-    tap: at => { ctlDown('REMOTE_LEFT', at); ctlUp('REMOTE_LEFT'); },
+    tap: at => { ctlDown('REMOTE_LEFT', at, tapOwner); ctlUp('REMOTE_LEFT', tapOwner); },
     // 2本指のタップは右クリック (#122)
-    rightTap: at => { ctlDown('REMOTE_RIGHT', at); ctlUp('REMOTE_RIGHT'); },
+    rightTap: at => { ctlDown('REMOTE_RIGHT', at, tapOwner); ctlUp('REMOTE_RIGHT', tapOwner); },
   });
   const held = new Map(); // pointerId -> button element
   function releasePointer(pointerId) {
     const el = held.get(pointerId);
     if (!el) return;
     held.delete(pointerId);
-    el.classList.remove('down');
-    ctlUp(el.dataset.ctl);
+    if (![...held.values()].includes(el)) el.classList.remove('down');
+    ctlUp(el.dataset.ctl, pointerId);
   }
   function releaseAll() {
     touchpad.reset(); roleInput.release();
     for (const id of [...held.keys()]) releasePointer(id);
 
-    for (const c of [...sentDown]) ctlUp(c);
-    sentDown.clear();
+    owners.releaseAll();
   }
 
   // 操作ボタンに押下・解放を付ける (操作定義から作ったボタンにも後から付ける、#60)
@@ -252,7 +253,7 @@ import { phoneAdvice } from '../app-view.js';
       if (held.has(e.pointerId)) return;
       held.set(e.pointerId, el);
       el.classList.add('down');
-      ctlDown(el.dataset.ctl, e.timeStamp);
+      ctlDown(el.dataset.ctl, e.timeStamp, e.pointerId);
     });
     el.addEventListener('pointerup', (e) => releasePointer(e.pointerId));
     el.addEventListener('pointercancel', (e) => releasePointer(e.pointerId));
