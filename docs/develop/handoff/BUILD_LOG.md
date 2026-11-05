@@ -1071,3 +1071,12 @@
 - #173へ製品実装再開コメント後、mainから専用ブランチを作成。session.rsへ主要判定を抽出し、純粋判定9件とHub通知順序1件を追加。副作用の順序と既存アサーションを保持。[判断記録](../decisions/2026-11-06-session-core.md)参照。
 - cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml：ホスト87件＋プローブ4件成功、手動/長計測2件ignored。cargo build同引数成功（既知LNK4099警告）。固定exeのprotocol-sim.mjsは55/55、shutdown-sim.mjsはquit/EOFで全解放後の正常終了、構造39項目、公開資料89件/555参照が成功。
 - rustfmtはstableツールチェーンに未導入のため実行不可（rustfmt.exe is not installed）。既存の簡潔な書式を維持しgit diff --check成功。実機試験は行っていない。#191の解放失敗問題・#174本番計測・#179/#180製品抽出は別の後続作業として残る。
+
+## 2026-11-06 — 型付き受信境界と不正通知時の停止（Codex、#179）
+
+- #173のPR #192を全CI成功後にmainへ統合（4eda262）、統合後main CIも成功。#179の重複PRなしを確認し再開コメント後に専用ブランチを作成。
+- Rust protocol.rsへ共通解釈とInput/Look/Remote/Commandを抽出し、入力保留を型付き値へ変更。有限な数値文字列・小数cast・未知state・ACK原値を維持。非有限な入力連番/視点は状態更新前に拒否する。認証・接続世代・epoch・順序・担当はHub/sessionに維持。[判断記録](../decisions/2026-11-06-protocol-boundary.md)参照。
+- Webに受信構造検証を追加。独立レビューで同epoch保持中の不正なgameによる例外と保持残存を検出したため、必須配列・入れ子・表示値の検証と適用中例外の全解放/切断を補強。12破損系列・描画失敗・復帰・未知typeの対照を実controllerで追加。最終独立レビューは修正必須残なし。
+- cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml：ホスト95件＋プローブ4件成功、既存2件ignored。cargo build同引数成功、既知LNK4099警告。固定exeのprotocol-sim.mjs 55/55成功。初回の新テストはfixtureにキー割当がなく失敗したため、製品のKeybindsを設定して再実行し成功（合格条件は緩和していない）。
+- node scripts/sim/protocol-boundary-test.mjs 7/7、phone-lifecycle-test.mjs 16/16、phone-session-test.mjs 7/7、input-owners-test.mjs 4/4、ui-input-test.mjs 12/12、診断、スマホ8観点、PC25/25、静的構文、構造39項目、公開資料検査、git diff --check成功（省略したmjsはscripts/sim配下）。別エージェントの独立実行でもWeb境界7/7と入力16/16成功。
+- node scripts/sim/capture-screens.mjs --bin <固定179-host.exe> --out data/local/179-screenshots：実ホスト配信で参加→準備→Ready→協力→Pause→診断→緊急停止の23画面保存。アクションと緊急停止の表示を目視確認。画像はGit対象外。Android/iPhone・実ゲームの受入ではない。最終head CIと配布zipはPRで追跡する。
