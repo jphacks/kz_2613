@@ -952,6 +952,109 @@
 - python scripts/verify_overlay.py：39項目成功。node scripts/sim/profile-catalog-test.mjs：502定義成功。node scripts/sim/profile-extract-test.mjs：抽出・未検証下書き・非対応キーの確認成功。node scripts/sim/app-view-test.mjs：25/25成功。node scripts/sim/phone-view-test.mjs：8観点成功。node scripts/sim/verify-ui-evidence.mjs：104画面の照合成功。git diff --check成功。
 - 変更対象は文書のみ。製品コード・通信契約・操作定義・画像は変更していない。実機・実ゲーム試験およびRustの再ビルドは実施しておらず、ランチャー起動や前面化の実機受入が未完了であることを維持した。
 
+## 2026-11-05 — Rustホストの回帰試験の基準整備（Codex、#169）
+
+- 最新main `b3c0e88`、未コミット変更なしを確認。対象Issue #169〜#174、関連 #38・#39・#157・#161・#162、既存PR・コメントと共通ルール・現行仕様を照合した。重複するopen PRはなく、#169へ「着手します。既存の安全性・入力処理を確認し、回帰テストを整備します。」を投稿してから `codex/169-safety-regression` を作成した。
+- `hub.rs` に12件の内部回帰試験を追加。同一出力の複数所有者、部分・全解放、押下60ms/解放50msと予約時刻、最新8件の連打キュー、旧Pump世代、Pause・緊急停止・入力先喪失、視点の累積・端数、WS/RTC共通順序処理を固定する。fixtureは環境変数変更、ゲーム探索、実時間sleepを避け、`Input::for_test` でWindowsのタイマー設定や実入力を呼ばない。
+- `protocol-sim.mjs` に5件追加（全55件）。連打、古い開始・全解放要求、視点の欠番・重複・逆順、ホスト切断時の権限・全解放・nextIseq再接続を補強した。製品の処理・定数・通信契約は変更していない。
+- `DEVELOPMENT_WORKFLOW.md` の既存手順へ、Codex・Claude Code共通のIssue着手コメント規則を最小限追記した。監査・後続境界・未確認事項は [判断記録](../decisions/2026-11-05-host-regression-baseline.md) に残した。
+- 検証済み：`node --check scripts/sim/protocol-sim.mjs`、`python scripts/verify_overlay.py`（39項目）、`python scripts/check-public-docs.py --all`、`node scripts/sim/app-view-test.mjs`（25/25）、`phone-view-test.mjs`（8観点）、`ui-input-test.mjs`（12/12）、`controller-diagnostics-test.mjs`、`profile-extract-test.mjs`、`profile-catalog-test.mjs`（502定義）、`check-static-pages.mjs`、`verify-ui-evidence.mjs`（104画面）、`git diff --check` が成功。最後の各 `.mjs` はすべて `node scripts/sim/` から実行した。
+- RustはSETUP_WINDOWS記載の既存ツールとキャッシュ `C:\Users\kumes\AppData\Local\ReCooplay\cargo-target` を用い、`RECOOPLAY_DRY_RUN=1` で再構築中。Rust単体・更新済みexeの通信/終了試験・CIの結果は完了後に追記する。この段階では合格扱いにしない。
+- 実装担当と別エージェントが差分をレビューし、現時点の修正必須指摘なし。PR作成後の最終headも確認する。SendInput失敗注入、実Peerによる旧rtc_gen拒否、スマホ実機・Windows実入力・Minecraft・Alt+Tab・実ホットキーは未確認。既存実演・過去観測を今回の受入へ読み替えない。
+- Rust検証完了：`RECOOPLAY_DRY_RUN=1`、既存PATH/`LIBCLANG_PATH`/`CARGO_TARGET_DIR`をSETUP_WINDOWSどおり設定して `cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` が成功（ホスト55件、手動表出力1件は既存の除外、プローブ4件）。ネイティブ依存の再構築を含み14分37秒。続く `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` も成功（30.91秒）。既知のOpenSSL `ossl_static.pdb` 不足のLNK4099警告のみ残る。
+- 更新済み `C:\Users\kumes\AppData\Local\ReCooplay\cargo-target\release\recooplay-host.exe` を `--bin` で指定した `node scripts/sim/protocol-sim.mjs` が55/55成功。`node scripts/sim/shutdown-sim.mjs --bin <同exe>` はquit/EOFの両方でup記録後の正常終了が成功。`node scripts/sim/static-assets-sim.mjs --bin <同exe>` は34ファイル成功。いずれもdry-runでOS入力は送らない。
+- 機械照合でも `hub.rs` の製品処理はorigin/mainと一致し、追加はcfg(test)の12件のみ。公開資料検査は78資料・528参照、全13図で成功。#170の呼出し/失敗時状態更新と#174の測定点/配送保証/負荷条件も、先行実装を行わず監査判断へ整理した。
+- `node scripts/sim/input-probe-sim.mjs --bin C:\Users\kumes\AppData\Local\ReCooplay\cargo-target\release\recooplay-input-probe.exe` は12/12成功（必ず `--mock`、OS入力なし）。これはプローブの既存障害試験であり、HubのSendInput失敗注入を検証したものではない。
+- 初回CI head `90cefdf`：構造（run 41974036599）とPCアプリのビルドは成功。ホストのビルド・単体も成功したが、通信は54/55。追加ホスト切断試験が、直前のRESUMEをP1だけ受信した時点でP3のphase/epoch同期前に入力していた。CIログの `inject MOUSE_R down` 待機失敗を確認し、各クライアントが同じcoop/epoch/自動復帰OFFを受信してから開始するよう試験準備を修正した。製品コード・合格条件は変えていない。別担当レビューでも原因と修正の妥当性を確認した。初回CIは全成功として扱わない。
+- 受信同期修正後、同じ再ビルド済みexeの `node scripts/sim/protocol-sim.mjs --bin <上記exe>` が再度55/55成功。最終差分の `node --check`・公開資料検査・`git diff --check` も成功。修正後headのCI結果はPRへ記載する。
+
+## 2026-11-05 — Windows入力アダプターの分離（Codex、#170）
+
+- #170のIssue・コメントと既存PRの重複を確認し、着手コメント投稿後、PR #175のhead `2e82eaa` から `codex/170-input-adapter` を分離した。作業ツリーは `data/local/worktrees/issue170`。未マージの先行PRから検証可能なStacked PRを作るという最新のユーザー判断を優先する。
+- `InputAdapter: Send` の利用可否/理由・キー・左右ボタン・相対移動・ホイールの境界を追加。Hubは `Box<dyn InputAdapter>` に依存し、従来の `Input` が同じWindows/dry-run実装へ委譲する。SendInputフラグ、入力順序、停止・フォーカス・epoch・通信契約・時間定数は変更していない。既存入力プローブのAPIも保持した。
+- 記録・失敗注入用実装はcfg(test)限定で、OS入力を呼ばない。境界試験7件を追加し、具体的な引数と順序、利用不可時の拒否、部分失敗後も他出力を解放すること、down/up/視点/ホイール/リモコン失敗時の現行状態更新を確認する。
+- up失敗後の再解放で同じupを再送しないこと、視点失敗でも量と診断集計を消費することは内部で再現した。実OSでの残留押下の証拠ではなく、このリファクタリングで安全修正を混ぜていない。独立安全修正の条件と設計理由は[判断記録](../decisions/2026-11-05-input-adapter.md)に整理した。
+- `RECOOPLAY_DRY_RUN=1`、既存のSETUP_WINDOWSのPATH/LIBCLANG_PATH/CARGO_TARGET_DIRを使い、`cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` 成功（ホスト62件・既存の手動表出力1件除外、プローブ4件、18.77秒）。`cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` 成功（24.58秒）。既知のOpenSSL PDB不足LNK4099警告は残る。
+- ビルド済みexeを作業ツリー内のGit対象外 `data/local/issue170/recooplay-host.exe` へコピーし、共有キャッシュと切り離して試験した。`node scripts/sim/shutdown-sim.mjs --bin <専用exe>` はquit/EOF両方で全解放後の正常終了が成功。`python scripts/verify_overlay.py` は39項目、`python scripts/check-public-docs.py --all` は79資料・529参照、`git diff --check` も成功。
+- Windows実入力、実際のSendInput失敗、Alt+Tab、ホットキー、スマホ実機・Minecraftと実Peerによる旧rtc_genの対照試験は未実施。
+- `node scripts/sim/protocol-sim.mjs --bin <専用exe>` は55/55成功。キー・入力先喪失・緊急停止・旧epoch・再接続・全解放を含む既存の通信回帰を維持した。Rustビルド後の製品ソース変更はない。親担当による独立差分レビューで修正必須指摘なし、PR最終headも確認対象とする。CI結果はPRへ記録する。
+
+## 2026-11-05 — 押下・解放・連打キュー管理の分離（Codex、#171）
+
+- #171の重複作業確認と着手コメント投稿後、検証済み#170 head `5a9d819` から `codex/171-input-manager` を作成した。新しいユーザー判断のStacked PR許可を優先し、親は#181、baseは `codex/170-input-adapter` とする。
+- `OutputState` と所有者・交互キュー・最低時間・タイマー世代の処理を `input_manager.rs` へ分離した。coreは明示時刻を受け、Emit/Wait/Idleを1件ずつ返し、OS・Hub・通信・タイマー実行器・ログへ依存しない。Hubには認可済み操作の伝達、送出・ログ・予約・診断が残る。
+- 押下60ms/解放50ms、上限8辺・古い2辺単位の破棄、複数所有者保持、停止優先の解放、旧世代Pump拒否を維持。#169/#170の既存62テストはアサーションを変えず保持し、独立core試験6件を追加した。設計と副作用順序、有限のStacked運用は[判断記録](../decisions/2026-11-05-input-manager.md)へ記録した。
+- `RECOOPLAY_DRY_RUN=1`、既存SETUP_WINDOWSのPATH/LIBCLANG_PATH/CARGO_TARGET_DIRを用い、`cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` はホスト68件＋プローブ4件成功（既存手動1件除外）。サブエージェントの利用上限による作業停止を挟んだが、再開時に成功ログと未コミット変更を確認し、破棄せず継続した。
+- `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` 成功（32.45秒、既知のOpenSSL PDB不足LNK4099警告）。新しいexeをGit対象外の `data/local/issue171/recooplay-host.exe` へコピーし、共有キャッシュと分離して試験した。`node scripts/sim/shutdown-sim.mjs --bin <専用exe>` はquit/EOFの全解放後正常終了が成功。構造39項目・差分検査も成功。
+- #170で内部再現したup失敗後の再送なし等の既知挙動は保持し、安全修正を混ぜていない。実OS入力・Windows設定変更は行わず、実機の押下/解放・Minecraftの操作感・Alt+Tab・実ホットキーは未確認。
+- `node scripts/sim/protocol-sim.mjs --bin <専用exe>` は55/55成功。公開文書検査は80資料・533参照、`git diff --check`も成功。親担当の一次独立レビューで修正必須指摘なし。最終headの独立レビューとCI結果はPRへ記録する。
+
+## 2026-11-05 — 視点累積・補間の純計算分離（Codex、#172）
+
+- #172の重複確認・着手コメント投稿後、#171の訂正後head `0e8fb27` から `codex/172-look-core` を作成した。親は#185、baseは `codex/171-input-manager`。純計算と既存回帰を独立検証できる追加層として再評価し、#175から4段で区切る。
+- `Look` の到着gap・2秒窓・平滑化・未処理量・整数化・端数を `look.rs` へ分離。明示時刻と認可済み差分を受け、移動要求を返す。Hubは担当/epoch/lseq/累積値を検証し、実送出後に既存診断を集計する。4ms、既定30〜120ms、最大gap×0.5、0.5px閾値、trunc、OS i32/診断i64の型幅を維持した。
+- 既存68件のアサーションは無改変。独立数値試験8件を追加し、係数、符号/端数保存、0.5px、1000ms、2秒の正確な境界、最大gapと時定数、停止時破棄、入力禁止、急な大量移動を固定した。判断・Stacked上限・実機チェックは[判断記録](../decisions/2026-11-05-look-core.md)へ記載。
+- `RECOOPLAY_DRY_RUN=1`、SETUP_WINDOWSの既存PATH/LIBCLANG_PATH/CARGO_TARGET_DIRで `cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` はホスト76件＋プローブ4件成功（既存手動1件除外）。境界assert補強後の `cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml look::tests` も8/8成功。後者では製品処理を変更していない。
+- `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` 成功（20.29秒、既知のLNK4099警告）。Git対象外 `data/local/issue172/recooplay-host.exe` に保存した専用exeで `node scripts/sim/shutdown-sim.mjs --bin <専用exe>` のquit/EOF全解放後正常終了が成功。`python scripts/verify_overlay.py` は39項目、`git diff --check`も成功。
+- 実OS入力・Windows設定変更なし。実機の操作感・Raw Input/感度・Android/iPhone・フォーカス喪失・実ホットキー・SendInput失敗は未確認。後続#173以降の認可/副作用をまたぐ実装はスタックを増やさず、設計監査へ渡す。
+- `node scripts/sim/protocol-sim.mjs --bin <専用exe>` は55/55成功。公開資料検査は81資料・535参照、差分検査も成功。親担当の最終差分レビューとCI結果をPRへ記録する。
+
+## 2026-11-05 — ホスト内部の再現可能な負荷計測（Codex、#174）
+
+- 重複するopen PR/着手コメントなしを確認した親担当が#174へ着手コメントを投稿し、PR #175/head `2e82eaa`から `codex/174-host-measurement` を分離。製品処理を変えず、cfg(test)の独立計測ハーネスと実行脚本を追加した。
+- `cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml`：ホスト56成功/2 ignored（既存手動表1件・opt-in長計測1件）、プローブ4成功。5負荷条件の40ms smokeを通常CIに含める。`cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` も成功。既知のOpenSSL PDB不足LNK4099警告のみ。
+- テストexe/製品exeはGit対象外の専用コピーへ保存し共有ビルドキャッシュのロックを解放した。`node scripts/sim/host-load-measure.mjs --test-bin data/local/issue174/host-measure-test.exe --duration-ms 1000 --repeats 3 --out data/local/issue174/initial.json`：15条件成功。待機/処理/停止/tick/通知キューを計測し、各条件で全解放・未処理視点破棄・旧入力非復元・キュー消化をアサートした。
+- 初期観測は受信キュー最大1,686件・停滞監視キュー最大1,008件、停止完了最大7,148µs。有限負荷の内部観測であり、製品上限/実ゲーム遅延ではない。詳細・再現手順・未測定条件は [判断記録](../decisions/2026-11-05-host-load-measurement.md) と個人パス/IP/tokenを含まないJSONへ残す。長計測は続けて実行する。
+- 初回head `04118b3` のCIはPR Rust/PCアプリ（run 41981601106）・構造（41981601121）、push Rust/PCアプリ（41981553682）・構造（41981553515）が全成功。通信55/55、既存の終了・画面・プローブ・配布zip/展開後dry-runも通過した。
+- 長計測の初回実行は利用上限停止後にセッション/実プロセス/結果ファイルが存在しないことを確認し、合格として数えず再実行。専用試験名と結果markerをバイナリ内で起動前に確認するrunnerへ更新し、製品exeの誤指定が実行開始前に拒否される負例と、40ms×5条件のrunner smokeを確認した。共有Rustキャッシュは使わず、既に構築した非注入テストexeの専用コピーを使用した。
+- `node scripts/sim/host-load-measure.mjs --test-bin data/local/issue174/host-measure-test.exe --duration-ms 30000 --repeats 3 --out data/local/issue174/long.json`：30秒×5条件×3反復、15条件・計27,975処理で全アサーション成功。対象ソース315b06c、開始時dirty=false、ソース4ファイルと実行したテストexeのSHA-256を結果に記録。個人パス/IP/tokenなしの長結果を `docs/develop/data/host-load/long.json` へ保存した。
+- 長計測の観測最大：受信キュー1,773件、停滞監視キュー1,008件、停止enqueue→内部停止完了8,775µs、tick間隔20,587µs。fixtureはtimeBeginPeriodを呼ばず受信待ちも本番と異なるため、製品の停止上限/4ms周期や実ゲームの遅延へ読み替えない。冒頭バースト/監視キュー蓄積は再現したが、本番ループ・実ソケット・ディスク/標準出力停滞・slow writerは未測定。最適化は実施していない。
+
+## 2026-11-05 — スマホ入力ライフサイクルの回帰試験（Codex、#176）
+
+- 最新main `b3c0e88`、作業ツリーclean、PR #175は未マージ・CI成功を確認。対象Issue・既存PR・コメントを照合し、#176への着手コメント後に `codex/176-phone-regression` をmainから作成した。最新ユーザー判断に従い、Rust側とは独立して進める。
+- 実controller・表示・生成操作・スティック・視点・タッチパッド・transportを隔離VMで動かす再利用可能なfixtureと15試験を追加。製品コードは変更していない。新試験を既存CIへ追加し、[判断記録](../decisions/2026-11-05-phone-regression.md)へ棚卸しと試験境界を記載した。
+- `node scripts/sim/phone-lifecycle-test.mjs` は15/15成功。別の正期待repro `node scripts/sim/phone-lifecycle-test.mjs --repro-shared-pointer` は終了コード1で、同controlの2指保持から片指だけを離すと早期upになる既存不具合を再現。既定CIはこの特定のAssertionErrorとactual/expectedだけを既知不具合として固定し、修正済みとは扱わない。#177で所有元管理と正期待への切替を行う。
+- 関連検証：`node scripts/sim/ui-input-test.mjs` 12/12、`phone-view-test.mjs` 8観点、`controller-diagnostics-test.mjs`、`check-static-pages.mjs`、`python scripts/verify_overlay.py` 39項目、`python scripts/check-public-docs.py --all` 78資料・522参照、`git diff --check` 成功（省略したmjsも `node scripts/sim/` から実行）。実装者とは別の親エージェントが全差分・正期待repro・fixtureを独立レビューし、修正必須指摘なし。
+- 実DOMの描画/ヒット判定/自動Pointer Capture配送・Android/iPhoneの複数指/回転/バックグラウンド/Wi-Fi断は未検証。実通信・OS入力は行っていない。#10・#38・#39は完了扱いにしない。最終CI結果はPRへ記載する。
+
+## 2026-11-05 — Pointer所有と入力解放の一元管理（Codex、#177）
+
+- #176のPR #182作成後に重複作業・コメントを確認し、#177へ着手コメントを投稿。最新ユーザー判断に従い、`codex/176-phone-regression` を親に `codex/177-pointer-ownership` を作成した。
+- `input-owners.js` へ保持元とcontrolの双方向管理を分離。送信できた最初のdownと最後のupだけを送り、Pointer・スティック・タップを別保持元で管理する。#176で再現済みの早期upを修正し、同じ正期待reproを通常の成功試験へ切り替えた。描画・視点・通信契約・役割認可・Rust処理は変更しない。[判断記録](../decisions/2026-11-05-pointer-ownership.md)へ責任境界と失効順を記載。
+- `node scripts/sim/input-owners-test.mjs` 4/4、`phone-lifecycle-test.mjs` 16/16、`phone-lifecycle-test.mjs --repro-shared-pointer` 成功（修正前はexit 1）、`controller-diagnostics-test.mjs`、`phone-view-test.mjs` 8観点、`ui-input-test.mjs` 12/12、`app-view-test.mjs` 25/25、`check-static-pages.mjs`、`python scripts/verify_overlay.py` 39項目、公開資料検査、`git diff --check` 成功。省略したmjsは `node scripts/sim/` から実行。
+- `node scripts/sim/capture-screens.mjs --bin <PR #181の専用dry-runホストexe> --out data/local/issue177/screenshots` が成功し、23画面を保存。生成された移動・アクション・緊急停止後の画面を目視確認し、表示崩れなし。画像はGit対象外で、実機受入へ読み替えない。
+- 実装した親とは別のエージェントが全差分・未追跡ファイル・停止経路を独立レビューし、修正必須P0〜P2指摘なし。独立実行でも所有4/4・ライフサイクル16/16・正期待repro・UI入力12/12・診断・差分検査成功。Android/iPhoneの複数指とPointer Capture配送、実ゲームは未検証。CI結果はPRへ記載する。
+
+## 2026-11-05 — スマホの接続・参加状態を分離する（Codex、#178）
+
+- #177のhead `6c80fab` を親に `codex/178-phone-session` の専用worktreeで作業。重複確認とIssueへの着手コメントは親担当が実施済み。`phone-session.js` へidentity/token・現在Socket・seq/iseq・retry/stopped/lastServerMsg・slot/host/game/epochと接続表示の導出を移した。controllerはDOM・実通信・入力停止/RTCの副作用をつなぐ。Reactや新依存は追加していない。
+- 責務抽出段階で `node scripts/sim/phone-session-test.mjs` 6/6、`phone-lifecycle-test.mjs` 16/16、`controller-diagnostics-test.mjs` が成功。`node --check apps/web-static/scripts/controller.js` も成功。製品入力・視点周期・通信形式を変更していない。
+- 既存の旧onopen通知には世代ガードがなく、可視化と予約再接続が重なったSocketの遅延openで現在のseqが巻き戻ることを再現。`node scripts/sim/phone-session-test.mjs --repro-stale-open` は正期待 `[1,2]` に対して実際 `[1,1]`、AssertionError・exit 1。この失敗再現を抽出コミットに残し、世代ガードの修正は次の独立コミットで扱う。
+- 判断とStackの区切りは [接続・参加状態の分離](../decisions/2026-11-05-phone-session.md) に記録。実ブラウザー・Android/iPhone・実WebRTC・OS入力は未検証。
+- 別の修正コミットでonopen先頭へ現在Socketの照合を1行追加。正期待の `node scripts/sim/phone-session-test.mjs --repro-stale-open` はexit 0となり、既定の同試験は7/7成功。seqの連続性、未ACK2件の維持、pingの予定時刻、旧Socketへのhello不送信を確認した。
+- 最終ローカル検証：`node scripts/sim/phone-lifecycle-test.mjs` 16/16、`input-owners-test.mjs` 4/4、`ui-input-test.mjs` 12/12、`controller-diagnostics-test.mjs`、`phone-view-test.mjs` 8観点、`app-view-test.mjs` 25/25、`check-static-pages.mjs`、`python scripts/verify_overlay.py` 39項目、`python scripts/check-public-docs.py --all` 80資料・527参照、`git diff --check` が成功。各 `.mjs` は `node scripts/sim/` から実行した。HTML/CSSは未変更。新しい実ブラウザー描画・スマホ実機・実ゲーム試験は未実施で、VMの成功を実機受入に読み替えていない。
+- CIへ接続・参加状態試験を追加。独立レビューとpush後CIの結果はPRへ反映する。Stacked PRはbase `codex/177-pointer-ownership` とし、このスマホStackは#178で区切る。
+- 追加の独立QA：親担当が製品head `94c94b5` の全製品差分とセッション単体7件・実controller16件・診断試験を独立レビュー/実行し、修正必須指摘なしを確認した。
+- 同headの専用worktreeで、親担当が `node scripts/sim/capture-screens.mjs --bin C:/Users/kumes/Documents/kz_2613/data/local/worktrees/issue170/data/local/issue171/recooplay-host.exe --out data/local/issue178/screenshots` を実行し成功。#171専用のdry-runホストを使い、PC 1920×1080とスマホ402×874（2倍）の23画面をGit対象外へ保存した。`shots.json` と23枚の存在を確認し、親担当と実装担当の双方がP2視点・緊急停止後P1の画像を目視して表示崩れなしを確認した。これはheadless Chromeの描画・疑似参加/停止確認であり、スマホ実端末・実WebRTC・Windows実入力・実ゲームの受入ではない。
+- 追加QA後はBUILD_LOGのみを更新し、製品/試験コードは`94c94b5`から変更しない。最終docs-only headのCIを追跡し、PR本文へ結果を記載する。
+
+## 2026-11-05 — セッション状態・認可の設計監査（Codex、#173）
+
+- 最新main `b3c0e88`、対象Issue・既存PR・コメントを再確認し、#173へ着手コメントを投稿してから独立監査ブランチを作成した。先行の製品Stackを無制限に増やさず、実装と並行できる設計・試験系列・再開条件を成果とする。
+- 現行コード・通信/ホスト仕様・回帰試験と、作業中のRust入力分離/スマホ状態分離を照合。責任境界、ガード、状態更新と副作用順序、維持するログ/通知、対照付き試験系列、外部の統合条件を[判断記録](../decisions/2026-11-05-session-extraction-plan.md)へ整理した。製品コード・採用仕様は変更せず、本Issueの製品分離が実装済みとは扱わない。
+- 別エージェントがコードと文書を独立レビューした。WSパースの実行箇所、再検出停止の対象範囲、Playerとmonitorのepoch条件の違いという指摘をそれぞれの対象文書へ反映した。未確認事項・保留理由もレビューし、それ以外の修正必須指摘なし。
+- `python scripts/check-public-docs.py --all`、`python scripts/verify_overlay.py`（39項目）、`git diff --check` 成功。監査資料とBUILD_LOGだけの変更のためRustの製品ソース再ビルドや新たなOS入力試験は行っていない。PRの既存CIも追跡し、結果をPRへ記載する。
+- Android/iPhone・Windows実入力・ゲーム操作・無線断・Alt+Tab・実ホットキー等は未検証のまま。mainマージ・Issueクローズ・正式リリースは行わない。
+
+## 2026-11-05 — 型付きメッセージ境界の設計監査（Codex、#179）
+
+- 最新main `b3c0e88`、対象Issue・既存PR・コメントを再確認し、#179へ着手コメントを投稿してから独立監査ブランチを作成した。先行の製品Stackを無制限に増やさず、実装と並行できる設計・試験系列・再開条件を成果とする。
+- 現行コード・通信/ホスト仕様・回帰試験と、作業中のRust入力分離/スマホ状態分離を照合。責任境界、ガード、状態更新と副作用順序、維持するログ/通知、対照付き試験系列、外部の統合条件を[判断記録](../decisions/2026-11-05-protocol-boundary-plan.md)へ整理した。製品コード・採用仕様は変更せず、本Issueの製品分離が実装済みとは扱わない。
+- 別エージェントがコードと文書を独立レビューした。WSパースの実行箇所、再検出停止の対象範囲、Playerとmonitorのepoch条件の違いという指摘をそれぞれの対象文書へ反映した。未確認事項・保留理由もレビューし、それ以外の修正必須指摘なし。
+- `python scripts/check-public-docs.py --all`、`python scripts/verify_overlay.py`（39項目）、`git diff --check` 成功。監査資料とBUILD_LOGだけの変更のためRustの製品ソース再ビルドや新たなOS入力試験は行っていない。PRの既存CIも追跡し、結果をPRへ記載する。
+- Android/iPhone・Windows実入力・ゲーム操作・無線断・Alt+Tab・実ホットキー等は未検証のまま。mainマージ・Issueクローズ・正式リリースは行わない。
+
 ## 2026-11-05 — ゲーム管理サービスの設計監査（Codex、#180）
 
 - 最新main `b3c0e88`、対象Issue・既存PR・コメントを再確認し、#180へ着手コメントを投稿してから独立監査ブランチを作成した。先行の製品Stackを無制限に増やさず、実装と並行できる設計・試験系列・再開条件を成果とする。

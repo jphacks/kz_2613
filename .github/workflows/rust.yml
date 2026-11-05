@@ -47,6 +47,12 @@ jobs:
         run: node scripts/sim/phone-view-test.mjs
       - name: 診断開始時のサーバー停止と非注入の通信テスト
         run: node scripts/sim/controller-diagnostics-test.mjs
+      - name: スマホ入力ライフサイクルの回帰
+        run: node scripts/sim/phone-lifecycle-test.mjs
+      - name: スマホの入力保持元と強制解放
+        run: node scripts/sim/input-owners-test.mjs
+      - name: スマホの接続・参加状態と再接続境界
+        run: node scripts/sim/phone-session-test.mjs
       - name: 改良後UIの撮影証拠の寸法と画面網羅
         run: node scripts/sim/verify-ui-evidence.mjs
       - name: 操作定義の静的抽出
