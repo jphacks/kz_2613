@@ -951,3 +951,13 @@
 - python scripts/check-public-docs.py --all：76資料・511参照、外向けMermaid12図（シーケンス6図）を含む全13図の構造確認成功。Mermaid 11.17.2で外向け12図のparse成功。ローカルプレビューの総合・ホスト仕様を1280px、総合と専門4冊を390pxで確認し、SVG全12図の描画とページ全体の横はみ出しなしを確認した。
 - python scripts/verify_overlay.py：39項目成功。node scripts/sim/profile-catalog-test.mjs：502定義成功。node scripts/sim/profile-extract-test.mjs：抽出・未検証下書き・非対応キーの確認成功。node scripts/sim/app-view-test.mjs：25/25成功。node scripts/sim/phone-view-test.mjs：8観点成功。node scripts/sim/verify-ui-evidence.mjs：104画面の照合成功。git diff --check成功。
 - 変更対象は文書のみ。製品コード・通信契約・操作定義・画像は変更していない。実機・実ゲーム試験およびRustの再ビルドは実施しておらず、ランチャー起動や前面化の実機受入が未完了であることを維持した。
+
+## 2026-11-05 — Rustホストの回帰試験の基準整備（Codex、#169）
+
+- 最新main `b3c0e88`、未コミット変更なしを確認。対象Issue #169〜#174、関連 #38・#39・#157・#161・#162、既存PR・コメントと共通ルール・現行仕様を照合した。重複するopen PRはなく、#169へ「着手します。既存の安全性・入力処理を確認し、回帰テストを整備します。」を投稿してから `codex/169-safety-regression` を作成した。
+- `hub.rs` に12件の内部回帰試験を追加。同一出力の複数所有者、部分・全解放、押下60ms/解放50msと予約時刻、最新8件の連打キュー、旧Pump世代、Pause・緊急停止・入力先喪失、視点の累積・端数、WS/RTC共通順序処理を固定する。fixtureは環境変数変更、ゲーム探索、実時間sleepを避け、`Input::for_test` でWindowsのタイマー設定や実入力を呼ばない。
+- `protocol-sim.mjs` に5件追加（全55件）。連打、古い開始・全解放要求、視点の欠番・重複・逆順、ホスト切断時の権限・全解放・nextIseq再接続を補強した。製品の処理・定数・通信契約は変更していない。
+- `DEVELOPMENT_WORKFLOW.md` の既存手順へ、Codex・Claude Code共通のIssue着手コメント規則を最小限追記した。監査・後続境界・未確認事項は [判断記録](../decisions/2026-11-05-host-regression-baseline.md) に残した。
+- 検証済み：`node --check scripts/sim/protocol-sim.mjs`、`python scripts/verify_overlay.py`（39項目）、`python scripts/check-public-docs.py --all`、`node scripts/sim/app-view-test.mjs`（25/25）、`phone-view-test.mjs`（8観点）、`ui-input-test.mjs`（12/12）、`controller-diagnostics-test.mjs`、`profile-extract-test.mjs`、`profile-catalog-test.mjs`（502定義）、`check-static-pages.mjs`、`verify-ui-evidence.mjs`（104画面）、`git diff --check` が成功。最後の各 `.mjs` はすべて `node scripts/sim/` から実行した。
+- RustはSETUP_WINDOWS記載の既存ツールとキャッシュ `C:\Users\kumes\AppData\Local\ReCooplay\cargo-target` を用い、`RECOOPLAY_DRY_RUN=1` で再構築中。Rust単体・更新済みexeの通信/終了試験・CIの結果は完了後に追記する。この段階では合格扱いにしない。
+- 実装担当と別エージェントが差分をレビューし、現時点の修正必須指摘なし。PR作成後の最終headも確認する。SendInput失敗注入、実Peerによる旧rtc_gen拒否、スマホ実機・Windows実入力・Minecraft・Alt+Tab・実ホットキーは未確認。既存実演・過去観測を今回の受入へ読み替えない。

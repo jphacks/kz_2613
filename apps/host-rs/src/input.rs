@@ -8,6 +8,12 @@ pub struct Input {
 }
 
 impl Input {
+    /// 単体試験専用。環境変数やWindowsのタイマー設定に触れず、実入力を必ず無効にする。
+    #[cfg(test)]
+    pub(crate) fn for_test() -> Self {
+        Self { dry_run: true, error: None }
+    }
+
     pub fn new() -> Self {
         let dry_run = std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1");
         let error = if cfg!(windows) || dry_run { None } else { Some("Windows 以外では注入できません".to_string()) };
