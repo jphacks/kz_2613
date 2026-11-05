@@ -22,6 +22,10 @@ const number = (name, fallback, min, max) => {
 };
 const bin = option('--test-bin', null);
 if (!bin) throw new Error('--test-bin に cargo test --no-run で構築したrecooplay-hostのテストexeを指定してください');
+const binary = fs.readFileSync(path.resolve(bin));
+// 製品exeを誤指定してサーバーを起動しない。専用試験名と結果markerを起動前に確認する。
+if (!binary.includes(Buffer.from('hub::tests::measurement::measure_host_load'))
+    || !binary.includes(Buffer.from('RECOOPLAY_MEASUREMENTS='))) throw new Error('専用計測を含むRustテストexeではありません。実行は開始していません');
 const duration = number('--duration-ms', 1000, 40, 60000);
 const repetitions = number('--repeats', 3, 1, 10);
 const burst = number('--burst', 2000, 16, 20000);
@@ -43,7 +47,7 @@ if (!marker) throw new Error('計測結果がありません。製品exeや別�
 const measurement = JSON.parse(marker.slice(marker.indexOf('RECOOPLAY_MEASUREMENTS=')+'RECOOPLAY_MEASUREMENTS='.length));
 if (measurement.schemaVersion !== 1 || measurement.results.length !== repetitions*5
     || measurement.results.some(r => !r.safeStopVerified || r.pendingEventsAtEnd !== 0)) throw new Error('結果形式または安全停止の検証が不正です');
-Object.assign(measurement,{sourceCommit,sourceDirty,sourceFiles});
+Object.assign(measurement,{sourceCommit,sourceDirty,sourceFiles,testBinarySha256:createHash('sha256').update(binary).digest('hex')});
 // 追跡する結果にはテストexeの場所・端末名・IP・clientId・token等を含めない。
 measurement.limits = [
   'Hub::runそのもの・HTTP/WS/RTCソケット・実ゲームの遅延を計測していない',
