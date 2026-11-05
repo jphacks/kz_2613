@@ -1,6 +1,8 @@
 import { createPhoneView } from './phone-view.js';
 import { bindCooperativeInput } from './cooperative-input.js';
 import { createFastChannel } from './transport.js';
+import { createInputOwners } from './input-owners.js';
+import { createPhoneSession } from './phone-session.js';
 import { recordInputMetric, inputMetrics } from './ui-metrics.js';
 
 import { bindTouchpad } from './touchpad.js';
@@ -9,70 +11,51 @@ import { phoneAdvice } from '../app-view.js';
 (() => {
   const $ = (id) => document.getElementById(id);
   const COLORS = { P1: 'var(--p1)', P2: 'var(--p2)', P3: 'var(--p3)', P4: 'var(--p4)' };
-  // 通信契約の版 (docs/protocol-specification.md)。PC のホストと合わなければ接続できない
-  const PROTOCOL_VERSION = 4;
-
-  // 端末ごとの ID。再接続時に同じスロットへ戻るために保存する
-  let clientId = null;
-  try { clientId = localStorage.getItem('recooplay.clientId'); } catch {}
-  if (!clientId) {
-    clientId = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
-    try { localStorage.setItem('recooplay.clientId', clientId); } catch {}
-  }
-
-  // 再接続用トークン。PC のホストが発行し、同じ枠へ戻るときに提示する (clientId だけでは枠を取り戻せない)
-  let token = null;
-  try { token = localStorage.getItem('recooplay.token'); } catch {}
-
-  let ws = null, seq = 0, retry = 0, stopped = false, pingTimer = null;
-  let me = null, isHost = false, game = null;
-  let iseq = 0;            // 入力の通し番号 (WebSocket / WebRTC の両方に同じ番号で送り、PC 側で先着 1 回だけ処理)
-  let lastServerMsg = 0;   // 最後にサーバーから何か届いた時刻 (無応答検知用)
+  const session = createPhoneSession({
+    storage: { getItem: key => localStorage.getItem(key), setItem: (key, value) => localStorage.setItem(key, value) },
+    createClientId: () => crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36),
+    now: () => performance.now(),
+  });
+  let pingTimer = null;
   const pending = new Map(); // iseq -> 送信時刻
   const rtts = [];
   let sent = 0;
 
-  const isOpen = () => ws?.readyState === 1;
+  const isOpen = session.isOpen;
   function setStatus(text, cls) { const el = $('status'); el.textContent = text; el.className = 'pill ' + cls; document.body.dataset.connection=cls; }
 
   function connect() {
-    if (stopped) return;
-    setStatus('接続中', 'warn');
+    if (session.stopped) return;
+    session.connecting();
+    setStatus(...session.status());
     const sock = new WebSocket(`ws://${location.host}/ws`);
-    ws = sock;
+    session.attach(sock);
     sock.onopen = () => {
-      retry = 0;
-      seq = 0;
+      if (!session.current(sock)) return;
       pending.clear();
-      lastServerMsg = performance.now();
-      sock.send(JSON.stringify({ type: 'hello', protocolVersion: PROTOCOL_VERSION, clientId, token, ua: navigator.userAgent, nextIseq: iseq + 1 }));
+      sock.send(JSON.stringify(session.open(navigator.userAgent)));
       clearInterval(pingTimer);
       pingTimer = setInterval(sendPing, 1000);
     };
-    sock.onclose = (ev) => { if (ws === sock) onDisconnected(ev.code); };
+    sock.onclose = (ev) => { if (session.current(sock)) onDisconnected(ev.code); };
     sock.onerror = () => {};
     sock.onmessage = (ev) => {
-      if (ws !== sock) return;
-      lastServerMsg = performance.now();
+      if (!session.current(sock)) return;
+      session.received();
       const msg = JSON.parse(ev.data);
       if (msg.type === 'rtc-answer' || msg.type === 'rtc-cand') { onRtcSignal(msg); return; }
       if (msg.type === 'welcome') {
-        if (msg.token && msg.token !== token) {
-          token = msg.token;
-          try { localStorage.setItem('recooplay.token', token); } catch {}
-        }
+        session.authenticate(msg);
         roleInput.resetEpoch();
         startRtc();
-        me = msg.slot;
-        isHost = msg.isHost;
-        document.documentElement.style.setProperty('--me', COLORS[me]);
-        $('slot').textContent = me;
-        $('role').innerHTML = `<b>${msg.role}${isHost ? '（ホスト）' : ''}</b>分担はPCの画面で決めます`;
-        setStatus(msg.reconnected ? '再接続OK' : '接続OK', 'ok');
+        session.welcome(msg);
+        document.documentElement.style.setProperty('--me', COLORS[session.me]);
+        $('slot').textContent = session.me;
+        $('role').innerHTML = `<b>${msg.role}${session.isHost ? '（ホスト）' : ''}</b>分担はPCの画面で決めます`;
+        setStatus(...session.status());
         render();
       } else if (msg.type === 'game') {
-        const epochChanged = game?.epoch !== msg.game.epoch;
-        game = msg.game;
+        const epochChanged = session.updateGame(msg.game);
         if (epochChanged) {
           releaseAll();
           roleInput.resetEpoch();
@@ -96,7 +79,7 @@ import { phoneAdvice } from '../app-view.js';
         }
         renderStats();
       } else if (msg.type === 'full') {
-        stopped = true;
+        session.stop();
         $('full').style.display = 'flex';
       } else if (msg.type === 'error' && msg.code === 'protocol_version') {
         showVersionMismatch();
@@ -108,16 +91,16 @@ import { phoneAdvice } from '../app-view.js';
 
   // 古い画面がキャッシュされているなど、PC のホストと通信契約の版が違う。再接続しても直らないので止める
   function showVersionMismatch() {
-    stopped = true;
-    setStatus('版が不一致', 'ng');
+    session.stop('version');
+    setStatus(...session.status());
     $('fullMessage').textContent = 'PCのアプリと画面の版が合いません。ページを再読み込みしてください。';
     $('full').style.display = 'flex';
   }
 
   // 同じ clientId の枠があるのにトークンが合わない (保存したトークンが消えた等)。PC でリセットするまで参加できない
   function showBadToken() {
-    stopped = true;
-    setStatus('参加できません', 'ng');
+    session.stop('token');
+    setStatus(...session.status());
     $('fullMessage').textContent = 'この端末の参加情報をPCで確認できませんでした。PC側でリセットしてから再読み込みしてください。';
     $('full').style.display = 'flex';
   }
@@ -126,18 +109,18 @@ import { phoneAdvice } from '../app-view.js';
     clearInterval(pingTimer);
     releaseAll();
     closeRtc();
-    if (code === 4000) { stopped = true; setStatus('別タブで接続中', 'ng'); return; }
+    const delay = session.disconnected(code);
+    if (code === 4000) { setStatus(...session.status()); return; }
     if (code === 4005) { showVersionMismatch(); return; }
     if (code === 4006) { showBadToken(); return; }
-    setStatus('切断 — 再接続待ち', 'ng');
-    setTimeout(connect, Math.min(5000, 250 * 2 ** retry++));
+    setStatus(...session.status());
+    setTimeout(connect, delay);
   }
 
   // サーバーから 3 秒何も届かなければ、OS が切断に気づくのを待たずに張り直す (Wi-Fi が一瞬止まった時の復帰を早める)
   setInterval(() => {
-    if (!isOpen() || performance.now() - lastServerMsg < 3000) return;
-    const old = ws;
-    ws = null;
+    if (!session.silent()) return;
+    const old = session.detach();
     try { old.close(); } catch {}
     onDisconnected(1006);
   }, 500);
@@ -145,8 +128,8 @@ import { phoneAdvice } from '../app-view.js';
   // 状態・UIとWebRTCの生成破棄を分離する。速達便の契約は変更しない。
   const rtcRtts = [], via = {ws:0,rtc:0};
   const fast = createFastChannel({
-    signal: msg => { if (isOpen()) ws.send(JSON.stringify(msg)); },
-    enabled: isOpen, getPhase: () => game?.phase,
+    signal: msg => { if (isOpen()) session.socket.send(JSON.stringify(msg)); },
+    enabled: isOpen, getPhase: () => session.game?.phase,
     onRtt: value => { rtcRtts.push(value); if (rtcRtts.length > 300) rtcRtts.shift(); },
     onPath: text => { $('path').textContent = text; },
   });
@@ -180,12 +163,12 @@ import { phoneAdvice } from '../app-view.js';
   function sendPing() {
     renderStats();
     $('inputMetrics').textContent = JSON.stringify(inputMetrics.summary());
-    if (isOpen()) ws.send(JSON.stringify({ type: 'ping', t: performance.now(), stats: stats() }));
+    if (isOpen()) session.socket.send(JSON.stringify({ type: 'ping', t: performance.now(), stats: stats() }));
   }
 
   function sendWs(obj) {
     if (!isOpen()) return false;
-    ws.send(JSON.stringify({ ...obj, seq: ++seq }));
+    session.socket.send(JSON.stringify(session.sequenced(obj)));
     return true;
   }
   // 入力 (押下/解放): WebSocket (確実) と WebRTC (速い) の両方に同じ番号で送る
@@ -197,7 +180,7 @@ import { phoneAdvice } from '../app-view.js';
     if (obj.state === 'down' && !visible) return false;
     if (!isOpen()) return false;
     // epoch: 押した時点の進行状態。PC は状態が変わった後に届いた古い入力を処理しない
-    const msg = { type: 'input', ...obj, iseq: ++iseq, epoch: game?.epoch, t: performance.now() };
+    const msg = session.input(obj);
     pending.set(msg.iseq, msg.t);
     sent++;
     fast.send(msg);
@@ -207,39 +190,39 @@ import { phoneAdvice } from '../app-view.js';
   }
 
   // ---- 操作の押下 / 解放 ----
-  // サーバーに down を送れたものだけ記録し、up はそれに対してだけ送る（再接続中の押下で片割れの up を送らない）
-  const sentDown = new Set();
-  function ctlDown(ctl, at) {
-    if (sentDown.has(ctl)) return;
-    if (sendInput({ button: ctl, state: 'down' })) { sentDown.add(ctl); recordInputMetric('pointerdown',at); }
-    if (navigator.vibrate) navigator.vibrate(8);
-  }
-  function ctlUp(ctl) {
-    if (!sentDown.delete(ctl)) return;
-    sendInput({ button: ctl, state: 'up' });
-  }
+  const owners = createInputOwners({
+    down: (ctl, at) => {
+      const sent = sendInput({ button: ctl, state: 'down' });
+      if (sent) recordInputMetric('pointerdown', at);
+      if (navigator.vibrate) navigator.vibrate(8);
+      return sent;
+    },
+    up: ctl => sendInput({ button: ctl, state: 'up' }),
+  });
+  function ctlDown(ctl, at, owner = ctl) { owners.press(owner, ctl, at); }
+  function ctlUp(ctl, owner = ctl) { owners.release(owner, ctl); }
+  const tapOwner = Symbol('remote tap');
 
   const touchpad = bindTouchpad($('remotePad'), {
-    enabled: () => me === 'P1' && game?.phase !== 'coop' && game?.remoteRoute !== 'none' && controlsVisible(),
-    send: (message) => { if (isOpen()) ws.send(JSON.stringify({...message, type:'remote', epoch:game?.epoch})); },
-    tap: at => { ctlDown('REMOTE_LEFT', at); ctlUp('REMOTE_LEFT'); },
+    enabled: () => session.me === 'P1' && session.game?.phase !== 'coop' && session.game?.remoteRoute !== 'none' && controlsVisible(),
+    send: (message) => { if (isOpen()) session.socket.send(JSON.stringify({...message, type:'remote', epoch:session.game?.epoch})); },
+    tap: at => { ctlDown('REMOTE_LEFT', at, tapOwner); ctlUp('REMOTE_LEFT', tapOwner); },
     // 2本指のタップは右クリック (#122)
-    rightTap: at => { ctlDown('REMOTE_RIGHT', at); ctlUp('REMOTE_RIGHT'); },
+    rightTap: at => { ctlDown('REMOTE_RIGHT', at, tapOwner); ctlUp('REMOTE_RIGHT', tapOwner); },
   });
   const held = new Map(); // pointerId -> button element
   function releasePointer(pointerId) {
     const el = held.get(pointerId);
     if (!el) return;
     held.delete(pointerId);
-    el.classList.remove('down');
-    ctlUp(el.dataset.ctl);
+    if (![...held.values()].includes(el)) el.classList.remove('down');
+    ctlUp(el.dataset.ctl, pointerId);
   }
   function releaseAll() {
     touchpad.reset(); roleInput.release();
     for (const id of [...held.keys()]) releasePointer(id);
 
-    for (const c of [...sentDown]) ctlUp(c);
-    sentDown.clear();
+    owners.releaseAll();
   }
 
   // 操作ボタンに押下・解放を付ける (操作定義から作ったボタンにも後から付ける、#60)
@@ -252,7 +235,7 @@ import { phoneAdvice } from '../app-view.js';
       if (held.has(e.pointerId)) return;
       held.set(e.pointerId, el);
       el.classList.add('down');
-      ctlDown(el.dataset.ctl, e.timeStamp);
+      ctlDown(el.dataset.ctl, e.timeStamp, e.pointerId);
     });
     el.addEventListener('pointerup', (e) => releasePointer(e.pointerId));
     el.addEventListener('pointercancel', (e) => releasePointer(e.pointerId));
@@ -260,12 +243,12 @@ import { phoneAdvice } from '../app-view.js';
   }
   document.querySelectorAll('[data-ctl]').forEach(bindControl);
   document.querySelectorAll('[data-cmd]').forEach((el) => el.addEventListener('click', () => command(el.dataset.cmd)));
-  $('startBtn').addEventListener('click', () => command(game?.phase === 'paused' ? 'RESUME' : game?.phase === 'preparing' ? 'READY' : 'PREPARE'));
+  $('startBtn').addEventListener('click', () => command(session.game?.phase === 'paused' ? 'RESUME' : session.game?.phase === 'preparing' ? 'READY' : 'PREPARE'));
   $('endBtn').addEventListener('click', () => { if (confirm('協力プレイを終了してロビーに戻りますか？')) command('END'); });
-  function command(cmd) { if (isOpen()) ws.send(JSON.stringify({ type: 'command', cmd, epoch: game?.epoch })); }
+  function command(cmd) { if (isOpen()) session.socket.send(JSON.stringify({ type: 'command', cmd, epoch: session.game?.epoch })); }
 
   document.addEventListener('contextmenu', (e) => e.preventDefault());
-  function stopRemote() { releaseAll(); if (isOpen()) ws.send(JSON.stringify({type:'release_inputs',epoch:game?.epoch})); }
+  function stopRemote() { releaseAll(); if (isOpen()) session.socket.send(JSON.stringify({type:'release_inputs',epoch:session.game?.epoch})); }
   document.addEventListener('pointercancel', stopRemote);
   portrait.addEventListener('change', stopRemote);
   window.addEventListener('orientationchange', stopRemote);
@@ -273,15 +256,15 @@ import { phoneAdvice } from '../app-view.js';
   window.addEventListener('blur', stopRemote);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) stopRemote();
-    else if (!ws || ws.readyState > 1) { retry = 0; connect(); }
+    else if (!session.socket || session.socket.readyState > 1) { session.resetRetry(); connect(); }
   });
 
   let previousLookSent = null;
   const roleInput = bindCooperativeInput({
-    getGame: () => game, getRole: () => me, isOpen: () => isOpen() && controlsVisible(), ctlDown, ctlUp, onCancel: stopRemote,
+    getGame: () => session.game, getRole: () => session.me, isOpen: () => isOpen() && controlsVisible(), ctlDown, ctlUp, onCancel: stopRemote,
     // 視点の担当: 操作定義の分担があればそれに従い、なければ P2 (#105)
     // 固定の画面では、担当 (入れ替え後の席、#47) が視点 (P2 の表) の人
-    canLook: () => { const acts = myActions(game, me); return acts ? acts.some((a) => a.type === 'mouseDelta') : (game?.roleOf?.[me] || me) === 'P2'; },
+    canLook: () => { const acts = myActions(session.game, session.me); return acts ? acts.some((a) => a.type === 'mouseDelta') : (session.game?.roleOf?.[session.me] || session.me) === 'P2'; },
     sendLook: (msg, at) => {
       if (!fast.send(msg)) sendWs(msg);
       sent++;
@@ -293,8 +276,8 @@ import { phoneAdvice } from '../app-view.js';
   });
 
   // ---- 画面の切り替え ----
-  const phoneView = createPhoneView({releaseAll,onDiagnosticsOpen:stopRemote,bindControl,bindStick:roleInput.setGeneratedStick,onRoleOk:()=>sendWs({type:'role_ok',epoch:game?.epoch})});
-  function render() { phoneView({me,isHost,game}); }
+  const phoneView = createPhoneView({releaseAll,onDiagnosticsOpen:stopRemote,bindControl,bindStick:roleInput.setGeneratedStick,onRoleOk:()=>sendWs({type:'role_ok',epoch:session.game?.epoch})});
+  function render() { phoneView(session.view()); }
 
   // ---- 通信テスト: 20Hz で 10 秒送る (注入はされない) ----
   $('burst').addEventListener('click', () => {
