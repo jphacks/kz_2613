@@ -2531,6 +2531,11 @@ mod tests {
     use super::*;
     use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
+    mod measurement {
+        use super::*;
+        include!("hub_measurement.rs");
+    }
+
     // Hub::newはゲーム探索・設定読込みを行うため使わない。
     // ログはOSの破棄先、入力は明示dry-run。環境変数の変更も実時間sleepも不要。
     fn fixture() -> (Hub, UnboundedReceiver<Out>) {
