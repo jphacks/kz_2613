@@ -1009,3 +1009,11 @@
 - 長計測の初回実行は利用上限停止後にセッション/実プロセス/結果ファイルが存在しないことを確認し、合格として数えず再実行。専用試験名と結果markerをバイナリ内で起動前に確認するrunnerへ更新し、製品exeの誤指定が実行開始前に拒否される負例と、40ms×5条件のrunner smokeを確認した。共有Rustキャッシュは使わず、既に構築した非注入テストexeの専用コピーを使用した。
 - `node scripts/sim/host-load-measure.mjs --test-bin data/local/issue174/host-measure-test.exe --duration-ms 30000 --repeats 3 --out data/local/issue174/long.json`：30秒×5条件×3反復、15条件・計27,975処理で全アサーション成功。対象ソース315b06c、開始時dirty=false、ソース4ファイルと実行したテストexeのSHA-256を結果に記録。個人パス/IP/tokenなしの長結果を `docs/develop/data/host-load/long.json` へ保存した。
 - 長計測の観測最大：受信キュー1,773件、停滞監視キュー1,008件、停止enqueue→内部停止完了8,775µs、tick間隔20,587µs。fixtureはtimeBeginPeriodを呼ばず受信待ちも本番と異なるため、製品の停止上限/4ms周期や実ゲームの遅延へ読み替えない。冒頭バースト/監視キュー蓄積は再現したが、本番ループ・実ソケット・ディスク/標準出力停滞・slow writerは未測定。最適化は実施していない。
+
+## 2026-11-05 — スマホ入力ライフサイクルの回帰試験（Codex、#176）
+
+- 最新main `b3c0e88`、作業ツリーclean、PR #175は未マージ・CI成功を確認。対象Issue・既存PR・コメントを照合し、#176への着手コメント後に `codex/176-phone-regression` をmainから作成した。最新ユーザー判断に従い、Rust側とは独立して進める。
+- 実controller・表示・生成操作・スティック・視点・タッチパッド・transportを隔離VMで動かす再利用可能なfixtureと15試験を追加。製品コードは変更していない。新試験を既存CIへ追加し、[判断記録](../decisions/2026-11-05-phone-regression.md)へ棚卸しと試験境界を記載した。
+- `node scripts/sim/phone-lifecycle-test.mjs` は15/15成功。別の正期待repro `node scripts/sim/phone-lifecycle-test.mjs --repro-shared-pointer` は終了コード1で、同controlの2指保持から片指だけを離すと早期upになる既存不具合を再現。既定CIはこの特定のAssertionErrorとactual/expectedだけを既知不具合として固定し、修正済みとは扱わない。#177で所有元管理と正期待への切替を行う。
+- 関連検証：`node scripts/sim/ui-input-test.mjs` 12/12、`phone-view-test.mjs` 8観点、`controller-diagnostics-test.mjs`、`check-static-pages.mjs`、`python scripts/verify_overlay.py` 39項目、`python scripts/check-public-docs.py --all` 78資料・522参照、`git diff --check` 成功（省略したmjsも `node scripts/sim/` から実行）。実装者とは別の親エージェントが全差分・正期待repro・fixtureを独立レビューし、修正必須指摘なし。
+- 実DOMの描画/ヒット判定/自動Pointer Capture配送・Android/iPhoneの複数指/回転/バックグラウンド/Wi-Fi断は未検証。実通信・OS入力は行っていない。#10・#38・#39は完了扱いにしない。最終CI結果はPRへ記載する。
