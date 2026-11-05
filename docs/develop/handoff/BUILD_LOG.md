@@ -951,3 +951,11 @@
 - python scripts/check-public-docs.py --all：76資料・511参照、外向けMermaid12図（シーケンス6図）を含む全13図の構造確認成功。Mermaid 11.17.2で外向け12図のparse成功。ローカルプレビューの総合・ホスト仕様を1280px、総合と専門4冊を390pxで確認し、SVG全12図の描画とページ全体の横はみ出しなしを確認した。
 - python scripts/verify_overlay.py：39項目成功。node scripts/sim/profile-catalog-test.mjs：502定義成功。node scripts/sim/profile-extract-test.mjs：抽出・未検証下書き・非対応キーの確認成功。node scripts/sim/app-view-test.mjs：25/25成功。node scripts/sim/phone-view-test.mjs：8観点成功。node scripts/sim/verify-ui-evidence.mjs：104画面の照合成功。git diff --check成功。
 - 変更対象は文書のみ。製品コード・通信契約・操作定義・画像は変更していない。実機・実ゲーム試験およびRustの再ビルドは実施しておらず、ランチャー起動や前面化の実機受入が未完了であることを維持した。
+
+## 2026-11-05 — スマホ入力ライフサイクルの回帰試験（Codex、#176）
+
+- 最新main `b3c0e88`、作業ツリーclean、PR #175は未マージ・CI成功を確認。対象Issue・既存PR・コメントを照合し、#176への着手コメント後に `codex/176-phone-regression` をmainから作成した。最新ユーザー判断に従い、Rust側とは独立して進める。
+- 実controller・表示・生成操作・スティック・視点・タッチパッド・transportを隔離VMで動かす再利用可能なfixtureと15試験を追加。製品コードは変更していない。新試験を既存CIへ追加し、[判断記録](../decisions/2026-11-05-phone-regression.md)へ棚卸しと試験境界を記載した。
+- `node scripts/sim/phone-lifecycle-test.mjs` は15/15成功。別の正期待repro `node scripts/sim/phone-lifecycle-test.mjs --repro-shared-pointer` は終了コード1で、同controlの2指保持から片指だけを離すと早期upになる既存不具合を再現。既定CIはこの特定のAssertionErrorとactual/expectedだけを既知不具合として固定し、修正済みとは扱わない。#177で所有元管理と正期待への切替を行う。
+- 関連検証：`node scripts/sim/ui-input-test.mjs` 12/12、`phone-view-test.mjs` 8観点、`controller-diagnostics-test.mjs`、`check-static-pages.mjs`、`python scripts/verify_overlay.py` 39項目、`python scripts/check-public-docs.py --all` 78資料・522参照、`git diff --check` 成功（省略したmjsも `node scripts/sim/` から実行）。実装者とは別の親エージェントが全差分・正期待repro・fixtureを独立レビューし、修正必須指摘なし。
+- 実DOMの描画/ヒット判定/自動Pointer Capture配送・Android/iPhoneの複数指/回転/バックグラウンド/Wi-Fi断は未検証。実通信・OS入力は行っていない。#10・#38・#39は完了扱いにしない。最終CI結果はPRへ記載する。
