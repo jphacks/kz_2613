@@ -17,6 +17,7 @@ mod netinfo;
 mod netwatch;
 mod profiles;
 mod rtc;
+mod session;
 
 use std::net::SocketAddr;
 use std::path::{Component, Path, PathBuf};
