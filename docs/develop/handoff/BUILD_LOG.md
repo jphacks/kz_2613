@@ -1088,3 +1088,9 @@
 - cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml：ホスト102件＋プローブ4件成功（既存2件ignored）。既存95件の期待値を維持し、外部呼出し・対象制限・手動登録・90/300秒/5秒境界のサービス5件、旧起動結果/ゲーム切替・mock前面喪失全解放のHub2件を追加。cargo build同引数成功（既知LNK4099警告）。
 - 固定180-host.exeのprotocol-sim.mjs 55/55、shutdown-sim.mjs quit/EOF全解放、static-assets-sim.mjs 37資産成功。Web境界7/7、静的構文、構造39項目、資料91件/558参照、git diff --check成功。省略したmjsはscripts/sim配下。
 - 別エージェントが全製品差分・5単体・2Hub試験を独立レビューし修正必須指摘なし。旧gen/state拒否をOS呼出しより先に行うこと、保存・通知・時間判定と案内の維持を確認。実ゲーム・ランチャー・Windows入力・スマホ・Alt+Tab・配布先PCは未検証。
+
+## 2026-11-06 — #191 入力送出失敗時の安全停止と再解放
+
+- キー・ボタンの失敗を未確認集合へ記録し、成功したupだけで取り除く。入力停止を一度だけ適用し、通常解放やスマホ要求から再試行枠を増やせない。停止時の再解放後は50ms間隔で最大3回。終了時の追加試行も最大3回で、未確認が残れば明示終了はコード1。
+- 再解放成功後もPCで明示再開するまで入力禁止。スマホのPCリモコンをラッチ中に止め、PC画面の両再開入口で転送済みの合成クリックも拒否する。PC画面の停止操作は維持。
+- 独立レビューの指摘3件を修正し、最終再レビューで修正必須残なし。`cargo test --release --locked --offline` は108件＋プローブ4件成功。release build、固定exeの `protocol-sim.mjs` 55/55、`shutdown-sim.mjs` quit/EOF、`capture-screens.mjs` 23画面と合成クリック拒否・CDPポインター再開、`git diff --check` 成功。Windows実注入での残留は未確認。
