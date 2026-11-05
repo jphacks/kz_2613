@@ -22,11 +22,16 @@ export async function reproduceStaleOpen() {
   current.receive({ type: 'welcome', slot: 'P1', isHost: true, role: 'ホスト', token: 'test-token' });
   current.receive({ type: 'game', game: h.game({ epoch: 8 }) });
   h.control('act:attack').fire('pointerdown');
+  h.advance(100);
   obsolete.open();
   h.control('act:attack').fire('pointerup');
   assert.deepEqual(current.sent.filter(message => message.type === 'input').map(message => message.seq), [1, 2],
     '旧Socketのopenで現在の送信seqを巻き戻してはいけない');
   assert.equal(obsolete.sent.length, 0, '旧Socketへhelloを送ってはいけない');
+  current.receive({ type: 'pong', t: 1250 }); h.advance(900);
+  const pings = current.sent.filter(message => message.type === 'ping');
+  assert.equal(pings.length, 1, '現在のpingタイマーの予定時刻をずらしてはいけない');
+  assert.equal(pings[0].stats.unacked, 2, '現在の未ACK入力を旧openで削除してはいけない');
 }
 
 if (process.argv.includes('--repro-stale-open')) {
@@ -78,5 +83,6 @@ if (process.argv.includes('--repro-stale-open')) {
     f.session.attach(current); assert(!f.session.current(old)); assert(f.session.current(current));
     assert.equal(f.session.detach(), current); assert(!f.session.current(current)); assert(!f.session.isOpen());
   });
+  await test('旧open通知: 重なった再接続の遅延openはseq・pending・pingを初期化しない', reproduceStaleOpen);
   console.log(`${passed}/${passed} 合格（接続・参加状態、DOM・OS入力なし）`);
 }

@@ -974,3 +974,6 @@
 - 責務抽出段階で `node scripts/sim/phone-session-test.mjs` 6/6、`phone-lifecycle-test.mjs` 16/16、`controller-diagnostics-test.mjs` が成功。`node --check apps/web-static/scripts/controller.js` も成功。製品入力・視点周期・通信形式を変更していない。
 - 既存の旧onopen通知には世代ガードがなく、可視化と予約再接続が重なったSocketの遅延openで現在のseqが巻き戻ることを再現。`node scripts/sim/phone-session-test.mjs --repro-stale-open` は正期待 `[1,2]` に対して実際 `[1,1]`、AssertionError・exit 1。この失敗再現を抽出コミットに残し、世代ガードの修正は次の独立コミットで扱う。
 - 判断とStackの区切りは [接続・参加状態の分離](../decisions/2026-11-05-phone-session.md) に記録。実ブラウザー・Android/iPhone・実WebRTC・OS入力は未検証。
+- 別の修正コミットでonopen先頭へ現在Socketの照合を1行追加。正期待の `node scripts/sim/phone-session-test.mjs --repro-stale-open` はexit 0となり、既定の同試験は7/7成功。seqの連続性、未ACK2件の維持、pingの予定時刻、旧Socketへのhello不送信を確認した。
+- 最終ローカル検証：`node scripts/sim/phone-lifecycle-test.mjs` 16/16、`input-owners-test.mjs` 4/4、`ui-input-test.mjs` 12/12、`controller-diagnostics-test.mjs`、`phone-view-test.mjs` 8観点、`app-view-test.mjs` 25/25、`check-static-pages.mjs`、`python scripts/verify_overlay.py` 39項目、`python scripts/check-public-docs.py --all` 80資料・527参照、`git diff --check` が成功。各 `.mjs` は `node scripts/sim/` から実行した。HTML/CSSは未変更。新しい実ブラウザー描画・スマホ実機・実ゲーム試験は未実施で、VMの成功を実機受入に読み替えていない。
+- CIへ接続・参加状態試験を追加。独立レビューとpush後CIの結果はPRへ反映する。Stacked PRはbase `codex/177-pointer-ownership` とし、このスマホStackは#178で区切る。
