@@ -12,6 +12,7 @@ mod hub;
 mod input;
 mod input_manager;
 mod keybinds;
+mod look;
 mod netinfo;
 mod netwatch;
 mod profiles;

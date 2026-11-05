@@ -988,3 +988,13 @@
 - `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` 成功（32.45秒、既知のOpenSSL PDB不足LNK4099警告）。新しいexeをGit対象外の `data/local/issue171/recooplay-host.exe` へコピーし、共有キャッシュと分離して試験した。`node scripts/sim/shutdown-sim.mjs --bin <専用exe>` はquit/EOFの全解放後正常終了が成功。構造39項目・差分検査も成功。
 - #170で内部再現したup失敗後の再送なし等の既知挙動は保持し、安全修正を混ぜていない。実OS入力・Windows設定変更は行わず、実機の押下/解放・Minecraftの操作感・Alt+Tab・実ホットキーは未確認。
 - `node scripts/sim/protocol-sim.mjs --bin <専用exe>` は55/55成功。公開文書検査は80資料・533参照、`git diff --check`も成功。親担当の一次独立レビューで修正必須指摘なし。最終headの独立レビューとCI結果はPRへ記録する。
+
+## 2026-11-05 — 視点累積・補間の純計算分離（Codex、#172）
+
+- #172の重複確認・着手コメント投稿後、#171の訂正後head `0e8fb27` から `codex/172-look-core` を作成した。親は#185、baseは `codex/171-input-manager`。純計算と既存回帰を独立検証できる追加層として再評価し、#175から4段で区切る。
+- `Look` の到着gap・2秒窓・平滑化・未処理量・整数化・端数を `look.rs` へ分離。明示時刻と認可済み差分を受け、移動要求を返す。Hubは担当/epoch/lseq/累積値を検証し、実送出後に既存診断を集計する。4ms、既定30〜120ms、最大gap×0.5、0.5px閾値、trunc、OS i32/診断i64の型幅を維持した。
+- 既存68件のアサーションは無改変。独立数値試験8件を追加し、係数、符号/端数保存、0.5px、1000ms、2秒の正確な境界、最大gapと時定数、停止時破棄、入力禁止、急な大量移動を固定した。判断・Stacked上限・実機チェックは[判断記録](../decisions/2026-11-05-look-core.md)へ記載。
+- `RECOOPLAY_DRY_RUN=1`、SETUP_WINDOWSの既存PATH/LIBCLANG_PATH/CARGO_TARGET_DIRで `cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` はホスト76件＋プローブ4件成功（既存手動1件除外）。境界assert補強後の `cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml look::tests` も8/8成功。後者では製品処理を変更していない。
+- `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` 成功（20.29秒、既知のLNK4099警告）。Git対象外 `data/local/issue172/recooplay-host.exe` に保存した専用exeで `node scripts/sim/shutdown-sim.mjs --bin <専用exe>` のquit/EOF全解放後正常終了が成功。`python scripts/verify_overlay.py` は39項目、`git diff --check`も成功。
+- 実OS入力・Windows設定変更なし。実機の操作感・Raw Input/感度・Android/iPhone・フォーカス喪失・実ホットキー・SendInput失敗は未確認。後続#173以降の認可/副作用をまたぐ実装はスタックを増やさず、設計監査へ渡す。
+- `node scripts/sim/protocol-sim.mjs --bin <専用exe>` は55/55成功。公開資料検査は81資料・535参照、差分検査も成功。親担当の最終差分レビューとCI結果をPRへ記録する。
