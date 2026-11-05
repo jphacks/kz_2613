@@ -20,6 +20,9 @@ use crate::profiles::{self, Profile};
 use crate::focus::{self, Foreground, Target};
 use crate::games::{self, Entry};
 use crate::input::InputAdapter;
+use crate::input_manager::{OutputState, PumpStep, MIN_HOLD_MS, MIN_GAP_MS};
+#[cfg(test)]
+use crate::input_manager::MAX_QUEUE;
 use crate::rtc::{Peer, RtcSignal};
 
 // 参加枠は P1〜P4 (#57)。2〜4人で遊び、人数は Ready の時点で接続している人数で決める (#105)
@@ -40,9 +43,6 @@ const PROTOCOL_VERSION: u64 = 4;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
-const MIN_HOLD_MS: u64 = 60; // 押下は最低この時間続ける (ゲームは 50ms ごとに入力を読む)
-const MIN_GAP_MS: u64 = 50; // 解放も最低この時間続けてから次を押す (連打を 1 回ずつ認識させる)
-const MAX_QUEUE: usize = 8; // 通信が詰まって溜まった連打は 4 回分まで (それ以上は古い方を捨てる)
 const LOOK_TICK: Duration = Duration::from_millis(4);
 const RTC_TIMEOUT: Duration = Duration::from_secs(5);
 const FOCUS_CHECK: Duration = Duration::from_millis(100); // 前面のウィンドウを確認する間隔
@@ -297,18 +297,6 @@ impl InjectMode {
             _ => None,
         }
     }
-}
-
-/// キー / マウスボタンごとの状態。複数人が同じ出力を押していれば全員離すまで押したまま。
-/// 押下・解放はキューに積み、最低押下時間・最低解放時間を守って 1 つずつ実行する。
-#[derive(Default)]
-struct OutputState {
-    holders: BTreeSet<&'static str>,
-    physical: bool,
-    changed_at: Option<Instant>,
-    queue: VecDeque<(bool, &'static str)>,
-    timer_gen: u64,
-    timer_pending: bool,
 }
 
 /// 視点 (P2) の補間。届いた量を「未消化分」に積み、4ms ごとに一定割合ずつ流す。
@@ -1231,77 +1219,30 @@ impl Hub {
     }
 
     fn pump(&mut self, idx: usize) {
-        if self.outputs[idx].timer_pending {
-            return;
-        }
         loop {
-            let st = &mut self.outputs[idx];
-            let Some(&(down, slot)) = st.queue.front() else { return };
-            if down == st.physical {
-                st.queue.pop_front();
-                continue;
+            match self.outputs[idx].pump_step(Instant::now()) {
+                PumpStep::Idle => return,
+                PumpStep::Wait { delay, generation } => {
+                    self.schedule(Instant::now() + delay, Timer::Pump(idx, generation));
+                    return;
+                }
+                PumpStep::Emit { down, slot } => self.apply_output(idx, down, slot),
             }
-            let min = Duration::from_millis(if st.physical { MIN_HOLD_MS } else { MIN_GAP_MS });
-            let elapsed = st.changed_at.map(|t| t.elapsed()).unwrap_or(Duration::MAX);
-            if elapsed < min {
-                st.timer_pending = true;
-                st.timer_gen += 1;
-                let at = Instant::now() + (min - elapsed);
-                let gen = st.timer_gen;
-                self.schedule(at, Timer::Pump(idx, gen));
-                return;
-            }
-            st.queue.pop_front();
-            st.physical = down;
-            st.changed_at = Some(Instant::now());
-            self.apply_output(idx, down, slot);
         }
     }
 
     fn set_output(&mut self, idx: usize, slot: &'static str, down: bool) {
-        let st = &mut self.outputs[idx];
-        let before = !st.holders.is_empty();
-        if down {
-            st.holders.insert(slot);
-        } else {
-            st.holders.remove(slot);
-        }
-        let after = !st.holders.is_empty();
-        if before == after {
-            return;
-        }
-        // キューは押下/解放が交互に並ぶので、古い方から 1 組ずつ捨てれば整合は崩れない
-        let mut dropped = 0;
-        while st.queue.len() >= MAX_QUEUE {
-            st.queue.drain(..2);
-            dropped += 1;
-        }
-        st.queue.push_back((after, slot));
+        let Some(dropped) = self.outputs[idx].set_holder(slot, down) else { return };
         for _ in 0..dropped {
             self.record("queue_drop", json!({ "out": OUTPUTS[idx].id, "slot": slot }));
         }
         self.pump(idx);
     }
 
-    /// 切断・停止時: 押しっぱなしのキーを即座に離す (slot = None なら全員分)
+    /// 切断・停止時のup要求は、出力ごとの状態を無効化した直後に順次送る。
     fn release_outputs(&mut self, slot: Option<&'static str>) {
         for idx in 0..OUTPUTS.len() {
-            let st = &mut self.outputs[idx];
-            match slot {
-                Some(s) => {
-                    st.holders.remove(s);
-                }
-                None => st.holders.clear(),
-            }
-            if !st.holders.is_empty() {
-                continue;
-            }
-            st.timer_pending = false;
-            st.timer_gen += 1; // 予約済みのタイマーを無効化
-            st.queue.clear();
-            if st.physical {
-                st.physical = false;
-                st.changed_at = Some(Instant::now());
+            if self.outputs[idx].release(slot, Instant::now()) {
                 self.apply_output(idx, false, slot.unwrap_or("system"));
             }
         }
@@ -1971,9 +1912,7 @@ impl Hub {
                 self.push_state();
             }
             Timer::Pump(idx, gen) => {
-                let st = &mut self.outputs[idx];
-                if st.timer_pending && st.timer_gen == gen {
-                    st.timer_pending = false;
+                if self.outputs[idx].on_timer(gen) {
                     self.pump(idx);
                 }
             }
