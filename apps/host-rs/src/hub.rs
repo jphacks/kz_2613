@@ -3,7 +3,7 @@
 // すべての状態変更はこのスレッドだけが行うのでロック不要。タイマーもこのスレッドで回す (視点は 4ms 刻み)。
 
 use std::cmp::Reverse;
-use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
@@ -20,6 +20,7 @@ use crate::profiles::{self, Profile};
 use crate::focus::{self, Foreground, Target};
 use crate::games::{self, Entry};
 use crate::input::InputAdapter;
+use crate::look::{Look, LOOK_TICK};
 use crate::input_manager::{OutputState, PumpStep, MIN_HOLD_MS, MIN_GAP_MS};
 #[cfg(test)]
 use crate::input_manager::MAX_QUEUE;
@@ -43,7 +44,6 @@ const PROTOCOL_VERSION: u64 = 4;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
-const LOOK_TICK: Duration = Duration::from_millis(4);
 const RTC_TIMEOUT: Duration = Duration::from_secs(5);
 const FOCUS_CHECK: Duration = Duration::from_millis(100); // 前面のウィンドウを確認する間隔
 const LAUNCH_POLL: Duration = Duration::from_millis(500); // 起動したゲームのウィンドウを探す間隔
@@ -299,25 +299,6 @@ impl InjectMode {
     }
 }
 
-/// 視点 (P2) の補間。届いた量を「未消化分」に積み、4ms ごとに一定割合ずつ流す。
-/// 流す速さ (時定数) は直近 2 秒の到着の途切れに合わせて自動調整する。
-struct Look {
-    slot: &'static str, // 視点を動かしている枠 (分担で変わる、#105)
-    px: f64,
-    py: f64,
-    fx: f64,
-    fy: f64,
-    sum_x: i64,
-    sum_y: i64,
-    n: u64,
-    last_tick: Instant,
-    last_arrive: Option<Instant>,
-    gaps: VecDeque<(Instant, f64)>,
-    tau: f64,
-    min_ms: f64,
-    max_ms: f64,
-}
-
 pub struct Hub {
     tx: Sender<Event>,
     input: Box<dyn InputAdapter>,
@@ -445,22 +426,7 @@ impl Hub {
             },
             inject: InjectMode::parse(&config.inject_mode).unwrap_or(InjectMode::Off),
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
-            look: Look {
-                slot: "P2",
-                px: 0.0,
-                py: 0.0,
-                fx: 0.0,
-                fy: 0.0,
-                sum_x: 0,
-                sum_y: 0,
-                n: 0,
-                last_tick: now,
-                last_arrive: None,
-                gaps: VecDeque::new(),
-                tau: config.look_smooth_min_ms,
-                min_ms: config.look_smooth_min_ms,
-                max_ms: config.look_smooth_max_ms,
-            },
+            look: Look::new(now, config.look_smooth_min_ms, config.look_smooth_max_ms),
             timers: BinaryHeap::new(),
             timer_seq: 0,
             state_pending: false,
@@ -1317,63 +1283,18 @@ impl Hub {
         if self.game.phase != Phase::Coop || !self.owns_look(slot) || !self.can_inject() {
             return;
         }
-        let now = Instant::now();
-        let look = &mut self.look;
-        look.slot = SLOT_NAMES[slot];
-        if let Some(prev) = look.last_arrive {
-            let gap = now.duration_since(prev).as_secs_f64() * 1000.0;
-            if gap < 1000.0 {
-                look.gaps.push_back((now, gap));
-            }
-        }
-        look.last_arrive = Some(now);
-        // 直近 2 秒のドラッグ中で一番長い途切れに合わせる (まとめて届く端末は平均だと間隔が短く見えるため最大値を使う)
-        while look.gaps.front().is_some_and(|(at, _)| now.duration_since(*at) > Duration::from_secs(2)) {
-            look.gaps.pop_front();
-        }
-        let max_gap = look.gaps.iter().map(|(_, g)| *g).fold(0.0, f64::max);
-        look.tau = (max_gap * 0.5).clamp(look.min_ms, look.max_ms);
-        look.px += dx;
-        look.py += dy;
+        self.look.add(SLOT_NAMES[slot], dx, dy, Instant::now());
     }
 
     fn reset_look(&mut self) {
-        let l = &mut self.look;
-        l.px = 0.0;
-        l.py = 0.0;
-        l.fx = 0.0;
-        l.fy = 0.0;
+        self.look.reset();
     }
 
     fn look_tick(&mut self) {
-        let now = Instant::now();
-        let dt = now.duration_since(self.look.last_tick).as_secs_f64() * 1000.0;
-        self.look.last_tick = now;
-        if self.look.px == 0.0 && self.look.py == 0.0 {
-            return;
-        }
-        if self.game.phase != Phase::Coop || !self.can_inject() {
-            return self.reset_look();
-        }
-        let l = &mut self.look;
-        // 未消化分が 0.5px 未満なら残りを全部流して終わらせる
-        let k = 1.0 - (-dt / l.tau).exp();
-        let small = l.px.abs() < 0.5 && l.py.abs() < 0.5;
-        let ox = if small { l.px } else { l.px * k };
-        let oy = if small { l.py } else { l.py * k };
-        l.px -= ox;
-        l.py -= oy;
-        l.fx += ox;
-        l.fy += oy;
-        let ix = l.fx.trunc();
-        let iy = l.fy.trunc();
-        l.fx -= ix;
-        l.fy -= iy;
-        if ix != 0.0 || iy != 0.0 {
-            self.input.mouse_move(ix as i32, iy as i32);
-            self.look.sum_x += ix as i64;
-            self.look.sum_y += iy as i64;
-            self.look.n += 1;
+        let allowed = self.game.phase == Phase::Coop && self.can_inject();
+        if let Some(movement) = self.look.tick(Instant::now(), allowed) {
+            self.input.mouse_move(movement.dx, movement.dy);
+            self.look.record_output(movement);
         }
     }
 
@@ -2468,6 +2389,7 @@ impl Hub {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::VecDeque;
     use crate::input::Input;
     use crate::input::testing::{Operation, RecordingInput};
     use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
@@ -2503,22 +2425,7 @@ mod tests {
             },
             inject: InjectMode::On,
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
-            look: Look {
-                slot: "P2",
-                px: 0.0,
-                py: 0.0,
-                fx: 0.0,
-                fy: 0.0,
-                sum_x: 0,
-                sum_y: 0,
-                n: 0,
-                last_tick: now,
-                last_arrive: None,
-                gaps: VecDeque::new(),
-                tau: 30.0,
-                min_ms: 30.0,
-                max_ms: 120.0,
-            },
+            look: Look::new(now, 30.0, 120.0),
             timers: BinaryHeap::new(),
             timer_seq: 0,
             state_pending: false,
