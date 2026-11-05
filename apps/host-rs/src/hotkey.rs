@@ -40,7 +40,7 @@ mod imp {
                 let mut msg = MSG::default();
                 while unsafe { GetMessageW(&mut msg, None, 0, 0) }.as_bool() {
                     if msg.message == WM_HOTKEY && msg.wParam.0 == HOTKEY_ID as usize {
-                        let _ = tx.send(Event::EmergencyStop { source: "hotkey" });
+                        let _ = tx.send(Event::EmergencyStop { source: "hotkey", enqueued_at: None });
                     }
                 }
             })
