@@ -6,6 +6,7 @@ import {createPhoneView} from '../../apps/web-static/scripts/phone-view.js';
 import {phoneAdvice} from '../../apps/web-static/app-view.js';
 import {createInputOwners} from '../../apps/web-static/scripts/input-owners.js';
 import {createPhoneSession} from '../../apps/web-static/scripts/phone-session.js';
+import {decodeServerMessage} from '../../apps/web-static/scripts/protocol.js';
 
 class Element {
   constructor(id='') {
@@ -42,14 +43,14 @@ try {
     matchMedia:()=>portrait,WebSocket:Socket,
     setInterval:(fn,ms)=>{const timer={fn,ms};intervals.push(timer);return timer;},clearInterval(){},
     setTimeout(){},alert(){},confirm:()=>true,
-    createPhoneView,phoneAdvice,createInputOwners,createPhoneSession,bindTouchpad:()=>({reset(){}}),
+    createPhoneView,phoneAdvice,createInputOwners,createPhoneSession,decodeServerMessage,bindTouchpad:()=>({reset(){}}),
     bindCooperativeInput:options=>{cooperative=options;return {release(){},resetEpoch(){}};},
     myActions:()=>null,recordInputMetric(){},inputMetrics:{summary:()=>({})},
     createFastChannel:()=>({isOpen:()=>false,start(){},close(){},signal(){},send:()=>false}),
   };
   const source=fs.readFileSync(new URL('../../apps/web-static/scripts/controller.js',import.meta.url),'utf8');
   vm.runInNewContext(source.replace(/^import .*$/gm,''),context);
-  Socket.last.onmessage({data:JSON.stringify({type:'game',game:{phase:'coop',epoch:7,connected:['P1','P2','P3']}})});
+  Socket.last.onmessage({data:JSON.stringify({type:'game',game:{phase:'coop',epoch:7,connected:['P1','P2','P3'],profile:{id:'test',name:'試験',actions:[]}}})});
   assert.equal(cooperative.isOpen(),true);
   attack.fire('pointerdown');
   el('phoneSettingsBtn').fire('click');

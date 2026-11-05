@@ -3,6 +3,7 @@ import { bindCooperativeInput } from './cooperative-input.js';
 import { createFastChannel } from './transport.js';
 import { createInputOwners } from './input-owners.js';
 import { createPhoneSession } from './phone-session.js';
+import { decodeServerMessage } from './protocol.js';
 import { recordInputMetric, inputMetrics } from './ui-metrics.js';
 
 import { bindTouchpad } from './touchpad.js';
@@ -41,8 +42,11 @@ import { phoneAdvice } from '../app-view.js';
     sock.onerror = () => {};
     sock.onmessage = (ev) => {
       if (!session.current(sock)) return;
+      try {
       session.received();
-      const msg = JSON.parse(ev.data);
+      const msg = decodeServerMessage(ev.data);
+      // 壊れた状態で操作を続けず、通常の切断経路で保持を失効させて再接続する。
+      if (!msg) { releaseAll(); sock.close(); return; }
       if (msg.type === 'rtc-answer' || msg.type === 'rtc-cand') { onRtcSignal(msg); return; }
       if (msg.type === 'welcome') {
         session.authenticate(msg);
@@ -85,6 +89,10 @@ import { phoneAdvice } from '../app-view.js';
         showVersionMismatch();
       } else if (msg.type === 'error' && msg.code === 'bad_token') {
         showBadToken();
+      }
+      } catch {
+        // 検証を通った通知でも適用・描画に失敗したら、保持を残して操作を続けない。
+        try { releaseAll(); } finally { sock.close(); }
       }
     };
   }
