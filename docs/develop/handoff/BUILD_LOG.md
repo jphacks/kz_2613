@@ -951,3 +951,11 @@
 - python scripts/check-public-docs.py --all：76資料・511参照、外向けMermaid12図（シーケンス6図）を含む全13図の構造確認成功。Mermaid 11.17.2で外向け12図のparse成功。ローカルプレビューの総合・ホスト仕様を1280px、総合と専門4冊を390pxで確認し、SVG全12図の描画とページ全体の横はみ出しなしを確認した。
 - python scripts/verify_overlay.py：39項目成功。node scripts/sim/profile-catalog-test.mjs：502定義成功。node scripts/sim/profile-extract-test.mjs：抽出・未検証下書き・非対応キーの確認成功。node scripts/sim/app-view-test.mjs：25/25成功。node scripts/sim/phone-view-test.mjs：8観点成功。node scripts/sim/verify-ui-evidence.mjs：104画面の照合成功。git diff --check成功。
 - 変更対象は文書のみ。製品コード・通信契約・操作定義・画像は変更していない。実機・実ゲーム試験およびRustの再ビルドは実施しておらず、ランチャー起動や前面化の実機受入が未完了であることを維持した。
+
+## 2026-11-05 — 型付きメッセージ境界の設計監査（Codex、#179）
+
+- 最新main `b3c0e88`、対象Issue・既存PR・コメントを再確認し、#179へ着手コメントを投稿してから独立監査ブランチを作成した。先行の製品Stackを無制限に増やさず、実装と並行できる設計・試験系列・再開条件を成果とする。
+- 現行コード・通信/ホスト仕様・回帰試験と、作業中のRust入力分離/スマホ状態分離を照合。責任境界、ガード、状態更新と副作用順序、維持するログ/通知、対照付き試験系列、外部の統合条件を[判断記録](../decisions/2026-11-05-protocol-boundary-plan.md)へ整理した。製品コード・採用仕様は変更せず、本Issueの製品分離が実装済みとは扱わない。
+- 別エージェントがコードと文書を独立レビューした。WSパースの実行箇所、再検出停止の対象範囲、Playerとmonitorのepoch条件の違いという指摘をそれぞれの対象文書へ反映した。未確認事項・保留理由もレビューし、それ以外の修正必須指摘なし。
+- `python scripts/check-public-docs.py --all`、`python scripts/verify_overlay.py`（39項目）、`git diff --check` 成功。監査資料とBUILD_LOGだけの変更のためRustの製品ソース再ビルドや新たなOS入力試験は行っていない。PRの既存CIも追跡し、結果をPRへ記載する。
+- Android/iPhone・Windows実入力・ゲーム操作・無線断・Alt+Tab・実ホットキー等は未検証のまま。mainマージ・Issueクローズ・正式リリースは行わない。
