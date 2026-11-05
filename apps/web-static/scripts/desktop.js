@@ -87,9 +87,11 @@ function remoteControl(c){
 $('subBtn').addEventListener('click',()=>rolesRun(desktopView(ui,game)==='paused'?{kind:'swap'}:rolesAction(game,games()).alt));
 // 緊急停止などで入力が止まっているときの「入力を再開する」(#114)。PC の前で確かめてから再開させる鍵
 const inputStopped=view=>['preparing','ready','paused'].includes(view)&&inject?.mode==='off';
-$('nextBtn').addEventListener('click',()=>{
+$('nextBtn').addEventListener('click',e=>{
   const view=desktopView(ui,game);
-  if(inputStopped(view))send({type:'inject_mode',mode:'on'});
+  if(inputStopped(view)) {
+    if(e.isTrusted)send({type:'inject_mode',mode:'on'});
+  }
   else if(view==='join')setUi({...ui,screen:'game'});
   else if(view==='game')gameMain();
   else if(view==='roles')rolesRun(rolesAction(game,games()));
@@ -106,7 +108,8 @@ document.addEventListener('click',e=>{
   const el=e.target.closest('[data-go],[data-game],[data-mode]');if(!el)return;
   if(el.dataset.go)setUi({...ui,screen:el.dataset.go});
   if(el.dataset.game)setUi({...ui,game:el.dataset.game});
-  if(el.dataset.mode)send({type:'inject_mode',mode:el.dataset.mode});
+  // スマホの仮想カーソルが生成したクリックには入力再開を許可しない。
+  if(el.dataset.mode&&(el.dataset.mode==='off'||e.isTrusted))send({type:'inject_mode',mode:el.dataset.mode});
 });
 function dialogRemote(control){
   const d=document.querySelector('dialog[open]');if(!d)return false;

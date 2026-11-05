@@ -196,6 +196,15 @@ async function main(){
   await pc.shot('pc-11-emergency-stop.jpg');
   await p1.shot('phone-p1-05-emergency-stop.jpg');
 
+  // 仮想カーソルと同じDOM clickでは再開せず、PC上のポインター操作でだけ再開する。
+  await pc.eval(`document.querySelector('[data-mode="on"]').click(); document.getElementById('nextBtn').click()`);
+  await sleep(500);
+  if(!await pc.eval(`document.getElementById('nextBtn').classList.contains('resume-input')`))throw Error('合成クリックで入力が再開した');
+  const {x,y}=await pc.eval(`(()=>{const r=document.getElementById('nextBtn').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  await pc.s('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',clickCount:1});
+  await pc.s('Input.dispatchMouseEvent',{type:'mouseReleased',x,y,button:'left',clickCount:1});
+  await pc.waitFor(`!document.getElementById('nextBtn').classList.contains('resume-input')`,'PC操作による入力再開');
+
   fs.writeFileSync(path.join(OUT,'shots.json'),JSON.stringify({captured:new Date().toISOString(),pc:`${PC.width}x${PC.height}`,phone:`${PHONE.width}x${PHONE.height}@${PHONE.deviceScaleFactor}x`,files:shots},null,2)+'\n');
   console.log(`${shots.length}枚を ${path.relative(ROOT,OUT)} に保存`);
 }
