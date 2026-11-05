@@ -1080,3 +1080,11 @@
 - cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml：ホスト95件＋プローブ4件成功、既存2件ignored。cargo build同引数成功、既知LNK4099警告。固定exeのprotocol-sim.mjs 55/55成功。初回の新テストはfixtureにキー割当がなく失敗したため、製品のKeybindsを設定して再実行し成功（合格条件は緩和していない）。
 - node scripts/sim/protocol-boundary-test.mjs 7/7、phone-lifecycle-test.mjs 16/16、phone-session-test.mjs 7/7、input-owners-test.mjs 4/4、ui-input-test.mjs 12/12、診断、スマホ8観点、PC25/25、静的構文、構造39項目、公開資料検査、git diff --check成功（省略したmjsはscripts/sim配下）。別エージェントの独立実行でもWeb境界7/7と入力16/16成功。
 - node scripts/sim/capture-screens.mjs --bin <固定179-host.exe> --out data/local/179-screenshots：実ホスト配信で参加→準備→Ready→協力→Pause→診断→緊急停止の23画面保存。アクションと緊急停止の表示を目視確認。画像はGit対象外。Android/iPhone・実ゲームの受入ではない。最終head CIと配布zipはPRで追跡する。
+
+## 2026-11-06 — ゲーム管理の外部境界と起動監視の分離（Codex、#180）
+
+- #173統合と#179確定差分を基準に、重複PRなしを確認し#180へ再開コメントを投稿。#179のafd6c23を親とする専用ブランチでHubを順次変更した。
+- game_service.rsへGameBackend/GameService、既知選択/対象構築/Minecraft Entry、手動登録・編集、純粋なLaunch::observeを分離。games/focusを再実装せず、認可・世代・Ready・全解放/epoch/通知の順序はHubに維持。[判断記録](../decisions/2026-11-06-game-service.md)参照。
+- cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml：ホスト102件＋プローブ4件成功（既存2件ignored）。既存95件の期待値を維持し、外部呼出し・対象制限・手動登録・90/300秒/5秒境界のサービス5件、旧起動結果/ゲーム切替・mock前面喪失全解放のHub2件を追加。cargo build同引数成功（既知LNK4099警告）。
+- 固定180-host.exeのprotocol-sim.mjs 55/55、shutdown-sim.mjs quit/EOF全解放、static-assets-sim.mjs 37資産成功。Web境界7/7、静的構文、構造39項目、資料91件/558参照、git diff --check成功。省略したmjsはscripts/sim配下。
+- 別エージェントが全製品差分・5単体・2Hub試験を独立レビューし修正必須指摘なし。旧gen/state拒否をOS呼出しより先に行うこと、保存・通知・時間判定と案内の維持を確認。実ゲーム・ランチャー・Windows入力・スマホ・Alt+Tab・配布先PCは未検証。
