@@ -41,6 +41,8 @@ jobs:
         run: node scripts/sim/protocol-sim.mjs
       - name: 終了通知と親プロセス消失時の全解放
         run: node scripts/sim/shutdown-sim.mjs
+      - name: 実WebSocketの非注入計測スモーク
+        run: node scripts/sim/runtime-measure.mjs --bin apps/host-rs/target/release/recooplay-host.exe --players 2 --cases normal --duration-ms 1000
       - name: PC 画面の表示ロジック
         run: node scripts/sim/app-view-test.mjs
       - name: スマホのReady・待機・停止と診断前の解放

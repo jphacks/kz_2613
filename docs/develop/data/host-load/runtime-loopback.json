@@ -1,0 +1,1047 @@
+{
+  "kind": "本番Hubと実loopback WSの内部・外部観測。観測値であり実機遅延や上限の保証ではない",
+  "executable": {
+    "name": "174-final-host.exe",
+    "sha256": "e50840be3c75f16adb346d326558b7ebbe329cfc4c9c495d3f53cb1597b1abea"
+  },
+  "results": [
+    {
+      "players": 2,
+      "scenario": "normal",
+      "durationMs": 5046.4808,
+      "sent": 222,
+      "pingSamples": 94,
+      "pingMs": {
+        "p50": 0.41740000000027067,
+        "p95": 0.720299999999952,
+        "max": 1.1928000000000338
+      },
+      "stopRoundTripMs": 1.6859000000004016,
+      "safeStop": true,
+      "runtime": {
+        "hub_event_us": {
+          "count": 441,
+          "max": 1446,
+          "p50": 14,
+          "p95": 67,
+          "sampled": 441
+        },
+        "hub_stop_enqueue_to_end_us": {
+          "count": 1,
+          "max": 1137,
+          "p50": 1137,
+          "p95": 1137,
+          "sampled": 1
+        },
+        "hub_stop_queue_us": {
+          "count": 1,
+          "max": 11,
+          "p50": 11,
+          "p95": 11,
+          "sampled": 1
+        },
+        "hub_stop_us": {
+          "count": 1,
+          "max": 1124,
+          "p50": 1124,
+          "p95": 1124,
+          "sampled": 1
+        },
+        "hub_ws_enqueue_to_end_us": {
+          "count": 437,
+          "max": 1471,
+          "p50": 66,
+          "p95": 143,
+          "sampled": 437
+        },
+        "hub_ws_queue_us": {
+          "count": 437,
+          "max": 790,
+          "p50": 41,
+          "p95": 108,
+          "sampled": 437
+        },
+        "log_flush_us": {
+          "count": 5,
+          "max": 153,
+          "p50": 75,
+          "p95": 153,
+          "sampled": 5
+        },
+        "log_record_us": {
+          "count": 299,
+          "max": 32,
+          "p50": 3,
+          "p95": 8,
+          "sampled": 299
+        },
+        "look_tick_interval_us": {
+          "count": 1336,
+          "max": 5761,
+          "p50": 4036,
+          "p95": 5048,
+          "sampled": 1336
+        },
+        "notify_monitors_us": {
+          "count": 136,
+          "max": 219,
+          "p50": 20,
+          "p95": 105,
+          "sampled": 136
+        },
+        "ws_queue_messages": {
+          "count": 462,
+          "max": 2,
+          "p50": 0,
+          "p95": 0,
+          "sampled": 462
+        },
+        "ws_send_us": {
+          "count": 461,
+          "max": 293,
+          "p50": 63,
+          "p95": 146,
+          "sampled": 461
+        }
+      },
+      "logBytes": 35565
+    },
+    {
+      "players": 2,
+      "scenario": "burst",
+      "durationMs": 5006.1944,
+      "sent": 63200,
+      "pingSamples": 94,
+      "pingMs": {
+        "p50": 1.2240999999994528,
+        "p95": 22.434400000000096,
+        "max": 31.581899999999223
+      },
+      "stopRoundTripMs": 1.9840999999996711,
+      "safeStop": true,
+      "runtime": {
+        "hub_event_us": {
+          "count": 63466,
+          "max": 2054,
+          "p50": 5,
+          "p95": 20,
+          "sampled": 63466
+        },
+        "hub_stop_enqueue_to_end_us": {
+          "count": 1,
+          "max": 1480,
+          "p50": 1480,
+          "p95": 1480,
+          "sampled": 1
+        },
+        "hub_stop_queue_us": {
+          "count": 1,
+          "max": 21,
+          "p50": 21,
+          "p95": 21,
+          "sampled": 1
+        },
+        "hub_stop_us": {
+          "count": 1,
+          "max": 1458,
+          "p50": 1458,
+          "p95": 1458,
+          "sampled": 1
+        },
+        "hub_ws_enqueue_to_end_us": {
+          "count": 63462,
+          "max": 2523,
+          "p50": 41,
+          "p95": 237,
+          "sampled": 63462
+        },
+        "hub_ws_queue_us": {
+          "count": 63462,
+          "max": 2512,
+          "p50": 32,
+          "p95": 227,
+          "sampled": 63462
+        },
+        "log_flush_us": {
+          "count": 5,
+          "max": 95,
+          "p50": 38,
+          "p95": 95,
+          "sampled": 5
+        },
+        "log_record_us": {
+          "count": 63276,
+          "max": 318,
+          "p50": 1,
+          "p95": 3,
+          "sampled": 63276
+        },
+        "look_tick_interval_us": {
+          "count": 1323,
+          "max": 5961,
+          "p50": 4006,
+          "p95": 5082,
+          "sampled": 1323
+        },
+        "notify_monitors_us": {
+          "count": 143,
+          "max": 127,
+          "p50": 19,
+          "p95": 85,
+          "sampled": 143
+        },
+        "ws_queue_messages": {
+          "count": 63447,
+          "max": 77,
+          "p50": 2,
+          "p95": 18,
+          "sampled": 63447
+        },
+        "ws_send_us": {
+          "count": 63446,
+          "max": 1314,
+          "p50": 5,
+          "p95": 42,
+          "sampled": 63446
+        }
+      },
+      "logBytes": 8326802
+    },
+    {
+      "players": 2,
+      "scenario": "slow-monitor",
+      "durationMs": 5012.722599999999,
+      "sent": 60800,
+      "pingSamples": 92,
+      "pingMs": {
+        "p50": 2.606999999999971,
+        "p95": 22.761099999999715,
+        "max": 28.746900000000096
+      },
+      "stopRoundTripMs": 15.222000000001572,
+      "safeStop": true,
+      "runtime": {
+        "hub_event_us": {
+          "count": 61060,
+          "max": 3787,
+          "p50": 10,
+          "p95": 34,
+          "sampled": 61060
+        },
+        "hub_stop_enqueue_to_end_us": {
+          "count": 1,
+          "max": 855,
+          "p50": 855,
+          "p95": 855,
+          "sampled": 1
+        },
+        "hub_stop_queue_us": {
+          "count": 1,
+          "max": 27,
+          "p50": 27,
+          "p95": 27,
+          "sampled": 1
+        },
+        "hub_stop_us": {
+          "count": 1,
+          "max": 828,
+          "p50": 828,
+          "p95": 828,
+          "sampled": 1
+        },
+        "hub_ws_enqueue_to_end_us": {
+          "count": 61055,
+          "max": 11103,
+          "p50": 110,
+          "p95": 745,
+          "sampled": 61055
+        },
+        "hub_ws_queue_us": {
+          "count": 61055,
+          "max": 11093,
+          "p50": 95,
+          "p95": 730,
+          "sampled": 61055
+        },
+        "log_flush_us": {
+          "count": 5,
+          "max": 39,
+          "p50": 34,
+          "p95": 39,
+          "sampled": 5
+        },
+        "log_record_us": {
+          "count": 60877,
+          "max": 1487,
+          "p50": 1,
+          "p95": 3,
+          "sampled": 60877
+        },
+        "look_tick_interval_us": {
+          "count": 1421,
+          "max": 8416,
+          "p50": 4007,
+          "p95": 5138,
+          "sampled": 1421
+        },
+        "notify_monitors_us": {
+          "count": 60947,
+          "max": 566,
+          "p50": 1,
+          "p95": 4,
+          "sampled": 60947
+        },
+        "ws_queue_messages": {
+          "count": 142709,
+          "max": 59363,
+          "p50": 7,
+          "p95": 56,
+          "sampled": 100000
+        },
+        "ws_queue_while_sending_messages": {
+          "count": 255,
+          "max": 59364,
+          "p50": 31433,
+          "p95": 58956,
+          "sampled": 255
+        },
+        "ws_send_pending_us": {
+          "count": 255,
+          "max": 5102115,
+          "p50": 2560775,
+          "p95": 4861067,
+          "sampled": 255
+        },
+        "ws_send_us": {
+          "count": 142708,
+          "max": 5103085,
+          "p50": 15,
+          "p95": 43,
+          "sampled": 100000
+        }
+      },
+      "logBytes": 8070891
+    },
+    {
+      "players": 2,
+      "scenario": "disconnect",
+      "durationMs": 5025.720800000003,
+      "sent": 166,
+      "pingSamples": 69,
+      "pingMs": {
+        "p50": 0.38810000000012224,
+        "p95": 0.5697999999974854,
+        "max": 0.6253999999971711
+      },
+      "stopRoundTripMs": 1.9068000000006577,
+      "safeStop": true,
+      "runtime": {
+        "hub_event_us": {
+          "count": 307,
+          "max": 1419,
+          "p50": 26,
+          "p95": 81,
+          "sampled": 307
+        },
+        "hub_stop_enqueue_to_end_us": {
+          "count": 1,
+          "max": 1342,
+          "p50": 1342,
+          "p95": 1342,
+          "sampled": 1
+        },
+        "hub_stop_queue_us": {
+          "count": 1,
+          "max": 23,
+          "p50": 23,
+          "p95": 23,
+          "sampled": 1
+        },
+        "hub_stop_us": {
+          "count": 1,
+          "max": 1318,
+          "p50": 1318,
+          "p95": 1318,
+          "sampled": 1
+        },
+        "hub_ws_enqueue_to_end_us": {
+          "count": 302,
+          "max": 1454,
+          "p50": 70,
+          "p95": 136,
+          "sampled": 302
+        },
+        "hub_ws_queue_us": {
+          "count": 302,
+          "max": 772,
+          "p50": 35,
+          "p95": 91,
+          "sampled": 302
+        },
+        "log_flush_us": {
+          "count": 5,
+          "max": 274,
+          "p50": 79,
+          "p95": 274,
+          "sampled": 5
+        },
+        "log_record_us": {
+          "count": 219,
+          "max": 21,
+          "p50": 3,
+          "p95": 10,
+          "sampled": 219
+        },
+        "look_tick_interval_us": {
+          "count": 1327,
+          "max": 6013,
+          "p50": 4012,
+          "p95": 5053,
+          "sampled": 1327
+        },
+        "notify_monitors_us": {
+          "count": 113,
+          "max": 139,
+          "p50": 30,
+          "p95": 105,
+          "sampled": 113
+        },
+        "ws_queue_messages": {
+          "count": 356,
+          "max": 2,
+          "p50": 0,
+          "p95": 0,
+          "sampled": 356
+        },
+        "ws_send_us": {
+          "count": 356,
+          "max": 426,
+          "p50": 73,
+          "p95": 159,
+          "sampled": 356
+        }
+      },
+      "logBytes": 26159
+    },
+    {
+      "players": 2,
+      "scenario": "many-log",
+      "durationMs": 5030.1247,
+      "sent": 63600,
+      "pingSamples": 94,
+      "pingMs": {
+        "p50": 1.394399999997404,
+        "p95": 15.357199999998556,
+        "max": 29.377400000001217
+      },
+      "stopRoundTripMs": 1.4452999999994063,
+      "safeStop": true,
+      "runtime": {
+        "hub_event_us": {
+          "count": 63867,
+          "max": 4652,
+          "p50": 8,
+          "p95": 29,
+          "sampled": 63867
+        },
+        "hub_stop_enqueue_to_end_us": {
+          "count": 1,
+          "max": 936,
+          "p50": 936,
+          "p95": 936,
+          "sampled": 1
+        },
+        "hub_stop_queue_us": {
+          "count": 1,
+          "max": 15,
+          "p50": 15,
+          "p95": 15,
+          "sampled": 1
+        },
+        "hub_stop_us": {
+          "count": 1,
+          "max": 920,
+          "p50": 920,
+          "p95": 920,
+          "sampled": 1
+        },
+        "hub_ws_enqueue_to_end_us": {
+          "count": 63863,
+          "max": 5126,
+          "p50": 98,
+          "p95": 594,
+          "sampled": 63863
+        },
+        "hub_ws_queue_us": {
+          "count": 63863,
+          "max": 5117,
+          "p50": 84,
+          "p95": 581,
+          "sampled": 63863
+        },
+        "log_flush_us": {
+          "count": 5,
+          "max": 29,
+          "p50": 25,
+          "p95": 29,
+          "sampled": 5
+        },
+        "log_record_us": {
+          "count": 63677,
+          "max": 4625,
+          "p50": 1,
+          "p95": 3,
+          "sampled": 63677
+        },
+        "look_tick_interval_us": {
+          "count": 1324,
+          "max": 6105,
+          "p50": 4006,
+          "p95": 5093,
+          "sampled": 1324
+        },
+        "notify_monitors_us": {
+          "count": 63745,
+          "max": 147,
+          "p50": 1,
+          "p95": 3,
+          "sampled": 63745
+        },
+        "ws_queue_messages": {
+          "count": 127448,
+          "max": 186,
+          "p50": 6,
+          "p95": 53,
+          "sampled": 100000
+        },
+        "ws_send_us": {
+          "count": 127448,
+          "max": 3970,
+          "p50": 14,
+          "p95": 39,
+          "sampled": 100000
+        }
+      },
+      "logBytes": 8443291
+    },
+    {
+      "players": 4,
+      "scenario": "normal",
+      "durationMs": 5025.702300000001,
+      "sent": 444,
+      "pingSamples": 188,
+      "pingMs": {
+        "p50": 0.3569999999999709,
+        "p95": 0.7043999999987136,
+        "max": 1.062099999999191
+      },
+      "stopRoundTripMs": 15.098100000002887,
+      "safeStop": true,
+      "runtime": {
+        "hub_event_us": {
+          "count": 761,
+          "max": 1546,
+          "p50": 10,
+          "p95": 68,
+          "sampled": 761
+        },
+        "hub_stop_enqueue_to_end_us": {
+          "count": 1,
+          "max": 1213,
+          "p50": 1213,
+          "p95": 1213,
+          "sampled": 1
+        },
+        "hub_stop_queue_us": {
+          "count": 1,
+          "max": 22,
+          "p50": 22,
+          "p95": 22,
+          "sampled": 1
+        },
+        "hub_stop_us": {
+          "count": 1,
+          "max": 1190,
+          "p50": 1190,
+          "p95": 1190,
+          "sampled": 1
+        },
+        "hub_ws_enqueue_to_end_us": {
+          "count": 755,
+          "max": 1592,
+          "p50": 72,
+          "p95": 189,
+          "sampled": 755
+        },
+        "hub_ws_queue_us": {
+          "count": 755,
+          "max": 668,
+          "p50": 51,
+          "p95": 126,
+          "sampled": 755
+        },
+        "log_flush_us": {
+          "count": 5,
+          "max": 98,
+          "p50": 76,
+          "p95": 98,
+          "sampled": 5
+        },
+        "log_record_us": {
+          "count": 523,
+          "max": 431,
+          "p50": 2,
+          "p95": 8,
+          "sampled": 523
+        },
+        "look_tick_interval_us": {
+          "count": 1333,
+          "max": 5745,
+          "p50": 4053,
+          "p95": 5020,
+          "sampled": 1333
+        },
+        "notify_monitors_us": {
+          "count": 142,
+          "max": 398,
+          "p50": 18,
+          "p95": 85,
+          "sampled": 142
+        },
+        "ws_queue_messages": {
+          "count": 802,
+          "max": 2,
+          "p50": 0,
+          "p95": 0,
+          "sampled": 802
+        },
+        "ws_send_us": {
+          "count": 802,
+          "max": 305,
+          "p50": 57,
+          "p95": 143,
+          "sampled": 802
+        }
+      },
+      "logBytes": 64591
+    },
+    {
+      "players": 4,
+      "scenario": "burst",
+      "durationMs": 5025.559300000001,
+      "sent": 90400,
+      "pingSamples": 176,
+      "pingMs": {
+        "p50": 0.5496000000057393,
+        "p95": 14.261800000000221,
+        "max": 15.802700000000186
+      },
+      "stopRoundTripMs": 15.919999999998254,
+      "safeStop": true,
+      "runtime": {
+        "hub_event_us": {
+          "count": 90707,
+          "max": 12186,
+          "p50": 4,
+          "p95": 17,
+          "sampled": 90707
+        },
+        "hub_stop_enqueue_to_end_us": {
+          "count": 1,
+          "max": 738,
+          "p50": 738,
+          "p95": 738,
+          "sampled": 1
+        },
+        "hub_stop_queue_us": {
+          "count": 1,
+          "max": 24,
+          "p50": 24,
+          "p95": 24,
+          "sampled": 1
+        },
+        "hub_stop_us": {
+          "count": 1,
+          "max": 713,
+          "p50": 713,
+          "p95": 713,
+          "sampled": 1
+        },
+        "hub_ws_enqueue_to_end_us": {
+          "count": 90701,
+          "max": 12784,
+          "p50": 29,
+          "p95": 223,
+          "sampled": 90701
+        },
+        "hub_ws_queue_us": {
+          "count": 90701,
+          "max": 12775,
+          "p50": 21,
+          "p95": 214,
+          "sampled": 90701
+        },
+        "log_flush_us": {
+          "count": 5,
+          "max": 52,
+          "p50": 19,
+          "p95": 52,
+          "sampled": 5
+        },
+        "log_record_us": {
+          "count": 90479,
+          "max": 12177,
+          "p50": 0,
+          "p95": 2,
+          "sampled": 90479
+        },
+        "look_tick_interval_us": {
+          "count": 1336,
+          "max": 15014,
+          "p50": 4009,
+          "p95": 5032,
+          "sampled": 1336
+        },
+        "notify_monitors_us": {
+          "count": 150,
+          "max": 231,
+          "p50": 24,
+          "p95": 103,
+          "sampled": 150
+        },
+        "ws_queue_messages": {
+          "count": 90754,
+          "max": 167,
+          "p50": 1,
+          "p95": 16,
+          "sampled": 90754
+        },
+        "ws_send_us": {
+          "count": 90754,
+          "max": 1589,
+          "p50": 4,
+          "p95": 32,
+          "sampled": 90754
+        }
+      },
+      "logBytes": 11895239
+    },
+    {
+      "players": 4,
+      "scenario": "slow-monitor",
+      "durationMs": 5030.9869000000035,
+      "sent": 88000,
+      "pingSamples": 180,
+      "pingMs": {
+        "p50": 0.48440000000118744,
+        "p95": 19.669199999996636,
+        "max": 34.943599999998696
+      },
+      "stopRoundTripMs": 15.13169999999809,
+      "safeStop": true,
+      "runtime": {
+        "hub_event_us": {
+          "count": 88310,
+          "max": 2884,
+          "p50": 9,
+          "p95": 28,
+          "sampled": 88310
+        },
+        "hub_stop_enqueue_to_end_us": {
+          "count": 1,
+          "max": 1190,
+          "p50": 1190,
+          "p95": 1190,
+          "sampled": 1
+        },
+        "hub_stop_queue_us": {
+          "count": 1,
+          "max": 14,
+          "p50": 14,
+          "p95": 14,
+          "sampled": 1
+        },
+        "hub_stop_us": {
+          "count": 1,
+          "max": 1175,
+          "p50": 1175,
+          "p95": 1175,
+          "sampled": 1
+        },
+        "hub_ws_enqueue_to_end_us": {
+          "count": 88303,
+          "max": 3002,
+          "p50": 102,
+          "p95": 834,
+          "sampled": 88303
+        },
+        "hub_ws_queue_us": {
+          "count": 88303,
+          "max": 2990,
+          "p50": 89,
+          "p95": 820,
+          "sampled": 88303
+        },
+        "log_flush_us": {
+          "count": 5,
+          "max": 157,
+          "p50": 28,
+          "p95": 157,
+          "sampled": 5
+        },
+        "log_record_us": {
+          "count": 88079,
+          "max": 2869,
+          "p50": 1,
+          "p95": 2,
+          "sampled": 88079
+        },
+        "look_tick_interval_us": {
+          "count": 1424,
+          "max": 6385,
+          "p50": 4001,
+          "p95": 5052,
+          "sampled": 1424
+        },
+        "notify_monitors_us": {
+          "count": 88153,
+          "max": 316,
+          "p50": 1,
+          "p95": 3,
+          "sampled": 88153
+        },
+        "ws_queue_messages": {
+          "count": 196708,
+          "max": 86572,
+          "p50": 10,
+          "p95": 91,
+          "sampled": 100000
+        },
+        "ws_queue_while_sending_messages": {
+          "count": 257,
+          "max": 86573,
+          "p50": 44604,
+          "p95": 85764,
+          "sampled": 257
+        },
+        "ws_send_pending_us": {
+          "count": 257,
+          "max": 5141906,
+          "p50": 2580721,
+          "p95": 4901413,
+          "sampled": 257
+        },
+        "ws_send_us": {
+          "count": 196707,
+          "max": 5156508,
+          "p50": 14,
+          "p95": 39,
+          "sampled": 100000
+        }
+      },
+      "logBytes": 11666439
+    },
+    {
+      "players": 4,
+      "scenario": "disconnect",
+      "durationMs": 5036.801100000004,
+      "sent": 387,
+      "pingSamples": 161,
+      "pingMs": {
+        "p50": 0.355199999998149,
+        "p95": 0.7423999999955413,
+        "max": 0.9924000000028173
+      },
+      "stopRoundTripMs": 14.48240000000078,
+      "safeStop": true,
+      "runtime": {
+        "hub_event_us": {
+          "count": 624,
+          "max": 1518,
+          "p50": 10,
+          "p95": 72,
+          "sampled": 624
+        },
+        "hub_stop_enqueue_to_end_us": {
+          "count": 1,
+          "max": 943,
+          "p50": 943,
+          "p95": 943,
+          "sampled": 1
+        },
+        "hub_stop_queue_us": {
+          "count": 1,
+          "max": 15,
+          "p50": 15,
+          "p95": 15,
+          "sampled": 1
+        },
+        "hub_stop_us": {
+          "count": 1,
+          "max": 926,
+          "p50": 926,
+          "p95": 926,
+          "sampled": 1
+        },
+        "hub_ws_enqueue_to_end_us": {
+          "count": 617,
+          "max": 1520,
+          "p50": 73,
+          "p95": 196,
+          "sampled": 617
+        },
+        "hub_ws_queue_us": {
+          "count": 617,
+          "max": 1011,
+          "p50": 50,
+          "p95": 149,
+          "sampled": 617
+        },
+        "log_flush_us": {
+          "count": 5,
+          "max": 116,
+          "p50": 27,
+          "p95": 116,
+          "sampled": 5
+        },
+        "log_record_us": {
+          "count": 442,
+          "max": 264,
+          "p50": 2,
+          "p95": 7,
+          "sampled": 442
+        },
+        "look_tick_interval_us": {
+          "count": 1333,
+          "max": 6065,
+          "p50": 4071,
+          "p95": 5055,
+          "sampled": 1333
+        },
+        "notify_monitors_us": {
+          "count": 120,
+          "max": 236,
+          "p50": 26,
+          "p95": 105,
+          "sampled": 120
+        },
+        "ws_queue_messages": {
+          "count": 698,
+          "max": 2,
+          "p50": 0,
+          "p95": 0,
+          "sampled": 698
+        },
+        "ws_send_us": {
+          "count": 697,
+          "max": 265,
+          "p50": 56,
+          "p95": 140,
+          "sampled": 697
+        }
+      },
+      "logBytes": 55048
+    },
+    {
+      "players": 4,
+      "scenario": "many-log",
+      "durationMs": 5027.876600000003,
+      "sent": 88800,
+      "pingSamples": 180,
+      "pingMs": {
+        "p50": 0.49500000000261934,
+        "p95": 18.187599999997474,
+        "max": 41.85689999999886
+      },
+      "stopRoundTripMs": 15.644100000004983,
+      "safeStop": true,
+      "runtime": {
+        "hub_event_us": {
+          "count": 89109,
+          "max": 14219,
+          "p50": 7,
+          "p95": 26,
+          "sampled": 89109
+        },
+        "hub_stop_enqueue_to_end_us": {
+          "count": 1,
+          "max": 883,
+          "p50": 883,
+          "p95": 883,
+          "sampled": 1
+        },
+        "hub_stop_queue_us": {
+          "count": 1,
+          "max": 35,
+          "p50": 35,
+          "p95": 35,
+          "sampled": 1
+        },
+        "hub_stop_us": {
+          "count": 1,
+          "max": 848,
+          "p50": 848,
+          "p95": 848,
+          "sampled": 1
+        },
+        "hub_ws_enqueue_to_end_us": {
+          "count": 89103,
+          "max": 14791,
+          "p50": 84,
+          "p95": 480,
+          "sampled": 89103
+        },
+        "hub_ws_queue_us": {
+          "count": 89103,
+          "max": 14772,
+          "p50": 73,
+          "p95": 469,
+          "sampled": 89103
+        },
+        "log_flush_us": {
+          "count": 5,
+          "max": 69,
+          "p50": 30,
+          "p95": 69,
+          "sampled": 5
+        },
+        "log_record_us": {
+          "count": 88879,
+          "max": 14202,
+          "p50": 1,
+          "p95": 2,
+          "sampled": 88879
+        },
+        "look_tick_interval_us": {
+          "count": 1327,
+          "max": 15885,
+          "p50": 4004,
+          "p95": 5074,
+          "sampled": 1327
+        },
+        "notify_monitors_us": {
+          "count": 88950,
+          "max": 158,
+          "p50": 1,
+          "p95": 3,
+          "sampled": 88950
+        },
+        "ws_queue_messages": {
+          "count": 177959,
+          "max": 179,
+          "p50": 7,
+          "p95": 61,
+          "sampled": 100000
+        },
+        "ws_send_us": {
+          "count": 177958,
+          "max": 1364,
+          "p50": 12,
+          "p95": 35,
+          "sampled": 100000
+        }
+      },
+      "logBytes": 11772839
+    }
+  ]
+}
