@@ -26,6 +26,6 @@ coreは時刻を引数で受けるので、最低押下60ms・最低解放50ms�
 
 ## Stacked PRの区切り
 
-親は[PR #181](https://github.com/jphacks/kz_2613/pull/181)（#170、head `5a9d819`）。最新ユーザー判断に従って親headから独立検証し、baseを `codex/170-input-adapter` にする。#175→#181→本PRの3段でRust入力系を区切り、親統合前にさらに深い分離を無制限に重ねない。
+親は[PR #181](https://github.com/jphacks/kz_2613/pull/181)（#170、head `5a9d819`）。最新ユーザー判断に従って親headから独立検証し、baseを `codex/170-input-adapter` にする。入力所有の分離は本PRで一区切りとする。追加層は独立検証可能な場合に改めて判断し、未統合の分離を無制限に重ねない。
 
 親がマージされたら最新main・base・差分を照合し、このIssueの責務移動だけが残るよう調整した上で、Rust単体・通信・終了・CIを再確認する。mainへのマージ・Issueクローズ・正式リリースは別担当の判断に委ねる。
