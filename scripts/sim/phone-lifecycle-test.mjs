@@ -12,8 +12,10 @@ export async function reproduceSharedPointerRelease() {
   button.fire('pointerdown', { pointerId: 1 }); button.fire('pointerdown', { pointerId: 2 });
   button.fire('pointerup', { pointerId: 1 });
   assert.deepEqual(states(h, 'act:attack'), ['down'], '別の指が同じ操作を保持中にupを送ってはいけない');
+  assert(button.classList.contains('down'), '同じボタンの別の指が保持中は押下表示を維持する');
   button.fire('pointerup', { pointerId: 2 });
   assert.deepEqual(states(h, 'act:attack'), ['down', 'up']);
+  assert(!button.classList.contains('down'));
 }
 
 if (process.argv.includes('--repro-shared-pointer')) {
@@ -28,11 +30,14 @@ if (process.argv.includes('--repro-shared-pointer')) {
     assert.deepEqual(states(h, 'act:attack'), ['down', 'up']); assert.deepEqual(states(h, 'act:jump'), ['down', 'up']);
     assert.deepEqual(h.inputs().map(message => message.iseq), [1, 2, 3, 4]);
   });
-  await test('既知不具合の再現: 同一操作2指保持の最初の解放で早期upになる（#177で修正）', async () => {
-    // 正しい期待値を実行し、既知のアサーションだけが失敗することを確認する。
-    await assert.rejects(reproduceSharedPointerRelease, error => error instanceof assert.AssertionError
-      && error.message.includes('別の指が同じ操作を保持中')
-      && JSON.stringify(error.actual) === '["down","up"]' && JSON.stringify(error.expected) === '["down"]');
+  await test('同一操作2指保持: 最後の保持元が離れるまでupせず、最後に1組だけ解放する', reproduceSharedPointerRelease);
+  await test('リモコン: ボタン保持中の同じクリックのタップは保持を早期解放しない', async () => {
+    const h = controllerHarness(); await h.ready({ phase: 'paused' });
+    const button = h.control('REMOTE_LEFT'), pad = h.el('remotePad');
+    button.fire('pointerdown', { pointerId: 1 });
+    pad.fire('pointerdown', { pointerId: 2 }); pad.fire('pointerup', { pointerId: 2, timeStamp: 1100 });
+    assert.deepEqual(states(h, 'REMOTE_LEFT'), ['down']);
+    button.fire('pointerup', { pointerId: 1 }); assert.deepEqual(states(h, 'REMOTE_LEFT'), ['down', 'up']);
   });
   await test('キャンセル: pointercancel/lostpointercaptureは全操作を解放し重複upを送らない', async () => {
     for (const event of ['pointercancel', 'lostpointercapture']) {
@@ -165,5 +170,5 @@ if (process.argv.includes('--repro-shared-pointer')) {
     assert.deepEqual(JSON.parse(JSON.stringify(h.peers[1].config)), { iceServers: [] });
     assert.deepEqual(JSON.parse(JSON.stringify(h.peers[1].options)), { ordered: false, maxRetransmits: 0 });
   });
-  console.log(`${passed}/${passed} 合格（スマホ入力ライフサイクル、既知不具合1件を明示、OS入力なし）`);
+  console.log(`${passed}/${passed} 合格（スマホ入力ライフサイクル、複数保持元の回帰を含む、OS入力なし）`);
 }
