@@ -967,3 +967,10 @@
 - `node scripts/sim/input-probe-sim.mjs --bin C:\Users\kumes\AppData\Local\ReCooplay\cargo-target\release\recooplay-input-probe.exe` は12/12成功（必ず `--mock`、OS入力なし）。これはプローブの既存障害試験であり、HubのSendInput失敗注入を検証したものではない。
 - 初回CI head `90cefdf`：構造（run 41974036599）とPCアプリのビルドは成功。ホストのビルド・単体も成功したが、通信は54/55。追加ホスト切断試験が、直前のRESUMEをP1だけ受信した時点でP3のphase/epoch同期前に入力していた。CIログの `inject MOUSE_R down` 待機失敗を確認し、各クライアントが同じcoop/epoch/自動復帰OFFを受信してから開始するよう試験準備を修正した。製品コード・合格条件は変えていない。別担当レビューでも原因と修正の妥当性を確認した。初回CIは全成功として扱わない。
 - 受信同期修正後、同じ再ビルド済みexeの `node scripts/sim/protocol-sim.mjs --bin <上記exe>` が再度55/55成功。最終差分の `node --check`・公開資料検査・`git diff --check` も成功。修正後headのCI結果はPRへ記載する。
+
+## 2026-11-05 — ホスト内部の再現可能な負荷計測（Codex、#174）
+
+- 重複するopen PR/着手コメントなしを確認した親担当が#174へ着手コメントを投稿し、PR #175/head `2e82eaa`から `codex/174-host-measurement` を分離。製品処理を変えず、cfg(test)の独立計測ハーネスと実行脚本を追加した。
+- `cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml`：ホスト56成功/2 ignored（既存手動表1件・opt-in長計測1件）、プローブ4成功。5負荷条件の40ms smokeを通常CIに含める。`cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` も成功。既知のOpenSSL PDB不足LNK4099警告のみ。
+- テストexe/製品exeはGit対象外の専用コピーへ保存し共有ビルドキャッシュのロックを解放した。`node scripts/sim/host-load-measure.mjs --test-bin data/local/issue174/host-measure-test.exe --duration-ms 1000 --repeats 3 --out data/local/issue174/initial.json`：15条件成功。待機/処理/停止/tick/通知キューを計測し、各条件で全解放・未処理視点破棄・旧入力非復元・キュー消化をアサートした。
+- 初期観測は受信キュー最大1,686件・停滞監視キュー最大1,008件、停止完了最大7,148µs。有限負荷の内部観測であり、製品上限/実ゲーム遅延ではない。詳細・再現手順・未測定条件は [判断記録](../decisions/2026-11-05-host-load-measurement.md) と個人パス/IP/tokenを含まないJSONへ残す。長計測は続けて実行する。
