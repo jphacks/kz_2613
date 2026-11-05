@@ -39,14 +39,14 @@ fn input(seq: i64) -> Work {
     Work::Event(Event::WsText { id: 10, text: json!({
         "type":"input", "iseq":seq, "epoch":1,
         "button":"act:forward", "state":if seq % 2 == 1 { "down" } else { "up" }
-    }).to_string() })
+    }).to_string(), enqueued_at: None })
 }
 
 fn producer(tx: Sender<Envelope>, stats: Arc<QueueStats>, scenario: Scenario, duration: Duration, burst: usize) {
     if matches!(scenario, Scenario::Burst | Scenario::StalledMonitor | Scenario::LargeLog) {
         for i in 0..burst {
             if i == burst / 2 {
-                enqueue(&tx, &stats, Work::Event(Event::EmergencyStop { source:"measurement" }), 0, true);
+                enqueue(&tx, &stats, Work::Event(Event::EmergencyStop { source:"measurement", enqueued_at: None }), 0, true);
             }
             let work = if matches!(scenario, Scenario::LargeLog) {
                 Work::Record(json!({ "payload":"x".repeat(2048), "index":i }))
@@ -68,7 +68,7 @@ fn producer(tx: Sender<Envelope>, stats: Arc<QueueStats>, scenario: Scenario, du
         if !stopped && start.elapsed() >= duration / 2 {
             let work = if matches!(scenario, Scenario::Disconnect) {
                 Work::Event(Event::WsClosed { id:11, code:1006 })
-            } else { Work::Event(Event::EmergencyStop { source:"measurement" }) };
+            } else { Work::Event(Event::EmergencyStop { source:"measurement", enqueued_at: None }) };
             enqueue(&tx, &stats, work, 0, true);
             stopped = true;
         }
@@ -83,14 +83,14 @@ fn producer(tx: Sender<Envelope>, stats: Arc<QueueStats>, scenario: Scenario, du
             lseq += 1;
             let text = json!({"type":"look","epoch":1,"lseq":lseq,"cx":lseq*8,"cy":-lseq*4}).to_string();
             let bytes = text.len();
-            enqueue(&tx, &stats, Work::Event(Event::WsText {id:11,text}), bytes, false);
+            enqueue(&tx, &stats, Work::Event(Event::WsText {id:11,text,enqueued_at:None}), bytes, false);
             next_look += Duration::from_millis(33);
         }
         if now >= next_ping {
             for id in [10,11,12] {
                 let text = json!({"type":"ping","t":0}).to_string();
                 let bytes = text.len();
-                enqueue(&tx, &stats, Work::Event(Event::WsText {id,text}), bytes, false);
+                enqueue(&tx, &stats, Work::Event(Event::WsText {id,text,enqueued_at:None}), bytes, false);
             }
             next_ping += Duration::from_millis(200);
         }
@@ -98,7 +98,7 @@ fn producer(tx: Sender<Envelope>, stats: Arc<QueueStats>, scenario: Scenario, du
     }
     // 非常に短いsmokeでも停止を必ず1回投入する。
     if !stopped {
-        enqueue(&tx, &stats, Work::Event(Event::EmergencyStop { source:"measurement" }), 0, true);
+        enqueue(&tx, &stats, Work::Event(Event::EmergencyStop { source:"measurement", enqueued_at: None }), 0, true);
     }
 }
 

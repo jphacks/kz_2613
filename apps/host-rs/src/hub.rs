@@ -57,14 +57,14 @@ pub enum Out {
 
 pub enum Event {
     WsOpen { id: u64, tx: UnboundedSender<Out>, ip: String, loopback: bool },
-    WsText { id: u64, text: String },
+    WsText { id: u64, text: String, enqueued_at: Option<Instant> },
     WsClosed { id: u64, code: u16 },
     RtcDescription { slot: usize, gen: u64, sdp: String, kind: String },
     RtcCandidate { slot: usize, gen: u64, cand: String, mid: String },
     RtcState { slot: usize, gen: u64, state: RtcSignal },
     RtcMessage { slot: usize, gen: u64, text: String },
     /// 緊急停止 (PC のホットキー / デスクトップアプリ)。全解放して注入を OFF にする
-    EmergencyStop { source: &'static str },
+    EmergencyStop { source: &'static str, enqueued_at: Option<Instant> },
     /// 試験用: 前面のウィンドウが入力先かどうかを差し替える (DRY_RUN のときだけ)
     FakeTarget(bool),
     FakeActivate(bool),
@@ -477,6 +477,7 @@ impl Hub {
             });
         }
         self.log("server_start", json!({ "port": port }));
+        let mut last_look_tick: Option<Instant> = None;
         loop {
             let now = Instant::now();
             while let Some(Reverse((at, _, timer))) = self.timers.peek().copied() {
@@ -484,6 +485,13 @@ impl Hub {
                     break;
                 }
                 self.timers.pop();
+                if timer == Timer::LookTick {
+                    if let Some(start) = crate::runtime_measure::start() {
+                        if let Some(last) = last_look_tick.replace(start) {
+                            crate::runtime_measure::sample("look_tick_interval_us", start.duration_since(last).as_micros() as u64);
+                        }
+                    }
+                }
                 self.on_timer(timer, at);
             }
             let wait = self
@@ -495,9 +503,24 @@ impl Hub {
                 Ok(Event::Shutdown) => {
                     // 終了時は押しっぱなしを残さない
                     let confirmed = self.release_for_shutdown();
+                    crate::runtime_measure::finish();
                     std::process::exit(if confirmed { 0 } else { 1 });
                 }
-                Ok(ev) => self.on_event(ev),
+                Ok(ev) => {
+                    let start = crate::runtime_measure::start();
+                    let metric = if matches!(ev, Event::EmergencyStop { .. }) { "hub_stop_us" } else { "hub_event_us" };
+                    let (queue_metric, total_metric, enqueued_at) = match &ev {
+                        Event::WsText { enqueued_at, .. } => ("hub_ws_queue_us", "hub_ws_enqueue_to_end_us", *enqueued_at),
+                        Event::EmergencyStop { enqueued_at, .. } => ("hub_stop_queue_us", "hub_stop_enqueue_to_end_us", *enqueued_at),
+                        _ => ("", "", None),
+                    };
+                    if let (Some(enqueued), Some(start)) = (enqueued_at, start) {
+                        crate::runtime_measure::sample(queue_metric, start.duration_since(enqueued).as_micros() as u64);
+                    }
+                    self.on_event(ev);
+                    crate::runtime_measure::elapsed(metric, start);
+                    crate::runtime_measure::elapsed(total_metric, enqueued_at);
+                }
                 Err(RecvTimeoutError::Timeout) => {}
                 Err(RecvTimeoutError::Disconnected) => { self.release_for_shutdown(); break; }
             }
@@ -512,6 +535,7 @@ impl Hub {
     // ---------- ログ ----------
 
     fn record(&mut self, kind: &str, data: Value) -> Value {
+        let start = crate::runtime_measure::start();
         let mut entry = Map::new();
         entry.insert("t".into(), json!(now_ms()));
         entry.insert("kind".into(), json!(kind));
@@ -520,6 +544,7 @@ impl Hub {
         }
         let entry = Value::Object(entry);
         let _ = writeln!(self.log_file, "{}", entry);
+        crate::runtime_measure::elapsed("log_record_us", start);
         entry
     }
 
@@ -546,12 +571,14 @@ impl Hub {
     }
 
     fn broadcast_monitors(&self, msg: &Value) {
+        let start = crate::runtime_measure::start();
         let text = msg.to_string();
         for c in self.conns.values() {
             if matches!(c.role, Role::Monitor { .. }) {
                 let _ = c.tx.send(Out::Text(text.clone()));
             }
         }
+        crate::runtime_measure::elapsed("notify_monitors_us", start);
     }
 
     fn broadcast_players(&self, msg: &Value) {
@@ -1727,7 +1754,9 @@ impl Hub {
                     self.report_net();
                 }
                 self.push_state();
+                let start = crate::runtime_measure::start();
                 let _ = self.log_file.flush();
+                crate::runtime_measure::elapsed("log_flush_us", start);
                 self.schedule(at + Duration::from_secs(1), Timer::Heartbeat);
             }
             Timer::StateFlush => {
@@ -1762,7 +1791,7 @@ impl Hub {
             Event::WsOpen { id, tx, ip, loopback } => {
                 self.conns.insert(id, Conn { tx, ip, loopback, role: Role::Unknown });
             }
-            Event::WsText { id, text } => {
+            Event::WsText { id, text, .. } => {
                 if let Some(msg) = protocol::parse_json(&text) {
                     self.on_ws_message(id, msg);
                 }
@@ -1786,7 +1815,7 @@ impl Hub {
                     }
                 }
             }
-            Event::EmergencyStop { source } => self.emergency_stop(source),
+            Event::EmergencyStop { source, .. } => self.emergency_stop(source),
             Event::ManualPicked(picked) => self.on_manual_picked(picked),
             Event::BluetoothAudio(on) => {
                 if self.bluetooth_audio != on {
@@ -2624,7 +2653,7 @@ mod tests {
         let epoch = h.game.epoch;
         for msg in [json!({"type":"input","iseq":1,"epoch":epoch,"button":"act:forward","state":"down"}),
             json!({"type":"inject_mode","mode":"off"}), json!({"type":"reset"}), json!({"type":"command","cmd":"PAUSE"})] {
-            h.on_event(Event::WsText { id:90, text:msg.to_string() });
+            h.on_event(Event::WsText { id:90, text:msg.to_string(), enqueued_at: None });
         }
         assert!(recorder.calls().is_empty()); assert_eq!(h.game.epoch, epoch); assert!(h.game.phase == Phase::Coop);
     }
