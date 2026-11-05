@@ -19,7 +19,8 @@ use crate::session::{self, Phase, InjectMode, MIN_PLAYERS, SLOT_NAMES};
 use crate::controls::{self, Kind, OUTPUTS};
 use crate::keybinds::{self, Keybinds};
 use crate::profiles::{self, Profile};
-use crate::focus::{self, Foreground, Target};
+use crate::focus::{Foreground, Target};
+use crate::game_service::{self, GameService, Launch, Watch, TITLES, LAUNCH_POLL};
 use crate::games::{self, Entry};
 use crate::input::InputAdapter;
 use crate::look::{Look, LOOK_TICK};
@@ -36,7 +37,6 @@ const SLOT_ROLES: [&str; MAX_SLOTS] = ["ホスト", "参加者", "参加者", "�
 /// 通信契約の版 (docs/protocol-specification.md)。変えるときは仕様書とシミュレーションも同時に更新する
 // PC アプリで選べるゲーム (apps/web-static/app-view.js の GAMES と同じ id)。P0 は Minecraft Java Edition のみ。
 // "pseudo-game" は診断用の疑似ゲーム画面 (/game) で、PC アプリの一覧には出さない (ゲーム変更の試験にも使う)
-const TITLES: [&str; 2] = ["minecraft-java", "pseudo-game"];
 // PC アプリ (apps/desktop) の実行ファイル名。前面になったら PC アプリへの手動復帰とみなす
 const DESKTOP_PROCESS: &str = "recooplay-desktop.exe";
 const DEFAULT_TITLE: &str = TITLES[0];
@@ -46,10 +46,6 @@ const CLOSE_BAD_TOKEN: u16 = 4006;
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
 const RTC_TIMEOUT: Duration = Duration::from_secs(5);
 const FOCUS_CHECK: Duration = Duration::from_millis(100); // 前面のウィンドウを確認する間隔
-const LAUNCH_POLL: Duration = Duration::from_millis(500); // 起動したゲームのウィンドウを探す間隔
-const LAUNCH_TIMEOUT: Duration = Duration::from_secs(90); // ランチャーの更新などを待つ上限。過ぎたら手動起動を案内する
-const MINECRAFT_LAUNCH_TIMEOUT: Duration = Duration::from_secs(300); // ランチャーで「プレイ」を押すのを待つ上限 (#55)
-const FOCUS_WAIT: Duration = Duration::from_secs(5); // ウィンドウが現れてから前面になるのを待つ上限
 
 // ---------- 外部とのやり取り ----------
 
@@ -103,17 +99,6 @@ fn now_ms() -> u64 {
 
 fn dry_run() -> bool {
     std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1")
-}
-
-/// 一覧から選んだゲームの起動の見届け (#93)。state は launching / started / failed / timeout
-struct Launch {
-    id: String,
-    name: String,
-    state: &'static str,
-    message: String,
-    gen: u64,
-    deadline: Instant,
-    seen: Option<Instant>, // ゲームのウィンドウを最初に見つけた時刻
 }
 
 // ---------- 状態 ----------
@@ -249,6 +234,7 @@ struct Game {
 pub struct Hub {
     tx: Sender<Event>,
     input: Box<dyn InputAdapter>,
+    game_service: GameService,
     log_file: BufWriter<File>,
     conns: HashMap<u64, Conn>,
     slots: [Option<Slot>; MAX_SLOTS],
@@ -360,6 +346,7 @@ impl Hub {
                 title: DEFAULT_TITLE.to_string(),
             },
             inject: InjectMode::parse(&config.inject_mode).unwrap_or(InjectMode::Off),
+            game_service: GameService::new(),
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
             look: Look::new(now, config.look_smooth_min_ms, config.look_smooth_max_ms),
             timers: BinaryHeap::new(),
@@ -816,7 +803,7 @@ impl Hub {
             else { Err("シミュレーション：前面化を拒否しました".into()) }
         } else if dry_run() {
             Err("dry-run：実ウィンドウは操作しません".into())
-        } else { focus::activate(&self.target) };
+        } else { self.game_service.activate(&self.target) };
         self.check_target();
         let ok = result.is_ok() && self.can_inject();
         self.log("auto_focus", json!({ "ok": ok, "simulated": simulated || dry_run() }));
@@ -853,7 +840,7 @@ impl Hub {
             ("OPEN_GAME", Phase::Preparing | Phase::Paused) => {
                 self.game.prepare_status = if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
                     "dry-run：実ウィンドウは操作しません".into()
-                } else { match crate::focus::activate(&self.target) {
+                } else { match self.game_service.activate(&self.target) {
                     Ok(()) => "対象ゲームを前面にしました".into(),
                     Err(reason) => format!("{}。{}を手動で前面にしてください", reason, name),
                 }};
@@ -866,7 +853,7 @@ impl Hub {
                 } else if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
                     format!("dry-run：{}を手動で開いてください", name)
                 } else {
-                    match crate::focus::activate(&self.target) {
+                    match self.game_service.activate(&self.target) {
                         Ok(()) => format!("{}のウィンドウを前面にしました。プレイ中の画面まで進めてください", name),
                         Err(reason) => format!("{}。{}を手動で開き、プレイ中の画面まで進めてください", reason, name),
                     }
@@ -1147,7 +1134,7 @@ impl Hub {
         if self.game.phase == Phase::Coop { return false; }
         if self.desktop { return self.app_focused; }
         let page = self.conns.values().any(|c| matches!(c.role, Role::Monitor {page:Page::App,focused:true}));
-        page && (self.fake_target.is_some() || crate::focus::foreground().is_some_and(|f|
+        page && (self.fake_target.is_some() || self.game_service.foreground().is_some_and(|f|
             ["msedge.exe", "chrome.exe", "firefox.exe"].contains(&f.process.as_str()) && f.title.contains("Re:Cooplay")))
     }
 
@@ -1229,7 +1216,7 @@ impl Hub {
         let (fg, ok) = match self.fake_target {
             Some(ok) => (None, ok),
             None => {
-                let fg = focus::foreground();
+                let fg = self.game_service.foreground();
                 let ok = fg.as_ref().is_some_and(|f| self.target.matches(f));
                 // PC アプリ (デスクトップアプリ) が前面か。WebView2 の画面は背面になっても blur を受け取らないため、
                 // 手動復帰の判定は前面のプロセス名で行う
@@ -1263,16 +1250,10 @@ impl Hub {
 
     /// 選べるゲーム: 固定の Minecraft・診断用の疑似ゲームと、検出したゲーム
     fn title_known(&self, title: &str) -> bool {
-        TITLES.contains(&title) || self.games.iter().any(|g| g.id == title)
+        game_service::title_known(&self.games, title)
     }
 
-    fn game_name(&self) -> String {
-        match self.games.iter().find(|g| g.id == self.game.title) {
-            Some(g) => g.name.clone(),
-            None if self.game.title == "pseudo-game" => "疑似ゲーム画面".into(),
-            None => "Minecraft".into(),
-        }
-    }
+    fn game_name(&self) -> String { game_service::game_name(&self.games, &self.game.title) }
 
     fn select_title(&mut self, title: String) {
         if title == self.game.title {
@@ -1298,36 +1279,24 @@ impl Hub {
 
     /// 入力先を選んだゲームに合わせる。一覧のゲームはインストール先のフォルダ内のプロセスだけを対象にする
     fn apply_target(&mut self) {
-        self.target = match self.games.iter().find(|g| g.id == self.game.title) {
-            Some(g) if g.source == games::MANUAL_SOURCE => Target::executable(Path::new(&g.launch_uri)),
-            Some(g) => Target::install_dir(&g.install_dir),
-            None if TITLES.contains(&self.game.title.as_str()) => self.base_target.clone(),
-            // 一覧から消えたゲームをMinecraftへ読み替えて送らない。
-            None => Target { processes: vec![], title_contains: String::new(), dir: None, executable: None },
-        };
+        self.target = game_service::target_for(&self.games, &self.game.title, &self.base_target);
         self.check_target();
         self.push_state();
     }
 
     /// インストール済みのゲームを別スレッドで探す (ディスクの読み取りで視点の刻みを止めない)。
     /// 試験 (dry-run) では RECOOPLAY_FAKE_GAMES のフォルダを Steam・Epic の代わりに読む
-    fn roots() -> games::Roots {
-        match std::env::var_os("RECOOPLAY_FAKE_GAMES") {
-            Some(dir) if dry_run() => games::Roots::fake(Path::new(&dir)),
-            _ => games::Roots::system(),
-        }
-    }
-
     fn scan_games(&mut self) {
         if self.games_scanning {
             // 探している途中で登録が変わったら、終わった後にもう一度探す
             self.rescan_pending = true;
             return;
         }
-        let roots = Self::roots();
+        let roots = self.game_service.roots();
+        let service = self.game_service.clone();
         let tx = self.tx.clone();
         let spawned = std::thread::Builder::new().name("games".into()).spawn(move || {
-            let _ = tx.send(Event::GamesDetected(games::detect(&roots)));
+            let _ = tx.send(Event::GamesDetected(service.detect(&roots)));
         });
         self.games_scanning = spawned.is_ok();
         self.push_state();
@@ -1344,12 +1313,9 @@ impl Hub {
         self.picking = true;
         let tx = self.tx.clone();
         let fake = if dry_run() { std::env::var_os("RECOOPLAY_FAKE_PICK").map(PathBuf::from) } else { None };
+        let service = self.game_service.clone();
         let spawned = std::thread::Builder::new().name("pick".into()).spawn(move || {
-            let picked = if dry_run() {
-                fake.and_then(|f| std::fs::read_to_string(f).ok()).map(|t| t.trim().to_string()).filter(|t| !t.is_empty()).map(PathBuf::from)
-            } else {
-                games::pick_exe()
-            };
+            let picked = service.pick(dry_run(), fake);
             let _ = tx.send(Event::ManualPicked(picked));
         });
         if spawned.is_err() {
@@ -1364,49 +1330,18 @@ impl Hub {
     fn on_manual_picked(&mut self, picked: Option<PathBuf>) {
         self.picking = false;
         let Some(exe) = picked else { return };
-        let Some(file) = Self::roots().manual else { return self.manual_result(false, "登録先のフォルダが見つかりません") };
-        if let Err(e) = games::manual_exe_ok(&exe) {
-            return self.manual_result(false, e);
-        }
-        let mut list = games::load_manual(&file);
-        let id = games::manual_id(&exe);
-        if list.iter().any(|g| g.id == id) {
-            return self.manual_result(false, "このゲームは登録済みです");
-        }
-        let name = exe.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "ゲーム".into());
-        list.push(games::ManualGame { id: id.clone(), name, exe });
-        match games::save_manual(&file, &list) {
-            Ok(()) => {
-                // ゲーム名・場所はログに残さない (ID だけ)
+        match self.game_service.register(exe) {
+            Ok(id) => {
                 self.log("manual_game", json!({ "action": "add", "id": format!("manual:{id}") }));
                 self.manual_result(true, "登録しました。一覧に「手動登録」として並びます");
                 self.scan_games();
             }
-            Err(_) => self.manual_result(false, "登録を保存できませんでした"),
+            Err(reason) => self.manual_result(false, reason),
         }
     }
 
-    /// 名前の変更・登録の解除 (PC 画面から)。name が None なら解除
     fn edit_manual_game(&mut self, id: &str, name: Option<String>) {
-        let Some(key) = id.strip_prefix("manual:") else { return };
-        let Some(file) = Self::roots().manual else { return };
-        let mut list = games::load_manual(&file);
-        let Some(i) = list.iter().position(|g| g.id == key) else { return };
-        let action = match name {
-            Some(n) => {
-                let n: String = n.chars().filter(|c| !c.is_control()).collect::<String>().trim().chars().take(60).collect();
-                if n.is_empty() {
-                    return;
-                }
-                list[i].name = n;
-                "rename"
-            }
-            None => {
-                list.remove(i);
-                "remove"
-            }
-        };
-        if games::save_manual(&file, &list).is_ok() {
+        if let Some(action) = self.game_service.edit(id, name) {
             self.log("manual_game", json!({ "action": action, "id": id }));
             self.scan_games();
         }
@@ -1454,15 +1389,7 @@ impl Hub {
     /// 起動はゲームの選択 → メンバー・分担の決定の後だけ (#109)。選んでいるゲームと違う id・決定前の要求は起動しない
     /// Minecraft を一覧の起動と同じ流れで扱うための項目 (#55)。公式ランチャーを開くだけで、「プレイ」はランチャーで押す
     fn minecraft_entry(&self) -> Option<games::Entry> {
-        self.minecraft_launch.as_ref().map(|launch| games::Entry {
-            id: "minecraft-java".into(),
-            name: "Minecraft".into(),
-            source: games::MINECRAFT_SOURCE,
-            install_dir: PathBuf::new(),
-            launch_uri: launch.clone(),
-            image: None,
-            icon_source: None,
-        })
+        game_service::minecraft_entry(self.minecraft_launch.as_deref())
     }
 
     fn launch_game(&mut self, id: &str) {
@@ -1492,8 +1419,8 @@ impl Hub {
         self.reset_look();
         self.advance_epoch();
         // すでに起動している (ウィンドウがある) ときは、起動し直さず前面にする
-        if !dry_run() && (self.target_ok || focus::exists(&self.target)) {
-            let message = match focus::activate(&self.target) {
+        if !dry_run() && (self.target_ok || self.game_service.exists(&self.target)) {
+            let message = match self.game_service.activate(&self.target) {
                 Ok(()) => format!("{}はすでに起動しています。前面にしました。準備してReadyを押すと開始します", entry.name),
                 Err(reason) => format!("{}はすでに起動しています（{}）。手動で前面にしてください", entry.name, reason),
             };
@@ -1513,8 +1440,9 @@ impl Hub {
         if !dry_run() {
             let tx = self.tx.clone();
             let target = entry.clone();
+            let service = self.game_service.clone();
             let spawned = std::thread::Builder::new().name("launch".into()).spawn(move || {
-                let _ = tx.send(Event::Launched { gen, result: games::launch(&target) });
+                let _ = tx.send(Event::Launched { gen, result: service.launch(&target) });
             });
             if spawned.is_err() {
                 self.finish_launch(&entry.id, &entry.name, "failed", format!("起動できませんでした。{}を手動で起動してください", entry.name));
@@ -1522,7 +1450,7 @@ impl Hub {
             }
         }
         // Minecraft はランチャーで「プレイ」を押す (ログイン・更新もある) ので長めに待つ
-        let timeout = if minecraft { MINECRAFT_LAUNCH_TIMEOUT } else { LAUNCH_TIMEOUT };
+        let timeout = game_service::launch_timeout(minecraft);
         self.launch = Some(Launch { id: entry.id, name: entry.name, state: "launching", message, gen, deadline: Instant::now() + timeout, seen: None });
         self.schedule(Instant::now() + LAUNCH_POLL, Timer::LaunchWatch(gen));
         self.push_game();
@@ -1530,7 +1458,7 @@ impl Hub {
     }
 
     fn on_launched(&mut self, gen: u64, result: Result<(), String>) {
-        let Some(l) = self.launch.as_ref().filter(|l| l.gen == gen && l.state == "launching") else { return };
+        let Some(l) = self.launch.as_ref().filter(|l| l.current(gen)) else { return };
         let (id, name) = (l.id.clone(), l.name.clone());
         self.log("launch_request", json!({ "id": id, "ok": result.is_ok() }));
         if let Err(reason) = result {
@@ -1547,32 +1475,18 @@ impl Hub {
 
     /// 起動したゲームのウィンドウが現れたら前面にする。期限までに現れなければ手動起動を案内する
     fn watch_launch(&mut self, gen: u64) {
-        let Some(l) = self.launch.as_ref().filter(|l| l.gen == gen && l.state == "launching") else { return };
-        let (id, name, deadline) = (l.id.clone(), l.name.clone(), l.deadline);
-        // 試験 (dry-run) では前面の判定の差し替え (target on) を「ウィンドウが現れた」とみなす
+        let Some(l) = self.launch.as_ref().filter(|l| l.current(gen)) else { return };
+        let id = l.id.clone();
         let appeared = match self.fake_target {
             Some(ok) => ok,
-            None => !dry_run() && (self.target_ok || focus::exists(&self.target)),
+            None => !dry_run() && (self.target_ok || self.game_service.exists(&self.target)),
         };
-        let (state, message) = if appeared {
-            // 既に前面ならそのまま (ゲームは自分で前面に出ることが多い)。背面なら前面にする。
-            // Windows は背面のプログラムからの前面化を拒むことがあるが、直後にゲームやランチャーが自分で前面に出ることが
-            // 多い (実機で観測)。拒否されても FOCUS_WAIT の間は待ち、それでも前面にならなければ手動を案内する
-            let result = if self.fake_target.is_some() || self.target_ok { Ok(()) } else { focus::activate(&self.target) };
-            let seen = *self.launch.as_mut().unwrap().seen.get_or_insert_with(Instant::now);
-            match result {
-                Ok(()) => ("started", format!("{}を前面にしました。ホストが準備してReadyを押すと開始します", name)),
-                Err(_) if seen.elapsed() < FOCUS_WAIT => {
-                    self.schedule(Instant::now() + LAUNCH_POLL, Timer::LaunchWatch(gen));
-                    return;
-                }
-                Err(reason) => ("started", format!("{}は起動しましたが、{}。手動で前面にしてください", name, reason)),
-            }
-        } else if Instant::now() >= deadline {
-            ("timeout", format!("{}の起動を確認できませんでした。ランチャーの画面（更新・ログイン・確認）を確かめ、手動で起動してください", name))
-        } else {
-            self.schedule(Instant::now() + LAUNCH_POLL, Timer::LaunchWatch(gen));
-            return;
+        let activation = if !appeared || self.fake_target.is_some() || self.target_ok { Ok(()) }
+            else { self.game_service.activate(&self.target) };
+        let (state, message) = match self.launch.as_mut().unwrap().observe(gen, Instant::now(), appeared, activation) {
+            Watch::Ignore => return,
+            Watch::Wait => { self.schedule(Instant::now() + LAUNCH_POLL, Timer::LaunchWatch(gen)); return; }
+            Watch::Complete { state, message } => (state, message),
         };
         self.log("launch_result", json!({ "id": id, "state": state }));
         if let Some(l) = self.launch.as_mut() {
@@ -2327,6 +2241,7 @@ mod tests {
                 title: DEFAULT_TITLE.to_string(),
             },
             inject: InjectMode::On,
+            game_service: GameService::new(),
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
             look: Look::new(now, 30.0, 120.0),
             timers: BinaryHeap::new(),
@@ -2616,6 +2531,47 @@ mod tests {
             h.on_event(Event::WsText { id:90, text:msg.to_string() });
         }
         assert!(recorder.calls().is_empty()); assert_eq!(h.game.epoch, epoch); assert!(h.game.phase == Phase::Coop);
+    }
+
+    #[test]
+    fn stale_launch_completions_and_watchers_cannot_overwrite_a_new_selection() {
+        let (mut h, _rx) = fixture();
+        h.launch_gen = 7;
+        h.launch = Some(Launch { id: "minecraft-java".into(), name: "Minecraft".into(), state: "launching",
+            message: "待機".into(), gen: 7, deadline: Instant::now() + Duration::from_secs(300), seen: None });
+        h.on_launched(6, Err("旧結果".into())); h.watch_launch(6);
+        assert_eq!(h.launch.as_ref().unwrap().message, "待機");
+        h.set_output(index("KEY_W"), "P1", true); h.look.px = 20.0;
+        let epoch = h.game.epoch;
+        h.select_title("pseudo-game".into());
+        assert!(h.launch.is_none()); assert!(h.game.phase == Phase::Lobby); assert!(h.game.epoch > epoch);
+        assert!(h.outputs.iter().all(|s| !s.physical && s.queue.is_empty())); assert_eq!(h.look.px, 0.0);
+        h.on_launched(7, Err("切替前の結果".into())); h.watch_launch(7);
+        assert!(h.launch.is_none()); assert_eq!(h.game.title, "pseudo-game");
+    }
+
+    #[test]
+    fn game_backend_focus_loss_releases_all_outputs_and_invalidates_old_work() {
+        struct MissingWindow;
+        impl game_service::GameBackend for MissingWindow {
+            fn roots(&self) -> games::Roots { panic!("探索しない") }
+            fn detect(&self, _: &games::Roots) -> games::Detected { panic!("探索しない") }
+            fn foreground(&self) -> Option<Foreground> { None }
+            fn exists(&self, _: &Target) -> bool { false }
+            fn activate(&self, _: &Target) -> Result<(), String> { Err("拒否".into()) }
+            fn launch(&self, _: &Entry) -> Result<(), String> { panic!("起動しない") }
+            fn pick_exe(&self) -> Option<PathBuf> { panic!("選択しない") }
+        }
+        let recorder = crate::input::testing::RecordingInput::default();
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.game_service = GameService::with_backend(std::sync::Arc::new(MissingWindow));
+        h.set_output(index("KEY_W"), "P1", true); h.set_output(index("MOUSE_L"), "P3", true);
+        h.look.px = 40.0; h.fake_target = None;
+        let epoch = h.game.epoch; h.check_target();
+        assert!(!h.can_inject()); assert_eq!(h.game.epoch, epoch + 1);
+        assert_eq!(h.look.px, 0.0);
+        assert!(h.outputs.iter().all(|s| !s.physical && s.holders.is_empty() && s.queue.is_empty()));
+        assert_eq!(recorder.calls().len(), 4);
     }
 
     #[test]
