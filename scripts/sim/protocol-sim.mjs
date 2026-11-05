@@ -1412,7 +1412,12 @@ async function main() {
     await check('ホスト切断: 全解放して権限を移譲せず、元のホストだけがnextIseqを引き継いで再開できる', async () => {
       let from = mon.mark();
       mon.send({ type: 'auto_resume', on: false });
-      await mon.waitFor(m => m.type === 'game' && !m.game.autoResume, { from });
+      const current = await mon.waitFor(m => m.type === 'game' && !m.game.autoResume && m.game.phase === 'coop', { from });
+      // 各WebSocketの受信順は独立。監視画面の受信だけではP3のphase/epochは同期しない。
+      for (const player of [p1, p2, p3]) {
+        await player.waitFor(m => m.type === 'game' && !m.game.autoResume
+          && m.game.phase === 'coop' && m.game.epoch === current.game.epoch, { what: '切断試験前のcoop/epoch同期' });
+      }
       p3.input('USE', 'down');
       await injected(mon, 'MOUSE_R', 'down', from);
       const nextIseq = p1.iseq + 1;
