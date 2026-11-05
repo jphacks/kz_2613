@@ -951,3 +951,19 @@
 - python scripts/check-public-docs.py --all：76資料・511参照、外向けMermaid12図（シーケンス6図）を含む全13図の構造確認成功。Mermaid 11.17.2で外向け12図のparse成功。ローカルプレビューの総合・ホスト仕様を1280px、総合と専門4冊を390pxで確認し、SVG全12図の描画とページ全体の横はみ出しなしを確認した。
 - python scripts/verify_overlay.py：39項目成功。node scripts/sim/profile-catalog-test.mjs：502定義成功。node scripts/sim/profile-extract-test.mjs：抽出・未検証下書き・非対応キーの確認成功。node scripts/sim/app-view-test.mjs：25/25成功。node scripts/sim/phone-view-test.mjs：8観点成功。node scripts/sim/verify-ui-evidence.mjs：104画面の照合成功。git diff --check成功。
 - 変更対象は文書のみ。製品コード・通信契約・操作定義・画像は変更していない。実機・実ゲーム試験およびRustの再ビルドは実施しておらず、ランチャー起動や前面化の実機受入が未完了であることを維持した。
+
+## 2026-11-05 — Rustホストの回帰試験の基準整備（Codex、#169）
+
+- 最新main `b3c0e88`、未コミット変更なしを確認。対象Issue #169〜#174、関連 #38・#39・#157・#161・#162、既存PR・コメントと共通ルール・現行仕様を照合した。重複するopen PRはなく、#169へ「着手します。既存の安全性・入力処理を確認し、回帰テストを整備します。」を投稿してから `codex/169-safety-regression` を作成した。
+- `hub.rs` に12件の内部回帰試験を追加。同一出力の複数所有者、部分・全解放、押下60ms/解放50msと予約時刻、最新8件の連打キュー、旧Pump世代、Pause・緊急停止・入力先喪失、視点の累積・端数、WS/RTC共通順序処理を固定する。fixtureは環境変数変更、ゲーム探索、実時間sleepを避け、`Input::for_test` でWindowsのタイマー設定や実入力を呼ばない。
+- `protocol-sim.mjs` に5件追加（全55件）。連打、古い開始・全解放要求、視点の欠番・重複・逆順、ホスト切断時の権限・全解放・nextIseq再接続を補強した。製品の処理・定数・通信契約は変更していない。
+- `DEVELOPMENT_WORKFLOW.md` の既存手順へ、Codex・Claude Code共通のIssue着手コメント規則を最小限追記した。監査・後続境界・未確認事項は [判断記録](../decisions/2026-11-05-host-regression-baseline.md) に残した。
+- 検証済み：`node --check scripts/sim/protocol-sim.mjs`、`python scripts/verify_overlay.py`（39項目）、`python scripts/check-public-docs.py --all`、`node scripts/sim/app-view-test.mjs`（25/25）、`phone-view-test.mjs`（8観点）、`ui-input-test.mjs`（12/12）、`controller-diagnostics-test.mjs`、`profile-extract-test.mjs`、`profile-catalog-test.mjs`（502定義）、`check-static-pages.mjs`、`verify-ui-evidence.mjs`（104画面）、`git diff --check` が成功。最後の各 `.mjs` はすべて `node scripts/sim/` から実行した。
+- RustはSETUP_WINDOWS記載の既存ツールとキャッシュ `C:\Users\kumes\AppData\Local\ReCooplay\cargo-target` を用い、`RECOOPLAY_DRY_RUN=1` で再構築中。Rust単体・更新済みexeの通信/終了試験・CIの結果は完了後に追記する。この段階では合格扱いにしない。
+- 実装担当と別エージェントが差分をレビューし、現時点の修正必須指摘なし。PR作成後の最終headも確認する。SendInput失敗注入、実Peerによる旧rtc_gen拒否、スマホ実機・Windows実入力・Minecraft・Alt+Tab・実ホットキーは未確認。既存実演・過去観測を今回の受入へ読み替えない。
+- Rust検証完了：`RECOOPLAY_DRY_RUN=1`、既存PATH/`LIBCLANG_PATH`/`CARGO_TARGET_DIR`をSETUP_WINDOWSどおり設定して `cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` が成功（ホスト55件、手動表出力1件は既存の除外、プローブ4件）。ネイティブ依存の再構築を含み14分37秒。続く `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` も成功（30.91秒）。既知のOpenSSL `ossl_static.pdb` 不足のLNK4099警告のみ残る。
+- 更新済み `C:\Users\kumes\AppData\Local\ReCooplay\cargo-target\release\recooplay-host.exe` を `--bin` で指定した `node scripts/sim/protocol-sim.mjs` が55/55成功。`node scripts/sim/shutdown-sim.mjs --bin <同exe>` はquit/EOFの両方でup記録後の正常終了が成功。`node scripts/sim/static-assets-sim.mjs --bin <同exe>` は34ファイル成功。いずれもdry-runでOS入力は送らない。
+- 機械照合でも `hub.rs` の製品処理はorigin/mainと一致し、追加はcfg(test)の12件のみ。公開資料検査は78資料・528参照、全13図で成功。#170の呼出し/失敗時状態更新と#174の測定点/配送保証/負荷条件も、先行実装を行わず監査判断へ整理した。
+- `node scripts/sim/input-probe-sim.mjs --bin C:\Users\kumes\AppData\Local\ReCooplay\cargo-target\release\recooplay-input-probe.exe` は12/12成功（必ず `--mock`、OS入力なし）。これはプローブの既存障害試験であり、HubのSendInput失敗注入を検証したものではない。
+- 初回CI head `90cefdf`：構造（run 41974036599）とPCアプリのビルドは成功。ホストのビルド・単体も成功したが、通信は54/55。追加ホスト切断試験が、直前のRESUMEをP1だけ受信した時点でP3のphase/epoch同期前に入力していた。CIログの `inject MOUSE_R down` 待機失敗を確認し、各クライアントが同じcoop/epoch/自動復帰OFFを受信してから開始するよう試験準備を修正した。製品コード・合格条件は変えていない。別担当レビューでも原因と修正の妥当性を確認した。初回CIは全成功として扱わない。
+- 受信同期修正後、同じ再ビルド済みexeの `node scripts/sim/protocol-sim.mjs --bin <上記exe>` が再度55/55成功。最終差分の `node --check`・公開資料検査・`git diff --check` も成功。修正後headのCI結果はPRへ記載する。
