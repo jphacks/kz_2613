@@ -977,3 +977,6 @@
 - 別の修正コミットでonopen先頭へ現在Socketの照合を1行追加。正期待の `node scripts/sim/phone-session-test.mjs --repro-stale-open` はexit 0となり、既定の同試験は7/7成功。seqの連続性、未ACK2件の維持、pingの予定時刻、旧Socketへのhello不送信を確認した。
 - 最終ローカル検証：`node scripts/sim/phone-lifecycle-test.mjs` 16/16、`input-owners-test.mjs` 4/4、`ui-input-test.mjs` 12/12、`controller-diagnostics-test.mjs`、`phone-view-test.mjs` 8観点、`app-view-test.mjs` 25/25、`check-static-pages.mjs`、`python scripts/verify_overlay.py` 39項目、`python scripts/check-public-docs.py --all` 80資料・527参照、`git diff --check` が成功。各 `.mjs` は `node scripts/sim/` から実行した。HTML/CSSは未変更。新しい実ブラウザー描画・スマホ実機・実ゲーム試験は未実施で、VMの成功を実機受入に読み替えていない。
 - CIへ接続・参加状態試験を追加。独立レビューとpush後CIの結果はPRへ反映する。Stacked PRはbase `codex/177-pointer-ownership` とし、このスマホStackは#178で区切る。
+- 追加の独立QA：親担当が製品head `94c94b5` の全製品差分とセッション単体7件・実controller16件・診断試験を独立レビュー/実行し、修正必須指摘なしを確認した。
+- 同headの専用worktreeで、親担当が `node scripts/sim/capture-screens.mjs --bin C:/Users/kumes/Documents/kz_2613/data/local/worktrees/issue170/data/local/issue171/recooplay-host.exe --out data/local/issue178/screenshots` を実行し成功。#171専用のdry-runホストを使い、PC 1920×1080とスマホ402×874（2倍）の23画面をGit対象外へ保存した。`shots.json` と23枚の存在を確認し、親担当と実装担当の双方がP2視点・緊急停止後P1の画像を目視して表示崩れなしを確認した。これはheadless Chromeの描画・疑似参加/停止確認であり、スマホ実端末・実WebRTC・Windows実入力・実ゲームの受入ではない。
+- 追加QA後はBUILD_LOGのみを更新し、製品/試験コードは`94c94b5`から変更しない。最終docs-only headのCIを追跡し、PR本文へ結果を記載する。
