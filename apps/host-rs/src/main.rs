@@ -19,6 +19,7 @@ mod netwatch;
 mod profiles;
 mod protocol;
 mod rtc;
+mod runtime_measure;
 mod session;
 
 use std::net::SocketAddr;
@@ -93,6 +94,7 @@ async fn main() {
 
     let (tx, rx) = std::sync::mpsc::channel::<Event>();
     let log_dir = std::env::var("RECOOPLAY_LOG_DIR").map(PathBuf::from).unwrap_or_else(|_| root.join("logs"));
+    runtime_measure::init(&log_dir);
     let mut hub = match Hub::new(tx.clone(), &config, input, &log_dir) {
         Ok(h) => h,
         Err(e) => {
@@ -101,12 +103,18 @@ async fn main() {
         }
     };
 
-    let listener = match tokio::net::TcpListener::bind(("0.0.0.0", port)).await {
+    let bind_ip = if runtime_measure::enabled() { "127.0.0.1" } else { "0.0.0.0" };
+    let listener = match tokio::net::TcpListener::bind((bind_ip, port)).await {
         Ok(l) => l,
         Err(e) => {
             eprintln!("ポート {port} で待ち受けできません: {e}");
             std::process::exit(1);
         }
+    };
+    let port = if runtime_measure::enabled() {
+        listener.local_addr().expect("bind済みの計測用アドレス").port()
+    } else {
+        port
     };
 
     println!("\nRe:Cooplay ホスト (Rust) 起動 (port {port})");
@@ -155,7 +163,7 @@ async fn main() {
                     match line.as_deref().map(str::trim) {
                         Ok("quit") | Err(_) => break,
                         Ok("stop") => {
-                            let _ = tx.send(Event::EmergencyStop { source: "app" });
+                            let _ = tx.send(Event::EmergencyStop { source: "app", enqueued_at: runtime_measure::start() });
                         }
                         // 試験用 (RECOOPLAY_DRY_RUN=1 と RECOOPLAY_FAKE_TARGET のときだけ有効): 前面のウィンドウの判定を差し替える
                         Ok("target on") => {
@@ -339,7 +347,7 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
     loop {
         tokio::select! {
             incoming = socket.recv() => match incoming {
-                Some(Ok(Message::Text(text))) => app.send(Event::WsText { id, text: text.to_string() }),
+                Some(Ok(Message::Text(text))) => app.send(Event::WsText { id, text: text.to_string(), enqueued_at: runtime_measure::start() }),
                 Some(Ok(Message::Close(frame))) => {
                     code = frame.map(|f| f.code).unwrap_or(1005);
                     break;
@@ -349,7 +357,7 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
             },
             outgoing = rx.recv() => match outgoing {
                 Some(Out::Text(text)) => {
-                    if socket.send(Message::Text(text.into())).await.is_err() {
+                    if send_ws_text(&mut socket, &rx, Message::Text(text.into())).await.is_err() {
                         break;
                     }
                 }
@@ -363,6 +371,33 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
         }
     }
     app.send(Event::WsClosed { id, code });
+}
+
+async fn send_ws_text(
+    socket: &mut WebSocket,
+    queue: &tokio::sync::mpsc::UnboundedReceiver<Out>,
+    message: Message,
+) -> Result<(), axum::Error> {
+    let Some(start) = runtime_measure::start() else { return socket.send(message).await };
+    runtime_measure::sample("ws_queue_messages", queue.len() as u64);
+    let send = socket.send(message);
+    tokio::pin!(send);
+    let interval = std::time::Duration::from_millis(20);
+    let mut probe = tokio::time::interval_at(tokio::time::Instant::now() + interval, interval);
+    probe.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    loop {
+        tokio::select! {
+            biased;
+            result = &mut send => {
+                runtime_measure::elapsed("ws_send_us", Some(start));
+                return result;
+            }
+            _ = probe.tick() => {
+                runtime_measure::elapsed("ws_send_pending_us", Some(start));
+                runtime_measure::sample("ws_queue_while_sending_messages", queue.len() as u64);
+            }
+        }
+    }
 }
 
 #[cfg(test)]
