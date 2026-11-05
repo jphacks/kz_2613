@@ -959,3 +959,11 @@
 - `node scripts/sim/phone-lifecycle-test.mjs` は15/15成功。別の正期待repro `node scripts/sim/phone-lifecycle-test.mjs --repro-shared-pointer` は終了コード1で、同controlの2指保持から片指だけを離すと早期upになる既存不具合を再現。既定CIはこの特定のAssertionErrorとactual/expectedだけを既知不具合として固定し、修正済みとは扱わない。#177で所有元管理と正期待への切替を行う。
 - 関連検証：`node scripts/sim/ui-input-test.mjs` 12/12、`phone-view-test.mjs` 8観点、`controller-diagnostics-test.mjs`、`check-static-pages.mjs`、`python scripts/verify_overlay.py` 39項目、`python scripts/check-public-docs.py --all` 78資料・522参照、`git diff --check` 成功（省略したmjsも `node scripts/sim/` から実行）。実装者とは別の親エージェントが全差分・正期待repro・fixtureを独立レビューし、修正必須指摘なし。
 - 実DOMの描画/ヒット判定/自動Pointer Capture配送・Android/iPhoneの複数指/回転/バックグラウンド/Wi-Fi断は未検証。実通信・OS入力は行っていない。#10・#38・#39は完了扱いにしない。最終CI結果はPRへ記載する。
+
+## 2026-11-05 — Pointer所有と入力解放の一元管理（Codex、#177）
+
+- #176のPR #182作成後に重複作業・コメントを確認し、#177へ着手コメントを投稿。最新ユーザー判断に従い、`codex/176-phone-regression` を親に `codex/177-pointer-ownership` を作成した。
+- `input-owners.js` へ保持元とcontrolの双方向管理を分離。送信できた最初のdownと最後のupだけを送り、Pointer・スティック・タップを別保持元で管理する。#176で再現済みの早期upを修正し、同じ正期待reproを通常の成功試験へ切り替えた。描画・視点・通信契約・役割認可・Rust処理は変更しない。[判断記録](../decisions/2026-11-05-pointer-ownership.md)へ責任境界と失効順を記載。
+- `node scripts/sim/input-owners-test.mjs` 4/4、`phone-lifecycle-test.mjs` 16/16、`phone-lifecycle-test.mjs --repro-shared-pointer` 成功（修正前はexit 1）、`controller-diagnostics-test.mjs`、`phone-view-test.mjs` 8観点、`ui-input-test.mjs` 12/12、`app-view-test.mjs` 25/25、`check-static-pages.mjs`、`python scripts/verify_overlay.py` 39項目、公開資料検査、`git diff --check` 成功。省略したmjsは `node scripts/sim/` から実行。
+- `node scripts/sim/capture-screens.mjs --bin <PR #181の専用dry-runホストexe> --out data/local/issue177/screenshots` が成功し、23画面を保存。生成された移動・アクション・緊急停止後の画面を目視確認し、表示崩れなし。画像はGit対象外で、実機受入へ読み替えない。
+- 実装した親とは別のエージェントが全差分・未追跡ファイル・停止経路を独立レビューし、修正必須P0〜P2指摘なし。独立実行でも所有4/4・ライフサイクル16/16・正期待repro・UI入力12/12・診断・差分検査成功。Android/iPhoneの複数指とPointer Capture配送、実ゲームは未検証。CI結果はPRへ記載する。

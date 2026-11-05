@@ -20,6 +20,7 @@ export function stickDirections(x, y) {
 export function attachStick(stick, { codes, isOpen, ctlDown, ctlUp, onCancel = () => {} }) {
   const knob = stick.querySelector('.knob');
   let stickId = null;
+  const owner = Symbol('stick');
   const on = new Set(); // 押している操作
   function update(e) {
     const r = stick.getBoundingClientRect();
@@ -29,15 +30,15 @@ export function attachStick(stick, { codes, isOpen, ctlDown, ctlUp, onCancel = (
     if (len > 1) { x /= len; y /= len; }
     knob.style.transform = `translate(${x * 62}%, ${y * 62}%)`;
     const want = new Set([...stickDirections(x, y)].map((d) => codes[d]).filter(Boolean));
-    for (const c of [...on]) if (!want.has(c)) { on.delete(c); ctlUp(c); }
-    for (const c of want) if (!on.has(c)) { on.add(c); ctlDown(c, e.timeStamp); }
+    for (const c of [...on]) if (!want.has(c)) { on.delete(c); ctlUp(c, owner); }
+    for (const c of want) if (!on.has(c)) { on.add(c); ctlDown(c, e.timeStamp, owner); }
     stick.querySelectorAll('.dir').forEach((el) => el.classList.toggle('on', on.has(codes[el.dataset.d])));
   }
   function release() {
     stickId = null;
     stick.classList.remove('active');
     knob.style.transform = '';
-    for (const c of [...on]) { on.delete(c); ctlUp(c); }
+    for (const c of [...on]) { on.delete(c); ctlUp(c, owner); }
     stick.querySelectorAll('.dir').forEach((el) => el.classList.remove('on'));
   }
   stick.addEventListener('pointerdown', (e) => {
