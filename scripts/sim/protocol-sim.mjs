@@ -611,6 +611,56 @@ async function main() {
       assert(held >= 55, `押下時間 ${held}ms`);
     });
 
+    await check('連打: まとめて届いた3回の押下・解放を順に送り、押下60ms・解放50msを保つ', async () => {
+      const from = mon.mark();
+      for (let i = 0; i < 3; i++) {
+        p3.input('ATTACK', 'down');
+        p3.input('ATTACK', 'up');
+      }
+      await mon.waitFor(m => m.type === 'inject' && m.entry.out === 'MOUSE_L'
+        && mon.msgs.slice(from).filter(x => x.type === 'inject' && x.entry.out === 'MOUSE_L').length === 6,
+      { from, what: '3回分の連打' });
+      const entries = mon.msgs.slice(from).filter(m => m.type === 'inject' && m.entry.out === 'MOUSE_L').map(m => m.entry);
+      assert(entries.map(e => e.state).join() === 'down,up,down,up,down,up', `連打の順序: ${JSON.stringify(entries)}`);
+      for (let i = 1; i < entries.length; i++) {
+        const min = entries[i - 1].state === 'down' ? 60 : 50;
+        // 壁時計で記録されるため、既存の最低押下試験と同じ5msの許容差を使う。
+        assert(entries[i].t - entries[i - 1].t >= min - 5,
+          `${entries[i - 1].state}の継続時間 ${entries[i].t - entries[i - 1].t}ms (最低${min}ms)`);
+      }
+      await sleep(150);
+      assert(mon.msgs.slice(from).filter(m => m.type === 'inject' && m.entry.out === 'MOUSE_L').length === 6, '連打を重複出力した');
+    });
+
+    await check('epoch: 古い開始コマンドは理由付きで拒否し、現在の進行を変更しない', async () => {
+      const epoch = p1.epoch;
+      for (const cmd of ['PREPARE', 'READY', 'RESUME', 'OPEN_GAME']) {
+        const from = p1.mark();
+        p1.send({ type: 'command', cmd, epoch: epoch - 1 });
+        const result = await p1.waitFor(m => m.type === 'command_result' && m.cmd === cmd, { from, what: cmd });
+        assert(!result.accepted && result.reasons.some(r => r.includes('古く')), JSON.stringify(result));
+        assert(p1.epoch === epoch && p1.phase === 'coop', `${cmd}が進行を変更した`);
+      }
+    });
+
+    await check('epoch: 古い・epochなしの全解放要求は現在の保持入力を解放せず、現在epochの要求だけ全解放する', async () => {
+      let from = mon.mark();
+      p1.input('JUMP', 'down');
+      await injected(mon, 'SPACE', 'down', from);
+      const epoch = p1.epoch;
+      from = mon.mark();
+      p2.send({ type: 'release_inputs', epoch: epoch - 1 });
+      p2.send({ type: 'release_inputs' });
+      await noInject(mon, from, 150);
+      assert(p1.epoch === epoch, '古い全解放要求でepochを更新した');
+      const playerFrom = p1.mark();
+      p2.send({ type: 'release_inputs', epoch });
+      await injected(mon, 'SPACE', 'up', from);
+      const released = await p1.waitFor(m => m.type === 'game' && m.game.epoch > epoch, { from: playerFrom });
+      for (const c of [p2, p3]) await c.waitFor(m => m.type === 'game' && m.game.epoch === released.game.epoch);
+      p1.input('JUMP', 'up');
+    });
+
     await check('キャンセル: 非表示・回転・診断の停止要求で全参加者の押下・保留連打・旧入力を即時破棄する', async () => {
       p1.input('FWD','up'); p3.input('ATTACK','up'); await sleep(150);
       const from = mon.mark(), playerFrom = p1.mark(), old = p1.epoch;
@@ -700,6 +750,30 @@ async function main() {
       await sleep(1000);
       dx = mon.msgs.slice(from).filter(m => m.type === 'look').reduce((sum, m) => sum + m.entry.dx, 0);
       assert(Math.abs(dx - 5) <= 1, `遅延パケットが基準を変更した: dx=${dx}`);
+    });
+
+    await check('視点: 欠番は次の累積値で補い、重複・逆順パケットで累積値の基準を巻き戻さない', async () => {
+      const old = p1.epoch, playerFrom = p1.mark();
+      p2.send({ type: 'release_inputs', epoch: old });
+      const reset = await p1.waitFor(m => m.type === 'game' && m.game.epoch > old, { from: playerFrom });
+      await p2.waitFor(m => m.type === 'game' && m.game.epoch === reset.game.epoch);
+      await p3.waitFor(m => m.type === 'game' && m.game.epoch === reset.game.epoch);
+      await sleep(300); // 前epochの100ms集計通知を除く。
+      const total = from => mon.msgs.slice(from).filter(m => m.type === 'look')
+        .reduce((a, m) => ({ dx: a.dx + m.entry.dx, dy: a.dy + m.entry.dy }), { dx: 0, dy: 0 });
+      let from = mon.mark();
+      p2.send({ type: 'look', lseq: 1, epoch: p2.epoch, cx: 12, cy: -6 });
+      p2.send({ type: 'look', lseq: 3, epoch: p2.epoch, cx: 30, cy: -15 }); // 2を欠落させる。
+      p2.send({ type: 'look', lseq: 2, epoch: p2.epoch, cx: 900, cy: 900 });
+      p2.send({ type: 'look', lseq: 3, epoch: p2.epoch, cx: 800, cy: 800 });
+      await sleep(1000);
+      const first = total(from);
+      assert(Math.abs(first.dx - 30) <= 1 && Math.abs(first.dy + 15) <= 1, `累積値を回復できない: ${JSON.stringify(first)}`);
+      from = mon.mark();
+      p2.send({ type: 'look', lseq: 4, epoch: p2.epoch, cx: 35, cy: -12 });
+      await sleep(1000);
+      const next = total(from);
+      assert(Math.abs(next.dx - 5) <= 1 && Math.abs(next.dy - 3) <= 1, `古いパケットが基準を変更した: ${JSON.stringify(next)}`);
     });
 
     await check('入力先: 常時 ON でも前面が入力先でなくなったら全解放し、押下を注入しない。PC 画面とスマホに知らせる', async () => {
@@ -1333,6 +1407,56 @@ async function main() {
       p1.send({ type: 'command', cmd: 'RESUME' });
       await phaseIs(p1, 'coop', pfrom);
       mon.send({ type: 'auto_resume', on: true });
+    });
+
+    await check('ホスト切断: 全解放して権限を移譲せず、元のホストだけがnextIseqを引き継いで再開できる', async () => {
+      let from = mon.mark();
+      mon.send({ type: 'auto_resume', on: false });
+      const current = await mon.waitFor(m => m.type === 'game' && !m.game.autoResume && m.game.phase === 'coop', { from });
+      // 各WebSocketの受信順は独立。監視画面の受信だけではP3のphase/epochは同期しない。
+      for (const player of [p1, p2, p3]) {
+        await player.waitFor(m => m.type === 'game' && !m.game.autoResume
+          && m.game.phase === 'coop' && m.game.epoch === current.game.epoch, { what: '切断試験前のcoop/epoch同期' });
+      }
+      p3.input('USE', 'down');
+      await injected(mon, 'MOUSE_R', 'down', from);
+      const nextIseq = p1.iseq + 1;
+      const playerFrom = p2.mark();
+      from = mon.mark();
+      p1.close();
+      const paused = await phaseIs(p2, 'paused', playerFrom);
+      assert(paused.game.reason === 'P1 disconnected' && !paused.game.canResume, JSON.stringify(paused.game));
+      await injected(mon, 'MOUSE_R', 'up', from);
+      const rejectedFrom = p2.mark();
+      from = mon.mark();
+      for (const cmd of ['PREPARE', 'READY', 'RESUME', 'END']) p2.send({ type: 'command', cmd });
+      p2.input('UP', 'down');
+      p2.input('UP', 'up');
+      await noInject(mon, from);
+      assert(!p2.msgs.slice(rejectedFrom).some(m => m.type === 'game' && m.game.phase !== 'paused'), '参加者へホスト権限を移譲した');
+      p1 = await join('P1', { nextIseq });
+      const w = await welcome(p1);
+      assert(w.reconnected && w.isHost && w.slot === 'P1', JSON.stringify(w));
+      p1.iseq = nextIseq - 1;
+      await phaseIs(p1, 'paused', 0);
+      from = mon.mark();
+      const ackFrom = p1.mark();
+      const n = p1.input('ENTER', 'down');
+      await injected(mon, 'ENTER', 'down', from);
+      await p1.waitFor(m => m.type === 'ack' && m.iseq === n, { from: ackFrom, what: '再接続後のnextIseq' });
+      p1.input('ENTER', 'up');
+      await injected(mon, 'ENTER', 'up', from);
+      const resumeFrom = p1.mark(), f2 = p2.mark(), f3 = p3.mark();
+      from = mon.mark();
+      p1.send({ type: 'command', cmd: 'RESUME' });
+      await phaseIs(p1, 'coop', resumeFrom);
+      await phaseIs(p2, 'coop', f2);
+      await phaseIs(p3, 'coop', f3);
+      await noPress(mon, from);
+      p3.input('USE', 'up');
+      from = mon.mark();
+      mon.send({ type: 'auto_resume', on: true });
+      await mon.waitFor(m => m.type === 'game' && m.game.autoResume, { from });
     });
 
     await check('復帰: ホストの PAUSE は自動復帰の対象外', async () => {

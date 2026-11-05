@@ -1,0 +1,1306 @@
+{
+  "arch": "x86_64",
+  "burstSize": 2000,
+  "clock": "Instant",
+  "durationMs": 30000,
+  "logSink": "null-device",
+  "os": "windows",
+  "repetitions": 3,
+  "results": [
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30002347,
+      "eventPayloadBytesPeak": 195,
+      "eventQueuePeak": 5,
+      "events": 1661,
+      "flushUs": {
+        "max": 4,
+        "n": 30,
+        "p50": 2,
+        "p95": 4,
+        "p99": 4
+      },
+      "lookTickIntervalUs": {
+        "max": 19509,
+        "n": 3102,
+        "p50": 9921,
+        "p95": 16274,
+        "p99": 16752
+      },
+      "lookTickLagUs": {
+        "max": 16996,
+        "n": 3103,
+        "p50": 9623,
+        "p95": 16138,
+        "p99": 16597
+      },
+      "lookTickProcessingUs": {
+        "max": 151,
+        "n": 3103,
+        "p50": 1,
+        "p95": 3,
+        "p99": 15
+      },
+      "monitorPayloadBytesPeak": 13013,
+      "monitorPayloadBytesTotal": 789192,
+      "monitorQueuePeak": 5,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 2856,
+        "n": 1661,
+        "p50": 10,
+        "p95": 41,
+        "p99": 68
+      },
+      "queueWaitUs": {
+        "max": 2888,
+        "n": 1661,
+        "p50": 26,
+        "p95": 478,
+        "p99": 934
+      },
+      "recordUs": {
+        "max": null,
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "repetition": 1,
+      "safeStopVerified": true,
+      "scenario": "normal",
+      "stopProcessingUs": {
+        "max": 2856,
+        "n": 1,
+        "p50": 2856,
+        "p95": 2856,
+        "p99": 2856
+      },
+      "stopQueueWaitUs": {
+        "max": 32,
+        "n": 1,
+        "p50": 32,
+        "p95": 32,
+        "p99": 32
+      },
+      "stopTotalUs": {
+        "max": 2889,
+        "n": 1,
+        "p50": 2889,
+        "p95": 2889,
+        "p99": 2889
+      },
+      "timerHeapPeak": 3
+    },
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30000202,
+      "eventPayloadBytesPeak": 121769,
+      "eventQueuePeak": 1633,
+      "events": 2001,
+      "flushUs": {
+        "max": 4,
+        "n": 31,
+        "p50": 0,
+        "p95": 0,
+        "p99": 4
+      },
+      "lookTickIntervalUs": {
+        "max": 6533,
+        "n": 7499,
+        "p50": 4184,
+        "p95": 4934,
+        "p99": 5233
+      },
+      "lookTickLagUs": {
+        "max": 3859,
+        "n": 7500,
+        "p50": 767,
+        "p95": 1513,
+        "p99": 1630
+      },
+      "lookTickProcessingUs": {
+        "max": 58,
+        "n": 7500,
+        "p50": 1,
+        "p95": 1,
+        "p99": 4
+      },
+      "monitorPayloadBytesPeak": 13139,
+      "monitorPayloadBytesTotal": 164461,
+      "monitorQueuePeak": 6,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 849,
+        "n": 2001,
+        "p50": 7,
+        "p95": 13,
+        "p99": 22
+      },
+      "queueWaitUs": {
+        "max": 11961,
+        "n": 2001,
+        "p50": 7925,
+        "p95": 11364,
+        "p99": 11856
+      },
+      "recordUs": {
+        "max": null,
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "repetition": 1,
+      "safeStopVerified": true,
+      "scenario": "burst",
+      "stopProcessingUs": {
+        "max": 849,
+        "n": 1,
+        "p50": 849,
+        "p95": 849,
+        "p99": 849
+      },
+      "stopQueueWaitUs": {
+        "max": 7925,
+        "n": 1,
+        "p50": 7925,
+        "p95": 7925,
+        "p99": 7925
+      },
+      "stopTotalUs": {
+        "max": 8775,
+        "n": 1,
+        "p50": 8775,
+        "p95": 8775,
+        "p99": 8775
+      },
+      "timerHeapPeak": 4
+    },
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30000407,
+      "eventPayloadBytesPeak": 122509,
+      "eventQueuePeak": 1643,
+      "events": 2001,
+      "flushUs": {
+        "max": 3,
+        "n": 31,
+        "p50": 0,
+        "p95": 0,
+        "p99": 3
+      },
+      "lookTickIntervalUs": {
+        "max": 11047,
+        "n": 7497,
+        "p50": 4206,
+        "p95": 4934,
+        "p99": 5179
+      },
+      "lookTickLagUs": {
+        "max": 10062,
+        "n": 7498,
+        "p50": 772,
+        "p95": 1513,
+        "p99": 1643
+      },
+      "lookTickProcessingUs": {
+        "max": 160,
+        "n": 7498,
+        "p50": 0,
+        "p95": 1,
+        "p99": 4
+      },
+      "monitorPayloadBytesPeak": 164460,
+      "monitorPayloadBytesTotal": 164460,
+      "monitorQueuePeak": 1008,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 661,
+        "n": 2001,
+        "p50": 4,
+        "p95": 5,
+        "p99": 10
+      },
+      "queueWaitUs": {
+        "max": 7392,
+        "n": 2001,
+        "p50": 4481,
+        "p95": 7168,
+        "p99": 7356
+      },
+      "recordUs": {
+        "max": null,
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "repetition": 1,
+      "safeStopVerified": true,
+      "scenario": "stalled_monitor",
+      "stopProcessingUs": {
+        "max": 661,
+        "n": 1,
+        "p50": 661,
+        "p95": 661,
+        "p99": 661
+      },
+      "stopQueueWaitUs": {
+        "max": 4481,
+        "n": 1,
+        "p50": 4481,
+        "p95": 4481,
+        "p99": 4481
+      },
+      "stopTotalUs": {
+        "max": 5143,
+        "n": 1,
+        "p50": 5143,
+        "p95": 5143,
+        "p99": 5143
+      },
+      "timerHeapPeak": 4
+    },
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30000939,
+      "eventPayloadBytesPeak": 195,
+      "eventQueuePeak": 5,
+      "events": 1661,
+      "flushUs": {
+        "max": 16,
+        "n": 30,
+        "p50": 2,
+        "p95": 4,
+        "p99": 16
+      },
+      "lookTickIntervalUs": {
+        "max": 20355,
+        "n": 3093,
+        "p50": 10308,
+        "p95": 16428,
+        "p99": 16884
+      },
+      "lookTickLagUs": {
+        "max": 17968,
+        "n": 3094,
+        "p50": 9814,
+        "p95": 16255,
+        "p99": 16688
+      },
+      "lookTickProcessingUs": {
+        "max": 180,
+        "n": 3094,
+        "p50": 1,
+        "p95": 2,
+        "p99": 13
+      },
+      "monitorPayloadBytesPeak": 12998,
+      "monitorPayloadBytesTotal": 778819,
+      "monitorQueuePeak": 5,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 1983,
+        "n": 1661,
+        "p50": 8,
+        "p95": 39,
+        "p99": 67
+      },
+      "queueWaitUs": {
+        "max": 2031,
+        "n": 1661,
+        "p50": 27,
+        "p95": 107,
+        "p99": 537
+      },
+      "recordUs": {
+        "max": null,
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "repetition": 1,
+      "safeStopVerified": true,
+      "scenario": "disconnect",
+      "stopProcessingUs": {
+        "max": 1983,
+        "n": 1,
+        "p50": 1983,
+        "p95": 1983,
+        "p99": 1983
+      },
+      "stopQueueWaitUs": {
+        "max": 50,
+        "n": 1,
+        "p50": 50,
+        "p95": 50,
+        "p99": 50
+      },
+      "stopTotalUs": {
+        "max": 2035,
+        "n": 1,
+        "p50": 2035,
+        "p95": 2035,
+        "p99": 2035
+      },
+      "timerHeapPeak": 3
+    },
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30001789,
+      "eventPayloadBytesPeak": 894325,
+      "eventQueuePeak": 431,
+      "events": 2001,
+      "flushUs": {
+        "max": 3,
+        "n": 31,
+        "p50": 0,
+        "p95": 0,
+        "p99": 3
+      },
+      "lookTickIntervalUs": {
+        "max": 9478,
+        "n": 7498,
+        "p50": 3630,
+        "p95": 5295,
+        "p99": 5545
+      },
+      "lookTickLagUs": {
+        "max": 5959,
+        "n": 7499,
+        "p50": 840,
+        "p95": 1638,
+        "p99": 1808
+      },
+      "lookTickProcessingUs": {
+        "max": 303,
+        "n": 7499,
+        "p50": 1,
+        "p95": 1,
+        "p99": 5
+      },
+      "monitorPayloadBytesPeak": 13133,
+      "monitorPayloadBytesTotal": 13133,
+      "monitorQueuePeak": 6,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 598,
+        "n": 2001,
+        "p50": 1,
+        "p95": 2,
+        "p99": 3
+      },
+      "queueWaitUs": {
+        "max": 785,
+        "n": 2001,
+        "p50": 158,
+        "p95": 748,
+        "p99": 782
+      },
+      "recordUs": {
+        "max": 37,
+        "n": 2000,
+        "p50": 1,
+        "p95": 2,
+        "p99": 2
+      },
+      "repetition": 1,
+      "safeStopVerified": true,
+      "scenario": "large_log",
+      "stopProcessingUs": {
+        "max": 598,
+        "n": 1,
+        "p50": 598,
+        "p95": 598,
+        "p99": 598
+      },
+      "stopQueueWaitUs": {
+        "max": 143,
+        "n": 1,
+        "p50": 143,
+        "p95": 143,
+        "p99": 143
+      },
+      "stopTotalUs": {
+        "max": 742,
+        "n": 1,
+        "p50": 742,
+        "p95": 742,
+        "p99": 742
+      },
+      "timerHeapPeak": 2
+    },
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30001037,
+      "eventPayloadBytesPeak": 195,
+      "eventQueuePeak": 5,
+      "events": 1661,
+      "flushUs": {
+        "max": 15,
+        "n": 30,
+        "p50": 2,
+        "p95": 5,
+        "p99": 15
+      },
+      "lookTickIntervalUs": {
+        "max": 20587,
+        "n": 3073,
+        "p50": 10208,
+        "p95": 16529,
+        "p99": 16903
+      },
+      "lookTickLagUs": {
+        "max": 17346,
+        "n": 3074,
+        "p50": 9727,
+        "p95": 16341,
+        "p99": 16711
+      },
+      "lookTickProcessingUs": {
+        "max": 45,
+        "n": 3074,
+        "p50": 1,
+        "p95": 3,
+        "p99": 8
+      },
+      "monitorPayloadBytesPeak": 13013,
+      "monitorPayloadBytesTotal": 778703,
+      "monitorQueuePeak": 5,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 833,
+        "n": 1661,
+        "p50": 10,
+        "p95": 39,
+        "p99": 59
+      },
+      "queueWaitUs": {
+        "max": 997,
+        "n": 1661,
+        "p50": 33,
+        "p95": 120,
+        "p99": 406
+      },
+      "recordUs": {
+        "max": null,
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "repetition": 2,
+      "safeStopVerified": true,
+      "scenario": "normal",
+      "stopProcessingUs": {
+        "max": 833,
+        "n": 1,
+        "p50": 833,
+        "p95": 833,
+        "p99": 833
+      },
+      "stopQueueWaitUs": {
+        "max": 24,
+        "n": 1,
+        "p50": 24,
+        "p95": 24,
+        "p99": 24
+      },
+      "stopTotalUs": {
+        "max": 858,
+        "n": 1,
+        "p50": 858,
+        "p95": 858,
+        "p99": 858
+      },
+      "timerHeapPeak": 3
+    },
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30000484,
+      "eventPayloadBytesPeak": 123174,
+      "eventQueuePeak": 1652,
+      "events": 2001,
+      "flushUs": {
+        "max": 2,
+        "n": 31,
+        "p50": 0,
+        "p95": 0,
+        "p99": 2
+      },
+      "lookTickIntervalUs": {
+        "max": 8514,
+        "n": 7498,
+        "p50": 3672,
+        "p95": 5304,
+        "p99": 5552
+      },
+      "lookTickLagUs": {
+        "max": 7237,
+        "n": 7499,
+        "p50": 838,
+        "p95": 1654,
+        "p99": 1850
+      },
+      "lookTickProcessingUs": {
+        "max": 631,
+        "n": 7499,
+        "p50": 1,
+        "p95": 1,
+        "p99": 5
+      },
+      "monitorPayloadBytesPeak": 13139,
+      "monitorPayloadBytesTotal": 164460,
+      "monitorQueuePeak": 6,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 516,
+        "n": 2001,
+        "p50": 4,
+        "p95": 7,
+        "p99": 10
+      },
+      "queueWaitUs": {
+        "max": 7104,
+        "n": 2001,
+        "p50": 4434,
+        "p95": 6954,
+        "p99": 7070
+      },
+      "recordUs": {
+        "max": null,
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "repetition": 2,
+      "safeStopVerified": true,
+      "scenario": "burst",
+      "stopProcessingUs": {
+        "max": 516,
+        "n": 1,
+        "p50": 516,
+        "p95": 516,
+        "p99": 516
+      },
+      "stopQueueWaitUs": {
+        "max": 4434,
+        "n": 1,
+        "p50": 4434,
+        "p95": 4434,
+        "p99": 4434
+      },
+      "stopTotalUs": {
+        "max": 4950,
+        "n": 1,
+        "p50": 4950,
+        "p95": 4950,
+        "p99": 4950
+      },
+      "timerHeapPeak": 4
+    },
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30001518,
+      "eventPayloadBytesPeak": 121325,
+      "eventQueuePeak": 1627,
+      "events": 2001,
+      "flushUs": {
+        "max": 3,
+        "n": 31,
+        "p50": 0,
+        "p95": 0,
+        "p99": 3
+      },
+      "lookTickIntervalUs": {
+        "max": 7047,
+        "n": 7499,
+        "p50": 3665,
+        "p95": 5339,
+        "p99": 5547
+      },
+      "lookTickLagUs": {
+        "max": 3417,
+        "n": 7500,
+        "p50": 865,
+        "p95": 1671,
+        "p99": 1865
+      },
+      "lookTickProcessingUs": {
+        "max": 70,
+        "n": 7500,
+        "p50": 0,
+        "p95": 1,
+        "p99": 5
+      },
+      "monitorPayloadBytesPeak": 164460,
+      "monitorPayloadBytesTotal": 164460,
+      "monitorQueuePeak": 1008,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 557,
+        "n": 2001,
+        "p50": 4,
+        "p95": 6,
+        "p99": 10
+      },
+      "queueWaitUs": {
+        "max": 7290,
+        "n": 2001,
+        "p50": 4530,
+        "p95": 7084,
+        "p99": 7260
+      },
+      "recordUs": {
+        "max": null,
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "repetition": 2,
+      "safeStopVerified": true,
+      "scenario": "stalled_monitor",
+      "stopProcessingUs": {
+        "max": 557,
+        "n": 1,
+        "p50": 557,
+        "p95": 557,
+        "p99": 557
+      },
+      "stopQueueWaitUs": {
+        "max": 4530,
+        "n": 1,
+        "p50": 4530,
+        "p95": 4530,
+        "p99": 4530
+      },
+      "stopTotalUs": {
+        "max": 5087,
+        "n": 1,
+        "p50": 5087,
+        "p95": 5087,
+        "p99": 5087
+      },
+      "timerHeapPeak": 4
+    },
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30001095,
+      "eventPayloadBytesPeak": 195,
+      "eventQueuePeak": 5,
+      "events": 1661,
+      "flushUs": {
+        "max": 3,
+        "n": 31,
+        "p50": 1,
+        "p95": 3,
+        "p99": 3
+      },
+      "lookTickIntervalUs": {
+        "max": 20159,
+        "n": 3098,
+        "p50": 10079,
+        "p95": 16474,
+        "p99": 16857
+      },
+      "lookTickLagUs": {
+        "max": 17373,
+        "n": 3099,
+        "p50": 9773,
+        "p95": 16297,
+        "p99": 16733
+      },
+      "lookTickProcessingUs": {
+        "max": 87,
+        "n": 3099,
+        "p50": 1,
+        "p95": 2,
+        "p99": 14
+      },
+      "monitorPayloadBytesPeak": 12998,
+      "monitorPayloadBytesTotal": 789203,
+      "monitorQueuePeak": 5,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 503,
+        "n": 1661,
+        "p50": 8,
+        "p95": 39,
+        "p99": 59
+      },
+      "queueWaitUs": {
+        "max": 824,
+        "n": 1661,
+        "p50": 31,
+        "p95": 338,
+        "p99": 682
+      },
+      "recordUs": {
+        "max": null,
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "repetition": 2,
+      "safeStopVerified": true,
+      "scenario": "disconnect",
+      "stopProcessingUs": {
+        "max": 503,
+        "n": 1,
+        "p50": 503,
+        "p95": 503,
+        "p99": 503
+      },
+      "stopQueueWaitUs": {
+        "max": 73,
+        "n": 1,
+        "p50": 73,
+        "p95": 73,
+        "p99": 73
+      },
+      "stopTotalUs": {
+        "max": 577,
+        "n": 1,
+        "p50": 577,
+        "p95": 577,
+        "p99": 577
+      },
+      "timerHeapPeak": 3
+    },
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30000982,
+      "eventPayloadBytesPeak": 871500,
+      "eventQueuePeak": 420,
+      "events": 2001,
+      "flushUs": {
+        "max": 4,
+        "n": 31,
+        "p50": 0,
+        "p95": 2,
+        "p99": 4
+      },
+      "lookTickIntervalUs": {
+        "max": 6269,
+        "n": 7499,
+        "p50": 3634,
+        "p95": 5302,
+        "p99": 5513
+      },
+      "lookTickLagUs": {
+        "max": 3093,
+        "n": 7500,
+        "p50": 838,
+        "p95": 1632,
+        "p99": 1808
+      },
+      "lookTickProcessingUs": {
+        "max": 117,
+        "n": 7500,
+        "p50": 1,
+        "p95": 1,
+        "p99": 5
+      },
+      "monitorPayloadBytesPeak": 13133,
+      "monitorPayloadBytesTotal": 13133,
+      "monitorQueuePeak": 6,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 641,
+        "n": 2001,
+        "p50": 1,
+        "p95": 2,
+        "p99": 3
+      },
+      "queueWaitUs": {
+        "max": 821,
+        "n": 2001,
+        "p50": 177,
+        "p95": 810,
+        "p99": 818
+      },
+      "recordUs": {
+        "max": 35,
+        "n": 2000,
+        "p50": 1,
+        "p95": 2,
+        "p99": 3
+      },
+      "repetition": 2,
+      "safeStopVerified": true,
+      "scenario": "large_log",
+      "stopProcessingUs": {
+        "max": 641,
+        "n": 1,
+        "p50": 641,
+        "p95": 641,
+        "p99": 641
+      },
+      "stopQueueWaitUs": {
+        "max": 177,
+        "n": 1,
+        "p50": 177,
+        "p95": 177,
+        "p99": 177
+      },
+      "stopTotalUs": {
+        "max": 818,
+        "n": 1,
+        "p50": 818,
+        "p95": 818,
+        "p99": 818
+      },
+      "timerHeapPeak": 2
+    },
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30001410,
+      "eventPayloadBytesPeak": 195,
+      "eventQueuePeak": 5,
+      "events": 1661,
+      "flushUs": {
+        "max": 8,
+        "n": 30,
+        "p50": 2,
+        "p95": 6,
+        "p99": 8
+      },
+      "lookTickIntervalUs": {
+        "max": 19593,
+        "n": 3084,
+        "p50": 10147,
+        "p95": 16383,
+        "p99": 16908
+      },
+      "lookTickLagUs": {
+        "max": 17544,
+        "n": 3085,
+        "p50": 9830,
+        "p95": 16244,
+        "p99": 16707
+      },
+      "lookTickProcessingUs": {
+        "max": 42,
+        "n": 3085,
+        "p50": 1,
+        "p95": 3,
+        "p99": 9
+      },
+      "monitorPayloadBytesPeak": 13013,
+      "monitorPayloadBytesTotal": 779053,
+      "monitorQueuePeak": 5,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 1150,
+        "n": 1661,
+        "p50": 10,
+        "p95": 40,
+        "p99": 64
+      },
+      "queueWaitUs": {
+        "max": 1765,
+        "n": 1661,
+        "p50": 31,
+        "p95": 99,
+        "p99": 617
+      },
+      "recordUs": {
+        "max": null,
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "repetition": 3,
+      "safeStopVerified": true,
+      "scenario": "normal",
+      "stopProcessingUs": {
+        "max": 1150,
+        "n": 1,
+        "p50": 1150,
+        "p95": 1150,
+        "p99": 1150
+      },
+      "stopQueueWaitUs": {
+        "max": 70,
+        "n": 1,
+        "p50": 70,
+        "p95": 70,
+        "p99": 70
+      },
+      "stopTotalUs": {
+        "max": 1221,
+        "n": 1,
+        "p50": 1221,
+        "p95": 1221,
+        "p99": 1221
+      },
+      "timerHeapPeak": 3
+    },
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30000888,
+      "eventPayloadBytesPeak": 124062,
+      "eventQueuePeak": 1664,
+      "events": 2001,
+      "flushUs": {
+        "max": 2,
+        "n": 31,
+        "p50": 0,
+        "p95": 0,
+        "p99": 2
+      },
+      "lookTickIntervalUs": {
+        "max": 6510,
+        "n": 7499,
+        "p50": 3669,
+        "p95": 5268,
+        "p99": 5500
+      },
+      "lookTickLagUs": {
+        "max": 3734,
+        "n": 7500,
+        "p50": 819,
+        "p95": 1618,
+        "p99": 1792
+      },
+      "lookTickProcessingUs": {
+        "max": 94,
+        "n": 7500,
+        "p50": 0,
+        "p95": 1,
+        "p99": 4
+      },
+      "monitorPayloadBytesPeak": 13139,
+      "monitorPayloadBytesTotal": 164460,
+      "monitorQueuePeak": 6,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 607,
+        "n": 2001,
+        "p50": 4,
+        "p95": 5,
+        "p99": 10
+      },
+      "queueWaitUs": {
+        "max": 7643,
+        "n": 2001,
+        "p50": 4731,
+        "p95": 7408,
+        "p99": 7600
+      },
+      "recordUs": {
+        "max": null,
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "repetition": 3,
+      "safeStopVerified": true,
+      "scenario": "burst",
+      "stopProcessingUs": {
+        "max": 607,
+        "n": 1,
+        "p50": 607,
+        "p95": 607,
+        "p99": 607
+      },
+      "stopQueueWaitUs": {
+        "max": 4731,
+        "n": 1,
+        "p50": 4731,
+        "p95": 4731,
+        "p99": 4731
+      },
+      "stopTotalUs": {
+        "max": 5339,
+        "n": 1,
+        "p50": 5339,
+        "p95": 5339,
+        "p99": 5339
+      },
+      "timerHeapPeak": 4
+    },
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30001282,
+      "eventPayloadBytesPeak": 132129,
+      "eventQueuePeak": 1773,
+      "events": 2001,
+      "flushUs": {
+        "max": 2,
+        "n": 31,
+        "p50": 0,
+        "p95": 0,
+        "p99": 2
+      },
+      "lookTickIntervalUs": {
+        "max": 6105,
+        "n": 7499,
+        "p50": 3668,
+        "p95": 5197,
+        "p99": 5492
+      },
+      "lookTickLagUs": {
+        "max": 2512,
+        "n": 7500,
+        "p50": 809,
+        "p95": 1602,
+        "p99": 1792
+      },
+      "lookTickProcessingUs": {
+        "max": 242,
+        "n": 7500,
+        "p50": 0,
+        "p95": 1,
+        "p99": 5
+      },
+      "monitorPayloadBytesPeak": 164460,
+      "monitorPayloadBytesTotal": 164460,
+      "monitorQueuePeak": 1008,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 572,
+        "n": 2001,
+        "p50": 4,
+        "p95": 8,
+        "p99": 10
+      },
+      "queueWaitUs": {
+        "max": 8299,
+        "n": 2001,
+        "p50": 5515,
+        "p95": 8068,
+        "p99": 8256
+      },
+      "recordUs": {
+        "max": null,
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "repetition": 3,
+      "safeStopVerified": true,
+      "scenario": "stalled_monitor",
+      "stopProcessingUs": {
+        "max": 572,
+        "n": 1,
+        "p50": 572,
+        "p95": 572,
+        "p99": 572
+      },
+      "stopQueueWaitUs": {
+        "max": 5515,
+        "n": 1,
+        "p50": 5515,
+        "p95": 5515,
+        "p99": 5515
+      },
+      "stopTotalUs": {
+        "max": 6087,
+        "n": 1,
+        "p50": 6087,
+        "p95": 6087,
+        "p99": 6087
+      },
+      "timerHeapPeak": 4
+    },
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30001472,
+      "eventPayloadBytesPeak": 195,
+      "eventQueuePeak": 5,
+      "events": 1661,
+      "flushUs": {
+        "max": 9,
+        "n": 30,
+        "p50": 2,
+        "p95": 6,
+        "p99": 9
+      },
+      "lookTickIntervalUs": {
+        "max": 19507,
+        "n": 3094,
+        "p50": 9976,
+        "p95": 16430,
+        "p99": 16832
+      },
+      "lookTickLagUs": {
+        "max": 18623,
+        "n": 3095,
+        "p50": 9729,
+        "p95": 16290,
+        "p99": 16695
+      },
+      "lookTickProcessingUs": {
+        "max": 197,
+        "n": 3095,
+        "p50": 1,
+        "p95": 3,
+        "p99": 16
+      },
+      "monitorPayloadBytesPeak": 12998,
+      "monitorPayloadBytesTotal": 798231,
+      "monitorQueuePeak": 5,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 519,
+        "n": 1661,
+        "p50": 9,
+        "p95": 44,
+        "p99": 63
+      },
+      "queueWaitUs": {
+        "max": 912,
+        "n": 1661,
+        "p50": 32,
+        "p95": 172,
+        "p99": 731
+      },
+      "recordUs": {
+        "max": null,
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "repetition": 3,
+      "safeStopVerified": true,
+      "scenario": "disconnect",
+      "stopProcessingUs": {
+        "max": 519,
+        "n": 1,
+        "p50": 519,
+        "p95": 519,
+        "p99": 519
+      },
+      "stopQueueWaitUs": {
+        "max": 116,
+        "n": 1,
+        "p50": 116,
+        "p95": 116,
+        "p99": 116
+      },
+      "stopTotalUs": {
+        "max": 636,
+        "n": 1,
+        "p50": 636,
+        "p95": 636,
+        "p99": 636
+      },
+      "timerHeapPeak": 3
+    },
+    {
+      "durationMs": 30000,
+      "elapsedUs": 30000118,
+      "eventPayloadBytesPeak": 1296875,
+      "eventQueuePeak": 625,
+      "events": 2001,
+      "flushUs": {
+        "max": 5,
+        "n": 31,
+        "p50": 0,
+        "p95": 0,
+        "p99": 5
+      },
+      "lookTickIntervalUs": {
+        "max": 6804,
+        "n": 7499,
+        "p50": 3685,
+        "p95": 5318,
+        "p99": 5570
+      },
+      "lookTickLagUs": {
+        "max": 3247,
+        "n": 7500,
+        "p50": 837,
+        "p95": 1670,
+        "p99": 1855
+      },
+      "lookTickProcessingUs": {
+        "max": 83,
+        "n": 7500,
+        "p50": 1,
+        "p95": 2,
+        "p99": 5
+      },
+      "monitorPayloadBytesPeak": 13133,
+      "monitorPayloadBytesTotal": 13247,
+      "monitorQueuePeak": 6,
+      "pendingEventsAtEnd": 0,
+      "processingUs": {
+        "max": 1382,
+        "n": 2001,
+        "p50": 3,
+        "p95": 6,
+        "p99": 16
+      },
+      "queueWaitUs": {
+        "max": 3423,
+        "n": 2001,
+        "p50": 1350,
+        "p95": 3212,
+        "p99": 3297
+      },
+      "recordUs": {
+        "max": 162,
+        "n": 2000,
+        "p50": 3,
+        "p95": 6,
+        "p99": 15
+      },
+      "repetition": 3,
+      "safeStopVerified": true,
+      "scenario": "large_log",
+      "stopProcessingUs": {
+        "max": 1382,
+        "n": 1,
+        "p50": 1382,
+        "p95": 1382,
+        "p99": 1382
+      },
+      "stopQueueWaitUs": {
+        "max": 1156,
+        "n": 1,
+        "p50": 1156,
+        "p95": 1156,
+        "p99": 1156
+      },
+      "stopTotalUs": {
+        "max": 2539,
+        "n": 1,
+        "p50": 2539,
+        "p95": 2539,
+        "p99": 2539
+      },
+      "timerHeapPeak": 2
+    }
+  ],
+  "schemaVersion": 1,
+  "scope": "test-harness/hub-handlers/std-mpsc/tokio-unbounded-monitor",
+  "unit": "microseconds",
+  "sourceCommit": "315b06c3d31975b86897aa0d6d7071d30ba3b851",
+  "sourceDirty": false,
+  "sourceFiles": {
+    "apps/host-rs/src/hub.rs": "dc9fa7999afd2b2b63d4e8cd91f85de9fa3255d87fbeaeb25aae905092385582",
+    "apps/host-rs/src/hub_measurement.rs": "d17f40346e0ff765dd804022e8100be7e25522517cbe77d70dac17ed8bf635bc",
+    "apps/host-rs/src/input.rs": "5d76123ece60aac6087ae07f8594ac107b6de5a27bfba339247c95285cf9611d",
+    "scripts/sim/host-load-measure.mjs": "21cf7fdabaadb2860eacfd4d644e47f5d8b8cce07642516824585a56a1540f25"
+  },
+  "testBinarySha256": "f37d35211400cabbf26b379f3654c042efa25481dc5b6fc07fa1da5986823223",
+  "limits": [
+    "Hub::runそのもの・HTTP/WS/RTCソケット・実ゲームの遅延を計測していない",
+    "ログはnull device。実ディスク/標準出力の停滞・slow writerは未測定",
+    "fixtureはtimeBeginPeriodを呼ばない。製品起動時のWindowsタイマー分解能やSendInput費用を含まない",
+    "監視キューは受信を止めたtokio unbounded channel。OSソケットバッファの停滞ではない",
+    "キューbytesはJSONペイロードのみ。allocator/Enum/チャネルの総メモリ使用量ではない",
+    "有限負荷の観測値は最悪時上限や性能保証ではない。実機検証#157とは区別する"
+  ]
+}
