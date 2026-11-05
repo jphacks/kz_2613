@@ -3,7 +3,7 @@
 // すべての状態変更はこのスレッドだけが行うのでロック不要。タイマーもこのスレッドで回す (視点は 4ms 刻み)。
 
 use std::cmp::Reverse;
-use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
@@ -19,7 +19,11 @@ use crate::keybinds::{self, Keybinds};
 use crate::profiles::{self, Profile};
 use crate::focus::{self, Foreground, Target};
 use crate::games::{self, Entry};
-use crate::input::Input;
+use crate::input::InputAdapter;
+use crate::look::{Look, LOOK_TICK};
+use crate::input_manager::{OutputState, PumpStep, MIN_HOLD_MS, MIN_GAP_MS};
+#[cfg(test)]
+use crate::input_manager::MAX_QUEUE;
 use crate::rtc::{Peer, RtcSignal};
 
 // 参加枠は P1〜P4 (#57)。2〜4人で遊び、人数は Ready の時点で接続している人数で決める (#105)
@@ -40,10 +44,6 @@ const PROTOCOL_VERSION: u64 = 4;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
-const MIN_HOLD_MS: u64 = 60; // 押下は最低この時間続ける (ゲームは 50ms ごとに入力を読む)
-const MIN_GAP_MS: u64 = 50; // 解放も最低この時間続けてから次を押す (連打を 1 回ずつ認識させる)
-const MAX_QUEUE: usize = 8; // 通信が詰まって溜まった連打は 4 回分まで (それ以上は古い方を捨てる)
-const LOOK_TICK: Duration = Duration::from_millis(4);
 const RTC_TIMEOUT: Duration = Duration::from_secs(5);
 const FOCUS_CHECK: Duration = Duration::from_millis(100); // 前面のウィンドウを確認する間隔
 const LAUNCH_POLL: Duration = Duration::from_millis(500); // 起動したゲームのウィンドウを探す間隔
@@ -299,40 +299,9 @@ impl InjectMode {
     }
 }
 
-/// キー / マウスボタンごとの状態。複数人が同じ出力を押していれば全員離すまで押したまま。
-/// 押下・解放はキューに積み、最低押下時間・最低解放時間を守って 1 つずつ実行する。
-#[derive(Default)]
-struct OutputState {
-    holders: BTreeSet<&'static str>,
-    physical: bool,
-    changed_at: Option<Instant>,
-    queue: VecDeque<(bool, &'static str)>,
-    timer_gen: u64,
-    timer_pending: bool,
-}
-
-/// 視点 (P2) の補間。届いた量を「未消化分」に積み、4ms ごとに一定割合ずつ流す。
-/// 流す速さ (時定数) は直近 2 秒の到着の途切れに合わせて自動調整する。
-struct Look {
-    slot: &'static str, // 視点を動かしている枠 (分担で変わる、#105)
-    px: f64,
-    py: f64,
-    fx: f64,
-    fy: f64,
-    sum_x: i64,
-    sum_y: i64,
-    n: u64,
-    last_tick: Instant,
-    last_arrive: Option<Instant>,
-    gaps: VecDeque<(Instant, f64)>,
-    tau: f64,
-    min_ms: f64,
-    max_ms: f64,
-}
-
 pub struct Hub {
     tx: Sender<Event>,
-    input: Input,
+    input: Box<dyn InputAdapter>,
     log_file: BufWriter<File>,
     conns: HashMap<u64, Conn>,
     slots: [Option<Slot>; MAX_SLOTS],
@@ -432,14 +401,14 @@ fn num(v: &Value, key: &str) -> Option<f64> {
 }
 
 impl Hub {
-    pub fn new(tx: Sender<Event>, config: &Config, input: Input, log_dir: &Path) -> std::io::Result<Hub> {
+    pub fn new(tx: Sender<Event>, config: &Config, input: impl InputAdapter + 'static, log_dir: &Path) -> std::io::Result<Hub> {
         std::fs::create_dir_all(log_dir)?;
         let name = format!("session-{}.jsonl", chrono::Utc::now().format("%Y-%m-%dT%H-%M-%S-%3fZ"));
         let log_file = BufWriter::new(File::options().create(true).append(true).open(log_dir.join(name))?);
         let now = Instant::now();
         let mut hub = Hub {
             tx,
-            input,
+            input: Box::new(input),
             log_file,
             conns: HashMap::new(),
             slots: [None, None, None, None],
@@ -457,22 +426,7 @@ impl Hub {
             },
             inject: InjectMode::parse(&config.inject_mode).unwrap_or(InjectMode::Off),
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
-            look: Look {
-                slot: "P2",
-                px: 0.0,
-                py: 0.0,
-                fx: 0.0,
-                fy: 0.0,
-                sum_x: 0,
-                sum_y: 0,
-                n: 0,
-                last_tick: now,
-                last_arrive: None,
-                gaps: VecDeque::new(),
-                tau: config.look_smooth_min_ms,
-                min_ms: config.look_smooth_min_ms,
-                max_ms: config.look_smooth_max_ms,
-            },
+            look: Look::new(now, config.look_smooth_min_ms, config.look_smooth_max_ms),
             timers: BinaryHeap::new(),
             timer_seq: 0,
             state_pending: false,
@@ -1231,77 +1185,30 @@ impl Hub {
     }
 
     fn pump(&mut self, idx: usize) {
-        if self.outputs[idx].timer_pending {
-            return;
-        }
         loop {
-            let st = &mut self.outputs[idx];
-            let Some(&(down, slot)) = st.queue.front() else { return };
-            if down == st.physical {
-                st.queue.pop_front();
-                continue;
+            match self.outputs[idx].pump_step(Instant::now()) {
+                PumpStep::Idle => return,
+                PumpStep::Wait { delay, generation } => {
+                    self.schedule(Instant::now() + delay, Timer::Pump(idx, generation));
+                    return;
+                }
+                PumpStep::Emit { down, slot } => self.apply_output(idx, down, slot),
             }
-            let min = Duration::from_millis(if st.physical { MIN_HOLD_MS } else { MIN_GAP_MS });
-            let elapsed = st.changed_at.map(|t| t.elapsed()).unwrap_or(Duration::MAX);
-            if elapsed < min {
-                st.timer_pending = true;
-                st.timer_gen += 1;
-                let at = Instant::now() + (min - elapsed);
-                let gen = st.timer_gen;
-                self.schedule(at, Timer::Pump(idx, gen));
-                return;
-            }
-            st.queue.pop_front();
-            st.physical = down;
-            st.changed_at = Some(Instant::now());
-            self.apply_output(idx, down, slot);
         }
     }
 
     fn set_output(&mut self, idx: usize, slot: &'static str, down: bool) {
-        let st = &mut self.outputs[idx];
-        let before = !st.holders.is_empty();
-        if down {
-            st.holders.insert(slot);
-        } else {
-            st.holders.remove(slot);
-        }
-        let after = !st.holders.is_empty();
-        if before == after {
-            return;
-        }
-        // キューは押下/解放が交互に並ぶので、古い方から 1 組ずつ捨てれば整合は崩れない
-        let mut dropped = 0;
-        while st.queue.len() >= MAX_QUEUE {
-            st.queue.drain(..2);
-            dropped += 1;
-        }
-        st.queue.push_back((after, slot));
+        let Some(dropped) = self.outputs[idx].set_holder(slot, down) else { return };
         for _ in 0..dropped {
             self.record("queue_drop", json!({ "out": OUTPUTS[idx].id, "slot": slot }));
         }
         self.pump(idx);
     }
 
-    /// 切断・停止時: 押しっぱなしのキーを即座に離す (slot = None なら全員分)
+    /// 切断・停止時のup要求は、出力ごとの状態を無効化した直後に順次送る。
     fn release_outputs(&mut self, slot: Option<&'static str>) {
         for idx in 0..OUTPUTS.len() {
-            let st = &mut self.outputs[idx];
-            match slot {
-                Some(s) => {
-                    st.holders.remove(s);
-                }
-                None => st.holders.clear(),
-            }
-            if !st.holders.is_empty() {
-                continue;
-            }
-            st.timer_pending = false;
-            st.timer_gen += 1; // 予約済みのタイマーを無効化
-            st.queue.clear();
-            if st.physical {
-                st.physical = false;
-                st.changed_at = Some(Instant::now());
+            if self.outputs[idx].release(slot, Instant::now()) {
                 self.apply_output(idx, false, slot.unwrap_or("system"));
             }
         }
@@ -1376,63 +1283,18 @@ impl Hub {
         if self.game.phase != Phase::Coop || !self.owns_look(slot) || !self.can_inject() {
             return;
         }
-        let now = Instant::now();
-        let look = &mut self.look;
-        look.slot = SLOT_NAMES[slot];
-        if let Some(prev) = look.last_arrive {
-            let gap = now.duration_since(prev).as_secs_f64() * 1000.0;
-            if gap < 1000.0 {
-                look.gaps.push_back((now, gap));
-            }
-        }
-        look.last_arrive = Some(now);
-        // 直近 2 秒のドラッグ中で一番長い途切れに合わせる (まとめて届く端末は平均だと間隔が短く見えるため最大値を使う)
-        while look.gaps.front().is_some_and(|(at, _)| now.duration_since(*at) > Duration::from_secs(2)) {
-            look.gaps.pop_front();
-        }
-        let max_gap = look.gaps.iter().map(|(_, g)| *g).fold(0.0, f64::max);
-        look.tau = (max_gap * 0.5).clamp(look.min_ms, look.max_ms);
-        look.px += dx;
-        look.py += dy;
+        self.look.add(SLOT_NAMES[slot], dx, dy, Instant::now());
     }
 
     fn reset_look(&mut self) {
-        let l = &mut self.look;
-        l.px = 0.0;
-        l.py = 0.0;
-        l.fx = 0.0;
-        l.fy = 0.0;
+        self.look.reset();
     }
 
     fn look_tick(&mut self) {
-        let now = Instant::now();
-        let dt = now.duration_since(self.look.last_tick).as_secs_f64() * 1000.0;
-        self.look.last_tick = now;
-        if self.look.px == 0.0 && self.look.py == 0.0 {
-            return;
-        }
-        if self.game.phase != Phase::Coop || !self.can_inject() {
-            return self.reset_look();
-        }
-        let l = &mut self.look;
-        // 未消化分が 0.5px 未満なら残りを全部流して終わらせる
-        let k = 1.0 - (-dt / l.tau).exp();
-        let small = l.px.abs() < 0.5 && l.py.abs() < 0.5;
-        let ox = if small { l.px } else { l.px * k };
-        let oy = if small { l.py } else { l.py * k };
-        l.px -= ox;
-        l.py -= oy;
-        l.fx += ox;
-        l.fy += oy;
-        let ix = l.fx.trunc();
-        let iy = l.fy.trunc();
-        l.fx -= ix;
-        l.fy -= iy;
-        if ix != 0.0 || iy != 0.0 {
-            self.input.mouse_move(ix as i32, iy as i32);
-            self.look.sum_x += ix as i64;
-            self.look.sum_y += iy as i64;
-            self.look.n += 1;
+        let allowed = self.game.phase == Phase::Coop && self.can_inject();
+        if let Some(movement) = self.look.tick(Instant::now(), allowed) {
+            self.input.mouse_move(movement.dx, movement.dy);
+            self.look.record_output(movement);
         }
     }
 
@@ -1971,9 +1833,7 @@ impl Hub {
                 self.push_state();
             }
             Timer::Pump(idx, gen) => {
-                let st = &mut self.outputs[idx];
-                if st.timer_pending && st.timer_gen == gen {
-                    st.timer_pending = false;
+                if self.outputs[idx].on_timer(gen) {
                     self.pump(idx);
                 }
             }
@@ -2529,6 +2389,9 @@ impl Hub {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::VecDeque;
+    use crate::input::Input;
+    use crate::input::testing::{Operation, RecordingInput};
     use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
     mod measurement {
@@ -2539,8 +2402,11 @@ mod tests {
     // Hub::newはゲーム探索・設定読込みを行うため使わない。
     // ログはOSの破棄先、入力は明示dry-run。環境変数の変更も実時間sleepも不要。
     fn fixture() -> (Hub, UnboundedReceiver<Out>) {
+        fixture_with_input(Box::new(Input::for_test()))
+    }
+
+    fn fixture_with_input(input: Box<dyn InputAdapter>) -> (Hub, UnboundedReceiver<Out>) {
         let (tx, _rx) = std::sync::mpsc::channel();
-        let input = Input::for_test();
         let log_file = BufWriter::new(File::options().write(true)
             .open(if cfg!(windows) { "NUL" } else { "/dev/null" }).unwrap());
         let now = Instant::now();
@@ -2564,22 +2430,7 @@ mod tests {
             },
             inject: InjectMode::On,
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
-            look: Look {
-                slot: "P2",
-                px: 0.0,
-                py: 0.0,
-                fx: 0.0,
-                fy: 0.0,
-                sum_x: 0,
-                sum_y: 0,
-                n: 0,
-                last_tick: now,
-                last_arrive: None,
-                gaps: VecDeque::new(),
-                tau: 30.0,
-                min_ms: 30.0,
-                max_ms: 120.0,
-            },
+            look: Look::new(now, 30.0, 120.0),
             timers: BinaryHeap::new(),
             timer_seq: 0,
             state_pending: false,
@@ -2893,6 +2744,130 @@ mod tests {
         h.look_tick();
         assert_eq!((h.look.px, h.look.py, h.look.fx, h.look.fy), (0.0, 0.0, 0.0, 0.0));
         assert_eq!((h.look.sum_x, h.look.sum_y, h.look.n), (0, 0, 0));
+    }
+
+    #[test]
+    fn adapter_records_exact_key_button_wheel_and_remote_arguments_in_order() {
+        let recorder = RecordingInput::default();
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.apply_output(index("ARROW_UP"), true, "P1");
+        h.apply_output(index("ARROW_UP"), false, "P1");
+        h.apply_output(index("MOUSE_L"), true, "P1");
+        h.apply_output(index("MOUSE_R"), false, "P1");
+        h.assigned[0].push("hotbar".into());
+        h.handle_control(0, "act:hotbar:up", "down");
+        h.handle_control(0, "act:hotbar:down", "down");
+        h.handle_control(0, "act:hotbar:down", "up"); // ホイールのupは送出しない。
+        h.game.phase = Phase::Paused;
+        h.remote_message(0, &json!({"epoch":1,"rseq":1,"kind":"move","dx":3.6,"dy":-2.2}));
+        h.remote_message(0, &json!({"epoch":1,"rseq":2,"kind":"scroll","dy":80}));
+        let operations: Vec<_> = recorder.calls().into_iter().map(|c| c.operation).collect();
+        assert_eq!(operations, [
+            Operation::Key { scan: 0x48, ext: true, down: true },
+            Operation::Key { scan: 0x48, ext: true, down: false },
+            Operation::Button { left: true, down: true },
+            Operation::Button { left: false, down: false },
+            Operation::Wheel(1), Operation::Wheel(-1),
+            Operation::Move { dx: 4, dy: -2 }, Operation::Wheel(-2),
+        ]);
+    }
+
+    #[test]
+    fn adapter_down_failure_is_reported_and_current_state_still_requests_release() {
+        let recorder = RecordingInput::with_results([false, true]);
+        let (mut h, mut rx) = fixture_with_input(Box::new(recorder.clone()));
+        let i = index("KEY_W");
+        h.set_output(i, "P1", true);
+        // 現行挙動の記録：失敗してもphysicalは先に更新され、後の停止はupを要求する。
+        assert!(h.outputs[i].physical);
+        h.release_outputs(None);
+        assert!(!h.outputs[i].physical);
+        let calls = recorder.calls();
+        assert_eq!(calls.iter().map(|c| c.ok).collect::<Vec<_>>(), [false, true]);
+        assert_eq!(calls[1].operation, Operation::Key { scan: 0x11, ext: false, down: false });
+        assert_eq!(injections(&mut rx).iter().map(|v| v["ok"].as_bool().unwrap()).collect::<Vec<_>>(), [false, true]);
+    }
+
+    #[test]
+    fn adapter_up_failure_currently_clears_physical_and_is_not_retried_by_second_release() {
+        let recorder = RecordingInput::with_results([true, false]);
+        let (mut h, mut rx) = fixture_with_input(Box::new(recorder.clone()));
+        let i = index("MOUSE_L");
+        h.set_output(i, "P1", true);
+        h.release_outputs(None);
+        assert!(!h.outputs[i].physical);
+        assert!(h.outputs[i].holders.is_empty());
+        h.release_outputs(None);
+        // 安全修正とは分離する。現実のOS保持状態と一致する保証はまだない。
+        assert_eq!(recorder.calls().len(), 2);
+        let out = injections(&mut rx);
+        assert_eq!(out[1]["state"], "up");
+        assert_eq!(out[1]["ok"], false);
+    }
+
+    #[test]
+    fn adapter_partial_release_failure_does_not_skip_other_outputs() {
+        let recorder = RecordingInput::with_results([true, true, false, true]);
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.set_output(index("KEY_W"), "P1", true);
+        h.set_output(index("MOUSE_L"), "P2", true);
+        h.release_outputs(None);
+        let calls = recorder.calls();
+        assert_eq!(calls.len(), 4);
+        assert_eq!(calls[2].operation, Operation::Key { scan: 0x11, ext: false, down: false });
+        assert!(!calls[2].ok);
+        assert_eq!(calls[3].operation, Operation::Button { left: true, down: false });
+        assert!(calls[3].ok);
+        assert!(h.outputs.iter().all(|s| !s.physical && s.queue.is_empty()));
+    }
+
+    #[test]
+    fn adapter_move_failure_currently_consumes_motion_and_updates_diagnostics() {
+        let recorder = RecordingInput::with_results([false]);
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.look.px = 1.25;
+        h.look.py = -2.5;
+        h.look.last_tick = Instant::now() - Duration::from_secs(1);
+        h.look_tick();
+        let calls = recorder.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].operation, Operation::Move { dx: 1, dy: -2 });
+        assert!(!calls[0].ok);
+        assert_eq!((h.look.sum_x, h.look.sum_y, h.look.n), (1, -2, 1));
+        assert!(h.look.px.abs() < 1e-9 && h.look.py.abs() < 1e-9);
+        assert!((h.look.fx - 0.25).abs() < 1e-9 && (h.look.fy + 0.5).abs() < 1e-9);
+    }
+
+    #[test]
+    fn adapter_wheel_and_remote_failures_keep_current_sequence_and_log_results() {
+        let recorder = RecordingInput::with_results([false, false]);
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.assigned[0].push("hotbar".into());
+        h.handle_control(0, "act:hotbar:up", "down");
+        h.game.phase = Phase::Paused;
+        let movement = json!({"epoch":1,"rseq":1,"kind":"move","dx":5,"dy":-7});
+        h.remote_message(0, &movement);
+        h.remote_message(0, &movement);
+        assert_eq!(h.slots[0].as_ref().unwrap().remote_seq, 1);
+        let calls = recorder.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].operation, Operation::Wheel(1));
+        assert_eq!(calls[1].operation, Operation::Move { dx: 5, dy: -7 });
+        assert!(calls.iter().all(|c| !c.ok));
+    }
+
+    #[test]
+    fn unavailable_adapter_blocks_new_input_and_exposes_reason() {
+        let recorder = RecordingInput::unavailable("試験用の利用不可");
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.keybinds.actions.push(("forward".into(), Some("KEY_W")));
+        assert!(!h.can_inject());
+        assert!(h.ready_reasons(true).iter().any(|r| r == "入力ドライバーが利用できません"));
+        h.handle_control(0, "act:forward", "down");
+        assert!(recorder.calls().is_empty());
+        let snapshot = h.inject_snapshot();
+        assert_eq!(snapshot["available"], false);
+        assert_eq!(snapshot["error"], "試験用の利用不可");
     }
 
 }
