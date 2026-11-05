@@ -14,6 +14,7 @@ use serde_json::{json, Map, Value};
 use tokio::sync::mpsc::UnboundedSender;
 
 use crate::config::Config;
+use crate::session::{self, Phase, InjectMode, MIN_PLAYERS, SLOT_NAMES};
 use crate::controls::{self, Kind, OUTPUTS};
 use crate::keybinds::{self, Keybinds};
 use crate::profiles::{self, Profile};
@@ -28,8 +29,6 @@ use crate::rtc::{Peer, RtcSignal};
 
 // 参加枠は P1〜P4 (#57)。2〜4人で遊び、人数は Ready の時点で接続している人数で決める (#105)
 const MAX_SLOTS: usize = 4;
-const MIN_PLAYERS: usize = 2;
-const SLOT_NAMES: [&str; MAX_SLOTS] = ["P1", "P2", "P3", "P4"];
 // 枠の既定の表示 (Minecraft を 3〜4人で遊ぶときの担当)。実際の担当は分担 (game.assigned) で決まる
 // 枠の呼び名。操作の分担は操作定義から決める (#141。Minecraft の固定の分担はやめた)
 const SLOT_ROLES: [&str; MAX_SLOTS] = ["ホスト", "参加者", "参加者", "参加者"];
@@ -222,34 +221,6 @@ impl Slot {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy)]
-enum Phase {
-    Lobby,
-    Preparing,
-    Coop,
-    Paused,
-}
-
-impl Phase {
-    fn name(self) -> &'static str {
-        match self {
-            Phase::Lobby => "lobby",
-            Phase::Preparing => "preparing",
-            Phase::Coop => "coop",
-            Phase::Paused => "paused",
-        }
-    }
-    fn parse(s: &str) -> Option<Phase> {
-        match s {
-            "lobby" => Some(Phase::Lobby),
-            "preparing" => Some(Phase::Preparing),
-            "coop" => Some(Phase::Coop),
-            "paused" => Some(Phase::Paused),
-            _ => None,
-        }
-    }
-}
-
 /// 決定したメンバーと分担 (#109)。分担はゲームと参加者から決まるので、この 2 つを照合すれば古い決定を使わない
 #[derive(Clone, PartialEq)]
 struct Lineup {
@@ -272,31 +243,6 @@ struct Game {
     epoch: u64,
     // PC アプリで選んだゲーム (表示先)。入力の許可 (進行・注入モード・入力先) とは別に持つ
     title: String,
-}
-
-#[derive(PartialEq, Eq, Clone, Copy)]
-enum InjectMode {
-    Off,
-    Test,
-    On,
-}
-
-impl InjectMode {
-    fn name(self) -> &'static str {
-        match self {
-            InjectMode::Off => "off",
-            InjectMode::Test => "test",
-            InjectMode::On => "on",
-        }
-    }
-    fn parse(s: &str) -> Option<InjectMode> {
-        match s {
-            "off" => Some(InjectMode::Off),
-            "test" => Some(InjectMode::Test),
-            "on" => Some(InjectMode::On),
-            _ => None,
-        }
-    }
 }
 
 pub struct Hub {
@@ -639,42 +585,20 @@ impl Hub {
     }
 
     fn ready_reasons(&self, require_focus: bool) -> Vec<String> {
-        let mut reasons: Vec<String> = Vec::new();
         let connected = self.connected_slots();
-        if self.game.phase == Phase::Paused && !self.participants.is_empty() {
-            // 再開は Ready で決めた参加者で行う。人数を変えるときは終了して組み直す (勝手に組み直さない)
-            let missing: Vec<&str> = self.participants.iter().filter(|i| !connected.contains(i)).map(|&i| SLOT_NAMES[i]).collect();
-            if !missing.is_empty() {
-                reasons.push(format!("{}の再接続を待っています。人数を変えるときは終了して組み直してください", missing.join("・")));
-            }
-        } else {
-            if !connected.contains(&0) { reasons.push("ホスト（P1）の接続が必要です".into()); }
-            if connected.len() < MIN_PLAYERS { reasons.push(format!("{}人以上の接続が必要です", MIN_PLAYERS)); }
-            if self.profile.is_none() {
-                reasons.push("このゲームの操作定義がありません".into());
-            }
-        }
-        let unacked: Vec<&str> = self.role_ack.iter().filter(|i| self.role_slots().contains(i)).map(|&i| SLOT_NAMES[i]).collect();
-        if !unacked.is_empty() {
-            reasons.push(format!("{}が新しい担当をスマホで確認していません", unacked.join("・")));
-        }
-        if self.game.phase != Phase::Paused && !self.lineup_ok() {
-            reasons.push("PCの画面でメンバーと分担を決定してください（参加者やゲームが変わった場合は決定し直してください）".into());
-        }
-        if !self.title_known(&self.game.title) { reasons.push("ゲームを選択してください".into()); }
-        if self.profile.as_ref().is_some_and(|p| !profiles::controller_supported(p)) {
-            reasons.push("このゲームはマウス操作が中心のため、スマホで分担できる操作がありません".into());
-        }
-        if !self.input.available() { reasons.push("入力ドライバーが利用できません".into()); }
-        if self.hotkey.is_err() && self.fake_target.is_none() { reasons.push("PCの緊急停止キーを登録してください".into()); }
-        // 入力が OFF なのは緊急停止の後か、診断で切り替えたとき。PC の前で確かめてから再開させる (#114)
-        if self.inject == InjectMode::Off { reasons.push("入力が止まっています（緊急停止など）。PCの画面で「入力を再開する」を押してください".into()); }
-        else if !self.can_inject() && (require_focus || self.inject != InjectMode::On) { reasons.push("対象のゲームを前面にしてください".into()); }
-        reasons
+        let roles = self.role_slots();
+        let unacked: Vec<usize> = self.role_ack.iter().copied().filter(|i| roles.contains(i)).collect();
+        session::ReadyFacts {
+            phase: self.game.phase, connected: &connected, participants: &self.participants, unacked: &unacked,
+            has_profile: self.profile.is_some(), lineup_ok: self.lineup_ok(), title_known: self.title_known(&self.game.title),
+            controller_supported: self.profile.as_ref().is_none_or(profiles::controller_supported),
+            input_available: self.input.available(), stop_available: self.hotkey.is_ok() || self.fake_target.is_some(),
+            inject: self.inject, can_inject: self.can_inject(),
+        }.reasons(require_focus)
     }
 
     fn can_prepare(&self) -> bool {
-        self.game.phase == Phase::Lobby && self.connected_slots().contains(&0) && self.lineup_ok()
+        session::can_prepare(self.game.phase, self.connected_slots().contains(&0), self.lineup_ok())
     }
 
     /// 決定したメンバーと分担が、今の選択と接続者に一致しているか
@@ -709,11 +633,11 @@ impl Hub {
     }
 
     fn can_ready(&self) -> bool {
-        self.game.phase == Phase::Preparing && self.ready_reasons(false).is_empty()
+        session::can_ready(self.game.phase, self.ready_reasons(false).is_empty())
     }
 
     fn can_resume(&self) -> bool {
-        self.game.phase == Phase::Paused && self.game.host_ready && self.ready_reasons(false).is_empty()
+        session::can_resume(self.game.phase, self.game.host_ready, self.ready_reasons(false).is_empty())
     }
 
     fn game_snapshot(&self) -> Value {
@@ -875,13 +799,11 @@ impl Hub {
     // lobby: ホストがリモコンで PC を操作 / coop: 3 人の分担操作 / paused: 分担操作を停止しホストにリモコンを戻す
 
     fn set_phase(&mut self, phase: Phase, reason: &str) {
-        if self.game.phase == phase {
-            return;
-        }
+        let Some(change) = session::phase_change(self.game.phase, phase) else { return };
         self.release_outputs(None);
         self.reset_look();
         self.game.phase = phase;
-        if phase == Phase::Lobby { self.assigned.clear(); self.participants.clear(); self.lineup = None; }
+        if change.clear_lineup { self.assigned.clear(); self.participants.clear(); self.lineup = None; }
         self.game.reason = Some(reason.to_string());
         self.advance_epoch();
         self.log("phase", json!({ "phase": phase.name(), "reason": reason, "epoch": self.game.epoch }));
@@ -918,13 +840,8 @@ impl Hub {
     fn maybe_auto_resume(&mut self) {
         // 再接続とPCアプリへの手動復帰が重なっても、前面の観測で復帰解除を先に確定する。
         self.check_target();
-        let by_disconnect = self.game.reason.as_deref().is_some_and(|r| r.ends_with("disconnected"));
-        if self.game.phase != Phase::Paused || !by_disconnect || !self.game.auto_resume {
-            return;
-        }
-        if now_ms() > self.game.auto_resume_until {
-            return;
-        }
+        if !session::auto_resume_window(self.game.phase, self.game.reason.as_deref(), self.game.auto_resume,
+            now_ms(), self.game.auto_resume_until) { return; }
         // WebRTC の接続中は待つ (つながるか、失敗して WebSocket のみになってから復帰)
         let rtc_settled = self
             .connected_slots()
@@ -937,11 +854,13 @@ impl Hub {
     }
 
     fn command(&mut self, slot: usize, cmd: &str) {
-        if slot != 0 {
-            return;
-        }
+        if !session::is_host(slot) { return; }
         let name = self.game_name();
-        let accepted = match (cmd, self.game.phase) {
+        let allowed = session::command_allowed(slot, cmd, self.game.phase,
+            cmd == "PREPARE" && self.game.phase == Phase::Lobby && self.can_prepare(),
+            cmd == "READY" && self.game.phase == Phase::Preparing && self.can_ready(),
+            cmd == "RESUME" && self.game.phase == Phase::Paused && self.can_resume());
+        let accepted = allowed && match (cmd, self.game.phase) {
             ("OPEN_GAME", Phase::Preparing | Phase::Paused) => {
                 self.game.prepare_status = if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
                     "dry-run：実ウィンドウは操作しません".into()
@@ -951,7 +870,7 @@ impl Hub {
                 }};
                 self.push_game(); true
             }
-            ("PREPARE", Phase::Lobby) if self.can_prepare() => {
+            ("PREPARE", Phase::Lobby) => {
                 self.game.host_ready = false;
                 self.game.prepare_status = if self.fake_target.is_some() {
                     "シミュレーション：実ゲームは起動していません".into()
@@ -966,14 +885,14 @@ impl Hub {
                 self.reload_keybinds();
                 self.set_phase(Phase::Preparing, "host prepare"); true
             }
-            ("READY", Phase::Preparing) if self.can_ready() && self.focus_for_coop() => {
+            ("READY", Phase::Preparing) if self.focus_for_coop() => {
                 self.reload_keybinds();
                 self.fix_assignment();
                 self.game.host_ready = true;
                 self.set_phase(Phase::Coop, "host ready"); true
             }
             // 再開は Ready で決めた参加者・分担のまま (参加者がそろうまで再開できない)
-            ("RESUME", Phase::Paused) if self.can_resume() && self.focus_for_coop() => { self.reload_keybinds(); self.set_phase(Phase::Coop, "host resume"); true }
+            ("RESUME", Phase::Paused) if self.focus_for_coop() => { self.reload_keybinds(); self.set_phase(Phase::Coop, "host resume"); true }
             ("PAUSE", Phase::Coop | Phase::Paused) => {
                 self.game.auto_resume_until = 0;
                 self.game.reason = Some("host pause".into());
@@ -1086,14 +1005,7 @@ impl Hub {
     /// 2 人の担当を入れ替える (#47)。開始前 (ロビー・準備中) と一時停止中だけ。全解放して epoch を進め、
     /// 2 人がスマホで新しい担当を確認するまで Ready・再開できない。ロビーでは分担の決定もやり直しになる
     fn swap_roles(&mut self, a: usize, b: usize) {
-        let set = match self.game.phase {
-            Phase::Lobby | Phase::Preparing => self.connected_slots(),
-            Phase::Paused if !self.participants.is_empty() => self.participants.clone(),
-            _ => return,
-        };
-        if a == b || !set.contains(&a) || !set.contains(&b) {
-            return;
-        }
+        if !session::can_swap(self.game.phase, &self.connected_slots(), &self.participants, a, b) { return; }
         self.seats.swap(a, b);
         self.release_outputs(None);
         self.reset_look();
@@ -1140,7 +1052,7 @@ impl Hub {
 
     /// この枠に割り当てた操作か
     fn is_assigned(&self, slot: usize, action: &str) -> bool {
-        self.assigned.get(slot).is_some_and(|a| a.iter().any(|x| x == action))
+        session::is_assigned(&self.assigned, slot, action)
     }
 
     /// この枠が視点 (マウス移動) を担当しているか。分担で視点を割り当てた人だけ (#141)
@@ -1747,17 +1659,11 @@ impl Hub {
             self.advance_epoch();
         }
         // 協力プレイ中に誰かが切れたら共同入力を止める (ホストの自動交代はしない)
-        let paused_by_disconnect = self.game.phase == Phase::Paused
-            && self.game.reason.as_deref().is_some_and(|r| r.ends_with("disconnected"));
-        // Ready の後に来た (参加していない) 人の切断では止めない
-        let participant = self.participants.contains(&idx);
-        if participant && (self.game.phase == Phase::Coop || paused_by_disconnect) {
-            // 期限は協力プレイから止まった時に始め、期限内に別の人が切れたときだけ延ばす。
-            // 期限を過ぎた後の切断や、再接続による接続の置き換え (replaced) では延ばさない (期限後は明示の RESUME まで再開しない)
-            let now = now_ms();
-            if self.game.phase == Phase::Coop || (reason != "replaced" && now <= self.game.auto_resume_until) {
-                self.game.auto_resume_until = now + self.game.auto_resume_ms;
-            }
+        let now = now_ms();
+        let plan = session::disconnect_plan(self.game.phase, self.game.reason.as_deref(), self.participants.contains(&idx),
+            reason == "replaced", now, self.game.auto_resume_until);
+        if plan.pause_or_wait {
+            if plan.extend_deadline { self.game.auto_resume_until = now + self.game.auto_resume_ms; }
             if self.game.phase == Phase::Coop {
                 self.set_phase(Phase::Paused, &format!("{} disconnected", SLOT_NAMES[idx]));
             } else {
@@ -2231,8 +2137,7 @@ impl Hub {
             "command" if via == Via::Ws => {
                 let cmd = s(&msg, "cmd").unwrap_or_default();
                 self.log("command", json!({ "slot": SLOT_NAMES[idx], "cmd": cmd }));
-                if matches!(cmd.as_str(), "READY" | "RESUME" | "PREPARE" | "OPEN_GAME")
-                    && msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
+                if !session::command_epoch_valid(&cmd, msg.get("epoch").and_then(Value::as_u64), self.game.epoch) {
                     self.send(self.slots[idx].as_ref().and_then(|s| s.conn), &json!({"type":"command_result","cmd":cmd,"accepted":false,"reasons":["画面の状態が古くなっています。更新を待ってください"]}));
                     return;
                 }
@@ -2642,6 +2547,33 @@ mod tests {
             assert_eq!((h.look.sum_x, h.look.sum_y, h.look.n), (0, 0, 0));
             assert!(!h.outputs[i].physical);
         }
+    }
+
+    #[test]
+    fn session_transition_notifies_release_before_new_epoch_and_cannot_restore_old_work() {
+        let (mut h, mut rx) = fixture();
+        h.set_output(index("KEY_W"), "P1", true);
+        h.set_output(index("MOUSE_L"), "P3", true);
+        h.look.px = 40.0; h.look.fx = 0.4;
+        while rx.try_recv().is_ok() {}
+        let old_epoch = h.game.epoch;
+        h.set_phase(Phase::Paused, "host pause");
+        let mut messages = Vec::new();
+        while let Ok(Out::Text(text)) = rx.try_recv() { messages.push(serde_json::from_str::<Value>(&text).unwrap()); }
+        let phase = messages.iter().position(|m| m["type"] == "log" && m["entry"]["kind"] == "phase").unwrap();
+        let game = messages.iter().position(|m| m["type"] == "game").unwrap();
+        let ups: Vec<_> = messages.iter().enumerate().filter(|(_, m)| m["type"] == "inject" && m["entry"]["state"] == "up").collect();
+        assert_eq!(ups.len(), 2);
+        assert!(ups.iter().all(|(i, _)| *i < phase));
+        assert!(phase < game);
+        assert_eq!(messages[phase]["entry"]["epoch"], old_epoch + 1);
+        assert_eq!(messages[game]["game"]["epoch"], old_epoch + 1);
+        assert_eq!(messages[game]["game"]["phase"], "paused");
+        assert_eq!((h.look.px, h.look.fx), (0.0, 0.0));
+        assert!(h.outputs.iter().all(|s| !s.physical && s.holders.is_empty() && s.queue.is_empty()));
+        h.command(0, "PAUSE");
+        assert_eq!(h.game.epoch, old_epoch + 2); // 同phaseのホスト停止も失効処理を省略しない。
+        assert_eq!(h.game.auto_resume_until, 0);
     }
 
     #[test]
