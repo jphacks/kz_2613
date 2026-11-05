@@ -16,13 +16,13 @@ token更新→視点リセット→RTC開始→slot/host更新→表示、game�
 node scripts/sim/phone-session-test.mjs --repro-stale-open
 ```
 
-世代ガード追加前の実controllerで、現在のSocketの送信seqが期待 `[1,2]` に対して実際 `[1,1]` となり、正期待のAssertionError・終了コード1を確認した。責務抽出と挙動修正を区別し、抽出のコミットにはこの失敗再現を残す。続く修正はonopenの先頭に既存game/closeと同じ世代照合を加え、古い通知を新状態へ入れない最小差分とする。
+世代ガード追加前の実controllerで、現在のSocketの送信seqが期待 `[1,2]` に対して実際 `[1,1]` となり、正期待のAssertionError・終了コード1を確認した。責務抽出と挙動修正を区別し、抽出のコミット `11374a6` にはこの失敗再現を残した。続く修正コミットでonopenの先頭に既存game/closeと同じ世代照合を加え、古い通知を新状態へ入れない最小差分とした。
 
 これは接続・再接続の境界条件を担保する修正であり、新しい再接続方式や仕様を導入するものではない。接続中Socketの重複生成自体を抑えるアルゴリズム、JSONの型付き解析、タイマーの全面変更は含めない。
 
 ## 検証と限界
 
-純粋なセッション試験は保存済みidentity/token、storage拒否、seq/iseq、server状態・epoch、backoff、終端コード、3秒の無応答境界、所有接続を確認する。既存の実controller VM試験はPointer所有・停止・epoch・画面更新・再接続・WS/RTCの契約を引き続き確認する。旧Socketのopen再現は、修正後に通常の成功回帰試験へ追加する。
+純粋なセッション試験は保存済みidentity/token、storage拒否、seq/iseq、server状態・epoch、backoff、終端コード、3秒の無応答境界、所有接続を確認する。既存の実controller VM試験はPointer所有・停止・epoch・画面更新・再接続・WS/RTCの契約を引き続き確認する。旧Socketのopen再現も通常の成功回帰試験へ追加し、seq・未ACK入力・pingの予定時刻・旧helloの不送信を確認する。
 
 タイマーの実スケジューリング、実ブラウザーの接続イベント配送、Android/iPhoneの復帰、Wi-Fi断、実WebRTC、Windows実入力・Minecraftは未検証。自動試験を実機受入として扱わない。結果と実行コマンドは [BUILD_LOG.md](../handoff/BUILD_LOG.md) に記録する。
 

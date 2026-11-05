@@ -31,6 +31,7 @@ import { phoneAdvice } from '../app-view.js';
     const sock = new WebSocket(`ws://${location.host}/ws`);
     session.attach(sock);
     sock.onopen = () => {
+      if (!session.current(sock)) return;
       pending.clear();
       sock.send(JSON.stringify(session.open(navigator.userAgent)));
       clearInterval(pingTimer);
