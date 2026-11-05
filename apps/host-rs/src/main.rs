@@ -16,6 +16,7 @@ mod look;
 mod netinfo;
 mod netwatch;
 mod profiles;
+mod protocol;
 mod rtc;
 mod session;
 
