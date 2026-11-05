@@ -10,6 +10,7 @@ mod games;
 mod hotkey;
 mod hub;
 mod input;
+mod input_manager;
 mod keybinds;
 mod netinfo;
 mod netwatch;
