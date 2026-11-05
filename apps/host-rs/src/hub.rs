@@ -90,6 +90,8 @@ enum Timer {
     StateFlush,
     Pump(usize, u64),       // (出力の番号, 世代)
     RtcTimeout(usize, u64), // (スロット, 世代)
+    InputFaultStop(u64),
+    ReleaseRetry(u64),
     LaunchWatch(u64),       // 起動の世代
 }
 
@@ -241,6 +243,13 @@ pub struct Hub {
     game: Game,
     inject: InjectMode,
     outputs: Vec<OutputState>,
+    release_pending: BTreeSet<usize>, // 成功upを確認するまでReset/epoch変更でも消さない。
+    input_fault: bool, // 自動回復後もPCの明示再開まで押下・移動・ホイールを禁止。
+    fault_stop_gen: u64,
+    fault_stop_pending: bool,
+    release_retry_gen: u64,
+    release_retry_attempts: u8,
+    release_retry_active: bool,
     look: Look,
     timers: BinaryHeap<Reverse<(Instant, u64, Timer)>>,
     timer_seq: u64,
@@ -347,6 +356,8 @@ impl Hub {
             },
             inject: InjectMode::parse(&config.inject_mode).unwrap_or(InjectMode::Off),
             game_service: GameService::new(),
+            release_pending: BTreeSet::new(), input_fault: false,
+            fault_stop_gen: 0, fault_stop_pending: false, release_retry_gen: 0, release_retry_attempts: 0, release_retry_active: false,
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
             look: Look::new(now, config.look_smooth_min_ms, config.look_smooth_max_ms),
             timers: BinaryHeap::new(),
@@ -483,14 +494,12 @@ impl Hub {
             match rx.recv_timeout(wait) {
                 Ok(Event::Shutdown) => {
                     // 終了時は押しっぱなしを残さない
-                    self.release_outputs(None);
-                    self.log("shutdown", json!({}));
-                    let _ = self.log_file.flush();
-                    std::process::exit(0);
+                    let confirmed = self.release_for_shutdown();
+                    std::process::exit(if confirmed { 0 } else { 1 });
                 }
                 Ok(ev) => self.on_event(ev),
                 Err(RecvTimeoutError::Timeout) => {}
-                Err(RecvTimeoutError::Disconnected) => break,
+                Err(RecvTimeoutError::Disconnected) => { self.release_for_shutdown(); break; }
             }
         }
     }
@@ -568,7 +577,7 @@ impl Hub {
             phase: self.game.phase, connected: &connected, participants: &self.participants, unacked: &unacked,
             has_profile: self.profile.is_some(), lineup_ok: self.lineup_ok(), title_known: self.title_known(&self.game.title),
             controller_supported: self.profile.as_ref().is_none_or(profiles::controller_supported),
-            input_available: self.input.available(), stop_available: self.hotkey.is_ok() || self.fake_target.is_some(),
+            input_available: self.input.available() && !self.input_fault, stop_available: self.hotkey.is_ok() || self.fake_target.is_some(),
             inject: self.inject, can_inject: self.can_inject(),
         }.reasons(require_focus)
     }
@@ -702,7 +711,7 @@ impl Hub {
     }
 
     fn can_inject(&self) -> bool {
-        self.title_known(&self.game.title) && self.input.available()
+        self.title_known(&self.game.title) && self.input.available() && !self.input_fault && self.release_pending.is_empty()
             && match self.inject {
                 InjectMode::Off => false,
                 InjectMode::Test => self.game_focused(),
@@ -723,7 +732,10 @@ impl Hub {
             "gameFocused": self.game_focused(),
             "active": self.can_inject(),
             "available": self.input.available(),
-            "error": self.input.error(),
+            "error": if self.input_fault { Some("入力送信に失敗しました。PCで安全を確認してから入力を再開してください") } else { self.input.error() },
+            "inputFault": self.input_fault,
+            "releaseUnconfirmed": self.release_pending.iter().map(|&i| OUTPUTS[i].id).collect::<Vec<_>>(),
+            "releaseRetryAttempts": self.release_retry_attempts,
             "minHoldMs": MIN_HOLD_MS,
             "emergencyHotkey": crate::hotkey::LABEL,
             "emergencyHotkeyError": self.hotkey.as_ref().err(),
@@ -778,6 +790,7 @@ impl Hub {
         let Some(change) = session::phase_change(self.game.phase, phase) else { return };
         self.release_outputs(None);
         self.reset_look();
+        if phase == Phase::Coop && self.input_fault { self.stop_input_failure(); return; }
         self.game.phase = phase;
         if change.clear_lineup { self.assigned.clear(); self.participants.clear(); self.lineup = None; }
         self.game.reason = Some(reason.to_string());
@@ -791,12 +804,14 @@ impl Hub {
     /// 切り替えるのは協力プレイに入る瞬間だけで、一時停止中に P1 が PC アプリを操作している間は前面を奪わない。
     /// Windows が拒否したときは、これまでどおり手動で前面にする案内を出す
     fn focus_for_coop(&mut self) -> bool {
+        if self.input_fault || !self.release_pending.is_empty() { return false; }
         // Testモードは疑似ゲーム画面のfocusのみで判定し、実ウィンドウを切り替えない。
         if self.inject != InjectMode::On { return self.can_inject(); }
         self.check_target();
-        if self.target_ok { return true; }
+        if self.target_ok { return self.can_inject(); }
         self.release_outputs(None);
         self.reset_look();
+        if self.input_fault { return false; }
         let simulated = self.fake_target.is_some();
         let result = if simulated {
             if self.fake_activate { self.fake_target = Some(true); Ok(()) }
@@ -865,10 +880,10 @@ impl Hub {
                 self.reload_keybinds();
                 self.fix_assignment();
                 self.game.host_ready = true;
-                self.set_phase(Phase::Coop, "host ready"); true
+                self.set_phase(Phase::Coop, "host ready"); self.game.phase == Phase::Coop && !self.input_fault
             }
             // 再開は Ready で決めた参加者・分担のまま (参加者がそろうまで再開できない)
-            ("RESUME", Phase::Paused) if self.focus_for_coop() => { self.reload_keybinds(); self.set_phase(Phase::Coop, "host resume"); true }
+            ("RESUME", Phase::Paused) if self.focus_for_coop() => { self.reload_keybinds(); self.set_phase(Phase::Coop, "host resume"); self.game.phase == Phase::Coop && !self.input_fault }
             ("PAUSE", Phase::Coop | Phase::Paused) => {
                 self.game.auto_resume_until = 0;
                 self.game.reason = Some("host pause".into());
@@ -1059,12 +1074,22 @@ impl Hub {
     // ---------- 入力注入 ----------
 
     fn apply_output(&mut self, idx: usize, down: bool, slot: &str) {
+        if down && self.input_fault { return; }
         let o = &OUTPUTS[idx];
         let ok = match o.kind {
             Kind::Key { scan, ext } => self.input.key(scan, ext, down),
             Kind::Mouse { left } => self.input.mouse_button(left, down),
             Kind::Wheel { .. } => false,
         };
+        if !ok {
+            self.release_pending.insert(idx);
+            if !self.input_fault {
+                self.input_fault = true; self.inject = InjectMode::Off; self.game.auto_resume_until = 0;
+                self.fault_stop_pending = true;
+                self.fault_stop_gen += 1;
+                self.schedule(Instant::now(), Timer::InputFaultStop(self.fault_stop_gen));
+            }
+        } else if !down { self.release_pending.remove(&idx); }
         let entry = self.record(
             "inject",
             json!({ "slot": slot, "out": o.id, "label": o.label, "state": if down { "down" } else { "up" }, "ok": ok }),
@@ -1074,6 +1099,7 @@ impl Hub {
 
     fn pump(&mut self, idx: usize) {
         loop {
+            if self.input_fault { return; }
             match self.outputs[idx].pump_step(Instant::now()) {
                 PumpStep::Idle => return,
                 PumpStep::Wait { delay, generation } => {
@@ -1086,6 +1112,7 @@ impl Hub {
     }
 
     fn set_output(&mut self, idx: usize, slot: &'static str, down: bool) {
+        if down && self.input_fault { return; }
         let Some(dropped) = self.outputs[idx].set_holder(slot, down) else { return };
         for _ in 0..dropped {
             self.record("queue_drop", json!({ "out": OUTPUTS[idx].id, "slot": slot }));
@@ -1096,7 +1123,8 @@ impl Hub {
     /// 切断・停止時のup要求は、出力ごとの状態を無効化した直後に順次送る。
     fn release_outputs(&mut self, slot: Option<&'static str>) {
         for idx in 0..OUTPUTS.len() {
-            if self.outputs[idx].release(slot, Instant::now()) {
+            let release = self.outputs[idx].release(slot, Instant::now());
+            if release {
                 self.apply_output(idx, false, slot.unwrap_or("system"));
             }
         }
@@ -1131,6 +1159,7 @@ impl Hub {
     }
 
     fn remote_app_active(&self) -> bool {
+        if self.input_fault { return false; }
         if self.game.phase == Phase::Coop { return false; }
         if self.desktop { return self.app_focused; }
         let page = self.conns.values().any(|c| matches!(c.role, Role::Monitor {page:Page::App,focused:true}));
@@ -1208,6 +1237,7 @@ impl Hub {
             self.push_game();
         }
         self.log("emergency_stop", json!({ "source": source }));
+        self.start_release_retry();
         self.push_state();
     }
 
@@ -1499,11 +1529,73 @@ impl Hub {
     }
 
     fn set_inject_mode(&mut self, mode: InjectMode) {
+        if mode != InjectMode::Off && (self.fault_stop_pending || !self.release_pending.is_empty()) {
+            self.log("inject_mode_rejected", json!({ "reason": "release unconfirmed" }));
+            self.push_game(); self.push_state(); return;
+        }
+        let fault_before = self.input_fault;
         if self.inject != mode { self.release_outputs(None); self.reset_look(); self.advance_epoch(); }
+        if mode != InjectMode::Off && self.input_fault {
+            if !fault_before || !self.release_pending.is_empty() {
+                self.inject = InjectMode::Off; self.push_game(); self.push_state(); return;
+            }
+            self.input_fault = false; self.release_retry_gen += 1; self.release_retry_active = false;
+        }
         self.inject = mode;
+        if mode == InjectMode::Off { self.start_release_retry(); }
         self.log("inject_mode", json!({ "mode": mode.name() }));
-        self.push_game();
+        self.push_game(); self.push_state();
+    }
+
+    // 送出関数から再入させない。専用タイマーで停止効果を1回だけ適用する。
+    fn stop_input_failure(&mut self) {
+        if !std::mem::take(&mut self.fault_stop_pending) { return; }
+        self.inject = InjectMode::Off; self.game.auto_resume_until = 0;
+        if self.game.phase == Phase::Coop { self.set_phase(Phase::Paused, "input failure"); }
+        else {
+            self.release_outputs(None); self.reset_look();
+            self.game.reason = Some("input failure".into()); self.advance_epoch(); self.push_game();
+        }
+        self.retry_pending_outputs();
+        self.log("input_failure", json!({ "unconfirmed": self.release_pending.iter().map(|&i| OUTPUTS[i].id).collect::<Vec<_>>() }));
+        self.start_release_retry(); self.push_state();
+    }
+
+    fn start_release_retry(&mut self) {
+        self.release_retry_gen += 1; self.release_retry_attempts = 0;
+        self.release_retry_active = !self.release_pending.is_empty();
+        if self.release_retry_active {
+            self.schedule(Instant::now() + Duration::from_millis(50), Timer::ReleaseRetry(self.release_retry_gen));
+        }
+    }
+
+    fn retry_pending_outputs(&mut self) {
+        for idx in self.release_pending.clone() { self.apply_output(idx, false, "system"); }
+    }
+
+    fn retry_releases(&mut self, gen: u64) {
+        if !self.release_retry_active || gen != self.release_retry_gen { return; }
+        self.release_retry_attempts += 1;
+        self.retry_pending_outputs();
+        if self.release_pending.is_empty() || self.release_retry_attempts >= 3 {
+            self.release_retry_active = false; self.release_retry_gen += 1;
+        } else { self.schedule(Instant::now() + Duration::from_millis(50), Timer::ReleaseRetry(gen)); }
         self.push_state();
+    }
+
+    fn release_for_shutdown(&mut self) -> bool {
+        self.inject = InjectMode::Off; self.game.auto_resume_until = 0;
+        self.release_outputs(None); self.reset_look();
+        // 終了直前はタイマーが動かないため、ここだけ有限回の同期再解放を行う。
+        for _ in 0..3 {
+            if self.release_pending.is_empty() { break; }
+            std::thread::sleep(Duration::from_millis(50));
+            self.retry_pending_outputs();
+        }
+        let confirmed = self.release_pending.is_empty();
+        self.log("shutdown", json!({ "releaseConfirmed": confirmed,
+            "unconfirmed": self.release_pending.iter().map(|&i| OUTPUTS[i].id).collect::<Vec<_>>() }));
+        let _ = self.log_file.flush(); confirmed
     }
 
     fn on_focus_change(&mut self) {
@@ -1657,6 +1749,8 @@ impl Hub {
                     self.maybe_auto_resume();
                 }
             }
+            Timer::InputFaultStop(gen) => { if self.input_fault && gen == self.fault_stop_gen { self.stop_input_failure(); } }
+            Timer::ReleaseRetry(gen) => self.retry_releases(gen),
             Timer::LaunchWatch(gen) => self.watch_launch(gen),
         }
     }
@@ -2242,6 +2336,8 @@ mod tests {
             },
             inject: InjectMode::On,
             game_service: GameService::new(),
+            release_pending: BTreeSet::new(), input_fault: false,
+            fault_stop_gen: 0, fault_stop_pending: false, release_retry_gen: 0, release_retry_attempts: 0, release_retry_active: false,
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
             look: Look::new(now, 30.0, 120.0),
             timers: BinaryHeap::new(),
@@ -2719,7 +2815,7 @@ mod tests {
     }
 
     #[test]
-    fn adapter_up_failure_currently_clears_physical_and_is_not_retried_by_second_release() {
+    fn adapter_up_failure_is_retained_until_the_fault_stop_retries_it() {
         let recorder = RecordingInput::with_results([true, false]);
         let (mut h, mut rx) = fixture_with_input(Box::new(recorder.clone()));
         let i = index("MOUSE_L");
@@ -2728,8 +2824,11 @@ mod tests {
         assert!(!h.outputs[i].physical);
         assert!(h.outputs[i].holders.is_empty());
         h.release_outputs(None);
-        // 安全修正とは分離する。現実のOS保持状態と一致する保証はまだない。
         assert_eq!(recorder.calls().len(), 2);
+        h.on_timer(Timer::InputFaultStop(h.fault_stop_gen), Instant::now());
+        assert_eq!(recorder.calls().len(), 3);
+        assert!(h.release_pending.is_empty());
+        assert!(h.input_fault); // 再解放の成功だけでは自動で入力を再開しない。
         let out = injections(&mut rx);
         assert_eq!(out[1]["state"], "up");
         assert_eq!(out[1]["ok"], false);
@@ -2749,6 +2848,116 @@ mod tests {
         assert_eq!(calls[3].operation, Operation::Button { left: true, down: false });
         assert!(calls[3].ok);
         assert!(h.outputs.iter().all(|s| !s.physical && s.queue.is_empty()));
+    }
+
+    #[test]
+    fn failed_release_stops_every_input_then_retries_without_restoring_old_work() {
+        let recorder = RecordingInput::with_results([true, false, false, true]);
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.set_output(index("KEY_W"), "P1", true); h.look.px = 50.0;
+        h.release_outputs(None);
+        assert!(h.input_fault); assert!(!h.can_inject()); assert!(h.inject == InjectMode::Off);
+        assert!(h.release_pending.contains(&index("KEY_W")));
+        h.set_output(index("MOUSE_L"), "P3", true);
+        h.handle_look(1, 20.0, 10.0); h.handle_control(0, "REMOTE_WHEEL_UP", "down");
+        assert_eq!(recorder.calls().len(), 2);
+        let epoch = h.game.epoch;
+        h.on_timer(Timer::InputFaultStop(h.fault_stop_gen), Instant::now());
+        assert!(h.game.phase == Phase::Paused); assert_eq!(h.game.epoch, epoch + 1);
+        assert_eq!(h.game.reason.as_deref(), Some("input failure")); assert_eq!(h.game.auto_resume_until, 0);
+        assert_eq!((h.look.px, h.look.py, h.look.fx, h.look.fy), (0.0, 0.0, 0.0, 0.0));
+        assert!(h.outputs.iter().all(|s| !s.physical && s.queue.is_empty() && s.holders.is_empty()));
+        let old_retry = h.release_retry_gen;
+        h.on_timer(Timer::ReleaseRetry(old_retry), Instant::now());
+        assert!(h.release_pending.is_empty()); assert!(h.input_fault); assert!(!h.can_resume());
+        assert_eq!(recorder.calls().len(), 4);
+        h.desktop = true;
+        h.app_focused = true;
+        assert!(!h.remote_app_active());
+        h.set_inject_mode(InjectMode::On);
+        assert!(!h.input_fault); assert!(h.can_inject());
+        assert!(h.remote_app_active());
+        h.on_timer(Timer::ReleaseRetry(old_retry), Instant::now());
+        assert_eq!(recorder.calls().len(), 4);
+    }
+
+    #[test]
+    fn repeated_release_failure_has_three_timer_passes_and_retains_uncertainty_after_reset() {
+        let recorder = RecordingInput::with_results(std::iter::once(true).chain(std::iter::repeat(false).take(50)));
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.set_output(index("MOUSE_L"), "P1", true); h.release_outputs(None);
+        h.on_timer(Timer::InputFaultStop(h.fault_stop_gen), Instant::now());
+        let gen = h.release_retry_gen;
+        for _ in 0..10 { h.on_timer(Timer::ReleaseRetry(gen), Instant::now()); }
+        assert_eq!(h.release_retry_attempts, 3); assert!(!h.release_retry_active);
+        assert_eq!(recorder.calls().len(), 6); // down + 最初のup + 停止時up + タイマー3回。
+        for mode in [InjectMode::On, InjectMode::Test] { h.set_inject_mode(mode); assert!(h.inject == InjectMode::Off); }
+        let before = recorder.calls().len();
+        for _ in 0..10 { h.release_outputs(None); }
+        h.on_ws_message(1, json!({"type":"reset"}));
+        assert!(h.input_fault); assert!(!h.release_pending.is_empty()); assert!(!h.can_inject());
+        h.set_phase(Phase::Coop, "拒否すべき再開"); assert!(h.game.phase != Phase::Coop);
+        h.on_timer(Timer::ReleaseRetry(gen), Instant::now());
+        assert_eq!(recorder.calls().len(), before); assert_eq!(h.release_retry_attempts, 3);
+        h.emergency_stop("test");
+        assert!(h.release_retry_active); assert_ne!(h.release_retry_gen, gen);
+    }
+
+    #[test]
+    fn failure_during_mode_change_cannot_reenable_or_skip_the_fault_stop() {
+        let recorder = RecordingInput::with_results(std::iter::once(true).chain(std::iter::repeat(false).take(20)));
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder));
+        h.set_output(index("KEY_W"), "P1", true);
+        h.set_inject_mode(InjectMode::Off);
+        assert!(h.input_fault); let stop = h.fault_stop_gen;
+        h.on_timer(Timer::InputFaultStop(stop), Instant::now());
+        assert!(h.game.phase == Phase::Paused);
+        h.set_inject_mode(InjectMode::On); assert!(h.inject == InjectMode::Off);
+        h.game.phase = Phase::Preparing;
+        h.set_phase(Phase::Coop, "ready"); assert!(h.game.phase != Phase::Coop);
+    }
+
+    #[test]
+    fn synchronous_fault_stop_consumes_its_queued_timer_once() {
+        let recorder = RecordingInput::with_results([true, false, true]);
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.game.phase = Phase::Preparing;
+        h.set_output(index("KEY_W"), "P1", true);
+        let epoch = h.game.epoch;
+        h.set_phase(Phase::Coop, "ready");
+        assert_eq!(h.game.epoch, epoch + 1);
+        assert!(!h.fault_stop_pending);
+        h.on_timer(Timer::InputFaultStop(h.fault_stop_gen), Instant::now());
+        assert_eq!(h.game.epoch, epoch + 1);
+        assert_eq!(recorder.calls().len(), 3);
+    }
+
+    #[test]
+    fn failed_down_is_also_released_and_stale_pump_cannot_emit_more_presses() {
+        let recorder = RecordingInput::with_results([false, true]);
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        let i = index("KEY_W"); h.set_output(i, "P1", true);
+        let pump = h.outputs[i].timer_gen;
+        h.set_output(i, "P1", false); h.set_output(i, "P1", true);
+        h.on_timer(Timer::InputFaultStop(h.fault_stop_gen), Instant::now());
+        h.on_timer(Timer::Pump(i, pump), Instant::now());
+        assert!(h.release_pending.is_empty()); assert!(h.input_fault);
+        assert_eq!(recorder.calls().iter().map(|c| c.operation.clone()).collect::<Vec<_>>(), [
+            Operation::Key { scan: 0x11, ext: false, down: true }, Operation::Key { scan: 0x11, ext: false, down: false }]);
+    }
+
+    #[test]
+    fn shutdown_has_finite_release_retries_and_reports_unconfirmed_failure() {
+        for recovers in [true, false] {
+            let results = if recovers { vec![true, false, false, true] } else { vec![true, false, false, false, false] };
+            let recorder = RecordingInput::with_results(results);
+            let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+            h.set_output(index("KEY_W"), "P1", true); h.look.px = 50.0;
+            assert_eq!(h.release_for_shutdown(), recovers);
+            assert_eq!(h.release_pending.is_empty(), recovers);
+            assert_eq!(h.look.px, 0.0); assert!(h.inject == InjectMode::Off);
+            assert!(recorder.calls().len() <= 5);
+        }
     }
 
     #[test]
