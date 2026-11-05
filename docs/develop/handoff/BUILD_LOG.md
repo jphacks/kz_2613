@@ -967,3 +967,10 @@
 - `node scripts/sim/input-owners-test.mjs` 4/4、`phone-lifecycle-test.mjs` 16/16、`phone-lifecycle-test.mjs --repro-shared-pointer` 成功（修正前はexit 1）、`controller-diagnostics-test.mjs`、`phone-view-test.mjs` 8観点、`ui-input-test.mjs` 12/12、`app-view-test.mjs` 25/25、`check-static-pages.mjs`、`python scripts/verify_overlay.py` 39項目、公開資料検査、`git diff --check` 成功。省略したmjsは `node scripts/sim/` から実行。
 - `node scripts/sim/capture-screens.mjs --bin <PR #181の専用dry-runホストexe> --out data/local/issue177/screenshots` が成功し、23画面を保存。生成された移動・アクション・緊急停止後の画面を目視確認し、表示崩れなし。画像はGit対象外で、実機受入へ読み替えない。
 - 実装した親とは別のエージェントが全差分・未追跡ファイル・停止経路を独立レビューし、修正必須P0〜P2指摘なし。独立実行でも所有4/4・ライフサイクル16/16・正期待repro・UI入力12/12・診断・差分検査成功。Android/iPhoneの複数指とPointer Capture配送、実ゲームは未検証。CI結果はPRへ記載する。
+
+## 2026-11-05 — スマホの接続・参加状態を分離する（Codex、#178）
+
+- #177のhead `6c80fab` を親に `codex/178-phone-session` の専用worktreeで作業。重複確認とIssueへの着手コメントは親担当が実施済み。`phone-session.js` へidentity/token・現在Socket・seq/iseq・retry/stopped/lastServerMsg・slot/host/game/epochと接続表示の導出を移した。controllerはDOM・実通信・入力停止/RTCの副作用をつなぐ。Reactや新依存は追加していない。
+- 責務抽出段階で `node scripts/sim/phone-session-test.mjs` 6/6、`phone-lifecycle-test.mjs` 16/16、`controller-diagnostics-test.mjs` が成功。`node --check apps/web-static/scripts/controller.js` も成功。製品入力・視点周期・通信形式を変更していない。
+- 既存の旧onopen通知には世代ガードがなく、可視化と予約再接続が重なったSocketの遅延openで現在のseqが巻き戻ることを再現。`node scripts/sim/phone-session-test.mjs --repro-stale-open` は正期待 `[1,2]` に対して実際 `[1,1]`、AssertionError・exit 1。この失敗再現を抽出コミットに残し、世代ガードの修正は次の独立コミットで扱う。
+- 判断とStackの区切りは [接続・参加状態の分離](../decisions/2026-11-05-phone-session.md) に記録。実ブラウザー・Android/iPhone・実WebRTC・OS入力は未検証。
