@@ -967,3 +967,14 @@
 - `node scripts/sim/input-probe-sim.mjs --bin C:\Users\kumes\AppData\Local\ReCooplay\cargo-target\release\recooplay-input-probe.exe` は12/12成功（必ず `--mock`、OS入力なし）。これはプローブの既存障害試験であり、HubのSendInput失敗注入を検証したものではない。
 - 初回CI head `90cefdf`：構造（run 41974036599）とPCアプリのビルドは成功。ホストのビルド・単体も成功したが、通信は54/55。追加ホスト切断試験が、直前のRESUMEをP1だけ受信した時点でP3のphase/epoch同期前に入力していた。CIログの `inject MOUSE_R down` 待機失敗を確認し、各クライアントが同じcoop/epoch/自動復帰OFFを受信してから開始するよう試験準備を修正した。製品コード・合格条件は変えていない。別担当レビューでも原因と修正の妥当性を確認した。初回CIは全成功として扱わない。
 - 受信同期修正後、同じ再ビルド済みexeの `node scripts/sim/protocol-sim.mjs --bin <上記exe>` が再度55/55成功。最終差分の `node --check`・公開資料検査・`git diff --check` も成功。修正後headのCI結果はPRへ記載する。
+
+## 2026-11-05 — Windows入力アダプターの分離（Codex、#170）
+
+- #170のIssue・コメントと既存PRの重複を確認し、着手コメント投稿後、PR #175のhead `2e82eaa` から `codex/170-input-adapter` を分離した。作業ツリーは `data/local/worktrees/issue170`。未マージの先行PRから検証可能なStacked PRを作るという最新のユーザー判断を優先する。
+- `InputAdapter: Send` の利用可否/理由・キー・左右ボタン・相対移動・ホイールの境界を追加。Hubは `Box<dyn InputAdapter>` に依存し、従来の `Input` が同じWindows/dry-run実装へ委譲する。SendInputフラグ、入力順序、停止・フォーカス・epoch・通信契約・時間定数は変更していない。既存入力プローブのAPIも保持した。
+- 記録・失敗注入用実装はcfg(test)限定で、OS入力を呼ばない。境界試験7件を追加し、具体的な引数と順序、利用不可時の拒否、部分失敗後も他出力を解放すること、down/up/視点/ホイール/リモコン失敗時の現行状態更新を確認する。
+- up失敗後の再解放で同じupを再送しないこと、視点失敗でも量と診断集計を消費することは内部で再現した。実OSでの残留押下の証拠ではなく、このリファクタリングで安全修正を混ぜていない。独立安全修正の条件と設計理由は[判断記録](../decisions/2026-11-05-input-adapter.md)に整理した。
+- `RECOOPLAY_DRY_RUN=1`、既存のSETUP_WINDOWSのPATH/LIBCLANG_PATH/CARGO_TARGET_DIRを使い、`cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` 成功（ホスト62件・既存の手動表出力1件除外、プローブ4件、18.77秒）。`cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` 成功（24.58秒）。既知のOpenSSL PDB不足LNK4099警告は残る。
+- ビルド済みexeを作業ツリー内のGit対象外 `data/local/issue170/recooplay-host.exe` へコピーし、共有キャッシュと切り離して試験した。`node scripts/sim/shutdown-sim.mjs --bin <専用exe>` はquit/EOF両方で全解放後の正常終了が成功。`python scripts/verify_overlay.py` は39項目、`python scripts/check-public-docs.py --all` は79資料・529参照、`git diff --check` も成功。
+- Windows実入力、実際のSendInput失敗、Alt+Tab、ホットキー、スマホ実機・Minecraftと実Peerによる旧rtc_genの対照試験は未実施。
+- `node scripts/sim/protocol-sim.mjs --bin <専用exe>` は55/55成功。キー・入力先喪失・緊急停止・旧epoch・再接続・全解放を含む既存の通信回帰を維持した。Rustビルド後の製品ソース変更はない。親担当による独立差分レビューで修正必須指摘なし、PR最終headも確認対象とする。CI結果はPRへ記録する。

@@ -19,7 +19,7 @@ use crate::keybinds::{self, Keybinds};
 use crate::profiles::{self, Profile};
 use crate::focus::{self, Foreground, Target};
 use crate::games::{self, Entry};
-use crate::input::Input;
+use crate::input::InputAdapter;
 use crate::rtc::{Peer, RtcSignal};
 
 // 参加枠は P1〜P4 (#57)。2〜4人で遊び、人数は Ready の時点で接続している人数で決める (#105)
@@ -332,7 +332,7 @@ struct Look {
 
 pub struct Hub {
     tx: Sender<Event>,
-    input: Input,
+    input: Box<dyn InputAdapter>,
     log_file: BufWriter<File>,
     conns: HashMap<u64, Conn>,
     slots: [Option<Slot>; MAX_SLOTS],
@@ -432,14 +432,14 @@ fn num(v: &Value, key: &str) -> Option<f64> {
 }
 
 impl Hub {
-    pub fn new(tx: Sender<Event>, config: &Config, input: Input, log_dir: &Path) -> std::io::Result<Hub> {
+    pub fn new(tx: Sender<Event>, config: &Config, input: impl InputAdapter + 'static, log_dir: &Path) -> std::io::Result<Hub> {
         std::fs::create_dir_all(log_dir)?;
         let name = format!("session-{}.jsonl", chrono::Utc::now().format("%Y-%m-%dT%H-%M-%S-%3fZ"));
         let log_file = BufWriter::new(File::options().create(true).append(true).open(log_dir.join(name))?);
         let now = Instant::now();
         let mut hub = Hub {
             tx,
-            input,
+            input: Box::new(input),
             log_file,
             conns: HashMap::new(),
             slots: [None, None, None, None],
@@ -2529,13 +2529,18 @@ impl Hub {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::input::Input;
+    use crate::input::testing::{Operation, RecordingInput};
     use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
     // Hub::newはゲーム探索・設定読込みを行うため使わない。
     // ログはOSの破棄先、入力は明示dry-run。環境変数の変更も実時間sleepも不要。
     fn fixture() -> (Hub, UnboundedReceiver<Out>) {
+        fixture_with_input(Box::new(Input::for_test()))
+    }
+
+    fn fixture_with_input(input: Box<dyn InputAdapter>) -> (Hub, UnboundedReceiver<Out>) {
         let (tx, _rx) = std::sync::mpsc::channel();
-        let input = Input::for_test();
         let log_file = BufWriter::new(File::options().write(true)
             .open(if cfg!(windows) { "NUL" } else { "/dev/null" }).unwrap());
         let now = Instant::now();
@@ -2888,6 +2893,130 @@ mod tests {
         h.look_tick();
         assert_eq!((h.look.px, h.look.py, h.look.fx, h.look.fy), (0.0, 0.0, 0.0, 0.0));
         assert_eq!((h.look.sum_x, h.look.sum_y, h.look.n), (0, 0, 0));
+    }
+
+    #[test]
+    fn adapter_records_exact_key_button_wheel_and_remote_arguments_in_order() {
+        let recorder = RecordingInput::default();
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.apply_output(index("ARROW_UP"), true, "P1");
+        h.apply_output(index("ARROW_UP"), false, "P1");
+        h.apply_output(index("MOUSE_L"), true, "P1");
+        h.apply_output(index("MOUSE_R"), false, "P1");
+        h.assigned[0].push("hotbar".into());
+        h.handle_control(0, "act:hotbar:up", "down");
+        h.handle_control(0, "act:hotbar:down", "down");
+        h.handle_control(0, "act:hotbar:down", "up"); // ホイールのupは送出しない。
+        h.game.phase = Phase::Paused;
+        h.remote_message(0, &json!({"epoch":1,"rseq":1,"kind":"move","dx":3.6,"dy":-2.2}));
+        h.remote_message(0, &json!({"epoch":1,"rseq":2,"kind":"scroll","dy":80}));
+        let operations: Vec<_> = recorder.calls().into_iter().map(|c| c.operation).collect();
+        assert_eq!(operations, [
+            Operation::Key { scan: 0x48, ext: true, down: true },
+            Operation::Key { scan: 0x48, ext: true, down: false },
+            Operation::Button { left: true, down: true },
+            Operation::Button { left: false, down: false },
+            Operation::Wheel(1), Operation::Wheel(-1),
+            Operation::Move { dx: 4, dy: -2 }, Operation::Wheel(-2),
+        ]);
+    }
+
+    #[test]
+    fn adapter_down_failure_is_reported_and_current_state_still_requests_release() {
+        let recorder = RecordingInput::with_results([false, true]);
+        let (mut h, mut rx) = fixture_with_input(Box::new(recorder.clone()));
+        let i = index("KEY_W");
+        h.set_output(i, "P1", true);
+        // 現行挙動の記録：失敗してもphysicalは先に更新され、後の停止はupを要求する。
+        assert!(h.outputs[i].physical);
+        h.release_outputs(None);
+        assert!(!h.outputs[i].physical);
+        let calls = recorder.calls();
+        assert_eq!(calls.iter().map(|c| c.ok).collect::<Vec<_>>(), [false, true]);
+        assert_eq!(calls[1].operation, Operation::Key { scan: 0x11, ext: false, down: false });
+        assert_eq!(injections(&mut rx).iter().map(|v| v["ok"].as_bool().unwrap()).collect::<Vec<_>>(), [false, true]);
+    }
+
+    #[test]
+    fn adapter_up_failure_currently_clears_physical_and_is_not_retried_by_second_release() {
+        let recorder = RecordingInput::with_results([true, false]);
+        let (mut h, mut rx) = fixture_with_input(Box::new(recorder.clone()));
+        let i = index("MOUSE_L");
+        h.set_output(i, "P1", true);
+        h.release_outputs(None);
+        assert!(!h.outputs[i].physical);
+        assert!(h.outputs[i].holders.is_empty());
+        h.release_outputs(None);
+        // 安全修正とは分離する。現実のOS保持状態と一致する保証はまだない。
+        assert_eq!(recorder.calls().len(), 2);
+        let out = injections(&mut rx);
+        assert_eq!(out[1]["state"], "up");
+        assert_eq!(out[1]["ok"], false);
+    }
+
+    #[test]
+    fn adapter_partial_release_failure_does_not_skip_other_outputs() {
+        let recorder = RecordingInput::with_results([true, true, false, true]);
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.set_output(index("KEY_W"), "P1", true);
+        h.set_output(index("MOUSE_L"), "P2", true);
+        h.release_outputs(None);
+        let calls = recorder.calls();
+        assert_eq!(calls.len(), 4);
+        assert_eq!(calls[2].operation, Operation::Key { scan: 0x11, ext: false, down: false });
+        assert!(!calls[2].ok);
+        assert_eq!(calls[3].operation, Operation::Button { left: true, down: false });
+        assert!(calls[3].ok);
+        assert!(h.outputs.iter().all(|s| !s.physical && s.queue.is_empty()));
+    }
+
+    #[test]
+    fn adapter_move_failure_currently_consumes_motion_and_updates_diagnostics() {
+        let recorder = RecordingInput::with_results([false]);
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.look.px = 1.25;
+        h.look.py = -2.5;
+        h.look.last_tick = Instant::now() - Duration::from_secs(1);
+        h.look_tick();
+        let calls = recorder.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].operation, Operation::Move { dx: 1, dy: -2 });
+        assert!(!calls[0].ok);
+        assert_eq!((h.look.sum_x, h.look.sum_y, h.look.n), (1, -2, 1));
+        assert!(h.look.px.abs() < 1e-9 && h.look.py.abs() < 1e-9);
+        assert!((h.look.fx - 0.25).abs() < 1e-9 && (h.look.fy + 0.5).abs() < 1e-9);
+    }
+
+    #[test]
+    fn adapter_wheel_and_remote_failures_keep_current_sequence_and_log_results() {
+        let recorder = RecordingInput::with_results([false, false]);
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.assigned[0].push("hotbar".into());
+        h.handle_control(0, "act:hotbar:up", "down");
+        h.game.phase = Phase::Paused;
+        let movement = json!({"epoch":1,"rseq":1,"kind":"move","dx":5,"dy":-7});
+        h.remote_message(0, &movement);
+        h.remote_message(0, &movement);
+        assert_eq!(h.slots[0].as_ref().unwrap().remote_seq, 1);
+        let calls = recorder.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].operation, Operation::Wheel(1));
+        assert_eq!(calls[1].operation, Operation::Move { dx: 5, dy: -7 });
+        assert!(calls.iter().all(|c| !c.ok));
+    }
+
+    #[test]
+    fn unavailable_adapter_blocks_new_input_and_exposes_reason() {
+        let recorder = RecordingInput::unavailable("試験用の利用不可");
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.keybinds.actions.push(("forward".into(), Some("KEY_W")));
+        assert!(!h.can_inject());
+        assert!(h.ready_reasons(true).iter().any(|r| r == "入力ドライバーが利用できません"));
+        h.handle_control(0, "act:forward", "down");
+        assert!(recorder.calls().is_empty());
+        let snapshot = h.inject_snapshot();
+        assert_eq!(snapshot["available"], false);
+        assert_eq!(snapshot["error"], "試験用の利用不可");
     }
 
 }
