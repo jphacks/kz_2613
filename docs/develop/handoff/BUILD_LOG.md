@@ -1062,3 +1062,12 @@
 - 別エージェントがコードと文書を独立レビューした。WSパースの実行箇所、再検出停止の対象範囲、Playerとmonitorのepoch条件の違いという指摘をそれぞれの対象文書へ反映した。未確認事項・保留理由もレビューし、それ以外の修正必須指摘なし。
 - `python scripts/check-public-docs.py --all`、`python scripts/verify_overlay.py`（39項目）、`git diff --check` 成功。監査資料とBUILD_LOGだけの変更のためRustの製品ソース再ビルドや新たなOS入力試験は行っていない。PRの既存CIも追跡し、結果をPRへ記載する。
 - Android/iPhone・Windows実入力・ゲーム操作・無線断・Alt+Tab・実ホットキー等は未検証のまま。mainマージ・Issueクローズ・正式リリースは行わない。
+
+## 2026-11-06 — 先行11 PRの統合とセッション判定の製品分離（Codex、#173）
+
+- #175→#181→#185→#187、#183、#182→#184→#186、#188→#189→#190を依存順にmainへmerge。force push・ブランチ削除・保護回避なし。各段階でmainのtreeと検証済み親/統合候補の完全一致を確認し、baseをmainへ変更した。BUILD_LOG競合は両記録を保持。別エージェントが元11差分と更新7差分を独立レビューし、製品差分一致・記録欠落0行・修正必須指摘なしを確認。各PRの最終headのPR/push CI全成功後に統合。Issueは閉じていない。
+- 全11本の固定候補8c8fd78（統合main a3ffc413と同tree）でRust77件＋プローブ4件、通信55/55、quit/EOF全解放、36ファイル配信が成功。PC表示25件・スマホ8観点・セッション7件・入力16件・所有4件・UI入力12件・診断・静的構文・502定義・抽出・104画面証拠・構造39項目・公開資料88件/553参照も成功。
+- 共有CARGO_TARGET_DIRを別worktreeから利用した初回検査は旧62件のバイナリを再利用したため全11本の証拠から除外。cargo clean -p recooplay-host --release後に製品crateを再構築し、77件とソースを照合した。以降の製品実装は通常ディレクトリで行う。依存キャッシュのコピーはしていない。
+- #173へ製品実装再開コメント後、mainから専用ブランチを作成。session.rsへ主要判定を抽出し、純粋判定9件とHub通知順序1件を追加。副作用の順序と既存アサーションを保持。[判断記録](../decisions/2026-11-06-session-core.md)参照。
+- cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml：ホスト87件＋プローブ4件成功、手動/長計測2件ignored。cargo build同引数成功（既知LNK4099警告）。固定exeのprotocol-sim.mjsは55/55、shutdown-sim.mjsはquit/EOFで全解放後の正常終了、構造39項目、公開資料89件/555参照が成功。
+- rustfmtはstableツールチェーンに未導入のため実行不可（rustfmt.exe is not installed）。既存の簡潔な書式を維持しgit diff --check成功。実機試験は行っていない。#191の解放失敗問題・#174本番計測・#179/#180製品抽出は別の後続作業として残る。
