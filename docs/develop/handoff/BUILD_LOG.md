@@ -1130,3 +1130,8 @@
 - /gameのフォーカス通知・入力観測の境界、OFFで始める専用設定、緊急停止・OS残留観測・復旧を整理。[実入力開始前チェック](../acceptance/windows-input-preflight.md)
 - 資料検査と差分検査を実施。
 - 監督者の明示許可後に、専用疑似ゲーム画面で単一Spaceの実入力を1回確認。押下・解放の送出成功、画面到達の目視、注入OFFと解放済み状態、終了後のOS状態を記録。残るAT-D04とMinecraftは未受入。
+
+## 2026-11-06 — PCアプリ内の動作環境・制限事項（Claude Code、#226）
+
+- 操作設定の画面に「動作環境・制限事項」を追加した。文面は配布zipの `README.txt` に合わせた。`check-static-pages.mjs` に必須の語の検査を追加した。
+- `check-static-pages`、`app-view` 25/25、`ui-input` 12/12が成功。headless Chromeで表示を確認した。WebView2の実画面は未確認。
