@@ -1122,3 +1122,11 @@
 - main 83c700907f0f382d08b5df9cc8ce1c2c2d274ca7の固定exeハッシュを照合。Android 16 / Chrome 156のUSB試験で初期表示、担当入力、診断、保持中Pause、再読み込みによるP1復帰が成功。[USB記録](../acceptance/evidence/2026-11-06-android-usb.md)
 - 同じPCホットスポットにAndroidとiOSの実端末2台で参加し、二段階Ready・分担、担当入力、切断・再接続、Pauseを部分確認。初回はiOS切断後に停止した状態でボタン待ちがタイムアウトし、追試でiOS攻撃とAndroidジャンプを観測。[2台の記録](../acceptance/evidence/2026-11-06-two-phones.md)
 - すべてdry-run。製品コードと既存USB CLIの修正なし。ホスト正常終了、ADB転送と試験用待受の残り0。資料検査と差分検査を実施。
+
+## 2026-11-06 — 2台の操作・通信復帰とWindows安全停止の準備（Codex、#10・#38・#39）
+
+- 統合main e95a43ad69399b7cc863ff99e60905db5a17e7b8 の構造・Rust通信CI成功と、83c7009から製品差分がないことを照合。固定exeハッシュを確認。
+- Android・iOSの実端末2台、模擬0、ホットスポットのdry-run。約30秒の担当入力、切断後の停止・同一枠復帰・明示Resume、担当交換・本人確認、物理ホットキー発火と注入OFFを記録。[実機証拠](../acceptance/evidence/2026-11-06-device-safety.md)
+- /gameのフォーカス通知・入力観測の境界、OFFで始める専用設定、緊急停止・OS残留観測・復旧を整理。[実入力開始前チェック](../acceptance/windows-input-preflight.md)
+- 資料検査と差分検査を実施。
+- 監督者の明示許可後に、専用疑似ゲーム画面で単一Spaceの実入力を1回確認。押下・解放の送出成功、画面到達の目視、注入OFFと解放済み状態、終了後のOS状態を記録。残るAT-D04とMinecraftは未受入。
