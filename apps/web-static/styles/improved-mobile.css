@@ -38,7 +38,7 @@ body[data-slot=P3] .phone-character img { width: 157.851%; height: 128.546%; lef
 .role-label { margin-top: 21px; border-radius: 0; padding: 1px 16px; background: var(--color-phone-button); box-shadow: 2px 3px 0 var(--color-button-shadow); font-size: 21px; line-height: 1.5; color: var(--color-paper); text-shadow: 1px 2px var(--color-phone-button-ink); }
 #waitRole { margin: 10px 0 0; font-size: 15px; color: var(--color-logo); }
 .wait-continue { margin-top: auto; min-height: 56px; padding: 7px 16px; font-size: clamp(15px,4.9vw,22px); border: 3px solid var(--color-phone-button); background: var(--color-disabled); color: var(--color-paper); box-shadow: 1px 3px 0 var(--color-button-shadow); text-shadow: 1px 2px var(--color-disabled-shadow); white-space: nowrap; }
-.wait-continue:disabled { color: var(--color-paper); border-color: var(--color-phone-button); box-shadow: 1px 3px 0 var(--color-button-shadow); }
+.wait-continue { display: flex; align-items: center; justify-content: center; text-align: center; color: var(--color-ink); background: var(--color-phone-surface); text-shadow: none; border-color: var(--color-phone-button); box-shadow: 1px 3px 0 var(--color-button-shadow); }
 #waitTitle { margin-top: 36px; color: var(--color-logo); font-size: 12px; line-height: 1.4; }
 .stick { border-width: 4px; background: var(--color-phone-surface); box-shadow: 0 4px 0 var(--color-shadow); }
 .stick .knob { border-color: var(--color-cyan); background: var(--color-phone-dots); }
