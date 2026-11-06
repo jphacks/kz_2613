@@ -151,4 +151,6 @@ dry-run値・設定読込有無・疑似対象・無注入の確認根拠：
 - [2026-11-06の実行記録](evidence/2026-11-06.md)
 - [Android USBでの実機受入記録](evidence/2026-11-06-android-usb.md)
 - [Android・iOSの2台受入記録](evidence/2026-11-06-two-phones.md)
+- [2台の操作・通信復帰・担当交換の受入記録](evidence/2026-11-06-device-safety.md)
+- [AT-D04の実入力開始前チェック](windows-input-preflight.md)
 - [対象11PRと追加受入条件](refactor-matrix.md)
