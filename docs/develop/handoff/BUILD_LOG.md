@@ -1101,3 +1101,18 @@
 - [測定手順と判断](../decisions/2026-11-06-host-runtime-measurement.md)、[exe SHA-256と全集計](../data/host-load/runtime-loopback.json)。受信停止でWS送信完了最大5.157秒、送信キュー最大86,572件。Hub停止完了は全条件で最大1.480ms。有限負荷の観測で、無制限キューに最悪時の有限上限は保証できない。配送方式と定数は維持。
 - 独立レビューで既存ホスト誤接続の経路を修正し、計測子のループバックbind・割当ポート通知後のみ接続。成功up照合を停止/切断直前からに限定し、最終再レビューに修正必須残なし。
 - `cargo test --release --locked --offline` は108件＋プローブ4件成功（手動/長計測の2件は通常実行対象外）。release build、通信55/55、quit/EOF、配信37件、CI相当の2人通常スモーク、スマホ入力16/所有4/セッション7/境界7/UI12、静的画面、構造39、資料、差分検査が成功。
+
+## 2026-11-06 — 実機受入試験の準備と中断（Codex、#10）
+
+- main b3c0e88から専用worktree・codex/10-device-acceptanceを作成。関連Issue・対象11PR・CIを確認し、#10へ着手コメント。実機受入手順とAndroid dry-run補助runnerを作成途中。
+- ADB認可済みAndroid 1台、Android 16/API36、1080x2392、Chrome 156.0.8078.79を確認。端末操作試験は未実施。一時forwardは除去し、中断時のforward/reverse一覧は空。
+- cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml成功（既存cache、13m31s、LNK4099のみ）。専用exe SHA-256 b1c3c24fa2ded67bf755eb7dde9f80d7ed1aa86412c6a2053539b9b573e00af4。ホストは起動していない。
+- node scripts/sim/ui-input-test.mjs 12/12、phone-view-test.mjs 8観点、controller-diagnostics-test.mjs、app-view-test.mjs 25/25、check-static-pages.mjs成功。新runnerは独立レビューの通信期限・cleanup補強が残り、未実行。公開資料検査は当時未作成の証拠ファイル参照を指摘し、作成後の再検査前。
+- ユーザー指示で中断。詳細はdocs/develop/acceptance/evidence/2026-11-06.md、再開手順は作業treeのdata/local/device-acceptance/RESUME.md。未コミットで保存、PR未作成。実Windows入力・ゲーム・永続設定変更なし。
+
+## 2026-11-06 — 実機受入手順と端末なしのローカル検証（Codex、#10）
+
+- 既存の専用ブランチを統合main 83c700907f0f382d08b5df9cc8ce1c2c2d274ca7へ早送り。統合側と中断時のBUILD_LOG追記を保持。2〜4人・二段階Ready・#195の安全停止を反映したAT-D01〜08と記録票を整備した。
+- Android補助CLIの構文・異常系7/7、同一SHAのホストで --host-only のHTTP・監視接続・初期押下ゼロ・正常終了が成功。dry-run固定、動的ループバック、時間制限と後片付けを実装。独立レビューのPause判定順序・動的ポート・保留手順の指摘を反映した。
+- 同一SHAのRustビルド・ホスト108件＋プローブ4件を再利用。今回の通信55/55、quit/EOF、静的配信37資産、スマホ入力16/所有4/セッション7/受信境界7/UI12、PC表示25、診断・画面構文、配布zip、構造・資料・差分検査は成功。
+- 実機操作は未実施。実施コマンド、失敗と再試行、ハッシュ、残る確認の詳細は [受入試験の証拠](../acceptance/evidence/2026-11-06.md) を参照。

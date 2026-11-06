@@ -4,6 +4,8 @@
 
 [総合仕様](README.md) ／ [導入](getting-started.md) ／ [ギャラリー](gallery.md)
 
+Award Day向けの実施手順、記録票、最新のローカル検査と実機確認待ちの一覧は[実機受入試験](develop/acceptance/README.md)を参照。
+
 ## 確認状況
 
 | 対象 | 確認できていること | 残る確認 |
