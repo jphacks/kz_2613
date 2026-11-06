@@ -293,9 +293,11 @@ async function main() {
     await check('参加の案内: Wi-Fi・ホットスポットの情報は PC 本体にだけ返し、ON にする要求は PC の画面からだけ受け付ける (#133)', async () => {
       const local = await (await fetch(`${BASE}/api/info`)).json();
       assert(local.wifi?.ssid === 'SimSpot' && local.wifi.qr.includes('<svg') && local.hotspot?.on === true, JSON.stringify({ wifi: local.wifi?.ssid, hotspot: local.hotspot }));
+      assert(typeof local.build?.version === 'string', `PC の画面に版を返さない: ${JSON.stringify(local.build)}`);
       const lan = local.urls.find((u) => !u.address.startsWith('127.'));
       if (lan) {
         const remote = await (await fetch(`http://${lan.address}:${PORT}/api/info`)).json();
+        assert(remote.build === undefined, 'LAN の端末に版を返した');
         assert(remote.wifi === null && remote.hotspot === null && remote.urls.length > 0, 'LAN の端末に Wi-Fi の情報を返した');
         const fromLan = await fetch(`http://${lan.address}:${PORT}/api/hotspot`, { method: 'POST', headers: { Origin: `http://${lan.address}:${PORT}` } });
         assert(fromLan.status === 403, `LAN からの ON 要求 ${fromLan.status}`);
