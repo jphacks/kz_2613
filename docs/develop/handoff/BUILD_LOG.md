@@ -1130,3 +1130,9 @@
 - /gameのフォーカス通知・入力観測の境界、OFFで始める専用設定、緊急停止・OS残留観測・復旧を整理。[実入力開始前チェック](../acceptance/windows-input-preflight.md)
 - 資料検査と差分検査を実施。
 - 監督者の明示許可後に、専用疑似ゲーム画面で単一Spaceの実入力を1回確認。押下・解放の送出成功、画面到達の目視、注入OFFと解放済み状態、終了後のOS状態を記録。残るAT-D04とMinecraftは未受入。
+
+## 2026-11-06 — 担当色の統一と待機画面の案内（Claude Code、#215・#227）
+
+- `colors.css` の `--p1〜4` と `/game` の色をキャラクターの色へ統一し、`/game` のP4の未定義を解消した。`check-static-pages.mjs` に一致の検査を追加し、色を崩すと失敗することを確認した。
+- 接続案内を2〜4人の文言にした。スマホの待機画面の押せないボタンを、ボタンではない案内へ変更した（原案の位置と形は維持）。
+- `check-static-pages`、`app-view` 25/25、`phone-view`、`ui-input` 12/12、`phone-lifecycle` 16/16、`verify-ui-evidence`、`static-assets-sim`（37ファイル）が成功。headless Chromeの360×640で待機画面を確認した。実端末は未実施。保存済みの画面画像は更新していない。
