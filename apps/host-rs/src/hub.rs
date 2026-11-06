@@ -2990,6 +2990,7 @@ mod tests {
 
     fn lobby_with(slots: &[(usize, bool)], disconnected_at: u64) -> Hub {
         let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(std::iter::repeat(true).take(50))));
+        h.game.phase = Phase::Lobby; // 共通のフィクスチャは協力プレイ中で始まる
         h.slots = Default::default();
         for &(i, connected) in slots {
             let mut s = Slot::new(format!("client{i}"), format!("token{i}"));
