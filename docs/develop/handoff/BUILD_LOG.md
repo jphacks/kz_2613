@@ -1130,3 +1130,9 @@
 - /gameのフォーカス通知・入力観測の境界、OFFで始める専用設定、緊急停止・OS残留観測・復旧を整理。[実入力開始前チェック](../acceptance/windows-input-preflight.md)
 - 資料検査と差分検査を実施。
 - 監督者の明示許可後に、専用疑似ゲーム画面で単一Spaceの実入力を1回確認。押下・解放の送出成功、画面到達の目視、注入OFFと解放済み状態、終了後のOS状態を記録。残るAT-D04とMinecraftは未受入。
+
+## 2026-11-06 — AT-D04実入力再開の準備（Codex、#39）
+
+- 統合main d6309e512ded9d52f9e8d1b5268a95ea62cd11e6 の構造CI・Rust通信CIが成功。固定exeのSHA-256が記録と一致し、ビルド元83c7009との製品差分なし。
+- 専用ルート・初期注入OFFと自動復帰OFFの設定、別窓のイベント観測、OSの読み取り観測を準備。ループバックdry-runでホットキー登録成功。今回の物理発火と実入力開始許可が揃うまでA〜Eを保留。[再開準備記録](../acceptance/evidence/2026-11-06-at-d04-restart.md)
+- node --check（ローカル観測スクリプト）、OS読み取りの短時間試験、python scripts/check-public-docs.py --all、git diff --checkを実行。
