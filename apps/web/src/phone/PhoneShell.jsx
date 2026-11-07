@@ -48,6 +48,7 @@ export function PhoneShell({ store }) {
           <button className="cmd" id="startBtn">START</button>
           <button className="cmd sub" id="openGameBtn" data-cmd="OPEN_GAME" hidden>ゲームを前面にする</button>
           <button className="cmd sub" id="endBtn" style={{ display: 'none' }}>ロビーに戻る（協力プレイ終了）</button>
+          <div id="hostTransfer" className="host-transfer" hidden></div>
           <div className="note" id="remoteNote">ゲームをプレイ中の画面まで進めた後、ホストだけがReadyを押します。</div>
         </section>
 

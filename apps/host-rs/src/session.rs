@@ -116,6 +116,11 @@ pub(crate) fn lobby_slot_expired(phase: Phase, connected: bool, disconnected_at:
     phase == Phase::Lobby && !connected && now.saturating_sub(disconnected_at) >= LOBBY_SLOT_HOLD_MS
 }
 
+/// ホストを手動で譲れるか (#233)。現在のホストが、ロビーで接続中の別の人へ渡すときだけ許す
+pub(crate) fn can_transfer_host(phase: Phase, from: usize, to: usize, connected: &[usize]) -> bool {
+    phase == Phase::Lobby && is_host(from) && !is_host(to) && connected.contains(&from) && connected.contains(&to)
+}
+
 /// P1 が空いたロビーで、次のホストになる枠 (接続中で最も若い枠)
 pub(crate) fn next_host(connected: &[usize]) -> Option<usize> {
     connected.iter().copied().filter(|&i| i != 0).min()
@@ -183,6 +188,18 @@ mod tests {
         assert!(!lobby_slot_expired(Phase::Lobby, true, at, at + LOBBY_SLOT_HOLD_MS));
         for phase in [Phase::Preparing, Phase::Coop, Phase::Paused] {
             assert!(!lobby_slot_expired(phase, false, at, at + LOBBY_SLOT_HOLD_MS));
+        }
+    }
+
+    #[test]
+    fn only_the_connected_host_can_transfer_to_a_connected_player_in_the_lobby() {
+        assert!(can_transfer_host(Phase::Lobby, 0, 2, &[0, 1, 2]));
+        assert!(!can_transfer_host(Phase::Lobby, 1, 2, &[0, 1, 2]), "ホスト以外は譲れない");
+        assert!(!can_transfer_host(Phase::Lobby, 1, 1, &[0, 1, 2]), "自分をホストにできない");
+        assert!(!can_transfer_host(Phase::Lobby, 0, 0, &[0, 1]));
+        assert!(!can_transfer_host(Phase::Lobby, 0, 3, &[0, 1]), "接続していない枠へは譲れない");
+        for phase in [Phase::Preparing, Phase::Coop, Phase::Paused] {
+            assert!(!can_transfer_host(phase, 0, 1, &[0, 1]), "開始後は譲れない");
         }
     }
 
