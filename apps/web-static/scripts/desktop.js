@@ -7,6 +7,9 @@ let ui={screen:'join',game:GAMES[0].id,swap:false},swapPick=null;
 // 起動したら必ず参加画面 (QR) から始める。前回の画面は覚えない (#126)。以前の版が保存した値は消す
 try{localStorage.removeItem('recooplay.app');}catch{}
 let state=null,game=null,inject=null,ws=null,online=false,gamesHtml='',shownGame='';
+// PCアプリがホストを再起動したときの案内 (#222)。状態の更新で消さず、一定時間だけ出す
+let hostNotice='';
+window.showHostNotice=text=>{hostNotice=text;render();setTimeout(()=>{if(hostNotice===text){hostNotice='';render();}},30000);};
 let infoPort=null;
 $('autoResumeSetting').addEventListener('change',e=>send({type:'auto_resume',on:e.target.checked}));
 $('rotationSetting').addEventListener('change',e=>send({type:'rotation',seconds:Number(e.target.value)}));
@@ -181,7 +184,8 @@ function render(){
   const keyWarnings=game?.keys?.warnings||[];
   const warning=desktopWarning(game,inject,online||!state)||(keyWarnings.length?'キー設定に注意が必要です。「操作設定」で実際に送るキーを確認してください。':'');
   const notices=[warning,networkNotice(state?.network,state?.slots),profileNotice(game?.profile)].filter(Boolean).join(' ');
-  $('warning').hidden=!notices;$('warning').textContent=notices;
+  const shown=[hostNotice,notices].filter(Boolean).join(' ');
+  $('warning').hidden=!shown;$('warning').textContent=shown;
   $('changePlayersBtn').hidden=!(view==='paused'&&game?.canChangePlayers);
   $('changePlayersBtn').textContent=`今の${game?.connected?.length||0}人で分担し直す`;
   const comm=commSettingsView(game,infoPort);
