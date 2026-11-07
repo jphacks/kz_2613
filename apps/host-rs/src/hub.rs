@@ -302,6 +302,9 @@ pub struct Hub {
     // 枠ごとの席順 (#47・#62)。分担の束 (移動・視点…) を席順の早い人から配る。初期値は枠の順。
     // ホストが入れ替えると束ごと交換される。終了してもリセットするまで保つ (入れ替えたまま再挑戦できる)
     seats: [usize; MAX_SLOTS],
+    // 利用者が変えたキー割当 (#50・#53)
+    key_overrides_path: Option<std::path::PathBuf>,
+    key_overrides: crate::key_overrides::Overrides,
     // 時間制の役割交代 (#161)。既定は OFF
     rotation_secs: u64,
     rotation_at: u64,
@@ -398,6 +401,8 @@ impl Hub {
             participants: Vec::new(),
             lineup: None,
             seats: [0, 1, 2, 3],
+            key_overrides_path: crate::key_overrides::default_path(),
+            key_overrides: crate::key_overrides::load(crate::key_overrides::default_path().as_deref()),
             rotation_secs: 0,
             rotation_at: 0,
             role_ack: Vec::new(),
@@ -971,7 +976,7 @@ impl Hub {
         self.keybinds = match &self.profile {
             Some(p) => {
                 let over = if p.id == "minecraft-java" { self.minecraft_options.as_deref() } else { None };
-                Keybinds::build(p, over)
+                Keybinds::build_with(p, over, self.key_overrides.get(&self.game.title))
             }
             None => Keybinds::none(),
         };
@@ -999,7 +1004,8 @@ impl Hub {
             .iter()
             .map(|(a, o)| (a.clone(), o.and_then(controls::output).map_or(Value::Null, |out| json!({ "out": out.id, "label": out.label }))))
             .collect();
-        json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings, "controls": controls, "actions": actions })
+        let edited: Vec<&String> = self.key_overrides.get(&self.game.title).map(|m| m.keys().collect()).unwrap_or_default();
+        json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings, "controls": controls, "actions": actions, "edited": edited })
     }
 
     /// 今接続している枠に、参加人数と操作定義から分担の案を作る (#105)。枠の番号ごと (参加していない枠は空)
@@ -1048,6 +1054,19 @@ impl Hub {
         self.role_ack = self.participants.clone();
         self.advance_epoch();
         self.log("role_rotation", json!({ "epoch": self.game.epoch }));
+        self.push_game();
+        self.push_state();
+    }
+
+    /// キー割当の変更を保存して反映する (#50・#53)。保存に失敗しても今の実行には反映し、PC画面へ知らせる
+    fn apply_key_change(&mut self) {
+        let saved = crate::key_overrides::save(self.key_overrides_path.as_deref(), &self.key_overrides);
+        if let Err(e) = &saved { self.log("key_save_error", json!({ "error": e })); }
+        self.broadcast_monitors(&json!({ "type": "key_result", "ok": saved.is_ok() }));
+        self.release_outputs(None);
+        self.reset_look();
+        self.advance_epoch();
+        self.reload_keybinds();
         self.push_game();
         self.push_state();
     }
@@ -2080,6 +2099,23 @@ impl Hub {
                     self.push_game();
                 }
             }
+            "set_key" => {
+                // 協力プレイ中は変えない。変えたら旧キーを解放し、epoch を進めてから新しいキーで送る
+                if self.game.phase == Phase::Coop { return; }
+                let Some(action) = s(msg, "action") else { return };
+                let output = match msg.get("output") { Some(Value::Null) => None, Some(Value::String(id)) if crate::key_overrides::assignable(id) => Some(id.clone()), _ => return };
+                if !self.profile.as_ref().is_some_and(|p| p.actions.iter().any(|a| a.id == action && a.kind == "button")) { return; }
+                self.key_overrides.entry(self.game.title.clone()).or_default().insert(action.clone(), output.clone());
+                self.log("set_key", json!({ "action": action, "output": output }));
+                self.apply_key_change();
+            }
+            "reset_keys" => {
+                if self.game.phase == Phase::Coop { return; }
+                if self.key_overrides.remove(&self.game.title).is_some() {
+                    self.log("reset_keys", json!({}));
+                    self.apply_key_change();
+                }
+            }
             "change_players" => {
                 if msg.get("epoch").and_then(Value::as_u64) == Some(self.game.epoch) { self.change_players(); }
             }
@@ -2541,6 +2577,8 @@ mod tests {
             participants: Vec::new(),
             lineup: None,
             seats: [0, 1, 2, 3],
+            key_overrides_path: None,
+            key_overrides: Default::default(),
             rotation_secs: 0,
             rotation_at: 0,
             role_ack: Vec::new(),
