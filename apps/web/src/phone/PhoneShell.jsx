@@ -54,7 +54,7 @@ export function PhoneShell() {
           <div className="players" id="players2"></div>
           <div className="wait-scene">
             <div className="phone-character" aria-hidden="true"><img id="waitCharacter" src="/assets/characters/blue.png" alt="" /></div>
-            <div className="card wait-card"><h1 className="dotted" id="waitHeading">接続完了!!</h1><div className="role-label">あなたの担当</div><div id="waitRole"></div><button className="wait-continue" disabled>操作画面へ進む →</button><div id="waitTitle">ホストの準備を待っています</div></div>
+            <div className="card wait-card"><h1 className="dotted" id="waitHeading">接続完了!!</h1><div className="role-label">あなたの担当</div><div id="waitRole"></div><div className="wait-continue" role="note">Readyで操作画面に変わります</div><div id="waitTitle">ホストの準備を待っています</div></div>
           </div>
         </section>
 
