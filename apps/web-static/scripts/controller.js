@@ -67,7 +67,7 @@ import { phoneAdvice } from '../app-view.js';
         }
         render();
       } else if (msg.type === 'command_result' && !msg.accepted) {
-        $('remoteNote').textContent = (msg.reasons || ['操作を受け付けませんでした']).join('。');
+        phoneView.note((msg.reasons || ['操作を受け付けませんでした']).join('。'));
       } else if (msg.type === 'pong') {
         const r = performance.now() - msg.t;
         $('rtt').textContent = Math.round(r) + 'ms';
