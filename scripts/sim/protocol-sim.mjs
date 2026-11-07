@@ -1845,6 +1845,41 @@ async function main() {
       for (const x of [host, old, b]) x.close();
     });
 
+    await check('人数の変更: 一時停止中にPC画面から今の接続で分担し直し、全員の確認と明示の再開を求める (#162)', async () => {
+      mon.send({ type: 'reset' });
+      await sleep(200);
+      mon.send({ type: 'select_game', title: 'minecraft-java' });
+      await sleep(100);
+      const id = (n) => ({ clientId: `sim-players-${n}` });
+      const a = await join('C1', id(1)); await welcome(a);
+      const b = await join('C2', id(2)); await welcome(b);
+      const c = await join('C3', id(3)); await welcome(c);
+      await sleep(200);
+      await confirmLineup(mon, a);
+      a.send({ type: 'command', cmd: 'PREPARE' }); await phaseIs(a, 'preparing', 0);
+      await a.waitFor((m) => m.type === 'game' && m.game.canReady, { what: 'canReady' });
+      a.send({ type: 'command', cmd: 'READY' }); await phaseIs(a, 'coop', 0);
+      const latest = () => [...a.msgs].reverse().find((m) => m.type === 'game').game;
+      mon.send({ type: 'change_players', epoch: latest().epoch });
+      await sleep(150);
+      assert(latest().phase === 'coop' && latest().participants.length === 3, '協力プレイ中に人数を変えた');
+      c.close();
+      await a.waitFor((m) => m.type === 'game' && m.game.phase === 'paused' && m.game.canChangePlayers, { what: 'paused', timeout: 6000 });
+      const held = latest();
+      assert(!held.canResume, '人数が足りないのに再開できる');
+      mon.send({ type: 'change_players', epoch: held.epoch - 1 });
+      await sleep(150);
+      assert(latest().participants.length === 3, '古いepochの要求を受け付けた');
+      mon.send({ type: 'change_players', epoch: held.epoch });
+      const changed = await a.waitFor((m) => m.type === 'game' && m.game.participants?.length === 2, { what: '2人の分担' });
+      assert(changed.game.phase === 'paused' && changed.game.epoch > held.epoch, JSON.stringify({ phase: changed.game.phase }));
+      assert(changed.game.roleAck.length === 2 && !changed.game.canResume, '全員の確認の前に再開できる');
+      for (const x of [a, b]) { const g = latest(); x.send({ type: 'role_ok', epoch: g.epoch }); await sleep(100); }
+      await a.waitFor((m) => m.type === 'game' && m.game.canResume, { what: '確認後の再開可' });
+      assert(latest().phase === 'paused', '確認だけで再開した');
+      for (const x of [a, b]) x.close();
+    });
+
     await check('ログ: IP・User-Agent・clientId を記録せず、枠名と端末の種類だけを残す', async () => {
       await sleep(1200); // ログは 1 秒ごとに書き出される
       const log = fs

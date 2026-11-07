@@ -86,6 +86,7 @@ function remoteControl(c){
   else if(c==='ENTER'&&view==='roles')rolesRun(rolesAction(game,games()));
   else setUi(navigate(ui,c,games()));
 }
+$('changePlayersBtn').addEventListener('click',()=>send({type:'change_players',epoch:game?.epoch}));
 $('subBtn').addEventListener('click',()=>rolesRun(desktopView(ui,game)==='paused'?{kind:'swap'}:rolesAction(game,games()).alt));
 // 緊急停止などで入力が止まっているときの「入力を再開する」(#114)。PC の前で確かめてから再開させる鍵
 const inputStopped=view=>['preparing','ready','paused'].includes(view)&&inject?.mode==='off';
@@ -180,6 +181,8 @@ function render(){
   const warning=desktopWarning(game,inject,online||!state)||(keyWarnings.length?'キー設定に注意が必要です。「操作設定」で実際に送るキーを確認してください。':'');
   const notices=[warning,networkNotice(state?.network,state?.slots),profileNotice(game?.profile)].filter(Boolean).join(' ');
   $('warning').hidden=!notices;$('warning').textContent=notices;
+  $('changePlayersBtn').hidden=!(view==='paused'&&game?.canChangePlayers);
+  $('changePlayersBtn').textContent=`今の${game?.connected?.length||0}人で分担し直す`;
   const comm=commSettingsView(game,infoPort);
   $('autoResumeSetting').checked=comm.checked;$('autoResumeSetting').disabled=comm.locked;$('commInfo').textContent=comm.text;
   $('steps').hidden=!['join','game','roles'].includes(view);
