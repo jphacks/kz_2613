@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
+import { pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -319,6 +319,17 @@ test('人数の参考: 全員に操作があり偏りの小さい人数を、断
   assert.equal(playerHint({...profile,controllerSupported:false}),null);
   assert.equal(playerHint({...profile,status:'device'}),null,'実機の記録があるゲームには出さない');
   assert.equal(playerHint(null),null);
+});
+
+test('演出: 状態が変わった瞬間だけ返し、協力プレイ中と一時停止中は何も返さない (#160)', () => {
+  const none={joined:[],lineup:false,screen:false};
+  const lobby={view:'join',connected:['P1'],lineupOk:false};
+  assert.deepEqual(pcEffects(null,lobby),none,'開いた直後は再生しない');
+  assert.deepEqual(pcEffects(lobby,lobby),none,'同じ状態の更新では再生しない');
+  assert.deepEqual(pcEffects(lobby,{...lobby,connected:['P1','P2']}).joined,['P2']);
+  assert.equal(pcEffects({...lobby,view:'roles'},{...lobby,view:'roles',lineupOk:true}).lineup,true);
+  assert.equal(pcEffects(lobby,{...lobby,view:'game'}).screen,true);
+  for(const view of ['coop','paused'])assert.deepEqual(pcEffects({view:'ready',connected:['P1'],lineupOk:true},{view,connected:['P1','P2'],lineupOk:true}),none);
 });
 
 const failed = results.filter((r) => !r).length;
