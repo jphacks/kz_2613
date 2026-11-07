@@ -52,5 +52,12 @@ for (const f of files) {
     if (!hex || !game.includes(`${slot}: '${hex}'`)) { failed++; console.log(`FAIL game.html の ${slot} の色がキャラクターの色 (${hex}) と違う`); }
   }
 }
+// 動作環境・制限事項: PCアプリ内で確認できる (#226)
+{
+  const app = fs.readFileSync(new URL('app.html', dir), 'utf8');
+  for (const word of ['Windows 11 x64', 'WebView2', 'Visual C++', '2〜4台', 'Ctrl+Alt+F12', '未検証']) {
+    if (!app.includes(word)) { failed++; console.log(`FAIL app.html の動作環境に「${word}」がない`); }
+  }
+}
 console.log(failed ? `${failed} 件の構文エラー` : 'すべて構文OK');
 process.exit(failed ? 1 : 0);
