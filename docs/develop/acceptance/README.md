@@ -20,7 +20,7 @@
 - [可変人数](../decisions/2026-10-25-variable-players.md)：現行はP1を含む2〜4人。5台目が満員。#38等の旧本文にある「必要人数3」「4台目拒否」は現在の合否条件に使わない。本番は3人で固定する。
 - [二段階Ready](../decisions/2026-10-25-two-stage-ready.md)：接続と協力開始は別。PCの分担決定→P1のPREPARE→明示READY。再開にも参加者・対象・停止手段が必要。
 - [画面統一](../decisions/2026-10-26-unify-controls.md)：3人Minecraftも生成画面と`act:<ID>`を使う。役割・入力先・epoch・通信契約は[通信仕様](../../protocol-specification.md)を参照する。
-- 自動復帰は実装初期値と採用判断を分ける。ON/OFF、期限内/外、ホストPAUSEを別々に試す。本番で許す条件は未決定のまま記録し、試験だけで採用を決めない。
+- 自動復帰は実装初期値と採用判断を分ける。ON/OFF、期限内/外、ホストPAUSEを別々に試す。ユーザー判断でON・期限15秒を採用した（[判断](../decisions/2026-11-06-host-reset-auto-resume.md)）。判断は実機の合格を意味しない。
 
 ## Android USB dry-runの再実行
 
