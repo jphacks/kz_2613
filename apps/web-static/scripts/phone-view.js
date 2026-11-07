@@ -1,10 +1,26 @@
 import { myActions, generatedKey, buildGenerated } from './generated-controls.js';
+import { SKINS, applySkin, createSkinStore } from './phone-skin.js';
 
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
 import {profileNotice,roleView,gameLabel,outputKeyLabel,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS} from '../app-view.js';
 export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindControl,bindStick=()=>{},onRoleOk=()=>{}}) {
   const $ = id => document.getElementById(id);
-  let lastView = null, lastGen = '';
+  let lastView = null, lastGen = '', skinGame = null;
+  // 画面の色はゲームごとに端末へ保存する (#159)。診断を開くと保持入力は解放済みで、入力の処理には触れない
+  const skins = createSkinStore(globalThis.localStorage ?? { getItem: () => null, setItem() {} });
+  const skinPicker = $('skinPicker');
+  function showSkin(id) {
+    if (document.documentElement) applySkin(document.documentElement, id);
+    skinPicker?.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.skin === id)));
+  }
+  if (skinPicker?.append) {
+    for (const s of SKINS) {
+      const button = document.createElement('button');
+      button.dataset.skin = s.id; button.textContent = s.label;
+      button.addEventListener('click', () => { skins.set(skinGame, s.id); showSkin(s.id); });
+      skinPicker.append(button);
+    }
+  }
   // 視点のパッドと感度は、操作定義の画面で視点を担当するときだけそちらへ移す
   const lookParts = [$('pad'), document.querySelector('#lookHome .sens')].filter(Boolean);
   const lookHome = $('lookHome');
@@ -17,6 +33,7 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
   $('roleOkBtn')?.addEventListener('click',()=>onRoleOk());
   function render({me,isHost,game}) {
     if (!me || !game) return;
+    if (game.title !== skinGame) { skinGame = game.title; showSkin(skins.get(skinGame)); }
     const role=roleView(game,me), heading=document.createElement('b');
     heading.textContent=role.title+(isHost?'（ホスト）':'');
     $('role').replaceChildren(heading,document.createTextNode(game.phase==='coop'?'確定した分担の操作だけを送信します':game.phase==='paused'?'確定した分担（再開時に確認）':'分担案（Readyで確定）'));

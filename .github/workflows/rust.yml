@@ -47,6 +47,8 @@ jobs:
         run: node scripts/sim/app-view-test.mjs
       - name: スマホのReady・待機・停止と診断前の解放
         run: node scripts/sim/phone-view-test.mjs
+      - name: スマホのカラースキンの保存と復元
+        run: node scripts/sim/phone-skin-test.mjs
       - name: 診断開始時のサーバー停止と非注入の通信テスト
         run: node scripts/sim/controller-diagnostics-test.mjs
       - name: スマホ入力ライフサイクルの回帰

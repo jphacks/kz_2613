@@ -1,0 +1,19 @@
+/* スマホのカラースキン (#159)。共通の色名をスマホ画面でだけ上書きする。標準は属性なしで従来の配色。 */
+html[data-skin=dark] {
+  --color-paper: #1B1E27; --color-surface: #20242E; --color-cream: #161922;
+  --color-phone-surface: #20242EF5; --color-pad-surface: #262B37EE; --color-button-surface: #2C3240;
+  --color-button-ink: #FFD58A; --color-phone-button-ink: #FFD58A; --color-ink: #EEF1F7; --color-black: #EEF1F7;
+  --color-logo: #C9CEDA; --color-muted: #AEB4C2; --color-cyan: #3FA7C9; --color-cyan-ink: #8CDCF5;
+  --color-ice: #2F4552; --color-phone-dots: #3D5A68; --color-phone-button: #8A7436; --color-button-shadow: #0A0B10;
+  --color-shadow: #00000080; --color-peach: #12141A; --color-lemon: #2B2A20; --color-purple: #B9B4F0; --color-disabled: #333845;
+}
+html[data-skin=pop] {
+  --color-cyan: #FF3D9A; --color-cyan-ink: #A3125E; --color-phone-dots: #FFC2E0; --color-phone-button: #FFE14D;
+  --color-ice: #FFE3F1; --color-peach: #B8F2E6; --color-lemon: #FFF3A6; --color-purple: #6A2BD9;
+  --color-button-surface: #FFFDE8; --color-button-ink: #A3125E;
+}
+/* 背景の星の画像は明るいので、ダークでは外す */
+html[data-skin=dark] body, html[data-skin=dark] #full, html[data-skin=dark] #rotatePrompt { background: var(--color-peach); }
+.skin-picker { display: flex; gap: 8px; padding: 8px 0 12px; }
+.skin-picker button { flex: 1; min-height: 44px; margin: 0; font-size: 14px; }
+.skin-picker button[aria-pressed=true] { outline: 3px solid var(--color-cyan-ink); }
