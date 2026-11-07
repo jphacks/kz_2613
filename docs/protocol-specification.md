@@ -84,7 +84,7 @@ sequenceDiagram
 | 4004 | 満員 |
 | 4005 | 通信版不一致。再読み込みが必要 |
 | 4006 | 再接続token不一致。PCでリセットして再参加 |
-| 4008 | ホストの交代。スマホは同じtokenで再接続し、P1として戻る |
+| 4008 | ホストの交代・譲渡。スマホは同じtokenで再接続し、新しい枠へ戻る |
 
 ---
 
@@ -94,6 +94,7 @@ sequenceDiagram
 |:--|:--|:--|
 | `hello` | WS | `protocolVersion`, `clientId`, `token`, `ua`, `nextIseq`。参加・再接続 |
 | `ping` | WS | `t`, `stats`。1秒ごとの生存確認・通信統計 |
+| `transfer_host` | WS | `to`, `epoch`。ロビーの現在のホストだけが、接続中の参加者へ譲る。2つの枠を入れ替える |
 | `command` | WS | `cmd`, `epoch`。P1のみ。PREPARE / READY / PAUSE / RESUME / END / OPEN_GAME |
 | `input` | WS＋RTC | `iseq`, `epoch`, `button`, `state:down/up`, `t`。WS版は`seq`も使用 |
 | `look` | RTC、未接続時WS | `lseq`, `epoch`, `cx`, `cy`。30Hzの累積視点移動 |

@@ -292,7 +292,7 @@ import { phoneAdvice } from '../app-view.js';
   });
 
   // ---- 画面の切り替え ----
-  const phoneView = createPhoneView({releaseAll,onDiagnosticsOpen:stopRemote,bindControl,bindStick:roleInput.setGeneratedStick,onRoleOk:()=>sendWs({type:'role_ok',epoch:session.game?.epoch})});
+  const phoneView = createPhoneView({releaseAll,onDiagnosticsOpen:stopRemote,bindControl,bindStick:roleInput.setGeneratedStick,onTransferHost:to=>sendWs({type:'transfer_host',to,epoch:session.game?.epoch}),onRoleOk:()=>sendWs({type:'role_ok',epoch:session.game?.epoch})});
   function render() { phoneView(session.view()); }
 
   // ---- 通信テスト: 20Hz で 10 秒送る (注入はされない) ----
