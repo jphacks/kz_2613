@@ -10,13 +10,15 @@
 | ビルド結果 | `apps/web-static/react/`。Git対象外で、CIと配布の前に作る |
 | 配信 | 既存の静的配信のまま。外部CDNは使わず、オフラインのLANで動く |
 | 切替 | 同等性を確認するまで、既存の画面を既定のまま残す |
-| 確認用の入口 | スマホは `/phone-react.html` |
+| 確認用の入口 | スマホは `/phone-react.html`、PCは `/app-react.html`（どちらもビルドで生成、Git対象外。PCの入口はPC本体だけが開ける） |
 
 ## 入力処理の境界
 
 Pointer Events、保持元の管理、接続、受信の検証、視点の送信はReactの状態管理に載せない。再描画の遅れが押下と解放に影響しないようにするためである。Reactは描画だけを担当し、既存のモジュールを呼び出す。
 
-最初の段階では、Reactが既存と同じidのDOMを同期的に描き、その後で `controller.js` を読み込む。表示の処理は `phone-view.js` から順にコンポーネントへ移す。
+画面の定義は `apps/web-static/index.html` だけに置く。`phone-react.html` はビルド時に `index.html` から生成する。Reactは変わる部分だけを `createPortal` で既存の要素の中へ描き、入力の要素には触れない。`index.html` を変えるときにReact側の修正は要らない。
+
+既定の画面を切り替えるときに、`index.html` の本文をコンポーネントへ移す。
 
 ## 確認の基準
 

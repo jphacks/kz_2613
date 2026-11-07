@@ -12,6 +12,7 @@ mod hotkey;
 mod hub;
 mod input;
 mod input_manager;
+mod key_overrides;
 mod keybinds;
 mod look;
 mod netinfo;
@@ -188,6 +189,9 @@ async fn main() {
                             let _ = tx.send(Event::FakeAppWindow(false));
                         }
                         // 試験用: 既定の音の出力先が Bluetooth になった・外れた (#131。実機では定期的に調べる)
+                        Ok("rotate") if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") => {
+                            let _ = tx.send(Event::FakeRotationDue);
+                        }
                         Ok("bt on") if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") => {
                             let _ = tx.send(Event::BluetoothAudio(true));
                         }
@@ -303,10 +307,11 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
         "/host" => "/host.html",
         "/game" => "/game.html",
         "/app" => "/app.html",
+        "/overlay" => "/overlay.html",
         p => p,
     };
     // ダッシュボードと疑似ゲーム画面は PC 本体からのみ
-    if matches!(path, "/host.html" | "/game.html" | "/app.html") && !is_loopback(&addr) {
+    if matches!(path, "/host.html" | "/game.html" | "/app.html" | "/app-react.html" | "/overlay.html") && !is_loopback(&addr) {
         return (StatusCode::FORBIDDEN, "this page is only available on the PC").into_response();
     }
     let rel = Path::new(path.trim_start_matches('/'));
@@ -346,7 +351,7 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
 /// PC 本体からだけ開ける画面か (実体のファイル名で判定する)
 fn is_pc_only_page(path: &Path) -> bool {
     let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_ascii_lowercase();
-    matches!(name.as_str(), "host.html" | "game.html" | "app.html")
+    matches!(name.as_str(), "host.html" | "game.html" | "app.html" | "app-react.html" | "overlay.html")
 }
 
 fn allowed_ws_headers(headers: &HeaderMap, port: u16, loopback: bool) -> bool {

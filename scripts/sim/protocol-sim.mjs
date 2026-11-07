@@ -302,7 +302,7 @@ async function main() {
         const fromLan = await fetch(`http://${lan.address}:${PORT}/api/hotspot`, { method: 'POST', headers: { Origin: `http://${lan.address}:${PORT}` } });
         assert(fromLan.status === 403, `LAN からの ON 要求 ${fromLan.status}`);
         // 表記を変えても PC 専用の画面を LAN へ配信しない (#214)
-        for (const p of ['/app', '/host', '/game', '/HOST.HTML', '/Host.html', '/app.HTML', '/GAME.html', '/host.html.', '/host.html::$DATA', '//host.html', '//app.html', '//game.html']) {
+        for (const p of ['/app', '/host', '/game', '/app-react.html', '/APP-REACT.HTML', '/overlay', '/OVERLAY.HTML', '//overlay.html', '/HOST.HTML', '/Host.html', '/app.HTML', '/GAME.html', '/host.html.', '/host.html::$DATA', '//host.html', '//app.html', '//game.html']) {
           const r = await fetch(`http://${lan.address}:${PORT}${p}`);
           assert(r.status === 403 || r.status === 404, `LAN へ ${p} を配信した: ${r.status}`);
         }
@@ -1843,6 +1843,120 @@ async function main() {
       const old = await join('T1', id(1)); const o = await welcome(old);
       assert(o.slot === 'P3' && o.isHost === false, JSON.stringify({ slot: o.slot, isHost: o.isHost }));
       for (const x of [host, old, b]) x.close();
+    });
+
+    await check('人数の変更: 一時停止中にPC画面から今の接続で分担し直し、全員の確認と明示の再開を求める (#162)', async () => {
+      mon.send({ type: 'reset' });
+      await sleep(200);
+      mon.send({ type: 'select_game', title: 'minecraft-java' });
+      await sleep(100);
+      const id = (n) => ({ clientId: `sim-players-${n}` });
+      const a = await join('C1', id(1)); await welcome(a);
+      const b = await join('C2', id(2)); await welcome(b);
+      const c = await join('C3', id(3)); await welcome(c);
+      await sleep(200);
+      await confirmLineup(mon, a);
+      a.send({ type: 'command', cmd: 'PREPARE' }); await phaseIs(a, 'preparing', 0);
+      await a.waitFor((m) => m.type === 'game' && m.game.canReady, { what: 'canReady' });
+      a.send({ type: 'command', cmd: 'READY' }); await phaseIs(a, 'coop', 0);
+      const latest = () => [...a.msgs].reverse().find((m) => m.type === 'game').game;
+      mon.send({ type: 'change_players', epoch: latest().epoch });
+      await sleep(150);
+      assert(latest().phase === 'coop' && latest().participants.length === 3, '協力プレイ中に人数を変えた');
+      c.close();
+      await a.waitFor((m) => m.type === 'game' && m.game.phase === 'paused' && m.game.canChangePlayers, { what: 'paused', timeout: 6000 });
+      const held = latest();
+      assert(!held.canResume, '人数が足りないのに再開できる');
+      mon.send({ type: 'change_players', epoch: held.epoch - 1 });
+      await sleep(150);
+      assert(latest().participants.length === 3, '古いepochの要求を受け付けた');
+      mon.send({ type: 'change_players', epoch: held.epoch });
+      const changed = await a.waitFor((m) => m.type === 'game' && m.game.participants?.length === 2, { what: '2人の分担' });
+      assert(changed.game.phase === 'paused' && changed.game.epoch > held.epoch, JSON.stringify({ phase: changed.game.phase }));
+      assert(changed.game.roleAck.length === 2 && !changed.game.canResume, '全員の確認の前に再開できる');
+      for (const x of [a, b]) { const g = latest(); x.send({ type: 'role_ok', epoch: g.epoch }); await sleep(100); }
+      await a.waitFor((m) => m.type === 'game' && m.game.canResume, { what: '確認後の再開可' });
+      assert(latest().phase === 'paused', '確認だけで再開した');
+      for (const x of [a, b]) x.close();
+    });
+
+    await check('役割交代: 時間で一時停止して全解放し、担当をずらして全員の確認と明示の再開を求める (#161)', async () => {
+      mon.send({ type: 'reset' });
+      await sleep(200);
+      mon.send({ type: 'select_game', title: 'minecraft-java' });
+      mon.send({ type: 'rotation', seconds: 45 });
+      await sleep(100);
+      const id = (n) => ({ clientId: `sim-rotation-${n}` });
+      const a = await join('R1', id(1)); await welcome(a);
+      const b = await join('R2', id(2)); await welcome(b);
+      await sleep(200);
+      const latest = () => [...a.msgs].reverse().find((m) => m.type === 'game').game;
+      assert(latest().rotationSeconds === 0, '選べない間隔を受け付けた');
+      mon.send({ type: 'rotation', seconds: 60 });
+      await a.waitFor((m) => m.type === 'game' && m.game.rotationSeconds === 60, { what: '間隔' });
+      a.send({ type: 'rotation', seconds: 0 }); await sleep(100);
+      assert(latest().rotationSeconds === 60, 'スマホから設定を変えた');
+      await confirmLineup(mon, a);
+      a.send({ type: 'command', cmd: 'PREPARE' }); await phaseIs(a, 'preparing', 0);
+      await a.waitFor((m) => m.type === 'game' && m.game.canReady, { what: 'canReady' });
+      a.send({ type: 'command', cmd: 'READY' }); await phaseIs(a, 'coop', 0);
+      const before = latest().assigned;
+      mon.send({ type: 'rotation', seconds: 120 }); await sleep(100);
+      assert(latest().rotationSeconds === 60, '協力プレイ中に設定を変えた');
+      const from = a.mark();
+      host.child.stdin.write('rotate\n');
+      const paused = await a.waitFor((m) => m.type === 'game' && m.game.phase === 'paused' && m.game.roleAck?.length === 2, { from, what: '交代' });
+      assert(paused.game.reason === 'role rotation' && !paused.game.canResume, JSON.stringify({ reason: paused.game.reason }));
+      assert(JSON.stringify(paused.game.assigned) !== JSON.stringify(before), '担当が変わっていない');
+      for (const x of [a, b]) { x.send({ type: 'role_ok', epoch: latest().epoch }); await sleep(100); }
+      await a.waitFor((m) => m.type === 'game' && m.game.canResume, { what: '確認後' });
+      assert(latest().phase === 'paused', '確認だけで再開した');
+      a.send({ type: 'command', cmd: 'RESUME' });
+      await a.waitFor((m) => m.type === 'game' && m.game.phase === 'coop', { from, what: '再開' });
+      a.send({ type: 'command', cmd: 'END' }); await sleep(100);
+      mon.send({ type: 'rotation', seconds: 0 });
+      await sleep(100);
+      for (const x of [a, b]) x.close();
+    });
+
+    await check('キー割当の編集: 停止中だけ変えられ、旧キーを解放して新しいキーで送る。不正な値は受け付けない (#50・#53)', async () => {
+      mon.send({ type: 'reset' });
+      await sleep(200);
+      mon.send({ type: 'select_game', title: 'minecraft-java' });
+      await sleep(100);
+      const id = (n) => ({ clientId: `sim-keys-${n}` });
+      const a = await join('K1', id(1)); await welcome(a);
+      const b = await join('K2', id(2)); await welcome(b);
+      await sleep(200);
+      const latest = () => [...a.msgs].reverse().find((m) => m.type === 'game').game;
+      const action = latest().profile.actions.find((x) => x.type === 'button' && latest().assignment?.P1?.includes(x.id))?.id || latest().profile.actions.find((x) => x.type === 'button').id;
+      const before = latest().keys.actions[action]?.out;
+      const target = before === 'KEY_E' ? 'KEY_T' : 'KEY_E';
+      for (const bad of [{ action, output: 'WHEEL_UP' }, { action, output: 'NOPE' }, { action: 'no-such-action', output: target }, { action }]) mon.send({ type: 'set_key', ...bad });
+      a.send({ type: 'set_key', action, output: target });
+      await sleep(200);
+      assert(latest().keys.actions[action]?.out === before, `不正な変更を受け付けた: ${latest().keys.actions[action]?.out}`);
+      const epoch = latest().epoch;
+      mon.send({ type: 'set_key', action, output: target });
+      const changed = await a.waitFor((m) => m.type === 'game' && m.game.keys.actions[action]?.out === target, { what: 'キーの変更' });
+      assert(changed.game.epoch > epoch && changed.game.keys.edited.includes(action), JSON.stringify({ epoch: changed.game.epoch, edited: changed.game.keys.edited }));
+      await confirmLineup(mon, a);
+      a.send({ type: 'command', cmd: 'PREPARE' }); await phaseIs(a, 'preparing', 0);
+      await a.waitFor((m) => m.type === 'game' && m.game.canReady, { what: 'canReady' });
+      a.send({ type: 'command', cmd: 'READY' }); await phaseIs(a, 'coop', 0);
+      const owner = Object.entries(latest().assigned).find(([, ids]) => ids.includes(action))?.[0];
+      const player = owner === 'P2' ? b : a;
+      let from = mon.mark();
+      player.rawInput(`act:${action}`, 'down'); await injected(mon, target, 'down', from);
+      player.rawInput(`act:${action}`, 'up'); await injected(mon, target, 'up', from);
+      mon.send({ type: 'set_key', action, output: before ?? null });
+      await sleep(200);
+      assert(latest().keys.actions[action]?.out === target, '協力プレイ中にキーを変えた');
+      a.send({ type: 'command', cmd: 'PAUSE' }); await phaseIs(a, 'paused', 0);
+      mon.send({ type: 'reset_keys' });
+      await a.waitFor((m) => m.type === 'game' && m.game.keys.actions[action]?.out === before && !m.game.keys.edited.length, { what: '初期値に戻す' });
+      a.send({ type: 'command', cmd: 'END' }); await sleep(100);
+      for (const x of [a, b]) x.close();
     });
 
     await check('ログ: IP・User-Agent・clientId を記録せず、枠名と端末の種類だけを残す', async () => {
