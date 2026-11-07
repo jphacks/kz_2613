@@ -113,12 +113,20 @@ import { phoneAdvice } from '../app-view.js';
     $('full').style.display = 'flex';
   }
 
+  // PC でリセットすると全員が切断される。自動で再接続せず、参加し直す人だけが再読み込みする (#213)
+  function showReset() {
+    setStatus(...session.status());
+    $('fullMessage').textContent = 'PCでリセットされました。参加するときはページを再読み込みしてください。';
+    $('full').style.display = 'flex';
+  }
+
   function onDisconnected(code) {
     clearInterval(pingTimer);
     releaseAll();
     closeRtc();
     const delay = session.disconnected(code);
     if (code === 4000) { setStatus(...session.status()); return; }
+    if (code === 4001) { showReset(); return; }
     if (code === 4005) { showVersionMismatch(); return; }
     if (code === 4006) { showBadToken(); return; }
     setStatus(...session.status());
