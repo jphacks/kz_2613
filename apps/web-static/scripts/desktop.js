@@ -215,6 +215,7 @@ async function loadInfo(){
     const response=await fetch('/api/info');if(!response.ok)throw Error('QR取得失敗');
     const info=await response.json(),u=joinUrl(info);
     infoPort=info.port;
+    if(info.build)$('buildInfo').textContent=`Re:Cooplay ${info.build.version}${info.build.commit?`（${info.build.commit}）`:'（開発版）'}`;
     $('qr').innerHTML=u?u.qr:'<span>接続先が見つかりません</span>';
     $('helpQr').innerHTML=$('qr').innerHTML;
     $('url').textContent=u?.url||'';
