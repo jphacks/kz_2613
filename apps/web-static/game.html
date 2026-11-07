@@ -7,7 +7,7 @@
 <link rel="icon" type="image/png" href="/assets/icon.png">
 <style>
   :root { --bg:#0b0e12; --panel:#161b22; --line:#2b323c; --text:#e8ecf1; --muted:#8b95a3; --ok:#3fb950; --ng:#f85149; --warn:#d29922; --accent:#4c8dff;
-    --p1:#4c8dff; --p2:#3fb950; --p3:#f0883e; --sys:#a371f7; }
+    --p1:#24C2FA; --p2:#5EFF5D; --p3:#CB00EA; --p4:#FF1D00; --sys:#a371f7; }
   * { box-sizing:border-box; }
   html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font-family:system-ui, sans-serif; overflow:hidden; }
   body { display:grid; grid-template-columns:1fr 440px; height:100vh; }
@@ -133,7 +133,8 @@
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
-  const COLORS = { P1: '#4c8dff', P2: '#3fb950', P3: '#f0883e', system: '#a371f7' };
+  // P1〜P4 はキャラクターの色 (colors.css の --color-character-*) と同じ値にする
+  const COLORS = { P1: '#24C2FA', P2: '#5EFF5D', P3: '#CB00EA', P4: '#FF1D00', system: '#a371f7' };
   const PHYS = '#ffffff55';
   const MATCH_MS = 500;
   const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
