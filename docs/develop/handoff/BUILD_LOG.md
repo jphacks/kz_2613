@@ -1253,3 +1253,9 @@
 - ローカルの `npm run build`、`app-view-test` 27/27、`ui-input-test` 12/12、`phone-view-test`、`phone-lifecycle-test` 16/16、`check-static-pages`、構文・差分検査が成功。ブラウザー比較のローカル追試はCDPの `Target.createTarget` がタイムアウトし、完了できなかった。CIの同等性試験成功と区別する。
 - #230・#234は前回指摘が未修正のため保留を継続。#239は上限超過の本文を落とした後、送信側の取り出しで件数が減り、切断条件を満たさず接続が残る分岐を指摘して保留した。
 - このレビューでは実端末・Minecraft・実OS入力の追試は実施していない。
+
+## 2026-11-07 — 画面の定義を index.html へ一本化（Claude Code、#235）
+
+- `index.html` とReactの二重管理をなくした。`phone-react.html` はビルド時に生成し、Reactは `createPortal` で変わる部分だけを既存の要素へ描く。タッチパッド・キーにReactは触れない。
+- `index.html` に要素を足し、React側を変えずに `react-phone-parity` が合格することを確認した（確認後に元へ戻した）。全19項目一致、タップのp95 19.5→11.9ms。
+- `BUILD_LOG.md` に `merge=union` を指定した。2ブランチの追記が競合なく両方残ることをローカルのGitで確認した。GitHubのマージ判定での動作は未確認。
