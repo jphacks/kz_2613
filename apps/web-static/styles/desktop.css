@@ -838,6 +838,9 @@ dialog button[aria-pressed=true] {
   background: var(--color-ice);
 }
 
+table.key-editor { border-collapse: collapse; margin: 8px 0; }
+table.key-editor th { text-align: left; padding: 4px 12px 4px 0; font-weight: 500; }
+table.key-editor select { min-height: 36px; }
 dialog details {
   margin: 18px 0;
 }

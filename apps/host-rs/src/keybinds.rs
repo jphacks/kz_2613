@@ -47,6 +47,11 @@ impl Keybinds {
 
     /// 定義の初期キーに、ユーザーの設定ファイルのキーを重ねる。override_path は設定ファイルの場所の上書き (config.json 等)
     pub fn build(p: &Profile, override_path: Option<&Path>) -> Keybinds {
+        Self::build_with(p, override_path, None)
+    }
+
+    /// ゲームの設定ファイルの後に、利用者が Re:Cooplay で変えたキー (#50・#53) を重ねる
+    pub fn build_with(p: &Profile, override_path: Option<&Path>, user: Option<&crate::key_overrides::GameOverrides>) -> Keybinds {
         let mut kb = Keybinds {
             source: "default",
             actions: p.actions.iter().map(|a| (a.id.clone(), a.default)).collect(),
@@ -99,6 +104,20 @@ impl Keybinds {
                     kb.warnings.push(format!("{}のキー設定を読めないため、初期設定のキーで送ります", p.name));
                 }
                 _ => kb.warnings.push(format!("{}のキー設定が見つからないため、初期設定のキーで送ります", p.name)),
+            }
+        }
+        if let Some(user) = user {
+            for (i, a) in p.actions.iter().enumerate() {
+                if a.kind != "button" { continue; }
+                let Some(choice) = user.get(&a.id) else { continue };
+                kb.actions[i].1 = match choice {
+                    None => None,
+                    Some(id) => match controls::output(id).filter(|_| crate::key_overrides::assignable(id)) {
+                        Some(o) => Some(o.id),
+                        None => continue, // 送れないキーは使わず、元のキーのままにする
+                    },
+                };
+                kb.source = "edited";
             }
         }
         // 2 つの操作が同じキーだと、片方を押すと両方が動く
@@ -516,6 +535,23 @@ mod tests {
         p.actions.iter_mut().find(|a|a.control.as_deref()==Some("JUMP")).unwrap().bind=Some("Jump".into());
         assert_eq!(out(&with_profile(&p,"!ActionMappings=ClearArray"),"JUMP"),None);
         assert_eq!(out(&with_profile(&p,"ActionMappings=(ActionName=\"Use\",Key=E)"),"JUMP"),None);
+    }
+
+    #[test]
+    fn user_choices_override_profile_keys_and_bad_choices_are_ignored() {
+        let p = profiles::builtin_minecraft();
+        let jump = p.actions.iter().find(|a| a.kind == "button").unwrap().id.clone();
+        let mut user = crate::key_overrides::GameOverrides::new();
+        user.insert(jump.clone(), Some("KEY_E".into()));
+        let kb = Keybinds::build_with(&p, Some(Path::new("missing-options.txt")), Some(&user));
+        assert_eq!(kb.actions.iter().find(|(a, _)| *a == jump).unwrap().1, Some("KEY_E"));
+        assert_eq!(kb.source, "edited");
+        user.insert(jump.clone(), Some("WHEEL_UP".into()));
+        let kb = Keybinds::build_with(&p, Some(Path::new("missing-options.txt")), Some(&user));
+        assert_ne!(kb.actions.iter().find(|(a, _)| *a == jump).unwrap().1, Some("WHEEL_UP"));
+        user.insert(jump.clone(), None);
+        let kb = Keybinds::build_with(&p, Some(Path::new("missing-options.txt")), Some(&user));
+        assert_eq!(kb.actions.iter().find(|(a, _)| *a == jump).unwrap().1, None);
     }
 
     #[test]

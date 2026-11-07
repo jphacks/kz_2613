@@ -195,6 +195,7 @@ function render(){
   else $('players').innerHTML=cards.map(c=>`<article class="${c.className}" data-slot="${c.slot}"><div class="player-badge">${c.badge}</div><div class="player-info"><p>${c.name}</p><p>${esc(c.role)}</p><p class="player-device">${esc(c.device)}</p></div><svg class="player-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg><div class="character">${character(c.index)}</div></article>`).join('');
   $('inputState').textContent=inject?.mode==='off'?'ゲームへの入力はOFFです':inject?.mode==='test'?'診断用の入力先です':inject?.active?`ゲームへの入力はONです（${name}が前面のときだけ）`:'ゲームへの入力を停止しています';
   $('keyWarnings').textContent=keyWarnings.join('。');
+  renderKeyEditor();
   $('keyBindings').innerHTML=roleSlots.map(slot=>`<h3>${esc(slot)}：${esc(roleView(game,slot).title)}</h3><ul>${roleView(game,slot).lines.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`).join('');
   $('gameStatus').textContent=game?.prepareStatus||'';
   // 通信の診断 (#70): つながっているスマホごとの経路・往復時間・途切れと、対処の案内
@@ -214,6 +215,19 @@ function playEffects(view){
   if(e.lineup)document.querySelectorAll('.role-column').forEach(fx);
   if(e.screen)fx(document.querySelector('.state-banner'));
 }
+// キー割当の編集 (#50・#53)。協力プレイ中は変えない。選べるのはホストが送れるキーと左右のマウスボタンだけ
+let keyEditorHtml='',keyMessage='';
+function renderKeyEditor(){
+  const p=game?.profile,outs=Object.entries(inject?.outputs||{}).filter(([,o])=>o.kind==='key'||o.kind==='mouse');
+  const buttons=(p?.actions||[]).filter(a=>a.type==='button'),locked=!game||game.phase==='coop';
+  const edited=new Set(game?.keys?.edited||[]);
+  const html=!buttons.length?'':`<h3>キー割当を変える</h3><p>${locked?'協力プレイ中は変更できません。一時停止すると変更できます。':'変更はこのPCに保存され、次回も使います。'}${esc(keyMessage)}</p><table class="key-editor">${buttons.map(a=>{
+    const cur=game?.keys?.actions?.[a.id]?.out||'';
+    return `<tr><th>${esc(a.label)}${edited.has(a.id)?'（変更済み）':''}</th><td><select data-key-action="${esc(a.id)}"${locked?' disabled':''}><option value=""${cur?'':' selected'}>送らない</option>${outs.map(([id,o])=>`<option value="${esc(id)}"${id===cur?' selected':''}>${esc(o.label)}</option>`).join('')}</select></td></tr>`;}).join('')}</table><button id="resetKeysBtn"${locked||!edited.size?' disabled':''}>このゲームのキーを初期値に戻す</button>`;
+  if(html!==keyEditorHtml){keyEditorHtml=html;$('keyEditor').innerHTML=html;}
+}
+document.addEventListener('change',e=>{const el=e.target.closest?.('[data-key-action]');if(el)send({type:'set_key',action:el.dataset.keyAction,output:el.value||null});});
+document.addEventListener('click',e=>{if(e.target.id==='resetKeysBtn'&&confirm('このゲームのキー割当を初期値に戻しますか？'))send({type:'reset_keys'});});
 function renderGames(){
   const list=games(),scanning=!!state?.gamesScanning;
   const html=list.map(g=>{
@@ -260,6 +274,7 @@ function connect(){
     const m=JSON.parse(ev.data),previousPhase=game?.phase;
     if(m.type==='state'){state=m;game=m.game;inject=m.inject;}
     else if(m.type==='game')game=m.game;
+    else if(m.type==='key_result'){keyMessage=m.ok?'':'（保存できませんでした。この実行の間だけ使います）';keyEditorHtml='';render();}
     else if(m.type==='manual_result'){manualMessage=m.message||'';renderGames();setTimeout(()=>{if(manualMessage===m.message){manualMessage='';renderGames();}},6000);}
     if(m.type==='state'||m.type==='game'){ui=screenOnGameUpdate(ui,previousPhase,game);render();}
     else if(m.type==='remote'&&m.route==='app'&&m.epoch===game?.epoch){

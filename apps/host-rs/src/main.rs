@@ -12,6 +12,7 @@ mod hotkey;
 mod hub;
 mod input;
 mod input_manager;
+mod key_overrides;
 mod keybinds;
 mod look;
 mod netinfo;
