@@ -1880,6 +1880,46 @@ async function main() {
       for (const x of [a, b]) x.close();
     });
 
+    await check('キー割当の編集: 停止中だけ変えられ、旧キーを解放して新しいキーで送る。不正な値は受け付けない (#50・#53)', async () => {
+      mon.send({ type: 'reset' });
+      await sleep(200);
+      mon.send({ type: 'select_game', title: 'minecraft-java' });
+      await sleep(100);
+      const id = (n) => ({ clientId: `sim-keys-${n}` });
+      const a = await join('K1', id(1)); await welcome(a);
+      const b = await join('K2', id(2)); await welcome(b);
+      await sleep(200);
+      const latest = () => [...a.msgs].reverse().find((m) => m.type === 'game').game;
+      const action = latest().profile.actions.find((x) => x.type === 'button' && latest().assignment?.P1?.includes(x.id))?.id || latest().profile.actions.find((x) => x.type === 'button').id;
+      const before = latest().keys.actions[action]?.out;
+      const target = before === 'KEY_E' ? 'KEY_T' : 'KEY_E';
+      for (const bad of [{ action, output: 'WHEEL_UP' }, { action, output: 'NOPE' }, { action: 'no-such-action', output: target }, { action }]) mon.send({ type: 'set_key', ...bad });
+      a.send({ type: 'set_key', action, output: target });
+      await sleep(200);
+      assert(latest().keys.actions[action]?.out === before, `不正な変更を受け付けた: ${latest().keys.actions[action]?.out}`);
+      const epoch = latest().epoch;
+      mon.send({ type: 'set_key', action, output: target });
+      const changed = await a.waitFor((m) => m.type === 'game' && m.game.keys.actions[action]?.out === target, { what: 'キーの変更' });
+      assert(changed.game.epoch > epoch && changed.game.keys.edited.includes(action), JSON.stringify({ epoch: changed.game.epoch, edited: changed.game.keys.edited }));
+      await confirmLineup(mon, a);
+      a.send({ type: 'command', cmd: 'PREPARE' }); await phaseIs(a, 'preparing', 0);
+      await a.waitFor((m) => m.type === 'game' && m.game.canReady, { what: 'canReady' });
+      a.send({ type: 'command', cmd: 'READY' }); await phaseIs(a, 'coop', 0);
+      const owner = Object.entries(latest().assigned).find(([, ids]) => ids.includes(action))?.[0];
+      const player = owner === 'P2' ? b : a;
+      let from = mon.mark();
+      player.rawInput(`act:${action}`, 'down'); await injected(mon, target, 'down', from);
+      player.rawInput(`act:${action}`, 'up'); await injected(mon, target, 'up', from);
+      mon.send({ type: 'set_key', action, output: before ?? null });
+      await sleep(200);
+      assert(latest().keys.actions[action]?.out === target, '協力プレイ中にキーを変えた');
+      a.send({ type: 'command', cmd: 'PAUSE' }); await phaseIs(a, 'paused', 0);
+      mon.send({ type: 'reset_keys' });
+      await a.waitFor((m) => m.type === 'game' && m.game.keys.actions[action]?.out === before && !m.game.keys.edited.length, { what: '初期値に戻す' });
+      a.send({ type: 'command', cmd: 'END' }); await sleep(100);
+      for (const x of [a, b]) x.close();
+    });
+
     await check('ログ: IP・User-Agent・clientId を記録せず、枠名と端末の種類だけを残す', async () => {
       await sleep(1200); // ログは 1 秒ごとに書き出される
       const log = fs

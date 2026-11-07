@@ -300,6 +300,9 @@ pub struct Hub {
     // 枠ごとの席順 (#47・#62)。分担の束 (移動・視点…) を席順の早い人から配る。初期値は枠の順。
     // ホストが入れ替えると束ごと交換される。終了してもリセットするまで保つ (入れ替えたまま再挑戦できる)
     seats: [usize; MAX_SLOTS],
+    // 利用者が変えたキー割当 (#50・#53)
+    key_overrides_path: Option<std::path::PathBuf>,
+    key_overrides: crate::key_overrides::Overrides,
     // 担当が変わり、本人がスマホで「確認しました」を押していない枠。押すまで Ready・再開できない
     role_ack: Vec<usize>,
     app_focused: bool,           // PC アプリが前面か (手動復帰の判定に使う)
@@ -393,6 +396,8 @@ impl Hub {
             participants: Vec::new(),
             lineup: None,
             seats: [0, 1, 2, 3],
+            key_overrides_path: crate::key_overrides::default_path(),
+            key_overrides: crate::key_overrides::load(crate::key_overrides::default_path().as_deref()),
             role_ack: Vec::new(),
             fake_target: std::env::var("RECOOPLAY_FAKE_TARGET")
                 .ok()
@@ -961,7 +966,7 @@ impl Hub {
         self.keybinds = match &self.profile {
             Some(p) => {
                 let over = if p.id == "minecraft-java" { self.minecraft_options.as_deref() } else { None };
-                Keybinds::build(p, over)
+                Keybinds::build_with(p, over, self.key_overrides.get(&self.game.title))
             }
             None => Keybinds::none(),
         };
@@ -989,7 +994,8 @@ impl Hub {
             .iter()
             .map(|(a, o)| (a.clone(), o.and_then(controls::output).map_or(Value::Null, |out| json!({ "out": out.id, "label": out.label }))))
             .collect();
-        json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings, "controls": controls, "actions": actions })
+        let edited: Vec<&String> = self.key_overrides.get(&self.game.title).map(|m| m.keys().collect()).unwrap_or_default();
+        json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings, "controls": controls, "actions": actions, "edited": edited })
     }
 
     /// 今接続している枠に、参加人数と操作定義から分担の案を作る (#105)。枠の番号ごと (参加していない枠は空)
@@ -1026,6 +1032,19 @@ impl Hub {
 
     /// 2 人の担当を入れ替える (#47)。開始前 (ロビー・準備中) と一時停止中だけ。全解放して epoch を進め、
     /// 2 人がスマホで新しい担当を確認するまで Ready・再開できない。ロビーでは分担の決定もやり直しになる
+    /// キー割当の変更を保存して反映する (#50・#53)。保存に失敗しても今の実行には反映し、PC画面へ知らせる
+    fn apply_key_change(&mut self) {
+        let saved = crate::key_overrides::save(self.key_overrides_path.as_deref(), &self.key_overrides);
+        if let Err(e) = &saved { self.log("key_save_error", json!({ "error": e })); }
+        self.broadcast_monitors(&json!({ "type": "key_result", "ok": saved.is_ok() }));
+        self.release_outputs(None);
+        self.reset_look();
+        self.advance_epoch();
+        self.reload_keybinds();
+        self.push_game();
+        self.push_state();
+    }
+
     /// 一時停止中に今の接続で参加者と分担を決め直す (#162)。旧入力を捨て、全員の確認と明示の再開を求める
     fn change_players(&mut self) {
         let connected = self.connected_slots();
@@ -2044,6 +2063,23 @@ impl Hub {
             "launch_game" => {
                 if let Some(id) = s(msg, "id") { self.launch_game(&id); }
             }
+            "set_key" => {
+                // 協力プレイ中は変えない。変えたら旧キーを解放し、epoch を進めてから新しいキーで送る
+                if self.game.phase == Phase::Coop { return; }
+                let Some(action) = s(msg, "action") else { return };
+                let output = match msg.get("output") { Some(Value::Null) => None, Some(Value::String(id)) if crate::key_overrides::assignable(id) => Some(id.clone()), _ => return };
+                if !self.profile.as_ref().is_some_and(|p| p.actions.iter().any(|a| a.id == action && a.kind == "button")) { return; }
+                self.key_overrides.entry(self.game.title.clone()).or_default().insert(action.clone(), output.clone());
+                self.log("set_key", json!({ "action": action, "output": output }));
+                self.apply_key_change();
+            }
+            "reset_keys" => {
+                if self.game.phase == Phase::Coop { return; }
+                if self.key_overrides.remove(&self.game.title).is_some() {
+                    self.log("reset_keys", json!({}));
+                    self.apply_key_change();
+                }
+            }
             "change_players" => {
                 if msg.get("epoch").and_then(Value::as_u64) == Some(self.game.epoch) { self.change_players(); }
             }
@@ -2505,6 +2541,8 @@ mod tests {
             participants: Vec::new(),
             lineup: None,
             seats: [0, 1, 2, 3],
+            key_overrides_path: None,
+            key_overrides: Default::default(),
             role_ack: Vec::new(),
             fake_target: Some(true),
             app_focused: false,
