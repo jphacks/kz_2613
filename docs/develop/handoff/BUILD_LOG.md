@@ -1157,3 +1157,7 @@
 - `colors.css` の `--p1〜4` と `/game` の色をキャラクターの色へ統一し、`/game` のP4の未定義を解消した。`check-static-pages.mjs` に一致の検査を追加し、色を崩すと失敗することを確認した。
 - 接続案内を2〜4人の文言にした。スマホの待機画面の押せないボタンを、ボタンではない案内へ変更した（原案の位置と形は維持）。
 - `check-static-pages`、`app-view` 25/25、`phone-view`、`ui-input` 12/12、`phone-lifecycle` 16/16、`verify-ui-evidence`、`static-assets-sim`（37ファイル）が成功。headless Chromeの360×640で待機画面を確認した。実端末は未実施。保存済みの画面画像は更新していない。
+## 2026-11-06 — PCアプリ内の動作環境・制限事項（Claude Code、#226）
+
+- 操作設定の画面に「動作環境・制限事項」を追加した。文面は配布zipの `README.txt` に合わせた。`check-static-pages.mjs` に必須の語の検査を追加した。
+- `check-static-pages`、`app-view` 25/25、`ui-input` 12/12が成功。headless Chromeで表示を確認した。WebView2の実画面は未確認。
