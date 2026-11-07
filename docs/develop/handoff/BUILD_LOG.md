@@ -1276,3 +1276,8 @@
 - #245・#246の差分、CIのRust・通信・React同等性・配布検証の成功を確認して統合した。#247は全解放・epoch更新・全員の担当確認・明示再開の条件を確認し、双方の記録を保持して統合準備した。
 - ローカルで `npm --prefix apps/web run build`、`phone-view-test`、`phone-lifecycle-test` 16/16、`controller-diagnostics-test`、`ui-input-test` 12/12、`app-view-test` 27/27、`check-static-pages`、`node --check scripts/sim/protocol-sim.mjs`、差分検査が成功。実端末・Minecraft・実OS入力の追試は実施していない。
 - #230・#234・#239は、前回指摘した再起動処理・保存領域の取得・送信待ち上限超過時の切断処理が未修正のため保留を継続する。
+
+## 2026-11-07 — 観客向け表示（Claude Code、#163）
+
+- OBS等のブラウザソースで重ねる透過ページ `/overlay` を追加した。参加者の色、担当、押している入力、進行を表示する。PC本体だけが開け、読み取り専用でホストへ操作を送らない。
+- ゲームへの常駐描画は採用しない。フォーカスと入力に影響させないため。ON/OFFはOBS側のソースで行う。第三者が担当を理解できるかの確認は未実施。
