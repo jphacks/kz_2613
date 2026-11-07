@@ -1572,6 +1572,7 @@ async function main() {
       p3.input('ATTACK', 'down');
       await injected(mon, 'KEY_W', 'down', mfrom);
       await injected(mon, 'MOUSE_L', 'down', mfrom);
+      const heldEpoch = p1.epoch;
       mfrom = mon.mark();
       from = p1.mark();
       host.child.stdin.write('stop\n');
@@ -1582,6 +1583,24 @@ async function main() {
       const st = await mon.waitFor((m) => m.type === 'state' && m.inject.mode === 'off', { from: mfrom, what: 'inject off' });
       assert(!st.inject.active, '注入が有効のまま');
       assert(st.inject.emergencyHotkey, 'ホットキーの表示がない');
+      assert(g.game.epoch > heldEpoch, '緊急停止でepochが更新されない');
+      mfrom = mon.mark();
+      from = p1.mark();
+      const staleFrom3 = p3.mark();
+      const staleP1 = p1.rawInput('act:forward', 'down', { epoch: heldEpoch });
+      const staleP3 = p3.rawInput('act:attack', 'down', { epoch: heldEpoch });
+      await Promise.all([
+        p1.waitFor(m => m.type === 'ack' && m.iseq === staleP1 && m.stale === true,
+          { from, what: '緊急停止前のP1入力を破棄' }),
+        p3.waitFor(m => m.type === 'ack' && m.iseq === staleP3 && m.stale === true,
+          { from: staleFrom3, what: '緊急停止前のP3入力を破棄' }),
+      ]);
+      p1.send({ type: 'command', cmd: 'RESUME', epoch: g.game.epoch });
+      await p1.waitFor(m => m.type === 'command_result' && m.cmd === 'RESUME' && !m.accepted,
+        { from, what: '緊急停止後のOFF状態では再開を拒否' });
+      await noInject(mon, mfrom);
+      assert(!p1.msgs.slice(from).some(m => m.type === 'game' && m.game.phase === 'coop'),
+        '緊急停止後の旧入力再送・再開要求で協力操作へ戻った');
       p1.input('FWD', 'up');
       p3.input('ATTACK', 'up');
       // 押し直しても注入しない (OFF のまま)
