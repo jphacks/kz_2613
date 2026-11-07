@@ -53,6 +53,7 @@ if ((Test-Path -LiteralPath $stage) -or (Test-Path -LiteralPath $zip)) { throw "
 New-Item -ItemType Directory -Force (Join-Path $stage "apps") | Out-Null
 
 Copy-Item $desktop, $host_ $stage
+if (-not (Test-Path (Join-Path $root "apps\web-static\react\phone.js"))) { throw "React版の画面がありません。apps\web で npm ci と npm run build を実行してください" }
 Copy-Item -Recurse (Join-Path $root "apps\web-static") (Join-Path $stage "apps\web-static")
 Copy-Item -Recurse (Join-Path $root "apps\game-profiles") (Join-Path $stage "apps\game-profiles")
 Copy-Item (Join-Path $root "config.example.json") $stage
