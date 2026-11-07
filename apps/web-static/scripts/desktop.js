@@ -1,5 +1,5 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,profileNotice,roleView,networkNotice,slotDiagnosis,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,rolesAction,commSettingsView,playerHint} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,profileNotice,roleView,networkNotice,slotDiagnosis,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,pcEffects,playerCards,roleColumns,rolesAction,commSettingsView,playerHint} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // swap: 一時停止中に担当を入れ替える画面を開いているか (#47)
@@ -9,6 +9,7 @@ try{localStorage.removeItem('recooplay.app');}catch{}
 let state=null,game=null,inject=null,ws=null,online=false,gamesHtml='',shownGame='';
 let infoPort=null;
 $('autoResumeSetting').addEventListener('change',e=>send({type:'auto_resume',on:e.target.checked}));
+$('rotationSetting').addEventListener('change',e=>send({type:'rotation',seconds:Number(e.target.value)}));
 // 選択画面の一覧。インストール済みのゲームはPC画面にだけ届く (state.games)
 const games=()=>gameList(state?.games,state?.minecraft);
 const send=m=>{if(ws?.readyState===1)ws.send(JSON.stringify(m));};
@@ -86,6 +87,7 @@ function remoteControl(c){
   else if(c==='ENTER'&&view==='roles')rolesRun(rolesAction(game,games()));
   else setUi(navigate(ui,c,games()));
 }
+$('changePlayersBtn').addEventListener('click',()=>send({type:'change_players',epoch:game?.epoch}));
 $('subBtn').addEventListener('click',()=>rolesRun(desktopView(ui,game)==='paused'?{kind:'swap'}:rolesAction(game,games()).alt));
 // 緊急停止などで入力が止まっているときの「入力を再開する」(#114)。PC の前で確かめてから再開させる鍵
 const inputStopped=view=>['preparing','ready','paused'].includes(view)&&inject?.mode==='off';
@@ -137,12 +139,12 @@ function render(){
   $('roles').style.setProperty('--role-count',String(roleSlots.length));
   $('roleHeading').textContent=!roleSlots.length?'参加者を待っています':game?.lineupOk?`${roleSlots.length}人で決定！`:`${roleSlots.length}人で、操作を分担！`;
   if(swapPick&&!roleSlots.includes(swapPick))swapPick=null;
-  const pendingAck=game?.roleAck||[];
-  $('roles').innerHTML=roleSlots.map(slot=>{
-    // i: その人の枠 (キャラクターの色)。担当は操作定義の分担から (#141)
-    const i=SLOT_NAMES.indexOf(slot),role=roleView(game,slot);
-    const swap=game?.canSwap?` data-swap="${slot}" role="button" tabindex="0" aria-pressed="${swapPick===slot}" aria-label="プレイヤー${i+1}の担当を入れ替える"`:'';
-    return `<article class="role-column${swapPick===slot?' picked':''}"${swap}><h3>プレイヤー${i+1}</h3>${character(i)}<div class="role-copy"><b>${esc(role.title)}</b><p>${esc(role.lines[0]||'担当する操作なし')}</p>${pendingAck.includes(slot)?'<span class="ack-wait">スマホで確認待ち</span>':''}</div></article>`;
+  const columns=roleColumns(game,roleSlots,swapPick);
+  // React版では分担の表示をReactが描く。入れ替えのクリックは document で受けるので同じ属性を付ける (#235)
+  if(globalThis.__recooplayPcRoles)globalThis.__recooplayPcRoles.set(columns);
+  else $('roles').innerHTML=columns.map(c=>{
+    const swap=c.swap?` data-swap="${c.slot}" role="button" tabindex="0" aria-pressed="${c.picked}" aria-label="プレイヤー${c.index+1}の担当を入れ替える"`:'';
+    return `<article class="role-column${c.picked?' picked':''}"${swap}><h3>プレイヤー${c.index+1}</h3>${character(c.index)}<div class="role-copy"><b>${esc(c.title)}</b><p>${esc(c.line)}</p>${c.ack?'<span class="ack-wait">スマホで確認待ち</span>':''}</div></article>`;
   }).join('');
   const titles={join:'',game:'ゲーム選択を<br>しよう！',roles:'分担しよう！',preparing:'準備中<span class="ellipsis">...</span>',ready:'準備完了！',coop:'協力プレイ中',paused:'一時停止中'};
   $('screenTitle').innerHTML=titles[view];
@@ -180,13 +182,20 @@ function render(){
   const warning=desktopWarning(game,inject,online||!state)||(keyWarnings.length?'キー設定に注意が必要です。「操作設定」で実際に送るキーを確認してください。':'');
   const notices=[warning,networkNotice(state?.network,state?.slots),profileNotice(game?.profile)].filter(Boolean).join(' ');
   $('warning').hidden=!notices;$('warning').textContent=notices;
+  $('changePlayersBtn').hidden=!(view==='paused'&&game?.canChangePlayers);
+  $('changePlayersBtn').textContent=`今の${game?.connected?.length||0}人で分担し直す`;
   const comm=commSettingsView(game,infoPort);
+  $('rotationSetting').value=String(game?.rotationSeconds??0);$('rotationSetting').disabled=!game||game.phase==='coop';
   $('autoResumeSetting').checked=comm.checked;$('autoResumeSetting').disabled=comm.locked;$('commInfo').textContent=comm.text;
   $('steps').hidden=!['join','game','roles'].includes(view);
   document.querySelectorAll('#steps button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===ui.screen?'page':'false'));
-  $('players').innerHTML=slots.map((s,i)=>`<article class="player ${s.state}${view==='preparing'&&s.host&&s.state==='connected'?' pending':''}" data-slot="${s.slot}"><div class="player-badge">${s.state==='empty'?'参加待ち':s.state==='lost'?'切断中':view==='ready'?'接続完了！':view==='preparing'?(s.host?'準備中！':'接続完了！'):'接続完了！'}</div><div class="player-info"><p>プレイヤー${i+1}</p><p>${esc(roleView(game,s.slot).title)}</p><p class="player-device">機種：${esc(s.device||'未接続')}</p></div><svg class="player-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg><div class="character">${character(i)}</div></article>`).join('');
+  const cards=playerCards(slots,view,game);
+  // React版では参加者の表示をReactが描く。両方から書くと表示が壊れる (#235)
+  if(globalThis.__recooplayPcPlayers)globalThis.__recooplayPcPlayers.set(cards);
+  else $('players').innerHTML=cards.map(c=>`<article class="${c.className}" data-slot="${c.slot}"><div class="player-badge">${c.badge}</div><div class="player-info"><p>${c.name}</p><p>${esc(c.role)}</p><p class="player-device">${esc(c.device)}</p></div><svg class="player-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg><div class="character">${character(c.index)}</div></article>`).join('');
   $('inputState').textContent=inject?.mode==='off'?'ゲームへの入力はOFFです':inject?.mode==='test'?'診断用の入力先です':inject?.active?`ゲームへの入力はONです（${name}が前面のときだけ）`:'ゲームへの入力を停止しています';
   $('keyWarnings').textContent=keyWarnings.join('。');
+  renderKeyEditor();
   $('keyBindings').innerHTML=roleSlots.map(slot=>`<h3>${esc(slot)}：${esc(roleView(game,slot).title)}</h3><ul>${roleView(game,slot).lines.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`).join('');
   $('gameStatus').textContent=game?.prepareStatus||'';
   // 通信の診断 (#70): つながっているスマホごとの経路・往復時間・途切れと、対処の案内
@@ -194,7 +203,31 @@ function render(){
   $('netDiag').innerHTML=diag.length?diag.map(d=>`<section class="net-row" data-level="${d.level}"><h3>${esc(d.name)}：${{ok:'良好',warn:'注意',bad:'不安定'}[d.level]}</h3><p>経路 ${esc(d.path)}・往復 ${d.rtt??'-'}ms（95% ${d.p95??'-'}ms）・途切れ ${d.stalls}回/10秒・再接続 ${d.reconnects}回</p>${d.hints.length?`<ul>${d.hints.map(h=>`<li>${esc(h)}</li>`).join('')}</ul>`:''}</section>`).join('')+(state?.network?.bluetoothAudio?'<p class="net-bt">PCの音の出力先がBluetoothです。有線のイヤホンかPCのスピーカーにすると、通信が安定しやすくなります。</p>':''):'<p>つながっているスマホはありません。</p>';
   document.querySelectorAll('#modeSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===inject?.mode)));
   $('hotkey').textContent=inject?.emergencyHotkeyError?'緊急停止キーを登録できません':`緊急停止：${inject?.emergencyHotkey||'Ctrl+Alt+F12'}`;
+  playEffects(view);
 }
+// 演出は開始前の画面だけで、状態が変わった瞬間に1回再生する (#160)。入力と前面化は待たせない
+let effectState=null;
+function fx(el){if(!el)return;el.classList.remove('fx-pop');void el.offsetWidth;el.classList.add('fx-pop');el.addEventListener('animationend',()=>el.classList.remove('fx-pop'),{once:true});}
+function playEffects(view){
+  const next={view,connected:(state?.slots||[]).filter(s=>s.connected).map(s=>s.name),lineupOk:!!game?.lineupOk};
+  const e=pcEffects(effectState,next);effectState=next;
+  for(const slot of e.joined)fx(document.querySelector(`.player[data-slot="${slot}"] .character-art`));
+  if(e.lineup)document.querySelectorAll('.role-column').forEach(fx);
+  if(e.screen)fx(document.querySelector('.state-banner'));
+}
+// キー割当の編集 (#50・#53)。協力プレイ中は変えない。選べるのはホストが送れるキーと左右のマウスボタンだけ
+let keyEditorHtml='',keyMessage='';
+function renderKeyEditor(){
+  const p=game?.profile,outs=Object.entries(inject?.outputs||{}).filter(([,o])=>o.kind==='key'||o.kind==='mouse');
+  const buttons=(p?.actions||[]).filter(a=>a.type==='button'),locked=!game||game.phase==='coop';
+  const edited=new Set(game?.keys?.edited||[]);
+  const html=!buttons.length?'':`<h3>キー割当を変える</h3><p>${locked?'協力プレイ中は変更できません。一時停止すると変更できます。':'変更はこのPCに保存され、次回も使います。'}${esc(keyMessage)}</p><table class="key-editor">${buttons.map(a=>{
+    const cur=game?.keys?.actions?.[a.id]?.out||'';
+    return `<tr><th>${esc(a.label)}${edited.has(a.id)?'（変更済み）':''}</th><td><select data-key-action="${esc(a.id)}"${locked?' disabled':''}><option value=""${cur?'':' selected'}>送らない</option>${outs.map(([id,o])=>`<option value="${esc(id)}"${id===cur?' selected':''}>${esc(o.label)}</option>`).join('')}</select></td></tr>`;}).join('')}</table><button id="resetKeysBtn"${locked||!edited.size?' disabled':''}>このゲームのキーを初期値に戻す</button>`;
+  if(html!==keyEditorHtml){keyEditorHtml=html;$('keyEditor').innerHTML=html;}
+}
+document.addEventListener('change',e=>{const el=e.target.closest?.('[data-key-action]');if(el)send({type:'set_key',action:el.dataset.keyAction,output:el.value||null});});
+document.addEventListener('click',e=>{if(e.target.id==='resetKeysBtn'&&confirm('このゲームのキー割当を初期値に戻しますか？'))send({type:'reset_keys'});});
 function renderGames(){
   const list=games(),scanning=!!state?.gamesScanning;
   const html=list.map(g=>{
@@ -205,7 +238,7 @@ function renderGames(){
   }).join('');
   // 1秒ごとの状態更新で一覧を作り直すとフォーカスが外れるため、変わったときだけ描き直す
   if(html!==gamesHtml){$('gameList').innerHTML=html;gamesHtml=html;}
-  if(shownGame!==ui.game){shownGame=ui.game;document.querySelector('.game-choice.selected')?.scrollIntoView({block:'nearest'});}
+  if(shownGame!==ui.game){const first=shownGame==='';shownGame=ui.game;if(!first)fx(document.querySelector('.game-choice.selected'));document.querySelector('.game-choice.selected')?.scrollIntoView({block:'nearest'});}
   $('gamesCount').textContent=manualMessage||gamesCountText(list,scanning);
   $('refreshGamesBtn').disabled=scanning;
   $('renameGameBtn').hidden=$('removeGameBtn').hidden=!isRegistered(ui.game)||!list.some(g=>g.id===ui.game);
@@ -241,6 +274,7 @@ function connect(){
     const m=JSON.parse(ev.data),previousPhase=game?.phase;
     if(m.type==='state'){state=m;game=m.game;inject=m.inject;}
     else if(m.type==='game')game=m.game;
+    else if(m.type==='key_result'){keyMessage=m.ok?'':'（保存できませんでした。この実行の間だけ使います）';keyEditorHtml='';render();}
     else if(m.type==='manual_result'){manualMessage=m.message||'';renderGames();setTimeout(()=>{if(manualMessage===m.message){manualMessage='';renderGames();}},6000);}
     if(m.type==='state'||m.type==='game'){ui=screenOnGameUpdate(ui,previousPhase,game);render();}
     else if(m.type==='remote'&&m.route==='app'&&m.epoch===game?.epoch){
