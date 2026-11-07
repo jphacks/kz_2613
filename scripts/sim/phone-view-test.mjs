@@ -85,8 +85,6 @@ assert.match(el('inputWarn').textContent,/分担できる操作がありませ�
 assert.doesNotMatch(el('waitRole').textContent,/分担できる操作がありません/);
 update('P1',{profile:{id:'reference',name:'参考用',status:'unverified',controllerSupported:true}});
 assert.match(el('inputWarn').textContent,/未検証.*確かめながら/);
-// 案内は選んだゲームの名前で出し、Minecraft・ワールドの文言を残さない (#140)
-update('P1',{phase:'preparing',canReady:true,titleName:'Outlast',remoteRoute:'game',inputTarget:true,profile:{id:'steam:238320',name:'Outlast',status:'unverified',controllerSupported:true}});
 // P2以降には、行えない操作を求める案内やホスト向けの情報を出さない (#238)
 update('P1',{inputTarget:'フォーカス外',profile:{...profile,id:'other',status:'template',name:'別のゲーム'}});
 assert.match(el('inputWarn').textContent,/前面に戻すまで/);assert.match(el('inputWarn').textContent,/確かめながら/);assert.equal(document.body.dataset.host,'true');
@@ -96,6 +94,8 @@ update('P2',{inputTarget:null,profile:{...profile,id:'other',status:'template',n
 assert.equal(el('inputWarn').textContent,'');assert.equal(el('inputWarn').style.display,'none');
 update('P1',{inputTarget:null,profile:{...profile,id:'other',status:'template',name:'別のゲーム'}});
 assert.equal(el('inputWarn').style.display,'block');
+// 案内は選んだゲームの名前で出し、Minecraft・ワールドの文言を残さない (#140)
+update('P1',{phase:'preparing',canReady:true,titleName:'Outlast',remoteRoute:'game',inputTarget:true,profile:{id:'steam:238320',name:'Outlast',status:'unverified',controllerSupported:true}});
 const shown=['remoteRoute','openGameBtn','inputWarn','remoteNote'].map((id)=>el(id).textContent).join(' ');
 assert.match(shown,/Outlastのメニューを操作中/);
 assert.match(shown,/Outlastを前面にする/);
