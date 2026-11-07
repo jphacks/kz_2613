@@ -1277,7 +1277,18 @@
 - ローカルで `npm --prefix apps/web run build`、`phone-view-test`、`phone-lifecycle-test` 16/16、`controller-diagnostics-test`、`ui-input-test` 12/12、`app-view-test` 27/27、`check-static-pages`、`node --check scripts/sim/protocol-sim.mjs`、差分検査が成功。実端末・Minecraft・実OS入力の追試は実施していない。
 - #230・#234・#239は、前回指摘した再起動処理・保存領域の取得・送信待ち上限超過時の切断処理が未修正のため保留を継続する。
 
+## 2026-11-07 — 観客向け表示（Claude Code、#163）
+
+- OBS等のブラウザソースで重ねる透過ページ `/overlay` を追加した。参加者の色、担当、押している入力、進行を表示する。PC本体だけが開け、読み取り専用でホストへ操作を送らない。
+- ゲームへの常駐描画は採用しない。フォーカスと入力に影響させないため。ON/OFFはOBS側のソースで行う。第三者が担当を理解できるかの確認は未実施。
+
 ## 2026-11-07 — PC画面の開始前の演出（Claude Code、#160）
 
 - 参加、ゲーム選択、分担の決定、画面の切替に0.32秒の演出を追加した。ユーザー判断でF07-05はReady前で完結させ、協力プレイ中・一時停止中は再生しない。効果音はなし。
 - 状態が変わった瞬間だけ `pcEffects` で判定する。入力と前面化は待たせない（ChromeでREADYからcoopまで29ms）。`prefers-reduced-motion` では既存の共通CSSで止まる。
+
+## 2026-11-07 — 開始前の演出と観客向け表示のPRレビュー（Codex）
+
+- #248の差分・CI成功を確認して統合。#249はPC専用の配信境界と表示処理を確認し、演出・観客表示の両関数、両試験、双方の検証記録を保持して統合準備した。
+- ローカルの `app-view-test` 29/29、`ui-input-test` 12/12、`check-static-pages`、`npm --prefix apps/web run build`、差分検査が成功。実OBS・実端末・Minecraft・実OS入力の追試は実施していない。
+- #230・#234・#239は前回指摘が未修正のため保留を継続する。

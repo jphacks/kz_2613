@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
+import { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -319,6 +319,16 @@ test('人数の参考: 全員に操作があり偏りの小さい人数を、断
   assert.equal(playerHint({...profile,controllerSupported:false}),null);
   assert.equal(playerHint({...profile,status:'device'}),null,'実機の記録があるゲームには出さない');
   assert.equal(playerHint(null),null);
+});
+
+test('観客向け表示: 参加者の担当と押している入力を出し、接続がなければ空にする (#163)', () => {
+  assert.deepEqual(overlayModel(null),{status:'',players:[]});
+  const profile={actions:[{id:'jump',label:'ジャンプ',group:'move',type:'button'}],groups:[{id:'move',label:'移動'}],assignment:{P1:['jump']}};
+  const state={game:{phase:'coop',participants:['P1','P2'],connected:['P1'],assigned:{P1:['jump'],P2:[]},profile,keys:{actions:{jump:{label:'Spaceキー'}}}},slots:[{name:'P1',connected:true,pressed:['act:jump']},{name:'P2',connected:false,pressed:[]}]};
+  const view=overlayModel(state);
+  assert.equal(view.status,'');assert.deepEqual(view.players.map(p=>p.slot),['P1','P2']);
+  assert.deepEqual(view.players[0].pressed,['Spaceキー']);assert.equal(view.players[1].connected,false);
+  assert.equal(overlayModel({...state,game:{...state.game,phase:'paused'}}).status,'一時停止中');
 });
 
 test('演出: 状態が変わった瞬間だけ返し、協力プレイ中と一時停止中は何も返さない (#160)', () => {
