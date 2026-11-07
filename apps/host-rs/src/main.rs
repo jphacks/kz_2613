@@ -303,10 +303,11 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
         "/host" => "/host.html",
         "/game" => "/game.html",
         "/app" => "/app.html",
+        "/overlay" => "/overlay.html",
         p => p,
     };
     // ダッシュボードと疑似ゲーム画面は PC 本体からのみ
-    if matches!(path, "/host.html" | "/game.html" | "/app.html") && !is_loopback(&addr) {
+    if matches!(path, "/host.html" | "/game.html" | "/app.html" | "/overlay.html") && !is_loopback(&addr) {
         return (StatusCode::FORBIDDEN, "this page is only available on the PC").into_response();
     }
     let rel = Path::new(path.trim_start_matches('/'));
@@ -346,7 +347,7 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
 /// PC 本体からだけ開ける画面か (実体のファイル名で判定する)
 fn is_pc_only_page(path: &Path) -> bool {
     let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_ascii_lowercase();
-    matches!(name.as_str(), "host.html" | "game.html" | "app.html")
+    matches!(name.as_str(), "host.html" | "game.html" | "app.html" | "overlay.html")
 }
 
 fn allowed_ws_headers(headers: &HeaderMap, port: u16, loopback: bool) -> bool {

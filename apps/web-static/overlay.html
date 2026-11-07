@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Re:Cooplay 観客向け表示</title>
+<link rel="stylesheet" href="/styles/colors.css">
+<!-- OBS等のブラウザソースで重ねる透過の画面 (#163)。読み取り専用で、ホストへ操作を送らない -->
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; font-family: 'Yu Gothic', Arial, sans-serif; overflow: hidden; }
+  #overlay { position: fixed; left: 24px; right: 24px; bottom: 24px; display: flex; gap: 12px; align-items: stretch; }
+  body[data-position=top] #overlay { top: 24px; bottom: auto; }
+  .card { flex: 1; min-width: 0; padding: 10px 14px; border-radius: 14px; border-left: 10px solid var(--slot); background: #000000B3; color: #FFFFFF; }
+  .card[data-slot=P1] { --slot: var(--color-character-blue); }
+  .card[data-slot=P2] { --slot: var(--color-character-green); }
+  .card[data-slot=P3] { --slot: var(--color-character-purple); }
+  .card[data-slot=P4] { --slot: var(--color-character-red); }
+  .card.off { opacity: .55; }
+  .name { font-size: 22px; font-weight: 800; color: var(--slot); }
+  .role { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .keys { min-height: 30px; margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .keys span { padding: 2px 8px; border-radius: 8px; background: var(--slot); color: #000000; font-size: 15px; font-weight: 700; }
+  #status { position: fixed; left: 50%; top: 24px; transform: translateX(-50%); padding: 6px 18px; border-radius: 14px; background: #000000B3; color: #FFFFFF; font-size: 24px; font-weight: 800; }
+  #status:empty { display: none; }
+</style>
+</head>
+<body>
+<div id="status"></div>
+<div id="overlay"></div>
+<script type="module" src="/scripts/overlay.js"></script>
+</body>
+</html>

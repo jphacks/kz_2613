@@ -126,6 +126,25 @@ export function playerHint(profile) {
   return best && { players: best.players, text: `参考：${best.players}人だと操作を分けやすい定義です（試遊の結果ではありません）` };
 }
 
+/** 観客向け表示の内容 (#163)。参加者の色・担当・押している入力・進行だけを出す */
+export function overlayModel(state) {
+  const game = state?.game;
+  if (!game) return { status: '', players: [] };
+  const slots = game.participants?.length ? game.participants : game.connected || [];
+  const label = (code) => {
+    const id = String(code).replace(/^act:/, '').split(':')[0];
+    const action = game.profile?.actions?.find((a) => a.id === id);
+    return action ? inputKeyLabel(game, action) : String(code);
+  };
+  return {
+    status: { lobby: '参加受付中', preparing: '準備中', paused: '一時停止中' }[game.phase] || '',
+    players: slots.map((slot) => {
+      const s = state.slots?.find((x) => x.name === slot);
+      return { slot, connected: !!s?.connected, role: roleView(game, slot).title, pressed: (s?.pressed || []).map(label) };
+    }),
+  };
+}
+
 export function desktopWarning(game, inject, connected = true) {
   if (!connected) return 'PCホストとの接続が切れました。再接続を待っています。';
   if (inject?.emergencyHotkeyError) return '緊急停止キーを登録できません。操作設定で入力をOFFにしてください。';
