@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -61,7 +61,7 @@ pub enum Out {
 }
 
 pub enum Event {
-    WsOpen { id: u64, tx: UnboundedSender<Out>, queued: Arc<AtomicUsize>, ip: String, loopback: bool },
+    WsOpen { id: u64, tx: UnboundedSender<Out>, queued: Arc<SendQueue>, ip: String, loopback: bool },
     WsText { id: u64, text: String, enqueued_at: Option<Instant> },
     WsClosed { id: u64, code: u16 },
     RtcDescription { slot: usize, gen: u64, sdp: String, kind: String },
@@ -125,21 +125,34 @@ enum Role {
 
 struct Conn {
     tx: UnboundedSender<Out>,
-    queued: Arc<AtomicUsize>, // 送信待ちの本文の数。送信側が減らす (#197)
+    queued: Arc<SendQueue>, // 送信待ちの本文の数。送信側が減らす (#197)
     ip: String,
     loopback: bool,
     role: Role,
+}
+
+/// 接続ごとの送信待ちの数と、上限で本文を落としたかの記録 (#197)
+#[derive(Default)]
+pub struct SendQueue {
+    pub len: AtomicUsize,
+    /// 一度でも本文を落としたら立てたままにする。送信側が空きを作っても、落とした接続は必ず切る
+    pub overflowed: AtomicBool,
+}
+
+impl SendQueue {
+    pub fn must_close(&self) -> bool { self.overflowed.load(Ordering::Relaxed) }
 }
 
 impl Conn {
     /// 本文を送信待ちへ積む。上限に達した接続は送信側が切断する (#197)。
     /// 切断は通常の経路で全解放し、再接続で最新の状態を受け取るので、落とした本文を補う必要はない
     fn push_text(&self, text: String) {
-        if self.queued.fetch_add(1, Ordering::Relaxed) >= WS_QUEUE_LIMIT {
-            self.queued.fetch_sub(1, Ordering::Relaxed);
+        if self.queued.len.fetch_add(1, Ordering::Relaxed) >= WS_QUEUE_LIMIT {
+            self.queued.len.fetch_sub(1, Ordering::Relaxed);
+            self.queued.overflowed.store(true, Ordering::Relaxed);
             return;
         }
-        if self.tx.send(Out::Text(text)).is_err() { self.queued.fetch_sub(1, Ordering::Relaxed); }
+        if self.tx.send(Out::Text(text)).is_err() { self.queued.len.fetch_sub(1, Ordering::Relaxed); }
     }
 }
 
@@ -3133,7 +3146,8 @@ mod tests {
         let (tx, mut rx) = unbounded_channel();
         let conn = Conn { tx, queued: Default::default(), ip: String::new(), loopback: true, role: Role::Unknown };
         for _ in 0..WS_QUEUE_LIMIT + 100 { conn.push_text("x".into()); }
-        assert_eq!(conn.queued.load(Ordering::Relaxed), WS_QUEUE_LIMIT);
+        assert_eq!(conn.queued.len.load(Ordering::Relaxed), WS_QUEUE_LIMIT);
+        assert!(conn.queued.must_close());
         conn.tx.send(Out::Close(4001, "reset".into())).unwrap();
         let mut texts = 0;
         let mut closed = false;
