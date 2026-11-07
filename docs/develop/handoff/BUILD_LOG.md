@@ -1204,3 +1204,9 @@
 - ローカルで `app-view-test` 25/25、`ui-input-test` 12/12、`phone-view-test`、`phone-session-test` 7/7、`phone-lifecycle-test` 16/16、`check-static-pages` と差分検査が成功。公開資料のPython検査は、この実行環境にPythonがないためCIで確認する。
 - #234はlocalStorage getterのSecurityErrorによる初期化失敗を再現し保留。#230は再起動と終了の競合、再起動の待受タイムアウト未処理を指摘し保留。通常系の試験成功と、異常系の問題を区別する。
 - このレビューでは実端末・Minecraft・実OS入力の追試は実施していない。
+
+## 2026-11-07 — スマホの待機画面をReactへ移す（Claude Code、#235）
+
+- 表示内容の計算を `phone-model.js` の純粋関数へ分け、既存画面とReact版で共用する。React版では既存の書き込みを止め、待機画面をReactだけが描く。入力と接続は変更していない。
+- `react-phone-parity.mjs` に待機画面の内容の完全比較（ロビー・一時停止中）を追加した。タグ間の改行とimgの属性の順序だけを除く。文言を1文字変えると不合格になることを確認した。
+- 全項目一致。タップのp95は12.4→13.2ms、視点は49.5→47.5件/秒（headless Chrome、1回の比較）。`phone-view`、`phone-lifecycle` 16/16、`ui-input` 12/12、`check-static-pages`、`static-assets-sim`（42ファイル）が成功。実端末は未確認。

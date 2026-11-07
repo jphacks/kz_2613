@@ -83,6 +83,9 @@ async function session(url, port, cdpPort) {
     await p1.waitFor(`document.querySelectorAll('#players1 .on').length===2`, 'P1の参加者表示');
     result.dom = await p1.ev(`(()=>{const out=[];const walk=(e,d)=>{for(const c of e.children){if(['SCRIPT','LINK'].includes(c.tagName)||c.id==='root'){if(c.id==='root')walk(c,d);continue}
       out.push([d,c.tagName,c.id,c.className,c.getAttribute('data-ctl')||'',c.getAttribute('data-cmd')||'',c.getAttribute('aria-label')||'',c.getAttribute('role')||'',c.hasAttribute('hidden'),c.disabled===true].join('|'));walk(c,d+1)}};walk(document.body,0);return out})()`);
+    // タグの間の改行と img の属性の順序 (Reactは src を最後に設定する) だけは比べない。要素・属性の値・文字は完全に比べる
+    const waitHtml = async () => (await p2.ev(`document.getElementById('v-wait').innerHTML`)).replace(/>\s+</g, '><').replace(/<img ([^>]*)>/g, (_, attrs) => `<img ${attrs.split(/ (?=[\w-]+=)/).sort().join(' ')}>`).trim();
+    result.waitLobby = await waitHtml();
     result.layout = await p1.ev(`JSON.stringify(['header','main','#v-remote','#remotePad','#startBtn'].map(q=>{const r=document.querySelector(q).getBoundingClientRect();return [q,Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]}))`);
 
     // 通信: WebRTC の成立
@@ -149,6 +152,8 @@ async function session(url, port, cdpPort) {
     mon.send({ type: 'phase', phase: 'paused' });
     await mon.until(m => m.game.phase === 'paused', 'paused');
     result.pauseRelease = await mon.until(m => m.injects.slice(from).find(x => x.state === 'up')?.out, 'Pause解放');
+    await p2.waitFor(`document.getElementById('waitHeading').textContent==='一時停止中'`, 'P2の一時停止表示');
+    result.waitPaused = await waitHtml();
     await p1.touch('touchEnd', []);
 
     // 再接続: 再読み込みで同じ枠へ戻り、停止のまま
@@ -170,9 +175,11 @@ console.log('既存画面の計測を完了');
 const after = await session('/phone-react.html', 18632, 9362);
 console.log('React版の計測を完了');
 const fails = [];
-const same = (name, a, b) => { const ok = JSON.stringify(a) === JSON.stringify(b); if (!ok) fails.push(name); console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${name}`); if (!ok) { const x = [a].flat(), y = [b].flat(); const i = x.findIndex((v, n) => v !== y[n]); console.log(`       既存: ${x[i]}\n       React: ${y[i]}`); } };
+const same = (name, a, b) => { const ok = JSON.stringify(a) === JSON.stringify(b); if (!ok) fails.push(name); console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${name}`); if (!ok) { const x = [a].flat(), y = [b].flat(); const i = x.findIndex((v, n) => v !== y[n]); const l = String(x[i]), r = String(y[i]); let c = 0; while (c < l.length && l[c] === r[c]) c++; console.log(`       既存: …${l.slice(Math.max(0, c - 40), c + 60)}\n       React: …${r.slice(Math.max(0, c - 40), c + 60)}`); } };
 same('DOMの構造', before.dom, after.dom);
 same('主な要素の位置と大きさ', before.layout, after.layout);
+same('待機画面の内容（ロビー）', before.waitLobby, after.waitLobby);
+same('待機画面の内容（一時停止中）', before.waitPaused, after.waitPaused);
 same('WebRTCの成立', before.rtc, after.rtc);
 same('生成された操作', before.controls, after.controls);
 same('押下と解放の順序', before.order, after.order);
