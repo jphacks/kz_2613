@@ -1246,3 +1246,10 @@
 - ローカルの `npm run build`、`app-view-test` 27/27、`ui-input-test` 12/12、`phone-view-test`、`phone-lifecycle-test` 16/16、`check-static-pages`、構文・差分検査が成功。ブラウザー比較のローカル追試はCDPの `Target.createTarget` がタイムアウトし、完了できなかった。CIの同等性試験成功と区別する。
 - #230・#234は前回指摘が未修正のため保留を継続。#239は上限超過の本文を落とした後、送信側の取り出しで件数が減り、切断条件を満たさず接続が残る分岐を指摘して保留した。
 - このレビューでは実端末・Minecraft・実OS入力の追試は実施していない。
+
+## 2026-11-07 — 機能監査の再開：CI成果物での回帰確認と変更機能の再判定（Claude Code、#200）
+
+- 対象 main `bed7b9c`。このPCではStrawberry Perlとlibclangが見つからず、ローカルの `cargo build` / `cargo test` は実施していない。代わりに利用者の許可を得て、Actions run 42347182356 の配布物 `ReCooplay-0.1.0-windows-x64.zip`（SHA-256 `dfc4d047…0c95d0`、同梱の.sha256と一致、manifest commit bed7b9c・dirty=false）の `recooplay-host.exe`（SHA-256 `5789c244…44735e`）を使った。CI成果物での試験であり、ローカルビルドの結果ではない。
+- dry-run・OS入力なしで、`protocol-sim` 57/57、`app-view-test` 27/27、`check-static-pages`、`verify_overlay.py`、`phone-session-test` 7/7、`phone-lifecycle-test` 16/16、`ui-input-test` 12/12、`input-owners-test` 4/4、`protocol-boundary-test` 7/7 ほかが成功。`react-phone-parity` は `apps/web` 未ビルドのため未実施。
+- リセット後のホスト決定を監査用のdry-run試験で確認した（全員4001で切断、最初に再参加した端末がホスト、旧トークンではP1を取り戻せない、ロビーでの15秒以内の再接続でホストを維持）。試験スクリプトと詳細はGit対象外の `data/local/feature-audit-104/` に置いた。
+- 再判定の案：F01-10・F03-12・F07-06 は不具合から合格（自動試験）、F10-10 は未実装から合格（自動試験。更新情報は #168 待ち）。Issueへは未投稿。実端末・Minecraft・実OS入力は未実施で、未チェックの11機能は残る。
