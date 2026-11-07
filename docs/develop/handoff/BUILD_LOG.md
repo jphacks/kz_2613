@@ -1161,3 +1161,7 @@
 
 - 操作設定の画面に「動作環境・制限事項」を追加した。文面は配布zipの `README.txt` に合わせた。`check-static-pages.mjs` に必須の語の検査を追加した。
 - `check-static-pages`、`app-view` 25/25、`ui-input` 12/12が成功。headless Chromeで表示を確認した。WebView2の実画面は未確認。
+## 2026-11-06 — PCアプリの版の表示（Claude Code、#216）
+
+- ホストが `package-manifest.json` の版とcommitを読み、PC本体の `/api/info` にだけ返す。開発中はビルドの版を使い「開発版」と表示する。操作設定の画面に表示する。
+- 更新の確認は外部通信を伴うため実装していない。扱いは #168 の結論に従う。
