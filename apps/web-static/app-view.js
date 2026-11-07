@@ -361,6 +361,15 @@ export function joinUrl(info) {
 }
 
 /** P1〜P4 の枠の表示 */
+/** PC画面の分担の表示 (#235)。入れ替え (#47) の選択状態を含む */
+export function roleColumns(game, roleSlots, swapPick) {
+  const pending = game?.roleAck || [];
+  return roleSlots.map((slot) => {
+    const index = SLOT_NAMES.indexOf(slot), role = roleView(game, slot);
+    return { slot, index, picked: swapPick === slot, swap: !!game?.canSwap, title: role.title, line: role.lines[0] || '担当する操作なし', ack: pending.includes(slot) };
+  });
+}
+
 /** PC画面の参加者の表示 (#235)。既存の画面とReact版で共用する */
 export function playerCards(slots, view, game) {
   return slots.map((s, i) => ({

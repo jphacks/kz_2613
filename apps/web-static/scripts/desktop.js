@@ -1,5 +1,5 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,profileNotice,roleView,networkNotice,slotDiagnosis,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,pcEffects,playerCards,rolesAction,commSettingsView,playerHint} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,profileNotice,roleView,networkNotice,slotDiagnosis,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,pcEffects,playerCards,roleColumns,rolesAction,commSettingsView,playerHint} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // swap: 一時停止中に担当を入れ替える画面を開いているか (#47)
@@ -139,12 +139,12 @@ function render(){
   $('roles').style.setProperty('--role-count',String(roleSlots.length));
   $('roleHeading').textContent=!roleSlots.length?'参加者を待っています':game?.lineupOk?`${roleSlots.length}人で決定！`:`${roleSlots.length}人で、操作を分担！`;
   if(swapPick&&!roleSlots.includes(swapPick))swapPick=null;
-  const pendingAck=game?.roleAck||[];
-  $('roles').innerHTML=roleSlots.map(slot=>{
-    // i: その人の枠 (キャラクターの色)。担当は操作定義の分担から (#141)
-    const i=SLOT_NAMES.indexOf(slot),role=roleView(game,slot);
-    const swap=game?.canSwap?` data-swap="${slot}" role="button" tabindex="0" aria-pressed="${swapPick===slot}" aria-label="プレイヤー${i+1}の担当を入れ替える"`:'';
-    return `<article class="role-column${swapPick===slot?' picked':''}"${swap}><h3>プレイヤー${i+1}</h3>${character(i)}<div class="role-copy"><b>${esc(role.title)}</b><p>${esc(role.lines[0]||'担当する操作なし')}</p>${pendingAck.includes(slot)?'<span class="ack-wait">スマホで確認待ち</span>':''}</div></article>`;
+  const columns=roleColumns(game,roleSlots,swapPick);
+  // React版では分担の表示をReactが描く。入れ替えのクリックは document で受けるので同じ属性を付ける (#235)
+  if(globalThis.__recooplayPcRoles)globalThis.__recooplayPcRoles.set(columns);
+  else $('roles').innerHTML=columns.map(c=>{
+    const swap=c.swap?` data-swap="${c.slot}" role="button" tabindex="0" aria-pressed="${c.picked}" aria-label="プレイヤー${c.index+1}の担当を入れ替える"`:'';
+    return `<article class="role-column${c.picked?' picked':''}"${swap}><h3>プレイヤー${c.index+1}</h3>${character(c.index)}<div class="role-copy"><b>${esc(c.title)}</b><p>${esc(c.line)}</p>${c.ack?'<span class="ack-wait">スマホで確認待ち</span>':''}</div></article>`;
   }).join('');
   const titles={join:'',game:'ゲーム選択を<br>しよう！',roles:'分担しよう！',preparing:'準備中<span class="ellipsis">...</span>',ready:'準備完了！',coop:'協力プレイ中',paused:'一時停止中'};
   $('screenTitle').innerHTML=titles[view];
