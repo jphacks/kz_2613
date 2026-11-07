@@ -1160,3 +1160,47 @@
 - `react-phone-parity.mjs` を追加した。既存画面とReact版で、DOM97要素の構造、位置、WebRTC、操作、押下と解放の順序、スティック、保持中のPause、再読み込みの結果が一致した。タップの遅延（40回）はp50 5.4→4.7ms、p95 17→12.5ms。視点の送信は47→48.5件/秒（WS・RTCの全送信の数）。読み込みは1.6→1.1秒。各1試行のheadless Chromeの値で、実端末・無線の性能ではない。
 - 試験の検出力は、React版のclassを意図的に変えて不合格になることで確認した。
 - `npm audit --omit=dev` は脆弱性0件。バンドルは226.8kB（gzip 71.1kB）と28.2kB。実端末、WebView2は未確認。
+
+## 2026-11-06 — 担当色の統一と待機画面の案内（Claude Code、#215・#227）
+
+- `colors.css` の `--p1〜4` と `/game` の色をキャラクターの色へ統一し、`/game` のP4の未定義を解消した。`check-static-pages.mjs` に一致の検査を追加し、色を崩すと失敗することを確認した。
+- 接続案内を2〜4人の文言にした。スマホの待機画面の押せないボタンを、ボタンではない案内へ変更した（原案の位置と形は維持）。
+- `check-static-pages`、`app-view` 25/25、`phone-view`、`ui-input` 12/12、`phone-lifecycle` 16/16、`verify-ui-evidence`、`static-assets-sim`（37ファイル）が成功。headless Chromeの360×640で待機画面を確認した。実端末は未実施。保存済みの画面画像は更新していない。
+## 2026-11-06 — PCアプリ内の動作環境・制限事項（Claude Code、#226）
+
+- 操作設定の画面に「動作環境・制限事項」を追加した。文面は配布zipの `README.txt` に合わせた。`check-static-pages.mjs` に必須の語の検査を追加した。
+- `check-static-pages`、`app-view` 25/25、`ui-input` 12/12が成功。headless Chromeで表示を確認した。WebView2の実画面は未確認。
+## 2026-11-06 — PCアプリの版の表示（Claude Code、#216）
+
+- ホストが `package-manifest.json` の版とcommitを読み、PC本体の `/api/info` にだけ返す。開発中はビルドの版を使い「開発版」と表示する。操作設定の画面に表示する。
+- 更新の確認は外部通信を伴うため実装していない。扱いは #168 の結論に従う。
+## 2026-11-06 — AT-D04実入力再開の準備（Codex、#39）
+
+- 統合main d6309e512ded9d52f9e8d1b5268a95ea62cd11e6 の構造CI・Rust通信CIが成功。固定exeのSHA-256が記録と一致し、ビルド元83c7009との製品差分なし。
+- 専用ルート・初期注入OFFと自動復帰OFFの設定、別窓のイベント観測、OSの読み取り観測を準備。ループバックdry-runでホットキー登録成功。今回の物理発火と実入力開始許可が揃うまでA〜Eを保留。[再開準備記録](../acceptance/evidence/2026-11-06-at-d04-restart.md)
+- node --check（ローカル観測スクリプト）、OS読み取りの短時間試験、python scripts/check-public-docs.py --all、git diff --checkを実行。
+
+## 2026-11-06 — AT-D04の左右マウスと同時保持の追試（Codex、#39）
+
+- 再開dry-runで物理停止の発火、注入OFF、論理押下ゼロを確認。監督者の明示許可後、Aの左右マウス各1回はホスト・専用画面・OSの3記録が一致。別窓イベント0と全解放を確認した。
+- Bの初回は観測疎通とモード切替に問題があり、送出前に終了。隔離画面の切替UIを外し、試行固有の観測資産でdry-run疎通を再確認。B追試で同時保持と解放を観測したが、先行単独クリックがあり全体判定は不合格。経緯は [試験記録](../acceptance/evidence/2026-11-06-at-d04-restart.md) に追記。
+- ローカル試験スクリプトの node --check、公開資料検査と差分検査を実行。C〜EとMinecraftは未実施。
+
+## 2026-11-07 — AT-D04の同時保持・保持中Pause（Codex、#39）
+
+- 最新main d6309e5の必須CIと固定exeを再照合し、dry-runで物理停止と全解放を再確認。明示許可後にB・C各1組を実施し、ホスト・疑似ゲーム・OSの証拠を照合して合格。
+- Dは保持中のフォーカス喪失で全解放を観測。切替先のfocusイベントが取れない試行は合格に数えない。結果と再試験の手順を [受入記録](../acceptance/evidence/2026-11-06-at-d04-restart.md) に追記。
+
+## 2026-11-07 — AT-D04のAlt+Tab・実入力中緊急停止（Codex、#39）
+
+- 操作簡略化のため模擬WS参加者2つを用い、監督者のAlt+Tabと物理Ctrl+Alt+F12でD・Eを各1回実施。固定exeによる実Windows入力、疑似ゲームへの到達、system全解放、GetAsyncKeyStateの全解放、別窓への入力ゼロを独立照合した。両系列はこの条件でPASS。実スマホ0台、WebRTC未使用。
+- ホスト終了0、OFF・押下と未確認解放ゼロを確認。Dはcoopのまま入力解放、Eはpaused・再開不可。失敗・準備中断の記録、余剰クリック、未確認条件を [受入記録](../acceptance/evidence/2026-11-06-at-d04-restart.md) に併記した。AT-D04全体とMinecraftの受入は継続中。
+- ローカル補助のnode --checkと監督指定なし起動の拒否を確認。補助の例外理由保存、終了状態を含む判定を改善。公開資料検査とgit diff --checkを最終差分で実施。
+
+
+## 2026-11-07 — 未マージPRのレビューと競合解消（Codex）
+
+- #211・#228・#229・#231・#232の差分とCIを確認。BUILD_LOGの各記録、担当色と動作環境の両検査を保持して競合を解消した。
+- ローカルで `app-view-test` 25/25、`ui-input-test` 12/12、`phone-view-test`、`phone-session-test` 7/7、`phone-lifecycle-test` 16/16、`check-static-pages` と差分検査が成功。公開資料のPython検査は、この実行環境にPythonがないためCIで確認する。
+- #234はlocalStorage getterのSecurityErrorによる初期化失敗を再現し保留。#230は再起動と終了の競合、再起動の待受タイムアウト未処理を指摘し保留。通常系の試験成功と、異常系の問題を区別する。
+- このレビューでは実端末・Minecraft・実OS入力の追試は実施していない。
