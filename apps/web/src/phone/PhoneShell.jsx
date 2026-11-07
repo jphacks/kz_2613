@@ -1,7 +1,9 @@
+import { WaitView } from './WaitView.jsx';
+
 // スマホ画面の外枠。#235 の最初の段階で index.html から機械変換した。
-// 入力と接続は既存の controller.js が id で扱うので、id を変えない。再描画もしない。
-// 表示の処理は段階を追ってコンポーネントへ移す。
-export function PhoneShell() {
+// 入力と接続は既存の controller.js が id で扱うので、id を変えない。外枠は再描画しない。
+// index.html を変えたら同じ変更をここへ入れる (react-phone-parity.mjs が検出する)。
+export function PhoneShell({ store }) {
   return (
     <>
       <header>
@@ -51,11 +53,7 @@ export function PhoneShell() {
 
         {/* ロビー / 一時停止: ホスト以外 */}
         <section className="view" id="v-wait">
-          <div className="players" id="players2"></div>
-          <div className="wait-scene">
-            <div className="phone-character" aria-hidden="true"><img id="waitCharacter" src="/assets/characters/blue.png" alt="" /></div>
-            <div className="card wait-card"><h1 className="dotted" id="waitHeading">接続完了!!</h1><div className="role-label">あなたの担当</div><div id="waitRole"></div><div className="wait-continue" role="note">Readyで操作画面に変わります</div><div id="waitTitle">ホストの準備を待っています</div></div>
-          </div>
+          <WaitView store={store} />
         </section>
 
         {/* 視点のパッドと感度の置き場所。視点を担当する人の操作画面へ移す */}
