@@ -47,6 +47,7 @@ const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 /// 接続ごとの送信待ちの上限。健全な接続は溜まらず、読取りが止まった接続だけが達する (#197)
 pub const WS_QUEUE_LIMIT: usize = 4096;
+const CLOSE_HOST_HANDOVER: u16 = 4008;
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
 const RTC_TIMEOUT: Duration = Duration::from_secs(5);
 const FOCUS_CHECK: Duration = Duration::from_millis(100); // 前面のウィンドウを確認する間隔
@@ -166,6 +167,7 @@ struct Slot {
     ua: Option<String>,
     connected_at: Option<u64>,
     last_seen: u64,
+    disconnected_at: u64, // ロビーの切断枠の解放に使う (#223)
     reconnects: u64,
     pressed: BTreeSet<String>,
     last_seq: i64,
@@ -201,6 +203,7 @@ impl Slot {
             ua: None,
             connected_at: None,
             last_seen: 0,
+            disconnected_at: 0,
             reconnects: 0,
             pressed: BTreeSet::new(),
             last_seq: 0,
@@ -1690,6 +1693,7 @@ impl Hub {
         }
         s.connected = false;
         s.conn = None;
+        s.disconnected_at = now_ms();
         let released: Vec<String> = std::mem::take(&mut s.pressed).into_iter().collect();
         self.release_outputs(Some(SLOT_NAMES[idx]));
         self.log("disconnect", json!({ "slot": SLOT_NAMES[idx], "reason": reason, "released": released }));
@@ -1698,7 +1702,7 @@ impl Hub {
             self.reset_look();
             self.advance_epoch();
         }
-        // 協力プレイ中に誰かが切れたら共同入力を止める (ホストの自動交代はしない)
+        // 協力プレイ中に誰かが切れたら共同入力を止める (ホストの交代はロビーでだけ行う、#223)
         let now = now_ms();
         let plan = session::disconnect_plan(self.game.phase, self.game.reason.as_deref(), self.participants.contains(&idx),
             reason == "replaced", now, self.game.auto_resume_until);
@@ -1713,6 +1717,50 @@ impl Hub {
             self.push_game();
         }
         self.push_state();
+    }
+
+    /// ロビーで戻らない枠を解放し、P1 が空いたら接続中で最も若い枠をホストにする (#223)。
+    /// P1 = ホストの前提を変えないよう枠ごと P1 へ移し、接続は 4008 で閉じる。スマホは通常の再接続で
+    /// 同じトークンのまま P1 として戻り、welcome と WebRTC が作り直される。元のホストは参加者として戻る。
+    fn release_lobby_slots(&mut self, now: u64) {
+        if self.game.phase != Phase::Lobby { return; }
+        let mut changed = false;
+        for i in 0..MAX_SLOTS {
+            let expired = self.slots[i].as_ref().is_some_and(|s| session::lobby_slot_expired(self.game.phase, s.connected, s.disconnected_at, now));
+            if expired {
+                self.slots[i] = None;
+                self.log("slot_released", json!({ "slot": SLOT_NAMES[i] }));
+                changed = true;
+            }
+        }
+        if self.slots[0].is_none() {
+            if let Some(from) = session::next_host(&self.connected_slots()) {
+                self.release_outputs(None);
+                self.reset_look();
+                let mut slot = self.slots[from].take().expect("接続中の枠");
+                let conn = slot.conn.take();
+                slot.connected = false;
+                slot.disconnected_at = now;
+                slot.rtc = None;
+                slot.rtc_state = "none";
+                slot.rtc_gen += 1;
+                slot.ibuf.clear();
+                self.slots[0] = Some(slot);
+                // 閉じる通知で移動前の枠を切断扱いにしない
+                if let Some(c) = conn.and_then(|id| self.conns.get_mut(&id)) { c.role = Role::Unknown; }
+                self.close(conn, CLOSE_HOST_HANDOVER, "host handover");
+                self.lineup = None;
+                self.seats = [0, 1, 2, 3];
+                self.role_ack.clear();
+                self.advance_epoch();
+                self.log("host_handover", json!({ "from": SLOT_NAMES[from] }));
+                changed = true;
+            }
+        }
+        if changed {
+            self.push_game();
+            self.push_state();
+        }
     }
 
     // ---------- タイマー ----------
@@ -1765,6 +1813,7 @@ impl Hub {
                         }
                     }
                 }
+                self.release_lobby_slots(now);
                 self.update_low_latency();
                 self.net_tick += 1;
                 if self.net_tick % 10 == 0 {
@@ -2028,12 +2077,19 @@ impl Hub {
                         c.role = Role::Unknown;
                     }
                 }
+                self.reset_look();
                 self.game.phase = Phase::Lobby;
                 self.game.host_ready = false;
+                self.game.reason = None;
+                self.game.auto_resume_until = 0;
+                // 前回の協力プレイの参加者・分担を残さない (#212)
+                self.assigned.clear();
+                self.participants.clear();
                 self.lineup = None;
                 self.seats = [0, 1, 2, 3];
                 self.role_ack.clear();
                 self.advance_epoch();
+                self.update_low_latency();
                 self.log("reset", json!({}));
                 self.push_game();
                 self.push_state();
@@ -2947,6 +3003,73 @@ mod tests {
         assert_eq!(recorder.calls().len(), before); assert_eq!(h.release_retry_attempts, 3);
         h.emergency_stop("test");
         assert!(h.release_retry_active); assert_ne!(h.release_retry_gen, gen);
+    }
+
+    fn lobby_with(slots: &[(usize, bool)], disconnected_at: u64) -> Hub {
+        let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(std::iter::repeat(true).take(50))));
+        h.game.phase = Phase::Lobby; // 共通のフィクスチャは協力プレイ中で始まる
+        h.slots = Default::default();
+        for &(i, connected) in slots {
+            let mut s = Slot::new(format!("client{i}"), format!("token{i}"));
+            s.connected = connected;
+            s.disconnected_at = disconnected_at;
+            h.slots[i] = Some(s);
+        }
+        h
+    }
+
+    #[test]
+    fn lobby_host_that_does_not_return_moves_to_the_youngest_connected_slot() {
+        let mut h = lobby_with(&[(0, false), (1, true), (2, true)], 1_000);
+        let epoch = h.game.epoch;
+        h.release_lobby_slots(1_000 + session::LOBBY_SLOT_HOLD_MS - 1);
+        assert_eq!(h.slots[0].as_ref().unwrap().client_id, "client0"); // 期限までは元のホストの枠を保つ
+        h.release_lobby_slots(1_000 + session::LOBBY_SLOT_HOLD_MS);
+        let host = h.slots[0].as_ref().unwrap();
+        assert_eq!((host.client_id.as_str(), host.token.as_str(), host.connected), ("client1", "token1", false));
+        assert!(h.slots[1].is_none() && h.slots[2].is_some());
+        assert_eq!(h.game.epoch, epoch + 1);
+    }
+
+    #[test]
+    fn lobby_slots_are_kept_outside_the_lobby_and_while_nobody_can_host() {
+        let later = 1_000 + session::LOBBY_SLOT_HOLD_MS;
+        for phase in [Phase::Preparing, Phase::Coop, Phase::Paused] {
+            let mut h = lobby_with(&[(0, false), (1, true)], 1_000);
+            h.game.phase = phase;
+            h.release_lobby_slots(later);
+            assert_eq!(h.slots[0].as_ref().unwrap().client_id, "client0"); // 協力プレイの開始後は権限を移さない
+        }
+        let mut h = lobby_with(&[(0, false), (1, false)], 1_000);
+        h.release_lobby_slots(later);
+        assert!(h.slots.iter().all(Option::is_none)); // 全員いなければ次の参加者が P1 になる
+    }
+
+    #[test]
+    fn participant_slot_is_released_and_a_late_host_slot_gap_is_filled() {
+        let later = 1_000 + session::LOBBY_SLOT_HOLD_MS;
+        let mut h = lobby_with(&[(0, true), (3, false)], 1_000);
+        let epoch = h.game.epoch;
+        h.release_lobby_slots(later);
+        assert!(h.slots[3].is_none() && h.slots[0].is_some());
+        assert_eq!(h.game.epoch, epoch); // 参加者の枠の解放ではホストも epoch も変わらない
+        // P1 の解放後に戻った枠だけが接続中でも、ホスト不在のままにしない
+        let mut h = lobby_with(&[(2, true)], 1_000);
+        h.release_lobby_slots(later);
+        assert_eq!(h.slots[0].as_ref().unwrap().client_id, "client2");
+    }
+
+    #[test]
+    fn reset_clears_the_previous_session_lineup_and_reason() {
+        let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(std::iter::repeat(true).take(50))));
+        h.participants = vec![0, 1, 2];
+        h.assigned = vec![vec!["a".into()], vec!["b".into()], vec!["c".into()]];
+        h.game.phase = Phase::Coop;
+        h.game.reason = Some("host ready".into());
+        h.game.auto_resume_until = 99;
+        h.on_ws_message(1, json!({"type":"reset"}));
+        assert!(h.participants.is_empty() && h.assigned.is_empty());
+        assert!(h.game.phase == Phase::Lobby && h.game.reason.is_none() && h.game.auto_resume_until == 0);
     }
 
     #[test]
