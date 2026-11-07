@@ -26,7 +26,7 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
     heading.textContent=role.title+(isHost?'（ホスト）':'');
     $('role').replaceChildren(heading,document.createTextNode(game.phase==='coop'?'確定した分担の操作だけを送信します':game.phase==='paused'?'確定した分担（再開時に確認）':'分担案（Readyで確定）'));
     const ackPending=(game.roleAck||[]).includes(me);
-    if($('roleNotice')){$('roleNotice').hidden=!ackPending;$('roleNoticeText').textContent=ackPending?`ホストが担当を入れ替えました。あなたの担当は「${role.title}」です。`:'';}
+    if($('roleNotice')){$('roleNotice').hidden=!ackPending;$('roleNoticeText').textContent=ackPending?`${game.reason==='role rotation'?'時間で担当が交代しました':'ホストが担当を入れ替えました'}。あなたの担当は「${role.title}」です。`:'';}
     const phase = game.phase;
     const label = { lobby: '参加受付', preparing: 'ゲーム準備', coop: '協力プレイ中', paused: '一時停止中' }[phase];
     $('phase').textContent = label;
