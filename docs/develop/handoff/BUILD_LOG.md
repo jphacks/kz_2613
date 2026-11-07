@@ -1153,3 +1153,9 @@
 - 操作簡略化のため模擬WS参加者2つを用い、監督者のAlt+Tabと物理Ctrl+Alt+F12でD・Eを各1回実施。固定exeによる実Windows入力、疑似ゲームへの到達、system全解放、GetAsyncKeyStateの全解放、別窓への入力ゼロを独立照合した。両系列はこの条件でPASS。実スマホ0台、WebRTC未使用。
 - ホスト終了0、OFF・押下と未確認解放ゼロを確認。Dはcoopのまま入力解放、Eはpaused・再開不可。失敗・準備中断の記録、余剰クリック、未確認条件を [受入記録](../acceptance/evidence/2026-11-06-at-d04-restart.md) に併記した。AT-D04全体とMinecraftの受入は継続中。
 - ローカル補助のnode --checkと監督指定なし起動の拒否を確認。補助の例外理由保存、終了状態を含む判定を改善。公開資料検査とgit diff --checkを最終差分で実施。
+
+## 2026-11-07 — D・E反復と緊急停止後の旧入力・再開拒否（Codex、#39）
+
+- 現地監督下でDを2回、Eを2回追加し、同じ固定exe・模擬WS参加者2つの条件でD/E各3回の合格を確認。E最終試行は停止後に旧epoch入力2件のstale ACKと実RESUME要求の拒否を確認し、追加送出ゼロ・OS全解放を維持した。[実測](../acceptance/evidence/2026-11-06-at-d04-restart.md)
+- 既存通信試験の緊急停止ケースへ、旧epochの更新・両参加者のstale ACK・RESUME拒否・追加送出なしを追記。`node scripts/sim/protocol-sim.mjs --bin ../../main-83c700907f0f/recooplay-host.exe` を専用worktreeで実行し、最終差分で55/55合格。OS入力なし。
+- 独立レビューで、OFFでの無送出だけではepoch拒否を証明できない点を修正。構文検査・資料検査・差分検査を実施。A〜Cの各3回反復とAT-D04の他の個別系列は残件として維持。
