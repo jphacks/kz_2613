@@ -93,6 +93,26 @@ export function phoneAdvice(stats) {
 /** 案内に出す、選んだゲームの名前 (#140)。ホストの game.titleName。分からなければ「ゲーム」 */
 export const gameLabel = (game) => game?.titleName || 'ゲーム';
 
+/**
+ * 分けやすい人数の参考 (#166)。操作定義の重みから、全員に操作があり偏りの最も小さい人数を返す。
+ * 試遊の結果ではないので「推奨」と断定しない。同じ偏りなら少ない人数にする。
+ * 実機の記録があるゲームは、計算の参考と食い違って見えないよう出さない
+ */
+export function playerHint(profile) {
+  if (!profile?.assignments || !profile.controllerSupported || profile.status === 'device') return null;
+  const weight = Object.fromEntries((profile.actions || []).map((a) => [a.id, a.weight ?? 1]));
+  let best = null;
+  for (let n = MIN_PLAYERS; n <= MAX_PLAYERS; n++) {
+    const people = Object.values(profile.assignments[n] || {}).filter((ids) => ids.length);
+    if (people.length !== n) continue;
+    const loads = people.map((ids) => ids.reduce((sum, id) => sum + (weight[id] ?? 1), 0));
+    const mean = loads.reduce((a, b) => a + b, 0) / n;
+    const spread = mean ? (Math.max(...loads) - Math.min(...loads)) / mean : Infinity;
+    if (!best || spread < best.spread - 1e-9) best = { players: n, spread };
+  }
+  return best && { players: best.players, text: `参考：${best.players}人だと操作を分けやすい定義です（試遊の結果ではありません）` };
+}
+
 export function desktopWarning(game, inject, connected = true) {
   if (!connected) return 'PCホストとの接続が切れました。再接続を待っています。';
   if (inject?.emergencyHotkeyError) return '緊急停止キーを登録できません。操作設定で入力をOFFにしてください。';
