@@ -43,5 +43,14 @@ for (const f of files) {
   });
   console.log(`${path.basename(String(f))}: ${scripts.length} script(s)`);
 }
+// 担当色: /game の色はキャラクターの色と同じにする (#215)
+{
+  const colors = fs.readFileSync(new URL('styles/colors.css', dir), 'utf8');
+  const game = fs.readFileSync(new URL('game.html', dir), 'utf8');
+  for (const [slot, name] of [['P1', 'blue'], ['P2', 'green'], ['P3', 'purple'], ['P4', 'red']]) {
+    const hex = colors.match(new RegExp(`--color-character-${name}: (#[0-9A-Fa-f]{6})`))?.[1];
+    if (!hex || !game.includes(`${slot}: '${hex}'`)) { failed++; console.log(`FAIL game.html の ${slot} の色がキャラクターの色 (${hex}) と違う`); }
+  }
+}
 console.log(failed ? `${failed} 件の構文エラー` : 'すべて構文OK');
 process.exit(failed ? 1 : 0);

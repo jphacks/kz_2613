@@ -1152,3 +1152,8 @@
 - 判断は[資料](../decisions/2026-11-06-host-reset-auto-resume.md)に記録した。実端末でのホスト交代は未実施。
 - 検証：`cargo build --release --locked --offline` 成功。`cargo test` はホスト114件・プローブ4件成功、手動2件は対象外。`protocol-sim` 56/56、`shutdown-sim`、`phone-session` 7/7、`phone-lifecycle` 16/16、`app-view` 25/25、`ui-input` 12/12が成功。
 - headless Chromeのスマホ画面で、ホストのタブを閉じて14秒時点はP2のまま、19秒時点でP1に昇格し、空いた枠に新しい端末が参加できることを確認した。リセットでは全員が案内を表示し、接続は0のままだった。LAN経路の表記違いは403または404になった。
+## 2026-11-06 — 担当色の統一と待機画面の案内（Claude Code、#215・#227）
+
+- `colors.css` の `--p1〜4` と `/game` の色をキャラクターの色へ統一し、`/game` のP4の未定義を解消した。`check-static-pages.mjs` に一致の検査を追加し、色を崩すと失敗することを確認した。
+- 接続案内を2〜4人の文言にした。スマホの待機画面の押せないボタンを、ボタンではない案内へ変更した（原案の位置と形は維持）。
+- `check-static-pages`、`app-view` 25/25、`phone-view`、`ui-input` 12/12、`phone-lifecycle` 16/16、`verify-ui-evidence`、`static-assets-sim`（37ファイル）が成功。headless Chromeの360×640で待機画面を確認した。実端末は未実施。保存済みの画面画像は更新していない。
