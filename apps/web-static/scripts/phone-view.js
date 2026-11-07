@@ -1,11 +1,12 @@
 import { myActions, generatedKey, buildGenerated } from './generated-controls.js';
 import { SKINS, applySkin, createSkinStore } from './phone-skin.js';
+import { playerChips, reasonText, waitModel } from './phone-model.js';
 
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
-import {profileNotice,roleView,gameLabel,outputKeyLabel,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS} from '../app-view.js';
-export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindControl,bindStick=()=>{},onRoleOk=()=>{}}) {
+import {profileNotice,roleView,gameLabel,outputKeyLabel,MIN_PLAYERS,MAX_PLAYERS} from '../app-view.js';
+export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindControl,bindStick=()=>{},onRoleOk=()=>{},onTransferHost=()=>{}}) {
   const $ = id => document.getElementById(id);
-  let lastView = null, lastGen = '', skinGame = null;
+  let lastView = null, lastGen = '', lastTransfer = '', skinGame = null;
   // 画面の色はゲームごとに端末へ保存する (#159)。診断を開くと保持入力は解放済みで、入力の処理には触れない
   const skins = createSkinStore(globalThis.localStorage ?? { getItem: () => null, setItem() {} });
   const skinPicker = $('skinPicker');
@@ -24,6 +25,7 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
   // 視点のパッドと感度は、操作定義の画面で視点を担当するときだけそちらへ移す
   const lookParts = [$('pad'), document.querySelector('#lookHome .sens')].filter(Boolean);
   const lookHome = $('lookHome');
+  const reactStore = globalThis.__recooplayPhoneStore;
   $('phoneSettingsBtn').addEventListener('click',()=>{
     onDiagnosticsOpen();
     $('phoneConnection').textContent=[$('status').textContent,$('phase').textContent,$('slot').textContent].join('・');
@@ -52,9 +54,6 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
     const generated = phase === 'coop' && joined;
     const view = generated ? 'v-gen' : isHost ? 'v-remote' : 'v-wait';
     document.body.dataset.view=view;
-    const characterName={P1:'blue',P2:'green',P3:'purple',P4:'red'}[me];
-    $('waitCharacter').src=`/assets/characters/${characterName}.png`;
-    $('waitHeading').textContent=phase==='paused'?'一時停止中':'接続完了!!';
     const genKey = generated ? generatedKey(game, me) : '';
     if (view !== lastView || genKey !== lastGen) {
       releaseAll(); // 画面が変わる時は押しっぱなしを解除
@@ -69,9 +68,21 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
       lastView = view;
       lastGen = genKey;
     }
-    const players = SLOT_NAMES.map((p) => `<span class="${game.connected.includes(p) ? 'on' : ''}">${p}${p === me ? '（自分）' : ''}</span>`).join('');
+    const players = playerChips(game, me).map((p) => `<span class="${p.on ? 'on' : ''}">${p.label}</span>`).join('');
     $('players1').innerHTML = players;
-    $('players2').innerHTML = players;
+    // ホストを譲る (#233)。ロビーのホストにだけ出す。認可はホストが判定する
+    const transferTo = isHost && phase === 'lobby' ? game.connected.filter((p) => p !== me) : [];
+    if (transferTo.join() !== lastTransfer) {
+      lastTransfer = transferTo.join();
+      const box = $('hostTransfer');
+      box.hidden = !transferTo.length;
+      box.replaceChildren(...(transferTo.length ? [document.createTextNode('ホストを譲る：')] : []), ...transferTo.map((p) => {
+        const button = document.createElement('button');
+        button.className = 'key'; button.textContent = p;
+        button.addEventListener('click', () => { if (confirm(`${p}にホストを譲りますか？`)) onTransferHost(p); });
+        return button;
+      }));
+    }
     // 案内は選んだゲームの名前で出す (#140)
     const name=gameLabel(game);
     $('remoteRoute').textContent = {app:'PCアプリを操作中',game:`${name}のメニューを操作中`,none:`PCアプリまたは${name}を前面にしてください`}[game.remoteRoute] || '';
@@ -93,11 +104,19 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
     const autoWait = phase === 'paused' && game.autoResume && game.reason?.endsWith('disconnected');
     document.body.dataset.phase = phase;
     document.body.dataset.slot = me;
-    $('waitTitle').textContent = !joined ? '次の開始から参加します' : phase === 'paused' ? (autoWait ? `${reasonText(game.reason)}。戻ると自動で再開します` : '一時停止中') : 'ホストの開始を待っています';
+    const wait = waitModel({ me, game, roleTitle: role.title, joined, autoWait });
+    // React版では待機画面をReactだけが描く。両方から書くと表示が壊れる (#235)
+    if (reactStore) reactStore.set(wait);
+    else {
+      $('waitCharacter').src = wait.character;
+      $('waitHeading').textContent = wait.heading;
+      $('waitRole').textContent = wait.role;
+      $('waitTitle').textContent = wait.title;
+      $('players2').innerHTML = players;
+    }
     if (phase === 'preparing') $('remoteNote').textContent = [game.prepareStatus, ...(game.readyReasons || []), '準備ができたらホストが明示Ready'].filter(Boolean).join('。');
     if (autoWait && isHost) $('remoteNote').textContent = `${reasonText(game.reason)}。戻ると自動で再開します（RESUME で手動再開も可）。`;
     if (phase === 'paused' && game.inputTarget && game.prepareStatus) $('remoteNote').textContent += `。${game.prepareStatus}`;
-    $('waitRole').textContent = role.title;
     $('burst').style.display = phase === 'coop' ? 'none' : '';
     document.querySelectorAll('[data-ctl="REMOTE_E"]').forEach(el => {
       el.textContent = game.keys?.controls && Object.hasOwn(game.keys.controls, 'INV')
@@ -110,5 +129,4 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
   }
   return render;
 }
-  function reasonText(r) { return r === 'host pause' ? 'ホストが停止' : r === 'app focus' ? 'PCアプリの画面に戻った' : r === 'emergency stop' ? 'PCの緊急停止' : r.endsWith('disconnected') ? r.split(' ')[0] + ' が切断' : r; }
 

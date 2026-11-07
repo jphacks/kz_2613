@@ -1,5 +1,5 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,profileNotice,roleView,networkNotice,slotDiagnosis,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,rolesAction} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,profileNotice,roleView,networkNotice,slotDiagnosis,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,rolesAction,commSettingsView,playerHint} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // swap: 一時停止中に担当を入れ替える画面を開いているか (#47)
@@ -7,6 +7,8 @@ let ui={screen:'join',game:GAMES[0].id,swap:false},swapPick=null;
 // 起動したら必ず参加画面 (QR) から始める。前回の画面は覚えない (#126)。以前の版が保存した値は消す
 try{localStorage.removeItem('recooplay.app');}catch{}
 let state=null,game=null,inject=null,ws=null,online=false,gamesHtml='',shownGame='';
+let infoPort=null;
+$('autoResumeSetting').addEventListener('change',e=>send({type:'auto_resume',on:e.target.checked}));
 // 選択画面の一覧。インストール済みのゲームはPC画面にだけ届く (state.games)
 const games=()=>gameList(state?.games,state?.minecraft);
 const send=m=>{if(ws?.readyState===1)ws.send(JSON.stringify(m));};
@@ -171,13 +173,15 @@ function render(){
   $('openGameBtn').hidden=!['preparing','ready','paused'].includes(view)||!game?.inputTarget;
   const name=gameLabel(game);
   const swapHint=game?.canSwap?(swapPick?`${swapPick}と入れ替える人の列を押してください`:'担当を入れ替えるときは、2人の列を順に押してください'):'';
-  $('actionNote').textContent=view==='roles'?(swapPick?swapHint:roleAction.note||swapHint):view==='preparing'?`${name}をプレイ中の画面まで進めてください。`:'';
+  $('actionNote').textContent=view==='roles'?(swapPick?swapHint:[roleAction.note||swapHint,game?.lineupOk?'':playerHint(game?.profile)?.text].filter(Boolean).join(' ')):view==='preparing'?`${name}をプレイ中の画面まで進めてください。`:'';
   $('openGameBtn').textContent=`${name}を前面にする`;
   $('inputSafety').textContent=`${name}が前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。`;
   const keyWarnings=game?.keys?.warnings||[];
   const warning=desktopWarning(game,inject,online||!state)||(keyWarnings.length?'キー設定に注意が必要です。「操作設定」で実際に送るキーを確認してください。':'');
   const notices=[warning,networkNotice(state?.network,state?.slots),profileNotice(game?.profile)].filter(Boolean).join(' ');
   $('warning').hidden=!notices;$('warning').textContent=notices;
+  const comm=commSettingsView(game,infoPort);
+  $('autoResumeSetting').checked=comm.checked;$('autoResumeSetting').disabled=comm.locked;$('commInfo').textContent=comm.text;
   $('steps').hidden=!['join','game','roles'].includes(view);
   document.querySelectorAll('#steps button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===ui.screen?'page':'false'));
   $('players').innerHTML=slots.map((s,i)=>`<article class="player ${s.state}${view==='preparing'&&s.host&&s.state==='connected'?' pending':''}" data-slot="${s.slot}"><div class="player-badge">${s.state==='empty'?'参加待ち':s.state==='lost'?'切断中':view==='ready'?'接続完了！':view==='preparing'?(s.host?'準備中！':'接続完了！'):'接続完了！'}</div><div class="player-info"><p>プレイヤー${i+1}</p><p>${esc(roleView(game,s.slot).title)}</p><p class="player-device">機種：${esc(s.device||'未接続')}</p></div><svg class="player-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg><div class="character">${character(i)}</div></article>`).join('');
@@ -210,6 +214,7 @@ async function loadInfo(){
   try{
     const response=await fetch('/api/info');if(!response.ok)throw Error('QR取得失敗');
     const info=await response.json(),u=joinUrl(info);
+    infoPort=info.port;
     if(info.build)$('buildInfo').textContent=`Re:Cooplay ${info.build.version}${info.build.commit?`（${info.build.commit}）`:'（開発版）'}`;
     $('qr').innerHTML=u?u.qr:'<span>接続先が見つかりません</span>';
     $('helpQr').innerHTML=$('qr').innerHTML;

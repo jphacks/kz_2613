@@ -33,6 +33,11 @@ jobs:
             apps/host-rs/target
           key: host-rs-${{ runner.os }}-${{ hashFiles('apps/host-rs/Cargo.lock') }}
           restore-keys: host-rs-${{ runner.os }}-
+      - name: React版の画面をビルド
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run build
       - run: cargo build --release --locked
         working-directory: apps/host-rs
       - run: cargo test --release --locked
@@ -43,6 +48,8 @@ jobs:
         run: node scripts/sim/shutdown-sim.mjs
       - name: 実WebSocketの非注入計測スモーク
         run: node scripts/sim/runtime-measure.mjs --bin apps/host-rs/target/release/recooplay-host.exe --players 2 --cases normal --duration-ms 1000
+      - name: 既存のスマホ画面とReact版の同等性
+        run: node scripts/sim/react-phone-parity.mjs --samples 20 --tolerance-ms 30
       - name: PC 画面の表示ロジック
         run: node scripts/sim/app-view-test.mjs
       - name: スマホのReady・待機・停止と診断前の解放
