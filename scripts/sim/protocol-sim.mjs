@@ -302,7 +302,7 @@ async function main() {
         const fromLan = await fetch(`http://${lan.address}:${PORT}/api/hotspot`, { method: 'POST', headers: { Origin: `http://${lan.address}:${PORT}` } });
         assert(fromLan.status === 403, `LAN からの ON 要求 ${fromLan.status}`);
         // 表記を変えても PC 専用の画面を LAN へ配信しない (#214)
-        for (const p of ['/app', '/host', '/game', '/overlay', '/OVERLAY.HTML', '//overlay.html', '/HOST.HTML', '/Host.html', '/app.HTML', '/GAME.html', '/host.html.', '/host.html::$DATA', '//host.html', '//app.html', '//game.html']) {
+        for (const p of ['/app', '/host', '/game', '/app-react.html', '/APP-REACT.HTML', '/overlay', '/OVERLAY.HTML', '//overlay.html', '/HOST.HTML', '/Host.html', '/app.HTML', '/GAME.html', '/host.html.', '/host.html::$DATA', '//host.html', '//app.html', '//game.html']) {
           const r = await fetch(`http://${lan.address}:${PORT}${p}`);
           assert(r.status === 403 || r.status === 404, `LAN へ ${p} を配信した: ${r.status}`);
         }

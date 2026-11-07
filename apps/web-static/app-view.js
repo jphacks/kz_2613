@@ -361,6 +361,16 @@ export function joinUrl(info) {
 }
 
 /** P1〜P4 の枠の表示 */
+/** PC画面の参加者の表示 (#235)。既存の画面とReact版で共用する */
+export function playerCards(slots, view, game) {
+  return slots.map((s, i) => ({
+    slot: s.slot, index: i,
+    className: `player ${s.state}${view === 'preparing' && s.host && s.state === 'connected' ? ' pending' : ''}`,
+    badge: s.state === 'empty' ? '参加待ち' : s.state === 'lost' ? '切断中' : view === 'ready' ? '接続完了！' : view === 'preparing' ? (s.host ? '準備中！' : '接続完了！') : '接続完了！',
+    name: `プレイヤー${i + 1}`, role: roleView(game, s.slot).title, device: `機種：${s.device || '未接続'}`,
+  }));
+}
+
 export function slotViews(slots) {
   return ROLES.map((r) => {
     const s = (slots || []).find((x) => x.name === r.slot) || {};
