@@ -294,7 +294,16 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
     if rel.components().any(|c| !matches!(c, Component::Normal(_))) {
         return StatusCode::BAD_REQUEST.into_response();
     }
+    // Windows の代替データストリーム (host.html::$DATA) は配信しない
+    if path.contains(':') {
+        return (StatusCode::NOT_FOUND, "not found").into_response();
+    }
     let file = app.public_dir.join(rel);
+    // 大文字・末尾のドット・短い名前など、表記が違っても同じファイルなら実体で判定する (#214)
+    let real = tokio::fs::canonicalize(&file).await.ok();
+    if !is_loopback(&addr) && real.as_deref().is_some_and(is_pc_only_page) {
+        return (StatusCode::FORBIDDEN, "this page is only available on the PC").into_response();
+    }
     let mime = match file.extension().and_then(|e| e.to_str()) {
         Some("html") => "text/html; charset=utf-8",
         Some("js") => "text/javascript; charset=utf-8",
@@ -315,6 +324,12 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
 }
 
 // DNS再束縛と別Originからの管理操作を防ぐ。OriginなしはPC内の非ブラウザ検証クライアントに限る。
+/// PC 本体からだけ開ける画面か (実体のファイル名で判定する)
+fn is_pc_only_page(path: &Path) -> bool {
+    let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_ascii_lowercase();
+    matches!(name.as_str(), "host.html" | "game.html" | "app.html")
+}
+
 fn allowed_ws_headers(headers: &HeaderMap, port: u16, loopback: bool) -> bool {
     let Some(host) = headers.get(header::HOST).and_then(|v| v.to_str().ok()) else { return false };
     let Ok(authority) = host.parse::<axum::http::uri::Authority>() else { return false };
