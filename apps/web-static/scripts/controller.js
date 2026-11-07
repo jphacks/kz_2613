@@ -109,7 +109,7 @@ import { phoneAdvice } from '../app-view.js';
   function showBadToken() {
     session.stop('token');
     setStatus(...session.status());
-    $('fullMessage').textContent = 'この端末の参加情報をPCで確認できませんでした。PC側でリセットしてから再読み込みしてください。';
+    $('fullMessage').textContent = 'この端末の参加情報を確認できませんでした。少し待ってから再読み込みしてください。直らないときはホストに伝えてください。';
     $('full').style.display = 'flex';
   }
 

@@ -12,6 +12,17 @@ export function playerChips(game, me) {
   return SLOT_NAMES.map((name) => ({ name, on: game.connected.includes(name), label: `${name}${name === me ? '（自分）' : ''}` }));
 }
 
+/**
+ * 画面上部の注意 (#238)。見ている人が行えることに合わせる。参加者は待つだけでよい。
+ * ゲームの検証状況はホストが判断する情報なので、参加者には出さない。安全の表示ではない
+ */
+export function inputWarnText({ isHost, game, name, notice }) {
+  const target = !game.inputTarget ? '' : isHost
+    ? `PCの画面が${name}になっていません。${name}を前面に戻すまで操作は届きません。`
+    : `PCの画面が${name}になっていません。ホストが戻すまでお待ちください。`;
+  return [target, isHost ? notice : ''].filter(Boolean).join(' ');
+}
+
 /** 待機画面の内容 */
 export function waitModel({ me, game, roleTitle, joined, autoWait }) {
   const phase = game.phase;

@@ -1,5 +1,5 @@
 import { myActions, generatedKey, buildGenerated } from './generated-controls.js';
-import { remoteModel, waitModel } from './phone-model.js';
+import { inputWarnText, remoteModel, waitModel } from './phone-model.js';
 
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
 import {profileNotice,roleView,gameLabel,outputKeyLabel} from '../app-view.js';
@@ -33,7 +33,6 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
     $('connecting').hidden = true;
     $('phase').className = 'pill ' + phase;
     const notice=profileNotice(game.profile);
-    $('inputWarn').style.display = game.inputTarget || notice ? 'block' : 'none';
     // Ready の後に来た人は今回の協力プレイに参加しない (次の Ready から参加する、#57)
     const joined = !game.participants?.length || game.participants.includes(me);
     // 協力プレイ中はどのゲームも操作定義から作った画面 (#141)
@@ -56,11 +55,13 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
     }
     // 案内は選んだゲームの名前で出す (#140)
     const name=gameLabel(game);
-    $('inputWarn').textContent=`PCの画面が${name}になっていません。ホストが${name}を前面に戻すまで操作は届きません。`;
-    $('inputWarn').textContent=[game.inputTarget?$('inputWarn').textContent:'',notice].filter(Boolean).join(' ');
+    const warn = inputWarnText({ isHost, game, name, notice });
+    $('inputWarn').textContent = warn;
+    $('inputWarn').style.display = warn ? 'block' : 'none';
     const autoWait = phase === 'paused' && game.autoResume && game.reason?.endsWith('disconnected');
     document.body.dataset.phase = phase;
     document.body.dataset.slot = me;
+    document.body.dataset.host = String(!!isHost); // 表示の切替だけに使う。権限はホストが判定する
     const wait = waitModel({ me, game, roleTitle: role.title, joined, autoWait });
     const remote = remoteModel({ me, isHost, game, name, autoWait });
     // React版では待機画面とリモコン画面の表示をReactだけが描く。両方から書くと表示が壊れる (#235)
