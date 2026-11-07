@@ -1,9 +1,10 @@
+import { RemoteView } from './RemoteView.jsx';
 import { WaitView } from './WaitView.jsx';
 
 // スマホ画面の外枠。#235 の最初の段階で index.html から機械変換した。
 // 入力と接続は既存の controller.js が id で扱うので、id を変えない。外枠は再描画しない。
 // index.html を変えたら同じ変更をここへ入れる (react-phone-parity.mjs が検出する)。
-export function PhoneShell({ store }) {
+export function PhoneShell({ store, remote }) {
   return (
     <>
       <header>
@@ -25,31 +26,7 @@ export function PhoneShell({ store }) {
         <div className="connecting" id="connecting"><span className="mascot" aria-hidden="true">✦</span>PCホストへ接続しています…</div>
         {/* ロビー / 一時停止: ホストのリモコン */}
         <section className="view" id="v-remote">
-          <div className="host-card"><h1>あなたがホストです！</h1><p>タッチパッドでPCを操作。準備の後にReady！</p></div>
-          <div className="players" id="players1"></div>
-          <div className="remote">
-            <div className="dpad">
-              <button className="key u" data-ctl="UP">▲</button>
-              <button className="key l" data-ctl="LEFT">◀</button>
-              <button className="key r" data-ctl="RIGHT">▶</button>
-              <button className="key d" data-ctl="DOWN">▼</button>
-            </div>
-            <div className="col">
-              <button className="key" data-ctl="ENTER">Enterキー</button>
-              <button className="key" data-ctl="ESC">Escキー</button>
-            </div>
-          </div>
-          <div id="remotePad" role="application" aria-label="ホストのタッチパッド">指でPCのカーソルを動かす</div>
-          <div className="remoteButtons">
-            <button className="key" data-ctl="REMOTE_LEFT">左クリック</button><button className="key" data-ctl="REMOTE_RIGHT">右クリック</button><button className="key" data-ctl="REMOTE_E">Eキー</button>
-            <button className="key" data-ctl="REMOTE_WHEEL_UP">ホイール↑</button><button className="key" data-ctl="REMOTE_WHEEL_DOWN">ホイール↓</button>
-          </div>
-          <div id="remoteRoute" className="note"></div>
-          <button className="cmd" id="startBtn">START</button>
-          <button className="cmd sub" id="openGameBtn" data-cmd="OPEN_GAME" hidden>ゲームを前面にする</button>
-          <button className="cmd sub" id="endBtn" style={{ display: 'none' }}>ロビーに戻る（協力プレイ終了）</button>
-          <div id="hostTransfer" className="host-transfer" hidden></div>
-          <div className="note" id="remoteNote">ゲームをプレイ中の画面まで進めた後、ホストだけがReadyを押します。</div>
+          <RemoteView store={remote} />
         </section>
 
         {/* ロビー / 一時停止: ホスト以外 */}
