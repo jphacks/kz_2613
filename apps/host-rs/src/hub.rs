@@ -670,6 +670,7 @@ impl Hub {
             // 枠 → 席順 (P1〜 で表す。入れ替えた人は入れ替えた先の席、#47。分担は席順で配る)
             "roleOf": self.role_slots().iter().filter_map(|&i| self.role_rank(i).map(|k| (SLOT_NAMES[i].to_string(), json!(SLOT_NAMES[k])))).collect::<Map<String, Value>>(),
             "roleAck": self.role_ack.iter().map(|&i| SLOT_NAMES[i]).collect::<Vec<_>>(),
+            "canChangePlayers": session::can_change_players(self.game.phase, &self.connected_slots(), &self.participants),
             "canSwap": matches!(self.game.phase, Phase::Lobby | Phase::Preparing) || (self.game.phase == Phase::Paused && !self.participants.is_empty()),
             "canLaunch": self.can_launch(),
             "reason": self.game.reason,
@@ -1025,6 +1026,24 @@ impl Hub {
 
     /// 2 人の担当を入れ替える (#47)。開始前 (ロビー・準備中) と一時停止中だけ。全解放して epoch を進め、
     /// 2 人がスマホで新しい担当を確認するまで Ready・再開できない。ロビーでは分担の決定もやり直しになる
+    /// 一時停止中に今の接続で参加者と分担を決め直す (#162)。旧入力を捨て、全員の確認と明示の再開を求める
+    fn change_players(&mut self) {
+        let connected = self.connected_slots();
+        if !session::can_change_players(self.game.phase, &connected, &self.participants) { return; }
+        self.release_outputs(None);
+        self.reset_look();
+        self.seats = [0, 1, 2, 3];
+        self.participants = connected.clone();
+        if let Some(p) = self.profile.clone() { self.assigned = self.proposal_for(&p, &connected); }
+        self.game.auto_resume_until = 0;
+        self.role_ack = connected;
+        self.advance_epoch();
+        let players: Vec<&str> = self.participants.iter().map(|&i| SLOT_NAMES[i]).collect();
+        self.log("change_players", json!({ "players": players }));
+        self.push_game();
+        self.push_state();
+    }
+
     fn swap_roles(&mut self, a: usize, b: usize) {
         if !session::can_swap(self.game.phase, &self.connected_slots(), &self.participants, a, b) { return; }
         self.seats.swap(a, b);
@@ -2024,6 +2043,9 @@ impl Hub {
             }
             "launch_game" => {
                 if let Some(id) = s(msg, "id") { self.launch_game(&id); }
+            }
+            "change_players" => {
+                if msg.get("epoch").and_then(Value::as_u64) == Some(self.game.epoch) { self.change_players(); }
             }
             "swap_roles" => {
                 let slot = |k: &str| s(msg, k).and_then(|n| SLOT_NAMES.iter().position(|x| *x == n));
@@ -3096,6 +3118,25 @@ mod tests {
             h.transfer_host(0, 1);
             assert_eq!(h.slots[0].as_ref().unwrap().client_id, "client0");
         }
+    }
+
+    #[test]
+    fn changing_players_releases_input_and_asks_everyone_to_confirm() {
+        let mut h = lobby_with(&[(0, true), (1, true)], 1_000);
+        h.game.phase = Phase::Paused;
+        h.participants = vec![0, 1, 2];
+        h.game.auto_resume_until = 99;
+        let epoch = h.game.epoch;
+        h.change_players();
+        assert_eq!(h.participants, vec![0, 1]);
+        assert_eq!(h.role_ack, vec![0, 1]);
+        assert_eq!(h.game.auto_resume_until, 0); // 明示の再開だけで戻る
+        assert_eq!(h.game.epoch, epoch + 1);
+        assert!(h.game.phase == Phase::Paused);
+        h.game.phase = Phase::Coop;
+        h.participants = vec![0, 1, 2];
+        h.change_players();
+        assert_eq!(h.participants, vec![0, 1, 2]); // 協力プレイ中は変えない
     }
 
     #[test]
