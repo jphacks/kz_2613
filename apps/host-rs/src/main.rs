@@ -24,7 +24,7 @@ mod session;
 
 use std::net::SocketAddr;
 use std::path::{Component, Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 
@@ -338,11 +338,15 @@ async fn ws_upgrade(ws: WebSocketUpgrade, ConnectInfo(addr): ConnectInfo<SocketA
     ws.on_upgrade(move |socket| ws_session(socket, addr, app))
 }
 
+/// 1 回の送信を待つ上限。スマホの切断判定 (4 秒) と揃える (#197)
+const WS_SEND_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(4);
+
 /// 1 本の WebSocket: 受信はハブへ、ハブからの送信はスマホ / PC 画面へ流す
 async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
     let id = app.next_id.fetch_add(1, Ordering::Relaxed);
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<Out>();
-    app.send(Event::WsOpen { id, tx, ip: client_ip(&addr), loopback: is_loopback(&addr) });
+    let queued = Arc::new(AtomicUsize::new(0));
+    app.send(Event::WsOpen { id, tx, queued: queued.clone(), ip: client_ip(&addr), loopback: is_loopback(&addr) });
     let mut code: u16 = 1006;
     loop {
         tokio::select! {
@@ -357,12 +361,16 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
             },
             outgoing = rx.recv() => match outgoing {
                 Some(Out::Text(text)) => {
-                    if send_ws_text(&mut socket, &rx, Message::Text(text.into())).await.is_err() {
+                    queued.fetch_sub(1, Ordering::Relaxed);
+                    // 読取りが止まった接続は切断判定と同じ時間で打ち切る。送信待ちが上限に達した接続も切る (#197)
+                    let sent = tokio::time::timeout(WS_SEND_TIMEOUT, send_ws_text(&mut socket, &rx, Message::Text(text.into()))).await;
+                    if !matches!(sent, Ok(Ok(()))) || queued.load(Ordering::Relaxed) >= hub::WS_QUEUE_LIMIT {
                         break;
                     }
                 }
                 Some(Out::Close(c, reason)) => {
-                    let _ = socket.send(Message::Close(Some(CloseFrame { code: c, reason: reason.into() }))).await;
+                    let close = socket.send(Message::Close(Some(CloseFrame { code: c, reason: reason.into() })));
+                    let _ = tokio::time::timeout(WS_SEND_TIMEOUT, close).await;
                     code = c;
                     break;
                 }
