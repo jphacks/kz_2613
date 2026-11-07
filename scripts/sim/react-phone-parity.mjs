@@ -79,7 +79,8 @@ async function session(url, port, cdpPort) {
     await call('Page.navigate', { url: `http://127.0.0.1:${port}${url}` }, p2.s);
     await p2.waitFor(`document.getElementById('status')?.textContent.includes('接続OK')`, 'P2接続');
 
-    // DOM: 接続直後の構造。動的な値は比べない
+    // DOM: 接続直後の構造。動的な値は比べない。P2の参加がP1の画面へ届いてから取る
+    await p1.waitFor(`document.querySelectorAll('#players1 .on').length===2`, 'P1の参加者表示');
     result.dom = await p1.ev(`(()=>{const out=[];const walk=(e,d)=>{for(const c of e.children){if(['SCRIPT','LINK'].includes(c.tagName)||c.id==='root'){if(c.id==='root')walk(c,d);continue}
       out.push([d,c.tagName,c.id,c.className,c.getAttribute('data-ctl')||'',c.getAttribute('data-cmd')||'',c.getAttribute('aria-label')||'',c.getAttribute('role')||'',c.hasAttribute('hidden'),c.disabled===true].join('|'));walk(c,d+1)}};walk(document.body,0);return out})()`);
     result.layout = await p1.ev(`JSON.stringify(['header','main','#v-remote','#remotePad','#startBtn'].map(q=>{const r=document.querySelector(q).getBoundingClientRect();return [q,Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]}))`);
