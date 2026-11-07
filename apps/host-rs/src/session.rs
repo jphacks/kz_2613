@@ -107,6 +107,19 @@ impl ReadyFacts<'_> {
 }
 
 pub(crate) fn is_host(slot: usize) -> bool { slot == 0 }
+
+/// ロビーで切断した枠を保持する時間。自動復帰の既定の期限と揃える (#223)
+pub(crate) const LOBBY_SLOT_HOLD_MS: u64 = 15_000;
+
+/// ロビーの切断枠が期限を過ぎたか。協力プレイの開始後は枠を保持し、権限も移さない
+pub(crate) fn lobby_slot_expired(phase: Phase, connected: bool, disconnected_at: u64, now: u64) -> bool {
+    phase == Phase::Lobby && !connected && now.saturating_sub(disconnected_at) >= LOBBY_SLOT_HOLD_MS
+}
+
+/// P1 が空いたロビーで、次のホストになる枠 (接続中で最も若い枠)
+pub(crate) fn next_host(connected: &[usize]) -> Option<usize> {
+    connected.iter().copied().filter(|&i| i != 0).min()
+}
 pub(crate) fn can_prepare(phase: Phase, host_connected: bool, lineup_ok: bool) -> bool {
     phase == Phase::Lobby && host_connected && lineup_ok
 }
@@ -160,6 +173,25 @@ mod tests {
         ReadyFacts { phase: Phase::Preparing, connected: &[0, 1, 2], participants: &[], unacked: &[],
             has_profile: true, lineup_ok: true, title_known: true, controller_supported: true,
             input_available: true, stop_available: true, inject: InjectMode::On, can_inject: true }
+    }
+
+    #[test]
+    fn lobby_slots_expire_only_in_the_lobby_after_the_hold_time() {
+        let at = 1_000;
+        assert!(!lobby_slot_expired(Phase::Lobby, false, at, at + LOBBY_SLOT_HOLD_MS - 1));
+        assert!(lobby_slot_expired(Phase::Lobby, false, at, at + LOBBY_SLOT_HOLD_MS));
+        assert!(!lobby_slot_expired(Phase::Lobby, true, at, at + LOBBY_SLOT_HOLD_MS));
+        for phase in [Phase::Preparing, Phase::Coop, Phase::Paused] {
+            assert!(!lobby_slot_expired(phase, false, at, at + LOBBY_SLOT_HOLD_MS));
+        }
+    }
+
+    #[test]
+    fn next_host_is_the_youngest_connected_slot() {
+        assert_eq!(next_host(&[1, 2, 3]), Some(1));
+        assert_eq!(next_host(&[3, 2]), Some(2));
+        assert_eq!(next_host(&[0]), None);
+        assert_eq!(next_host(&[]), None);
     }
 
     #[test]
