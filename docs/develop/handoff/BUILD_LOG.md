@@ -1276,3 +1276,8 @@
 - #245・#246の差分、CIのRust・通信・React同等性・配布検証の成功を確認して統合した。#247は全解放・epoch更新・全員の担当確認・明示再開の条件を確認し、双方の記録を保持して統合準備した。
 - ローカルで `npm --prefix apps/web run build`、`phone-view-test`、`phone-lifecycle-test` 16/16、`controller-diagnostics-test`、`ui-input-test` 12/12、`app-view-test` 27/27、`check-static-pages`、`node --check scripts/sim/protocol-sim.mjs`、差分検査が成功。実端末・Minecraft・実OS入力の追試は実施していない。
 - #230・#234・#239は、前回指摘した再起動処理・保存領域の取得・送信待ち上限超過時の切断処理が未修正のため保留を継続する。
+
+## 2026-11-07 — PC画面の開始前の演出（Claude Code、#160）
+
+- 参加、ゲーム選択、分担の決定、画面の切替に0.32秒の演出を追加した。ユーザー判断でF07-05はReady前で完結させ、協力プレイ中・一時停止中は再生しない。効果音はなし。
+- 状態が変わった瞬間だけ `pcEffects` で判定する。入力と前面化は待たせない（ChromeでREADYからcoopまで29ms）。`prefers-reduced-motion` では既存の共通CSSで止まる。
