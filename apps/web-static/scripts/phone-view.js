@@ -3,9 +3,9 @@ import { playerChips, reasonText, waitModel } from './phone-model.js';
 
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
 import {profileNotice,roleView,gameLabel,outputKeyLabel,MIN_PLAYERS,MAX_PLAYERS} from '../app-view.js';
-export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindControl,bindStick=()=>{},onRoleOk=()=>{}}) {
+export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindControl,bindStick=()=>{},onRoleOk=()=>{},onTransferHost=()=>{}}) {
   const $ = id => document.getElementById(id);
-  let lastView = null, lastGen = '';
+  let lastView = null, lastGen = '', lastTransfer = '';
   // 視点のパッドと感度は、操作定義の画面で視点を担当するときだけそちらへ移す
   const lookParts = [$('pad'), document.querySelector('#lookHome .sens')].filter(Boolean);
   const lookHome = $('lookHome');
@@ -53,6 +53,19 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
     }
     const players = playerChips(game, me).map((p) => `<span class="${p.on ? 'on' : ''}">${p.label}</span>`).join('');
     $('players1').innerHTML = players;
+    // ホストを譲る (#233)。ロビーのホストにだけ出す。認可はホストが判定する
+    const transferTo = isHost && phase === 'lobby' ? game.connected.filter((p) => p !== me) : [];
+    if (transferTo.join() !== lastTransfer) {
+      lastTransfer = transferTo.join();
+      const box = $('hostTransfer');
+      box.hidden = !transferTo.length;
+      box.replaceChildren(...(transferTo.length ? [document.createTextNode('ホストを譲る：')] : []), ...transferTo.map((p) => {
+        const button = document.createElement('button');
+        button.className = 'key'; button.textContent = p;
+        button.addEventListener('click', () => { if (confirm(`${p}にホストを譲りますか？`)) onTransferHost(p); });
+        return button;
+      }));
+    }
     // 案内は選んだゲームの名前で出す (#140)
     const name=gameLabel(game);
     $('remoteRoute').textContent = {app:'PCアプリを操作中',game:`${name}のメニューを操作中`,none:`PCアプリまたは${name}を前面にしてください`}[game.remoteRoute] || '';
