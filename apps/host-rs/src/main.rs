@@ -45,6 +45,7 @@ struct App {
     hub: Arc<Mutex<Sender<Event>>>,
     next_id: Arc<AtomicU64>,
     public_dir: Arc<PathBuf>,
+    build: Arc<serde_json::Value>,
     port: u16,
     wifi: Arc<Option<(String, String)>>,
     images: games::Images,
@@ -147,6 +148,7 @@ async fn main() {
         hub: Arc::new(Mutex::new(tx.clone())),
         next_id: Arc::new(AtomicU64::new(1)),
         public_dir: Arc::new(root.join(WEB_DIR)),
+        build: Arc::new(build_info(&root)),
         port,
         wifi: Arc::new(config.wifi.clone()),
         images,
@@ -233,15 +235,32 @@ async fn main() {
     }
 }
 
+/// 製品の版。配布物は package-manifest.json の版と commit、開発中はビルドの版を使う
+fn build_info(root: &Path) -> serde_json::Value {
+    let text = std::fs::read_to_string(root.join("package-manifest.json")).unwrap_or_default();
+    parse_build_info(&text)
+}
+
+fn parse_build_info(manifest: &str) -> serde_json::Value {
+    // PowerShell が書いた manifest は先頭に BOM がある
+    let value = serde_json::from_str::<serde_json::Value>(manifest.trim_start_matches('\u{feff}')).unwrap_or_default();
+    let version = value.get("version").and_then(|v| v.as_str()).unwrap_or(env!("CARGO_PKG_VERSION"));
+    let commit = value.get("commit").and_then(|v| v.as_str()).map(|c| c.chars().take(7).collect::<String>());
+    serde_json::json!({ "version": version, "commit": commit })
+}
+
 async fn api_info(State(app): State<App>, ConnectInfo(addr): ConnectInfo<SocketAddr>) -> Response {
     // ホットスポットの設定の読み取りは時間がかかることがあるので、待ち受けのスレッドを止めない
     let loopback = is_loopback(&addr);
-    let body = tokio::task::spawn_blocking(move || {
+    let build = app.build.clone();
+    let mut body = tokio::task::spawn_blocking(move || {
         let wifi = app.wifi.as_ref().as_ref().map(|(s, p)| (s.as_str(), p.as_str()));
         netinfo::info(app.port, wifi, loopback)
     })
     .await
     .unwrap_or_default();
+    // 版は PC の画面にだけ返す (#216)
+    if loopback { body["build"] = (*build).clone(); }
     ([(header::CONTENT_TYPE, "application/json"), (header::CACHE_CONTROL, "no-store")], body.to_string()).into_response()
 }
 
@@ -294,7 +313,16 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
     if rel.components().any(|c| !matches!(c, Component::Normal(_))) {
         return StatusCode::BAD_REQUEST.into_response();
     }
+    // Windows の代替データストリーム (host.html::$DATA) は配信しない
+    if path.contains(':') {
+        return (StatusCode::NOT_FOUND, "not found").into_response();
+    }
     let file = app.public_dir.join(rel);
+    // 大文字・末尾のドット・短い名前など、表記が違っても同じファイルなら実体で判定する (#214)
+    let real = tokio::fs::canonicalize(&file).await.ok();
+    if !is_loopback(&addr) && real.as_deref().is_some_and(is_pc_only_page) {
+        return (StatusCode::FORBIDDEN, "this page is only available on the PC").into_response();
+    }
     let mime = match file.extension().and_then(|e| e.to_str()) {
         Some("html") => "text/html; charset=utf-8",
         Some("js") => "text/javascript; charset=utf-8",
@@ -315,6 +343,12 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
 }
 
 // DNS再束縛と別Originからの管理操作を防ぐ。OriginなしはPC内の非ブラウザ検証クライアントに限る。
+/// PC 本体からだけ開ける画面か (実体のファイル名で判定する)
+fn is_pc_only_page(path: &Path) -> bool {
+    let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_ascii_lowercase();
+    matches!(name.as_str(), "host.html" | "game.html" | "app.html")
+}
+
 fn allowed_ws_headers(headers: &HeaderMap, port: u16, loopback: bool) -> bool {
     let Some(host) = headers.get(header::HOST).and_then(|v| v.to_str().ok()) else { return false };
     let Ok(authority) = host.parse::<axum::http::uri::Authority>() else { return false };
@@ -403,6 +437,15 @@ async fn send_ws_text(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn build_info_reads_the_manifest_with_bom_and_falls_back_to_the_build_version() {
+        let info = parse_build_info("\u{feff}{\"version\":\"9.8.7\",\"commit\":\"abcdef0123456\"}");
+        assert_eq!((info["version"].as_str(), info["commit"].as_str()), (Some("9.8.7"), Some("abcdef0")));
+        let dev = parse_build_info("");
+        assert_eq!(dev["version"].as_str(), Some(env!("CARGO_PKG_VERSION")));
+        assert!(dev["commit"].is_null());
+    }
 
     #[test]
     fn websocket_origin_and_host_must_be_trusted() {
