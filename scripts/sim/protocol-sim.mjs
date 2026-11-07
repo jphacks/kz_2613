@@ -777,11 +777,11 @@ async function main() {
       await sleep(1000);
       const first = total(from);
       assert(Math.abs(first.dx - 30) <= 1 && Math.abs(first.dy + 15) <= 1, `累積値を回復できない: ${JSON.stringify(first)}`);
-      from = mon.mark();
       p2.send({ type: 'look', lseq: 4, epoch: p2.epoch, cx: 35, cy: -12 });
       await sleep(1000);
-      const next = total(from);
-      assert(Math.abs(next.dx - 5) <= 1 && Math.abs(next.dy - 3) <= 1, `古いパケットが基準を変更した: ${JSON.stringify(next)}`);
+      // 符号が変わると前区間の端数も使うため、同じ基準点からの累積量を照合する。
+      const combined = total(from);
+      assert(Math.abs(combined.dx - 35) <= 1 && Math.abs(combined.dy + 12) <= 1, `古いパケットが基準を変更した: ${JSON.stringify(combined)}`);
     });
 
     await check('入力先: 常時 ON でも前面が入力先でなくなったら全解放し、押下を注入しない。PC 画面とスマホに知らせる', async () => {
