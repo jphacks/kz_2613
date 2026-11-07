@@ -1821,6 +1821,30 @@ async function main() {
       for (const x of [promoted, back, c]) x.close();
     });
 
+    await check('ホストの譲渡: ロビーのホストだけが接続中の人へ譲れて、両者は同じトークンで入れ替わった枠へ戻る (#233)', async () => {
+      mon.send({ type: 'reset' });
+      await sleep(200);
+      const id = (n) => ({ clientId: `sim-transfer-${n}` });
+      const a = await join('T1', id(1)); await welcome(a);
+      const b = await join('T2', id(2)); await welcome(b);
+      const c = await join('T3', id(3)); await welcome(c);
+      const game = () => [...a.msgs].reverse().find((m) => m.type === 'game').game;
+      b.send({ type: 'transfer_host', to: 'P2', epoch: game().epoch });
+      c.send({ type: 'transfer_host', to: 'P3', epoch: game().epoch });
+      a.send({ type: 'transfer_host', to: 'P3', epoch: game().epoch - 1 });
+      a.send({ type: 'transfer_host', to: 'P4', epoch: game().epoch });
+      await sleep(300);
+      assert(a.closed === null && b.closed === null && c.closed === null, '認可されない譲渡で接続が閉じた');
+      a.send({ type: 'transfer_host', to: 'P3', epoch: game().epoch });
+      assert((await a.waitClose()) === 4008 && (await c.waitClose()) === 4008, `close ${a.closed}/${c.closed}`);
+      assert(b.closed === null, '関係のないP2まで切断した');
+      const host = await join('T3', id(3)); const w = await welcome(host);
+      assert(w.slot === 'P1' && w.isHost === true, JSON.stringify({ slot: w.slot, isHost: w.isHost }));
+      const old = await join('T1', id(1)); const o = await welcome(old);
+      assert(o.slot === 'P3' && o.isHost === false, JSON.stringify({ slot: o.slot, isHost: o.isHost }));
+      for (const x of [host, old, b]) x.close();
+    });
+
     await check('ログ: IP・User-Agent・clientId を記録せず、枠名と端末の種類だけを残す', async () => {
       await sleep(1200); // ログは 1 秒ごとに書き出される
       const log = fs

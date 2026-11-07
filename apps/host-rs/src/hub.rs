@@ -1702,6 +1702,39 @@ impl Hub {
         self.push_state();
     }
 
+    /// 移した枠の端末を 4008 で閉じ、同じトークンの再接続で新しい枠へ戻す。welcome と WebRTC を作り直す
+    fn reconnect_slot(&mut self, idx: usize, now: u64) {
+        let Some(slot) = self.slots[idx].as_mut() else { return };
+        let conn = slot.conn.take();
+        slot.connected = false;
+        slot.disconnected_at = now;
+        slot.rtc = None;
+        slot.rtc_state = "none";
+        slot.rtc_gen += 1;
+        slot.ibuf.clear();
+        // 閉じる通知で移動前の枠を切断扱いにしない
+        if let Some(c) = conn.and_then(|id| self.conns.get_mut(&id)) { c.role = Role::Unknown; }
+        self.close(conn, CLOSE_HOST_HANDOVER, "host handover");
+    }
+
+    /// 現在のホストが、ロビーで接続中の別の人へホストを譲る (#233)。2 つの枠を入れ替える
+    fn transfer_host(&mut self, from: usize, to: usize) {
+        if !session::can_transfer_host(self.game.phase, from, to, &self.connected_slots()) { return; }
+        self.release_outputs(None);
+        self.reset_look();
+        self.slots.swap(0, to);
+        let now = now_ms();
+        self.reconnect_slot(0, now);
+        self.reconnect_slot(to, now);
+        self.lineup = None;
+        self.seats = [0, 1, 2, 3];
+        self.role_ack.clear();
+        self.advance_epoch();
+        self.log("host_transfer", json!({ "to": SLOT_NAMES[to] }));
+        self.push_game();
+        self.push_state();
+    }
+
     /// ロビーで戻らない枠を解放し、P1 が空いたら接続中で最も若い枠をホストにする (#223)。
     /// P1 = ホストの前提を変えないよう枠ごと P1 へ移し、接続は 4008 で閉じる。スマホは通常の再接続で
     /// 同じトークンのまま P1 として戻り、welcome と WebRTC が作り直される。元のホストは参加者として戻る。
@@ -1720,18 +1753,8 @@ impl Hub {
             if let Some(from) = session::next_host(&self.connected_slots()) {
                 self.release_outputs(None);
                 self.reset_look();
-                let mut slot = self.slots[from].take().expect("接続中の枠");
-                let conn = slot.conn.take();
-                slot.connected = false;
-                slot.disconnected_at = now;
-                slot.rtc = None;
-                slot.rtc_state = "none";
-                slot.rtc_gen += 1;
-                slot.ibuf.clear();
-                self.slots[0] = Some(slot);
-                // 閉じる通知で移動前の枠を切断扱いにしない
-                if let Some(c) = conn.and_then(|id| self.conns.get_mut(&id)) { c.role = Role::Unknown; }
-                self.close(conn, CLOSE_HOST_HANDOVER, "host handover");
+                self.slots[0] = self.slots[from].take();
+                self.reconnect_slot(0, now);
                 self.lineup = None;
                 self.seats = [0, 1, 2, 3];
                 self.role_ack.clear();
@@ -2241,6 +2264,11 @@ impl Hub {
             }
             "remote" if via == Via::Ws => self.remote_message(idx, &msg),
             // 新しい担当をスマホで確認した (#47)
+            "transfer_host" if via == Via::Ws => {
+                if msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) { return; }
+                let to = s(&msg, "to").and_then(|name| SLOT_NAMES.iter().position(|n| *n == name));
+                if let Some(to) = to { self.transfer_host(idx, to); }
+            }
             "role_ok" if via == Via::Ws => {
                 if msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
                     return;
@@ -3040,6 +3068,34 @@ mod tests {
         let mut h = lobby_with(&[(2, true)], 1_000);
         h.release_lobby_slots(later);
         assert_eq!(h.slots[0].as_ref().unwrap().client_id, "client2");
+    }
+
+    #[test]
+    fn host_transfer_swaps_slots_and_only_the_current_host_can_do_it() {
+        let mut h = lobby_with(&[(0, true), (1, true), (2, true)], 1_000);
+        let epoch = h.game.epoch;
+        h.transfer_host(1, 2);
+        assert_eq!(h.slots[0].as_ref().unwrap().client_id, "client0"); // ホスト以外は譲れない
+        assert_eq!(h.game.epoch, epoch);
+        h.transfer_host(0, 3);
+        assert_eq!(h.slots[0].as_ref().unwrap().client_id, "client0"); // 接続していない枠へは譲れない
+        h.transfer_host(0, 2);
+        let (host, old) = (h.slots[0].as_ref().unwrap(), h.slots[2].as_ref().unwrap());
+        assert_eq!((host.client_id.as_str(), host.token.as_str()), ("client2", "token2"));
+        assert_eq!((old.client_id.as_str(), old.token.as_str()), ("client0", "token0"));
+        assert_eq!(h.slots[1].as_ref().unwrap().client_id, "client1"); // 他の人は変わらない
+        assert!(!host.connected && !old.connected); // 同じトークンの再接続で新しい枠へ戻る
+        assert_eq!(h.game.epoch, epoch + 1);
+    }
+
+    #[test]
+    fn host_transfer_is_rejected_after_the_lobby() {
+        for phase in [Phase::Preparing, Phase::Coop, Phase::Paused] {
+            let mut h = lobby_with(&[(0, true), (1, true)], 1_000);
+            h.game.phase = phase;
+            h.transfer_host(0, 1);
+            assert_eq!(h.slots[0].as_ref().unwrap().client_id, "client0");
+        }
     }
 
     #[test]
