@@ -50,6 +50,8 @@ jobs:
         run: node scripts/sim/runtime-measure.mjs --bin apps/host-rs/target/release/recooplay-host.exe --players 2 --cases normal --duration-ms 1000
       - name: 既存のスマホ画面とReact版の同等性
         run: node scripts/sim/react-phone-parity.mjs --samples 20 --tolerance-ms 30
+      - name: 既存のPC画面とReact版の同等性
+        run: node scripts/sim/react-pc-parity.mjs
       - name: PC 画面の表示ロジック
         run: node scripts/sim/app-view-test.mjs
       - name: スマホのReady・待機・停止と診断前の解放
