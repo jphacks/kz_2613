@@ -72,7 +72,7 @@ if (process.argv.includes('--repro-stale-open')) {
     assert.deepEqual(Array.from({ length: 7 }, () => session.disconnected(1006)), [250, 500, 1000, 2000, 4000, 5000, 5000]);
     session.resetRetry(); assert.equal(session.disconnected(1006), 250);
     session.open('agent'); assert.equal(session.disconnected(1006), 250);
-    for (const [code, text] of [[4000, '別タブで接続中'], [4005, '版が不一致'], [4006, '参加できません']]) {
+    for (const [code, text] of [[4000, '別タブで接続中'], [4001, 'リセットされました'], [4005, '版が不一致'], [4006, '参加できません']]) {
       const f = fixture(); assert.equal(f.session.disconnected(code), null); assert(f.session.stopped); assert.deepEqual(f.session.status(), [text, 'ng']);
     }
   });
