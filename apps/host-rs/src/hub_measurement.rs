@@ -128,7 +128,7 @@ fn run_scenario(scenario: Scenario, duration: Duration, burst: usize) -> Value {
     for slot in 0..3 {
         let id = slot as u64 + 10;
         let (tx, rx) = unbounded_channel();
-        hub.conns.insert(id, Conn { tx, ip:String::new(), loopback:true, role:Role::Player {slot} });
+        hub.conns.insert(id, Conn { tx, queued:Default::default(), ip:String::new(), loopback:true, role:Role::Player {slot} });
         let s = hub.slots[slot].get_or_insert_with(|| Slot::new(format!("fixture{slot}"), String::new()));
         s.conn = Some(id); s.connected = true; s.last_seen = now_ms();
         players.push(rx);
