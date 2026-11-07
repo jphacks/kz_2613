@@ -61,7 +61,12 @@ async function session(url, port, cdpPort) {
     // 演出のクラスは比べない (再生回数は別に比べる)。既存の画面は描き直しで演出が途中で消えることがある
     const tidy = async () => (await ev(`document.getElementById('players').innerHTML`)).replace(/ fx-pop/g, '').replace(/>\s+</g, '><').replace(/<img ([^>]*)>/g, (_, a) => `<img ${a.split(/ (?=[\w-]+=)/).sort().join(' ')}>`).trim();
     const snap = async (name, cond) => { await waitFor(cond, name); await sleep(150); result.players[name] = await tidy(); };
+    const rolesHtml = async () => (await ev(`document.getElementById('roles').innerHTML`)).replace(/ fx-pop/g, '').replace(/>\s+</g, '><').replace(/<img ([^>]*)>/g, (_, a) => `<img ${a.split(/ (?=[\w-]+=)/).sort().join(' ')}>`).trim();
+    result.roles = {};
     await waitFor(`!!document.querySelector('#qr svg')`, '参加用QR');
+    // ゲームの検出と画像の読込が終わってから構造を比べる
+    await waitFor(`!document.getElementById('refreshGamesBtn').disabled&&document.querySelectorAll('#gameList .game-choice').length>0`, 'ゲーム一覧');
+    await sleep(500);
     result.dom = await ev(`(()=>{const out=[];const walk=(e,d)=>{for(const c of e.children){if(['SCRIPT','LINK'].includes(c.tagName))continue;if(c.id==='players'){out.push([d,c.tagName,c.id].join('|'));continue}
       out.push([d,c.tagName,c.id,c.className.baseVal??c.className,c.getAttribute('data-go')||'',c.hasAttribute('hidden')].join('|'));walk(c,d+1)}};walk(document.body,0);return out})()`);
     await snap('参加待ち', `document.querySelectorAll('#players .player.empty').length===4`);
@@ -74,9 +79,11 @@ async function session(url, port, cdpPort) {
     await waitFor(`document.body.dataset.view==='game'`, 'ゲーム選択');
     await ev(`document.getElementById('nextBtn').click();1`);
     await waitFor(`document.body.dataset.view==='roles'`, '分担');
+    await sleep(200); result.roles['決定前'] = await rolesHtml();
     await ev(`document.getElementById('nextBtn').click();1`);
     await p1.until(x => x.game?.lineupOk, '分担の決定');
     await sleep(300);
+    result.roles['決定後'] = await rolesHtml();
     p1.command('PREPARE');
     await snap('準備中', `document.body.dataset.view==='ready'||document.body.dataset.view==='preparing'`);
     await p1.until(x => x.game?.canReady, 'canReady');
@@ -84,6 +91,16 @@ async function session(url, port, cdpPort) {
     await snap('協力プレイ', `document.body.dataset.view==='coop'`);
     p1.command('PAUSE');
     await snap('一時停止', `document.body.dataset.view==='paused'`);
+    // 一時停止中の入れ替え: 画面を開き、1人目を選ぶ (#47)
+    await ev(`document.getElementById('subBtn').click();1`);
+    await waitFor(`!!document.querySelector('#roles [data-swap]')`, '入れ替えの画面');
+    await ev(`document.querySelector('#roles [data-swap="P1"]').click();1`);
+    await waitFor(`!!document.querySelector('#roles .picked')`, '1人目の選択');
+    result.roles['入れ替えの選択'] = await rolesHtml();
+    await ev(`document.querySelector('#roles [data-swap="P2"]').click();1`);
+    await p1.until(x => x.game?.roleAck?.length === 2, '入れ替え');
+    await waitFor(`document.querySelectorAll('#roles .ack-wait').length===2`, '確認待ちの表示');
+    result.roles['入れ替え後'] = await rolesHtml();
     p2.close();
     await snap('切断', `document.querySelectorAll('#players .player.lost').length===1`);
     result.fx = await ev('window.__fx');
@@ -105,6 +122,7 @@ const same = (name, a, b) => {
 };
 same('DOMの構造', before.dom, after.dom);
 for (const k of Object.keys(before.players)) same(`参加者の表示（${k}）`, before.players[k], after.players[k]);
+for (const k of Object.keys(before.roles)) same(`分担の表示（${k}）`, before.roles[k], after.roles[k]);
 same('演出の再生回数', before.fx, after.fx);
 same('実行時のエラー', before.errors, after.errors);
 console.log(fails.length ? `不合格: ${fails.join('、')}` : `合格: 既存のPC画面とReact版が一致（演出 ${after.fx} 回）`);
