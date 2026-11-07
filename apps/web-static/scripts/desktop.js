@@ -1,5 +1,5 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,profileNotice,roleView,networkNotice,slotDiagnosis,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,rolesAction,commSettingsView,playerHint} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,profileNotice,roleView,networkNotice,slotDiagnosis,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,pcEffects,rolesAction,commSettingsView,playerHint} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // swap: 一時停止中に担当を入れ替える画面を開いているか (#47)
@@ -197,6 +197,17 @@ function render(){
   $('netDiag').innerHTML=diag.length?diag.map(d=>`<section class="net-row" data-level="${d.level}"><h3>${esc(d.name)}：${{ok:'良好',warn:'注意',bad:'不安定'}[d.level]}</h3><p>経路 ${esc(d.path)}・往復 ${d.rtt??'-'}ms（95% ${d.p95??'-'}ms）・途切れ ${d.stalls}回/10秒・再接続 ${d.reconnects}回</p>${d.hints.length?`<ul>${d.hints.map(h=>`<li>${esc(h)}</li>`).join('')}</ul>`:''}</section>`).join('')+(state?.network?.bluetoothAudio?'<p class="net-bt">PCの音の出力先がBluetoothです。有線のイヤホンかPCのスピーカーにすると、通信が安定しやすくなります。</p>':''):'<p>つながっているスマホはありません。</p>';
   document.querySelectorAll('#modeSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===inject?.mode)));
   $('hotkey').textContent=inject?.emergencyHotkeyError?'緊急停止キーを登録できません':`緊急停止：${inject?.emergencyHotkey||'Ctrl+Alt+F12'}`;
+  playEffects(view);
+}
+// 演出は開始前の画面だけで、状態が変わった瞬間に1回再生する (#160)。入力と前面化は待たせない
+let effectState=null;
+function fx(el){if(!el)return;el.classList.remove('fx-pop');void el.offsetWidth;el.classList.add('fx-pop');el.addEventListener('animationend',()=>el.classList.remove('fx-pop'),{once:true});}
+function playEffects(view){
+  const next={view,connected:(state?.slots||[]).filter(s=>s.connected).map(s=>s.name),lineupOk:!!game?.lineupOk};
+  const e=pcEffects(effectState,next);effectState=next;
+  for(const slot of e.joined)fx(document.querySelector(`.player[data-slot="${slot}"] .character-art`));
+  if(e.lineup)document.querySelectorAll('.role-column').forEach(fx);
+  if(e.screen)fx(document.querySelector('.state-banner'));
 }
 function renderGames(){
   const list=games(),scanning=!!state?.gamesScanning;
@@ -208,7 +219,7 @@ function renderGames(){
   }).join('');
   // 1秒ごとの状態更新で一覧を作り直すとフォーカスが外れるため、変わったときだけ描き直す
   if(html!==gamesHtml){$('gameList').innerHTML=html;gamesHtml=html;}
-  if(shownGame!==ui.game){shownGame=ui.game;document.querySelector('.game-choice.selected')?.scrollIntoView({block:'nearest'});}
+  if(shownGame!==ui.game){const first=shownGame==='';shownGame=ui.game;if(!first)fx(document.querySelector('.game-choice.selected'));document.querySelector('.game-choice.selected')?.scrollIntoView({block:'nearest'});}
   $('gamesCount').textContent=manualMessage||gamesCountText(list,scanning);
   $('refreshGamesBtn').disabled=scanning;
   $('renameGameBtn').hidden=$('removeGameBtn').hidden=!isRegistered(ui.game)||!list.some(g=>g.id===ui.game);

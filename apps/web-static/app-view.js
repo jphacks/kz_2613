@@ -145,6 +145,19 @@ export function overlayModel(state) {
   };
 }
 
+/**
+ * PC画面の演出 (#160)。状態が変わった瞬間だけ返す。画面は状態の更新のたびに描き直すので、
+ * CSSだけで演出すると毎回再生される。協力プレイ中・一時停止中は何も返さない (F07-11)
+ */
+export function pcEffects(prev, next) {
+  if (!prev || ['coop', 'paused'].includes(next.view)) return { joined: [], lineup: false, screen: false };
+  return {
+    joined: next.connected.filter((slot) => !prev.connected.includes(slot)),
+    lineup: next.lineupOk && !prev.lineupOk,
+    screen: next.view !== prev.view,
+  };
+}
+
 export function desktopWarning(game, inject, connected = true) {
   if (!connected) return 'PCホストとの接続が切れました。再接続を待っています。';
   if (inject?.emergencyHotkeyError) return '緊急停止キーを登録できません。操作設定で入力をOFFにしてください。';

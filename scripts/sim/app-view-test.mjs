@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { overlayModel, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
+import { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -329,6 +329,17 @@ test('観客向け表示: 参加者の担当と押している入力を出し、
   assert.equal(view.status,'');assert.deepEqual(view.players.map(p=>p.slot),['P1','P2']);
   assert.deepEqual(view.players[0].pressed,['Spaceキー']);assert.equal(view.players[1].connected,false);
   assert.equal(overlayModel({...state,game:{...state.game,phase:'paused'}}).status,'一時停止中');
+});
+
+test('演出: 状態が変わった瞬間だけ返し、協力プレイ中と一時停止中は何も返さない (#160)', () => {
+  const none={joined:[],lineup:false,screen:false};
+  const lobby={view:'join',connected:['P1'],lineupOk:false};
+  assert.deepEqual(pcEffects(null,lobby),none,'開いた直後は再生しない');
+  assert.deepEqual(pcEffects(lobby,lobby),none,'同じ状態の更新では再生しない');
+  assert.deepEqual(pcEffects(lobby,{...lobby,connected:['P1','P2']}).joined,['P2']);
+  assert.equal(pcEffects({...lobby,view:'roles'},{...lobby,view:'roles',lineupOk:true}).lineup,true);
+  assert.equal(pcEffects(lobby,{...lobby,view:'game'}).screen,true);
+  for(const view of ['coop','paused'])assert.deepEqual(pcEffects({view:'ready',connected:['P1'],lineupOk:true},{view,connected:['P1','P2'],lineupOk:true}),none);
 });
 
 const failed = results.filter((r) => !r).length;
