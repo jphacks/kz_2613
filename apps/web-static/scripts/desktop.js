@@ -1,5 +1,5 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,profileNotice,roleView,networkNotice,slotDiagnosis,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,rolesAction,commSettingsView} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,profileNotice,roleView,networkNotice,slotDiagnosis,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,rolesAction,commSettingsView,playerHint} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // swap: 一時停止中に担当を入れ替える画面を開いているか (#47)
@@ -173,7 +173,7 @@ function render(){
   $('openGameBtn').hidden=!['preparing','ready','paused'].includes(view)||!game?.inputTarget;
   const name=gameLabel(game);
   const swapHint=game?.canSwap?(swapPick?`${swapPick}と入れ替える人の列を押してください`:'担当を入れ替えるときは、2人の列を順に押してください'):'';
-  $('actionNote').textContent=view==='roles'?(swapPick?swapHint:roleAction.note||swapHint):view==='preparing'?`${name}をプレイ中の画面まで進めてください。`:'';
+  $('actionNote').textContent=view==='roles'?(swapPick?swapHint:[roleAction.note||swapHint,game?.lineupOk?'':playerHint(game?.profile)?.text].filter(Boolean).join(' ')):view==='preparing'?`${name}をプレイ中の画面まで進めてください。`:'';
   $('openGameBtn').textContent=`${name}を前面にする`;
   $('inputSafety').textContent=`${name}が前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。`;
   const keyWarnings=game?.keys?.warnings||[];

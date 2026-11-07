@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { commSettingsView, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
+import { commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -306,6 +306,19 @@ test('通信の設定: 自動復帰の状態・期限・ポートを示し、協
   assert.match(coop.text,/20秒/);assert.match(coop.text,/変更できません/);assert.doesNotMatch(coop.text,/ポート/);
   assert.equal(commSettingsView({phase:'paused',autoResume:true},8080).locked,false);
   assert.equal(commSettingsView(null,null).locked,true);
+});
+
+test('人数の参考: 全員に操作があり偏りの小さい人数を、断定せずに示す (#166)', () => {
+  const actions=[{id:'a',weight:2},{id:'b',weight:2},{id:'c',weight:2},{id:'d',weight:1}];
+  const profile={controllerSupported:true,actions,assignments:{2:{P1:['a','d'],P2:['b','c']},3:{P1:['a'],P2:['b'],P3:['c','d']},4:{P1:['a'],P2:['b'],P3:['c'],P4:['d']}}};
+  const hint=playerHint(profile);
+  assert.equal(hint.players,2);assert.match(hint.text,/参考/);assert.match(hint.text,/試遊の結果ではありません/);assert.doesNotMatch(hint.text,/推奨/);
+  const empty={...profile,assignments:{2:{P1:['a','b','c','d'],P2:[]},3:{P1:['a'],P2:['b'],P3:['c','d']},4:{P1:['a','b'],P2:['c'],P3:['d'],P4:[]}}};
+  assert.equal(playerHint(empty).players,3,'操作のない人が出る人数は選ばない');
+  assert.equal(playerHint({...profile,assignments:{2:{P1:['a','b','c','d'],P2:[]}}}),null);
+  assert.equal(playerHint({...profile,controllerSupported:false}),null);
+  assert.equal(playerHint({...profile,status:'device'}),null,'実機の記録があるゲームには出さない');
+  assert.equal(playerHint(null),null);
 });
 
 const failed = results.filter((r) => !r).length;
