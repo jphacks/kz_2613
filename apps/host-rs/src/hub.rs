@@ -7,7 +7,9 @@ use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
+use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use serde_json::{json, Map, Value};
@@ -43,6 +45,8 @@ const DEFAULT_TITLE: &str = TITLES[0];
 const PROTOCOL_VERSION: u64 = 4;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
+/// 接続ごとの送信待ちの上限。健全な接続は溜まらず、読取りが止まった接続だけが達する (#197)
+pub const WS_QUEUE_LIMIT: usize = 4096;
 const CLOSE_HOST_HANDOVER: u16 = 4008;
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
 const RTC_TIMEOUT: Duration = Duration::from_secs(5);
@@ -57,7 +61,7 @@ pub enum Out {
 }
 
 pub enum Event {
-    WsOpen { id: u64, tx: UnboundedSender<Out>, ip: String, loopback: bool },
+    WsOpen { id: u64, tx: UnboundedSender<Out>, queued: Arc<SendQueue>, ip: String, loopback: bool },
     WsText { id: u64, text: String, enqueued_at: Option<Instant> },
     WsClosed { id: u64, code: u16 },
     RtcDescription { slot: usize, gen: u64, sdp: String, kind: String },
@@ -123,9 +127,35 @@ enum Role {
 
 struct Conn {
     tx: UnboundedSender<Out>,
+    queued: Arc<SendQueue>, // 送信待ちの本文の数。送信側が減らす (#197)
     ip: String,
     loopback: bool,
     role: Role,
+}
+
+/// 接続ごとの送信待ちの数と、上限で本文を落としたかの記録 (#197)
+#[derive(Default)]
+pub struct SendQueue {
+    pub len: AtomicUsize,
+    /// 一度でも本文を落としたら立てたままにする。送信側が空きを作っても、落とした接続は必ず切る
+    pub overflowed: AtomicBool,
+}
+
+impl SendQueue {
+    pub fn must_close(&self) -> bool { self.overflowed.load(Ordering::Relaxed) }
+}
+
+impl Conn {
+    /// 本文を送信待ちへ積む。上限に達した接続は送信側が切断する (#197)。
+    /// 切断は通常の経路で全解放し、再接続で最新の状態を受け取るので、落とした本文を補う必要はない
+    fn push_text(&self, text: String) {
+        if self.queued.len.fetch_add(1, Ordering::Relaxed) >= WS_QUEUE_LIMIT {
+            self.queued.len.fetch_sub(1, Ordering::Relaxed);
+            self.queued.overflowed.store(true, Ordering::Relaxed);
+            return;
+        }
+        if self.tx.send(Out::Text(text)).is_err() { self.queued.len.fetch_sub(1, Ordering::Relaxed); }
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -575,7 +605,7 @@ impl Hub {
 
     fn send(&self, conn: Option<u64>, msg: &Value) {
         if let Some(c) = conn.and_then(|id| self.conns.get(&id)) {
-            let _ = c.tx.send(Out::Text(msg.to_string()));
+            c.push_text(msg.to_string());
         }
     }
 
@@ -590,7 +620,7 @@ impl Hub {
         let text = msg.to_string();
         for c in self.conns.values() {
             if matches!(c.role, Role::Monitor { .. }) {
-                let _ = c.tx.send(Out::Text(text.clone()));
+                c.push_text(text.clone());
             }
         }
         crate::runtime_measure::elapsed("notify_monitors_us", start);
@@ -600,7 +630,7 @@ impl Hub {
         let text = msg.to_string();
         for slot in self.slots.iter().flatten() {
             if let Some(c) = slot.conn.and_then(|id| self.conns.get(&id)) {
-                let _ = c.tx.send(Out::Text(text.clone()));
+                c.push_text(text.clone());
             }
         }
     }
@@ -1925,8 +1955,8 @@ impl Hub {
 
     fn on_event(&mut self, ev: Event) {
         match ev {
-            Event::WsOpen { id, tx, ip, loopback } => {
-                self.conns.insert(id, Conn { tx, ip, loopback, role: Role::Unknown });
+            Event::WsOpen { id, tx, queued, ip, loopback } => {
+                self.conns.insert(id, Conn { tx, queued, ip, loopback, role: Role::Unknown });
             }
             Event::WsText { id, text, .. } => {
                 if let Some(msg) = protocol::parse_json(&text) {
@@ -2587,7 +2617,7 @@ mod tests {
             desktop: false,
         };
         let (monitor_tx, monitor_rx) = unbounded_channel();
-        hub.conns.insert(1, Conn { tx: monitor_tx, ip: String::new(), loopback: true,
+        hub.conns.insert(1, Conn { tx: monitor_tx, queued: Default::default(), ip: String::new(), loopback: true,
             role: Role::Monitor { page: Page::Host, focused: false } });
         hub.game.phase = Phase::Coop;
         hub.profile = Some(profiles::builtin_minecraft());
@@ -2811,7 +2841,7 @@ mod tests {
         let (mut h, _rx) = fixture();
         h.keybinds = Keybinds::build(h.profile.as_ref().unwrap(), None);
         let (tx, mut rx) = unbounded_channel();
-        h.conns.insert(90, Conn { tx, ip: String::new(), loopback: false, role: Role::Player { slot: 0 } });
+        h.conns.insert(90, Conn { tx, queued: Default::default(), ip: String::new(), loopback: false, role: Role::Player { slot: 0 } });
         h.slots[0].as_mut().unwrap().conn = Some(90);
         h.accept_input(0, json!({"iseq":"NaN","epoch":1,"button":"act:forward","state":"down"}), Via::Rtc);
         assert_eq!(h.slots[0].as_ref().unwrap().next_iseq, 1);
@@ -2831,7 +2861,7 @@ mod tests {
         let recorder = crate::input::testing::RecordingInput::default();
         let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
         let (tx, _rx) = unbounded_channel();
-        h.on_event(Event::WsOpen { id: 90, tx, ip: String::new(), loopback: false });
+        h.on_event(Event::WsOpen { id: 90, tx, queued: Default::default(), ip: String::new(), loopback: false });
         let epoch = h.game.epoch;
         for msg in [json!({"type":"input","iseq":1,"epoch":epoch,"button":"act:forward","state":"down"}),
             json!({"type":"inject_mode","mode":"off"}), json!({"type":"reset"}), json!({"type":"command","cmd":"PAUSE"})] {
@@ -3246,6 +3276,23 @@ mod tests {
         h.on_ws_message(1, json!({"type":"reset"}));
         assert!(h.participants.is_empty() && h.assigned.is_empty());
         assert!(h.game.phase == Phase::Lobby && h.game.reason.is_none() && h.game.auto_resume_until == 0);
+    }
+
+    #[test]
+    fn stalled_connection_queue_stops_at_the_limit_but_close_still_goes_out() {
+        let (tx, mut rx) = unbounded_channel();
+        let conn = Conn { tx, queued: Default::default(), ip: String::new(), loopback: true, role: Role::Unknown };
+        for _ in 0..WS_QUEUE_LIMIT + 100 { conn.push_text("x".into()); }
+        assert_eq!(conn.queued.len.load(Ordering::Relaxed), WS_QUEUE_LIMIT);
+        assert!(conn.queued.must_close());
+        conn.tx.send(Out::Close(4001, "reset".into())).unwrap();
+        let mut texts = 0;
+        let mut closed = false;
+        while let Ok(out) = rx.try_recv() {
+            match out { Out::Text(_) => texts += 1, Out::Close(..) => closed = true, Out::Terminate => {} }
+        }
+        assert_eq!(texts, WS_QUEUE_LIMIT);
+        assert!(closed);
     }
 
     #[test]
