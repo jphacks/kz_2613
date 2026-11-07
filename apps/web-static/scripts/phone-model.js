@@ -1,5 +1,5 @@
 // スマホ画面の表示内容の計算。既存の画面とReact版で共用する (#235)。DOMと入力には触れない。
-import { SLOT_NAMES } from '../app-view.js';
+import { SLOT_NAMES, MIN_PLAYERS, MAX_PLAYERS } from '../app-view.js';
 
 const CHARACTERS = { P1: 'blue', P2: 'green', P3: 'purple', P4: 'red' };
 
@@ -21,6 +21,33 @@ export function waitModel({ me, game, roleTitle, joined, autoWait }) {
     role: roleTitle,
     title: !joined ? '次の開始から参加します' : phase === 'paused' ? (autoWait ? `${reasonText(game.reason)}。戻ると自動で再開します` : '一時停止中') : 'ホストの開始を待っています',
     players: playerChips(game, me),
+  };
+}
+
+/** ホストのリモコン画面の内容。入力の要素 (タッチパッド・キー) は含まない */
+export function remoteModel({ me, isHost, game, name, autoWait }) {
+  const phase = game.phase;
+  let note = game.canReady
+    ? (phase === 'paused' ? `一時停止中${game.reason ? '（' + reasonText(game.reason) + '）' : ''}。リモコンで操作でき、RESUME で協力プレイに戻ります。` : `${name}をプレイ中の画面まで進めた後、ホストだけがReadyを押します。`)
+    : phase === 'lobby' ? (game.lineupOk
+      ? `メンバーと分担を決定しました（${game.connected.length}人）。PCの画面でゲームを起動してから準備へ進めます。`
+      : `PCの画面でゲームを選び、メンバーと分担を決定してください（${game.connected.length}人接続、${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べます）。`)
+    : (game.readyReasons || []).join('。') || 'ホストの明示操作を待っています';
+  if (phase === 'preparing') note = [game.prepareStatus, ...(game.readyReasons || []), '準備ができたらホストが明示Ready'].filter(Boolean).join('。');
+  if (autoWait && isHost) note = `${reasonText(game.reason)}。戻ると自動で再開します（RESUME で手動再開も可）。`;
+  if (phase === 'paused' && game.inputTarget && game.prepareStatus) note += `。${game.prepareStatus}`;
+  return {
+    players: playerChips(game, me),
+    route: { app: 'PCアプリを操作中', game: `${name}のメニューを操作中`, none: `PCアプリまたは${name}を前面にしてください` }[game.remoteRoute] || '',
+    startLabel: phase === 'paused' ? '再開する' : phase === 'preparing' ? `Ready・${game.connected.length}人で操作を始める` : 'ゲームを開く・準備する',
+    startDisabled: !(phase === 'paused' ? game.canResume : phase === 'preparing' ? game.canReady : game.canPrepare),
+    openGameLabel: `${name}を前面にする`,
+    // 前面にするボタンは、ゲームが前面でないときだけ (協力プレイに入るときはホストが自動で前面にする、#138)
+    openGameHidden: !['preparing', 'paused'].includes(phase) || !game.inputTarget,
+    endVisible: phase === 'paused',
+    // ホストを譲る (#233)。ロビーのホストにだけ出す。認可はホストが判定する
+    transferTo: isHost && phase === 'lobby' ? game.connected.filter((p) => p !== me) : [],
+    note,
   };
 }
 
