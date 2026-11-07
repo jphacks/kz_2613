@@ -71,6 +71,8 @@ pub enum Event {
     FakeActivate(bool),
     /// 既定の音の出力先が Bluetooth か (#131)。実機では定期的に調べ、試験では標準入力の "bt on/off" で差し替える
     BluetoothAudio(bool),
+    /// 試験用: 役割交代の時刻を今にする (dry-run のみ)
+    FakeRotationDue,
     /// ファイル選択の画面で選ばれた実行ファイル (#49。キャンセルなら None)
     ManualPicked(Option<PathBuf>),
     /// 試験用: PC アプリのウィンドウが前面になった・外れた (DRY_RUN のときだけ。実際は前面のプロセス名で判定する)
@@ -300,6 +302,9 @@ pub struct Hub {
     // 枠ごとの席順 (#47・#62)。分担の束 (移動・視点…) を席順の早い人から配る。初期値は枠の順。
     // ホストが入れ替えると束ごと交換される。終了してもリセットするまで保つ (入れ替えたまま再挑戦できる)
     seats: [usize; MAX_SLOTS],
+    // 時間制の役割交代 (#161)。既定は OFF
+    rotation_secs: u64,
+    rotation_at: u64,
     // 担当が変わり、本人がスマホで「確認しました」を押していない枠。押すまで Ready・再開できない
     role_ack: Vec<usize>,
     app_focused: bool,           // PC アプリが前面か (手動復帰の判定に使う)
@@ -393,6 +398,8 @@ impl Hub {
             participants: Vec::new(),
             lineup: None,
             seats: [0, 1, 2, 3],
+            rotation_secs: 0,
+            rotation_at: 0,
             role_ack: Vec::new(),
             fake_target: std::env::var("RECOOPLAY_FAKE_TARGET")
                 .ok()
@@ -670,6 +677,7 @@ impl Hub {
             // 枠 → 席順 (P1〜 で表す。入れ替えた人は入れ替えた先の席、#47。分担は席順で配る)
             "roleOf": self.role_slots().iter().filter_map(|&i| self.role_rank(i).map(|k| (SLOT_NAMES[i].to_string(), json!(SLOT_NAMES[k])))).collect::<Map<String, Value>>(),
             "roleAck": self.role_ack.iter().map(|&i| SLOT_NAMES[i]).collect::<Vec<_>>(),
+            "rotationSeconds": self.rotation_secs,
             "canChangePlayers": session::can_change_players(self.game.phase, &self.connected_slots(), &self.participants),
             "canSwap": matches!(self.game.phase, Phase::Lobby | Phase::Preparing) || (self.game.phase == Phase::Paused && !self.participants.is_empty()),
             "canLaunch": self.can_launch(),
@@ -826,6 +834,8 @@ impl Hub {
         if change.clear_lineup { self.assigned.clear(); self.participants.clear(); self.lineup = None; }
         self.game.reason = Some(reason.to_string());
         self.advance_epoch();
+        // 協力プレイに入るたびに数え直す。止まっている間は交代しない
+        self.rotation_at = if phase == Phase::Coop && self.rotation_secs != 0 { now_ms() + self.rotation_secs * 1000 } else { 0 };
         self.log("phase", json!({ "phase": phase.name(), "reason": reason, "epoch": self.game.epoch }));
         self.update_low_latency();
         self.push_game();
@@ -1026,6 +1036,22 @@ impl Hub {
 
     /// 2 人の担当を入れ替える (#47)。開始前 (ロビー・準備中) と一時停止中だけ。全解放して epoch を進め、
     /// 2 人がスマホで新しい担当を確認するまで Ready・再開できない。ロビーでは分担の決定もやり直しになる
+    /// 時間制の役割交代 (#161)。協力プレイを止めて全員の入力を解放し、担当をずらして全員の確認を待つ。
+    /// 再開はホストの明示操作だけで、自動復帰しない。ホストの権限は移らない
+    fn rotate_roles_if_due(&mut self, now: u64) {
+        if !session::rotation_due(self.game.phase, self.rotation_at, now) { return; }
+        self.set_phase(Phase::Paused, "role rotation");
+        if self.game.phase != Phase::Paused { return; }
+        self.seats = session::rotated_seats(self.seats, &self.participants);
+        if let Some(p) = self.profile.clone() { self.assigned = self.proposal_for(&p, &self.participants.clone()); }
+        self.game.auto_resume_until = 0;
+        self.role_ack = self.participants.clone();
+        self.advance_epoch();
+        self.log("role_rotation", json!({ "epoch": self.game.epoch }));
+        self.push_game();
+        self.push_state();
+    }
+
     /// 一時停止中に今の接続で参加者と分担を決め直す (#162)。旧入力を捨て、全員の確認と明示の再開を求める
     fn change_players(&mut self) {
         let connected = self.connected_slots();
@@ -1839,6 +1865,7 @@ impl Hub {
                     }
                 }
                 self.release_lobby_slots(now);
+                self.rotate_roles_if_due(now);
                 self.update_low_latency();
                 self.net_tick += 1;
                 if self.net_tick % 10 == 0 {
@@ -1908,6 +1935,7 @@ impl Hub {
             }
             Event::EmergencyStop { source, .. } => self.emergency_stop(source),
             Event::ManualPicked(picked) => self.on_manual_picked(picked),
+            Event::FakeRotationDue => { if self.rotation_at != 0 { self.rotation_at = 1; self.rotate_roles_if_due(now_ms()); } }
             Event::BluetoothAudio(on) => {
                 if self.bluetooth_audio != on {
                     self.bluetooth_audio = on;
@@ -2043,6 +2071,14 @@ impl Hub {
             }
             "launch_game" => {
                 if let Some(id) = s(msg, "id") { self.launch_game(&id); }
+            }
+            "rotation" => {
+                let secs = msg.get("seconds").and_then(Value::as_u64).unwrap_or(0);
+                if self.game.phase != Phase::Coop && session::ROTATION_CHOICES.contains(&secs) {
+                    self.rotation_secs = secs;
+                    self.log("rotation", json!({ "seconds": secs }));
+                    self.push_game();
+                }
             }
             "change_players" => {
                 if msg.get("epoch").and_then(Value::as_u64) == Some(self.game.epoch) { self.change_players(); }
@@ -2505,6 +2541,8 @@ mod tests {
             participants: Vec::new(),
             lineup: None,
             seats: [0, 1, 2, 3],
+            rotation_secs: 0,
+            rotation_at: 0,
             role_ack: Vec::new(),
             fake_target: Some(true),
             app_focused: false,
@@ -3137,6 +3175,26 @@ mod tests {
         h.participants = vec![0, 1, 2];
         h.change_players();
         assert_eq!(h.participants, vec![0, 1, 2]); // 協力プレイ中は変えない
+    }
+
+    #[test]
+    fn role_rotation_stops_input_moves_roles_and_waits_for_everyone() {
+        let (mut h, _rx) = fixture();
+        h.participants = vec![0, 1];
+        h.rotation_secs = 60;
+        h.rotation_at = 1_000;
+        h.set_output(index("KEY_W"), "P1", true);
+        let epoch = h.game.epoch;
+        h.rotate_roles_if_due(999);
+        assert!(h.game.phase == Phase::Coop); // 時刻の前は何もしない
+        h.rotate_roles_if_due(1_000);
+        assert!(h.game.phase == Phase::Paused);
+        assert_eq!(h.game.reason.as_deref(), Some("role rotation"));
+        assert!(h.outputs.iter().all(|o| !o.physical)); // 全員の入力を解放する
+        assert_eq!(h.seats, [1, 0, 2, 3]);
+        assert_eq!(h.role_ack, vec![0, 1]); // 全員の確認が要る
+        assert_eq!((h.rotation_at, h.game.auto_resume_until), (0, 0)); // 止まっている間は数えず、自動で再開しない
+        assert!(h.game.epoch > epoch);
     }
 
     #[test]

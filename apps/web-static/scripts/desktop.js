@@ -9,6 +9,7 @@ try{localStorage.removeItem('recooplay.app');}catch{}
 let state=null,game=null,inject=null,ws=null,online=false,gamesHtml='',shownGame='';
 let infoPort=null;
 $('autoResumeSetting').addEventListener('change',e=>send({type:'auto_resume',on:e.target.checked}));
+$('rotationSetting').addEventListener('change',e=>send({type:'rotation',seconds:Number(e.target.value)}));
 // 選択画面の一覧。インストール済みのゲームはPC画面にだけ届く (state.games)
 const games=()=>gameList(state?.games,state?.minecraft);
 const send=m=>{if(ws?.readyState===1)ws.send(JSON.stringify(m));};
@@ -184,6 +185,7 @@ function render(){
   $('changePlayersBtn').hidden=!(view==='paused'&&game?.canChangePlayers);
   $('changePlayersBtn').textContent=`今の${game?.connected?.length||0}人で分担し直す`;
   const comm=commSettingsView(game,infoPort);
+  $('rotationSetting').value=String(game?.rotationSeconds??0);$('rotationSetting').disabled=!game||game.phase==='coop';
   $('autoResumeSetting').checked=comm.checked;$('autoResumeSetting').disabled=comm.locked;$('commInfo').textContent=comm.text;
   $('steps').hidden=!['join','game','roles'].includes(view);
   document.querySelectorAll('#steps button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===ui.screen?'page':'false'));

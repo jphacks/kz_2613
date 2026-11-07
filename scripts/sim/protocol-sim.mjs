@@ -1880,6 +1880,45 @@ async function main() {
       for (const x of [a, b]) x.close();
     });
 
+    await check('役割交代: 時間で一時停止して全解放し、担当をずらして全員の確認と明示の再開を求める (#161)', async () => {
+      mon.send({ type: 'reset' });
+      await sleep(200);
+      mon.send({ type: 'select_game', title: 'minecraft-java' });
+      mon.send({ type: 'rotation', seconds: 45 });
+      await sleep(100);
+      const id = (n) => ({ clientId: `sim-rotation-${n}` });
+      const a = await join('R1', id(1)); await welcome(a);
+      const b = await join('R2', id(2)); await welcome(b);
+      await sleep(200);
+      const latest = () => [...a.msgs].reverse().find((m) => m.type === 'game').game;
+      assert(latest().rotationSeconds === 0, '選べない間隔を受け付けた');
+      mon.send({ type: 'rotation', seconds: 60 });
+      await a.waitFor((m) => m.type === 'game' && m.game.rotationSeconds === 60, { what: '間隔' });
+      a.send({ type: 'rotation', seconds: 0 }); await sleep(100);
+      assert(latest().rotationSeconds === 60, 'スマホから設定を変えた');
+      await confirmLineup(mon, a);
+      a.send({ type: 'command', cmd: 'PREPARE' }); await phaseIs(a, 'preparing', 0);
+      await a.waitFor((m) => m.type === 'game' && m.game.canReady, { what: 'canReady' });
+      a.send({ type: 'command', cmd: 'READY' }); await phaseIs(a, 'coop', 0);
+      const before = latest().assigned;
+      mon.send({ type: 'rotation', seconds: 120 }); await sleep(100);
+      assert(latest().rotationSeconds === 60, '協力プレイ中に設定を変えた');
+      const from = a.mark();
+      host.child.stdin.write('rotate\n');
+      const paused = await a.waitFor((m) => m.type === 'game' && m.game.phase === 'paused' && m.game.roleAck?.length === 2, { from, what: '交代' });
+      assert(paused.game.reason === 'role rotation' && !paused.game.canResume, JSON.stringify({ reason: paused.game.reason }));
+      assert(JSON.stringify(paused.game.assigned) !== JSON.stringify(before), '担当が変わっていない');
+      for (const x of [a, b]) { x.send({ type: 'role_ok', epoch: latest().epoch }); await sleep(100); }
+      await a.waitFor((m) => m.type === 'game' && m.game.canResume, { what: '確認後' });
+      assert(latest().phase === 'paused', '確認だけで再開した');
+      a.send({ type: 'command', cmd: 'RESUME' });
+      await a.waitFor((m) => m.type === 'game' && m.game.phase === 'coop', { from, what: '再開' });
+      a.send({ type: 'command', cmd: 'END' }); await sleep(100);
+      mon.send({ type: 'rotation', seconds: 0 });
+      await sleep(100);
+      for (const x of [a, b]) x.close();
+    });
+
     await check('ログ: IP・User-Agent・clientId を記録せず、枠名と端末の種類だけを残す', async () => {
       await sleep(1200); // ログは 1 秒ごとに書き出される
       const log = fs
