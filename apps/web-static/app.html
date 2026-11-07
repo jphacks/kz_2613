@@ -12,7 +12,7 @@
 <body data-view="join">
 <div class="desktop-shell">
   <aside class="sidebar">
-    <div class="brand-band"><a class="brand" href="/app" aria-label="Re:Cooplay 参加画面へ"><img class="brand-image" src="/assets/logo.png" width="3200" height="2400" alt="Re:Cooplay"></a><p class="brand-message"><strong>ひとり</strong>のゲームを<br>笑い、失敗し、協力し、<br><b>みんなの<br>冒険に。</b></p></div>
+    <div class="brand-band"><a class="brand" href="/app" aria-label="Re:Cooplay 参加画面へ"><img class="brand-image" src="/assets/logo.png" width="960" height="720" alt="Re:Cooplay"></a><p class="brand-message"><strong>ひとり</strong>のゲームを<br>笑い、失敗し、協力し、<br><b>みんなの<br>冒険に。</b></p></div>
     <h1 id="screenTitle" class="page-title"></h1>
     <hr class="left-rule" id="leftRule" hidden>
     <p class="explanation" id="explanation"></p><p class="secondary" id="secondary"></p>
@@ -55,13 +55,18 @@
 <dialog id="settings" aria-labelledby="settingsTitle">
   <h2 id="settingsTitle">操作設定</h2><p id="inputState" role="status"></p>
   <nav id="steps" aria-label="画面の移動"></nav>
-  <details id="keyDetails"><summary>担当と実際に送るキー</summary><p id="keyWarnings" role="status"></p><div id="keyBindings"></div></details>
+  <details id="keyDetails"><summary>担当と実際に送るキー</summary><p id="keyWarnings" role="status"></p><div id="keyBindings"></div><div id="keyEditor"></div></details>
   <p id="inputSafety">選んだゲームが前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。</p>
   <!-- 入力は初期値で ON (対象のゲームが前面で協力プレイ中のときだけ送る)。手動の OFF/ON は診断・緊急用 (#114) -->
   <details id="commDetails"><summary>通信の設定</summary>
     <label class="comm-setting"><input type="checkbox" id="autoResumeSetting"> 切断から戻ったら自動で再開する</label>
     <p id="commInfo" role="status"></p>
   </details>
+  <details id="ruleDetails"><summary>遊び方</summary>
+    <label class="comm-setting">時間で担当を交代する <select id="rotationSetting"><option value="0">しない</option><option value="60">1分ごと</option><option value="120">2分ごと</option><option value="180">3分ごと</option></select></label>
+    <p>時間になると一時停止して、全員が新しい担当を確認した後、ホストが再開します。協力プレイ中は変更できません。</p>
+  </details>
+  <details id="overlayDetails"><summary>観客向け表示（配信・録画）</summary><p>OBSなどのブラウザソースに <code>http://127.0.0.1:ポート/overlay</code> を追加すると、担当と操作を透過で重ねられます。上に出すときは末尾に <code>?position=top</code> を付けます。ゲームの画面には描画しません。</p></details>
   <details id="netDetails"><summary>通信の診断</summary><div id="netDiag" role="status"></div></details>
   <details id="inputDetails"><summary>入力の一時停止（診断・緊急用）</summary><div class="seg" id="modeSeg"><button data-mode="off">入力を止める</button><button data-mode="on">入力を再開する</button></div></details>
   <details><summary>手順・詳しい確認</summary><ol id="gameSteps"></ol><p id="gameStatus"></p><p><a href="/host">診断画面を開く</a></p></details>
