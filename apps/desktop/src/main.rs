@@ -18,6 +18,11 @@ const WEB_DIR: &str = "apps/web-static";
 const HOST_EXE: &str = if cfg!(windows) { "recooplay-host.exe" } else { "recooplay-host" };
 const START_TIMEOUT: Duration = Duration::from_secs(15);
 const QUIT_TIMEOUT: Duration = Duration::from_secs(3);
+/// ホストの終了を調べる間隔と、続けて再起動する上限 (#222)
+const WATCH_INTERVAL: Duration = Duration::from_millis(500);
+const MAX_RESTARTS: u32 = 3;
+/// これより長く動いたら、次の異常終了は別の問題として数え直す
+const STABLE_RUN: Duration = Duration::from_secs(60);
 
 /// 起動したホストのプロセス
 struct Host(Mutex<Option<Child>>);
@@ -136,6 +141,56 @@ fn stop_host(host: &Mutex<Option<Child>>) {
     let _ = child.wait();
 }
 
+/// 動作中のホストの異常終了の案内 (#222)。実入力の押下はホスト自身が解放できない場合があるので、必ず知らせる
+fn host_restart_notice(restarted: bool) -> String {
+    let keys = "キーが押されたままなら、物理キーを押して離してください。";
+    if restarted {
+        format!("PCホストが異常終了したため再起動しました。{keys}スマホは自動で参加し直します。分担からやり直してください。")
+    } else {
+        format!("PCホストが異常終了を繰り返したため、再起動を止めました。{keys}アプリを閉じて起動し直してください。")
+    }
+}
+
+/// 続けて再起動してよいか。長く動いた後の異常終了は数え直す
+fn next_restart_count(count: u32, ran_for: Duration) -> Option<u32> {
+    let next = if ran_for >= STABLE_RUN { 1 } else { count + 1 };
+    (next <= MAX_RESTARTS).then_some(next)
+}
+
+fn show_host_notice(app: &tauri::AppHandle, text: &str) {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.eval(&format!("window.showHostNotice?.({})", serde_json::Value::from(text)));
+    }
+}
+
+/// 起動後のホストを見守る。終了要求 (stop_host) ではホストの取り出しで止まる。
+/// 再起動したホストはロビーから始まり、Ready まで入力を送らない
+fn watch_host(handle: tauri::AppHandle, root: PathBuf, exe: PathBuf, port: u16) {
+    let host = handle.state::<Host>();
+    let (mut restarts, mut started) = (0, Instant::now());
+    loop {
+        std::thread::sleep(WATCH_INTERVAL);
+        {
+            let mut guard = host.0.lock().unwrap();
+            let Some(child) = guard.as_mut() else { return };
+            if !matches!(child.try_wait(), Ok(Some(_))) { continue; }
+            *guard = None;
+        }
+        let Some(next) = next_restart_count(restarts, started.elapsed()) else {
+            return show_host_notice(&handle, &host_restart_notice(false));
+        };
+        restarts = next;
+        started = Instant::now();
+        match spawn_host(&root, &exe, port) {
+            Ok(child) => *host.0.lock().unwrap() = Some(child),
+            Err(_) => return show_host_notice(&handle, &host_restart_notice(false)),
+        }
+        if wait_ready(&host.0, port).is_ok() {
+            show_host_notice(&handle, &host_restart_notice(true));
+        }
+    }
+}
+
 fn show_error(app: &tauri::AppHandle, text: &str) {
     *app.state::<StartupError>().0.lock().unwrap() = Some(text.to_string());
     if let Some(w) = app.get_webview_window("main") {
@@ -185,6 +240,7 @@ fn main() {
                 if let Some(w) = handle.get_webview_window("main") {
                     let _ = w.navigate(url);
                 }
+                watch_host(handle.clone(), root, exe, port);
             });
             Ok(())
         })
@@ -210,5 +266,19 @@ mod tests {
         assert!(!missing.contains("ポート"));
         let other = host_exit_message(std::process::ExitStatus::from_raw(1), 18600);
         assert!(other.contains("18600") && !other.contains("Visual C++"));
+    }
+
+    #[test]
+    fn host_restarts_stop_after_the_limit_and_count_again_after_a_stable_run() {
+        let short = Duration::from_secs(1);
+        assert_eq!(next_restart_count(0, short), Some(1));
+        assert_eq!(next_restart_count(MAX_RESTARTS - 1, short), Some(MAX_RESTARTS));
+        assert_eq!(next_restart_count(MAX_RESTARTS, short), None);
+        assert_eq!(next_restart_count(MAX_RESTARTS, STABLE_RUN), Some(1));
+    }
+
+    #[test]
+    fn host_notice_always_mentions_keys_that_may_stay_pressed() {
+        for restarted in [true, false] { assert!(host_restart_notice(restarted).contains("物理キー")); }
     }
 }

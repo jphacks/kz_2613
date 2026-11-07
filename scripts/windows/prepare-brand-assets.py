@@ -16,6 +16,9 @@ source.resize((256, 256), Image.Resampling.LANCZOS).save(
     icons / 'icon.ico', sizes=[(s, s) for s in [16, 24, 32, 48, 64, 128, 256]])
 source.resize((192, 192), Image.Resampling.LANCZOS).save(web / 'icon.png')
 source.resize((180, 180), Image.Resampling.LANCZOS).save(web / 'apple-touch-icon.png')
-shutil.copyfile(web / 'logo.png', startup / 'logo.png')
+# ロゴは表示の最大（PC画面で約215px）に対して十分な960x720で配る。原画像は logo-source.png に残す
+logo = Image.open(icons / 'logo-source.png').convert('RGBA').resize((960, 720), Image.Resampling.LANCZOS)
+logo.save(web / 'logo.png', optimize=True)
+logo.save(startup / 'logo.png', optimize=True)
 shutil.copyfile(web / 'icon.png', startup / 'icon.png')
 print('ロゴ・Windows用PNG/ICO・ブラウザ用アイコンを生成しました（切り取りなし）')
