@@ -1150,3 +1150,5 @@
 - #214：PC専用の画面を実ファイルで判定し、`::$DATA`を配信しない。
 - #225：自動復帰ON・15秒の判断を資料へ記録した。コードの初期値は変更なし。
 - 判断は[資料](../decisions/2026-11-06-host-reset-auto-resume.md)に記録した。実端末でのホスト交代は未実施。
+- 検証：`cargo build --release --locked --offline` 成功。`cargo test` はホスト114件・プローブ4件成功、手動2件は対象外。`protocol-sim` 56/56、`shutdown-sim`、`phone-session` 7/7、`phone-lifecycle` 16/16、`app-view` 25/25、`ui-input` 12/12が成功。
+- headless Chromeのスマホ画面で、ホストのタブを閉じて14秒時点はP2のまま、19秒時点でP1に昇格し、空いた枠に新しい端末が参加できることを確認した。リセットでは全員が案内を表示し、接続は0のままだった。LAN経路の表記違いは403または404になった。
