@@ -32,3 +32,6 @@ Thumbs.db
 apps/host-rs/target/
 apps/desktop/target/
 apps/desktop/gen/
+
+# Reactのビルド結果（#235）
+apps/web-static/react/
