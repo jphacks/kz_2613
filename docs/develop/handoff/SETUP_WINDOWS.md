@@ -15,7 +15,8 @@
 |---|---|---|
 | `apps/host-rs/` | Rust版PCホスト（HTTP・WebSocket・WebRTC・SendInput） | `cargo build --release --locked`、`cargo test --release --locked` |
 | `apps/desktop/` | PCアプリ（Tauri / WebView2）。ホストを起動して画面を表示する | `cargo build --release --locked` |
-| `apps/web-static/` | スマホ・PC画面（ビルド不要の静的HTML/JS） | `node scripts/sim/check-static-pages.mjs`、`node scripts/sim/app-view-test.mjs` |
+| `apps/web/` | React版の画面のソース（移行中） | `npm ci`、`npm run build`（`apps/web` で実行。配布の前に必要） |
+| `apps/web-static/` | スマホ・PC画面（既存の静的HTML/JS） | `node scripts/sim/check-static-pages.mjs`、`node scripts/sim/app-view-test.mjs` |
 | `scripts/sim/` | 通信契約のシミュレーション（注入なし） | `node scripts/sim/protocol-sim.mjs` |
 
 構造確認は `py -3 scripts/verify_overlay.py`。GitHub Actionsでは `checks.yml`（構造確認）と `rust.yml`（上表のビルド・試験）を実行する。どれもOSへの入力を送らず、Minecraft・スマホ実機の合格の代わりにはならない。
