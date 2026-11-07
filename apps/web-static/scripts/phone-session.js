@@ -34,6 +34,7 @@ export function createPhoneSession({ storage, createClientId, now }) {
   function stop(reason) { stopped = true; if (reason) connection = reason; }
   function disconnected(code) {
     if (code === 4000) { stop('replaced'); return null; }
+    if (code === 4001) { stop('reset'); return null; }
     if (code === 4005) { stop('version'); return null; }
     if (code === 4006) { stop('token'); return null; }
     connection = 'disconnected';
@@ -49,7 +50,7 @@ export function createPhoneSession({ storage, createClientId, now }) {
   function status() {
     return {
       connecting: ['接続中', 'warn'], connected: [reconnected ? '再接続OK' : '接続OK', 'ok'],
-      disconnected: ['切断 — 再接続待ち', 'ng'], replaced: ['別タブで接続中', 'ng'],
+      disconnected: ['切断 — 再接続待ち', 'ng'], replaced: ['別タブで接続中', 'ng'], reset: ['リセットされました', 'ng'],
       version: ['版が不一致', 'ng'], token: ['参加できません', 'ng'],
     }[connection];
   }

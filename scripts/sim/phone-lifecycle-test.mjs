@@ -149,7 +149,7 @@ if (process.argv.includes('--repro-shared-pointer')) {
     h.control('act:attack').fire('pointerup'); assert.equal(current.sent.filter(message => message.type === 'input').length, 0);
   });
   await test('終了コード: 接続置換・版不一致・token不一致では再試行せず保持を失効する', async () => {
-    for (const code of [4000, 4005, 4006]) {
+    for (const code of [4000, 4001, 4005, 4006]) {
       const h = controllerHarness(); await h.ready(); h.control('act:attack').fire('pointerdown');
       h.sockets[0].close(code); h.advance(6000);
       assert.equal(h.sockets.length, 1); assert(h.peers[0].closed);

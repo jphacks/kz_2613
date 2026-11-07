@@ -293,12 +293,20 @@ async function main() {
     await check('参加の案内: Wi-Fi・ホットスポットの情報は PC 本体にだけ返し、ON にする要求は PC の画面からだけ受け付ける (#133)', async () => {
       const local = await (await fetch(`${BASE}/api/info`)).json();
       assert(local.wifi?.ssid === 'SimSpot' && local.wifi.qr.includes('<svg') && local.hotspot?.on === true, JSON.stringify({ wifi: local.wifi?.ssid, hotspot: local.hotspot }));
+      assert(typeof local.build?.version === 'string', `PC の画面に版を返さない: ${JSON.stringify(local.build)}`);
       const lan = local.urls.find((u) => !u.address.startsWith('127.'));
       if (lan) {
         const remote = await (await fetch(`http://${lan.address}:${PORT}/api/info`)).json();
+        assert(remote.build === undefined, 'LAN の端末に版を返した');
         assert(remote.wifi === null && remote.hotspot === null && remote.urls.length > 0, 'LAN の端末に Wi-Fi の情報を返した');
         const fromLan = await fetch(`http://${lan.address}:${PORT}/api/hotspot`, { method: 'POST', headers: { Origin: `http://${lan.address}:${PORT}` } });
         assert(fromLan.status === 403, `LAN からの ON 要求 ${fromLan.status}`);
+        // 表記を変えても PC 専用の画面を LAN へ配信しない (#214)
+        for (const p of ['/app', '/host', '/game', '/HOST.HTML', '/Host.html', '/app.HTML', '/GAME.html', '/host.html.', '/host.html::$DATA', '//host.html', '//app.html', '//game.html']) {
+          const r = await fetch(`http://${lan.address}:${PORT}${p}`);
+          assert(r.status === 403 || r.status === 404, `LAN へ ${p} を配信した: ${r.status}`);
+        }
+        assert((await fetch(`http://${lan.address}:${PORT}/`)).status === 200, 'LAN へスマホ画面を配信できない');
       }
       const foreign = await fetch(`${BASE}/api/hotspot`, { method: 'POST', headers: { Origin: 'http://evil.example' } });
       const noOrigin = await fetch(`${BASE}/api/hotspot`, { method: 'POST' });
@@ -1771,6 +1779,27 @@ async function main() {
       assert(files.length > 0, 'ログファイルがない');
       const log = files.map((f) => fs.readFileSync(path.join(host.logDir, f), 'utf8')).join('');
       for (const k of ['P1', 'P2', 'P3']) assert(!log.includes(tokens[k]), `${k} のトークンがログに出た`);
+    });
+
+    await check('ロビー: 戻らないホストの枠は15秒で解放し、接続中の最も若い枠がホストになる。元のホストは参加者で戻る (#223)', async () => {
+      mon.send({ type: 'reset' });
+      await sleep(200);
+      const id = (n) => ({ clientId: `sim-handover-${n}` });
+      const a = await join('H1', id(1)); await welcome(a);
+      const b = await join('H2', id(2)); await welcome(b);
+      const c = await join('H3', id(3)); await welcome(c);
+      const slots = [a, b, c].map((x) => x.msgs.find((m) => m.type === 'welcome').slot);
+      assert(slots.join() === 'P1,P2,P3', slots.join());
+      a.close();
+      await sleep(13000);
+      assert(b.closed === null, '期限前にホストを移した');
+      assert((await b.waitClose(5000)) === 4008, `close ${b.closed}`);
+      assert(c.closed === null, 'P3 まで切断した');
+      const promoted = await join('H2', id(2)); const w = await welcome(promoted);
+      assert(w.slot === 'P1' && w.isHost === true && w.reconnected === true, JSON.stringify({ slot: w.slot, isHost: w.isHost }));
+      const back = await join('H1', id(1)); const old = await welcome(back);
+      assert(old.slot === 'P2' && old.isHost === false, JSON.stringify({ slot: old.slot, isHost: old.isHost }));
+      for (const x of [promoted, back, c]) x.close();
     });
 
     await check('ログ: IP・User-Agent・clientId を記録せず、枠名と端末の種類だけを残す', async () => {
