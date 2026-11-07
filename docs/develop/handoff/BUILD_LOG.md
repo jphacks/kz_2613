@@ -1321,3 +1321,9 @@
 - #251の保存・入力停止・認可・キー反映の差分とCI成功を確認して統合した。#252はPC専用ページの配信境界とReactの同期描画を確認し、キー編集・参加者表示・両方の検証記録を保持して統合準備した。
 - ローカルで `app-view-test` 29/29、`ui-input-test` 12/12、`phone-lifecycle-test` 16/16、`npm --prefix apps/web run build`、`check-static-pages`、`node --check scripts/sim/react-pc-parity.mjs`、差分検査が成功。WebView2・実端末・実ゲーム・実OS入力の追試は実施していない。
 - #230・#234・#239は前回から変更がなく、指摘未修正のため保留を継続する。
+
+## 2026-11-07 — 配信するロゴの容量を減らす（Claude Code、#256）
+
+- `logo.png`（3200×2400、1.3MB）はスマホの画面を開くたびに読み込まれていた。表示は最大でPC画面の約215pxなので、960×720（210KB）にした。原画像は `apps/desktop/icons/logo-source.png` に残し、`prepare-brand-assets.py` で作り直せるようにした。
+- 白・黒の背景に合成した表示サイズの比較で、差は最大12/255、差が16を超える画素は0。`verify-ui-evidence`、`static-assets-sim`、両方の同等性試験などが成功。
+- #254・#256 の初回の調査で「参照なし」とした中間画像とスクリプトは、証拠フォルダ内の資料から参照されていた。調べ方の誤りなので、削除せずIssueで訂正した。
