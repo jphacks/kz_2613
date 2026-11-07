@@ -1152,6 +1152,15 @@
 - 判断は[資料](../decisions/2026-11-06-host-reset-auto-resume.md)に記録した。実端末でのホスト交代は未実施。
 - 検証：`cargo build --release --locked --offline` 成功。`cargo test` はホスト114件・プローブ4件成功、手動2件は対象外。`protocol-sim` 56/56、`shutdown-sim`、`phone-session` 7/7、`phone-lifecycle` 16/16、`app-view` 25/25、`ui-input` 12/12が成功。
 - headless Chromeのスマホ画面で、ホストのタブを閉じて14秒時点はP2のまま、19秒時点でP1に昇格し、空いた枠に新しい端末が参加できることを確認した。リセットでは全員が案内を表示し、接続は0のままだった。LAN経路の表記違いは403または404になった。
+
+## 2026-11-07 — React移行の基盤とスマホ画面の外枠（Claude Code、#235）
+
+- ユーザー判断でReact移行を最優先にした。`apps/web/` にReact 19・Viteを導入し、ビルド結果を `apps/web-static/react/` へ出す。`/phone-react.html` は確認用で、既定の画面は変更していない。
+- `index.html` の本文を機械変換して外枠にし、入力と接続は既存の `controller.js` をそのまま使う。
+- `react-phone-parity.mjs` を追加した。既存画面とReact版で、DOM97要素の構造、位置、WebRTC、操作、押下と解放の順序、スティック、保持中のPause、再読み込みの結果が一致した。タップの遅延（40回）はp50 5.4→4.7ms、p95 17→12.5ms。視点の送信は47→48.5件/秒（WS・RTCの全送信の数）。読み込みは1.6→1.1秒。各1試行のheadless Chromeの値で、実端末・無線の性能ではない。
+- 試験の検出力は、React版のclassを意図的に変えて不合格になることで確認した。mainの `index.html` の変更を取り込んだ際も、外枠のずれ（待機画面の案内）を検出した。外枠は再生成して一致を確認した（統合後のタップp95 12.8→12.5ms）。
+- `npm audit --omit=dev` は脆弱性0件。バンドルは226.8kB（gzip 71.1kB）と28.2kB。実端末、WebView2は未確認。
+
 ## 2026-11-06 — 担当色の統一と待機画面の案内（Claude Code、#215・#227）
 
 - `colors.css` の `--p1〜4` と `/game` の色をキャラクターの色へ統一し、`/game` のP4の未定義を解消した。`check-static-pages.mjs` に一致の検査を追加し、色を崩すと失敗することを確認した。
@@ -1200,6 +1209,17 @@
 - ローカルで `app-view-test` 25/25、`ui-input-test` 12/12、`phone-view-test`、`phone-session-test` 7/7、`phone-lifecycle-test` 16/16、`check-static-pages` と差分検査が成功。公開資料のPython検査は、この実行環境にPythonがないためCIで確認する。
 - #234はlocalStorage getterのSecurityErrorによる初期化失敗を再現し保留。#230は再起動と終了の競合、再起動の待受タイムアウト未処理を指摘し保留。通常系の試験成功と、異常系の問題を区別する。
 - このレビューでは実端末・Minecraft・実OS入力の追試は実施していない。
+
+## 2026-11-07 — スマホの待機画面をReactへ移す（Claude Code、#235）
+
+- 表示内容の計算を `phone-model.js` の純粋関数へ分け、既存画面とReact版で共用する。React版では既存の書き込みを止め、待機画面をReactだけが描く。入力と接続は変更していない。
+- `react-phone-parity.mjs` に待機画面の内容の完全比較（ロビー・一時停止中）を追加した。タグ間の改行とimgの属性の順序だけを除く。文言を1文字変えると不合格になることを確認した。
+- 全項目一致。タップのp95は12.4→13.2ms、視点は49.5→47.5件/秒（headless Chrome、1回の比較）。`phone-view`、`phone-lifecycle` 16/16、`ui-input` 12/12、`check-static-pages`、`static-assets-sim`（42ファイル）が成功。実端末は未確認。
+
+## 2026-11-07 — ホストの手動譲渡（Claude Code、#233）
+
+- ロビーのP1のスマホに「ホストを譲る」を追加した。サーバーが現在のホスト・ロビー・相手の接続を確認し、2つの枠を入れ替える。両者は4008で閉じ、同じトークンで再接続する。
+- 認可の純粋関数・枠の入れ替えの単体試験と、`protocol-sim` の譲渡の試験（非ホスト・旧epoch・未接続の拒否を含む）を追加した。実端末は未確認。
 
 ## 2026-11-07 — 受入追試の分離と視点試験の端数判定（Codex、#39）
 
