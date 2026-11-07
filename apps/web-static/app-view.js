@@ -93,6 +93,19 @@ export function phoneAdvice(stats) {
 /** 案内に出す、選んだゲームの名前 (#140)。ホストの game.titleName。分からなければ「ゲーム」 */
 export const gameLabel = (game) => game?.titleName || 'ゲーム';
 
+/**
+ * 通信の設定の表示 (#220)。協力プレイ中は変えない。ポートの変更には再起動が要るので config.json の案内にする。
+ * 自動復帰の切替はホストの実行中だけ有効で、起動すると初期値へ戻る
+ */
+export function commSettingsView(game, port) {
+  const seconds = Math.round((game?.autoResumeMs ?? 15000) / 1000);
+  const locked = !game || game.phase === 'coop';
+  const lines = [`自動で再開できる時間：切断から${seconds}秒以内`, 'ホストの一時停止・緊急停止の後は自動で再開しません', 'この設定はアプリを閉じると初期値に戻ります'];
+  if (port) lines.push(`ポート：${port}（変更は config.json で行い、アプリを起動し直してください）`);
+  if (game?.phase === 'coop') lines.unshift('協力プレイ中は変更できません。一時停止すると変更できます');
+  return { checked: !!game?.autoResume, locked, text: lines.join('。') };
+}
+
 export function desktopWarning(game, inject, connected = true) {
   if (!connected) return 'PCホストとの接続が切れました。再接続を待っています。';
   if (inject?.emergencyHotkeyError) return '緊急停止キーを登録できません。操作設定で入力をOFFにしてください。';
