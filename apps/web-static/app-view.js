@@ -126,6 +126,38 @@ export function playerHint(profile) {
   return best && { players: best.players, text: `参考：${best.players}人だと操作を分けやすい定義です（試遊の結果ではありません）` };
 }
 
+/** 観客向け表示の内容 (#163)。参加者の色・担当・押している入力・進行だけを出す */
+export function overlayModel(state) {
+  const game = state?.game;
+  if (!game) return { status: '', players: [] };
+  const slots = game.participants?.length ? game.participants : game.connected || [];
+  const label = (code) => {
+    const id = String(code).replace(/^act:/, '').split(':')[0];
+    const action = game.profile?.actions?.find((a) => a.id === id);
+    return action ? inputKeyLabel(game, action) : String(code);
+  };
+  return {
+    status: { lobby: '参加受付中', preparing: '準備中', paused: '一時停止中' }[game.phase] || '',
+    players: slots.map((slot) => {
+      const s = state.slots?.find((x) => x.name === slot);
+      return { slot, connected: !!s?.connected, role: roleView(game, slot).title, pressed: (s?.pressed || []).map(label) };
+    }),
+  };
+}
+
+/**
+ * PC画面の演出 (#160)。状態が変わった瞬間だけ返す。画面は状態の更新のたびに描き直すので、
+ * CSSだけで演出すると毎回再生される。協力プレイ中・一時停止中は何も返さない (F07-11)
+ */
+export function pcEffects(prev, next) {
+  if (!prev || ['coop', 'paused'].includes(next.view)) return { joined: [], lineup: false, screen: false };
+  return {
+    joined: next.connected.filter((slot) => !prev.connected.includes(slot)),
+    lineup: next.lineupOk && !prev.lineupOk,
+    screen: next.view !== prev.view,
+  };
+}
+
 export function desktopWarning(game, inject, connected = true) {
   if (!connected) return 'PCホストとの接続が切れました。再接続を待っています。';
   if (inject?.emergencyHotkeyError) return '緊急停止キーを登録できません。操作設定で入力をOFFにしてください。';
@@ -329,6 +361,25 @@ export function joinUrl(info) {
 }
 
 /** P1〜P4 の枠の表示 */
+/** PC画面の分担の表示 (#235)。入れ替え (#47) の選択状態を含む */
+export function roleColumns(game, roleSlots, swapPick) {
+  const pending = game?.roleAck || [];
+  return roleSlots.map((slot) => {
+    const index = SLOT_NAMES.indexOf(slot), role = roleView(game, slot);
+    return { slot, index, picked: swapPick === slot, swap: !!game?.canSwap, title: role.title, line: role.lines[0] || '担当する操作なし', ack: pending.includes(slot) };
+  });
+}
+
+/** PC画面の参加者の表示 (#235)。既存の画面とReact版で共用する */
+export function playerCards(slots, view, game) {
+  return slots.map((s, i) => ({
+    slot: s.slot, index: i,
+    className: `player ${s.state}${view === 'preparing' && s.host && s.state === 'connected' ? ' pending' : ''}`,
+    badge: s.state === 'empty' ? '参加待ち' : s.state === 'lost' ? '切断中' : view === 'ready' ? '接続完了！' : view === 'preparing' ? (s.host ? '準備中！' : '接続完了！') : '接続完了！',
+    name: `プレイヤー${i + 1}`, role: roleView(game, s.slot).title, device: `機種：${s.device || '未接続'}`,
+  }));
+}
+
 export function slotViews(slots) {
   return ROLES.map((r) => {
     const s = (slots || []).find((x) => x.name === r.slot) || {};
