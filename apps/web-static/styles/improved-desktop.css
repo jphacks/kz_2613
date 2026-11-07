@@ -5,6 +5,9 @@
 .brand-message { position: absolute; top: 13px; left: 278px; width: 225px; margin: 0; text-align: center; font-size: 18px; line-height: 1.65; font-weight: 800; }
 .brand-message strong { font-size: 32px; color: var(--color-stage-purple); text-shadow: 1px 3px 2px var(--color-shadow); }
 .brand-message b { display: block; color: var(--color-cyan); font-size: 31px; line-height: 1.35; -webkit-text-stroke: 4px var(--color-paper); paint-order: stroke fill; text-shadow: 2px 3px 2px var(--color-shadow); }
+/* 開始前の画面の短い演出 (#160)。transform を使う既存の配置と重ならないよう scale を使う */
+@keyframes fx-pop { 0% { scale: .86; opacity: .35; } 65% { scale: 1.04; opacity: 1; } 100% { scale: 1; opacity: 1; } }
+.fx-pop { animation: fx-pop .32s ease-out; }
 [data-view=join] .explanation { top: 269px; left: 70px; width: 430px; font-size: 32px; font-weight: 700; }
 .state-banner { position: absolute; left: 139px; top: 49px; width: 1034px; height: 269px; border-radius: 31px; background: var(--color-panel-translucent); box-shadow: 0 5px 3px var(--color-shadow); text-align: center; padding: 19px 18px; }
 .state-banner h2 { margin: 0; color: var(--color-cyan); font-family: Arial,'Yu Gothic',sans-serif; font-size: 124px; line-height: 1.45; font-weight: 800; white-space: nowrap; -webkit-text-stroke: 7px var(--color-paper); paint-order: stroke fill; text-shadow: 4px 6px var(--color-title-shadow); }

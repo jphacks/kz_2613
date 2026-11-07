@@ -67,7 +67,7 @@ import { phoneAdvice } from '../app-view.js';
         }
         render();
       } else if (msg.type === 'command_result' && !msg.accepted) {
-        $('remoteNote').textContent = (msg.reasons || ['操作を受け付けませんでした']).join('。');
+        phoneView.note((msg.reasons || ['操作を受け付けませんでした']).join('。'));
       } else if (msg.type === 'pong') {
         const r = performance.now() - msg.t;
         $('rtt').textContent = Math.round(r) + 'ms';
@@ -109,7 +109,7 @@ import { phoneAdvice } from '../app-view.js';
   function showBadToken() {
     session.stop('token');
     setStatus(...session.status());
-    $('fullMessage').textContent = 'この端末の参加情報をPCで確認できませんでした。PC側でリセットしてから再読み込みしてください。';
+    $('fullMessage').textContent = 'この端末の参加情報を確認できませんでした。少し待ってから再読み込みしてください。直らないときはホストに伝えてください。';
     $('full').style.display = 'flex';
   }
 

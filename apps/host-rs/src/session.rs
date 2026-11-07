@@ -77,7 +77,7 @@ impl ReadyFacts<'_> {
             // 再開は Ready で決めた参加者で行う。人数を変えるときは終了して組み直す (勝手に組み直さない)
             let missing: Vec<&str> = self.participants.iter().filter(|i| !self.connected.contains(i)).map(|&i| SLOT_NAMES[i]).collect();
             if !missing.is_empty() {
-                reasons.push(format!("{}の再接続を待っています。人数を変えるときは終了して組み直してください", missing.join("・")));
+                reasons.push(format!("{}の再接続を待っています。人数を変えるときはPCの画面で分担し直してください", missing.join("・")));
             }
         } else {
             if !self.connected.contains(&0) { reasons.push("ホスト（P1）の接続が必要です".into()); }
@@ -150,6 +150,33 @@ pub(crate) struct PhaseChange { pub clear_lineup: bool }
 pub(crate) fn phase_change(from: Phase, to: Phase) -> Option<PhaseChange> {
     (from != to).then_some(PhaseChange { clear_lineup: to == Phase::Lobby })
 }
+/// 時間制の役割交代で選べる間隔 (秒)。0 は交代しない (#161)
+pub(crate) const ROTATION_CHOICES: [u64; 4] = [0, 60, 120, 180];
+
+/// 交代の時刻になったか。協力プレイ中だけ
+pub(crate) fn rotation_due(phase: Phase, at: u64, now: u64) -> bool {
+    phase == Phase::Coop && at != 0 && now >= at
+}
+
+/// 参加者の間で担当を 1 つずらす。参加者でない枠の席は変えない
+pub(crate) fn rotated_seats(seats: [usize; 4], participants: &[usize]) -> [usize; 4] {
+    let mut order = participants.to_vec();
+    order.sort_by_key(|&i| seats[i]);
+    let mut next = seats;
+    for (k, &slot) in order.iter().enumerate() {
+        next[slot] = seats[order[(k + 1) % order.len()]];
+    }
+    next
+}
+
+/// 一時停止中に今の接続で分担し直せるか (#162)。ホストがいて、遊べる人数で、参加者と接続が違うときだけ
+pub(crate) fn can_change_players(phase: Phase, connected: &[usize], participants: &[usize]) -> bool {
+    let (mut now, mut before) = (connected.to_vec(), participants.to_vec());
+    now.sort_unstable();
+    before.sort_unstable();
+    phase == Phase::Paused && !before.is_empty() && connected.contains(&0) && connected.len() >= MIN_PLAYERS && now != before
+}
+
 pub(crate) fn can_swap(phase: Phase, connected: &[usize], participants: &[usize], a: usize, b: usize) -> bool {
     let set = match phase {
         Phase::Lobby | Phase::Preparing => connected,
@@ -201,6 +228,34 @@ mod tests {
         for phase in [Phase::Preparing, Phase::Coop, Phase::Paused] {
             assert!(!can_transfer_host(phase, 0, 1, &[0, 1]), "開始後は譲れない");
         }
+    }
+
+    #[test]
+    fn players_change_only_while_paused_with_the_host_and_a_real_difference() {
+        assert!(can_change_players(Phase::Paused, &[0, 1], &[0, 1, 2]), "3人から2人");
+        assert!(can_change_players(Phase::Paused, &[0, 1, 2], &[0, 1]), "2人から3人");
+        assert!(can_change_players(Phase::Paused, &[0, 2], &[0, 1]), "人の入れ替わり");
+        assert!(!can_change_players(Phase::Paused, &[1, 0], &[0, 1]), "同じ顔ぶれ");
+        assert!(!can_change_players(Phase::Paused, &[1, 2], &[0, 1, 2]), "ホストがいない");
+        assert!(!can_change_players(Phase::Paused, &[0], &[0, 1]), "1人では遊べない");
+        assert!(!can_change_players(Phase::Paused, &[0, 1], &[]), "参加者が決まっていない");
+        for phase in [Phase::Lobby, Phase::Preparing, Phase::Coop] {
+            assert!(!can_change_players(phase, &[0, 1], &[0, 1, 2]), "一時停止中だけ");
+        }
+    }
+
+    #[test]
+    fn rotation_is_due_only_during_coop_and_moves_roles_among_participants() {
+        assert!(rotation_due(Phase::Coop, 100, 100));
+        assert!(!rotation_due(Phase::Coop, 100, 99));
+        assert!(!rotation_due(Phase::Coop, 0, 100), "OFF");
+        for phase in [Phase::Lobby, Phase::Preparing, Phase::Paused] { assert!(!rotation_due(phase, 100, 200)); }
+        assert_eq!(rotated_seats([0, 1, 2, 3], &[0, 1, 2]), [1, 2, 0, 3]);
+        assert_eq!(rotated_seats([1, 2, 0, 3], &[0, 1, 2]), [2, 0, 1, 3]);
+        assert_eq!(rotated_seats([0, 1, 2, 3], &[0, 3]), [3, 1, 2, 0], "参加者でない枠は変えない");
+        let mut seats = [0, 1, 2, 3];
+        for _ in 0..3 { seats = rotated_seats(seats, &[0, 1, 2]); }
+        assert_eq!(seats, [0, 1, 2, 3], "人数の回数で元へ戻る");
     }
 
     #[test]
@@ -266,7 +321,7 @@ mod tests {
     fn resume_keeps_fixed_participants_and_does_not_rebuild_the_lineup() {
         let f = ReadyFacts { phase: Phase::Paused, participants: &[0, 1, 2], connected: &[0, 2, 3],
             lineup_ok: false, has_profile: false, ..ready() };
-        assert_eq!(f.reasons(false), ["P2の再接続を待っています。人数を変えるときは終了して組み直してください"]);
+        assert_eq!(f.reasons(false), ["P2の再接続を待っています。人数を変えるときはPCの画面で分担し直してください"]);
         let mut reconnected = f; reconnected.connected = &[0, 1, 2, 3];
         assert!(reconnected.reasons(false).is_empty());
     }
