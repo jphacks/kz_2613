@@ -1152,3 +1152,11 @@
 - 判断は[資料](../decisions/2026-11-06-host-reset-auto-resume.md)に記録した。実端末でのホスト交代は未実施。
 - 検証：`cargo build --release --locked --offline` 成功。`cargo test` はホスト114件・プローブ4件成功、手動2件は対象外。`protocol-sim` 56/56、`shutdown-sim`、`phone-session` 7/7、`phone-lifecycle` 16/16、`app-view` 25/25、`ui-input` 12/12が成功。
 - headless Chromeのスマホ画面で、ホストのタブを閉じて14秒時点はP2のまま、19秒時点でP1に昇格し、空いた枠に新しい端末が参加できることを確認した。リセットでは全員が案内を表示し、接続は0のままだった。LAN経路の表記違いは403または404になった。
+
+## 2026-11-07 — React移行の基盤とスマホ画面の外枠（Claude Code、#235）
+
+- ユーザー判断でReact移行を最優先にした。`apps/web/` にReact 19・Viteを導入し、ビルド結果を `apps/web-static/react/` へ出す。`/phone-react.html` は確認用で、既定の画面は変更していない。
+- `index.html` の本文を機械変換して外枠にし、入力と接続は既存の `controller.js` をそのまま使う。
+- `react-phone-parity.mjs` を追加した。既存画面とReact版で、DOM97要素の構造、位置、WebRTC、操作、押下と解放の順序、スティック、保持中のPause、再読み込みの結果が一致した。タップの遅延（40回）はp50 5.4→4.7ms、p95 17→12.5ms。視点の送信は47→48.5件/秒（WS・RTCの全送信の数）。読み込みは1.6→1.1秒。各1試行のheadless Chromeの値で、実端末・無線の性能ではない。
+- 試験の検出力は、React版のclassを意図的に変えて不合格になることで確認した。
+- `npm audit --omit=dev` は脆弱性0件。バンドルは226.8kB（gzip 71.1kB）と28.2kB。実端末、WebView2は未確認。
