@@ -4,7 +4,7 @@ import { SLOT_NAMES, MIN_PLAYERS, MAX_PLAYERS } from '../app-view.js';
 const CHARACTERS = { P1: 'blue', P2: 'green', P3: 'purple', P4: 'red' };
 
 export function reasonText(r) {
-  return r === 'host pause' ? 'ホストが停止' : r === 'app focus' ? 'PCアプリの画面に戻った' : r === 'emergency stop' ? 'PCの緊急停止' : r.endsWith('disconnected') ? r.split(' ')[0] + ' が切断' : r;
+  return r === 'host pause' ? 'ホストが停止' : r === 'app focus' ? 'PCアプリの画面に戻った' : r === 'emergency stop' ? 'PCの緊急停止' : r === 'role rotation' ? '時間で担当を交代' : r.endsWith('disconnected') ? r.split(' ')[0] + ' が切断' : r;
 }
 
 /** 参加者の枠の一覧 */

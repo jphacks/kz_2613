@@ -62,6 +62,10 @@
     <label class="comm-setting"><input type="checkbox" id="autoResumeSetting"> 切断から戻ったら自動で再開する</label>
     <p id="commInfo" role="status"></p>
   </details>
+  <details id="ruleDetails"><summary>遊び方</summary>
+    <label class="comm-setting">時間で担当を交代する <select id="rotationSetting"><option value="0">しない</option><option value="60">1分ごと</option><option value="120">2分ごと</option><option value="180">3分ごと</option></select></label>
+    <p>時間になると一時停止して、全員が新しい担当を確認した後、ホストが再開します。協力プレイ中は変更できません。</p>
+  </details>
   <details id="overlayDetails"><summary>観客向け表示（配信・録画）</summary><p>OBSなどのブラウザソースに <code>http://127.0.0.1:ポート/overlay</code> を追加すると、担当と操作を透過で重ねられます。上に出すときは末尾に <code>?position=top</code> を付けます。ゲームの画面には描画しません。</p></details>
   <details id="netDetails"><summary>通信の診断</summary><div id="netDiag" role="status"></div></details>
   <details id="inputDetails"><summary>入力の一時停止（診断・緊急用）</summary><div class="seg" id="modeSeg"><button data-mode="off">入力を止める</button><button data-mode="on">入力を再開する</button></div></details>
