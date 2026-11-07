@@ -1,5 +1,5 @@
 import {createVirtualCursor} from './virtual-cursor.js';
-import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,profileNotice,roleView,networkNotice,slotDiagnosis,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,pcEffects,rolesAction,commSettingsView,playerHint} from '../app-view.js';
+import {SCREENS,SCREEN_TITLES,GAMES,slotViews,navigate,joinUrl,joinGuideView,screenOnGameUpdate,desktopView,desktopWarning,gameLabel,profileNotice,roleView,networkNotice,slotDiagnosis,shownSlots,SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,gameList,gameCard,gameAction,isRegistered,gamesCountText,pcEffects,playerCards,rolesAction,commSettingsView,playerHint} from '../app-view.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // swap: 一時停止中に担当を入れ替える画面を開いているか (#47)
@@ -189,7 +189,10 @@ function render(){
   $('autoResumeSetting').checked=comm.checked;$('autoResumeSetting').disabled=comm.locked;$('commInfo').textContent=comm.text;
   $('steps').hidden=!['join','game','roles'].includes(view);
   document.querySelectorAll('#steps button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===ui.screen?'page':'false'));
-  $('players').innerHTML=slots.map((s,i)=>`<article class="player ${s.state}${view==='preparing'&&s.host&&s.state==='connected'?' pending':''}" data-slot="${s.slot}"><div class="player-badge">${s.state==='empty'?'参加待ち':s.state==='lost'?'切断中':view==='ready'?'接続完了！':view==='preparing'?(s.host?'準備中！':'接続完了！'):'接続完了！'}</div><div class="player-info"><p>プレイヤー${i+1}</p><p>${esc(roleView(game,s.slot).title)}</p><p class="player-device">機種：${esc(s.device||'未接続')}</p></div><svg class="player-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg><div class="character">${character(i)}</div></article>`).join('');
+  const cards=playerCards(slots,view,game);
+  // React版では参加者の表示をReactが描く。両方から書くと表示が壊れる (#235)
+  if(globalThis.__recooplayPcPlayers)globalThis.__recooplayPcPlayers.set(cards);
+  else $('players').innerHTML=cards.map(c=>`<article class="${c.className}" data-slot="${c.slot}"><div class="player-badge">${c.badge}</div><div class="player-info"><p>${c.name}</p><p>${esc(c.role)}</p><p class="player-device">${esc(c.device)}</p></div><svg class="player-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg><div class="character">${character(c.index)}</div></article>`).join('');
   $('inputState').textContent=inject?.mode==='off'?'ゲームへの入力はOFFです':inject?.mode==='test'?'診断用の入力先です':inject?.active?`ゲームへの入力はONです（${name}が前面のときだけ）`:'ゲームへの入力を停止しています';
   $('keyWarnings').textContent=keyWarnings.join('。');
   renderKeyEditor();
