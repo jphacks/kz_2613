@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-import { playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
+import { commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } from '../../apps/web-static/app-view.js';
 
 const results = [];
 function test(name, fn) {
@@ -295,6 +295,17 @@ test('本番の安全案内: 切断・緊急停止・入力OFF・前面喪失と
   assert.match(desktopWarning({...g,phase:'preparing',connected:['P1']},{mode:'on'}),/2人以上/);
   assert.match(desktopWarning(g,{emergencyHotkeyError:'失敗'}),/登録できません/);
   assert.equal(desktopWarning(g,{mode:'on',active:true}),'');
+});
+
+test('通信の設定: 自動復帰の状態・期限・ポートを示し、協力プレイ中は変更させない (#220)', () => {
+  const lobby=commSettingsView({phase:'lobby',autoResume:true,autoResumeMs:15000},8080);
+  assert.equal(lobby.checked,true);assert.equal(lobby.locked,false);
+  assert.match(lobby.text,/15秒/);assert.match(lobby.text,/8080/);assert.match(lobby.text,/初期値に戻ります/);
+  const coop=commSettingsView({phase:'coop',autoResume:false,autoResumeMs:20000},null);
+  assert.equal(coop.checked,false);assert.equal(coop.locked,true);
+  assert.match(coop.text,/20秒/);assert.match(coop.text,/変更できません/);assert.doesNotMatch(coop.text,/ポート/);
+  assert.equal(commSettingsView({phase:'paused',autoResume:true},8080).locked,false);
+  assert.equal(commSettingsView(null,null).locked,true);
 });
 
 test('人数の参考: 全員に操作があり偏りの小さい人数を、断定せずに示す (#166)', () => {

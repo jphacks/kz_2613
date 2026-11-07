@@ -94,6 +94,19 @@ export function phoneAdvice(stats) {
 export const gameLabel = (game) => game?.titleName || 'ゲーム';
 
 /**
+ * 通信の設定の表示 (#220)。協力プレイ中は変えない。ポートの変更には再起動が要るので config.json の案内にする。
+ * 自動復帰の切替はホストの実行中だけ有効で、起動すると初期値へ戻る
+ */
+export function commSettingsView(game, port) {
+  const seconds = Math.round((game?.autoResumeMs ?? 15000) / 1000);
+  const locked = !game || game.phase === 'coop';
+  const lines = [`自動で再開できる時間：切断から${seconds}秒以内`, 'ホストの一時停止・緊急停止の後は自動で再開しません', 'この設定はアプリを閉じると初期値に戻ります'];
+  if (port) lines.push(`ポート：${port}（変更は config.json で行い、アプリを起動し直してください）`);
+  if (game?.phase === 'coop') lines.unshift('協力プレイ中は変更できません。一時停止すると変更できます');
+  return { checked: !!game?.autoResume, locked, text: lines.join('。') };
+}
+
+/**
  * 分けやすい人数の参考 (#166)。操作定義の重みから、全員に操作があり偏りの最も小さい人数を返す。
  * 試遊の結果ではないので「推奨」と断定しない。同じ偏りなら少ない人数にする。
  * 実機の記録があるゲームは、計算の参考と食い違って見えないよう出さない
