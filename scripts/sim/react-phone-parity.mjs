@@ -82,10 +82,10 @@ async function session(url, port, cdpPort) {
     // DOM: 接続直後の構造。動的な値は比べない。P2の参加がP1の画面へ届いてから取る
     await p1.waitFor(`document.querySelectorAll('#players1 .on').length===2`, 'P1の参加者表示');
     await p1.waitFor(`document.body.dataset.view==='v-remote'&&!document.getElementById('viewFx').classList.contains('run')`, 'P1ロビーの演出完了');
-    result.dom = await p1.ev(`(()=>{const out=[];const walk=(e,d)=>{for(const c of e.children){if(['SCRIPT','LINK'].includes(c.tagName)||c.id==='root'){if(c.id==='root')walk(c,d);continue}
+    result.dom = await p1.ev(`(()=>{const out=[];const walk=(e,d)=>{for(const c of e.children){if(['SCRIPT','LINK'].includes(c.tagName)||c.id==='root'||c.id==='lookHome'){if(c.id==='root')walk(c,d);continue}
       out.push([d,c.tagName,c.id,c.className,c.getAttribute('data-ctl')||'',c.getAttribute('data-cmd')||'',c.getAttribute('aria-label')||'',c.getAttribute('role')||'',c.hasAttribute('hidden'),c.disabled===true].join('|'));walk(c,d+1)}};walk(document.body,0);return out})()`);
     // タグの間の改行と img の属性の順序 (Reactは src を最後に設定する) だけは比べない。要素・属性の値・文字は完全に比べる
-    const tidyHtml = async (page, id) => (await page.ev(`document.getElementById('${id}').innerHTML`)).replace(/>\s+</g, '><').replace(/style="display: ?(\w+);?"/g, 'style="display:$1"').replace(/<img ([^>]*)>/g, (_, attrs) => `<img ${attrs.split(/ (?=[\w-]+=)/).sort().join(' ')}>`).trim();
+    const tidyHtml = async (page, id) => (await page.ev(`document.getElementById('${id}').innerHTML`)).replace(/ data-bound="1"/g,'').replace(/>\s+</g, '><').replace(/style="display: ?(\w+);?"/g, 'style="display:$1"').replace(/<img ([^>]*)>/g, (_, attrs) => `<img ${attrs.split(/ (?=[\w-]+=)/).sort().join(' ')}>`).trim();
     const waitHtml = () => tidyHtml(p2, 'v-wait'), remoteHtml = () => tidyHtml(p1, 'v-remote');
     result.waitLobby = await waitHtml();
     result.remoteLobby = await remoteHtml();
@@ -193,9 +193,9 @@ async function session(url, port, cdpPort) {
       await mon.until(m=>m.game.phase==='paused','再停止');
       await p1.waitFor(`document.body.dataset.view==='v-remote'&&!document.getElementById('viewFx').classList.contains('run')`,'再停止表示');
       // 各スマホへのgame通知は独立して届く。P1の描画完了をP2の反映済みとは扱わない。
-      await p2.waitFor(`document.body.dataset.phase==='paused'&&document.getElementById('pad').parentElement.id==='lookHome'`,'P2の再停止反映');
+      await p2.waitFor(`document.body.dataset.phase==='paused'&&(!document.getElementById('pad')||document.getElementById('pad').parentElement.id==='lookHome')`,'P2の再停止反映');
     }
-    result.remount = await p2.ev(`document.querySelectorAll('#pad').length===1&&document.querySelectorAll('#sens').length===1&&document.getElementById('pad').parentElement.id==='lookHome'`);
+    result.remount = await p2.ev(`document.querySelectorAll('#pad').length<=1&&document.querySelectorAll('#sens').length<=1&&(!document.getElementById('pad')||document.getElementById('pad').parentElement.id==='lookHome')`);
     assert(result.remount, '再マウント後も視点パッド・感度は一つだけ');
 
     // 再接続: 再読み込みで同じ枠へ戻り、停止のまま

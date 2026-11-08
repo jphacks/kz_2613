@@ -1,15 +1,12 @@
 import type { PhoneGame, Slot } from '../contracts';
 import { createStore } from '../store';
-import { desktopView, slotViews, shownSlots, playerCards, roleColumns, gameList, gameCard, gameAction, rolesAction, gameLabel, desktopWarning, networkNotice, profileNotice, playerHint, commSettingsView, gamesCountText, isRegistered, roleView, slotDiagnosis, joinUrl, joinGuideView, MIN_PLAYERS, MAX_PLAYERS } from '../../../web-static/app-view.js';
+import { desktopView, slotViews, shownSlots, playerCards, roleColumns, gameList, gameCard, gameAction, rolesAction, gameLabel, desktopWarning, networkNotice, profileNotice, playerHint, commSettingsView, gamesCountText, isRegistered, roleView, slotDiagnosis, joinUrl, joinGuideView, MIN_PLAYERS, MAX_PLAYERS } from '../model/presentation.ts';
 
-interface Inject {
-  mode: string; active: boolean; emergencyHotkeyError?: string; emergencyHotkey?: string;
-  outputs?: Record<string, {kind: string; label: string}>;
-}
+import type {InjectionState,HostState} from '../model/domain.ts';
 export interface PcSnapshot {
   ui: {screen: string; game: string | null; swap: boolean};
-  game: PhoneGame | null; inject: Inject | null; online: boolean; swapPick: Slot | null;
-  state: {slots?: {name: Slot; connected: boolean; assigned?: boolean; ua?: string}[]; games?: unknown[]; minecraft?: unknown; network?: {bluetoothAudio?: boolean}; gamesScanning?: boolean} | null;
+  game: PhoneGame | null; inject: InjectionState | null; online: boolean; swapPick: Slot | null;
+  state: HostState | null;
   hostNotice: string; infoPort: number | null; manualMessage: string; keyMessage: string;
 }
 export const pcState = createStore<PcSnapshot>({ui: {screen: 'join', game: 'minecraft', swap: false}, game: null, inject: null, state: null, online: false, swapPick: null, hostNotice: '', infoPort: null, manualMessage: '', keyMessage: ''});
@@ -19,15 +16,15 @@ export interface PcActions {
   setKey(action: string, output: string | null): void;
 }
 let actions: PcActions | undefined;
-export function setPcActions(next: PcActions) { actions = next; }
+export function setPcActions(next: PcActions|undefined) { actions = next; }
 export const settingsActions: PcActions = {
   setAutoResume: on => actions?.setAutoResume(on),
   setRotation: seconds => actions?.setRotation(seconds),
   setKey: (action, output) => actions?.setKey(action, output),
 };
 export interface PcInfo {
-  port: number; build?: {version: string; commit?: string};
-  wifi?: {ssid: string; qr: string}; hotspot?: {on: boolean};
+  port: number; build?: {version: string; commit?: string|null};
+  wifi?: {ssid: string; qr: string}|null; hotspot?: {on: boolean}|null;
   urls?: {url: string; qr: string; hotspot?: boolean}[];
 }
 export const connectionState = createStore<{info: PcInfo | null; message: string; busy: boolean; loaded: boolean}>({info: null, message: '', busy: false, loaded: false});

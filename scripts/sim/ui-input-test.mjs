@@ -1,17 +1,19 @@
 // DOMの入力境界・キャンセル・RTC形式を、OS入力なしで検証する。
 import assert from 'node:assert/strict';
-import {bindTouchpad} from '../../apps/web-static/scripts/touchpad.js';
-import {bindCooperativeInput} from '../../apps/web-static/scripts/cooperative-input.js';
-import {stickDirections} from '../../apps/web-static/scripts/stick.js';
-import {createFastChannel} from '../../apps/web-static/scripts/transport.js';
+const {bindTouchpad} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/input/touchpad.ts' : '../../apps/web-static/scripts/touchpad.js');
+const {bindCooperativeInput: createCooperativeInput} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/input/cooperative.ts' : '../../apps/web-static/scripts/cooperative-input.js');
+const {stickDirections} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/input/stick.ts' : '../../apps/web-static/scripts/stick.js');
+const {createFastChannel} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/transport/fast-channel.ts' : '../../apps/web-static/scripts/transport.js');
 import {createVirtualCursor} from '../../apps/web-static/scripts/virtual-cursor.js';
 import {myActions, generatedKey, buildGenerated} from '../../apps/web-static/scripts/generated-controls.js';
+const bindCooperativeInput=options=>{const input=createCooperativeInput(options);if(process.env.RECOOPLAY_TEST_TS==='1')input.bindLook(document.getElementById('pad'),document.getElementById('sens'),document.getElementById('sensVal'));return input;};
 const intervals = [];
 const originalInterval = globalThis.setInterval;
 globalThis.setInterval = (fn,ms) => { intervals.push({fn,ms}); return intervals.length; };
 class Element {
   constructor() { this.handlers = new Map(); this.style = {}; this.value = '2'; this.classList = {add(){},remove(){},toggle(){}}; }
   addEventListener(name,fn) { const list = this.handlers.get(name)||[]; list.push(fn);this.handlers.set(name,list); }
+  removeEventListener(name,fn) { this.handlers.set(name,(this.handlers.get(name)||[]).filter(value=>value!==fn)); }
   querySelector() { return new Element(); }
   querySelectorAll() { return []; }
   setPointerCapture() {}

@@ -3,7 +3,7 @@ import type { PlayerCardModel, RoleColumnModel } from '../contracts';
 import { PlayerCard, RoleColumn } from './PlayerCards';
 import { pcState, pcModel, connectionState, connectionModel, settingsActions } from './model';
 import { GameTile, KeyEditor, NetworkDiagnostics, Lines } from './parts';
-import { SCREENS, SCREEN_TITLES, GAMES } from '../../../web-static/app-view.js';
+import { SCREENS, SCREEN_TITLES, GAMES } from '../model/presentation.ts';
 
 export function PcApp() {
   const state = useSyncExternalStore(pcState.subscribe, pcState.get);

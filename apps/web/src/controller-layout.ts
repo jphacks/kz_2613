@@ -1,5 +1,5 @@
 import type { Action, ControllerGame, Direction, Slot } from './contracts';
-import { inputKeyLabel, inputGroupLabel } from '../../web-static/app-view.js';
+import { inputKeyLabel, inputGroupLabel } from './model/presentation.ts';
 
 export type ControlPart =
   | { kind: 'button'; id: string; control: string; label: string }
@@ -23,7 +23,7 @@ export function controllerLayout(game: ControllerGame, slot: Slot): ControlGroup
     const key = action.group ?? '';
     groups.set(key, [...(groups.get(key) ?? []), action]);
   }
-  let hasStick = false;
+  let hasStick = false,hasLook=false;
   return [...groups].map(([id, actions]) => {
     const parts: ControlPart[] = [];
     const directions = DIRECTIONS.flatMap(([name, rx, mark]) => {
@@ -43,7 +43,8 @@ export function controllerLayout(game: ControllerGame, slot: Slot): ControlGroup
         parts.push({ kind: 'button', id: `${a.id}:${direction}`, control: `act:${a.id}:${direction}`, label });
       }
     }
-    if (actions.some(a => a.type === 'mouseDelta')) parts.push({ kind: 'look', id: `${id}:look` });
+    // 現行の視点エンジンは1枚のパッドを所有する。複数の操作グループでも重複IDを作らない。
+    if (!hasLook&&actions.some(a => a.type === 'mouseDelta')) {hasLook=true;parts.push({ kind: 'look', id: `${id}:look` });}
     return { id, label: inputGroupLabel(game, actions), parts };
   });
 }

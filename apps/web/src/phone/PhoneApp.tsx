@@ -1,6 +1,7 @@
+import {Controller} from './Controller';
 import { useSyncExternalStore } from 'react';
-import { display, skin, chooseSkin, transferHost } from './view';
-import { SKINS } from '../../../web-static/scripts/phone-skin.js';
+import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked } from './view';
+import { SKINS } from '../model/skin.ts';
 
 // 製品スマホ画面の構造と低頻度表示はReactだけが描く。
 // パッド・押下クラス・診断統計・通信状態は独立した入力エンジンへ委譲する。
@@ -8,15 +9,16 @@ export function PhoneApp() {
   const state = useSyncExternalStore(display.subscribe, display.get);
   const selectedSkin = useSyncExternalStore(skin.subscribe, skin.get);
   const game = state.snapshot.game;
+  const status=useSyncExternalStore(connection.subscribe,connection.get);
   return <>
 
 <div className="phone-bg" aria-hidden="true"><i className="phone-bg-stars"></i></div>
 <header>
   <span className="brand"><img className="brand-image" src="/assets/logo.png" width="960" height="720" alt="Re:Cooplay" /></span>
-  <div id="slot">--</div>
+  <div id="slot">{state.snapshot.me ?? '--'}</div>
   <div id="role"><b>{state.role}</b>{state.roleCopy}</div>
   <div className="right">
-    <span className="pill warn" id="status">接続中</span>
+    <span className={`pill ${status.kind}`} id="status">{status.text}</span>
     <span className={`pill${game ? ` ${game.phase}` : ''}`} id="phase">{game ? {lobby: '参加受付', preparing: 'ゲーム準備', coop: '協力プレイ中', paused: '一時停止中'}[game.phase] : '-'}</span>
   </div>
   <button className="phone-settings" id="phoneSettingsBtn" aria-label="接続・診断を確認">⋯</button>
@@ -67,15 +69,9 @@ export function PhoneApp() {
   </section>
 
 
-  <div id="lookHome" hidden>
-    <div id="pad">ドラッグでマウス移動<div className="dot"></div></div>
-    <label className="sens">感度 <input type="range" id="sens" min="0.5" max="6" step="0.1" defaultValue="2" /> <span id="sensVal">2.0</span></label>
-  </div>
-
-
   <section className={`view${state.view === 'v-gen' ? ' show' : ''}`} id="v-gen">
     <div className="gen-title" id="genTitle">{state.controllerTitle}</div>
-    <div id="genControls"></div>
+    <div id="genControls">{state.controller&&<Controller key={state.controller.key} groups={state.controller.groups} bindings={state.controller.bindings}/>}</div>
     <button className="cmd pause" data-cmd="PAUSE" id="genPause" hidden={!state.controllerHost}>一時停止・ホスト操作へ</button>
   </section>
 
@@ -83,20 +79,30 @@ export function PhoneApp() {
   <div className="view-fx" id="viewFx" aria-hidden="true"></div>
 </main>
 
-<dialog id="phoneDiagnostics" aria-labelledby="phoneDiagnosticsTitle"><h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection"></p><div id="skinPicker" className="skin-picker" role="group" aria-label="画面の色">{SKINS.map(s => <button key={s.id} data-skin={s.id} aria-pressed={selectedSkin === s.id} onClick={() => chooseSkin(s.id)}>{s.label}</button>)}</div><footer>
-  <span>RTT <b id="rtt">-</b></span>
-  <span>平均/最大 <b id="rttAvg">-</b></span>
-  <span>送信 <b id="sent">0</b></span>
-  <span>未ACK <b id="unacked">0</b></span>
-  <span>経路 <b id="path">-</b></span>
-  <button id="burst" style={{display: game?.phase === 'coop' ? 'none' : ''}}>通信テスト</button>
-  <p id="phoneNetAdvice" role="status"></p>
-  <output id="inputMetrics" hidden aria-hidden="true"></output>
-</footer><button id="closePhoneDiagnostics">閉じる</button></dialog>
+<dialog id="phoneDiagnostics" aria-labelledby="phoneDiagnosticsTitle"><h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection">{[status.text,game?{lobby:'参加受付',preparing:'ゲーム準備',coop:'協力プレイ中',paused:'一時停止中'}[game.phase]:'-',state.snapshot.me??'--'].join('・')}</p><div id="skinPicker" className="skin-picker" role="group" aria-label="画面の色">{SKINS.map(s => <button key={s.id} data-skin={s.id} aria-pressed={selectedSkin === s.id} onClick={() => chooseSkin(s.id)}>{s.label}</button>)}</div><PhoneDiagnostics phase={game?.phase}/><button id="closePhoneDiagnostics">閉じる</button></dialog>
 
 <div id="rotatePrompt" role="status"><b>スマホを縦にしてください</b><p>操作を停止し、押していたキーを離しました。<br />縦向きに戻して、新しい押下から再開します。</p></div>
-<div id="full" role="alert"><div className="phone-message" id="fullMessage">部屋が満員です（4人まで）。<br />空きが出たら再読み込みしてください。</div></div>
+<FullMessage/>
 
 
 </>;
+}
+
+function PhoneDiagnostics({phase}:{phase:string|undefined}) {
+  const data=useSyncExternalStore(telemetry.subscribe,telemetry.get);
+  return <footer>
+  <span>RTT <b id="rtt">{data.rtt}</b></span>
+  <span>平均/最大 <b id="rttAvg">{data.rttAvg}</b></span>
+  <span>送信 <b id="sent">{data.sent}</b></span>
+  <span>未ACK <b id="unacked">{data.unacked}</b></span>
+  <span>経路 <b id="path">{data.path}</b></span>
+  <button id="burst" disabled={data.burstBusy} style={{display: phase === 'coop' ? 'none' : ''}}>通信テスト</button>
+  <p id="phoneNetAdvice" role="status">{data.advice}</p>
+  <output id="inputMetrics" hidden aria-hidden="true">{data.inputMetrics}</output>
+</footer>;
+}
+
+function FullMessage(){
+  const state=useSyncExternalStore(blocked.subscribe,blocked.get);
+  return <div id="full" role="alert" style={{display:state?'flex':undefined}}><div className="phone-message" id="fullMessage">{state?.message ?? <>部屋が満員です（4人まで）。<br />空きが出たら再読み込みしてください。</>}</div></div>;
 }

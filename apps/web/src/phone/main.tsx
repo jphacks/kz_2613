@@ -4,6 +4,8 @@ import { byId } from '../dom';
 import { PhoneApp } from './PhoneApp';
 import { createReactPhoneView } from './view';
 
-flushSync(() => createRoot(byId('root')).render(<PhoneApp />));
-const { startPhoneController } = await import('../../../web-static/scripts/phone-runtime.js');
-startPhoneController({ createView: createReactPhoneView });
+const root=createRoot(byId('root'));
+flushSync(() => root.render(<PhoneApp />));
+const { startPhoneController } = await import('./runtime.ts');
+const controller=startPhoneController({ createView: createReactPhoneView });
+import.meta.hot?.dispose(()=>{controller.dispose();root.unmount();});
