@@ -2,7 +2,7 @@ import {createVirtualCursor} from '../input/virtual-cursor.ts';
 import {createLifetime} from '../input/lifetime.ts';
 import {byId} from '../dom.ts';
 import {GAMES,gameList,navigate,desktopView,rolesAction,gameAction,isRegistered,shownSlots,screenOnGameUpdate,pcEffects,joinGuideView} from '../model/presentation.ts';
-import {decodePcMessage} from '../transport/pc-messages.ts';
+import {decodePcMessage,decodeHotspotResult} from '../transport/pc-messages.ts';
 import {decodePcInfo} from '../transport/pc-info.ts';
 import type {Slot,PhoneGame} from '../contracts.ts';
 import type {Navigation,HostState,InjectionState,UiAction,EffectState} from '../model/domain.ts';
@@ -50,10 +50,13 @@ let hotspotMessage='';
 lifetime.listen($('hotspotBtn'), 'click',async()=>{
   renderInfo(undefined,'ホットスポットをONにしています…',true);
   try{
-    const r=await (await fetch('/api/hotspot',{method:'POST'})).json();
+    const response=await fetch('/api/hotspot',{method:'POST',signal:abort.signal});
+    if(!response.ok)throw new Error('ホットスポット操作の応答がありません');
+    const r=decodeHotspotResult(await response.json());
+    if(!r)throw new Error('ホットスポット操作の応答形式が違います');
     hotspotMessage=r.ok?'':r.error||'ホットスポットをONにできませんでした';
   }catch{hotspotMessage='ホットスポットをONにできませんでした';}
-  loadInfo();
+  if(!disposed)loadInfo();
 });
 lifetime.listen($('openGameBtn'), 'click',()=>send({type:'open_game'}));
 lifetime.listen($('refreshGamesBtn'), 'click',()=>send({type:'refresh_games'}));

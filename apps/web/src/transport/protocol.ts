@@ -46,7 +46,8 @@ export function isPhoneGame(value: unknown): value is PhoneGame {
   return true;
 }
 
-export function decodeServerMessage(text: string): ServerMessage | null {
+export function decodeServerMessage(text: unknown): ServerMessage | null {
+  if(typeof text!=='string')return null;
   let message: unknown;
   try { message = JSON.parse(text); } catch { return null; }
   if (!object(message) || typeof message.type !== 'string') return null;

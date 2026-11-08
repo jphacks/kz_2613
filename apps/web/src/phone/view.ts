@@ -59,11 +59,7 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
     const changed = view !== lastView || key !== lastKey;
     if (changed) {
       input.releaseAll();
-      if (view === 'v-gen') {
-        if (!game.profile) throw new Error('協力操作の定義がありません');
-
-      }
-
+      if (view === 'v-gen'&&!game.profile) throw new Error('協力操作の定義がありません');
     }
     const autoWait = game.phase === 'paused' && game.autoResume && game.reason?.endsWith('disconnected');
     const name = gameLabel(game);
