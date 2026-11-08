@@ -12,8 +12,11 @@
 <link rel="stylesheet" href="/styles/mobile.css">
 <link rel="stylesheet" href="/styles/improved-mobile.css">
 <link rel="stylesheet" href="/styles/phone-skins.css">
+<link rel="stylesheet" href="/styles/phone-background.css">
+<link rel="stylesheet" href="/styles/view-transition.css">
 </head>
 <body>
+<div class="phone-bg" aria-hidden="true"><i class="phone-bg-stars"></i></div>
 <header>
   <span class="brand"><img class="brand-image" src="/assets/logo.png" width="960" height="720" alt="Re:Cooplay"></span>
   <div id="slot">--</div>
@@ -65,7 +68,7 @@
     <div class="players" id="players2"></div>
     <div class="wait-scene">
       <div class="phone-character" aria-hidden="true"><img id="waitCharacter" src="/assets/characters/blue.png" alt=""></div>
-      <div class="card wait-card"><h1 class="dotted" id="waitHeading">接続完了!!</h1><div class="role-label">あなたの担当</div><div id="waitRole"></div><div class="wait-continue" role="note">Readyで操作画面に変わります</div><div id="waitTitle">ホストの準備を待っています</div></div>
+      <div class="card wait-card"><h1 class="dotted" id="waitHeading">接続完了!!</h1><div class="role-label">あなたの担当</div><div id="waitRole"></div><div class="wait-continue" role="note">Readyで<br>操作画面に変わります</div><div id="waitTitle">ホストの準備を待っています</div></div>
     </div>
   </section>
 
@@ -82,6 +85,8 @@
     <button class="cmd pause" data-cmd="PAUSE" id="genPause" hidden>一時停止・ホスト操作へ</button>
   </section>
 
+  <!-- 画面切り替えの演出 (ワイプ＋流れ星)。見た目だけで、押下は受けない -->
+  <div class="view-fx" id="viewFx" aria-hidden="true"></div>
 </main>
 
 <dialog id="phoneDiagnostics" aria-labelledby="phoneDiagnosticsTitle"><h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection"></p><div id="skinPicker" class="skin-picker" role="group" aria-label="画面の色"></div><footer>
