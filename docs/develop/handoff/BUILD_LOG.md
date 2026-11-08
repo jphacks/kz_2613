@@ -1385,3 +1385,52 @@
 - 画面：出所の名前（Steam（追加したゲーム）・GOG・Ubisoft Connect・EA app・Battle.net・Xbox）を出し、見出しの件数を「Steam・Epic など」として数える。`protocol-specification.md` の source の一覧を更新した。
 - 検証：`cargo test --release --locked` **135件合格**（追加9件：Steam に追加したゲームの64ビットID、バイナリVDFの不正データ、レジストリ系3ランチャー、Battle.net の製品の読み取りと自身の除外、Xbox の読み取りと Minecraft ランチャーの除外、SHA-256、発行者ID）。このPCの実データで、Xbox 版 Minecraft ランチャーのファミリー名の計算が公式の値（`Microsoft.4297127D64EC6_8wekyb3d8bbwe`）と一致し、実際の `product.db`（Battle.net 自身だけ）からゲームを出さないことを確かめた。`protocol-sim` 60/60、`app-view-test` 30/30（追加1件）、`ui-input-test` 12/12、ほかCIの試験（React の比較・配布zipを除く）と `verify_overlay.py`・`check-public-docs.py` 合格。
 - **未検証：** GOG・Ubisoft・EA・Steam に追加したゲームは、このPCに入っていないため固定のデータでの試験だけ。Battle.net・EA・Ubisoft・Xbox の起動の形式で実際に起動できるか（#218）。
+## 2026-11-08 — スマホの画面切り替えに演出を付ける（Claude Code）
+
+- ユーザーが比較ページで6案から「ワイプ＋流れ星の群れ」を選び、帯の色を本人のキャラクターの色（P1青・P2緑・P3紫・P4赤）に合わせるよう指示した。`view-transition.js`・`view-transition.css` を追加し、`phone-view.js` の `.view` の切り替えから呼ぶ。
+- 帯は620msで横切り、画面を覆う310msの時点で画面を入れ替える。それまで古い画面は `inert` にして新しい押下を受けない。押しっぱなしの解放は従来どおり切り替えの開始時に行う。動きを減らす設定とブラウザ以外（試験）では演出せず即座に切り替える。演出中に次の切り替えが来たら、前の入れ替えを済ませてから始める。
+- `view-transition-test` を追加して成功。`phone-view-test`、`phone-lifecycle-test`、`phone-session-test`、`phone-skin-test`、`controller-diagnostics-test`、`app-view-test`、`ui-input-test`、`check-static-pages` も成功。`ui-preview.mjs` とheadless Chromeで、P1・P2・P3の帯の色と接続直後の切り替えを目視確認した。
+- Rustホストのビルドが必要な `react-phone-parity`、実端末（iPhone・Android）での見た目・滑らかさは未確認。
+
+## 2026-11-08 — スマホのキャラクターの切り抜きを直す（Claude Code）
+
+- ユーザーから「スマホのキャラクターが見切れている」と指摘があった。P4（赤）は切り抜きの値がなく、青用の値で上と左右が欠けていた。P2〜P4の枠の縦横比も青の値のままだった。接続中の画面のキャラクターは下が切れていた。
+- P2〜P4の枠の縦横比と切り抜きを画像ごとの値にし、P4の値を追加した（`shared.css` の `.art-1`〜`.art-3` と同じ）。接続中は不透明部分を枠に合わせて全身を出す。待機画面でキャラクターの下半分がカードの後ろに隠れる配置は意図どおりなので変えない（一度全身表示にしたが、ユーザーの指示で戻した）。
+- `ui-preview.mjs` とheadless Chromeで、402×874・430×932のP2〜P4（P4は枠を書き換えて表示）と接続中の画面を目視確認した。`phone-view-test`・`phone-skin-test`・`app-view-test`・`ui-input-test`・`check-static-pages`・`view-transition-test` が成功。実端末は未確認。
+
+## 2026-11-08 — スマホの背景をキャラクターの色ときらめきにし、待機カードを不透明にする（Claude Code）
+
+- ユーザーが背景の比較ページから、B3（キャラクター色のグラデーション）とB2（空色グラデーション×きらめき）の組み合わせを選んだ。上は本人のキャラクターの色を淡く敷いて同じ色の水玉を重ね、下はレモン色の空に白と黄色の✦を置く。`phone-background.css` と `index.html` の `.phone-bg` で描き、背景画像 `mobile-stars.png` はスマホ画面では使わなくなった（ファイルは残す）。ダーク配色では従来どおり単色にする。
+- 待機カードが半透明で、後ろに隠したキャラクターの下半身が透けていたため、不透明の `--color-surface` にした。
+- `ui-preview.mjs` とheadless Chromeで、P1〜P4（P4は枠を書き換えて表示）、ダーク、ポップの配色を目視確認した。`phone-view-test`・`phone-skin-test`・`phone-lifecycle-test`・`app-view-test`・`ui-input-test`・`check-static-pages`・`view-transition-test` が成功。`static-assets-sim` はWindows用のRustホスト（`recooplay-host.exe`）が必要なため実行できなかった。実端末は未確認。
+
+## 2026-11-08 — 待機カードの「Readyで操作画面に変わります」を2行にする（Claude Code）
+
+- 1行のまま大きな文字で表示していたため、枠が待機カードの枠にかかっていた。「Readyで／操作画面に変わります」の2行にし、幅をカードの86%まで、文字を `clamp(14px,4.3vw,19px)` にした。
+- `ui-preview.mjs` で320×568・360×640・402×874・430×932の枠の位置を測り、カードの内側に収まることを確認した。`phone-view-test`・`check-static-pages`・`phone-skin-test` が成功。
+
+## 2026-11-08 — スマホの背景の模様を平たい星と流れ星にする（Claude Code）
+
+- ユーザーが前の背景（`mobile-stars.png`）の流れ星を参考に挙げ、光らない平たい模様の5案からV1（5つ角の星＋3本線の尾の流れ星を画面全体に散らす）を選んだ。グラデーション（上はキャラクターの色、下はレモン色）はそのまま、上の水玉と小さな✦をやめて `assets/phone-stars.svg` を白の半透明（`--color-bg-star`）で重ねる。形はSVG、色はCSSの mask で付ける。
+- `ui-preview.mjs` とheadless Chromeで、P1〜P4（P4は枠を書き換えて表示）、ダーク、ポップの配色を目視確認した。`phone-view-test`・`phone-skin-test`・`check-static-pages`・`app-view-test`・`ui-input-test`・`view-transition-test` が成功。Rustホストは `.svg` を `image/svg+xml` で配信する（`main.rs`）が、実際の配信は未確認。
+
+## 2026-11-08 — 画面切り替えの流れ星を背景と同じ形にする（Claude Code）
+
+- ユーザーが背景V1に合わせた演出の4案からT1を選んだ。帯（キャラクターの色と水玉）はそのままに、流れ星を背景と同じ平たい5つ角の星＋3本線の尾にし、光（drop-shadowのぼかし）をやめた。真ん中の✦も5つ角の星にした。星の大きさは比較ページ（画面の幅244px）で決めた値を、実際の画面の幅に合わせて拡大する。使わなくなった `--color-fx-star-tail`・`--color-fx-star-glow` を削除した。
+- 比較ページでキャラクターがカードの手前に出ていたのは比較ページだけの誤り（`z-index`）で、実際の待機画面はカードの後ろから出る配置のまま。
+- `view-transition-test`・`phone-view-test`・`phone-skin-test`・`check-static-pages` が成功。`ui-preview.mjs` とheadless Chromeで接続直後の切り替えを目視確認した。実端末は未確認。
+
+## 2026-11-08 — スマホの水色の枠と見出しをキャラクターの色にする（Claude Code）
+
+- ユーザーの指示で、標準の配色のときだけ、水色の枠・「接続完了!!」などの見出し・点線を本人のキャラクターの色（P1青・P2緑・P3紫・P4赤）にした。黄色の枠は変えない。`phone-skins.css` で `body[data-slot]` の `--color-cyan`・`--color-cyan-ink`・`--color-phone-dots` を上書きする。緑は白地で文字が読みにくいため、少し深い緑にした。ダーク・ポップの配色はスキンの色のまま。
+- `ui-preview.mjs` とheadless Chromeで、待機画面のP1〜P4、ホストの画面の青・緑、ポップ配色を目視確認した（P4・緑のホストの画面は枠を書き換えて表示）。操作画面は `ui-preview.mjs` で表示できず未確認。`phone-view-test`・`phone-skin-test`・`check-static-pages`・`app-view-test`・`ui-input-test`・`view-transition-test` が成功。
+
+## 2026-11-08 — 変更全体のレビューと満員・横向き画面の背景（Claude Code）
+
+- このブランチの変更全体を読み直した。満員（`#full`）と横向き（`#rotatePrompt`）の画面は背景のグラデーションだけで星の模様が出ていなかったため、`::after` で同じ模様を重ねた（ダークでは出さない）。`ui-preview.mjs` で両画面を目視確認した。
+- 残る確認: 実端末の見た目・滑らかさ、P4と操作画面の見た目、Rustホストからの `.svg` 配信、`react-phone-parity`・`static-assets-sim`（Rustホストが必要）。`artifacts/improved-ui` の撮影証拠は変更前の画面のままで、撮り直していない（`verify-ui-evidence` は寸法・網羅だけを見るため合格する）。
+
+## 2026-11-08 — 画面切り替えの始まりに古い画面の大きさが変わるのを直す（Claude Code）
+
+- ユーザーが動作確認デモで「切り替えの時にUIがきゅっと縮む」と指摘した。`body` の `data-view` を描画の最初に変えていたため、帯が覆う前から古い画面に次の画面の余白（`body[data-view=v-wait] main { padding: 0 }` の有無）が当たり、待機画面が402×820から374×792へ一瞬で縮んでいた（操作画面から戻る時は逆に広がる）。`data-view` を画面を入れ替える時（`showView`）に変えるようにした。
+- 動作確認デモ（模擬ホスト）で、切り替え開始から300msの古い画面の大きさが変わらないことを測った。`phone-view-test`・`phone-lifecycle-test`・`phone-session-test`・`check-static-pages`・`view-transition-test` が成功。
