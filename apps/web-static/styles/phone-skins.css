@@ -15,6 +15,8 @@ html[data-skin=pop] {
 /* 背景の星の画像は明るいので、ダークでは外す */
 html[data-skin=dark] body, html[data-skin=dark] #full, html[data-skin=dark] #rotatePrompt { background: var(--color-peach); }
 html[data-skin=dark] .phone-bg, html[data-skin=dark] #full::after, html[data-skin=dark] #rotatePrompt::after { display: none; }
+/* 無効のボタンは、ダークでも文字が読める暗い地にする（標準の薄い灰色のままだと文字が見えない） */
+html[data-skin=dark] .cmd:disabled { background: var(--color-disabled); color: var(--color-muted); }
 .skin-picker { display: flex; gap: 8px; padding: 8px 0 12px; }
 .skin-picker button { flex: 1; min-height: 44px; margin: 0; font-size: 14px; }
 .skin-picker button[aria-pressed=true] { outline: 3px solid var(--color-cyan-ink); }
