@@ -21,7 +21,7 @@
 | 通信（速達便） | **WebRTC DataChannel**（`ordered:false`、`maxRetransmits:0`）。シグナリングはWebSocket、STUN/TURNなし | **検証済み**（Android Chrome・iPhone Safari） | WebSocket（TCP）は欠けたパケットの再送待ちで後続が詰まる。不調端末では視点の途切れが42%から1.7%に減り、往復遅延の最大は2015msから221msになった |
 | WebRTCライブラリ | **libdatachannel**（Rustでは `datachannel` crate、Nodeでは `node-datachannel`） | 検証済み（Node）／Rust版は未検証 | iPhone Safariとの接続を確認済みのエンジンを維持する。Rust版はOpenSSLを同梱した静的リンク（`vendored`） |
 | ネットワーク | Windowsモバイルホットスポット（`192.168.137.1`） | **検証済み**（上流回線あり）／上流なしは未検証 | Android 2台＋iPhone 1台が同時に接続できた |
-| スマホ・PC画面 | [React + TypeScript strict](2026-11-08-react-typescript-foundation.md)（`apps/web/`、Vite）。入力エンジン・Pointer Eventsは独立。診断は静的HTML | 移行ブランチで自動試験・Android USB試験済み。既定URLは従来版、iPhone・実入力の受入は未完了 | 外部CDNなし。Node試作品の検証履歴は[旧判断](2026-10-24-prototype-validated.md)に保持。React化は2026-11-08のユーザー指示で必須に更新 |
+| スマホ・PC画面 | [React + TypeScript strict](2026-11-09-react-product-review.md)（`apps/web/`、Vite）。入力・接続・通信もTS、Pointer EventsはReact描画から独立。診断は静的HTML | PR #274の `/`・`/app`・TauriをReactへ標準化。AndroidはCDP/dry-runで同条件比較。iPhone・実指・Minecraftの受入は未完了 | 外部CDNなし。旧JSは比較・復元用に保全。mainの採用・正式リリースは別の判断 |
 | PCアプリの枠 | Tauri 2（WebView2）。代替は通常のブラウザ | 採用（このPCでビルド・起動・終了を確認。スマホ実機・配布は未検証） | `apps/desktop`。Rust版ホストを子プロセスとして起動し、同じHTMLをそのまま表示する。終了・異常終了時はホストが全解放してから終了する |
 | QR | 参加URLのQRとWi-Fi接続用のQR（`WIFI:T:WPA;S:..;P:..;;`）をSVGで生成する | **検証済み**（URL QR） | オフラインで生成する。Wi-Fi接続用QRは `config.json` に記載した場合だけ表示する |
 | 設定 | `config.json`（port、wifi、injectMode、autoResume、lookSmoothMin/MaxMs。requiredPlayers は #115 で廃止） | **検証済み** | Node・Rustで共通の項目 |

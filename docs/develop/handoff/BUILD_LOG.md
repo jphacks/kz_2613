@@ -1490,3 +1490,12 @@
 - `node scripts/sim/react-phone-parity.mjs --bin C:/Users/kumes/AppData/Local/ReCooplay/target-pr-queue/release/recooplay-host.exe --samples 20 --tolerance-ms 30`：成功。p95は参照16.8ms・移行後12.7ms、視点28.5・28回/秒（PC headless、Android性能の証拠ではない）。パッドを隠しhomeへ移す実装依存とdata-bound属性を比較から外し、表示・操作・多重ID・停止後に視点を送らない条件は維持した。
 - `react-pc-parity.mjs --bin <同ホスト>`：最初はQR取得の待機で失敗。追加した境界検証がRustの開発版 `commit:null` とqrcode crateのSVG `version` を拒否していたため、Rustの実装に合わせて修正。再試験は全比較・設定変更/復元・演出14回に合格。
 - Androidの予備比較はA/B/C各60秒×3回、入力と視点を各60秒で完走・未ACK/解放残留なし。ただし時間制御で操作サイクル数が142〜144と異なるため、本比較には採用しない。操作48サイクル（単発・連打・保持・同一/別ボタン2接点・スティック8方向とボタン）、視点1800移動と別操作10タップへ固定した本比較を開始した。試行ごとにホスト/タブ/生データ/統計を独立させ、A/B/Cの順序を交替する。USB/CDP/dry-runであり、実Wi-Fi・実指・Minecraftの検証ではない。
+
+## 2026-11-09 — Android固定回数比較の完了と標準URL切替の検証準備
+
+- A/B/C/D/Eを同じAndroid 16・Chrome156・同じPCとホストexeで各3試行、ボタン60秒＋視点60秒で比較した。A=main c271ebe、B/C=PR旧画面/React 9947391、D=TSエンジン48f180a、E=診断の同期描画を外したdf7e3eb。各試行48サイクル・1800視点移動で、ボタン224件をホストの受理ログと照合し、欠落・重複・未ACKは0。全解放・再接続・回転・非表示を含む後続試験も全合格。
+- 視点の平均送信間隔は全条件34.48〜34.85ms。端末内送信の200ms以上の空白は0。一方、ホストのlookLost（受信連番の空き）は16〜21回を記録した。ボタン欠落と混同せず、実パケット損失率・最終移動量の欠落とも断定しない。累積値で後続までの抜けを補う既存仕様を維持した。
+- DのACK観測p95は109.3〜111.5msで、Cの109.0〜109.1msより数ms高い試行があった。観測点は製品ACK処理後で、診断描画も含む。同期React描画を受信処理内で強制する構造を除去し（df7e3eb）、Eを再測定した。Eのp95は109.2〜111.3msで試行差は残るため、ネットワーク改善や統計的な同等性を主張しない。Eの視点最大間隔は69.3ms（Dは96.8ms）だったが、3試行の観測範囲として記録する。
+- HTTP/WSはADB reverse TCP。RTCはローカルICEで成立したが選択候補対を収集していない。旧CLIの「WebRTCはUSB経路」という説明は不正確だったため、共有した測定記録では訂正した。純Wi-Fi・無線断・実指・実OS入力・Minecraftの試験とは区別する。
+- `node scripts/device/summarize-react-review.mjs`：15試行の端末/Chrome・exeハッシュ・操作回数・資産の一致、ボタン受理の欠落/重複なしを検証して成功。識別子を除いた生データをgzipで保全し、`evidence/pr274-review/trials.json` に統計と各gzipのSHA256を記録した。
+- 標準URLをRustで `/`→phone-react.html、`/app`→app-react.htmlへ変更し、Tauriの環境変数によるUI切替を除去した。旧版は明示URL `/index.html`・`/app.html` と固定worktreeで保存する。mainへはマージしない。以下で標準化後のビルド・Android・Tauri・配布を検証する。

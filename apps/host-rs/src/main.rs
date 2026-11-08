@@ -304,10 +304,10 @@ async fn api_hotspot(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
 
 async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<SocketAddr>, uri: Uri) -> Response {
     let path = match uri.path() {
-        "/" => "/index.html",
+        "/" => "/phone-react.html",
         "/host" => "/host.html",
         "/game" => "/game.html",
-        "/app" => "/app.html",
+        "/app" => "/app-react.html",
         "/overlay" => "/overlay.html",
         p => p,
     };

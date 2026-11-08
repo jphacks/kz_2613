@@ -23,7 +23,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/dev.ps1 -Tas
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/dev.ps1 -Task dry-run
 ```
 
-`-ExecutionPolicy Bypass` はこのPowerShellプロセスで既存のローカルスクリプトを実行する指定であり、UAC設定やシステム全体の実行ポリシーを変更しない。`dry-run` はOS入力を送らず、設定ファイルを読まず、空きポートを割り当てる。表示されたポートのReact確認URLを開き、`quit` で終了する。
+`-ExecutionPolicy Bypass` はこのPowerShellプロセスで既存のローカルスクリプトを実行する指定であり、UAC設定やシステム全体の実行ポリシーを変更しない。`dry-run` はOS入力を送らず、設定ファイルを読まず、空きポートを割り当てる。表示されたポートの標準URL（スマホ `/`、PC `/app`）を開き、`quit` で終了する。
 
 キャッシュは既定 `%LOCALAPPDATA%/ReCooplay/cargo-target`。別の既存キャッシュを使う場合は `CARGO_TARGET_DIR` を指定する。必要なツールがないときは [SETUP_WINDOWS.md](SETUP_WINDOWS.md) に従って準備する。開発コマンドから自動インストールしない。
 

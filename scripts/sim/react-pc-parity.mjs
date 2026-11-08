@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {stripTypeScriptTypes} from 'node:module';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const arg = (name, fallback) => { const i = process.argv.indexOf(name); return i < 0 ? fallback : process.argv[i + 1]; };
@@ -80,6 +81,14 @@ async function session(url, port, cdpPort) {
     const rolesHtml = async () => (await ev(`document.getElementById('roles').innerHTML`)).replace(/ fx-pop/g, '').replace(/>\s+</g, '><').replace(/<img ([^>]*)>/g, (_, a) => `<img ${a.split(/ (?=[\w-]+=)/).sort().join(' ')}>`).trim();
     result.roles = {};
     await waitFor(`!!document.querySelector('#qr svg')`, '参加用QR');
+    result.productEntry=(await(await fetch(targetUrl)).text()).includes('/react/pc.js');
+    const boundarySource=stripTypeScriptTypes(fs.readFileSync(path.join(ROOT,'apps/web/src/transport/pc-info.ts'),'utf8'),{mode:'strip'}).replace(/^export /gm,'');
+    result.qrBoundary=await ev(`(async()=>{${boundarySource}
+      const real=await(await fetch('/api/info')).json();
+      const invalid=['<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>','<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>','<svg xmlns="http://www.w3.org/2000/svg"><foreignObject/></svg>','<svg xmlns="http://www.w3.org/2000/svg"><image href="x"/></svg>','<svg xmlns="http://www.w3.org/2000/svg"><path fill="url(x)"/></svg>','<!DOCTYPE svg><svg xmlns="http://www.w3.org/2000/svg"/>'];
+      return {real:decodePcInfo(real)!==null,rejected:invalid.map(value=>!validQr(value))};
+    })()`);
+    assert.equal(result.qrBoundary.real,true);assert(result.qrBoundary.rejected.every(Boolean),'危険なSVGを拒否する');
     // ゲームの検出と画像の読込が終わってから構造を比べる
     await waitFor(`!document.getElementById('refreshGamesBtn').disabled&&document.querySelectorAll('#gameList .game-choice').length>0`, 'ゲーム一覧');
     await sleep(500);
@@ -144,6 +153,21 @@ async function session(url, port, cdpPort) {
     p2.close();
     await snap('切断', `document.querySelectorAll('#players .player.lost').length===1`);
     result.fx = await ev('window.__fx');
+    await ev(`document.getElementById('settingsBtn').focus();document.getElementById('settingsBtn').click();true`);
+    await waitFor(`document.getElementById('settings').open`,'設定ダイアログ');
+    for(const type of ['keyDown','keyUp'])await call('Input.dispatchKeyEvent',{type,key:'Tab',code:'Tab',windowsVirtualKeyCode:9},s);
+    assert(await ev(`document.activeElement?.closest('dialog')?.id==='settings'`),'Tabのフォーカスをダイアログ内に保つ');
+    for(const type of ['keyDown','keyUp'])await call('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27},s);
+    await waitFor(`!document.getElementById('settings').open`,'Escapeで閉じる');
+    assert(await ev(`document.activeElement?.id==='settingsBtn'`),'閉じた後のフォーカス復元');
+    result.dialogKeyboard=true;
+    result.viewports=[];
+    for(const [width,height]of [[1280,720],[1024,768],[1280,1024],[900,1200]]){
+      await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false},s);await sleep(100);
+      const bounds=await ev(`(()=>{const r=document.querySelector('.desktop-shell').getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:innerWidth,height:innerHeight}})()`);
+      assert(bounds.x>=-1&&bounds.y>=-1&&bounds.right<=width+1&&bounds.bottom<=height+1,'PC画面の縦横比で領域外へはみ出さない');
+      result.viewports.push([width,height]);
+    }
   } finally {
     for (const p of phones) try { p.close(); } catch {}
     try { host.stdin.write('quit\n'); } catch {}
@@ -153,8 +177,8 @@ async function session(url, port, cdpPort) {
   return result;
 }
 
-const before = await session('/app', 18651, 9371);
-const after = await session('/app-react.html', 18652, 9372);
+const before = await session('/app.html', 18651, 9371);
+const after = await session('/app', 18652, 9372);
 const fails = [];
 const same = (name, a, b) => {
   const ok = JSON.stringify(a) === JSON.stringify(b); if (!ok) fails.push(name); console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${name}`);
@@ -167,5 +191,9 @@ for (const k of Object.keys(before.screens)) same(`主要画面の文言・状�
 same('設定値の変更と復元', before.settings, after.settings);
 same('演出の再生回数', before.fx, after.fx);
 same('実行時のエラー', before.errors, after.errors);
+same('実際のホストQRと危険SVGの境界',before.qrBoundary,after.qrBoundary);
+same('ダイアログのTab・Escape・フォーカス復元',before.dialogKeyboard,after.dialogKeyboard);
+same('PCの4種類の縦横比',before.viewports,after.viewports);
+if(!after.productEntry)fails.push('標準URLのReact entry');
 console.log(fails.length ? `不合格: ${fails.join('、')}` : `合格: 既存のPC画面とReact版が一致（演出 ${after.fx} 回）`);
 process.exit(fails.length ? 1 : 0);

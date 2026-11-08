@@ -104,6 +104,11 @@ try {
   }
   const app = await fetch(`${url}/app`, { signal: AbortSignal.timeout(3000) });
   assert.equal(app.status, 200, '/appを配信できません');
+  assert((await app.text()).includes('/react/pc.js'),'配布物の /app はReactを起動する');
+  const phone=await fetch(url+'/',{signal:AbortSignal.timeout(3000)});
+  assert.equal(phone.status,200);
+  assert((await phone.text()).includes('/react/phone.js'),'配布物の / はReactを起動する');
+  for(const entry of ['phone','pc'])assert.equal((await fetch(`${url}/react/${entry}.js`)).status,200,'製品entryの同梱と配信');
   child.stdin.end('quit\n');
   assert.equal(await Promise.race([exited, sleep(5000).then(() => 'timeout')]), 0, '正常終了しません');
   const events = inventory(path.join(dir, 'logs')).filter(file => file.endsWith('.jsonl'))
