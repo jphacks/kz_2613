@@ -27,4 +27,3 @@ export function RoleColumn({ c }: { c: RoleColumnModel }) {
     </article>
   );
 }
-
