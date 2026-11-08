@@ -14,6 +14,16 @@ html[data-skin=pop] {
 }
 /* 背景の星の画像は明るいので、ダークでは外す */
 html[data-skin=dark] body, html[data-skin=dark] #full, html[data-skin=dark] #rotatePrompt { background: var(--color-peach); }
+html[data-skin=dark] .phone-bg, html[data-skin=dark] #full::after, html[data-skin=dark] #rotatePrompt::after { display: none; }
 .skin-picker { display: flex; gap: 8px; padding: 8px 0 12px; }
 .skin-picker button { flex: 1; min-height: 44px; margin: 0; font-size: 14px; }
 .skin-picker button[aria-pressed=true] { outline: 3px solid var(--color-cyan-ink); }
+/* 標準の配色では、水色の枠・見出し・点線を本人のキャラクターの色にする。黄色の枠は変えない。
+   --me は phone-background.css で枠 (P1〜P4) ごとに決まる。ダーク・ポップはスキンの色のまま。 */
+html:not([data-skin]) body[data-slot] {
+  --color-cyan: var(--me);
+  --color-cyan-ink: color-mix(in srgb, var(--me) 55%, var(--color-fx-shade));
+  --color-phone-dots: color-mix(in srgb, var(--me) 40%, var(--color-fx-star));
+}
+/* 緑は明るく白地で文字が読みにくいので、少し深い緑にする */
+html:not([data-skin]) body[data-slot=P2] { --color-cyan: color-mix(in srgb, var(--me) 80%, var(--color-fx-shade)); }

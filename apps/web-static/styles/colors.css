@@ -48,6 +48,11 @@
   --color-button-ink: #A34D19;
   --color-button-shadow: #B0A693;
   --color-disabled-shadow: #AAAAAA;
+  /* スマホの画面切り替えの流れ星 (view-transition.css)。スキンで変えない */
+  --color-fx-star: #FFFFFF;
+  --color-fx-shade: #000000;
+  /* スマホの背景の星と流れ星 (phone-background.css) */
+  --color-bg-star: #FFFFFFB8;
   --bg: var(--color-cream); --panel: var(--color-surface); --panel2: var(--color-ice);
   --text: var(--color-ink); --muted: var(--color-muted); --line: var(--color-cyan);
   --ok: var(--color-success); --ng: var(--color-error); --warn: var(--color-warning);
