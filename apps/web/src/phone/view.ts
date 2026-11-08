@@ -88,7 +88,8 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
   }) as PhoneView;
   render.note = note => flushSync(() => display.set({ ...display.get(), remote: { ...display.get().remote, note } }));
   render.connection=(text,kind)=>{document.body.dataset.connection=kind;flushSync(()=>connection.set({text,kind}));};
-  render.telemetry=patch=>flushSync(()=>telemetry.set({...telemetry.get(),...patch}));
+  // 入力/ACKの処理中に診断DOMの同期描画を挟まない。診断部だけが通常のReact更新を購読する。
+  render.telemetry=patch=>telemetry.set({...telemetry.get(),...patch});
   render.blocked=message=>flushSync(()=>blocked.set({message}));
   render.dispose=()=>{input.releaseAll();lifetime.dispose();transition.dispose();bindings=undefined;};
   return render;
