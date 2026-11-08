@@ -31,6 +31,7 @@ class Ws {
 }
 
 async function session(url, port, cdpPort) {
+  console.log(`PC比較: ${url === '/app-react.html' ? 'React版' : '従来版'}を開始`);
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-pc-parity-'));
   const logDir = path.join(tmp, 'logs'); fs.mkdirSync(logDir);
   const host = spawn(BIN, [], { env: { ...process.env, PORT: String(port), RECOOPLAY_ROOT: ROOT, RECOOPLAY_DRY_RUN: '1', RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_DESKTOP: '1', RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_KEY_OVERRIDES: path.join(tmp,'key-overrides.json') }, stdio: ['pipe', 'ignore', 'ignore'] });
@@ -55,7 +56,15 @@ async function session(url, port, cdpPort) {
     await call('Emulation.setDeviceMetricsOverride', { width: 1920, height: 1080, deviceScaleFactor: 1, mobile: false }, s);
     const ev = async x => { const r = await call('Runtime.evaluate', { expression: x, awaitPromise: true, returnByValue: true }, s); if (r.exceptionDetails) throw Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text); return r.result.value; };
     const waitFor = async (x, what) => { const t = Date.now(); while (Date.now() - t < 8000) { if (await ev(x).catch(() => false)) return; await sleep(30); } throw Error(`画面の待機: ${what}`); };
-    await call('Page.navigate', { url: `http://127.0.0.1:${port}${url}` }, s);
+    const targetUrl = `http://127.0.0.1:${port}${url}`;
+    try {
+      await call('Page.navigate', { url: targetUrl }, s);
+    } catch (error) {
+      if (error.message !== 'CDPの応答なし: Page.navigate') throw error;
+      // 応答期限だけでは遷移失敗と決めない。同じtargetを読み直し、遷移操作を重複させない。
+      await waitFor(`location.href===${JSON.stringify(targetUrl)}`, '遷移先URLの確認');
+      console.log('Page.navigateの応答期限後、同じtargetの遷移先を確認');
+    }
     await waitFor(`document.body.dataset.view==='join'&&document.querySelectorAll('#players .player').length===4`, 'PC画面');
     await ev(`window.__fx=0;new MutationObserver(l=>{for(const m of l)if(m.target.classList?.contains('fx-pop')&&!String(m.oldValue).includes('fx-pop'))window.__fx++}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class'],attributeOldValue:true});1`);
     // 演出のクラスは比べない (再生回数は別に比べる)。既存の画面は描き直しで演出が途中で消えることがある
@@ -101,11 +110,15 @@ async function session(url, port, cdpPort) {
     await ev(`(()=>{const e=document.getElementById('rotationSetting');e.value='0';e.dispatchEvent(new Event('change',{bubbles:true}));return 1})()`);
     await p1.until(x=>x.game.rotationSeconds===0,'時間交代の復元');
     const keyEdit=await ev(`(()=>{const e=document.querySelector('[data-key-action]');return {action:e.dataset.keyAction,old:e.value,next:[...e.options].find(o=>o.value&&o.value!==e.value).value}})()`);
+    const bindingsBefore = await ev(`document.getElementById('keyBindings').textContent`);
     const setKey=async value=>ev(`(()=>{const e=document.querySelector('[data-key-action]');e.value=${JSON.stringify(value)};e.dispatchEvent(new Event('change',{bubbles:true}));return 1})()`);
     await setKey(keyEdit.next);
     await p1.until(x=>x.game.keys?.actions?.[keyEdit.action]?.out===keyEdit.next,'キー設定の変更');
+    await waitFor(`document.getElementById('keyBindings').textContent!==${JSON.stringify(bindingsBefore)}`, 'PC画面のキー変更反映');
     await setKey(keyEdit.old);
     await p1.until(x=>x.game.keys?.actions?.[keyEdit.action]?.out===keyEdit.old,'キー設定の復元');
+    // P1への通知とPCの通知は独立。PCが旧epochのまま決定すると正しく拒否される。
+    await waitFor(`document.getElementById('keyBindings').textContent===${JSON.stringify(bindingsBefore)}`, 'PC画面のキー復元反映');
     result.settings=true;
     await ev(`document.getElementById('nextBtn').click();1`);
     await p1.until(x => x.game?.lineupOk, '分担の決定');
