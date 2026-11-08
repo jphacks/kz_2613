@@ -1378,3 +1378,10 @@
 
 - 上限で本文を落とした後に送信側が1件消化すると、件数だけの判定では切断されず、落とした通知が補われないまま接続が続く競合があった。落としたことを `SendQueue.overflowed` に記録し、送信側はその記録で必ず切断する。
 - `cargo test` ホスト126件・プローブ4件、`protocol-sim` 60/60、`shutdown-sim` が成功（dry-run）。実Wi-Fi・実端末・長時間の負荷は未検証。
+
+## 2026-11-08 — #265 Steam・Epic・Minecraft 以外のランチャーのゲームを検出する（Claude Code）
+- `apps/host-rs/src/launchers.rs` を追加し、検出（`games::detect`）に組み込んだ。対象：Steam に追加したゲーム（`shortcuts.vdf`）・GOG・Ubisoft Connect・EA app・Battle.net（`product.db`）・Xbox（PC Game Pass、`XboxGames\*\Content`）。読み取りのみ。起動は検出時に確かめた値（英数字のID・実在する実行ファイル）だけから組み立てる。GOG は実行ファイル、ほかはランチャーのプロトコル（Xbox はパッケージのアプリID）で起動する。入力先はインストール先のフォルダ内のプロセス。一覧の項目はすべて「未検証」。itch.io は、インストール情報が SQLite と gzip にしかないため対象外（手動登録で代わりに使える）。判断の記録は `docs/develop/decisions/2026-10-25-game-detection-launch.md` の追記。
+- レジストリは試験で JSON（`<偽のフォルダ>\registry.json`）に差し替えられる。ログ `games_detected` に出所ごとの件数を足した（名前・場所は残さない）。
+- 画面：出所の名前（Steam（追加したゲーム）・GOG・Ubisoft Connect・EA app・Battle.net・Xbox）を出し、見出しの件数を「Steam・Epic など」として数える。`protocol-specification.md` の source の一覧を更新した。
+- 検証：`cargo test --release --locked` **135件合格**（追加9件：Steam に追加したゲームの64ビットID、バイナリVDFの不正データ、レジストリ系3ランチャー、Battle.net の製品の読み取りと自身の除外、Xbox の読み取りと Minecraft ランチャーの除外、SHA-256、発行者ID）。このPCの実データで、Xbox 版 Minecraft ランチャーのファミリー名の計算が公式の値（`Microsoft.4297127D64EC6_8wekyb3d8bbwe`）と一致し、実際の `product.db`（Battle.net 自身だけ）からゲームを出さないことを確かめた。`protocol-sim` 60/60、`app-view-test` 30/30（追加1件）、`ui-input-test` 12/12、ほかCIの試験（React の比較・配布zipを除く）と `verify_overlay.py`・`check-public-docs.py` 合格。
+- **未検証：** GOG・Ubisoft・EA・Steam に追加したゲームは、このPCに入っていないため固定のデータでの試験だけ。Battle.net・EA・Ubisoft・Xbox の起動の形式で実際に起動できるか（#218）。
