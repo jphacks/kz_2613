@@ -11,7 +11,7 @@ PC ホスト（`apps/host-rs` の `recooplay-host.exe`）を子プロセスと�
 | `src/main.rs` | ホストの起動・待ち受けの確認・終了処理。ウィンドウに `http://127.0.0.1:<port>/app` を表示する |
 | `ui/index.html` | ホストの起動を待つ間の画面と、起動できなかったときの案内 |
 | `tauri.conf.json`、`capabilities/` | Tauri の設定。ホストの画面には Tauri の API を開放しない |
-| `icons/` | 仮のアイコン |
+| `icons/` | 採用アイコンの原PNG・SVG・Windows用PNG/ICO（[生成手順](../../docs/develop/design/brand-assets.md)） |
 
 ## ビルドと起動
 
