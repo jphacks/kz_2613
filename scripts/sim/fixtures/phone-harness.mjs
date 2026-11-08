@@ -134,7 +134,7 @@ export function controllerHarness() {
     let source = fs.readFileSync(absolute, 'utf8');
     source = source.replace(/^import\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"];?\s*$/gm, (_, bindings, relative) => {
       imports[relative] = load(path.resolve(path.dirname(absolute), relative));
-      return `const {${bindings}} = imports[${JSON.stringify(relative)}];`;
+      return `const {${bindings.replace(/\bas\b/g, ':')}} = imports[${JSON.stringify(relative)}];`;
     });
     source = source.replace(/\bexport\s+(function|const)\s+(\w+)/g, (_, kind, name) => { names.push(name); return `${kind} ${name}`; });
     const run = new vm.Script(`(function(imports) {\n${source}\nreturn {${names.join(',')}};\n})`, { filename: absolute }).runInContext(context);

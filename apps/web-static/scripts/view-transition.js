@@ -38,6 +38,7 @@ export function transitionDirection(from, to) {
   return from === 'v-gen' && to !== 'v-gen' ? 'back' : 'forward';
 }
 
+/** @param {{layer?: HTMLElement, win?: typeof globalThis}} [options] */
 export function createViewTransition({ layer, win = globalThis } = {}) {
   let pending = null; // { apply, timer, inertEl }
   let cleanup = null;

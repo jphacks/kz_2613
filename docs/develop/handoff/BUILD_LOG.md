@@ -1451,3 +1451,17 @@
 - 端末はAndroid（Chrome）。PCのモバイルホットスポット経由。ホストはdry-run（OS入力なし）、2人目は模擬、対象ウィンドウは前面という試験用設定。
 - 接続、PREPARE、Ready（協力プレイへ）、一時停止の各切り替えで、帯・水玉・流れ星・中央の星の演出が出て、切り替え後の画面が正常に表示されることを録画で確認した。背景とキャラクター色の枠に配置の崩れはない。操作感は利用者が実機の画面で確認した。
 - 未確認：iPhone Safari、「視差効果を減らす」オン時の動き、横向き、Minecraftへの実入力。
+
+## 2026-11-09 — React + TypeScript strictの製品UI基盤（Codex、#235）
+
+- 2026-11-08のユーザー指示に従いGoal Modeの `create_goal` を実際に設定し、`codex/235-react-typescript` で実装。#235の着手コメントを投稿済み。着手コメントの継続ルールは既存のままで、新しいルールPRは作成していない。
+- スマホ/PC主要画面をTSXへ移し、Islands/Portalとglobal storeを削除。`contracts.ts`、共通コントローラーモデル、Reactボタン/スティック/視点、PCの型付き設定APIを追加。入力の保持・30Hz・WebRTC/WS・epoch・認可は既存エンジン/ホストに残した。新しい本番依存なし。
+- `npm ci --prefix apps/web`、`npm run build --prefix apps/web`：成功（strict型チェック込み、追加開発依存は版固定、audit 0件）。`node --experimental-strip-types scripts/sim/controller-layout-test.mjs`：合格。CIは既存buildに型チェックを含め、共通モデル試験を追加。
+- `CARGO_TARGET_DIR=C:/Users/kumes/AppData/Local/ReCooplay/target-pr-queue` と既存Perl/libclangを使用し、`cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml`、`cargo test --release --locked --manifest-path apps/host-rs/Cargo.toml`：成功。135件合格・2件ignored、input-probe 4件合格。既存のdead_codeとOpenSSL PDB警告あり。
+- `CARGO_TARGET_DIR=C:/Users/kumes/AppData/Local/ReCooplay/target-pr-queue-desktop` で `cargo build --release --locked --offline --manifest-path apps/desktop/Cargo.toml`：成功。管理者トークンでないこと（IsInRole Administrator=false）も確認。`dev.ps1 -Task verify` と `-Task desktop`：成功。過去のUACポップアップの原因は記録不足で断定できないが、今回の通常ビルドでは再現なし。インストーラーやFirewall変更を検証から分離。
+- 上記ホストを `--bin` に指定した `protocol-sim.mjs`：60/60、`react-phone-parity.mjs --samples 20`：DOM/配置/操作/安全停止/再接続/反復再表示に合格。タップp95 20.7→19.3ms、look 29→28回/秒（ka除外、PC上の模擬タッチで実端末遅延ではない）。`react-pc-parity.mjs`：主要画面の文言とボタン状態・設定の変更/復元を含めて一致、演出14回・実行時エラーなし。
+- `phone-lifecycle-test` 16/16、`phone-session-test` 7/7、`input-owners-test` 4/4、`protocol-boundary-test` 7/7、`ui-input-test` 12/12に合格。`phone-view-test`、`controller-diagnostics-test`、`phone-skin-test`、`view-transition-test`、`app-view-test`、`android-dry-run-test`、`check-static-pages`、`verify_overlay.py`、`check-public-docs.py`、`git diff --check`：合格。
+- Android 16 / SDK36、Chrome156.0.8078.79の実機を認可済みADB/CDPで検証。参加/ボタン/2接点保持/スティック/44px領域/診断/Pause全解放/実回転/実非表示と復帰/再読み込み/担当交換後の視点/送信停止/JavaScriptエラーなしを確認。USB経路・P2/P3は模擬・OS入力なし。実指やLAN品質の合格とは扱わない。生の記録は `data/local/device-acceptance/run-24HFRs`、共有用は `acceptance/evidence/react-235/android-summary.json`。
+- Tauri実窓で `/app-react.html`、参加/ゲーム選択/設定をComputer Useで確認。終了後に `shutdown releaseConfirmed:true unconfirmed:[]` とプロセス終了を確認。初回の再ビルドは旧EXEを起動したためロックで失敗したが、終了・再ビルド成功後の新EXEで確認し直した。
+- `static-assets-sim.mjs --bin <上記ホスト>`：57資産のHTTP/MIME/no-store/ローカル参照に合格。`package.ps1 -Out data/local/react-migration/package-235` と同zipの `package-smoke.mjs`：同梱/ハッシュ/改変拒否/リポジトリ外での無注入起動・正常終了に合格。Archiveモジュールの自動読込制限は.NET展開APIで解消し、システムの実行ポリシーは変更していない。
+- 判断は `decisions/2026-11-08-react-typescript-foundation.md`、通常権限の手順は `WINDOWS_NORMAL_USER_DEV.md`、試験条件・証拠・再開手順は `acceptance/2026-11-09-react-typescript.md`。既定URL切替、iPhone Safari・実指・3実端末・Wi-Fi断・Minecraft実入力・配布先PCの受入は未完了。#271/#50/#272は共通描画/型境界を準備した段階で、保存スキーマ/編集UI/型生成の完了とは扱わない。

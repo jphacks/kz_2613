@@ -15,7 +15,7 @@
 |---|---|---|
 | `apps/host-rs/` | Rust版PCホスト（HTTP・WebSocket・WebRTC・SendInput） | `cargo build --release --locked`、`cargo test --release --locked` |
 | `apps/desktop/` | PCアプリ（Tauri / WebView2）。ホストを起動して画面を表示する | `cargo build --release --locked` |
-| `apps/web/` | React版の画面のソース（移行中） | `npm ci`、`npm run build`（`apps/web` で実行。配布の前に必要） |
+| `apps/web/` | React + TypeScript strictの製品画面（既定ルート切替は受入後） | `npm ci`、`npm run typecheck`、`npm run build`（`apps/web` で実行。buildは型チェックを含む） |
 | `apps/web-static/` | スマホ・PC画面（既存の静的HTML/JS） | `node scripts/sim/check-static-pages.mjs`、`node scripts/sim/app-view-test.mjs` |
 | `scripts/sim/` | 通信契約のシミュレーション（注入なし） | `node scripts/sim/protocol-sim.mjs` |
 
@@ -72,3 +72,7 @@ node scripts/sim/protocol-sim.mjs --bin "$env:CARGO_TARGET_DIR\release\recooplay
 - Minecraftを前面にする明示手順を備えた、独立したWindows専用プローブでキーと相対マウスの挙動を確認する。
 - プロセス起動時に合成キーを送らない。PCからの明確な緊急停止・全解放を用意する。
 - 実PCで試験し記録するまで、プローブを検証済みと報告しない。
+
+## 通常権限の開発経路
+
+繰り返しのビルド・型チェック・dry-runは [WINDOWS_NORMAL_USER_DEV.md](WINDOWS_NORMAL_USER_DEV.md) と `scripts/windows/dev.ps1` を使う。インストーラー・Firewall設定・ツール再導入は通常の検証から分離する。TauriでReact版を確認するときは `RECOOPLAY_REACT_UI=1` を明示する。既定は従来版の `/app` を維持する。
