@@ -1385,3 +1385,14 @@
 - 画面：出所の名前（Steam（追加したゲーム）・GOG・Ubisoft Connect・EA app・Battle.net・Xbox）を出し、見出しの件数を「Steam・Epic など」として数える。`protocol-specification.md` の source の一覧を更新した。
 - 検証：`cargo test --release --locked` **135件合格**（追加9件：Steam に追加したゲームの64ビットID、バイナリVDFの不正データ、レジストリ系3ランチャー、Battle.net の製品の読み取りと自身の除外、Xbox の読み取りと Minecraft ランチャーの除外、SHA-256、発行者ID）。このPCの実データで、Xbox 版 Minecraft ランチャーのファミリー名の計算が公式の値（`Microsoft.4297127D64EC6_8wekyb3d8bbwe`）と一致し、実際の `product.db`（Battle.net 自身だけ）からゲームを出さないことを確かめた。`protocol-sim` 60/60、`app-view-test` 30/30（追加1件）、`ui-input-test` 12/12、ほかCIの試験（React の比較・配布zipを除く）と `verify_overlay.py`・`check-public-docs.py` 合格。
 - **未検証：** GOG・Ubisoft・EA・Steam に追加したゲームは、このPCに入っていないため固定のデータでの試験だけ。Battle.net・EA・Ubisoft・Xbox の起動の形式で実際に起動できるか（#218）。
+
+## 2026-11-08 — 指定PNGへのアプリアイコンの更新（Codex、#268）
+
+- ユーザー指定の `C:/Users/kumes/Downloads/icon.png`（2048×2048 RGBA）を `apps/desktop/icons/icon-source.png` へそのまま保存した。SHA-256：`25c4195916c2a260ae3b8017c5ee125f79fea15bf72478e921a767c8e8e0f40b`。
+- `prepare-brand-assets.py` に原PNGを無劣化で埋め込むSVG生成を追加し、ICOは原画像から各サイズへ直接縮小するようにした。Windows用PNG/ICO・WebとTauri起動画面のPNGを再生成した。ロゴの生成結果に差分なし。新しい本番依存なし。
+- `python scripts/windows/prepare-brand-assets.py`：成功。`python scripts/sim/verify-brand-assets.py --source C:/Users/kumes/Downloads/icon.png --exe C:/Users/kumes/AppData/Local/ReCooplay/cargo-target/release/recooplay-desktop.exe --preview docs/develop/design/evidence/icon-268/sizes-light-dark.png`：原画像・SVGのバイト一致、PNG 6件・ICO 7サイズの全画素一致、EXE内の7画像とICOのバイト一致に合格。EXE検証器の初回はリソースコンパイラーのplanes値の正規化（0→1）を不一致と判定したため、画像データの完全一致を保持しつつメタデータの正規化を許容して再実行した。
+- `CARGO_TARGET_DIR=C:/Users/kumes/AppData/Local/ReCooplay/cargo-target` を指定し、`cargo build --release --locked --offline --manifest-path apps/desktop/Cargo.toml`：成功（1分12秒）。サンドボックス内は既存キャッシュのロック作成が拒否されたため、承認付き実行で成功した。
+- `node scripts/sim/static-assets-sim.mjs --bin C:/Users/kumes/AppData/Local/ReCooplay/cargo-target/release/recooplay-host.exe`：42ファイルのHTTP・MIME・no-store・ローカル素材の照合に合格。初回はサンドボックス内でホストが起動せず失敗、通常環境の承認付きdry-runで再実行して成功した。
+- `node scripts/sim/check-static-pages.mjs`：全5ページと外部JSの構文・参照確認に合格。`git diff --check`：成功。
+- 明暗背景の16・24・32・48pxで2体の形と水色・赤を視認した（16pxでは表情の細部は小さい）。再ビルドしたTauriアプリを `RECOOPLAY_DRY_RUN=1`、`RECOOPLAY_NO_CONFIG=1`、専用ポートで起動し、実窓タイトルバーの新アイコンを確認して終了した。
+- 判断と再生成手順は `decisions/2026-11-08-app-icon.md` と `design/brand-assets.md`。タスクバー・デスクトップショートカット・iPhoneホーム画面のキャッシュ反映は、今回それぞれの表示操作を行っていないため未検証。Minecraft・スマホ実機の操作の合格には読み替えない。

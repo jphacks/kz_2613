@@ -1,5 +1,46 @@
 # 提供ロゴ・アイコンの反映
 
+## 現在の採用アイコン（2026-11-08、#268）
+
+今回のユーザー指定 `C:/Users/kumes/Downloads/icon.png` を採用した。以下の2026-10-25の記録は履歴として保持する。ロゴは従来のまま。
+
+- 原画像：`apps/desktop/icons/icon-source.png`（2048×2048、RGBA、881,644 bytes）。提供PNGとバイト単位で一致。
+- SHA-256：`25c4195916c2a260ae3b8017c5ee125f79fea15bf72478e921a767c8e8e0f40b`。
+- 透過部分・影・輪郭・配色・元からある余白を保持した。切り取り、背景除去、形状の修正は行っていない。
+
+| 形式・用途 | ファイル | サイズ |
+| --- | --- | --- |
+| 再利用するSVG | `apps/desktop/icons/icon.svg` | 2048×2048、原PNGをdata URIで無劣化埋め込み |
+| Windowsアプリ | `apps/desktop/icons/32x32.png`、`128x128.png`、`icon.png` | 32・128・256px |
+| Windows実行ファイルのアイコン | `apps/desktop/icons/icon.ico` | 16・24・32・48・64・128・256px、透過あり |
+| ブラウザfavicon | `apps/web-static/assets/icon.png` | 192px |
+| iPhoneホーム画面用 | `apps/web-static/assets/apple-touch-icon.png` | 180px |
+| Tauri起動画面favicon | `apps/desktop/ui/assets/icon.png` | 192px |
+
+SVGはパス化したベクター画像ではなく、PNGを内包する自己完結したSVG。自動トレースによる外観の変化を避けるため、この形式を採用した。外部ファイル・フォント・通信は不要だが、拡大時の情報量は原PNGの2048pxまで。約1.18MBあるためブラウザfaviconには既存の縮小PNGを使い続ける。Windows用ICOの各サイズは、256pxを経由せず原画像から直接縮小する。
+
+### 再生成と確認
+
+開発用のPillow 11.3.0を使用。本番依存は追加していない。
+
+```powershell
+python scripts/windows/prepare-brand-assets.py
+python scripts/sim/verify-brand-assets.py --preview docs/develop/design/evidence/icon-268/sizes-light-dark.png
+cargo build --release --locked --offline --manifest-path apps/desktop/Cargo.toml
+# CARGO_TARGET_DIRを設定した場合は、実際のビルド出力を指定する。
+python scripts/sim/verify-brand-assets.py --exe apps/desktop/target/release/recooplay-desktop.exe
+```
+
+提供ファイルとも照合する場合は検証コマンドに `--source C:/Users/kumes/Downloads/icon.png` を追加する。EXEの照合はWindows専用で、PEをデータとして読み取り、コードを実行しない。
+
+- 原画像と提供PNG、SVGに埋め込んだPNGがバイト単位で一致。PNG 6件とICO 7サイズは、原画像をLANCZOSで縮小したRGBAの全画素が一致した。
+- ビルドしたEXEのアイコン7サイズがICOの画像データとバイト単位で一致した。リソースコンパイラーによるplanes値の0→1の正規化は画像の変更に含めない。
+- [明暗背景・縮小表示](evidence/icon-268/sizes-light-dark.png)で16・24・32・48pxでも2体の形と水色・赤を識別できた。16pxでは表情の細部は小さくなる。比較画像の256px欄は表示上128pxに縮小している。
+- 再ビルドしたTauriアプリをdry-runで起動し、実窓のタイトルバーに新アイコンが出ることを視認した。静的配信42ファイルのHTTP・MIME・キャッシュ照合、静的ページの構文確認も合格。
+- タスクバー・デスクトップのショートカットのキャッシュ反映、iPhoneのホーム画面追加は未検証。既存のショートカットに古いアイコンが残る場合は、新しいEXEでの確認が必要。Minecraftやスマホの操作試験は今回の検証に含めない。
+
+## 2026-10-25の反映記録（履歴）
+
 2026-10-25の明示指定により、従来の文字ロゴと仮アイコンを提供画像へ差し替えた。ロゴ・キャラ等の仮素材を用いた過去のスクリーンショットは履歴として保持する。
 
 | 用途 | 提供ファイル | リポジトリ内の原画像 | SHA256 |
