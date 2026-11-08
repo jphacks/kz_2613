@@ -41,7 +41,7 @@
 |:--|:--|
 | `npm ci --prefix apps/web`、`npm run build --prefix apps/web` | lockから復元、strict型チェックとViteビルド成功。追加は開発依存のみ |
 | `cargo build --release --locked` / `cargo test --release --locked`（host） | 成功。135件合格・2件ignored、input-probe 4件合格。既存のdead_codeとOpenSSL PDB警告あり |
-| desktopのreleaseビルド | 通常権限で成功。React確認用の明示的な環境変数を追加 |
+| desktopのreleaseビルド・`cargo test --release --locked --offline --manifest-path apps/desktop/Cargo.toml` | 通常権限で成功、既存テスト3/3合格。React確認用の明示的な環境変数を追加 |
 | `react-phone-parity.mjs --samples 20` | DOM・配置・待機・リモコン・生成操作・順序・スティック・WebRTC・Pause・再接続・反復再マウント・エラー比較に合格 |
 | 同試験のタップからdry-run注入まで | p95：従来20.7ms→React19.3ms。許容悪化10ms以内。実端末・Minecraftの遅延とは別 |
 | 同試験のlook送信数 | 従来29回/秒→React28回/秒。kaを除外。PC同条件の模擬タッチによる計測 |
