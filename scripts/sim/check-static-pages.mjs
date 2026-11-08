@@ -18,13 +18,15 @@ function checkModule(file) {
 for (const entry of fs.readdirSync(dir,{recursive:true}).filter(f=>f.endsWith('.js'))) {
   checkModule(new URL(entry.replaceAll('\\','/'),dir));
   const source = fs.readFileSync(new URL(entry.replaceAll('\\','/'),dir),'utf8');
-  for (const [,relative] of source.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) {
+  // JSDocのimport型は実行時の依存ではない。
+  const runtimeSource=source.replace(/\/\*[\s\S]*?\*\//g,'');
+  for (const [,relative] of runtimeSource.matchAll(/(?:from\s*|import\s*\(\s*)['"](\.[^'"]+)['"]/g)) {
     if (!fs.existsSync(new URL(relative,new URL(entry.replaceAll('\\','/'),dir)))) { failed++; console.log(`FAIL モジュールがありません: ${entry} → ${relative}`); }
   }
 }
 for (const f of files) {
   const html = fs.readFileSync(f, 'utf8');
-  for (const [,asset] of html.matchAll(/(?:src|href)="(\/(?:styles|scripts|assets)\/[^"?#]+)"/g)) {
+  for (const [,asset] of html.matchAll(/(?:src|href)="(\/(?:styles|scripts|assets|react)\/[^"?#]+)"/g)) {
     if (!fs.existsSync(new URL(asset.slice(1),dir))) { failed++; console.log(`FAIL 素材がありません: ${asset}`); }
   }
   const scripts = [...html.matchAll(/<script( type="module")?>([\s\S]*?)<\/script>/g)];

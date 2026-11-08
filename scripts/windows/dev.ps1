@@ -52,7 +52,7 @@ try {
       $env:RECOOPLAY_NO_CONFIG = '1'
       $env:RECOOPLAY_STDIN_CONTROL = '1'
       $env:PORT = '0'
-      Write-Host '無注入ホストを起動します。表示ポートの /phone-react.html を開き、quit またはCtrl+Cで終了します。'
+      Write-Host '無注入ホストを起動します。表示ポートの / を開き、quit またはCtrl+Cで終了します。'
       Invoke-Checked $bin @()
     }
   }

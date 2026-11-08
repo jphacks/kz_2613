@@ -236,13 +236,7 @@ fn main() {
                     return show_error(&handle, &e);
                 }
                 // ダッシュボードは PC 本体 (ループバック) からのみ開ける
-                // React移行の受入専用。既定のデモ経路は実機受入まで維持する。
-                let page = if std::env::var("RECOOPLAY_REACT_UI").as_deref() == Ok("1") {
-                    "/app-react.html"
-                } else {
-                    "/app"
-                };
-                let url: tauri::Url = format!("http://127.0.0.1:{port}{page}").parse().expect("app url");
+                let url: tauri::Url = format!("http://127.0.0.1:{port}/app").parse().expect("app url");
                 if let Some(w) = handle.get_webview_window("main") {
                     let _ = w.navigate(url);
                 }

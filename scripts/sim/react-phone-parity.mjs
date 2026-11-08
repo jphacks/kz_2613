@@ -82,6 +82,7 @@ async function session(url, port, cdpPort) {
     // DOM: 接続直後の構造。動的な値は比べない。P2の参加がP1の画面へ届いてから取る
     await p1.waitFor(`document.querySelectorAll('#players1 .on').length===2`, 'P1の参加者表示');
     await p1.waitFor(`document.body.dataset.view==='v-remote'&&!document.getElementById('viewFx').classList.contains('run')`, 'P1ロビーの演出完了');
+    result.productEntry=(await(await fetch(`http://127.0.0.1:${port}${url}`)).text()).includes('/react/phone.js');
     result.dom = await p1.ev(`(()=>{const out=[];const walk=(e,d)=>{for(const c of e.children){if(['SCRIPT','LINK'].includes(c.tagName)||c.id==='root'||c.id==='lookHome'){if(c.id==='root')walk(c,d);continue}
       out.push([d,c.tagName,c.id,c.className,c.getAttribute('data-ctl')||'',c.getAttribute('data-cmd')||'',c.getAttribute('aria-label')||'',c.getAttribute('role')||'',c.hasAttribute('hidden'),c.disabled===true].join('|'));walk(c,d+1)}};walk(document.body,0);return out})()`);
     // タグの間の改行と img の属性の順序 (Reactは src を最後に設定する) だけは比べない。要素・属性の値・文字は完全に比べる
@@ -204,6 +205,14 @@ async function session(url, port, cdpPort) {
     await sleep(500);
     result.reload = await p2.ev(`document.getElementById('slot').textContent+'/'+document.body.dataset.phase`);
     result.finalPhase = mon.game.phase;
+    result.viewports=[];
+    for(const [width,height]of [[320,568],[360,640],[393,873],[430,932],[600,900]]){
+      await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:2,mobile:true},p1.s);await sleep(100);
+      const observed=await p1.ev(`({overflow:document.documentElement.scrollWidth>innerWidth,areas:[...document.querySelectorAll('#v-remote button,#phoneSettingsBtn')].filter(e=>e.getClientRects().length).map(e=>{const r=e.getBoundingClientRect();return [r.width,r.height]})})`);
+      assert.equal(observed.overflow,false,'スマホで横にはみ出さない');
+      assert(observed.areas.every(([w,h])=>w>=44&&h>=44),'小さい画面でも44pxの操作領域');
+      result.viewports.push([width,height]);
+    }
   } finally {
     try { mon.ws.close(); host.stdin.write('quit\n'); } catch {}
     await sleep(300); host.kill(); chrome.kill(); await sleep(300);
@@ -212,9 +221,9 @@ async function session(url, port, cdpPort) {
   return result;
 }
 
-const before = await session('/', 18631, 9361);
+const before = await session('/index.html', 18631, 9361);
 console.log('既存画面の計測を完了');
-const after = await session('/phone-react.html', 18632, 9362);
+const after = await session('/', 18632, 9362);
 console.log('React版の計測を完了');
 const fails = [];
 const limit = (name, ok) => { if (!ok) fails.push(name); console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${name}`); };
@@ -240,6 +249,8 @@ same('実行時のエラー', before.errors, after.errors);
 limit(`タップの遅延 p95 が${TOLERANCE_MS}ms以上悪化しない (${before.tap.p95}→${after.tap.p95}ms)`, after.tap.p95 <= before.tap.p95 + TOLERANCE_MS);
 // 悪化だけを不合格にする (React版が速い場合は問題ない)
 limit(`視点の送信周期が落ちない (${before.lookPerSec}→${after.lookPerSec}/秒)`, after.lookPerSec >= before.lookPerSec - 5);
+same('スマホの5種類の画面寸法と44px操作領域',before.viewports,after.viewports);
+limit('標準URLのReact entry',after.productEntry===true);
 console.log(JSON.stringify({ tap: { before: before.tap, after: after.tap }, lookPerSec: [before.lookPerSec, after.lookPerSec], loadMs: [before.loadMs, after.loadMs], dom: before.dom.length }));
 console.log(fails.length ? `不合格: ${fails.join('、')}` : '合格: 既存画面とReact版が一致');
 process.exit(fails.length ? 1 : 0);

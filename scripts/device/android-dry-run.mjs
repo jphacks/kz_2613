@@ -12,12 +12,15 @@ const SCRIPT_ROOT=fileURLToPath(new URL('../../',import.meta.url));
 const options = new Map();
 for (let i = 2; i < process.argv.length; i++) {
   const key = process.argv[i];
-  assert(['--bin', '--adb', '--sha256', '--host-only', '--react', '--root', '--benchmark-ms', '--condition', '--trial'].includes(key), '不明な引数');
+  assert(['--bin', '--adb', '--sha256', '--host-only', '--react', '--root', '--benchmark-ms', '--condition', '--trial', '--players', '--legacy', '--ws-only'].includes(key), '不明な引数');
   assert(!options.has(key), '重複した引数');
-  const value = ['--host-only', '--react'].includes(key) ? true : process.argv[++i];
+  const value = ['--host-only', '--react', '--legacy', '--ws-only'].includes(key) ? true : process.argv[++i];
   assert(value && (value === true || !value.startsWith('--')), '引数の値が必要です');
   options.set(key, value);
 }
+const playerCount=Number(options.get('--players')??3);
+assert([2,3,4].includes(playerCount),'players must be 2, 3 or 4');
+assert(!(options.has('--legacy')&&options.has('--react')),'legacy and react are exclusive');
 const ROOT=path.resolve(options.get('--root') ?? SCRIPT_ROOT);
 const benchmarkMs=Number(options.get('--benchmark-ms') ?? 0);
 assert(benchmarkMs===0 || Number.isInteger(benchmarkMs)&&benchmarkMs>=1000&&benchmarkMs<=120000,'計測時間が不正です');
@@ -44,9 +47,9 @@ const http = async url => {
 let port, cdpPort, base, testUrl, hostClosed, serial;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const until=async(fn,label,ms=10000)=>{const end=Date.now()+ms;while(Date.now()<end){if(await fn())return;await sleep(100);}throw Error(`待機失敗: ${label}`);};
-const report={condition:options.get('--condition'),trial:options.get('--trial'),benchmarkMs,date:new Date().toISOString(),sourceCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:ROOT,encoding:'utf8'}).trim(),sourceDirty:execFileSync('git',['status','--porcelain'],{cwd:ROOT,encoding:'utf8'}).trim().length>0,binarySha256:hash,
-  uiAssets:options.has('--react')?Object.fromEntries(fs.readdirSync(path.join(ROOT,'apps/web-static/react')).filter(f=>f.endsWith('.js')).map(f=>[f,crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT,'apps/web-static/react',f))).digest('hex')])):undefined,
-  safety:{dryRun:true,noConfig:true,fakeTarget:true,osInput:false},ui: options.has('--react') ? 'React + TypeScript' : '従来版',connection:hostOnly ? 'PCループバック' : 'ADB reverse TCP / WebSocket',tests:[],limitations:['実指・iPhone・3実端末・Wi-Fi断・実Windows入力・Minecraft・別PCは未検証。WebRTCはUSB経路の成立確認']};
+const report={players:playerCount,wsOnly:options.has('--ws-only'),condition:options.get('--condition'),trial:options.get('--trial'),benchmarkMs,date:new Date().toISOString(),sourceCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:ROOT,encoding:'utf8'}).trim(),sourceDirty:execFileSync('git',['status','--porcelain'],{cwd:ROOT,encoding:'utf8'}).trim().length>0,binarySha256:hash,
+  uiAssets:!options.has('--legacy')&&fs.existsSync(path.join(ROOT,'apps/web-static/react'))?Object.fromEntries(fs.readdirSync(path.join(ROOT,'apps/web-static/react')).filter(f=>f.endsWith('.js')).map(f=>[f,crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT,'apps/web-static/react',f))).digest('hex')])):undefined,
+  safety:{dryRun:true,noConfig:true,fakeTarget:true,osInput:false},ui: options.has('--legacy') ? 'legacy' : options.has('--react') ? 'React + TypeScript alias' : 'React + TypeScript standard',connection:hostOnly ? 'PCループバック' : 'ADB reverse TCP / WebSocket',tests:[],limitations:['実指・iPhone・3実端末・Wi-Fi断・実Windows入力・Minecraft・別PCは未検証。HTTP/WS: ADB reverse TCP; RTC: selected candidate pair not collected']};
 let host, mon, browser, tabId, forwarded=false,reversed=false, ping;
 const clients=[];
 const pageErrors=[];
@@ -136,7 +139,7 @@ try{
   report.hostPort = port;
   console.log('試験ホストのポート: ' + port);
   base = 'http://127.0.0.1:' + port;
-  testUrl = base + (options.has('--react') ? '/phone-react.html?acceptance=' : '/?acceptance=') + crypto.randomUUID();
+  testUrl = base + (options.has('--legacy')?'/index.html?acceptance=':options.has('--react')?'/phone-react.html?acceptance=':'/?acceptance=') + crypto.randomUUID();
   await http(base);
   mon=await open(client());mon.send({type:'monitor',page:'host'});
   await until(()=>mon.state(),'monitor');
@@ -166,12 +169,17 @@ try{
     page = await cdp('ws://127.0.0.1:' + cdpPort + '/devtools/page/' + tabId);
     browser = page;
     await page.call('Runtime.enable');await page.call('Page.enable');
+    if(options.has('--ws-only')){
+      await page.call('Page.addScriptToEvaluateOnNewDocument',{source:'Object.defineProperty(window,"RTCPeerConnection",{value:undefined,configurable:true})'});
+      await page.call('Page.reload',{ignoreCache:true});
+      await until(async()=>await evaluate(`!!document.getElementById('status')&&document.getElementById('status').textContent.includes('接続')`),'WS-only page');
+    }
     report.device.chrome=(await (await http('http://127.0.0.1:' + cdpPort + '/json/version')).json()).Browser;
-    await check('Android初期表示・P1参加',async()=>{await until(async()=>await evaluate(`document.getElementById('slot').textContent==='P1'&&document.getElementById('status').textContent==='接続OK'`),'P1');await shot('01-p1-lobby');const view=await evaluate(`({slot:document.getElementById('slot').textContent,status:document.getElementById('status').textContent,path:document.getElementById('path').textContent,width:innerWidth,height:innerHeight,overflow:document.documentElement.scrollWidth>innerWidth})`);assert.equal(view.overflow,false);return view;});
+    await check('Android初期表示・P1参加',async()=>{await until(async()=>await evaluate(`document.getElementById('slot').textContent==='P1'&&['接続OK','再接続OK'].includes(document.getElementById('status').textContent)`),'P1');await shot('01-p1-lobby');const view=await evaluate(`({slot:document.getElementById('slot').textContent,status:document.getElementById('status').textContent,path:document.getElementById('path').textContent,width:innerWidth,height:innerHeight,overflow:document.documentElement.scrollWidth>innerWidth})`);assert.equal(view.overflow,false);return view;});
     // PC上の模擬参加者を補助として使う。3台の実機受入ではない。
-    for(const slot of ['P2','P3']){const c=await open(client());c.send({type:'hello',protocolVersion:4,clientId:`acceptance-${slot}`,ua:'simulation'});await until(()=>c.messages.some(m=>m.type==='welcome'),'模擬参加');}
+    for(const slot of ['P2','P3','P4'].slice(0,playerCount-1)){const c=await open(client());c.send({type:'hello',protocolVersion:4,clientId:`acceptance-${slot}`,ua:'simulation'});await until(()=>c.messages.some(m=>m.type==='welcome'),'模擬参加');}
     ping=setInterval(()=>{for(const c of clients)if(c.ws.readyState===1)c.send({type:'ping',t:Date.now()});},1000);
-    await until(()=>mon.state().game.connected.length===3,'3参加者');
+    await until(()=>mon.state().game.connected.length===playerCount,'participants');
     const g=mon.state().game;mon.send({type:'confirm_lineup',title:g.title,members:g.connected,epoch:g.epoch});
     await until(()=>mon.state().game.lineupOk,'分担確定');
     await click('#startBtn');await until(()=>mon.state().game.phase==='preparing','preparing');
@@ -267,12 +275,14 @@ try{
       await until(async()=>await evaluate(`document.body.dataset.view==='v-gen'&&!document.getElementById('viewFx').classList.contains('run')`),'切断前操作画面');
       await touchStart('[data-ctl="act:jump"]');
       await until(()=>mon.state().inject.down.length>0,'切断前保持');
+      const disconnectAt=performance.now();
       await evaluate(`window.__acceptanceSocket.close();true`);
       await until(()=>mon.state().game.phase==='paused'&&mon.state().inject.down.length===0,'切断時の全解放');
+      const releaseAfterMs=performance.now()-disconnectAt;
       await until(async()=>mon.state().slots[0].connected&&mon.state().slots[0].reconnects>reconnects&&await evaluate(`document.getElementById('slot').textContent==='P1'&&document.getElementById('status').textContent==='再接続OK'`),'同じP1へ再接続');
       await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
       await sleep(250);assert.deepEqual(mon.state().inject.down,[]);assert.equal(mon.state().game.phase,'paused');
-      return {slot:'P1',phase:'paused',down:[],reconnects:mon.state().slots[0].reconnects,method:'試験タブの実WebSocketを閉じる（Wi-Fi断ではない）'};
+      return {slot:'P1',phase:'paused',down:[],reconnects:mon.state().slots[0].reconnects,releaseAfterMs,reconnectAfterMs:performance.now()-disconnectAt,timing:'PC process observation including CDP and 100ms polling',method:'試験タブの実WebSocketを閉じる（Wi-Fi断ではない）'};
     });
     await check('Android再読み込み・元の管理権',async()=>{const reconnects=mon.state().slots[0].reconnects;const loader=(await page.call('Page.getFrameTree')).frameTree.frame.loaderId;await page.call('Page.reload',{ignoreCache:true});await until(async()=>{const next=(await page.call('Page.getFrameTree')).frameTree.frame.loaderId;return next!==loader&&mon.state().slots[0].connected&&mon.state().slots[0].reconnects>reconnects&&await evaluate(`document.getElementById('slot').textContent==='P1'&&document.getElementById('status').textContent==='再接続OK'&&!document.getElementById('startBtn').disabled`);},'新しい文書でP1再接続');assert.equal(mon.state().game.phase,'paused');return {slot:'P1',phase:'paused',reconnects:mon.state().slots[0].reconnects};});
     await check('Android担当変更後の視点パッド・送信周期',async()=>{
@@ -284,22 +294,29 @@ try{
       await until(()=>mon.state().game.roleAck.length===0&&mon.state().game.canResume,'担当確認完了');
       await click('#startBtn');
       await until(async()=>await evaluate(`document.body.dataset.view==='v-gen'&&!!document.querySelector('#v-gen #pad')&&!document.getElementById('viewFx').classList.contains('run')`),'視点パッド表示');
+      const lookMark=mon.messages.length;
       await evaluate(`window.__lookTimes=[];for(const proto of [WebSocket.prototype,RTCDataChannel.prototype]){const original=proto.send;proto.send=function(data){if(typeof data==='string'&&data.includes('"look"'))window.__lookTimes.push(performance.now());return original.call(this,data)}};true`);
       const point=await touchStart('#v-gen #pad');
-      const companion=await evaluate(`(()=>{const e=document.querySelector('#genControls [data-ctl]');if(!e)return null;const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,id:2}})()`);
+      const companion=await evaluate(`(()=>{const e=document.querySelector('#genControls [data-ctl]');if(!e)return null;const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,id:2,control:e.dataset.ctl}})()`);
       const started=Date.now();let i=0;
       let companionHeld=false;
       while(benchmarkMs?i<1800:Date.now()-started<1500){
         const padPoint={x:point.x+(i%30)-15,y:point.y,id:1};
-        if(benchmarkMs&&companion&&i%180===0){await page.call('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[padPoint,companion]});companionHeld=true;}
+        if(benchmarkMs&&companion&&i%180===0){await page.call('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[padPoint,{x:companion.x,y:companion.y,id:2}]});companionHeld=true;}
         if(companionHeld&&i%180===8){await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[padPoint]});companionHeld=false;}
-        await page.call('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:companionHeld?[padPoint,companion]:[padPoint]});i++;
+        await page.call('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:companionHeld?[padPoint,{x:companion.x,y:companion.y,id:2}]:[padPoint]});i++;
         await sleep(benchmarkMs?Math.max(0,started+i*benchmarkMs/1800-Date.now()):12);
       }
       await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await sleep(80);
       const times=await evaluate(`window.__lookTimes`);assert(times.length>=10,'視点の送信が不足');
       const gaps=times.slice(1).map((t,i)=>t-times[i]);
       if(benchmarkMs)report.lookPerformance={version:2,moves:i,companionTaps:companion?10:0,durationMs:Date.now()-started,times,gaps,summary:summarize(gaps),gaps200ms:gaps.filter(g=>g>=200).length,longestGapMs:Math.max(...gaps),hostLookLost:mon.state().slots[0].lookLost};
+      if(benchmarkMs&&companion){
+        const inputs=mon.messages.slice(lookMark).filter(m=>m.type==='log'&&m.entry.slot==='P1'&&m.entry.button===companion.control).map(m=>m.entry.state);
+        assert.equal(inputs.filter(s=>s==='down').length,10,'look companion down');assert.equal(inputs.filter(s=>s==='up').length,10,'look companion up');
+        report.lookPerformance.companionInputs={control:companion.control,states:inputs};
+      }
+      if(options.has('--ws-only'))assert.equal(await evaluate(`document.getElementById('path').textContent`),'WSのみ');
       gaps.sort((a,b)=>a-b);
       await touchStart('#v-gen #pad');
       await click('#genPause');await until(()=>mon.state().game.phase==='paused','視点停止');
