@@ -9,7 +9,7 @@ const root=fileURLToPath(new URL('../../',import.meta.url));
 const option=process.argv.indexOf('--bin');
 const bin=option<0?path.join(root,'apps/host-rs/target/release/recooplay-host.exe'):process.argv[option+1];
 let port,output='',launchError;
-const child=spawn(bin,[],{env:{...process.env,PORT:'0',RECOOPLAY_ROOT:root,RECOOPLAY_DRY_RUN:'1',RECOOPLAY_NO_CONFIG:'1',RECOOPLAY_STDIN_CONTROL:'1',RECOOPLAY_LOG_DIR:fs.mkdtempSync(path.join(os.tmpdir(),'recooplay-assets-'))},stdio:['pipe','pipe','ignore'],windowsHide:true});
+const child=spawn(bin,[],{env:{...process.env,PORT:'0',RECOOPLAY_ROOT:root,RECOOPLAY_DRY_RUN:'1',RECOOPLAY_NO_CONFIG:'1',RECOOPLAY_RUNTIME_MEASURE:'1',RECOOPLAY_STDIN_CONTROL:'1',RECOOPLAY_LOG_DIR:fs.mkdtempSync(path.join(os.tmpdir(),'recooplay-assets-'))},stdio:['pipe','pipe','ignore'],windowsHide:true});
 child.on('error',error=>{launchError=error.code});
 child.stdin.on('error',()=>{});
 child.stdout.on('data',chunk=>{output=(output+chunk).slice(-8192);const match=output.match(/server_start \{"port":([1-9]\d{0,4})\}/);if(match)port=Number(match[1]);});

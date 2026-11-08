@@ -32,7 +32,7 @@ class Ws {
 }
 
 async function session(url, port, cdpPort) {
-  console.log(`PC比較: ${url === '/app-react.html' ? 'React版' : '従来版'}を開始`);
+  console.log(`PC比較: ${url === '/app' ? '標準React版' : '従来版'}を開始`);
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-pc-parity-'));
   const logDir = path.join(tmp, 'logs'); fs.mkdirSync(logDir);
   const host = spawn(BIN, [], { env: { ...process.env, PORT: String(port), RECOOPLAY_ROOT: ROOT, RECOOPLAY_DRY_RUN: '1', RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_DESKTOP: '1', RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_KEY_OVERRIDES: path.join(tmp,'key-overrides.json') }, stdio: ['pipe', 'ignore', 'ignore'] });
