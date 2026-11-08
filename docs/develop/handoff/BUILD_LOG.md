@@ -1477,3 +1477,5 @@
 - Android補助スクリプトへ、再読み込みとは別に「保持中の実WebSocket切断→全解放/paused→同じP1への再接続→旧押下なし」を追加。Wi-Fi断やOS入力とは区別した。従来版とReact版を同じAndroid16/Chrome156で各14項目実施し全合格。Reactは `data/local/device-acceptance/run-037g52`、従来版は `run-XEW5c8`。共有証拠を `acceptance/evidence/react-235` へ更新。
 - 同実機のlook間隔の中央値は従来33.1ms/React33.0ms、p95は66.0/66.1ms。event-to-sendの3標本p95は従来26.5ms/React20.4ms。少標本・USB/CDPのため改善やLANの保証を主張しない。両版ともJavaScriptエラーなし、試験タブ/転送/回転設定を後始末しホスト正常終了。
 - `dev.ps1 -Task verify`（追加プレビュー・入力ライフサイクル16/16・セッション7/7・受信境界7/7を含む）、`android-dry-run-test.mjs` 7/7、`check-static-pages.mjs`、`verify_overlay.py`、`check-public-docs.py`：合格。iPhone/実指/複数実端末/Wi-Fi断/Minecraftと標準URL採用は未完了として保持する。
+- 追加CIのPC比較は、初回がPage.navigateの応答期限超過、失敗ジョブ1回の再実行では従来版の分担決定待ちで失敗した。P1のキー復元通知を受けただけでPC自身の旧epochの描画反映を待っていなかったため、PCの担当キー表示が変更→復元することを確認してから決定するよう試験を修正した。Page.navigateが期限を超えた場合も同じtargetのURLと画面を再観測し、遷移を重複実行しない。比較項目・許容値・認可は変更なし。ローカルの `react-pc-parity.mjs --bin <上記ホスト>` は設定変更/復元・分担・演出14回を含め全合格。
+- 2026-11-09のユーザー回答：「用意できないため実機受入は保留」。接続中のiPhone/iPadも通常権限のPnP一覧で見つからず、iOS用CLIはPATHにないことを確認した。iPhone受入と既定URL切替は保留し、開発PRの独立した検証は継続する。
