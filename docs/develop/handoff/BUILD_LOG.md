@@ -1434,3 +1434,14 @@
 
 - ユーザーが動作確認デモで「切り替えの時にUIがきゅっと縮む」と指摘した。`body` の `data-view` を描画の最初に変えていたため、帯が覆う前から古い画面に次の画面の余白（`body[data-view=v-wait] main { padding: 0 }` の有無）が当たり、待機画面が402×820から374×792へ一瞬で縮んでいた（操作画面から戻る時は逆に広がる）。`data-view` を画面を入れ替える時（`showView`）に変えるようにした。
 - 動作確認デモ（模擬ホスト）で、切り替え開始から300msの古い画面の大きさが変わらないことを測った。`phone-view-test`・`phone-lifecycle-test`・`phone-session-test`・`check-static-pages`・`view-transition-test` が成功。
+
+## 2026-11-08 — 指定PNGへのアプリアイコンの更新（Codex、#268）
+
+- ユーザー指定の `C:/Users/kumes/Downloads/icon.png`（2048×2048 RGBA）を `apps/desktop/icons/icon-source.png` へそのまま保存した。SHA-256：`25c4195916c2a260ae3b8017c5ee125f79fea15bf72478e921a767c8e8e0f40b`。
+- `prepare-brand-assets.py` に原PNGを無劣化で埋め込むSVG生成を追加し、ICOは原画像から各サイズへ直接縮小するようにした。Windows用PNG/ICO・WebとTauri起動画面のPNGを再生成した。ロゴの生成結果に差分なし。新しい本番依存なし。
+- `python scripts/windows/prepare-brand-assets.py`：成功。`python scripts/sim/verify-brand-assets.py --source C:/Users/kumes/Downloads/icon.png --exe C:/Users/kumes/AppData/Local/ReCooplay/cargo-target/release/recooplay-desktop.exe --preview docs/develop/design/evidence/icon-268/sizes-light-dark.png`：原画像・SVGのバイト一致、PNG 6件・ICO 7サイズの全画素一致、EXE内の7画像とICOのバイト一致に合格。EXE検証器の初回はリソースコンパイラーのplanes値の正規化（0→1）を不一致と判定したため、画像データの完全一致を保持しつつメタデータの正規化を許容して再実行した。
+- `CARGO_TARGET_DIR=C:/Users/kumes/AppData/Local/ReCooplay/cargo-target` を指定し、`cargo build --release --locked --offline --manifest-path apps/desktop/Cargo.toml`：成功（1分12秒）。サンドボックス内は既存キャッシュのロック作成が拒否されたため、承認付き実行で成功した。
+- `node scripts/sim/static-assets-sim.mjs --bin C:/Users/kumes/AppData/Local/ReCooplay/cargo-target/release/recooplay-host.exe`：42ファイルのHTTP・MIME・no-store・ローカル素材の照合に合格。初回はサンドボックス内でホストが起動せず失敗、通常環境の承認付きdry-runで再実行して成功した。
+- `node scripts/sim/check-static-pages.mjs`：全5ページと外部JSの構文・参照確認に合格。`git diff --check`：成功。
+- 明暗背景の16・24・32・48pxで2体の形と水色・赤を視認した（16pxでは表情の細部は小さい）。再ビルドしたTauriアプリを `RECOOPLAY_DRY_RUN=1`、`RECOOPLAY_NO_CONFIG=1`、専用ポートで起動し、実窓タイトルバーの新アイコンを確認して終了した。
+- 判断と再生成手順は `decisions/2026-11-08-app-icon.md` と `design/brand-assets.md`。タスクバー・デスクトップショートカット・iPhoneホーム画面のキャッシュ反映は、今回それぞれの表示操作を行っていないため未検証。Minecraft・スマホ実機の操作の合格には読み替えない。
