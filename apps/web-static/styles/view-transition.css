@@ -1,0 +1,45 @@
+/* スマホの画面切り替えの演出 (ワイプ＋流れ星の群れ)。scripts/view-transition.js と対で使う。
+   帯の色は本人のキャラクターの色。動きを減らす設定では JS が演出せず、shared.css もアニメーションを止める。 */
+main { position: relative; }
+.view-fx { position: absolute; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; --fx: var(--color-character-blue); }
+.view-fx[data-slot=P2] { --fx: var(--color-character-green); }
+.view-fx[data-slot=P3] { --fx: var(--color-character-purple); }
+.view-fx[data-slot=P4] { --fx: var(--color-character-red); }
+.view-fx > * { display: none; }
+.view-fx.run > * { display: block; }
+
+/* 帯: キャラクター色の地に、同じ色を白へ寄せた水玉 */
+.view-fx-band {
+  position: absolute; inset: 0;
+  background: var(--fx) radial-gradient(circle, color-mix(in srgb, var(--fx) 45%, var(--color-fx-star)) 2.2px, transparent 2.6px) 0 0 / 14px 14px;
+  animation: view-fx-wipe 620ms cubic-bezier(.65, 0, .35, 1) both;
+}
+.view-fx[data-dir=back] .view-fx-band { animation-name: view-fx-wipe-back; }
+.view-fx-mark { position: absolute; left: 50%; top: 50%; width: 80px; height: 80px; transform: translate(-50%, -50%); }
+.view-fx-mark svg { display: block; width: 100%; height: 100%; fill: var(--color-fx-star); stroke: var(--color-fx-star);
+  filter: drop-shadow(0 4px 0 color-mix(in srgb, var(--fx) 55%, var(--color-fx-shade))); }
+@keyframes view-fx-wipe {
+  0% { clip-path: polygon(100% 0, 125% 0, 100% 100%, 100% 100%); }
+  45%, 55% { clip-path: polygon(-25% 0, 125% 0, 100% 100%, -50% 100%); }
+  100% { clip-path: polygon(-25% 0, -25% 0, -50% 100%, -50% 100%); }
+}
+@keyframes view-fx-wipe-back {
+  0% { clip-path: polygon(-25% 0, -25% 0, -50% 100%, -50% 100%); }
+  45%, 55% { clip-path: polygon(-25% 0, 125% 0, 100% 100%, -50% 100%); }
+  100% { clip-path: polygon(100% 0, 125% 0, 100% 100%, 100% 100%); }
+}
+
+/* 流れ星: 背景と同じ平たい5つ角の星＋3本線の尾。光らせない。
+   進むときは右上→左下、戻るときは左上→右下。帯の動く向きに合わせる */
+.view-fx-lane { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform: rotate(145deg); }
+.view-fx[data-dir=back] .view-fx-lane { transform: rotate(35deg); }
+.view-fx-star {
+  position: absolute; left: 0; top: 0; width: var(--len); height: calc(var(--r) * 2); margin-top: calc(var(--r) * -1);
+  animation: view-fx-shoot 420ms var(--dl) cubic-bezier(.35, .05, .45, 1) both;
+}
+.view-fx-star svg { display: block; width: 100%; height: 100%; overflow: visible; fill: var(--color-fx-star); stroke: var(--color-fx-star); }
+@keyframes view-fx-shoot {
+  0% { opacity: 0; transform: translate(var(--from), var(--y)); }
+  12%, 88% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--to), var(--y)); }
+}
