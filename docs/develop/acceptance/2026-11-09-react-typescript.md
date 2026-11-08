@@ -17,7 +17,16 @@
 | 操作 | CDP touch、ADBによる実回転・HOME非表示・Chrome復帰 |
 | 復元 | 試験タブ、ADB forward/reverseを解除し、回転モードを元のfreeへ復元 |
 
-13項目すべて合格。端末内pointerdown→送信は3標本でp50 35.1ms・p95 36.2ms、診断RTTは平均22ms・最大111ms。視点は45送信、間隔の中央値33ms・p95 40.6msを観測した。少標本のUSB/CDP計測であり実指やLANの性能保証ではない。詳細は [android-summary.json](evidence/react-235/android-summary.json) に記録した。実IP・端末serial・参加tokenは含めない。記録のsourceCommitは変更の基点、sourceDirtyは未コミット状態を示し、実際に試したビルドはuiAssetsのSHA-256で照合できる。
+従来版・React版とも同じAndroidで14項目すべて合格。詳細は [React版](evidence/react-235/android-summary.json) と [従来版](evidence/react-235/android-legacy-summary.json) に記録した。実IP・端末serial・参加tokenは含めない。sourceCommitは変更の基点、sourceDirtyは未コミット状態を示し、Reactの試験資産はuiAssetsのSHA-256で照合できる。
+
+| 計測 | 従来版 | React版 |
+|:--|:--|:--|
+| pointerdown→送信（3標本）p50 / p95 | 24.0 / 26.5ms | 19.9 / 20.4ms |
+| 診断RTT 平均 / 最大 | 19 / 106ms | 19 / 106ms |
+| 約1.5秒のlook送信数 | 43 | 42 |
+| look間隔 中央値 / p95 | 33.1 / 66.0ms | 33.0 / 66.1ms |
+
+少標本のUSB/CDP計測であり、改善や実指・LANの性能保証は主張しない。
 
 - P1参加、横あふれなし、WebRTC+WS成立
 - 生成ボタンのdown/up、同じボタンの2接点保持、最後の接点でのみup
@@ -25,6 +34,7 @@
 - 診断の開閉、保持中のホストPauseと全解放
 - 再開、実回転による停止、縦復帰後の旧押下なし
 - Chromeの実非表示と復帰、旧押下なし
+- 保持中に試験タブの実WebSocketを閉じ、全解放・paused・同じP1への再接続・旧押下なしを確認（Wi-Fi断ではない）
 - 再読み込み後のP1・管理権とpaused状態の復元
 - P1/P2の担当交換、両者の確認、視点パッド、送信周期、Pause後の視点送信停止
 - JavaScript例外・console errorなし、ホスト正常終了
@@ -43,14 +53,14 @@
 | `cargo build --release --locked` / `cargo test --release --locked`（host） | 成功。135件合格・2件ignored、input-probe 4件合格。既存のdead_codeとOpenSSL PDB警告あり |
 | desktopのreleaseビルド・`cargo test --release --locked --offline --manifest-path apps/desktop/Cargo.toml` | 通常権限で成功、既存テスト3/3合格。React確認用の明示的な環境変数を追加 |
 | `react-phone-parity.mjs --samples 20` | DOM・配置・待機・リモコン・生成操作・順序・スティック・WebRTC・Pause・再接続・反復再マウント・エラー比較に合格 |
-| 同試験のタップからdry-run注入まで | p95：従来20.7ms→React19.3ms。許容悪化10ms以内。実端末・Minecraftの遅延とは別 |
-| 同試験のlook送信数 | 従来29回/秒→React28回/秒。kaを除外。PC同条件の模擬タッチによる計測 |
+| 同試験のタップからdry-run注入まで | p95：追加検証時は従来14.8ms→React10.1ms。許容悪化10ms以内。実端末・Minecraftの遅延とは別 |
+| 同試験のlook送信数 | 追加検証時は両版28回/秒。kaを除外。PC同条件の模擬タッチによる計測 |
 | `react-pc-parity.mjs` | DOM・参加・分担・主要画面の文言/ボタン状態・設定変更/復元・演出14回・エラー比較に合格 |
 | `protocol-sim.mjs` | 60/60合格、dry-run |
 | `phone-lifecycle-test.mjs` | 16/16合格 |
 | `phone-session-test.mjs` / `input-owners-test.mjs` / `protocol-boundary-test.mjs` | 7/7・4/4・7/7合格 |
 | `ui-input-test.mjs` | 12/12合格 |
-| 共通レイアウト、phone-view、診断、skin、view-transition、app-view | 合格 |
+| 共通レイアウト、`controller-preview-test.mjs`、phone-view、診断、skin、view-transition、app-view | 合格。実TSXをReactで描き、プレビューの視点表示と入力属性/重複IDなしを確認 |
 | `check-static-pages.mjs` / `static-assets-sim.mjs` | 構文・参照、57資産のHTTP/MIME/no-store/ローカル参照確認に合格 |
 | `package.ps1` / `package-smoke.mjs` | zip作成、全同梱物とハッシュ、改変/欠落の拒否、リポジトリ外での配信・正常終了に合格 |
 | `verify_overlay.py` / `check-public-docs.py` / `git diff --check` | 合格 |
@@ -74,6 +84,15 @@ PC写真はheadless Chromeの比較試験によるもの。実WebView2の確認�
 - zip試験はArchiveモジュールの自動読込制限で失敗したため、.NETの展開APIへ変更した。システムの実行ポリシーは変更していない。
 - バックグラウンド中のCDP touchEndはタイムアウトしたため、Chrome復帰後に終了イベントを送るよう補助スクリプトを修正した。回転・転送設定も後始末する。
 - 比較試験は演出途中を比較していたため両版の演出完了を待ち、DOMノードを真偽値で判定するよう修正した。比較項目は削除せず、反復再マウントと設定変更を追加した。
+
+
+## 共通コントローラーのプレビュー
+
+入力bindingsがない場合も、プレイ用の同じ部品からボタン・スティック・ホイール・視点パッド・感度を描く。パッドの見た目は共通CSSを使い、実入力用IDやdata-ctlは出さず、全体をinertにする。Play側の既存ノード移動と入力エンジンは維持する。これは編集UIや保存スキーマの完了ではない。
+
+`controller-preview-test.mjs` が実際のTSXを既存Viteで変換し、Reactによる描画と入力境界を確認する。600px幅のheadless Chromeで表示も確認した。
+
+![入力に接続しない共通プレビュー](evidence/react-235/controller-preview.png)
 
 ## 再実行
 

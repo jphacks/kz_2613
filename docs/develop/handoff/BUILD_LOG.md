@@ -1468,3 +1468,12 @@
 - 成果物は draft PR [#274](https://github.com/jphacks/kz_2613/pull/274) に提示した。追加ファイルを含む `git diff --check origin/main` でTSXの末尾空白を検出・除去し、同コマンドとstrictビルドを再実行して成功した。mainマージ・Issueクローズはしていない。
 - 追加確認：`cargo test --release --locked --offline --manifest-path apps/desktop/Cargo.toml`（同じdesktopキャッシュ）：3/3合格。コミット `43e842473227c5d074d9cbfa936f7a5f28714cf5`、dirty=falseの最終zipを `data/local/react-migration/package-235-final` へ作成し、同zipの `package-smoke.mjs` も合格。Android試験のuiAssetsハッシュが最終ビルドと完全一致し、追加資料3件のローカル参照が存在することを照合した。
 - CI追跡で反復再マウントの確認が1回失敗した。試験はP1の停止表示だけを待ってP2のパッド位置を直ちに検査していたため、P2自身のpaused・lookHomeへの反映も明示的に待つよう修正した。個数・配置のassertは維持。`react-phone-parity.mjs --samples 20` を再実行し全項目合格（タップp95 29.3→21.8ms、look 28→27回/秒）。
+
+## 2026-11-09 — 移行基盤の完了監査とプレビュー/実切断の補完（Codex、#235）
+
+- 先行ターンはPR #274・CI成功まで進んだが、完了監査で入力bindingsなしの共通プレビューに視点パッドが出ないことを確認した。同じCSSを使うIDなしの視点/感度表示を追加し、ボタンの見た目を変えるdisabled属性の代わりに全体をinertにした。実入力用data-ctl・IDは出さない。編集UIや保存スキーマの実装ではない。
+- `node --experimental-strip-types scripts/sim/controller-preview-test.mjs`：合格。既存Viteで実TSXを変換してReactで描き、ボタン/スティック/ホイール/視点が存在し、入力属性・重複IDがなくinertであることを確認。`--write-preview` のHTMLを隔離headless Chromeの600px幅で撮影・視認した。CIと `dev.ps1 -Task verify` に追加。
+- `npm run build --prefix apps/web`：strict型チェックとビルド成功。`react-phone-parity.mjs --bin C:/Users/kumes/AppData/Local/ReCooplay/target-pr-queue/release/recooplay-host.exe --samples 20`：全比較に合格。タップp95 14.8→10.1ms、look両版28回/秒。プレビュー用CSSは既存IDと同じ詳細度を維持し、プレイ画面の表示を変えない。
+- Android補助スクリプトへ、再読み込みとは別に「保持中の実WebSocket切断→全解放/paused→同じP1への再接続→旧押下なし」を追加。Wi-Fi断やOS入力とは区別した。従来版とReact版を同じAndroid16/Chrome156で各14項目実施し全合格。Reactは `data/local/device-acceptance/run-037g52`、従来版は `run-XEW5c8`。共有証拠を `acceptance/evidence/react-235` へ更新。
+- 同実機のlook間隔の中央値は従来33.1ms/React33.0ms、p95は66.0/66.1ms。event-to-sendの3標本p95は従来26.5ms/React20.4ms。少標本・USB/CDPのため改善やLANの保証を主張しない。両版ともJavaScriptエラーなし、試験タブ/転送/回転設定を後始末しホスト正常終了。
+- `dev.ps1 -Task verify`（追加プレビュー・入力ライフサイクル16/16・セッション7/7・受信境界7/7を含む）、`android-dry-run-test.mjs` 7/7、`check-static-pages.mjs`、`verify_overlay.py`、`check-public-docs.py`：合格。iPhone/実指/複数実端末/Wi-Fi断/Minecraftと標準URL採用は未完了として保持する。
