@@ -192,6 +192,8 @@ async function session(url, port, cdpPort) {
       mon.send({type:'phase',phase:'paused'});
       await mon.until(m=>m.game.phase==='paused','再停止');
       await p1.waitFor(`document.body.dataset.view==='v-remote'&&!document.getElementById('viewFx').classList.contains('run')`,'再停止表示');
+      // 各スマホへのgame通知は独立して届く。P1の描画完了をP2の反映済みとは扱わない。
+      await p2.waitFor(`document.body.dataset.phase==='paused'&&document.getElementById('pad').parentElement.id==='lookHome'`,'P2の再停止反映');
     }
     result.remount = await p2.ev(`document.querySelectorAll('#pad').length===1&&document.querySelectorAll('#sens').length===1&&document.getElementById('pad').parentElement.id==='lookHome'`);
     assert(result.remount, '再マウント後も視点パッド・感度は一つだけ');
