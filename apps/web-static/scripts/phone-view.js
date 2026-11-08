@@ -4,6 +4,7 @@ import { inputWarnText, remoteModel, waitModel } from './phone-model.js';
 
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
 import {profileNotice,roleView,gameLabel,outputKeyLabel} from '../app-view.js';
+import { createViewTransition } from './view-transition.js';
 export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindControl,bindStick=()=>{},onRoleOk=()=>{},onTransferHost=()=>{}}) {
   const $ = id => document.getElementById(id);
   let lastView = null, lastGen = '', lastTransfer = '', skinGame = null;
@@ -27,6 +28,8 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
   const lookHome = $('lookHome');
   const reactStore = globalThis.__recooplayPhoneStore;
   const reactRemote = globalThis.__recooplayRemoteStore;
+  // 画面の切り替えの演出 (ワイプ＋流れ星の群れ)。帯は本人のキャラクターの色
+  const transition = createViewTransition({ layer: $('viewFx') });
   const transferHost = (p) => { if (confirm(`${p}にホストを譲りますか？`)) onTransferHost(p); };
   if (reactRemote) reactRemote.transfer = transferHost;
   $('phoneSettingsBtn').addEventListener('click',()=>{
@@ -47,7 +50,6 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
     const phase = game.phase;
     const label = { lobby: '参加受付', preparing: 'ゲーム準備', coop: '協力プレイ中', paused: '一時停止中' }[phase];
     $('phase').textContent = label;
-    $('connecting').hidden = true;
     $('phase').className = 'pill ' + phase;
     const notice=profileNotice(game.profile);
     // Ready の後に来た人は今回の協力プレイに参加しない (次の Ready から参加する、#57)
@@ -55,7 +57,6 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
     // 協力プレイ中はどのゲームも操作定義から作った画面 (#141)
     const generated = phase === 'coop' && joined;
     const view = generated ? 'v-gen' : isHost ? 'v-remote' : 'v-wait';
-    document.body.dataset.view=view;
     const genKey = generated ? generatedKey(game, me) : '';
     if (view !== lastView || genKey !== lastGen) {
       releaseAll(); // 画面が変わる時は押しっぱなしを解除
@@ -66,7 +67,15 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
       } else if (lookParts[0] && lookParts[0].parentElement !== lookHome) {
         lookHome.append(...lookParts);
       }
-      document.querySelectorAll('.view').forEach((el) => el.classList.toggle('show', el.id === view));
+      // 帯が画面を覆った時点で入れ替える。それまで古い画面は新しい押下を受けない (view-transition.js)
+      // body の data-view で余白が変わるので、画面を入れ替える時に合わせて変える (先に変えると古い画面の大きさが一瞬変わる)
+      const showView = () => {
+        document.body.dataset.view = view;
+        $('connecting').hidden = true;
+        document.querySelectorAll('.view').forEach((el) => el.classList.toggle('show', el.id === view));
+      };
+      if (view !== lastView) transition.run({ slot: me, from: lastView, to: view, oldEl: lastView ? $(lastView) : $('connecting'), apply: showView });
+      else { transition.finish(); showView(); }
       lastView = view;
       lastGen = genKey;
     }
