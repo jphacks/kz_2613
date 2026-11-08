@@ -28,7 +28,7 @@ export function PcApp() {
     <div className="join-guide" id="joinGuide" hidden={model.view !== 'join'}>
       <p className="qr-bubble" id="qrBubble"><Lines text={connection.guide.bubble.replace(/<br>/g, '\n')} /></p>
       <svg className="qr-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg>
-      
+
       <p className="qr-step-label wifi-label" id="wifiLabel" hidden={!connection.guide.two}>① Wi-Fiにつなぐ</p>
       <div className="qr wifi-qr" id="wifiQr" hidden={!connection.guide.wifiQr} dangerouslySetInnerHTML={{__html: connection.guide.wifiQr || ''}} />
       <button className="hotspot-btn" id="hotspotBtn" hidden={!connection.guide.button} disabled={connection.busy}>ホットスポットを<br />ONにする</button>
@@ -61,7 +61,7 @@ export function PcApp() {
   <nav id="steps" aria-label="画面の移動" hidden={!['join','game','roles'].includes(model.view)}>{SCREENS.map(screen => <button key={screen} data-go={screen} aria-label={SCREEN_TITLES[screen as keyof typeof SCREEN_TITLES]} aria-current={screen === state.ui.screen ? 'page' : 'false'}>{{join: '参加',game: '選択',roles: '分担'}[screen as 'join'|'game'|'roles']}</button>)}</nav>
   <details id="keyDetails"><summary>担当と実際に送るキー</summary><p id="keyWarnings" role="status">{model.warnings}</p><div id="keyBindings">{model.bindings.map(b => <Fragment key={b.slot}><h3>{b.slot}：{b.title}</h3><ul>{b.lines.map((line: string, i: number) => <li key={i}>{line}</li>)}</ul></Fragment>)}</div><div id="keyEditor"><KeyEditor model={model} state={state} /></div></details>
   <p id="inputSafety">{model.name}が前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。</p>
-  
+
   <details id="commDetails"><summary>通信の設定</summary>
     <label className="comm-setting"><input type="checkbox" id="autoResumeSetting" checked={model.comm.checked} disabled={model.comm.locked} onChange={event => settingsActions.setAutoResume(event.currentTarget.checked)} /> 切断から戻ったら自動で再開する</label>
     <p id="commInfo" role="status">{model.comm.text}</p>

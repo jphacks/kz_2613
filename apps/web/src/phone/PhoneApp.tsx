@@ -28,7 +28,7 @@ export function PhoneApp() {
 
 <main>
   <div className="connecting" id="connecting" hidden={!!state.view}><span className="mascot" aria-hidden="true">✦</span>PCホストへ接続しています…</div>
-  
+
   <section className={`view${state.view === 'v-remote' ? ' show' : ''}`} id="v-remote">
     <div className="host-card"><h1>あなたがホストです！</h1><p>タッチパッドでPCを操作。準備の後にReady！</p></div>
     <div className="players" id="players1">{state.remote.players.map(p => <span key={p.name} className={p.on ? 'on' : ''}>{p.label}</span>)}</div>
@@ -57,7 +57,7 @@ export function PhoneApp() {
     <div className="note" id="remoteNote">{state.remote.note}</div>
   </section>
 
-  
+
   <section className={`view${state.view === 'v-wait' ? ' show' : ''}`} id="v-wait">
     <div className="players" id="players2">{state.wait.players.map(p => <span key={p.name} className={p.on ? 'on' : ''}>{p.label}</span>)}</div>
     <div className="wait-scene">
@@ -66,20 +66,20 @@ export function PhoneApp() {
     </div>
   </section>
 
-  
+
   <div id="lookHome" hidden>
     <div id="pad">ドラッグでマウス移動<div className="dot"></div></div>
     <label className="sens">感度 <input type="range" id="sens" min="0.5" max="6" step="0.1" defaultValue="2" /> <span id="sensVal">2.0</span></label>
   </div>
 
-  
+
   <section className={`view${state.view === 'v-gen' ? ' show' : ''}`} id="v-gen">
     <div className="gen-title" id="genTitle">{state.controllerTitle}</div>
     <div id="genControls"></div>
     <button className="cmd pause" data-cmd="PAUSE" id="genPause" hidden={!state.controllerHost}>一時停止・ホスト操作へ</button>
   </section>
 
-  
+
   <div className="view-fx" id="viewFx" aria-hidden="true"></div>
 </main>
 

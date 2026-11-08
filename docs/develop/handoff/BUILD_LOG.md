@@ -1465,3 +1465,4 @@
 - Tauri実窓で `/app-react.html`、参加/ゲーム選択/設定をComputer Useで確認。終了後に `shutdown releaseConfirmed:true unconfirmed:[]` とプロセス終了を確認。初回の再ビルドは旧EXEを起動したためロックで失敗したが、終了・再ビルド成功後の新EXEで確認し直した。
 - `static-assets-sim.mjs --bin <上記ホスト>`：57資産のHTTP/MIME/no-store/ローカル参照に合格。`package.ps1 -Out data/local/react-migration/package-235` と同zipの `package-smoke.mjs`：同梱/ハッシュ/改変拒否/リポジトリ外での無注入起動・正常終了に合格。Archiveモジュールの自動読込制限は.NET展開APIで解消し、システムの実行ポリシーは変更していない。
 - 判断は `decisions/2026-11-08-react-typescript-foundation.md`、通常権限の手順は `WINDOWS_NORMAL_USER_DEV.md`、試験条件・証拠・再開手順は `acceptance/2026-11-09-react-typescript.md`。既定URL切替、iPhone Safari・実指・3実端末・Wi-Fi断・Minecraft実入力・配布先PCの受入は未完了。#271/#50/#272は共通描画/型境界を準備した段階で、保存スキーマ/編集UI/型生成の完了とは扱わない。
+- 成果物は draft PR [#274](https://github.com/jphacks/kz_2613/pull/274) に提示した。追加ファイルを含む `git diff --check origin/main` でTSXの末尾空白を検出・除去し、同コマンドとstrictビルドを再実行して成功した。mainマージ・Issueクローズはしていない。
