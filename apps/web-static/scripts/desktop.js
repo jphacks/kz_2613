@@ -158,7 +158,7 @@ function render(){
   if(view==='paused'&&!game?.canResume)$('stateSubtitle').textContent=inject?.mode==='off'?'安全を確かめてから「入力を再開する」を押してください':'再開前に、接続とゲームの画面を確認してください';
   $('leftRule').hidden=!['game','roles'].includes(view);
   $('explanation').innerHTML=view==='join'?`${MIN_PLAYERS}〜${MAX_PLAYERS}人がそろったら、<br>OKボタンを押そう！！`:view==='game'?'右側にあるゲーム一覧から<br>遊びたいゲームを<br>選択してください！':view==='roles'?(game?.lineupOk?'メンバーと分担を<br>決定しました！':'操作をそれぞれの<br>スマホに分けよう！'):'';
-  $('secondary').innerHTML=view==='game'?'Steam・Epic・手動登録のゲームは<br>分担を決めた後に起動できます。<br>「未検証」は操作が届くか未確認です。':view==='roles'?(game?.lineupOk?'ゲームを起動・準備して<br>スマホでReady！':'メンバーと分担を確認して<br>決定しよう！'):'';
+  $('secondary').innerHTML=view==='game'?'Steam・Epic などのランチャーと手動登録のゲームは<br>分担を決めた後に起動できます。<br>「未検証」は操作が届くか未確認です。':view==='roles'?(game?.lineupOk?'ゲームを起動・準備して<br>スマホでReady！':'メンバーと分担を確認して<br>決定しよう！'):'';
   const stopped=inputStopped(view);
   $('nextBtn').hidden=!stopped&&!['join','game','roles'].includes(view);
   $('nextBtn').classList.toggle('resume-input',stopped);
