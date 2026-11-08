@@ -246,6 +246,21 @@ try{
       await click('#genPause');await until(()=>mon.state().game.phase==='paused','再停止');
       return {down:[],method:'ADB HOMEで非表示にしてChromeへ復帰'};
     });
+    await check('Android保持中の通信切断・同じ枠への再接続',async()=>{
+      const reconnects=mon.state().slots[0].reconnects;
+      await evaluate(`(()=>{const original=WebSocket.prototype.send;WebSocket.prototype.send=function(data){if(this.url.endsWith('/ws'))window.__acceptanceSocket=this;return original.call(this,data)};return true})()`);
+      await until(async()=>await evaluate(`window.__acceptanceSocket?.readyState===WebSocket.OPEN`),'試験対象Socket');
+      await click('#startBtn');await until(()=>mon.state().game.phase==='coop','切断前再開');
+      await until(async()=>await evaluate(`document.body.dataset.view==='v-gen'&&!document.getElementById('viewFx').classList.contains('run')`),'切断前操作画面');
+      await touchStart('[data-ctl="act:jump"]');
+      await until(()=>mon.state().inject.down.length>0,'切断前保持');
+      await evaluate(`window.__acceptanceSocket.close();true`);
+      await until(()=>mon.state().game.phase==='paused'&&mon.state().inject.down.length===0,'切断時の全解放');
+      await until(async()=>mon.state().slots[0].connected&&mon.state().slots[0].reconnects>reconnects&&await evaluate(`document.getElementById('slot').textContent==='P1'&&document.getElementById('status').textContent==='再接続OK'`),'同じP1へ再接続');
+      await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+      await sleep(250);assert.deepEqual(mon.state().inject.down,[]);assert.equal(mon.state().game.phase,'paused');
+      return {slot:'P1',phase:'paused',down:[],reconnects:mon.state().slots[0].reconnects,method:'試験タブの実WebSocketを閉じる（Wi-Fi断ではない）'};
+    });
     await check('Android再読み込み・元の管理権',async()=>{const reconnects=mon.state().slots[0].reconnects;const loader=(await page.call('Page.getFrameTree')).frameTree.frame.loaderId;await page.call('Page.reload',{ignoreCache:true});await until(async()=>{const next=(await page.call('Page.getFrameTree')).frameTree.frame.loaderId;return next!==loader&&mon.state().slots[0].connected&&mon.state().slots[0].reconnects>reconnects&&await evaluate(`document.getElementById('slot').textContent==='P1'&&document.getElementById('status').textContent==='再接続OK'&&!document.getElementById('startBtn').disabled`);},'新しい文書でP1再接続');assert.equal(mon.state().game.phase,'paused');return {slot:'P1',phase:'paused',reconnects:mon.state().slots[0].reconnects};});
     await check('Android担当変更後の視点パッド・送信周期',async()=>{
       mon.send({type:'swap_roles',a:'P1',b:'P2'});

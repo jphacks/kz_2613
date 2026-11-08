@@ -30,6 +30,10 @@ function Look({ bindings }: { bindings?: InputBindings }) {
       }
     };
   }, [bindings]);
+  if (!bindings) return <>
+    <div className="look-pad">ドラッグでマウス移動<div className="dot" /></div>
+    <label className="sens">感度 <input type="range" min="0.5" max="6" step="0.1" defaultValue="2" aria-label="感度のプレビュー" /> <span>2.0</span></label>
+  </>;
   return <div ref={ref} style={{ display: 'contents' }} />;
 }
 
@@ -41,11 +45,11 @@ export function Controller({ groups, bindings }: { groups: ControlGroup[]; bindi
     ref.current?.querySelectorAll<HTMLElement>('[data-ctl]').forEach(bindings.bindControl);
     return () => bindings.releaseAll();
   }, [groups, bindings]);
-  return <div ref={ref} style={{ display: 'contents' }}>{groups.length ? groups.map(group => <div className="gen-group" key={group.id}>
+  return <div ref={ref} inert={!bindings} style={{ display: 'contents' }}>{groups.length ? groups.map(group => <div className="gen-group" key={group.id}>
     <div className="gen-label">{group.label}</div>
     {group.parts.filter(p => p.kind === 'stick').map(p => p.kind === 'stick' && <Stick key={p.id} part={p} bindings={bindings} />)}
     {group.parts.some(p => p.kind === 'button') && <div className="gen-grid">{group.parts.map(p => p.kind === 'button' &&
-      <button className="key" key={p.id} data-ctl={bindings ? p.control : undefined} disabled={!bindings}>{p.label}</button>)}</div>}
+      <button className="key" key={p.id} data-ctl={bindings ? p.control : undefined} aria-disabled={!bindings || undefined}>{p.label}</button>)}</div>}
     {group.parts.some(p => p.kind === 'look') && <Look bindings={bindings} />}
   </div>) : <p className="gen-empty">この人数では担当する操作がありません</p>}</div>;
 }
