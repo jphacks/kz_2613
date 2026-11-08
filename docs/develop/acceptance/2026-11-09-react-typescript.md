@@ -1,5 +1,7 @@
 # React + TypeScript移行基盤の検証記録（#235）
 
+この文書は基盤移行時点の記録。後続依頼で入力・通信エンジンもstrict TSへ移し、PR内の標準URL/TauriをReactへ切り替えた。現在の構成・受入範囲は [総合レビュー](2026-11-09-pr274-self-review.md) と [性能比較](2026-11-09-react-performance.md) を参照する。以下の標準切替保留は当時の判定として保持する。
+
 ## 範囲と結論
 
 2026-11-08〜09、専用ブランチでスマホ・PCの主要画面をReact + TypeScript strictへ移した。IslandsとPortalの入口を廃止し、React版は型付き描画アダプターを使う。入力エンジン、サーバーの認可、protocolVersion=4、入力定数は維持した。

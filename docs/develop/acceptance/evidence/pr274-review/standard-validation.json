@@ -1,0 +1,1105 @@
+{
+  "scope": "標準URL / と /app。AndroidはCDP合成タッチ、dry-run、模擬参加者。Tauri実窓は別試験。製品受入とは区別する。",
+  "runner": "android-dry-run.mjsはメインworktreeから実行。sourceCommit/sourceDirtyは配信対象worktreeを示す。失敗2件後にCDPの部分touchEndを修正した。最終runnerはこの記録を追加したコミットで保全。",
+  "records": [
+    {
+      "condition": "standard-three",
+      "players": 3,
+      "wsOnly": false,
+      "benchmarkMs": 60000,
+      "sourceCommit": "0d43517da474d8263491fb1e748674e660eac8eb",
+      "sourceDirty": false,
+      "binarySha256": "49800945fa52473c58a28ea8221e04f6b931b0e4162488ea97c28f5ef08a498b",
+      "error": null,
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "status": "接続OK",
+            "path": "WebRTC+WS",
+            "width": 384,
+            "height": 701,
+            "overflow": false
+          }
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格",
+          "observed": {
+            "downToSendMs": {
+              "n": 72,
+              "p50": 18.900000035762787,
+              "p95": 27.400000035762787,
+              "p99": 29.600000023841858,
+              "mean": 18.69722222040097,
+              "max": 29.600000023841858
+            },
+            "upToSendMs": {
+              "n": 88,
+              "p50": 17.899999976158142,
+              "p95": 25.80000001192093,
+              "p99": 29.19999998807907,
+              "mean": 17.37727272578261,
+              "max": 29.19999998807907
+            },
+            "ackRttMs": {
+              "n": 224,
+              "p50": 17,
+              "p95": 109.39999997615814,
+              "p99": 112.69999998807907,
+              "mean": 31.009374997445516,
+              "max": 114.10000002384186
+            },
+            "unacked": 0,
+            "firstVia": {
+              "ws": 107,
+              "rtc": 117
+            },
+            "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+          }
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "via": [
+              "rtc",
+              "rtc"
+            ]
+          }
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "method": "Android Chrome CDPの2接点タッチ（実指ではない）"
+          }
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "down": []
+          }
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格",
+          "observed": "診断ダイアログの開閉"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格",
+          "observed": {
+            "areas": [
+              {
+                "width": 174,
+                "height": 44
+              },
+              {
+                "width": 174,
+                "height": 44
+              },
+              {
+                "width": 174,
+                "height": 44
+              }
+            ],
+            "metrics": {
+              "pointerdown": {
+                "n": 119,
+                "p50": 22.299999952316284,
+                "p95": 35.80000001192093,
+                "max": 39.19999998807907
+              }
+            },
+            "rtt": "27/111ms"
+          }
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格",
+          "observed": {
+            "phase": "paused",
+            "down": []
+          }
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格",
+          "observed": {
+            "down": [],
+            "rotation": "横向きで停止し縦復帰後も旧押下を復元しない"
+          }
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格",
+          "observed": {
+            "down": [],
+            "method": "ADB HOMEで非表示にしてChromeへ復帰"
+          }
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "phase": "paused",
+            "down": [],
+            "reconnects": 1,
+            "releaseAfterMs": 113.30059999998775,
+            "reconnectAfterMs": 616.2317999999941,
+            "timing": "PC process observation including CDP and 100ms polling",
+            "method": "試験タブの実WebSocketを閉じる（Wi-Fi断ではない）"
+          }
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "phase": "paused",
+            "reconnects": 2
+          }
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格",
+          "observed": {
+            "count": 1727,
+            "medianMs": 33,
+            "p95Ms": 63.9,
+            "transport": "WebRTC+WS"
+          }
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格",
+          "observed": {
+            "errors": []
+          }
+        }
+      ],
+      "look": {
+        "version": 2,
+        "moves": 1800,
+        "companionTaps": 0,
+        "durationMs": 60131,
+        "summary": {
+          "n": 1726,
+          "p50": 33,
+          "p95": 63.90000003576279,
+          "p99": 66.10000002384186,
+          "mean": 34.75069524912403,
+          "max": 68.30000001192093
+        },
+        "gaps200ms": 0,
+        "longestGapMs": 68.30000001192093,
+        "hostLookLost": 17
+      },
+      "raw": "standard-three.json.gz",
+      "rawSha256": "ab353fd3a688de695a68f4a7612e99f2308d5dbffe4fbaf5af1644c8ae487137"
+    },
+    {
+      "condition": "standard-two-combined",
+      "players": 2,
+      "wsOnly": false,
+      "benchmarkMs": 60000,
+      "sourceCommit": "0d43517da474d8263491fb1e748674e660eac8eb",
+      "sourceDirty": false,
+      "binarySha256": "49800945fa52473c58a28ea8221e04f6b931b0e4162488ea97c28f5ef08a498b",
+      "error": "look companion down\n\n1 !== 10\n",
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "status": "接続OK",
+            "path": "WebRTC+WS",
+            "width": 384,
+            "height": 701,
+            "overflow": false
+          }
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格",
+          "observed": {
+            "downToSendMs": {
+              "n": 72,
+              "p50": 19,
+              "p95": 26.700000047683716,
+              "p99": 32,
+              "mean": 18.12777777761221,
+              "max": 32
+            },
+            "upToSendMs": {
+              "n": 88,
+              "p50": 17.19999998807907,
+              "p95": 28.19999998807907,
+              "p99": 31.299999952316284,
+              "mean": 17.51704545522278,
+              "max": 31.299999952316284
+            },
+            "ackRttMs": {
+              "n": 224,
+              "p50": 16.69999998807907,
+              "p95": 111,
+              "p99": 113.19999998807907,
+              "mean": 30.38928571370031,
+              "max": 114.19999998807907
+            },
+            "unacked": 0,
+            "firstVia": {
+              "rtc": 120,
+              "ws": 104
+            },
+            "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+          }
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "via": [
+              "rtc",
+              "ws"
+            ]
+          }
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "method": "Android Chrome CDPの2接点タッチ（実指ではない）"
+          }
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "down": []
+          }
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格",
+          "observed": "診断ダイアログの開閉"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格",
+          "observed": {
+            "areas": [
+              {
+                "width": 174,
+                "height": 44
+              },
+              {
+                "width": 174,
+                "height": 44
+              },
+              {
+                "width": 174,
+                "height": 44
+              }
+            ],
+            "metrics": {
+              "pointerdown": {
+                "n": 119,
+                "p50": 21.600000023841858,
+                "p95": 35.10000002384186,
+                "max": 38.19999998807907
+              }
+            },
+            "rtt": "27/112ms"
+          }
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格",
+          "observed": {
+            "phase": "paused",
+            "down": []
+          }
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格",
+          "observed": {
+            "down": [],
+            "rotation": "横向きで停止し縦復帰後も旧押下を復元しない"
+          }
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格",
+          "observed": {
+            "down": [],
+            "method": "ADB HOMEで非表示にしてChromeへ復帰"
+          }
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "phase": "paused",
+            "down": [],
+            "reconnects": 1,
+            "releaseAfterMs": 109.75210000001243,
+            "reconnectAfterMs": 615.1771000000008,
+            "timing": "PC process observation including CDP and 100ms polling",
+            "method": "試験タブの実WebSocketを閉じる（Wi-Fi断ではない）"
+          }
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "phase": "paused",
+            "reconnects": 2
+          }
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "不合格",
+          "reason": "look companion down\n\n1 !== 10\n"
+        }
+      ],
+      "look": {
+        "version": 2,
+        "moves": 1800,
+        "companionTaps": 10,
+        "durationMs": 60151,
+        "summary": {
+          "n": 1725,
+          "p50": 33,
+          "p95": 47.90000003576279,
+          "p99": 66.10000002384186,
+          "mean": 34.76678260868874,
+          "max": 130.4000000357628
+        },
+        "gaps200ms": 0,
+        "longestGapMs": 130.4000000357628,
+        "hostLookLost": 18
+      },
+      "raw": "standard-two-combined.json.gz",
+      "rawSha256": "7d2440a4e6227f5cd8446ef2e4f364e6f6575b4eebb81e3371f96f338966061f"
+    },
+    {
+      "condition": "standard-two-combined-retry",
+      "players": 2,
+      "wsOnly": false,
+      "benchmarkMs": 60000,
+      "sourceCommit": "0d43517da474d8263491fb1e748674e660eac8eb",
+      "sourceDirty": false,
+      "binarySha256": "49800945fa52473c58a28ea8221e04f6b931b0e4162488ea97c28f5ef08a498b",
+      "error": "look companion down\n\n1 !== 10\n",
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "status": "接続OK",
+            "path": "WebRTC+WS",
+            "width": 384,
+            "height": 701,
+            "overflow": false
+          }
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格",
+          "observed": {
+            "downToSendMs": {
+              "n": 72,
+              "p50": 18.80000001192093,
+              "p95": 27.399999976158142,
+              "p99": 28.30000001192093,
+              "mean": 18.486111109455425,
+              "max": 28.30000001192093
+            },
+            "upToSendMs": {
+              "n": 88,
+              "p50": 17.69999998807907,
+              "p95": 27.80000001192093,
+              "p99": 28.600000023841858,
+              "mean": 17.124999997290697,
+              "max": 28.600000023841858
+            },
+            "ackRttMs": {
+              "n": 224,
+              "p50": 16.80000001192093,
+              "p95": 110.79999995231628,
+              "p99": 114.40000003576279,
+              "mean": 30.7156250040446,
+              "max": 131.5
+            },
+            "unacked": 0,
+            "firstVia": {
+              "rtc": 127,
+              "ws": 97
+            },
+            "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+          }
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "via": [
+              "rtc",
+              "rtc"
+            ]
+          }
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "method": "Android Chrome CDPの2接点タッチ（実指ではない）"
+          }
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "down": []
+          }
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格",
+          "observed": "診断ダイアログの開閉"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格",
+          "observed": {
+            "areas": [
+              {
+                "width": 174,
+                "height": 44
+              },
+              {
+                "width": 174,
+                "height": 44
+              },
+              {
+                "width": 174,
+                "height": 44
+              }
+            ],
+            "metrics": {
+              "pointerdown": {
+                "n": 119,
+                "p50": 20.69999998807907,
+                "p95": 35.80000001192093,
+                "max": 39.799999952316284
+              }
+            },
+            "rtt": "26/132ms"
+          }
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格",
+          "observed": {
+            "phase": "paused",
+            "down": []
+          }
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格",
+          "observed": {
+            "down": [],
+            "rotation": "横向きで停止し縦復帰後も旧押下を復元しない"
+          }
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格",
+          "observed": {
+            "down": [],
+            "method": "ADB HOMEで非表示にしてChromeへ復帰"
+          }
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "phase": "paused",
+            "down": [],
+            "reconnects": 1,
+            "releaseAfterMs": 108.8642000000109,
+            "reconnectAfterMs": 608.1231000000116,
+            "timing": "PC process observation including CDP and 100ms polling",
+            "method": "試験タブの実WebSocketを閉じる（Wi-Fi断ではない）"
+          }
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "phase": "paused",
+            "reconnects": 2
+          }
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "不合格",
+          "reason": "look companion down\n\n1 !== 10\n"
+        }
+      ],
+      "look": {
+        "version": 2,
+        "moves": 1800,
+        "companionTaps": 10,
+        "durationMs": 60144,
+        "summary": {
+          "n": 1716,
+          "p50": 33,
+          "p95": 63.89999997615814,
+          "p99": 66.30000001192093,
+          "mean": 34.949533799554644,
+          "max": 100.39999997615814
+        },
+        "gaps200ms": 0,
+        "longestGapMs": 100.39999997615814,
+        "hostLookLost": 18
+      },
+      "raw": "standard-two-combined-retry.json.gz",
+      "rawSha256": "4ec8c1fa6e557f9ef20941b6f23e69632d0469dc889706568e256a457e69f460"
+    },
+    {
+      "condition": "standard-two-combined-fixed",
+      "players": 2,
+      "wsOnly": false,
+      "benchmarkMs": 60000,
+      "sourceCommit": "0d43517da474d8263491fb1e748674e660eac8eb",
+      "sourceDirty": false,
+      "binarySha256": "49800945fa52473c58a28ea8221e04f6b931b0e4162488ea97c28f5ef08a498b",
+      "error": null,
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "status": "接続OK",
+            "path": "WebRTC+WS",
+            "width": 384,
+            "height": 701,
+            "overflow": false
+          }
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格",
+          "observed": {
+            "downToSendMs": {
+              "n": 72,
+              "p50": 19.19999998807907,
+              "p95": 27.599999964237213,
+              "p99": 28.899999976158142,
+              "mean": 19.21805555290646,
+              "max": 28.899999976158142
+            },
+            "upToSendMs": {
+              "n": 88,
+              "p50": 16.19999998807907,
+              "p95": 25.80000001192093,
+              "p99": 29.099999964237213,
+              "mean": 15.998863642865961,
+              "max": 29.099999964237213
+            },
+            "ackRttMs": {
+              "n": 224,
+              "p50": 17.099999964237213,
+              "p95": 111.29999995231628,
+              "p99": 114.39999997615814,
+              "mean": 31.101339284596698,
+              "max": 128.69999998807907
+            },
+            "unacked": 0,
+            "firstVia": {
+              "ws": 62,
+              "rtc": 162
+            },
+            "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+          }
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "via": [
+              "ws",
+              "ws"
+            ]
+          }
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "method": "Android Chrome CDPの2接点タッチ（実指ではない）"
+          }
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "down": []
+          }
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格",
+          "observed": "診断ダイアログの開閉"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格",
+          "observed": {
+            "areas": [
+              {
+                "width": 174,
+                "height": 44
+              },
+              {
+                "width": 174,
+                "height": 44
+              },
+              {
+                "width": 174,
+                "height": 44
+              }
+            ],
+            "metrics": {
+              "pointerdown": {
+                "n": 119,
+                "p50": 21.69999998807907,
+                "p95": 33.69999998807907,
+                "max": 37
+              }
+            },
+            "rtt": "27/129ms"
+          }
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格",
+          "observed": {
+            "phase": "paused",
+            "down": []
+          }
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格",
+          "observed": {
+            "down": [],
+            "rotation": "横向きで停止し縦復帰後も旧押下を復元しない"
+          }
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格",
+          "observed": {
+            "down": [],
+            "method": "ADB HOMEで非表示にしてChromeへ復帰"
+          }
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "phase": "paused",
+            "down": [],
+            "reconnects": 1,
+            "releaseAfterMs": 8.49550000000454,
+            "reconnectAfterMs": 604.2808999999979,
+            "timing": "PC process observation including CDP and 100ms polling",
+            "method": "試験タブの実WebSocketを閉じる（Wi-Fi断ではない）"
+          }
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "phase": "paused",
+            "reconnects": 2
+          }
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格",
+          "observed": {
+            "count": 1725,
+            "medianMs": 33,
+            "p95Ms": 50.2,
+            "transport": "WebRTC+WS"
+          }
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格",
+          "observed": {
+            "errors": []
+          }
+        }
+      ],
+      "look": {
+        "version": 2,
+        "moves": 1800,
+        "companionTaps": 10,
+        "durationMs": 60137,
+        "summary": {
+          "n": 1724,
+          "p50": 33,
+          "p95": 50.19999998807907,
+          "p99": 66.10000002384186,
+          "mean": 34.79831786543615,
+          "max": 115.10000002384186
+        },
+        "gaps200ms": 0,
+        "longestGapMs": 115.10000002384186,
+        "hostLookLost": 15,
+        "companionInputs": {
+          "control": "act:attack",
+          "states": [
+            "down",
+            "up",
+            "down",
+            "up",
+            "down",
+            "up",
+            "down",
+            "up",
+            "down",
+            "up",
+            "down",
+            "up",
+            "down",
+            "up",
+            "down",
+            "up",
+            "down",
+            "up",
+            "down",
+            "up"
+          ]
+        }
+      },
+      "raw": "standard-two-combined-fixed.json.gz",
+      "rawSha256": "0f48759347e53f6f23aa7ecf2d3a2a74de20b2b1c86bdcb4e8c83f56884a16ef"
+    },
+    {
+      "condition": "standard-ws-only",
+      "players": 3,
+      "wsOnly": true,
+      "benchmarkMs": 0,
+      "sourceCommit": "0d43517da474d8263491fb1e748674e660eac8eb",
+      "sourceDirty": false,
+      "binarySha256": "49800945fa52473c58a28ea8221e04f6b931b0e4162488ea97c28f5ef08a498b",
+      "error": null,
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "status": "再接続OK",
+            "path": "WSのみ",
+            "width": 384,
+            "height": 701,
+            "overflow": false
+          }
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "via": [
+              "ws",
+              "ws"
+            ]
+          }
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "method": "Android Chrome CDPの2接点タッチ（実指ではない）"
+          }
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格",
+          "observed": {
+            "input": [
+              "down",
+              "up"
+            ],
+            "down": []
+          }
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格",
+          "observed": "診断ダイアログの開閉"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格",
+          "observed": {
+            "areas": [
+              {
+                "width": 174,
+                "height": 44
+              },
+              {
+                "width": 174,
+                "height": 44
+              },
+              {
+                "width": 174,
+                "height": 44
+              }
+            ],
+            "metrics": {
+              "pointerdown": {
+                "n": 3,
+                "p50": 29,
+                "p95": 33.30000001192093,
+                "max": 33.30000001192093
+              }
+            },
+            "rtt": "22/110ms"
+          }
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格",
+          "observed": {
+            "phase": "paused",
+            "down": []
+          }
+        },
+        {
+          "id": "Androidダーク配色の無効ボタン",
+          "result": "合格",
+          "observed": {
+            "color": "rgb(174, 180, 194)",
+            "background": "rgb(51, 56, 69)",
+            "visible": true
+          }
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格",
+          "observed": {
+            "down": [],
+            "rotation": "横向きで停止し縦復帰後も旧押下を復元しない"
+          }
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格",
+          "observed": {
+            "down": [],
+            "method": "ADB HOMEで非表示にしてChromeへ復帰"
+          }
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "phase": "paused",
+            "down": [],
+            "reconnects": 2,
+            "releaseAfterMs": 8.475299999998242,
+            "reconnectAfterMs": 637.2469999999994,
+            "timing": "PC process observation including CDP and 100ms polling",
+            "method": "試験タブの実WebSocketを閉じる（Wi-Fi断ではない）"
+          }
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格",
+          "observed": {
+            "slot": "P1",
+            "phase": "paused",
+            "reconnects": 3
+          }
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格",
+          "observed": {
+            "count": 43,
+            "medianMs": 33,
+            "p95Ms": 63.7,
+            "transport": "WSのみ"
+          }
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格",
+          "observed": {
+            "errors": []
+          }
+        }
+      ],
+      "look": {},
+      "raw": "standard-ws-only.json.gz",
+      "rawSha256": "0ea44c431584cf133f0462c0220901fb20800c284db26c56ca964f493c0b4106"
+    }
+  ],
+  "native": {
+    "desktopSha256": "dd717b9e1c6d503c268ef0afb0063137ea63f84ec2eca0089cdbe6f818446ebc",
+    "hostSha256": "49800945fa52473c58a28ea8221e04f6b931b0e4162488ea97c28f5ef08a498b",
+    "dryRun": true,
+    "fakeTarget": true,
+    "exitCode": 0,
+    "shutdown": {
+      "kind": "shutdown",
+      "releaseConfirmed": true,
+      "t": 1794165758928,
+      "unconfirmed": []
+    }
+  },
+  "package": {
+    "sourceCommit": "0d43517da474d8263491fb1e748674e660eac8eb",
+    "dirty": false,
+    "files": 569,
+    "sha256": "5a6036f5d9f5a507fd640ae2aa5c5e5c5996ad70a0e73f919caec0b2fe4f8503",
+    "bytes": 9073844,
+    "smoke": "repo外展開・内容照合・欠落/改変拒否・標準URLのdry-run起動/正常終了"
+  },
+  "ci": [
+    {
+      "commit": "0d43517da474d8263491fb1e748674e660eac8eb",
+      "runs": [
+        42514496080,
+        42514496091
+      ],
+      "conclusion": "success"
+    }
+  ]
+}

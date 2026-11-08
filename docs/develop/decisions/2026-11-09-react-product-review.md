@@ -32,3 +32,25 @@ Open PRは #273 と #274。#273はダークスキンの無効ボタンとBUILD_L
 5. 全レビュー項目を根拠付きで判定し、標準化後のAndroid/Tauri/オフライン資産/zip/CIを再検証する。
 
 USB reverseの結果はWi-Fi性能ではない。CDPのタッチは実指ではない。dry-runの出力時間はMinecraft反応時間ではない。短い試行で長時間の性能を保証しない。測定による負荷も全条件に共通にする。
+
+## 最終構成と採用結果
+
+上記の方針を実装し、PRブランチでReactを標準にした。製品の入力・通信・接続・モデル・ランタイムをTSへ移した理由は、重要な製品コードへstrict検査と明示的な寿命を適用し、旧DOM描画との二重責務を解消するためである。型付け自体による高速化は採用理由にしない。本番依存の追加はない。
+
+| 責務 | 正本 | 状態・寿命 |
+|---|---|---|
+| 製品HTML/ビルド | `apps/web/pages/`、`apps/web/vite.config.js` | Vite生成物は編集しない |
+| UI/共通操作部 | `phone/PhoneApp.tsx`・`Controller.tsx`、`pc/PcApp.tsx`・各部品 | Reactが要素構造・文言を所有 |
+| 低頻度の表示 | `phone/view.ts`、`pc/model.ts`、`store.ts` | snapshotを購読。診断telemetryは同期flushしない |
+| 純粋モデル/操作定義 | `model/`、`controller-layout.ts`、`contracts.ts` | ゲーム操作・担当・表示・部品を分離 |
+| 高頻度入力 | `input/` | Pointer Events、保持元、stick/pad、releaseAll。React state外 |
+| 通信/認可の境界 | `transport/` | unknown受信→実行時検証→型付きmessage。セッションとepochが正本 |
+| 結合と破棄 | `phone/runtime.ts`・`pc/runtime.ts`、`input/lifetime.ts` | 接続/購読/タイマーの開始とdispose、停止時全解放 |
+| ホスト/PCアプリ | Rust `main.rs`、Tauri `main.rs` | `/`・`/app`がReact、OS入力と認可は既存Rustのまま |
+| 比較・復元 | `apps/web-static/LEGACY.md` | 明示した旧URL・固定worktree。製品TSから参照しない |
+
+`39e4c5d`で移行、`48f180a`でAPI境界を補完、`df7e3eb`でACK/input経路の診断同期描画を除去。`53b0f59`で標準化、`0d43517`で標準資産試験の起動通知とCLI境界を補完した。後続の補助試験修正と資料は同じPRへ反映する。
+
+[総合レビュー](../acceptance/2026-11-09-pr274-self-review.md) の206項目と[Android性能報告](../acceptance/2026-11-09-react-performance.md) に根拠・制限を残した。A〜E各60秒×3回の比較、標準URLのAndroid、Tauri実窓、通常権限ビルド、repo外zip、CIが成功した範囲で標準化を採用する。iPhoneを利用できないことだけを理由には保留しないが、実指・Minecraft・緊急停止実操作などの安全受入は完了していない。
+
+#50/#271の編集/保存、#272のRustとの全面型生成、#157/#264の追加計測を今回完成したとは扱わない。mainマージ・Issue close・正式リリース・Award Day安定版の更新は行わない。
