@@ -52,7 +52,8 @@ try {
   assert.equal(checksum[0], hash(fs.readFileSync(zip)), 'zipのSHA-256不一致');
   assert.equal(checksum[1], path.basename(zip));
   const expand = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-    'Expand-Archive -LiteralPath $env:RECOOPLAY_TEST_ZIP -DestinationPath $env:RECOOPLAY_TEST_DEST'],
+    // Archiveモジュールの自動読込に依存せず、通常権限の.NET APIで展開する。
+    'Add-Type -AssemblyName System.IO.Compression.FileSystem; [IO.Compression.ZipFile]::ExtractToDirectory($env:RECOOPLAY_TEST_ZIP, $env:RECOOPLAY_TEST_DEST)'],
   { env: { ...process.env, RECOOPLAY_TEST_ZIP: zip, RECOOPLAY_TEST_DEST: temp }, encoding: 'utf8', windowsHide: true });
   assert.equal(expand.status, 0, expand.stderr || String(expand.error));
   const entries = fs.readdirSync(temp);
