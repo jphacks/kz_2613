@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import {stripTypeScriptTypes} from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -9,6 +10,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.
 class Events {
   constructor() { this.handlers = new Map(); }
   addEventListener(type, fn) { const list = this.handlers.get(type) || []; list.push(fn); this.handlers.set(type, list); }
+  removeEventListener(type,fn) {this.handlers.set(type,(this.handlers.get(type)||[]).filter(value=>value!==fn));}
   fire(type, values = {}) {
     const event = { type, pointerId: 1, clientX: 100, clientY: 100, timeStamp: 1000, preventDefault() {}, ...values };
     for (const fn of this.handlers.get(type) || []) fn(event);
@@ -132,6 +134,7 @@ export function controllerHarness() {
     if (modules.has(absolute)) return modules.get(absolute);
     const imports = {}, names = [];
     let source = fs.readFileSync(absolute, 'utf8');
+    if(absolute.endsWith('.ts'))source=stripTypeScriptTypes(source,{mode:'strip'});
     source = source.replace(/^import\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"];?\s*$/gm, (_, bindings, relative) => {
       imports[relative] = load(path.resolve(path.dirname(absolute), relative));
       return `const {${bindings.replace(/\bas\b/g, ':')}} = imports[${JSON.stringify(relative)}];`;
@@ -140,7 +143,21 @@ export function controllerHarness() {
     const run = new vm.Script(`(function(imports) {\n${source}\nreturn {${names.join(',')}};\n})`, { filename: absolute }).runInContext(context);
     const exports = run(imports); modules.set(absolute, exports); return exports;
   }
-  load(path.join(ROOT, 'apps/web-static/scripts/controller.js'));
+  let controller;
+  if(process.env.RECOOPLAY_TEST_TS==='1'){
+    const {createPhoneView}=load(path.join(ROOT,'apps/web-static/scripts/phone-view.js'));
+    const {startPhoneController}=load(path.join(ROOT,'apps/web/src/phone/runtime.ts'));
+    controller=startPhoneController({createView(bindings){
+      const unbind=bindings.bindLook(el('pad'),el('sens'),el('sensVal'));
+      const view=createPhoneView(bindings);
+      view.connection=(text,kind)=>{el('status').textContent=text;el('status').className='pill '+kind;document.body.dataset.connection=kind;};
+      view.telemetry=data=>{const names={rtt:'rtt',rttAvg:'rttAvg',sent:'sent',unacked:'unacked',path:'path',advice:'phoneNetAdvice',inputMetrics:'inputMetrics'};for(const [key,value] of Object.entries(data))if(names[key])el(names[key]).textContent=String(value);};
+      view.blocked=message=>{if(message)el('fullMessage').textContent=message;el('full').style.display='flex';};
+      view.dispose=unbind;
+      return view;
+    }});
+  }else load(path.join(ROOT, 'apps/web-static/scripts/controller.js'));
+
   function advance(ms) {
     const end = now + ms;
     for (;;) {
@@ -169,5 +186,5 @@ export function controllerHarness() {
     sockets[0].receive({ type: 'game', game: game(overrides) });
     await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
   }
-  return { document, window, portrait, el, sockets, peers, storage, advance, game, ready, inputs, messages, control };
+  return {dispose:()=>controller?.dispose(),activeTimers:()=>timers.size, document, window, portrait, el, sockets, peers, storage, advance, game, ready, inputs, messages, control };
 }

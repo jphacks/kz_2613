@@ -39,6 +39,7 @@ try {
       Invoke-Checked 'npm.cmd' @('run', 'typecheck', '--prefix', 'apps/web')
       Invoke-Checked 'node' @('--experimental-strip-types', 'scripts/sim/controller-layout-test.mjs')
       Invoke-Checked 'node' @('--experimental-strip-types', 'scripts/sim/controller-preview-test.mjs')
+      Invoke-Checked 'node' @('scripts/sim/product-web-test.mjs')
       Invoke-Checked 'node' @('scripts/sim/phone-lifecycle-test.mjs')
       Invoke-Checked 'node' @('scripts/sim/phone-session-test.mjs')
       Invoke-Checked 'node' @('scripts/sim/protocol-boundary-test.mjs')

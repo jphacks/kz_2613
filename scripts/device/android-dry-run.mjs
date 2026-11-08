@@ -6,17 +6,21 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
+import {beginPerformance, finishPerformance, summarize} from './android-performance.mjs';
 
-const ROOT=fileURLToPath(new URL('../../',import.meta.url));
+const SCRIPT_ROOT=fileURLToPath(new URL('../../',import.meta.url));
 const options = new Map();
 for (let i = 2; i < process.argv.length; i++) {
   const key = process.argv[i];
-  assert(['--bin', '--adb', '--sha256', '--host-only', '--react'].includes(key), '不明な引数');
+  assert(['--bin', '--adb', '--sha256', '--host-only', '--react', '--root', '--benchmark-ms', '--condition', '--trial'].includes(key), '不明な引数');
   assert(!options.has(key), '重複した引数');
   const value = ['--host-only', '--react'].includes(key) ? true : process.argv[++i];
   assert(value && (value === true || !value.startsWith('--')), '引数の値が必要です');
   options.set(key, value);
 }
+const ROOT=path.resolve(options.get('--root') ?? SCRIPT_ROOT);
+const benchmarkMs=Number(options.get('--benchmark-ms') ?? 0);
+assert(benchmarkMs===0 || Number.isInteger(benchmarkMs)&&benchmarkMs>=1000&&benchmarkMs<=120000,'計測時間が不正です');
 const BIN = options.get('--bin'), ADB = options.get('--adb') ?? 'adb';
 const EXPECTED = options.get('--sha256');
 assert(BIN && /^[0-9a-f]{64}$/i.test(EXPECTED), '--bin と64桁の --sha256 が必要です');
@@ -40,7 +44,7 @@ const http = async url => {
 let port, cdpPort, base, testUrl, hostClosed, serial;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const until=async(fn,label,ms=10000)=>{const end=Date.now()+ms;while(Date.now()<end){if(await fn())return;await sleep(100);}throw Error(`待機失敗: ${label}`);};
-const report={date:new Date().toISOString(),sourceCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:ROOT,encoding:'utf8'}).trim(),sourceDirty:execFileSync('git',['status','--porcelain'],{cwd:ROOT,encoding:'utf8'}).trim().length>0,binarySha256:hash,
+const report={condition:options.get('--condition'),trial:options.get('--trial'),benchmarkMs,date:new Date().toISOString(),sourceCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:ROOT,encoding:'utf8'}).trim(),sourceDirty:execFileSync('git',['status','--porcelain'],{cwd:ROOT,encoding:'utf8'}).trim().length>0,binarySha256:hash,
   uiAssets:options.has('--react')?Object.fromEntries(fs.readdirSync(path.join(ROOT,'apps/web-static/react')).filter(f=>f.endsWith('.js')).map(f=>[f,crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT,'apps/web-static/react',f))).digest('hex')])):undefined,
   safety:{dryRun:true,noConfig:true,fakeTarget:true,osInput:false},ui: options.has('--react') ? 'React + TypeScript' : '従来版',connection:hostOnly ? 'PCループバック' : 'ADB reverse TCP / WebSocket',tests:[],limitations:['実指・iPhone・3実端末・Wi-Fi断・実Windows入力・Minecraft・別PCは未検証。WebRTCはUSB経路の成立確認']};
 let host, mon, browser, tabId, forwarded=false,reversed=false, ping;
@@ -172,6 +176,15 @@ try{
     await until(()=>mon.state().game.lineupOk,'分担確定');
     await click('#startBtn');await until(()=>mon.state().game.phase==='preparing','preparing');
     await click('#startBtn');await until(()=>mon.state().game.phase==='coop','coop');
+    if(benchmarkMs) await check('Android反復入力の独立性能試行',async()=>{
+      const mark=mon.messages.length;
+      const workload=await beginPerformance({evaluate,page,durationMs:benchmarkMs});
+      report.performance=await finishPerformance(evaluate,workload);
+      report.performance.hostEvents=mon.messages.slice(mark).filter(m=>['log','inject'].includes(m.type)&&m.entry).map(m=>({type:m.type,entry:m.entry}));
+      report.performance.hostSlots=mon.state().slots.map(s=>({name:s.name,events:s.events,lost:s.lost,outOfOrder:s.outOfOrder,via:s.via,lookLost:s.lookLost,reconnects:s.reconnects}));
+      assert.deepEqual(mon.state().inject.down,[]);
+      return report.performance.summary;
+    });
     await check('Android生成操作面・単指ボタン',async()=>{await shot('02-p1-coop');const mark=mon.messages.length;await touch('[data-ctl="act:jump"]');const ev=mon.messages.slice(mark).filter(m=>m.type==='log'&&m.entry.button==='act:jump').map(m=>m.entry.state);assert.deepEqual(ev,['down','up']);return {input:ev,via:mon.messages.slice(mark).filter(m=>m.type==='log'&&m.entry.button==='act:jump').map(m=>m.entry.via)};});
     await check('Android同一ボタンの2接点保持',async()=>{
       const mark=mon.messages.length;
@@ -273,11 +286,21 @@ try{
       await until(async()=>await evaluate(`document.body.dataset.view==='v-gen'&&!!document.querySelector('#v-gen #pad')&&!document.getElementById('viewFx').classList.contains('run')`),'視点パッド表示');
       await evaluate(`window.__lookTimes=[];for(const proto of [WebSocket.prototype,RTCDataChannel.prototype]){const original=proto.send;proto.send=function(data){if(typeof data==='string'&&data.includes('"look"'))window.__lookTimes.push(performance.now());return original.call(this,data)}};true`);
       const point=await touchStart('#v-gen #pad');
+      const companion=await evaluate(`(()=>{const e=document.querySelector('#genControls [data-ctl]');if(!e)return null;const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,id:2}})()`);
       const started=Date.now();let i=0;
-      while(Date.now()-started<1500){await page.call('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:point.x+(i++%30)-15,y:point.y,id:1}]});await sleep(12);}
+      let companionHeld=false;
+      while(benchmarkMs?i<1800:Date.now()-started<1500){
+        const padPoint={x:point.x+(i%30)-15,y:point.y,id:1};
+        if(benchmarkMs&&companion&&i%180===0){await page.call('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[padPoint,companion]});companionHeld=true;}
+        if(companionHeld&&i%180===8){await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[padPoint]});companionHeld=false;}
+        await page.call('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:companionHeld?[padPoint,companion]:[padPoint]});i++;
+        await sleep(benchmarkMs?Math.max(0,started+i*benchmarkMs/1800-Date.now()):12);
+      }
       await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await sleep(80);
       const times=await evaluate(`window.__lookTimes`);assert(times.length>=10,'視点の送信が不足');
-      const gaps=times.slice(1).map((t,i)=>t-times[i]).sort((a,b)=>a-b);
+      const gaps=times.slice(1).map((t,i)=>t-times[i]);
+      if(benchmarkMs)report.lookPerformance={version:2,moves:i,companionTaps:companion?10:0,durationMs:Date.now()-started,times,gaps,summary:summarize(gaps),gaps200ms:gaps.filter(g=>g>=200).length,longestGapMs:Math.max(...gaps),hostLookLost:mon.state().slots[0].lookLost};
+      gaps.sort((a,b)=>a-b);
       await touchStart('#v-gen #pad');
       await click('#genPause');await until(()=>mon.state().game.phase==='paused','視点停止');
       await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
@@ -319,6 +342,8 @@ try{
   if (browser) await cleanup('CDP切断', () => browser.close());
   if (reversed) await cleanup('reverse解除', () => adb('reverse','--remove','tcp:' + port));
   if (forwarded) await cleanup('forward解除', () => adb('forward','--remove','tcp:' + cdpPort));
+  const runtime=path.join(OUT,'host-logs/runtime-measure.json');
+  if(fs.existsSync(runtime))report.hostRuntime=JSON.parse(fs.readFileSync(runtime,'utf8'));
   fs.writeFileSync(path.join(OUT,'summary.json'),JSON.stringify(report,null,2)+'\n');
   console.log('記録: ' + path.relative(ROOT,OUT) + '/summary.json');
 }

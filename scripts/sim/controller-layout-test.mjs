@@ -26,4 +26,6 @@ assert.deepEqual(controllerLayout({ ...game, assigned: undefined }, 'P1'), []);
 assert.equal(controllerLayout(game, 'P2')[0].parts[0].control, 'act:attack');
 assert.equal(parts.find(p => p.kind === 'stick').directions[0].label, 'Wキー');
 assert.equal(game.profile.actions.length, 6, '正本の操作定義を変更しない');
+const repeatedLook={...game,profile:{...game.profile,actions:[...game.profile.actions,{id:'look2',type:'mouseDelta',group:'other'}]},assigned:{P1:['look','look2']}};
+assert.equal(controllerLayout(repeatedLook,'P1').flatMap(g=>g.parts).filter(p=>p.kind==='look').length,1,'複数の視点定義でも実パッドを重複生成しない');
 console.log('合格: 担当境界・未知操作・スティック・ホイール・視点・キー表示の共通描画モデル');

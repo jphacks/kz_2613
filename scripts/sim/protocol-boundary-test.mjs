@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { decodeServerMessage } from '../../apps/web-static/scripts/protocol.js';
+const { decodeServerMessage } = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/transport/protocol.ts' : '../../apps/web-static/scripts/protocol.js');
 import { controllerHarness } from './fixtures/phone-harness.mjs';
 let passed = 0;
 async function test(name, run) { await run(); passed++; console.log(`合格: ${name}`); }
@@ -8,7 +8,7 @@ const decode = value => decodeServerMessage(JSON.stringify(value));
 await test('構文・envelope: 壊れたJSONとnull/配列/型なしを例外なく拒否する', () => {
   for (const text of ['{', '', '[', '{"t":NaN}']) assert.equal(decodeServerMessage(text), null);
   for (const value of [null, [], {}, { type: 1 }]) assert.equal(decode(value), null);
-  const future = { type: 'future', extra: 'x'.repeat(100000) }; assert.deepEqual(decode(future), future);
+  const future = { type: 'future', extra: 'x'.repeat(100000) }; assert.deepEqual(decode(future), process.env.RECOOPLAY_TEST_TS === '1' ? {type:'unknown',originalType:'future'} : future);
 });
 await test('参加・RTT・ACK・RTC信号: 副作用前に識別子と値の型を確認する', () => {
   for (const value of [

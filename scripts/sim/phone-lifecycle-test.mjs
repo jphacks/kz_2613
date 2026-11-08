@@ -158,7 +158,9 @@ if (process.argv.includes('--repro-shared-pointer')) {
   });
   await test('WebRTC: 旧候補と非同期旧Blob通知が現在の接続へ反映されない', async () => {
     const h = controllerHarness(); await h.ready(); const first = h.peers[0]; first.channel.readyState = 'open';
-    let finish; const delayed = first.channel.onmessage({ data: { text: () => new Promise(resolve => { finish = resolve; }) } });
+    let finish;
+    const blob=new Blob([]);blob.text=()=>new Promise(resolve=>{finish=resolve;});
+    const delayed = first.channel.onmessage({data:blob});
     h.sockets[0].close(); h.advance(250); const socket = h.sockets.at(-1); socket.open();
     socket.receive({ type: 'welcome', slot: 'P1', isHost: true, role: 'ホスト', token: 'test-token' });
     await Promise.resolve(); await Promise.resolve(); await Promise.resolve();

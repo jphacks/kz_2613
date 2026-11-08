@@ -1479,3 +1479,14 @@
 - `dev.ps1 -Task verify`（追加プレビュー・入力ライフサイクル16/16・セッション7/7・受信境界7/7を含む）、`android-dry-run-test.mjs` 7/7、`check-static-pages.mjs`、`verify_overlay.py`、`check-public-docs.py`：合格。iPhone/実指/複数実端末/Wi-Fi断/Minecraftと標準URL採用は未完了として保持する。
 - 追加CIのPC比較は、初回がPage.navigateの応答期限超過、失敗ジョブ1回の再実行では従来版の分担決定待ちで失敗した。P1のキー復元通知を受けただけでPC自身の旧epochの描画反映を待っていなかったため、PCの担当キー表示が変更→復元することを確認してから決定するよう試験を修正した。Page.navigateが期限を超えた場合も同じtargetのURLと画面を再観測し、遷移を重複実行しない。比較項目・許容値・認可は変更なし。ローカルの `react-pc-parity.mjs --bin <上記ホスト>` は設定変更/復元・分担・演出14回を含め全合格。
 - 2026-11-09のユーザー回答：「用意できないため実機受入は保留」。接続中のiPhone/iPadも通常権限のPnP一覧で見つからず、iOS用CLIはPATHにないことを確認した。iPhone受入と既定URL切替は保留し、開発PRの独立した検証は継続する。
+
+## 2026-11-09 — PR #274の総合自己レビュー・製品エンジンのTypeScript化（作業中）
+
+- 新しいユーザー依頼で自己レビューを開始し、[着手コメント](https://github.com/jphacks/kz_2613/pull/274#issuecomment-6724900679)を投稿。品質条件を満たせばPRブランチで標準化するという今回の判断を適用する。上記のiPhone保留は継続するが、今回の標準化を一律に禁止する意味にはしない。
+- 最新main `c271ebe` と開始時PR HEAD `9947391` を独立worktreeへ保存。Open PRは #273・#274。#273のスキン修正との重複を確認し、Reactにも影響する共有CSSへ同じ無効ボタン修正を適用した。#273の旧main実機記録をReactの合格とは扱わない。
+- 実装前に `decisions/2026-11-09-react-product-review.md` を追加。入力・通信・接続・モデル・遷移・スマホ/PCランタイムを製品TSへ移し、製品から旧JSのimportを除去。`allowJs/checkJs`を削除し、strictに加えて未使用宣言も検査する。通信方式、入力定数、Rustの認可・OS入力処理は変更していない。
+- 操作面の入れ子rootとパッドのDOM移動を廃止。Reactが操作要素・接続状態・診断値を描画し、型付きbindingで高頻度の押下クラス/ノブ/パッドだけをエンジンへ渡す。入力保持は押下時の操作IDを保存する。エンジンと部品の破棄で全解放・購読解除・タイマー停止を行う。
+- `npm run typecheck --prefix apps/web`、`npm run build --prefix apps/web`：成功。製品TSの実装へ適用した `node scripts/sim/product-web-test.mjs`：成功（保持元4、セッション7、受信境界7、ライフサイクル16、UI入力12、表示判断30、スキン、破棄、PC境界、34モジュールの旧JS依存/循環検査）。遷移試験もTS側で成功し、同runnerへ追加した。
+- `node scripts/sim/react-phone-parity.mjs --bin C:/Users/kumes/AppData/Local/ReCooplay/target-pr-queue/release/recooplay-host.exe --samples 20 --tolerance-ms 30`：成功。p95は参照16.8ms・移行後12.7ms、視点28.5・28回/秒（PC headless、Android性能の証拠ではない）。パッドを隠しhomeへ移す実装依存とdata-bound属性を比較から外し、表示・操作・多重ID・停止後に視点を送らない条件は維持した。
+- `react-pc-parity.mjs --bin <同ホスト>`：最初はQR取得の待機で失敗。追加した境界検証がRustの開発版 `commit:null` とqrcode crateのSVG `version` を拒否していたため、Rustの実装に合わせて修正。再試験は全比較・設定変更/復元・演出14回に合格。
+- Androidの予備比較はA/B/C各60秒×3回、入力と視点を各60秒で完走・未ACK/解放残留なし。ただし時間制御で操作サイクル数が142〜144と異なるため、本比較には採用しない。操作48サイクル（単発・連打・保持・同一/別ボタン2接点・スティック8方向とボタン）、視点1800移動と別操作10タップへ固定した本比較を開始した。試行ごとにホスト/タブ/生データ/統計を独立させ、A/B/Cの順序を交替する。USB/CDP/dry-runであり、実Wi-Fi・実指・Minecraftの検証ではない。

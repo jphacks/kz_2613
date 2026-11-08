@@ -5,18 +5,16 @@ import react from '@vitejs/plugin-react';
 
 const webStatic = fileURLToPath(new URL('../web-static/', import.meta.url));
 
-// CSS・素材のhead参照は従来版と共通化し、製品画面のbodyはTSXだけが描く (#235)。
-const PAGES = [['index.html', '/scripts/controller.js', 'phone-react.html', '/react/phone.js'], ['app.html', '/scripts/desktop.js', 'app-react.html', '/react/pc.js']];
+// 製品HTMLを正本にする。比較用の旧HTML/JSをビルド入力へ混ぜない。
+const PAGES = [['phone.html','phone-react.html','phone'],['pc.html','app-react.html','pc']];
 function reactPages() {
   return {
     name: 'recooplay-react-pages',
     closeBundle() {
-      for (const [source, from, target, to] of PAGES) {
-        const html = fs.readFileSync(`${webStatic}${source}`, 'utf8');
-        const script = `<script type="module" src="${from}"></script>`;
-        if (!html.includes(script)) throw new Error(`${source} に ${from} の読み込みがありません`);
-        const body = html.replace(/<body[^>]*>[\s\S]*<\/body>/, `<body><div id="root" style="display:contents"></div>${script}</body>`);
-        fs.writeFileSync(`${webStatic}${target}`, body.replace(script, `<script type="module" src="${to}"></script>`));
+      for (const [source,target,entry] of PAGES) {
+        const html = fs.readFileSync(new URL(`pages/${source}`,import.meta.url),'utf8');
+        if(!html.includes('id="root"')||!html.includes(`src="/react/${entry}.js"`))throw new Error(`${source} に製品の起動要素がありません`);
+        fs.writeFileSync(`${webStatic}${target}`,html);
       }
     },
   };
