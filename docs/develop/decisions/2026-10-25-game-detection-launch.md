@@ -13,3 +13,19 @@
 - **プライバシー：** インストール済みゲームの一覧はPC画面にだけ送り、スマホには送らない。ログには、検出は件数だけ、選択・起動はIDだけを記録し、ゲーム名・インストール先は残さない。
 
 PC上のdry-runシミュレーションで照合し、開発PCではSteamの検出とTerrariaの起動・前面化・入力先の判定を確認した（注入OFF）。検出したゲームへの入力（注入ON）は未検証。Epicの実機テストは、2026-10-25のユーザー判断で本PRの対象外とする（使える見込みの状態で可）。起動URLは、Epicのランチャーが作るデスクトップのショートカットと同じ形式（名前空間・カタログID・アプリ名）を使い、それがなければアプリ名だけの形式（Lutrisの設定例と同じ）を使う。
+
+## 追記（2026-11-08、#265）：Steam・Epic・Minecraft 以外のランチャー
+
+`apps/host-rs/src/launchers.rs` で、次のランチャーのゲームも検出する。読むのはPC内のファイルとレジストリだけ。起動は検出時に確かめた値（英数字の ID・実在する実行ファイル）だけから組み立て、入力先はインストール先のフォルダ内のプロセスとする（Steam・Epic と同じ扱い）。一覧の項目はすべて「未検証」。
+
+| ランチャー | 検出の手がかり | 起動 | このPCでの確認 |
+|---|---|---|---|
+| Steam に追加したゲーム（`steam-shortcut`） | `userdata\<ID>\config\shortcuts.vdf`（バイナリVDF）。実行ファイルが実在するものだけ | `steam://rungameid/<appid を上位32ビット＋0x02000000>`（appid がない古い形式は 実行ファイル＋名前 の CRC32） | 入っていない（固定のデータで試験） |
+| GOG（`gog`） | レジストリ `GOG.com\Games`。追加コンテンツ（`dependsOn`）は出さない | 実行ファイルを引数なしで起動（DRM なし） | 入っていない（同上） |
+| Ubisoft Connect（`ubisoft`） | レジストリ `Ubisoft\Launcher\Installs` の `InstallDir`。名前はアンインストール情報 `Uplay Install <ID>` | `uplay://launch/<ID>/0` | 入っていない（同上） |
+| EA app（`ea`） | アンインストール情報のうち、インストール先に `__Installer\installerdata.xml` があるもの。その `contentID` | `origin2://game/launch?offerIds=<contentID>&autoDownload=1` | 入っていない（同上） |
+| Battle.net（`battlenet`） | `ProgramData\Battle.net\Agent\product.db`（Protocol Buffers）の製品ID・製品コード・インストール先。Battle.net 自身（agent・bna）は出さない | `battlenet://<製品コード>` | 実際の `product.db`（Battle.net 自身だけ）でゲームを出さないことを確認。ゲームの起動は未検証 |
+| Xbox（PC Game Pass、`xbox`） | 各ドライブの `XboxGames\<ゲーム>\Content` の `appxmanifest.xml`＋`MicrosoftGame.config`。公式の Minecraft ランチャーは出さない（固定の項目で扱う） | `shell:AppsFolder\<パッケージファミリー名>!<アプリID>`。ファミリー名の発行者IDは、発行者名（UTF-16LE）の SHA-256 から計算する | 実際の Xbox 版 Minecraft ランチャーで、計算したファミリー名が公式の値と一致することを確認 |
+
+- **対象外：** itch.io。インストール情報が SQLite のデータベースと gzip のファイルにしかなく、今の依存関係では読めないため（手動登録で代わりに使える）。
+- **未検証：** 上の起動の形式は公開情報に基づく案で、Battle.net の製品コード・EA の contentID・Ubisoft の ID で実際に起動できるかは、各ランチャーが入ったPCで確かめる（#218）。

@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 /// 一覧の 1 項目
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Entry {
-    /// "steam:<appid>" / "epic:<AppName>"
+    /// "steam:<appid>" / "epic:<AppName>" / "manual:<ID>"、ほかのランチャーは "gog:<ID>" など (#265)
     pub id: String,
     pub name: String,
     pub source: &'static str,
@@ -79,12 +79,16 @@ pub struct Roots {
     pub icons: PathBuf,
     /// 手動で登録したアプリの一覧 (#49・#56)。ユーザーのフォルダに置き、リポジトリには置かない
     pub manual: Option<PathBuf>,
+    /// Steam・Epic 以外のランチャー (#265)
+    pub launchers: crate::launchers::Places,
 }
 
 impl Roots {
     pub fn system() -> Roots {
+        let steam = imp::steam_path();
         Roots {
-            steam: imp::steam_path(),
+            launchers: crate::launchers::Places::system(steam.clone()),
+            steam,
             epic_manifests: std::env::var_os("PROGRAMDATA")
                 .map(|p| PathBuf::from(p).join(r"Epic\EpicGamesLauncher\Data\Manifests")),
             minecraft: minecraft_candidates(),
@@ -93,9 +97,11 @@ impl Roots {
         }
     }
 
-    /// 試験用: <dir>/steam を Steam のフォルダ、<dir>/epic を Epic のマニフェストのフォルダとみなす
+    /// 試験用: <dir>/steam を Steam のフォルダ、<dir>/epic を Epic のマニフェストのフォルダとみなす。
+    /// ほかのランチャーは <dir>/registry.json・<dir>/battlenet・<dir>/xbox (#265)
     pub fn fake(dir: &Path) -> Roots {
         Roots {
+            launchers: crate::launchers::Places::fake(dir, Some(dir.join("steam"))),
             steam: Some(dir.join("steam")),
             epic_manifests: Some(dir.join("epic")),
             minecraft: vec![dir.join(r"minecraft\Minecraft.exe")],
@@ -126,6 +132,7 @@ pub fn detect(roots: &Roots) -> Detected {
     if let Some(dir) = &roots.epic_manifests {
         list.extend(detect_epic(dir));
     }
+    list.extend(crate::launchers::detect(&roots.launchers));
     if let Some(file) = &roots.manual {
         list.extend(load_manual(file).into_iter().filter_map(manual_entry));
     }
@@ -149,7 +156,7 @@ fn app_image(exe: &Path, icons: &Path, id: &str) -> Option<PathBuf> {
 
 /// appxmanifest.xml のロゴ (Square150x150Logo・Square44x44Logo・Logo) のうち、いちばん大きい版の PNG。
 /// 版はファイル名の後ろに付く (例: SmallLogo.altform-unplated_targetsize-256.png)。ハイコントラスト用 (contrast) は使わない
-fn appx_logo(dir: &Path) -> Option<PathBuf> {
+pub(crate) fn appx_logo(dir: &Path) -> Option<PathBuf> {
     let manifest = std::fs::read_to_string(dir.join("appxmanifest.xml")).ok()?;
     let mut best: Option<(u32, PathBuf)> = None;
     for attr in ["Square150x150Logo", "Square44x44Logo", "Logo"] {
@@ -251,13 +258,13 @@ pub fn png(width: u32, height: u32, rgba: &[u8]) -> Vec<u8> {
 /// 一覧での出所: 公式の Minecraft ランチャー (#55)
 pub const MINECRAFT_SOURCE: &str = "minecraft";
 
-/// ランチャーのプロトコルで起動する。手動で登録したアプリは、その実行ファイルを引数なしで起動する。
+/// ランチャーのプロトコルで起動する。手動で登録したアプリと GOG のゲームは、その実行ファイルを引数なしで起動する。
 /// Minecraft は公式ランチャーを開くだけ。dry-run では呼ばない
 pub fn launch(entry: &Entry) -> Result<(), String> {
     if entry.source == MINECRAFT_SOURCE {
         return open_minecraft_launcher(&entry.launch_uri);
     }
-    if entry.source == MANUAL_SOURCE {
+    if entry.source == MANUAL_SOURCE || entry.source == crate::launchers::GOG_SOURCE {
         return imp::open_exe(Path::new(&entry.launch_uri));
     }
     imp::open_uri(&entry.launch_uri)
@@ -910,7 +917,7 @@ mod tests {
         let list = vec![ManualGame { id: manual_id(&exe), name: "My Game".into(), exe: exe.clone() }];
         save_manual(&file, &list).unwrap();
         assert_eq!(load_manual(&file), list);
-        let found = detect(&Roots { steam: None, epic_manifests: None, minecraft: vec![], icons: dir.join("icons"), manual: Some(file) }).games;
+        let found = detect(&Roots { steam: None, epic_manifests: None, minecraft: vec![], icons: dir.join("icons"), manual: Some(file), launchers: crate::launchers::Places::fake(&dir, None) }).games;
         let _ = std::fs::remove_dir_all(&dir);
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].source, MANUAL_SOURCE);
