@@ -148,6 +148,8 @@ dry-run値・設定読込有無・疑似対象・無注入の確認根拠：
 
 ## 今回の証拠
 
+- [PR #274の総合自己レビューと標準化](2026-11-09-pr274-self-review.md)
+- [PR #274のAndroid入力・通信性能比較](2026-11-09-react-performance.md)
 - [2026-11-06の実行記録](evidence/2026-11-06.md)
 - [Android USBでの実機受入記録](evidence/2026-11-06-android-usb.md)
 - [Android・iOSの2台受入記録](evidence/2026-11-06-two-phones.md)

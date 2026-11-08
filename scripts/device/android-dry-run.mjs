@@ -199,7 +199,8 @@ try{
       const point=await touchStart('[data-ctl="act:jump"]');
       await page.call('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...point,id:1},{x:point.x+18,y:point.y,id:2}]});
       await sleep(100);
-      await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[{x:point.x+18,y:point.y,id:2}]});
+      // CDPの非空touchEndは「終了する接点」を指定する（残す接点ではない）。
+      await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[{...point,id:1}]});
       await sleep(100);
       const held=mon.messages.slice(mark).filter(m=>m.type==='log'&&m.entry.button==='act:jump').map(m=>m.entry.state);
       assert.deepEqual(held,['down'],'最初の接点の解放でupしてはならない');
@@ -226,6 +227,20 @@ try{
         return {phase:'paused',down:[]};
       } finally {
         await page.call('Input.dispatchTouchEvent', {type:'touchEnd',touchPoints:[]});
+      }
+    });
+    await check('Androidダーク配色の無効ボタン',async()=>{
+      await click('#phoneSettingsBtn');await click('#skinPicker [data-skin="dark"]');await click('#closePhoneDiagnostics');
+      mon.send({type:'inject_mode',mode:'off'});
+      try {
+        await until(async()=>await evaluate(`document.getElementById('startBtn').disabled`),'入力OFFの反映');
+        const colors=await evaluate(`(()=>{const e=document.getElementById('startBtn'),s=getComputedStyle(e);return {color:s.color,background:s.backgroundColor,visible:e.getClientRects().length>0}})()`);
+        assert(colors.visible);assert.equal(colors.color,'rgb(174, 180, 194)');assert.equal(colors.background,'rgb(51, 56, 69)');
+        await shot('04-dark-disabled');return colors;
+      } finally {
+        mon.send({type:'inject_mode',mode:'on'});
+        await click('#phoneSettingsBtn');await click('#skinPicker [data-skin="standard"]');await click('#closePhoneDiagnostics');
+        await until(async()=>await evaluate(`!document.getElementById('startBtn').disabled`),'入力ONの反映');
       }
     });
     await check('Android再開と実回転時の全解放',async()=>{
@@ -300,17 +315,25 @@ try{
       const companion=await evaluate(`(()=>{const e=document.querySelector('#genControls [data-ctl]');if(!e)return null;const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,id:2,control:e.dataset.ctl}})()`);
       const started=Date.now();let i=0;
       let companionHeld=false;
+      const companionPositions=[];
+      report.companionPositions=companionPositions;
       while(benchmarkMs?i<1800:Date.now()-started<1500){
         const padPoint={x:point.x+(i%30)-15,y:point.y,id:1};
-        if(benchmarkMs&&companion&&i%180===0){await page.call('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[padPoint,{x:companion.x,y:companion.y,id:2}]});companionHeld=true;}
-        if(companionHeld&&i%180===8){await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[padPoint]});companionHeld=false;}
+        if(benchmarkMs&&companion&&i%180===0){
+          const position=await evaluate(`(()=>{const e=[...document.querySelectorAll('#genControls [data-ctl]')].find(e=>e.dataset.ctl===${JSON.stringify(companion.control)});if(!e)return null;const r=e.getBoundingClientRect();const x=r.x+r.width/2,y=r.y+r.height/2;return {x,y,hit:document.elementFromPoint(x,y)?.closest('[data-ctl]')?.dataset.ctl,scroll:document.getElementById('genControls').scrollTop}})()`);
+          assert(position,'同時操作のボタンが存在する');
+          companionPositions.push(position);assert.equal(position.hit,companion.control,'同時操作は現在表示されているボタンを狙う');
+          companion.x=position.x;companion.y=position.y;
+          await page.call('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[padPoint,{x:companion.x,y:companion.y,id:2}]});companionHeld=true;
+        }
+        if(companionHeld&&i%180===8){await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[{x:companion.x,y:companion.y,id:2}]});companionHeld=false;}
         await page.call('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:companionHeld?[padPoint,{x:companion.x,y:companion.y,id:2}]:[padPoint]});i++;
         await sleep(benchmarkMs?Math.max(0,started+i*benchmarkMs/1800-Date.now()):12);
       }
       await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await sleep(80);
       const times=await evaluate(`window.__lookTimes`);assert(times.length>=10,'視点の送信が不足');
       const gaps=times.slice(1).map((t,i)=>t-times[i]);
-      if(benchmarkMs)report.lookPerformance={version:2,moves:i,companionTaps:companion?10:0,durationMs:Date.now()-started,times,gaps,summary:summarize(gaps),gaps200ms:gaps.filter(g=>g>=200).length,longestGapMs:Math.max(...gaps),hostLookLost:mon.state().slots[0].lookLost};
+      if(benchmarkMs)report.lookPerformance={version:2,moves:i,companionTaps:companion?10:0,companionPositions,durationMs:Date.now()-started,times,gaps,summary:summarize(gaps),gaps200ms:gaps.filter(g=>g>=200).length,longestGapMs:Math.max(...gaps),hostLookLost:mon.state().slots[0].lookLost};
       if(benchmarkMs&&companion){
         const inputs=mon.messages.slice(lookMark).filter(m=>m.type==='log'&&m.entry.slot==='P1'&&m.entry.button===companion.control).map(m=>m.entry.state);
         assert.equal(inputs.filter(s=>s==='down').length,10,'look companion down');assert.equal(inputs.filter(s=>s==='up').length,10,'look companion up');
