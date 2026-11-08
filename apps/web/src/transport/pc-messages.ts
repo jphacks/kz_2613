@@ -23,7 +23,12 @@ const inject=(v:unknown)=>object(v)&&string(v.mode)&&boolean(v.active)
   &&optional(v,'emergencyHotkey',string)&&optional(v,'emergencyHotkeyError',v=>v===null||string(v))
   &&optional(v,'outputs',v=>object(v)&&Object.values(v).every(v=>object(v)&&string(v.kind)&&string(v.label)));
 
-export function decodePcMessage(text:string):PcMessage|null {
+export function decodeHotspotResult(v:unknown):{ok:boolean;error?:string|null}|null {
+  if(!object(v)||!boolean(v.ok)||!optional(v,'error',v=>v===null||string(v)))return null;
+  return {ok:v.ok===true,error:typeof v.error==='string'?v.error:null};
+}
+export function decodePcMessage(text:unknown):PcMessage|null {
+  if(typeof text!=='string')return null;
   let v:unknown;try{v=JSON.parse(text)}catch{return null}
   if(!object(v)||!string(v.type))return null;
   switch(v.type){
