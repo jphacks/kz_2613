@@ -14,6 +14,7 @@ mod input;
 mod input_manager;
 mod key_overrides;
 mod keybinds;
+mod launchers;
 mod look;
 mod netinfo;
 mod netwatch;

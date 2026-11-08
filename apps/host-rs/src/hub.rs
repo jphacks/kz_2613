@@ -1512,7 +1512,11 @@ impl Hub {
         }
         // ゲーム名・インストール先はログに残さない (件数だけ)
         let count = |src: &str| list.iter().filter(|g| g.source == src).count();
-        self.log("games_detected", json!({ "steam": count("steam"), "epic": count("epic"), "registered": count(games::MANUAL_SOURCE) }));
+        let mut counts = json!({ "steam": count("steam"), "epic": count("epic"), "registered": count(games::MANUAL_SOURCE) });
+        if let (Some(m), serde_json::Value::Object(more)) = (counts.as_object_mut(), crate::launchers::counts(&list)) {
+            m.extend(more);
+        }
+        self.log("games_detected", counts);
         if let Ok(mut images) = self.images.lock() {
             *images = list.iter().filter_map(|g| g.image.clone().map(|p| (g.id.clone(), p))).collect();
             if let Some(p) = detected.minecraft.and_then(|m| m.image) {
