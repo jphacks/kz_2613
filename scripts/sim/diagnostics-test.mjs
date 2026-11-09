@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {decodePcMessage} from '../../apps/web/src/shared/transport/pc-messages.ts';
+import {ago,device,logText} from '../../apps/web/src/diagnostics/model.ts';
+const game={phase:'lobby',epoch:0,connected:[],profile:null};
+const state={type:'state',now:1000,game,inject:{mode:'off',active:false,available:true,error:null,target:{ok:false,expect:'game',process:null},outputs:{KEY_W:{kind:'key',label:'W',code:'KeyW'}}},slots:[{name:'P1',role:'移動',assigned:true,connected:true,ip:'test',lastSeen:500,events:2,lost:0,outOfOrder:0,lookLost:0,via:{rtc:1,ws:1},clientStats:{avg:1,p95:2,max:3,unacked:0,rtc:{avg:1,p95:2,max:3}}}]};
+const decode=value=>decodePcMessage(JSON.stringify(value));
+assert.deepEqual(decode(state),state);
+assert.deepEqual(decode({...state,inject:{...state.inject,outputs:{MOUSE_L:{kind:'mouse',label:'左クリック',code:null}}}})?.inject.outputs.MOUSE_L.code,null,'Rustの非キー出力はcode:null');
+for(const slot of [{...state.slots[0],lastSeen:'1'},{...state.slots[0],via:{rtc:[]}},{...state.slots[0],clientStats:{rtc:{p95:'2'}}},{...state.slots[0],role:{}}])assert.equal(decode({...state,slots:[slot]}),null);
+for(const inject of [{...state.inject,available:'yes'},{...state.inject,error:[]},{...state.inject,target:{ok:'yes'}},{...state.inject,target:{process:{}}},{...state.inject,outputs:{KEY_W:{kind:'key',label:'W',code:1}}}])assert.equal(decode({...state,inject}),null);
+assert.equal(decode({...state,now:'1000'}),null);
+const log={type:'log',entry:{t:1000,kind:'join',slot:'P1',extra:['a','b']}};
+assert.deepEqual(decode(log),log);
+for(const entry of [{t:'1000',kind:'join'},{t:1000,kind:{}},{t:1000,kind:'join',burst:[]},{t:1000,kind:'join',slot:{}}])assert.equal(decode({type:'log',entry}),null);
+assert.equal(ago(0,1000),'-');assert.equal(ago(500,1000),'0.5s前');
+assert.equal(device(undefined),'-');assert.equal(device('iPhone'),'iOS');assert.equal(device('Android 10; test)'),'Android test');assert.equal(device('Android'),'Android');
+assert.match(logText(log.entry),/join\s+slot=P1 extra=\[a,b\]/);
+console.log('合格: 診断state・統計・注入先・ログの型境界、端末名・時刻・ログ表示');

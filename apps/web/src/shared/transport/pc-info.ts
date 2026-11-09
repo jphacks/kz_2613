@@ -18,7 +18,7 @@ function isPcInfo(v:unknown):v is PcInfo {
   if(v.build!==undefined&&(!object(v.build)||!text(v.build.version)||(v.build.commit!==undefined&&v.build.commit!==null&&!text(v.build.commit))))return false;
   if(v.hotspot!==undefined&&v.hotspot!==null&&(!object(v.hotspot)||typeof v.hotspot.on!=='boolean'))return false;
   if(v.wifi!==undefined&&v.wifi!==null&&(!object(v.wifi)||!text(v.wifi.ssid)||!validQr(v.wifi.qr)))return false;
-  if(v.urls!==undefined&&(!Array.isArray(v.urls)||!v.urls.every(v=>object(v)&&text(v.url)&&validQr(v.qr)
+  if(v.urls!==undefined&&(!Array.isArray(v.urls)||!v.urls.every(v=>object(v)&&text(v.url)&&validQr(v.qr)&&['address','name'].every(k=>v[k]===undefined||text(v[k]))
     &&(v.hotspot===undefined||typeof v.hotspot==='boolean'))))return false;
   return true;
 }
