@@ -1578,3 +1578,12 @@
 - リセット（#213）：PCのリセットで両端末が「PCでリセットされました。参加するときはページを再読み込みしてください。」を表示し、自動再接続しない。iPhoneを先に再読み込みするとP1、Androidを後にするとP2になった。
 - 基本の表示とタッチ（#10）：iPhoneは利用者が実指で操作し、すべて意図どおりだった（Space長押し約5秒＝押下1・解放1、同じボタンに2本指で片指を離しても保持、別ボタンの同時押しで独立した解放、ホームへ戻すと約1.2秒で解放、横向きへ回すと解放）。Androidは実機のChromeへCDP（`Input.dispatchTouchEvent`）でタッチを送り、非表示はホームボタン、回転は画面の回転設定で実施した（実指ではない）。長押し5.05秒、2本指で片指を離しても保持、別ボタンの同時押しで独立、非表示で約1秒後に解放、回転の約0.2秒後に解放し、全系列で残留なし。
 - 未確認：Minecraftへの実入力、実Wi-Fi・長時間、Androidの実指の複数操作、ゲームごとのスキンの保存・復元の実機確認、iPhoneのスキン再読み込み後の保持。
+
+## 2026-11-09 PR #274: main統合後の再検証と画面部品の分割（Claude Code）
+
+- mainの#273を取り込んだ（競合は `phone-skins.css` のコメント1行のみ。Codex側が同じダーク無効ボタン修正を入れていたため内容は同一）。
+- 型の厳密化：`Navigation.screen` を `ScreenId`（join/game/roles）、`UiAction.kind` を `UiActionKind` のリテラルUnionにした。`data-go` は `SCREENS` に含まれる値だけ受理する。外部ゲームの操作IDは列挙していない。
+- 画面の分割：`PhoneApp` を `Header`・`HostRemoteScreen`・`WaitingScreen`・`GameplayScreen`・`DiagnosticsDialog`、`PcApp` を `Sidebar`・`Workspace`・`SettingsDialog`・`RenameDialog`・`ConnectionHelpDialog` に分けた。DOM ID・文言・入力エンジンは変更していない（描画の移動のみ）。
+- 検証：`npm run build`（tsc strict + Vite）、ホスト `cargo test` 137合格・2 ignored＋別枠4、protocol-sim 60/60、shutdown-sim、app-view-test 30/30、スマホ画面・スキン・ライフサイクル・入力担当・セッション・境界・ui-input 12/12・静的資産、react-phone-parity・react-pc-parity、product-web-test、controller-layout/preview-test すべて合格。
+- Android実機（Wi-Fi・dry-run・Codexと同じ `android-dry-run.mjs --wifi-network` 経路、60秒計測）：分割前後の2回とも15項目合格（Wi-Fi経路証明、2接点保持、Pause・回転・バックグラウンド・切断・再読み込みの全解放、JSエラーなし）。CDP合成タッチであり実指ではない。
+- 未実施：iPhone（利用者判断で不要）、実指、Minecraft実入力、実無線断。#271/#50（編集可能レイアウトの保存・編集UI）と#272（Rust間の型生成）は本PRでは完成していない。レビュー10件のうち、通常UIのonClick化（1）、表示モデル分割（3）、store/actionsのProvider化（4）、`flushSync`の再点検（5）、DOM所有境界（7）は入力の遅延・安全性への回帰リスクがあるため見送り、別Issueで扱う。

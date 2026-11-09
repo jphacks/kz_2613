@@ -5,42 +5,61 @@ import { pcState, pcModel, connectionState, connectionModel, settingsActions } f
 import { GameTile, KeyEditor, NetworkDiagnostics, Lines } from './parts';
 import { SCREENS, SCREEN_TITLES, GAMES } from '../model/presentation.ts';
 
+type PcState = ReturnType<typeof pcState.get>;
+type PcModel = ReturnType<typeof pcModel>;
+type ConnectionModel = ReturnType<typeof connectionModel>;
+
+// PC画面を領域ごとの部品に分ける。表示モデルはpcModelが作り、ここは描画だけを持つ。
 export function PcApp() {
   const state = useSyncExternalStore(pcState.subscribe, pcState.get);
   useSyncExternalStore(connectionState.subscribe, connectionState.get);
   const connection = connectionModel();
   const model = pcModel(state);
+  return <>
+<div className="desktop-shell">
+  <Sidebar state={state} model={model} connection={connection}/>
+  <Workspace model={model}/>
+  <footer className="utility-bar"><span id="hotkey">{model.hotkey}</span><button id="settingsBtn">操作設定</button></footer>
+</div>
+<SettingsDialog state={state} model={model} connection={connection}/>
+<RenameDialog/>
+<ConnectionHelpDialog connection={connection}/>
+</>;
+}
+
+function Sidebar({state,model,connection}:{state:PcState;model:PcModel;connection:ConnectionModel}) {
   const game = state.game;
   const primaryDetails = ['game', 'roles'].includes(model.view);
-  return <>
+  return <aside className="sidebar">
+  <div className="brand-band"><a className="brand" href="/app" aria-label="Re:Cooplay 参加画面へ"><img className="brand-image" src="/assets/logo.png" width="960" height="720" alt="Re:Cooplay" /></a><p className="brand-message"><strong>ひとり</strong>のゲームを<br />笑い、失敗し、協力し、<br /><b>みんなの<br />冒険に。</b></p></div>
+  <h1 id="screenTitle" className="page-title" hidden={model.view === 'join'}><Lines text={model.title} />{model.view === 'preparing' && <span className="ellipsis">...</span>}</h1>
+  <hr className="left-rule" id="leftRule" hidden={!primaryDetails} />
+  <p className="explanation" id="explanation"><Lines text={model.explanation} /></p><p className="secondary" id="secondary"><Lines text={model.secondary} /></p>
+  <button className={`main-cta${model.next.stopped ? ' resume-input' : ''}`} id="nextBtn" hidden={model.next.hidden} disabled={model.next.disabled}>{model.next.label}</button>
+  <button className="sub-cta" id="subBtn" hidden={model.sub.hidden} disabled={model.sub.disabled}>{model.sub.label}</button>
+  <button className="sub-cta" id="changePlayersBtn" hidden={!(model.view === 'paused' && game?.canChangePlayers)}>今の{game?.connected.length || 0}人で分担し直す</button>
+  <button className="main-cta disabled-start" id="blockedStart" disabled hidden={model.blockedStart}>START</button>
+  <div className="main-cta start-instruction" id="readyInstruction" role="note" hidden={model.readyInstruction}>START<span>ホストのスマホでReady</span></div>
+  <div className="join-guide" id="joinGuide" hidden={model.view !== 'join'}>
+    <p className="qr-bubble" id="qrBubble"><Lines text={connection.guide.bubble.replace(/<br>/g, '\n')} /></p>
+    <svg className="qr-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg>
 
-<div className="desktop-shell">
-  <aside className="sidebar">
-    <div className="brand-band"><a className="brand" href="/app" aria-label="Re:Cooplay 参加画面へ"><img className="brand-image" src="/assets/logo.png" width="960" height="720" alt="Re:Cooplay" /></a><p className="brand-message"><strong>ひとり</strong>のゲームを<br />笑い、失敗し、協力し、<br /><b>みんなの<br />冒険に。</b></p></div>
-    <h1 id="screenTitle" className="page-title" hidden={model.view === 'join'}><Lines text={model.title} />{model.view === 'preparing' && <span className="ellipsis">...</span>}</h1>
-    <hr className="left-rule" id="leftRule" hidden={!primaryDetails} />
-    <p className="explanation" id="explanation"><Lines text={model.explanation} /></p><p className="secondary" id="secondary"><Lines text={model.secondary} /></p>
-    <button className={`main-cta${model.next.stopped ? ' resume-input' : ''}`} id="nextBtn" hidden={model.next.hidden} disabled={model.next.disabled}>{model.next.label}</button>
-    <button className="sub-cta" id="subBtn" hidden={model.sub.hidden} disabled={model.sub.disabled}>{model.sub.label}</button>
-    <button className="sub-cta" id="changePlayersBtn" hidden={!(model.view === 'paused' && game?.canChangePlayers)}>今の{game?.connected.length || 0}人で分担し直す</button>
-    <button className="main-cta disabled-start" id="blockedStart" disabled hidden={model.blockedStart}>START</button>
-    <div className="main-cta start-instruction" id="readyInstruction" role="note" hidden={model.readyInstruction}>START<span>ホストのスマホでReady</span></div>
-    <div className="join-guide" id="joinGuide" hidden={model.view !== 'join'}>
-      <p className="qr-bubble" id="qrBubble"><Lines text={connection.guide.bubble.replace(/<br>/g, '\n')} /></p>
-      <svg className="qr-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg>
+    <p className="qr-step-label wifi-label" id="wifiLabel" hidden={!connection.guide.two}>① Wi-Fiにつなぐ</p>
+    <div className="qr wifi-qr" id="wifiQr" hidden={!connection.guide.wifiQr} dangerouslySetInnerHTML={{__html: connection.guide.wifiQr || ''}} />
+    <button className="hotspot-btn" id="hotspotBtn" hidden={!connection.guide.button} disabled={connection.busy}>ホットスポットを<br />ONにする</button>
+    <p className="qr-step-label join-label" id="joinLabel" hidden={!connection.guide.two}>② 参加する</p>
+    <div className="qr" id="qr" dangerouslySetInnerHTML={{__html: connection.qr}} />
+    <p className="qr-note" id="qrNote" hidden={!connection.note}>{connection.note}</p>
+    <button className="connection-help" id="connectionHelpBtn">接続方法・URLを確認</button>
+  </div>
+  <button className="open-game" id="openGameBtn" hidden={model.openGameHidden}>{model.name}を前面にする</button>
+  <p className="action-note" id="actionNote" role="status">{model.actionNote}</p>
+</aside>;
+}
 
-      <p className="qr-step-label wifi-label" id="wifiLabel" hidden={!connection.guide.two}>① Wi-Fiにつなぐ</p>
-      <div className="qr wifi-qr" id="wifiQr" hidden={!connection.guide.wifiQr} dangerouslySetInnerHTML={{__html: connection.guide.wifiQr || ''}} />
-      <button className="hotspot-btn" id="hotspotBtn" hidden={!connection.guide.button} disabled={connection.busy}>ホットスポットを<br />ONにする</button>
-      <p className="qr-step-label join-label" id="joinLabel" hidden={!connection.guide.two}>② 参加する</p>
-      <div className="qr" id="qr" dangerouslySetInnerHTML={{__html: connection.qr}} />
-      <p className="qr-note" id="qrNote" hidden={!connection.note}>{connection.note}</p>
-      <button className="connection-help" id="connectionHelpBtn">接続方法・URLを確認</button>
-    </div>
-    <button className="open-game" id="openGameBtn" hidden={model.openGameHidden}>{model.name}を前面にする</button>
-    <p className="action-note" id="actionNote" role="status">{model.actionNote}</p>
-  </aside>
-  <main className="workspace">
+function Workspace({model}:{model:PcModel}) {
+  const primaryDetails = ['game', 'roles'].includes(model.view);
+  return <main className="workspace">
     <div className="state-banner" id="stateBanner" hidden={primaryDetails}><h2 id="stateTitle">{model.stateTitle}</h2><p id="stateSubtitle">{model.stateSubtitle}</p></div>
     <section id="playerStage" className="player-stage" aria-label="参加者と担当" hidden={primaryDetails}><div id="players" className="players">{model.cards.map((card: PlayerCardModel) => <PlayerCard key={card.slot} card={card} />)}</div></section>
     <section id="gameStage" className="game-stage" aria-label="ゲーム選択" hidden={model.view !== 'game'}><div id="games" className="game-frame">
@@ -53,10 +72,12 @@ export function PcApp() {
       <button id="keyBindingsBtn" className="role-keys">このPCのキー設定を確認</button>
     </section>
     <p id="warning" className="safety-warning" role="alert" hidden={!model.notices}>{model.notices}</p>
-  </main>
-  <footer className="utility-bar"><span id="hotkey">{model.hotkey}</span><button id="settingsBtn">操作設定</button></footer>
-</div>
-<dialog id="settings" aria-labelledby="settingsTitle">
+  </main>;
+}
+
+function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;connection:ConnectionModel}) {
+  const game = state.game;
+  return <dialog id="settings" aria-labelledby="settingsTitle">
   <h2 id="settingsTitle">操作設定</h2><p id="inputState" role="status">{model.inputState}</p>
   <nav id="steps" aria-label="画面の移動" hidden={!['join','game','roles'].includes(model.view)}>{SCREENS.map(screen => <button key={screen} data-go={screen} aria-label={SCREEN_TITLES[screen as keyof typeof SCREEN_TITLES]} aria-current={screen === state.ui.screen ? 'page' : 'false'}>{{join: '参加',game: '選択',roles: '分担'}[screen as 'join'|'game'|'roles']}</button>)}</nav>
   <details id="keyDetails"><summary>担当と実際に送るキー</summary><p id="keyWarnings" role="status">{model.warnings}</p><div id="keyBindings">{model.bindings.map(b => <Fragment key={b.slot}><h3>{b.slot}：{b.title}</h3><ul>{b.lines.map((line: string, i: number) => <li key={i}>{line}</li>)}</ul></Fragment>)}</div><div id="keyEditor"><KeyEditor model={model} state={state} /></div></details>
@@ -87,19 +108,22 @@ export function PcApp() {
   <details><summary>Minecraftについて</summary><p className="legal">NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.<br />Re:CooplayはMinecraftの公式製品ではなく、Mojang・Microsoftの承認・提携はありません。</p></details>
   <p id="buildInfo" className="legal">{connection.build}</p>
   <button id="closeSettings">閉じる</button>
-</dialog>
+</dialog>;
+}
 
-<dialog id="renameGame" aria-labelledby="renameTitle">
+function RenameDialog() {
+  return <dialog id="renameGame" aria-labelledby="renameTitle">
   <h2 id="renameTitle">名前を変更</h2>
   <form id="renameForm" method="dialog"><input id="renameInput" maxLength={60} aria-label="ゲームの名前" required />
   <p><button id="renameSave" value="save">保存</button><button id="renameCancel" type="button">キャンセル</button></p></form>
-</dialog>
-<dialog id="connectionHelp" aria-labelledby="connectionTitle">
+</dialog>;
+}
+
+function ConnectionHelpDialog({connection}:{connection:ConnectionModel}) {
+  return <dialog id="connectionHelp" aria-labelledby="connectionTitle">
   <h2 id="connectionTitle">スマホを接続する</h2><p>PCと同じWi-Fiへ接続してから、QRを読み取ってください。最初に読み取った人がホスト（P1）になります。2〜4人で遊べます。</p>
   <div id="helpQr" className="help-qr" dangerouslySetInnerHTML={{__html: connection.qr}} />
   <p className="url" id="url">{connection.url}</p><p id="urlNote">{connection.urlNote}</p><p id="wifi">{connection.wifi}</p>
   <button id="reloadInfo">QRを取得し直す</button><button id="closeConnectionHelp">閉じる</button>
-</dialog>
-
-</>;
+</dialog>;
 }

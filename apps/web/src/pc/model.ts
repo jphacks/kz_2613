@@ -2,9 +2,9 @@ import type { PhoneGame, Slot } from '../contracts';
 import { createStore } from '../store';
 import { desktopView, slotViews, shownSlots, playerCards, roleColumns, gameList, gameCard, gameAction, rolesAction, gameLabel, desktopWarning, networkNotice, profileNotice, playerHint, commSettingsView, gamesCountText, isRegistered, roleView, slotDiagnosis, joinUrl, joinGuideView, MIN_PLAYERS, MAX_PLAYERS } from '../model/presentation.ts';
 
-import type {InjectionState,HostState} from '../model/domain.ts';
+import type {InjectionState,HostState,Navigation} from '../model/domain.ts';
 export interface PcSnapshot {
-  ui: {screen: string; game: string | null; swap: boolean};
+  ui: Navigation;
   game: PhoneGame | null; inject: InjectionState | null; online: boolean; swapPick: Slot | null;
   state: HostState | null;
   hostNotice: string; infoPort: number | null; manualMessage: string; keyMessage: string;

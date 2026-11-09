@@ -1,7 +1,7 @@
 import {createVirtualCursor} from '../input/virtual-cursor.ts';
 import {createLifetime} from '../input/lifetime.ts';
 import {byId} from '../dom.ts';
-import {GAMES,gameList,navigate,desktopView,rolesAction,gameAction,isRegistered,shownSlots,screenOnGameUpdate,pcEffects,joinGuideView} from '../model/presentation.ts';
+import {GAMES,SCREENS,gameList,navigate,desktopView,rolesAction,gameAction,isRegistered,shownSlots,screenOnGameUpdate,pcEffects,joinGuideView} from '../model/presentation.ts';
 import {decodePcMessage,decodeHotspotResult} from '../transport/pc-messages.ts';
 import {decodePcInfo} from '../transport/pc-info.ts';
 import type {Slot,PhoneGame} from '../contracts.ts';
@@ -122,7 +122,8 @@ lifetime.listenDocument('click',e=>{
     render();return;
   }
   const el=(e.target instanceof Element ? e.target : null)?.closest<HTMLElement>('[data-go],[data-game],[data-mode]');if(!el)return;
-  if(el.dataset.go)setUi({...ui,screen:el.dataset.go});
+  const go=SCREENS.find(id=>id===el.dataset.go);
+  if(go)setUi({...ui,screen:go});
   if(el.dataset.game)setUi({...ui,game:el.dataset.game});
   // スマホの仮想カーソルが生成したクリックには入力再開を許可しない。
   if(el.dataset.mode&&(el.dataset.mode==='off'||e.isTrusted))send({type:'inject_mode',mode:el.dataset.mode});
