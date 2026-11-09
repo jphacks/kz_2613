@@ -40,11 +40,12 @@ try {
   failure(['--players','5'], /players must/);
   failure(['--legacy','--react'], /exclusive/);
   failure(['--bin', fixture, '--sha256', '0'.repeat(64)], /ハッシュと異なります/);
+  failure(['--bin',fixture,'--sha256',hash,'--wifi-network','unused','--host-only'],/実Android/);
   const noAdb = failure(['--bin', fixture, '--sha256', hash, '--adb', path.join(dir, 'missing-adb.exe')], /ADBコマンド失敗: devices/, true);
   assert.equal(noAdb.hostExit, undefined);
   const noHost = failure(['--bin', fixture, '--sha256', hash, '--host-only'], /dry-runホスト起動失敗/, true);
   assert.notEqual(noHost.hostExit?.code, 0);
-  console.log('9/9 合格（Android補助CLIの入力拒否・ADBなし・ホスト起動失敗）');
+  console.log('10/10 合格（Android補助CLIの入力拒否・Wi-Fiの端末必須・ADBなし・ホスト起動失敗）');
 } finally {
   fs.unlinkSync(fixture);
   fs.rmdirSync(dir);

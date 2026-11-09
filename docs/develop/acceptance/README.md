@@ -64,6 +64,25 @@ Remove-Item Env:RECOOPLAY_RUNTIME_MEASURE -ErrorAction SilentlyContinue
 
 PCの `/app` に表示されるQRで参加し、PCの `/host` で状態と入力を観測する。入力先の疑似喪失はホストの標準入力に `target off`、復帰は `target on`、停止は `stop`、終了は `quit` を入力する。ホットキーと実際の前面切替はAT-D04で別に確認する。終了後は試験用PowerShellを閉じる。監督下の実入力試験は、別の起動で[構築手順の実入力と緊急停止の案内](../handoff/SETUP_WINDOWS.md)に従う。
 
+### Androidの実Wi-Fi経路を検証する自動比較
+
+USB/CDPは操作だけに使用し、製品のHTTP/WS/RTCはLANへ接続する。Wi-Fi性能レビューではUSB専用試験の成功を代替にせず、以下の経路証明を必須にする。端末が利用できる場合はrunner未整備だけを理由に未実施で終えない。
+
+```powershell
+node scripts/device/wifi-network-discover.mjs --adb $adbPath --output data/local/wifi-network.private.json
+node scripts/device/android-dry-run.mjs --adb $adbPath --bin $hostPath --sha256 $hostHash --wifi-network data/local/wifi-network.private.json --benchmark-ms 60000 --condition E-wifi --trial 1
+```
+
+検出は有効なPC Wi-FiアダプターとAndroid wlan0の同一subnetから一意な候補を選び、生アドレスをGit対象外へ保存する。曖昧なら停止して調査する。既存reverse転送やUSBテザリングがある場合は試験を拒否し、他者の転送は削除しない。Firewall/ルーター/ホットスポット設定は変更しない。
+
+Wi-Fi指定では `RECOOPLAY_RUNTIME_MEASURE` を子プロセスへ継承せず、通常の `0.0.0.0` 待受を使う。空きポートを選び、起動したPID・LAN Establishedソケットの両端、Chrome HTTPの実接続先とWS URL、PC専用ページ拒否を検証する。HTTPキャッシュやlocalhost URLを経路証明に使わない。`/api/info` は公開APIなので200が正常で、wifi/hotspot/buildのPC限定情報がないことを確認する。
+
+RTC併用ではgetStatsの `transport.selectedCandidatePairId` で選択したペアを特定し、両端が同じWi-Fiアドレスであることを照合する。5秒ごとの候補対も記録する。成立表示や候補一覧だけでは合格させない。`--ws-only` は文書開始時からRTCを無効にし、同じLANのWS経路を確認する。
+
+入力別のホスト時刻には `RECOOPLAY_INPUT_TRACE=1` を使用する。dry-run/no-config/fake targetの全フラグを同時に要求し、runtime-measureのループバック制限を変更しない。入力/視点の連番・受信/受理/出力時刻だけをメモリーに蓄積し終了時に保存する。実OS入力はしない。試行ごとに新しいホスト・タブ・生データ・統計を使い、通常診断の累計や前試行を混ぜない（#259）。
+
+共有前に生アドレス・serial・token・接続URLを除去し、残した経路の照合結果と測定値・raw SHA256を記録する。`network.private.json`、元sessionログ、未確認画像をそのまま公開しない。比較を含む完了レビューは、実Wi-Fi必須項目の全判定と経路証拠が揃うまで完了扱いにしない。
+
 ### AT-D01：端末表示・Pointer（#10）
 
 - 前提：Android Chrome・iPhone Safariそれぞれの版を記録。最初はdry-run、入力の流れをモニターで確認する。
