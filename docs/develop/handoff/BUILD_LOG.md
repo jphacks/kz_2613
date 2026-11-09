@@ -1559,3 +1559,4 @@
 - 製品修正c2e2fe3のCIは[Structure checks](https://github.com/jphacks/kz_2613/actions/runs/42548657268) / [Rust・製品回帰・配布](https://github.com/jphacks/kz_2613/actions/runs/42548657277)が成功。最終記録HEADもpush後に追跡する。PR #274の追加着手・完了記録を更新し、Draftを維持する。
 - 読取/起動の通常権限承認経路が一時的に利用量制限で自動レビュー失敗となったため、その時間は未実行として保持。指定時刻経過後に同じ承認経路で再実行し成功。制限回避、UAC昇格、Firewall/永続ネットワーク設定の変更はしていない。
 - 実Wi-Fi断そのもの、ルーター/距離/混雑/Bluetoothの比較、実指・長時間・iPhone・複数実スマホ・実OS入力/Minecraft・別PCは未受入。dry-runのLAN計測とAT-D07全体の製品受入を分ける。mainマージ・Issue close・正式release・Award Day安定版更新はしない。
+- Wi-Fi試験後、同じ47f6f6fホスト・固定c2e2fe3配信で `android-dry-run.mjs --condition usb-regression-after-wifi --trial 1`（Wi-Fi/benchmark指定なし）を実行。既存USBの15機能項目が成功、host exit0・後片付け失敗0。evidence/pr274-wifi-after/usb-regression.jsonとrawへ分離保存し、旧USB15試行と無線性能値には混ぜない。
