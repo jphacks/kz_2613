@@ -18,7 +18,7 @@ export async function beginPerformance({evaluate, page, durationMs}) {
       const original=proto.send;
       proto.send=function(data){
         if(via==='ws'&&!p.attached&&this.url.endsWith('/ws')){p.attached=true;this.addEventListener('message',e=>{try{const m=JSON.parse(e.data);if(m.type==='ack')p.acks.push({at:performance.now(),iseq:m.iseq,via:m.via});}catch{}});}
-        try { const m=JSON.parse(data);if(['input','look'].includes(m.type))p.sends.push({at:performance.now(),via,type:m.type,state:m.state,control:m.button,iseq:m.iseq,lseq:m.lseq,event:p.last}); }catch{}
+        try { const m=JSON.parse(data);if(['input','look'].includes(m.type))p.sends.push({at:performance.now(),via,type:m.type,state:m.state,control:m.button,iseq:m.iseq,lseq:m.lseq,epoch:m.epoch,event:p.last}); }catch{}
         return original.call(this,data);
       };
     }

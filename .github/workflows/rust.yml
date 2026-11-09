@@ -54,6 +54,11 @@ jobs:
         run: node --experimental-strip-types scripts/sim/controller-preview-test.mjs
       - name: 製品TypeScriptの入力・通信・表示・破棄と依存グラフ
         run: node scripts/sim/product-web-test.mjs
+      - name: Android試験の経路判定とUSBへの誤退避の拒否
+        run: |
+          node scripts/device/android-dry-run-test.mjs
+          node scripts/device/wifi-route-test.mjs
+          node scripts/device/wifi-host-analysis-test.mjs
       - name: 既存のスマホ画面とReact版の同等性
         run: node scripts/sim/react-phone-parity.mjs --samples 20 --tolerance-ms 30
       - name: 既存のPC画面とReact版の同等性
