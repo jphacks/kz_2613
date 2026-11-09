@@ -12,6 +12,13 @@ for(const file of walk(root).filter(f=>/\.tsx?$/.test(f)&&!f.endsWith('.d.ts')))
   const source=fs.readFileSync(file,'utf8');
   assert(!/@ts-(?:ignore|nocheck)|\bas\s+any\b|:\s*any\b/.test(source),`${file}: 型検査の回避`);
   const imports=[...source.matchAll(/^import\s+(?!type\b)[^\n]*?from\s*['"]([^'"]+)['"]/gm),...source.matchAll(/\bimport\(['"]([^'"]+)['"]\)/g)].map(m=>m[1]);
+  const owner=path.relative(root,file).split(path.sep)[0];
+  for(const [,spec] of source.matchAll(/(?:from\s*|import\s*)['"]([^'"]+)['"]/g)){
+    if(!spec.startsWith('.'))continue;
+    const targetOwner=path.relative(root,path.resolve(path.dirname(file),spec)).split(path.sep)[0];
+    assert(owner!== 'shared'||targetOwner==='shared',`sharedから画面への依存: ${file} → ${spec}`);
+    assert(['shared','styles',owner].includes(targetOwner),`画面間の依存: ${file} → ${spec}`);
+  }
   const edges=[];
   for(const spec of imports){
     if(!spec.startsWith('.')){assert(dependencies[spec.split('/')[0]],`未宣言の依存: ${spec}`);continue;}

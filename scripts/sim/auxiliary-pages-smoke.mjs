@@ -1,0 +1,59 @@
+// 新画面を実ブラウザで起動し受信境界・再接続・pagehide破棄を確認する。OS入力なし。
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {spawn} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+const root=fileURLToPath(new URL('../../',import.meta.url));
+const arg=(name,fallback)=>{const i=process.argv.indexOf(name);return i<0?fallback:process.argv[i+1];};
+const bin=arg('--bin',path.join(root,'apps/host-rs/target/release/recooplay-host.exe'));
+const chrome=arg('--chrome',['C:/Program Files/Google/Chrome/Application/chrome.exe','C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(p=>fs.existsSync(p)));
+assert(chrome,'ChromeまたはEdgeが必要です');
+const pages=arg('--pages','overlay').split(',');
+const temp=fs.mkdtempSync(path.join(os.tmpdir(),'recooplay-auxiliary-'));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const until=async(fn,label)=>{for(let n=0;n<100;n++){if(await fn())return;await sleep(100);}throw Error('待機失敗: '+label);};
+let port,host,child,cdp;
+const requests=new Map();let seq=0;
+const call=(method,params={})=>new Promise((resolve,reject)=>{const id=++seq;const timer=setTimeout(()=>{requests.delete(id);reject(Error('CDP timeout: '+method));},10000);requests.set(id,{resolve,reject,timer});cdp.send(JSON.stringify({id,method,params}));});
+const evaluate=async expression=>{const value=await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});assert(!value.exceptionDetails,'ブラウザ内の試験式が失敗');return value.result.value;};
+try{
+ host=spawn(bin,[],{cwd:root,windowsHide:true,env:{...process.env,PORT:'0',RECOOPLAY_ROOT:root,RECOOPLAY_DRY_RUN:'1',RECOOPLAY_NO_CONFIG:'1',RECOOPLAY_RUNTIME_MEASURE:'1',RECOOPLAY_FAKE_TARGET:'1',RECOOPLAY_STDIN_CONTROL:'1',RECOOPLAY_LOG_DIR:temp},stdio:['pipe','pipe','ignore']});
+ let start='';host.stdout.on('data',data=>{start=(start+data).slice(-8192);const m=start.match(/server_start \{"port":(\d+)\}/);if(m)port=Number(m[1]);});
+ host.on('error',()=>{});host.stdin.on('error',()=>{});
+ await until(()=>{assert(host.exitCode===null,'dry-runホスト起動失敗');return !!port;},'host');
+ const profile=path.join(temp,'browser');
+ child=spawn(chrome,['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
+ await until(()=>fs.existsSync(path.join(profile,'DevToolsActivePort')),'browser');
+ const debugPort=fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0];
+ const target=await(await fetch(`http://127.0.0.1:${debugPort}/json/new?about:blank`,{method:'PUT'})).json();
+ cdp=new WebSocket(target.webSocketDebuggerUrl);await until(()=>cdp.readyState===1,'CDP');
+ cdp.onmessage=event=>{const message=JSON.parse(event.data),pending=requests.get(message.id);if(!pending)return;requests.delete(message.id);clearTimeout(pending.timer);message.error?pending.reject(Error(message.error.message)):pending.resolve(message.result);};
+ await call('Page.enable');await call('Runtime.enable');
+ await call('Page.addScriptToEvaluateOnNewDocument',{source:`window.__pageTest={sockets:[],sent:[],errors:[]};window.addEventListener('error',()=>__pageTest.errors.push('error'));window.addEventListener('unhandledrejection',()=>__pageTest.errors.push('rejection'));const Original=WebSocket;window.WebSocket=class extends Original{constructor(...args){super(...args);__pageTest.sockets.push(this);}send(raw){__pageTest.sent.push(JSON.parse(raw).type);super.send(raw);}};`});
+ for(const page of pages){
+   const route={overlay:'/overlay?position=top',diagnostics:'/host','pseudo-game':'/game'}[page];assert(route);
+   await call('Page.navigate',{url:`http://127.0.0.1:${port}${route}`});
+   await until(()=>evaluate(`!!window.__pageTest&&__pageTest.sockets[0]?.readyState===1&&document.querySelector(${JSON.stringify(page==='overlay'?'#status':page==='diagnostics'?'#slots':'#cv')})!==null`),page);
+   await until(()=>evaluate(page==='overlay'?`document.getElementById('status').textContent==='参加受付中'`:page==='diagnostics'?`document.getElementById('slots').children.length===4`:`document.getElementById('players').children.length===4`),'state');
+   assert(await evaluate(`document.styleSheets.length>0`),'CSSが読み込まれる');
+   if(page==='overlay')assert.equal(await evaluate(`document.body.dataset.position`),'top');
+   await evaluate(`for(const data of ['壊れたJSON','null','[]','{"type":"state"}'])__pageTest.sockets[0].onmessage({data});`);
+   assert.equal(await evaluate(`__pageTest.errors.length`),0,'不正受信で例外を起こさない');
+   if(page==='overlay')assert.deepEqual(await evaluate(`__pageTest.sent`),['monitor'],'観客表示は操作を送らない');
+   await evaluate(`__pageTest.sockets[0].close()`);
+   await until(()=>evaluate(`__pageTest.sockets.length===2&&__pageTest.sockets[1].readyState===1`),'reconnect');
+   await evaluate(`window.dispatchEvent(new Event('pagehide'))`);
+   await until(()=>evaluate(`__pageTest.sockets.every(s=>s.readyState>=2)`),'dispose');
+   await sleep(1200);assert.equal(await evaluate(`__pageTest.sockets.length`),2,'破棄後は再接続しない');
+   assert.equal(await evaluate(`__pageTest.errors.length`),0,'起動・受信・破棄に例外なし');
+   console.log(`合格: ${page}の起動・描画・不正受信拒否・再接続・破棄`);
+ }
+}finally{
+ for(const pending of requests.values())clearTimeout(pending.timer);cdp?.close();
+ if(child&&child.exitCode===null){child.kill();await Promise.race([new Promise(r=>child.once('close',r)),sleep(3000)]);}
+ if(host&&host.exitCode===null){host.stdin.end('quit\n');await Promise.race([new Promise(r=>host.once('close',r)),sleep(3000)]);if(host.exitCode===null)host.kill();}
+ assert.equal(path.dirname(path.resolve(temp)),path.resolve(os.tmpdir()));assert(path.basename(temp).startsWith('recooplay-auxiliary-'));
+ fs.rmSync(temp,{recursive:true,force:true,maxRetries:5,retryDelay:200});
+}

@@ -1587,3 +1587,69 @@
 - 検証：`npm run build`（tsc strict + Vite）、ホスト `cargo test` 137合格・2 ignored＋別枠4、protocol-sim 60/60、shutdown-sim、app-view-test 30/30、スマホ画面・スキン・ライフサイクル・入力担当・セッション・境界・ui-input 12/12・静的資産、react-phone-parity・react-pc-parity、product-web-test、controller-layout/preview-test すべて合格。
 - Android実機（Wi-Fi・dry-run・Codexと同じ `android-dry-run.mjs --wifi-network` 経路、60秒計測）：分割前後の2回とも15項目合格（Wi-Fi経路証明、2接点保持、Pause・回転・バックグラウンド・切断・再読み込みの全解放、JSエラーなし）。CDP合成タッチであり実指ではない。
 - 未実施：iPhone（利用者判断で不要）、実指、Minecraft実入力、実無線断。#271/#50（編集可能レイアウトの保存・編集UI）と#272（Rust間の型生成）は本PRでは完成していない。レビュー10件のうち、通常UIのonClick化（1）、表示モデル分割（3）、store/actionsのProvider化（4）、`flushSync`の再点検（5）、DOM所有境界（7）は入力の遅延・安全性への回帰リスクがあるため見送り、別Issueで扱う。
+
+
+## 2026-11-09 — #279 PR-A a: 配信資産と共有TSの移動
+
+- 基点: origin/main `ee77270`。独立worktree `data/local/worktrees/279-web-structure`、`codex/279-web-structure`。元の作業ツリーは変更しない。
+- 利用者の追記に従い、移動とパス/import更新を同一コミットにした。TS化・試験移植は後続。途中のCIと旧試験を保つため、旧配信ルートをまず `apps/web/static` へそのまま移動。旧版削除後に最終の `src`/`public`/`dist` へ整理する。診断・疑似ゲームのinline JSはPR-B/Cまで一時的に維持する。
+- 既存タグ3つの存在と最新mainを確認。Issue #279作成・着手コメント投稿済み。mainへのpush/マージ/Issue closeは行わない。
+- 移動前: `npm ci`/`npm run build`、product-web-test、phone-view-test（8観点）、controller-diagnostics-test（200件）の成功を確認。移動後もWebビルド・同試験・check-static-pages・verify_overlay成功。Rust host build/test: 137成功・2 ignored、probe 4成功。desktop build/test: 3成功。
+- assert数はソース上のassert呼出箇所数（ループ展開前）。動的な観点数・200 packetの各値/連番も維持して後続に対照記録する。
+
+| 移植対象 | 移植前assert箇所 |
+|---|---:|
+| `app-view-test` | 194 |
+| `phone-view-test` | 53 |
+| `controller-diagnostics-test` | 14 |
+| `input-owners-test` | 17 |
+| `phone-session-test` | 39 |
+| `phone-skin-test` | 15 |
+| `protocol-boundary-test` | 21 |
+| `ui-input-test` | 73 |
+| `view-transition-test` | 23 |
+| `phone-lifecycle-test` | 59 |
+
+- Android実Wi-Fiの前後比較は未実施: 指定の `data/local/wifi-network.private.json` が存在せず、サンドボックスからのADB server接続も失敗。実IP・秘密情報は公開しない。実入力試験は許可の範囲外なので実施しない。iPhone・実指・Minecraft・実無線断は未確認。
+`python data/local/run-web-checks.py a` 相当のrust.yml全Node試験（parity含む）・構造/公開docs成功。protocol-sim 60/60、input-probe-sim 12/12。package.ps1 / package-smoke成功。git diff -M --stat HEAD: 131 files、155 insertions、131 deletions（BUILD_LOG追加を除きパス/importのみ）。
+
+
+## 2026-11-09 — #279 PR-A b: 旧JS依存の試験を製品TSへ移植
+
+- [x] Ready可否・前面化失敗・2/4人ラベル、途中参加の待機、自分の色・担当、ホストだけのPause、診断前停止、未検証/非対応案内、ホストと参加者の案内分離、ゲーム名、INVキー（null/省略含む）。旧DOMモックを製品 `createReactPhoneView` の表示store検査へ置換。53assert箇所を維持。
+- [x] phone-harnessは製品TS runtime/viewだけをVMで実行。Controllerの描画先だけテストDOMへ接続し、保持/解放・30Hz・接続処理は製品コードを使用。16ライフサイクル観点、受信境界7観点を維持。描画失敗注入は旧innerHTMLから製品store購読への例外注入に変更。
+- [x] 診断を開く前のup/release_inputs、epoch=7、診断中のボタン/視点抑止、BURST 200件のstate/button/epoch・iseq連続を維持。仮想時計の進行中は模擬pongを返し、3秒無応答試験と混同しない。
+- [x] 操作割当、方向スティック、ホイール前後、視点、空担当、変更時の再生成キー、Minecraft/汎用の実キー表示をcontroller-layout/model/actionsと実ControllerのReact HTMLで確認。UI入力12観点を維持。
+- [x] owners/session/skin/protocol/transition/app-viewのTS専用化。RECOOPLAY_TEST_TS廃止。shared→画面/画面→別画面の型importを含む禁止を追加し、PcInfoを共有domainへ移動。
+- `node scripts/sim/product-web-test.mjs`、`npm run build --prefix apps/web` 成功。モデル・入力・接続・描画境界を変更したため関連14スイートを実行。TS化/削除していない旧画面はこのコミットで維持。
+
+| 試験 | 移植前assert箇所 | 移植後assert箇所 |
+|---|---:|---:|
+| `app-view-test` | 194 | 194 |
+| `phone-view-test` | 53 | 53 |
+| `controller-diagnostics-test` | 14 | 14 |
+| `input-owners-test` | 17 | 17 |
+| `phone-session-test` | 39 | 39 |
+| `phone-skin-test` | 15 | 15 |
+| `protocol-boundary-test` | 21 | 21 |
+| `ui-input-test` | 73 | 74 |
+| `view-transition-test` | 23 | 23 |
+| `phone-lifecycle-test` | 59 | 59 |
+
+
+## 2026-11-09 — #279 PR-A c: 旧版削除と最終配信構成への切替
+
+- 旧JS/HTMLと比較専用parityを削除。旧表示専用ui-preview・build-ui-gallery・report-pc-fidelityは旧構成依存のため廃止。capture-screensは標準URLと実DOMを使うため維持し、audit-pc-fidelity/measure-pc-referenceは提供画像の解析用として維持。
+- Viteをroot=src / publicDir=public / outDir=distの5 HTML入力にし、phone/pcのCSSをmain.tsxから元と同順序でimport。Vite設定自身もtsconfig.node.jsonのstrict検査へ追加（新依存なし）。Rust/Tauriの探索目印はdist/phone/index.html。package.ps1も同じ配置に更新。
+- [x] 静的配信: 5 HTML、ハッシュ付きJS/CSS、画像、MIME、no-store、CSS背景参照、旧URL404。PC限定のcanonicalizeした実体ディレクトリ検査とroot外拒否。LANの大文字/末尾ドット/::$DATA/重複スラッシュ/直接パスをprotocol-simで検査（60/60）。
+- [x] Android runnerは旧版/alias切替を廃止し標準URLとdistの資産ハッシュを使用。CLI拒否は12/12。実Wi-Fiはprivate設定なしのため未実施。
+- [x] check-static-pagesをビルド済み5 HTML/JS・担当色・PC環境文言の検査へ移植。package-smokeと構造検査も新パスで実行。共有TSは旧ファイルに依存しない。診断・疑似ゲームとoverlayのinline/旧runtimeは次の独立コミット/PRで移植する。
+- `npm run build --prefix apps/web`、host build/test（138成功・2 ignored、probe 4）、desktop build/test（3成功）、rust.ymlに列挙された全Node試験、verify_overlay、check-public-docs成功。shutdown-sim成功、input-probe-sim 12/12。`package.ps1 -Out data/local/package-c` / package-smokeも展開先から全静的配信・正常終了成功。
+- in-app browserで新しい/appを開き、ロゴ・参加待ち4人・QR・設定の描画を目視確認。dry-run環境の緊急停止キー登録エラーの表示は維持。Tauri実窓、実指、iPhone、Minecraft、実無線断はこの時点では未確認。
+
+## 2026-11-09 — #279 PR-A d: overlayのReact/TS化
+
+- overlayをReactのstateとoverlayModelで描画。元のDOM ID・CSS・?position=top・1秒再接続・登録以外は送信しない条件を維持。共有monitorはdecodePcMessageでunknown入力を検証し、古いsocket/破棄後の通知と再接続を停止する。
+- `npm run build --prefix apps/web`、product-web-test（新monitor試験を含む）、check-static-pages成功。`auxiliary-pages-smoke.mjs --pages overlay --bin <構築済みホスト>` 成功: 実headless Chromeで起動・状態描画・不正受信拒否・再接続・pagehide破棄後の非再接続を確認。初回のスモークはfixtureの動的ポート通知設定不足で失敗し、RECOOPLAY_RUNTIME_MEASURE=1を追加して成功した。
+- Tauri実窓を専用ポート18130、dry-run/no-config/fake targetで起動。AXで/app・ロゴ・4人参加待ち・設定と緊急停止表示を確認し、閉じる操作後の窓消失とshutdownログ1件を確認した。これは実入力/Minecraft/実機受入を意味しない。
+- PR-Aの構築・Rust/desktop単体試験・全CI相当Node試験・package-smokeはコミットcで成功。overlay変更に対して上記を追加検証。Android実Wi-Fi前後比較はprivate設定未提供のため未確認。iPhone・実指・Minecraft実入力・実無線断も未確認。旧版は既存タグのみで保持する。

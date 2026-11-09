@@ -66,7 +66,7 @@ for(const record of manifest.results){
   assert(proof.samples.some(s=>s.label==='input-end')&&proof.samples.some(s=>s.label==='look-end'));
   if(!r.wsOnly)assert(proof.samples.find(s=>s.label==='input-end').pathHistory.length>=10,'60秒間のICE履歴が不足');
   r.performance.summary=metrics;r.hostAnalysis=host;
-  r.uiInventory=inventory(path.join(sourceRoot,'apps/web-static'));
+  r.uiInventory=inventory(path.join(sourceRoot,'apps/web/dist'));
   for(const [name,digest]of Object.entries(r.uiAssets??{}))assert.equal(r.uiInventory['react/'+name],digest);
   delete r.hostPort;delete r.cdpPort;
   const safe=JSON.stringify(r);

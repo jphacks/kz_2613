@@ -74,7 +74,7 @@ function matches(element, selector) {
     && (attribute[2] === undefined || element.dataset[attribute[1]] === attribute[2]);
 }
 
-export function controllerHarness() {
+export function controllerHarness({viewOnly=false}={}) {
   let now = 1000, timerId = 0;
   const timers = new Map(), sockets = [], peers = [], storage = new Map();
   const document = new Events(), window = new Events(), portrait = new Events(), elements = new Map();
@@ -125,38 +125,57 @@ export function controllerHarness() {
     crypto: { randomUUID: () => 'test-client' }, matchMedia: () => portrait,
     setInterval: (fn, ms) => addTimer(fn, ms, true), clearInterval: id => timers.delete(id),
     setTimeout: (fn, ms) => addTimer(fn, ms, false), clearTimeout: id => timers.delete(id),
+    requestAnimationFrame: fn => addTimer(fn, 16, false), cancelAnimationFrame: id => timers.delete(id),
     alert() {}, confirm: () => true,
   });
   window.RTCPeerConnection = Peer;
   const modules = new Map();
   function load(filename) {
-    const absolute = path.resolve(filename);
+    const absolute = [filename,filename+'.ts'].map(f=>path.resolve(f)).find(f=>fs.existsSync(f));
     if (modules.has(absolute)) return modules.get(absolute);
     const imports = {}, names = [];
     let source = fs.readFileSync(absolute, 'utf8');
     if(absolute.endsWith('.ts'))source=stripTypeScriptTypes(source,{mode:'strip'});
     source = source.replace(/^import\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"];?\s*$/gm, (_, bindings, relative) => {
-      imports[relative] = load(path.resolve(path.dirname(absolute), relative));
+      imports[relative] = relative==='react-dom' ? {flushSync:fn=>fn()} : load(path.resolve(path.dirname(absolute), relative));
       return `const {${bindings.replace(/\bas\b/g, ':')}} = imports[${JSON.stringify(relative)}];`;
     });
     source = source.replace(/\bexport\s+(function|const)\s+(\w+)/g, (_, kind, name) => { names.push(name); return `${kind} ${name}`; });
     const run = new vm.Script(`(function(imports) {\n${source}\nreturn {${names.join(',')}};\n})`, { filename: absolute }).runInContext(context);
     const exports = run(imports); modules.set(absolute, exports); return exports;
   }
+  const {createReactPhoneView,display,connection,telemetry,blocked}=load(path.join(ROOT,'apps/web/src/phone/view.ts'));
+  let bound=[],lastController=null;
+  const materialize=()=>{
+    const data=display.get();
+    if(data.controller===lastController)return;
+    for(const cleanup of bound)cleanup?.();bound=[];lastController=data.controller;
+    el('genControls').replaceChildren();
+    if(!data.controller)return;
+    const {groups,bindings}=data.controller;
+    for(const group of groups)for(const part of group.parts){
+      if(part.kind==='button'){
+        const button=new Element(document,'button');button.dataset.ctl=part.control;button.textContent=part.label;
+        el('genControls').append(button);bound.push(bindings.bindControl(button));
+      }else if(part.kind==='stick'){
+        const stick=new Element(document);stick.className='stick gen-stick';el('genControls').append(stick);
+        const knob=new Element(document);knob.className='knob';stick.append(knob);
+        bindings.bindStick(stick,Object.fromEntries(part.directions.map(d=>[d.name,d.control])));
+        bound.push(()=>bindings.bindStick(null,{}));
+      }else bound.push(bindings.bindLook(el('pad'),el('sens'),el('sensVal')));
+    }
+  };
+  if(!viewOnly)display.subscribe(materialize);
+  connection.subscribe(()=>{const value=connection.get();el('status').textContent=value.text;el('status').className='pill '+value.kind;});
+  telemetry.subscribe(()=>{const data=telemetry.get();const names={rtt:'rtt',rttAvg:'rttAvg',sent:'sent',unacked:'unacked',path:'path',advice:'phoneNetAdvice',inputMetrics:'inputMetrics'};for(const [key,value]of Object.entries(data))if(names[key])el(names[key]).textContent=String(value);});
+  blocked.subscribe(()=>{const value=blocked.get();if(value){el('fullMessage').textContent=value.message;el('full').style.display='flex';}});
+  const calls={release:0,diagnostics:0};let render;
   let controller;
-  if(process.env.RECOOPLAY_TEST_TS==='1'){
-    const {createPhoneView}=load(path.join(ROOT,'apps/web-static/scripts/phone-view.js'));
+  if(viewOnly)render=createReactPhoneView({releaseAll:()=>calls.release++,onDiagnosticsOpen:()=>calls.diagnostics++,onRoleOk(){},onTransferHost(){}});
+  else {
     const {startPhoneController}=load(path.join(ROOT,'apps/web/src/phone/runtime.ts'));
-    controller=startPhoneController({createView(bindings){
-      const unbind=bindings.bindLook(el('pad'),el('sens'),el('sensVal'));
-      const view=createPhoneView(bindings);
-      view.connection=(text,kind)=>{el('status').textContent=text;el('status').className='pill '+kind;document.body.dataset.connection=kind;};
-      view.telemetry=data=>{const names={rtt:'rtt',rttAvg:'rttAvg',sent:'sent',unacked:'unacked',path:'path',advice:'phoneNetAdvice',inputMetrics:'inputMetrics'};for(const [key,value] of Object.entries(data))if(names[key])el(names[key]).textContent=String(value);};
-      view.blocked=message=>{if(message)el('fullMessage').textContent=message;el('full').style.display='flex';};
-      view.dispose=unbind;
-      return view;
-    }});
-  }else load(path.join(ROOT, 'apps/web-static/scripts/controller.js'));
+    controller=startPhoneController({createView(bindings){render=createReactPhoneView(bindings);return render;}});
+  }
 
   function advance(ms) {
     const end = now + ms;
@@ -186,5 +205,5 @@ export function controllerHarness() {
     sockets[0].receive({ type: 'game', game: game(overrides) });
     await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
   }
-  return {dispose:()=>controller?.dispose(),activeTimers:()=>timers.size, document, window, portrait, el, sockets, peers, storage, advance, game, ready, inputs, messages, control };
+  return {render,display,calls,dispose:()=>controller?.dispose(),activeTimers:()=>timers.size, document, window, portrait, el, sockets, peers, storage, advance, game, ready, inputs, messages, control };
 }

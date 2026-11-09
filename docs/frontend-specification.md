@@ -65,7 +65,7 @@ Tauriは`/app`をWebView2に表示します。PC専用画面はループバッ�
 
 ### ローカル配信
 
-PCホストが`apps/web-static/`を配信します。PCアプリはループバックの`/app`、スマホはPCのLANアドレスの`/`を開きます。フロントエンド専用のビルドやクラウドへのデプロイはありません。
+PCホストが`apps/web/dist/`を配信します。PCアプリはループバックの`/app`、スマホはPCのLANアドレスの`/`を開きます。`apps/web` で `npm ci` と `npm run build` を実行し、生成した5画面をホストがローカル配信します。クラウドへのデプロイはありません。
 
 参加カードはWi-Fi参加とアプリ参加のQRを表示します。Wi-Fi情報はPC本体にだけ返し、スマホは同じネットワークへの接続後に参加URLを開きます。
 
@@ -290,4 +290,4 @@ function command(cmd) { if (isOpen()) ws.send(JSON.stringify({ type: 'command', 
 
 現在epochを付けて送信し、サーバーがP1・進行・準備条件を検証します。
 
-実装：[PC画面](../apps/web-static/scripts/desktop.js) ／ [表示ロジック](../apps/web-static/app-view.js) ／ [スマホ入力](../apps/web-static/scripts/controller.js) ／ [操作画面生成](../apps/web-static/scripts/generated-controls.js)
+実装：[PC画面](../apps/web/src/pc/runtime.ts) ／ [表示ロジック](../apps/web/src/shared/model/presentation.ts) ／ [スマホ入力](../apps/web/src/phone/runtime.ts) ／ [操作画面生成](../apps/web/src/shared/controller-layout.ts)

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-const { createPhoneSession, PHONE_PROTOCOL_VERSION } = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/transport/session.ts' : '../../apps/web-static/scripts/phone-session.js');
+const { createPhoneSession, PHONE_PROTOCOL_VERSION } = await import('../../apps/web/src/shared/transport/session.ts');
 import { controllerHarness } from './fixtures/phone-harness.mjs';
 
 let passed = 0;

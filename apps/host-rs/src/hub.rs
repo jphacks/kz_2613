@@ -37,7 +37,7 @@ const MAX_SLOTS: usize = 4;
 // 枠の呼び名。操作の分担は操作定義から決める (#141。Minecraft の固定の分担はやめた)
 const SLOT_ROLES: [&str; MAX_SLOTS] = ["ホスト", "参加者", "参加者", "参加者"];
 /// 通信契約の版 (docs/protocol-specification.md)。変えるときは仕様書とシミュレーションも同時に更新する
-// PC アプリで選べるゲーム (apps/web-static/app-view.js の GAMES と同じ id)。P0 は Minecraft Java Edition のみ。
+// PC アプリで選べるゲーム (apps/web/dist/shared/model/presentation.ts の GAMES と同じ id)。P0 は Minecraft Java Edition のみ。
 // "pseudo-game" は診断用の疑似ゲーム画面 (/game) で、PC アプリの一覧には出さない (ゲーム変更の試験にも使う)
 // PC アプリ (apps/desktop) の実行ファイル名。前面になったら PC アプリへの手動復帰とみなす
 const DESKTOP_PROCESS: &str = "recooplay-desktop.exe";

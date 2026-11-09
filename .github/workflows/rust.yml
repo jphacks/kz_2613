@@ -61,10 +61,6 @@ jobs:
           node scripts/device/wifi-host-analysis-test.mjs
           node scripts/device/wifi-trial-acks-test.mjs
           node scripts/device/wifi-ack-observer-test.mjs
-      - name: 既存のスマホ画面とReact版の同等性
-        run: node scripts/sim/react-phone-parity.mjs --samples 20 --tolerance-ms 30
-      - name: 既存のPC画面とReact版の同等性
-        run: node scripts/sim/react-pc-parity.mjs
       - name: PC 画面の表示ロジック
         run: node scripts/sim/app-view-test.mjs
       - name: スマホのReady・待機・停止と診断前の解放
@@ -93,6 +89,8 @@ jobs:
         run: node scripts/sim/ui-input-test.mjs
       - name: 画像と外部化したCSS・JSの配信
         run: node scripts/sim/static-assets-sim.mjs
+      - name: 観客表示の起動・受信境界・破棄
+        run: node scripts/sim/auxiliary-pages-smoke.mjs --pages overlay
       - name: 入力プローブの安全経路（--mock、OS 入力なし）
         run: node scripts/sim/input-probe-sim.mjs
       - uses: actions/cache@v4

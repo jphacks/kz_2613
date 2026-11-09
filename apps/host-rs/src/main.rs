@@ -41,7 +41,7 @@ use axum::Router;
 use crate::config::Config;
 use crate::hub::{Event, Hub, Out};
 
-const WEB_DIR: &str = "apps/web-static";
+const WEB_DIR: &str = "apps/web/dist";
 
 #[derive(Clone)]
 struct App {
@@ -62,7 +62,7 @@ impl App {
     }
 }
 
-/// 画面 (apps/web-static/) のある場所 (= リポジトリのルート) を探す。RECOOPLAY_ROOT で指定も可
+/// 画面 (apps/web/dist/) のある場所 (= リポジトリのルート) を探す。RECOOPLAY_ROOT で指定も可
 fn find_root() -> PathBuf {
     if let Ok(r) = std::env::var("RECOOPLAY_ROOT") {
         return PathBuf::from(r);
@@ -72,7 +72,7 @@ fn find_root() -> PathBuf {
     if let Ok(exe) = std::env::current_exe() {
         candidates.extend(exe.ancestors().skip(1).take(4).map(Path::to_path_buf));
     }
-    candidates.into_iter().find(|p| p.join(WEB_DIR).join("index.html").is_file()).unwrap_or(cwd)
+    candidates.into_iter().find(|p| p.join(WEB_DIR).join("phone/index.html").is_file()).unwrap_or(cwd)
 }
 
 fn is_loopback(addr: &SocketAddr) -> bool {
@@ -306,17 +306,13 @@ async fn api_hotspot(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
 
 async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<SocketAddr>, uri: Uri) -> Response {
     let path = match uri.path() {
-        "/" => "/phone-react.html",
-        "/host" => "/host.html",
-        "/game" => "/game.html",
-        "/app" => "/app-react.html",
-        "/overlay" => "/overlay.html",
+        "/" => "/phone/index.html",
+        "/app" => "/pc/index.html",
+        "/overlay" => "/overlay/index.html",
+        "/host" => "/diagnostics/index.html",
+        "/game" => "/pseudo-game/index.html",
         p => p,
     };
-    // ダッシュボードと疑似ゲーム画面は PC 本体からのみ
-    if matches!(path, "/host.html" | "/game.html" | "/app.html" | "/app-react.html" | "/overlay.html") && !is_loopback(&addr) {
-        return (StatusCode::FORBIDDEN, "this page is only available on the PC").into_response();
-    }
     let rel = Path::new(path.trim_start_matches('/'));
     if rel.components().any(|c| !matches!(c, Component::Normal(_))) {
         return StatusCode::BAD_REQUEST.into_response();
@@ -327,11 +323,19 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
     }
     let file = app.public_dir.join(rel);
     // 大文字・末尾のドット・短い名前など、表記が違っても同じファイルなら実体で判定する (#214)
-    let real = tokio::fs::canonicalize(&file).await.ok();
-    if !is_loopback(&addr) && real.as_deref().is_some_and(is_pc_only_page) {
+    let Ok(root) = tokio::fs::canonicalize(app.public_dir.as_ref()).await else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let Ok(real) = tokio::fs::canonicalize(&file).await else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if !real.starts_with(&root) {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    if !is_loopback(&addr) && is_pc_only_page(&real, &root) {
         return (StatusCode::FORBIDDEN, "this page is only available on the PC").into_response();
     }
-    let mime = match file.extension().and_then(|e| e.to_str()) {
+    let mime = match real.extension().and_then(|e| e.to_str()) {
         Some("html") => "text/html; charset=utf-8",
         Some("js") => "text/javascript; charset=utf-8",
         Some("css") => "text/css; charset=utf-8",
@@ -344,17 +348,18 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
         Some("json") => "application/json",
         _ => "application/octet-stream",
     };
-    match tokio::fs::read(&file).await {
+    match tokio::fs::read(&real).await {
         Ok(data) => ([(header::CONTENT_TYPE, mime), (header::CACHE_CONTROL, "no-store")], data).into_response(),
         Err(_) => (StatusCode::NOT_FOUND, "not found").into_response(),
     }
 }
 
 // DNS再束縛と別Originからの管理操作を防ぐ。OriginなしはPC内の非ブラウザ検証クライアントに限る。
-/// PC 本体からだけ開ける画面か (実体のファイル名で判定する)
-fn is_pc_only_page(path: &Path) -> bool {
-    let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_ascii_lowercase();
-    matches!(name.as_str(), "host.html" | "game.html" | "app.html" | "app-react.html" | "overlay.html")
+/// 解決済みの実体がPC専用画面フォルダの配下ならLANへ返さない。
+fn is_pc_only_page(path: &Path, root: &Path) -> bool {
+    let Some(name) = path.strip_prefix(root).ok().and_then(|p| p.components().next()) else { return false };
+    let name = name.as_os_str().to_string_lossy().to_ascii_lowercase();
+    matches!(name.as_str(), "pc" | "overlay" | "diagnostics" | "pseudo-game")
 }
 
 fn allowed_ws_headers(headers: &HeaderMap, port: u16, loopback: bool) -> bool {
@@ -461,6 +466,17 @@ mod tests {
         let dev = parse_build_info("");
         assert_eq!(dev["version"].as_str(), Some(env!("CARGO_PKG_VERSION")));
         assert!(dev["commit"].is_null());
+    }
+
+    #[test]
+    fn pc_page_policy_covers_entire_resolved_directories() {
+        let root = Path::new("dist");
+        for dir in ["pc", "PC", "overlay", "diagnostics", "pseudo-game"] {
+            assert!(is_pc_only_page(&root.join(dir).join("index.html"), root));
+            assert!(is_pc_only_page(&root.join(dir).join("nested/file.txt"), root));
+        }
+        assert!(!is_pc_only_page(&root.join("phone/index.html"), root));
+        assert!(!is_pc_only_page(&root.join("assets/icon.png"), root));
     }
 
     #[test]

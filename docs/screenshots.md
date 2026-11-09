@@ -128,3 +128,6 @@ PCのキーボードで Ctrl+Alt+F12 を押すと、すぐに入力を止めて�
 ---
 
 <sub>撮影し直すときは、ホストをビルドしてから `node scripts/sim/capture-screens.mjs --bin apps/host-rs/target/release/recooplay-host.exe` を実行します（Chrome または Edge を使います）。画像は `docs/screenshots/` に保存されます。この撮影はPC上のシミュレーションで、実機での動作確認やゲームとの互換性を示すものではありません。</sub>
+
+
+注記: この撮影記録は旧構成（タグ `legacy-js-last-with-react`）のもの。新構成での実機受入とは区別する。

@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "npm run typecheck && vite build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --project tsconfig.node.json"
   },
   "dependencies": {
     "react": "19.3.1",

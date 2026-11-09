@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-const { decodeServerMessage } = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/transport/protocol.ts' : '../../apps/web-static/scripts/protocol.js');
+const { decodeServerMessage } = await import('../../apps/web/src/shared/transport/protocol.ts');
 import { controllerHarness } from './fixtures/phone-harness.mjs';
 let passed = 0;
 async function test(name, run) { await run(); passed++; console.log(`合格: ${name}`); }
@@ -8,7 +8,7 @@ const decode = value => decodeServerMessage(JSON.stringify(value));
 await test('構文・envelope: 壊れたJSONとnull/配列/型なしを例外なく拒否する', () => {
   for (const text of ['{', '', '[', '{"t":NaN}']) assert.equal(decodeServerMessage(text), null);
   for (const value of [null, [], {}, { type: 1 }]) assert.equal(decode(value), null);
-  const future = { type: 'future', extra: 'x'.repeat(100000) }; assert.deepEqual(decode(future), process.env.RECOOPLAY_TEST_TS === '1' ? {type:'unknown',originalType:'future'} : future);
+  const future = { type: 'future', extra: 'x'.repeat(100000) }; assert.deepEqual(decode(future), {type:'unknown',originalType:'future'});
 });
 await test('参加・RTT・ACK・RTC信号: 副作用前に識別子と値の型を確認する', () => {
   for (const value of [
@@ -79,7 +79,7 @@ await test('同epochで保持中: 描画が参照する必須構造の破損も�
 });
 await test('適用中の例外: 検証後の描画失敗でも保持を解放して切断する', async () => {
   const h = controllerHarness(); await h.ready(); h.control('act:attack').fire('pointerdown');
-  h.el('players1').insertAdjacentHTML = () => { throw new Error('描画失敗の注入'); };
+  const unsubscribe=h.display.subscribe(() => {unsubscribe();throw new Error('描画失敗の注入');});
   assert.doesNotThrow(() => h.sockets[0].receive({ type: 'game', game: h.game() }));
   assert.equal(h.sockets[0].readyState, 3);
   assert.deepEqual(h.inputs().map(m => m.state), ['down', 'up']);

@@ -1,4 +1,4 @@
-import type {PhoneTelemetry} from '../contracts.ts';
+import type {PhoneTelemetry} from '../shared/contracts.ts';
 
 interface FrameClock {
   request(callback: () => void): number;

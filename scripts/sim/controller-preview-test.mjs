@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import {createRequire} from 'node:module';
 import {pathToFileURL, fileURLToPath} from 'node:url';
 import {transformWithOxc} from '../../apps/web/node_modules/vite/dist/node/index.js';
-import {controllerLayout} from '../../apps/web/src/controller-layout.ts';
+import {controllerLayout} from '../../apps/web/src/shared/controller-layout.ts';
 
 const requireWeb = createRequire(new URL('../../apps/web/package.json', import.meta.url));
 const {createElement} = await import(pathToFileURL(requireWeb.resolve('react')).href);
@@ -13,7 +13,7 @@ const sourceUrl = new URL('../../apps/web/src/phone/Controller.tsx', import.meta
 let {code} = await transformWithOxc(fs.readFileSync(sourceUrl, 'utf8'), fileURLToPath(sourceUrl), {jsx:{runtime:'automatic'}});
 code = code.replace(/from (["'])([^"']+)\1/g, (_, quote, specifier) => {
   const url = specifier.startsWith('.')
-    ? new URL(specifier === '../controller-layout' ? '../controller-layout.ts' : specifier, sourceUrl).href
+    ? new URL(specifier === '../shared/controller-layout' ? '../shared/controller-layout.ts' : specifier, sourceUrl).href
     : pathToFileURL(requireWeb.resolve(specifier)).href;
   return `from ${JSON.stringify(url)}`;
 });
@@ -36,7 +36,7 @@ if (process.argv.includes('--write-preview')) {
   const out = new URL('../../data/local/react-migration/', import.meta.url);
   fs.mkdirSync(out, {recursive:true});
   const styles = ['colors','tokens','shared','mobile','improved-mobile','phone-skins'].map(name =>
-    `<link rel="stylesheet" href="${new URL(`../../apps/web-static/styles/${name}.css`, import.meta.url).href}">`).join('');
+    `<link rel="stylesheet" href="${new URL(`../../apps/web/src/styles/${name}.css`, import.meta.url).href}">`).join('');
   fs.writeFileSync(new URL('controller-preview.html',out), `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${styles}</head><body data-view="v-gen"><main><section class="view show" id="v-gen"><div id="genControls">${html}</div></section></main></body></html>`);
 }
 console.log('合格: 共通React部品のプレビューはボタン・スティック・視点を描き、実入力へ接続しない');

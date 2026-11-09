@@ -37,8 +37,8 @@ outputs = {
     'apps/desktop/icons/32x32.png': 32,
     'apps/desktop/icons/128x128.png': 128,
     'apps/desktop/icons/icon.png': 256,
-    'apps/web-static/assets/icon.png': 192,
-    'apps/web-static/assets/apple-touch-icon.png': 180,
+    'apps/web/public/assets/icon.png': 192,
+    'apps/web/public/assets/apple-touch-icon.png': 180,
     'apps/desktop/ui/assets/icon.png': 192,
 }
 for path, size in outputs.items():

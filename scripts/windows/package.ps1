@@ -6,7 +6,7 @@
 #
 # 中身 (インストール不要。展開したフォルダから recooplay-desktop.exe を起動する):
 #   recooplay-desktop.exe / recooplay-host.exe   アプリと PC ホスト (アプリは同じフォルダのホストを使う)
-#   apps\web-static\                              スマホ・PC の画面 (アプリはこのフォルダの場所をルートとして探す)
+#   apps\web\dist\                              スマホ・PC の画面 (アプリはこのフォルダの場所をルートとして探す)
 #   config.example.json                           設定の例 (config.json にコピーして使う)
 #   allow-firewall.ps1                            受信の許可 (管理者 PowerShell で実行)
 #   README.txt                                    起動・ファイアウォール・注意事項
@@ -50,11 +50,11 @@ for ($ancestor = [IO.DirectoryInfo]$outDir; $null -ne $ancestor; $ancestor = $an
 $stage = Join-Path $outDir $name
 $zip = Join-Path $outDir "$name.zip"
 if ((Test-Path -LiteralPath $stage) -or (Test-Path -LiteralPath $zip)) { throw "配布物が既にあります。-Outで新しい出力先を指定してください: $outDir" }
-New-Item -ItemType Directory -Force (Join-Path $stage "apps") | Out-Null
+New-Item -ItemType Directory -Force (Join-Path $stage "apps\web") | Out-Null
 
 Copy-Item $desktop, $host_ $stage
-if (-not (Test-Path (Join-Path $root "apps\web-static\react\phone.js"))) { throw "React版の画面がありません。apps\web で npm ci と npm run build を実行してください" }
-Copy-Item -Recurse (Join-Path $root "apps\web-static") (Join-Path $stage "apps\web-static")
+if (-not (Test-Path (Join-Path $root "apps\web\dist\phone\index.html"))) { throw "React版の画面がありません。apps\web で npm ci と npm run build を実行してください" }
+Copy-Item -Recurse (Join-Path $root "apps\web\dist") (Join-Path $stage "apps\web\dist")
 Copy-Item -Recurse (Join-Path $root "apps\game-profiles") (Join-Path $stage "apps\game-profiles")
 Copy-Item (Join-Path $root "config.example.json") $stage
 Copy-Item (Join-Path $root "scripts\windows\allow-firewall.ps1") $stage

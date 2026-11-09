@@ -1,9 +1,9 @@
-// PC アプリ画面の表示ロジック (apps/web-static/app-view.js) の試験。
+// PC アプリ画面の表示ロジック (apps/web/src/shared/model/presentation.ts) の試験。
 // 参加状態・開始可否の表示が、ホストから届く状態 (state.slots / game.canReady など) と一致することを確かめる。
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-const { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/model/presentation.ts' : '../../apps/web-static/app-view.js');
+const { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } = await import('../../apps/web/src/shared/model/presentation.ts');
 
 const results = [];
 function test(name, fn) {

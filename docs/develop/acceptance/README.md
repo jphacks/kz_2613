@@ -187,3 +187,6 @@ dry-run値・設定読込有無・疑似対象・無注入の確認根拠：
 - [対象11PRと追加受入条件](refactor-matrix.md)
 
 実Wi-Fiの移行比較は[性能報告](2026-11-09-react-performance.md)、[主21試行](evidence/pr274-wifi/trials.json)、[修正後6試行](evidence/pr274-wifi-after/trials.json)を参照。先行ACK診断だけ `--ack-observer` を指定し、通常測定へ混ぜない。修正後集計は `summarize-wifi-review.mjs --batch <manifest> --supplement --out <別folder>` を使用し、失敗と旧USBデータを保持する。
+
+
+Web構成の移行後は標準URLだけを試験する。旧版との比較専用オプションは廃止した。過去の受入記録は旧構成（タグ `legacy-js-last-with-react`）の観測として保持し、新構成の合格へ読み替えない。

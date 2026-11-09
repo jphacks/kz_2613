@@ -1,4 +1,4 @@
-import type { PlayerCardModel, RoleColumnModel } from '../contracts';
+import type { PlayerCardModel, RoleColumnModel } from '../shared/contracts';
 
 const CHARACTERS = ['blue', 'green', 'purple', 'red'];
 

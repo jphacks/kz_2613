@@ -1,6 +1,6 @@
 // スマホのカラースキンの保存・復元と不正値の扱い (#159)。DOM・通信・OS入力なし。
 import assert from 'node:assert/strict';
-const {SKINS,applySkin,createSkinStore}=await import(process.env.RECOOPLAY_TEST_TS==='1'?'../../apps/web/src/model/skin.ts':'../../apps/web-static/scripts/phone-skin.js');
+const {SKINS,applySkin,createSkinStore}=await import('../../apps/web/src/shared/model/skin.ts');
 
 function memory(initial) {
   const map = new Map(initial ? [['recooplay.skins', initial]] : []);
