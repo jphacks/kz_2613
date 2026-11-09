@@ -7,16 +7,17 @@ import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 import {beginPerformance, finishPerformance, summarize} from './android-performance.mjs';
-import {readWifiNetwork,freeLanPort,hostSocketProof,rtcObserverSource,rtcStatsExpression,validateSelectedPairs,validateHttpWs} from './wifi-route.mjs';
+import {readWifiNetwork,freeLanPort,hostSocketProof,rtcObserverSource,rtcStatsExpression,validateSelectedPairs,validateHttpWs,privateError} from './wifi-route.mjs';
 import {analyzeHostInput} from './wifi-host-analysis.mjs';
+import {earlyAckSource,ackPhases} from './wifi-ack-observer.mjs';
 
 const SCRIPT_ROOT=fileURLToPath(new URL('../../',import.meta.url));
 const options = new Map();
 for (let i = 2; i < process.argv.length; i++) {
   const key = process.argv[i];
-  assert(['--bin', '--adb', '--sha256', '--host-only', '--react', '--root', '--benchmark-ms', '--condition', '--trial', '--players', '--legacy', '--ws-only', '--wifi-network'].includes(key), '不明な引数');
+  assert(['--bin', '--adb', '--sha256', '--host-only', '--react', '--root', '--benchmark-ms', '--condition', '--trial', '--players', '--legacy', '--ws-only', '--wifi-network', '--ack-observer'].includes(key), '不明な引数');
   assert(!options.has(key), '重複した引数');
-  const value = ['--host-only', '--react', '--legacy', '--ws-only'].includes(key) ? true : process.argv[++i];
+  const value = ['--host-only', '--react', '--legacy', '--ws-only', '--ack-observer'].includes(key) ? true : process.argv[++i];
   assert(value && (value === true || !value.startsWith('--')), '引数の値が必要です');
   options.set(key, value);
 }
@@ -34,6 +35,7 @@ assert.equal(hash, EXPECTED.toLowerCase(), 'exeが指定ハッシュと異なり
 const hostOnly = options.has('--host-only');
 const wifi=options.has('--wifi-network');
 assert(!(wifi&&hostOnly),'Wi-Fi試験では実Androidが必要です');
+assert(!options.has('--ack-observer')||wifi&&benchmarkMs>0,'先行ACK診断はWi-Fi性能試行だけで使用する');
 fs.mkdirSync(path.join(ROOT, 'data/local/device-acceptance'), {recursive:true});
 const OUT = fs.mkdtempSync(path.join(ROOT, 'data/local/device-acceptance/run-'));
 const adb = (...args) => {
@@ -58,10 +60,12 @@ let host, mon, browser, tabId, forwarded=false,reversed=false, ping;
 const clients=[];
 const pageErrors=[];
 let savedRotation;
-if(wifi)report.runner={commit:execFileSync('git',['rev-parse','HEAD'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim(),dirty:execFileSync('git',['status','--porcelain'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim().length>0,modules:Object.fromEntries(['android-dry-run.mjs','android-performance.mjs','wifi-route.mjs','wifi-host-analysis.mjs'].map(name=>[name,crypto.createHash('sha256').update(fs.readFileSync(new URL(name,import.meta.url))).digest('hex')]))};
+if(wifi)report.ackObserver=options.has('--ack-observer');
+if(wifi)report.runner={commit:execFileSync('git',['rev-parse','HEAD'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim(),dirty:execFileSync('git',['status','--porcelain'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim().length>0,modules:Object.fromEntries(['android-dry-run.mjs','android-performance.mjs','wifi-route.mjs','wifi-host-analysis.mjs','wifi-ack-observer.mjs'].map(name=>[name,crypto.createHash('sha256').update(fs.readFileSync(new URL(name,import.meta.url))).digest('hex')]))};
 let wifiNetwork;
 const networkEvents=[],privateNetworkSamples=[];
-const check=async(id,fn)=>{try{const observed=await fn();report.tests.push({id,result:'合格',observed});console.log(`${id}: 合格`);}catch(e){report.tests.push({id,result:'不合格',reason:e.message});throw e;}};
+const safeError=message=>wifi?privateError(message,[serial,wifiNetwork?.pc,wifiNetwork?.android]):message;
+const check=async(id,fn)=>{try{const observed=await fn();report.tests.push({id,result:'合格',observed});console.log(`${id}: 合格`);}catch(e){report.tests.push({id,result:'不合格',reason:safeError(e.message)});throw e;}};
 function client(){
   const ws=new WebSocket(`ws://127.0.0.1:${port}/ws`),messages=[];
   ws.addEventListener('message',e=>messages.push(JSON.parse(e.data)));
@@ -200,6 +204,7 @@ try{
     if(wifi){
       await page.call('Network.enable');await page.call('Network.setCacheDisabled',{cacheDisabled:true});
       await page.call('Page.addScriptToEvaluateOnNewDocument',{source:rtcObserverSource});
+      if(options.has('--ack-observer'))await page.call('Page.addScriptToEvaluateOnNewDocument',{source:earlyAckSource});
     }
     if(options.has('--ws-only')){
       await page.call('Page.addScriptToEvaluateOnNewDocument',{source:'Object.defineProperty(window,"RTCPeerConnection",{value:undefined,configurable:true})'});
@@ -234,6 +239,10 @@ try{
       const mark=mon.messages.length;
       const workload=await beginPerformance({evaluate,page,durationMs:benchmarkMs});
       report.performance=await finishPerformance(evaluate,workload);
+      if(options.has('--ack-observer')){
+        report.performance.raw.earlyAcks=await evaluate('window.__wifiEarlyAcks');
+        report.performance.ackPhases=ackPhases(report.performance.raw,report.performance.raw.earlyAcks);
+      }
       if(wifi)report.performance.summary.method='Wi-Fi LAN / CDP合成タッチ。端末内送信時間とACK観測（製品handlerを含む）、ゲーム応答ではない';
       await collectWifiProof('input-end');
       report.performance.hostEvents=mon.messages.slice(mark).filter(m=>['log','inject'].includes(m.type)&&m.entry).map(m=>({type:m.type,entry:m.entry}));
@@ -402,8 +411,8 @@ try{
     await check('Android JavaScriptエラー',async()=>{assert.deepEqual(pageErrors,[]);return {errors:[]};});
   }
 } catch (error) {
-  report.error = error.message;
-  console.error(error.message);
+  report.error = safeError(error.message);
+  console.error(report.error);
   process.exitCode = 1;
 } finally {
   if(wifi){

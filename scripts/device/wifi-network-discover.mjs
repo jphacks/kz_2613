@@ -4,7 +4,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import assert from 'node:assert/strict';
-import {privateIpv4} from './wifi-route.mjs';
+import {privateIpv4,privateError} from './wifi-route.mjs';
+process.on('uncaughtException',error=>{
+  console.error(error.code&&error.code!=='ERR_ASSERTION'?'Wi-Fi状態の読み取りに失敗（接続情報を含むnative例外は表示しません）':privateError(error.message));
+  process.exitCode=1;
+});
 const args=new Map();
 for(let i=2;i<process.argv.length;i+=2){assert(['--adb','--output'].includes(process.argv[i])&&process.argv[i+1],'引数は--adb/--output');assert(!args.has(process.argv[i]));args.set(process.argv[i],process.argv[i+1]);}
 const adb=(...a)=>execFileSync(args.get('--adb')??'adb',a,{encoding:'utf8',windowsHide:true,timeout:10000});

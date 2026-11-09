@@ -59,6 +59,8 @@ jobs:
           node scripts/device/android-dry-run-test.mjs
           node scripts/device/wifi-route-test.mjs
           node scripts/device/wifi-host-analysis-test.mjs
+          node scripts/device/wifi-trial-acks-test.mjs
+          node scripts/device/wifi-ack-observer-test.mjs
       - name: 既存のスマホ画面とReact版の同等性
         run: node scripts/sim/react-phone-parity.mjs --samples 20 --tolerance-ms 30
       - name: 既存のPC画面とReact版の同等性

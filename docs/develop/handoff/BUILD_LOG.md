@@ -1523,3 +1523,13 @@
 - `input_trace.rs`を追加。明示したtrace/dry-run/no-config/fake-targetの4フラグが揃う時だけ有効。runtime-measureとは独立し、LANバインドと入力アルゴリズムを変更しない。WS/RTCのアプリ受信・hub処理・順序buffer・受理・dry-run出力の単調時計を、識別情報/本文を保存せずメモリーへ蓄積し終了時に出力する。上限到達は有効な比較データとして扱わない。
 - 通常権限、既存Perl/libclang/cacheで `cargo test --offline --release --locked --manifest-path apps/host-rs/Cargo.toml`：137合格/2ignored＋probe4。`cargo build --offline --release --locked --manifest-path apps/host-rs/Cargo.toml`：成功。既存dead_code/PDB LNK4099警告あり。`node scripts/device/android-dry-run-test.mjs`：10/10、`wifi-route-test.mjs`、`wifi-host-analysis-test.mjs`、`node --check scripts/device/android-dry-run.mjs`：成功。経路未証明/USB URL/キャッシュ/誤ICE候補の拒否と、未同期時計の原点を動かしてもhost内計測が変わらないことを検査。CIへ追加。
 - 計測付きホストでWi-Fi予備E（入力60秒＋視点60秒）を完走。224入力/受理/出力が一致、順序gap待ち0。受信→受理p95 0.147ms、受理→dry出力p95 8.035ms（最低押下/解放の待ちを含む）。視点ホスト到着に200ms超の空白2件/最大284.521msがあり、本比較で旧JS/TSを同条件で測定する。予備値を本比較の3試行へ黙って混ぜない。
+
+## 2026-11-09 — 実Wi-Fiの21独立試行を完了し、ACK差の追加診断へ進む
+
+- 計測hostはd7b4b79のソース、SHA256 `47f6f6f85bd3ad76e55f340a9d00d779cc5bb8e3aa7ab90b90b3bb6d85570099`。全21試行で同一exeを使用。runnerはクリーンな752f949で固定し、A〜E＋A/E WS-onlyの7条件を各3回、入力60秒/48サイクル/224論理入力、視点60秒/1800移動で測った。順序は7条件の巡回開始を0/2/4ずらした。Eの配信対象はfe19ecbの独立worktreeで、前回Eと同じ9個の製品JSハッシュを保持。
+- 最初の本比較は保全コピーのexe配置先から起動し、LAN文書が届かず2回失敗した。Firewallを読み取ると、同一ハッシュの通常開発パスは有効Allow受信2/Block0、保全コピーのパスはAllow0/Block2だった。規則を変更せず、予備で到達確認済みの通常開発パスへ揃えて再開した。再読込の新Document応答を待つ修正も752f949で固定した。失敗2回はbatch-attempt1/2と元summaryを保全し、成功データへ混ぜない。
+- 全21試行で4,704入力の送信/受理/dry出力が一致、欠落/重複適用/未ACK0、順序gap待ち0、停止/切断/回転/非表示/再接続後の残留なし。視点の送信200ms空白0に対し、hostのアプリ受信には200ms空白が計25件あった。旧/新、RTC/WSで試行差があり、物理パケット損失やMinecraft反映と同一視しない。
+- 無線状態100標本は2412MHz、link72Mbps、RSSI -45〜-40dBmで、全標本のAP識別子は同一（識別子は公開しない）。PCはWi-Fi Direct/mobile hotspot、Androidはwlan0。HTTP/WSの実LAN接続と非ループバック認可、選択ICEのtransport→pair→両端ID/アドレス一致を各試行と5秒履歴で検証。端末はAndroid16/Chrome156.0.8078.79、P2/P3は模擬参加者。実指/実OS入力/実無線断/Minecraftは未受入。
+- `node scripts/device/summarize-wifi-review.mjs`：21試行のソース/runner/端末/exe/資産/入力/ACK/出力/経路を照合し成功。匿名raw gzipとSHA256、全分位/平均/最大/nのCSV、独立集約JSON、準備10記録（成功2/失敗8）と無線環境を `acceptance/evidence/pr274-wifi` へ保存。旧USB15試行は変更していない。ACK集計は当該試行の送信iseqに一致する最初のACKだけを採り、warmup/別試行/二重ACKを除外する（#259）。
+- AのACK観測p95は107.9〜109.4ms、Eは111.3〜112.1ms。WS-onlyのAは106.8〜107.6ms、Eは108.7〜110.4ms。Eのp99には226.7ms/WS-only235.9msの試行もあり、残る差を無回帰と断定しない。製品onmessage前に登録する先行ACK observerを追加し、同じrenderer時計で既存観測点までの処理/配送区間を分ける追加診断を実施する。主21試行には途中でこの観測を追加していない。
+- `wifi-route-test`・`wifi-host-analysis-test`・`wifi-trial-acks-test`・`wifi-ack-observer-test`：成功。CLI拒否試験は11/11。transport/candidateのID関係も明示的に検査し、不一致を拒否。reverse拒否の例外に端末識別子を含めないboolean検証とエラーのprivate値除去を追加した。通常権限の `protocol-sim.mjs --bin <同host>` は60/60成功（制限環境での初回は待受に到達せず失敗し、通常実行で再確認）。752f949のCI Structure42543336466 / Rust42543336455は全成功。

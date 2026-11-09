@@ -8,6 +8,15 @@ import {execFileSync} from 'node:child_process';
 export function privateIpv4(address) {
   return net.isIP(address)===4 && (/^10\./.test(address)||/^192\.168\./.test(address)||/^172\.(1[6-9]|2\d|3[01])\./.test(address));
 }
+export function validateUsbIsolation(reverse,usb) {
+  assert(!/mCurrentFunctions=.*(?:rndis|ncm)/i.test(usb),'AndroidのUSBテザリングを検出');
+  assert(reverse.trim()==='','Wi-Fi試験ではADB reverse転送がないことを要求する（内容/端末識別子は出力しない）');
+}
+export function privateError(message,identities=[]) {
+  let text=String(message);
+  for(const identity of identities)if(identity)text=text.replaceAll(identity,'[private]');
+  return text.replace(/https?:\/\/[^\s]+/g,'[private URL]').replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g,ip=>ip.split('.').every(n=>Number(n)<=255)?'[private address]':ip);
+}
 export function readWifiNetwork(file,adb) {
   const data=JSON.parse(fs.readFileSync(file,'utf8').replace(/^\uFEFF/,''));
   const pc=data.pc?.IPAddress,android=data.androidAddress;
@@ -19,8 +28,7 @@ export function readWifiNetwork(file,adb) {
   assert(interfaces.some(i=>i.ifname==='wlan0'&&i.addr_info.some(a=>a.local===android)),'Androidのwlan0アドレスが一致しない');
   const route=adb('shell','ip','route','get',pc);
   assert(route.includes('dev wlan0')&&route.includes(`src ${android}`),'AndroidからPCへの経路はwlan0でなければならない');
-  assert(!/mCurrentFunctions=.*(?:rndis|ncm)/i.test(adb('shell','dumpsys','usb')),'AndroidのUSBテザリングを検出');
-  assert.equal(adb('reverse','--list').trim(),'','Wi-Fi試験ではADB reverse転送がないことを要求する（他者の転送を削除しない）');
+  validateUsbIsolation(adb('reverse','--list'),adb('shell','dumpsys','usb'));
   return {pc,android,proof:{pcWifiActive:true,androidWifiActive:true,androidRouteViaWlan:true,usbTethering:false,adbReverseMappings:0,topology:data.adapter?.InterfaceDescription?.includes('Wi-Fi Direct')?'Windows Wi-Fi Direct / mobile hotspot':'Wi-Fi LAN',debugTransport:'USB ADB forward / CDP only'}};
 }
 export async function freeLanPort() {
@@ -42,6 +50,8 @@ export const rtcObserverSource=`(()=>{const Original=window.RTCPeerConnection;wi
 export function validateSelectedPairs(stats,network) {
   assert(stats.length>0,'getStatsのtransport.selectedCandidatePairIdを取得できない');
   return stats.map((s,index)=>{
+    assert(s.transport?.type==='transport'&&s.transport.selectedCandidatePairId===s.pair.id,'transportと選択候補ペアのIDが一致しない');
+    assert(s.pair.localCandidateId===s.local?.id&&s.pair.remoteCandidateId===s.remote?.id,'候補ペアと両端候補IDが一致しない');
     assert(s.pair.state==='succeeded'&&s.pair.nominated,'選択候補ペアが成功していない');
     assert(s.local?.address===network.android,'RTC local candidateはAndroid wlan0でなければならない');
     assert(s.remote?.address===network.pc,'RTC remote candidateはPCのWi-Fi LANでなければならない');
