@@ -6,6 +6,10 @@
 
 Award Day向けの実施手順、記録票、最新のローカル検査と実機確認待ちの一覧は[実機受入試験](develop/acceptance/README.md)を参照。
 
+## 製品通信と試験経路
+
+[2026-11-09のユーザー判断](develop/decisions/2026-11-09-wifi-product-baseline.md)により、製品利用と性能受入はWi-Fiを前提にする。USB/ADB reverseの既存試験は開発・切り分け用の補助記録で、無線の合格の代替にはしない。デバッグ用のADB forward/CDPをUSBで操作していても、HTTP/WS/RTCの実Wi-Fi経路を確認できればWi-Fi測定に含められる。
+
 ## 確認状況
 
 | 対象 | 確認できていること | 残る確認 |

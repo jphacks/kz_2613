@@ -30,7 +30,7 @@
 
 - Windows入力：Win32 `SendInput`（スキャンコードのキー、相対マウス移動、左右ボタン、ホイール）、`timeBeginPeriod(1)`。疑似ゲーム画面で検証済み、Minecraftでは**未検証**。
 - PCホスト：**Rust**（tokio＋axum、状態はhubスレッド1本、`windows` crate、WebRTCは `datachannel`＝libdatachannel）。Rust版はPC上のシミュレーションのみ実施済みで、Rust実機・Minecraft・Tauriは未検証。
-- 通信：ローカルWi-Fi。**WebSocket（JSON、本体）＋WebRTC DataChannel（順序保証・再送なしの速達便）**。STUN/TURNとインターネットは使わない。Windowsモバイルホットスポットを使い、代替はローカルAP。
+- 通信：ローカルWi-Fi。**WebSocket（JSON、本体）＋WebRTC DataChannel（順序保証・再送なしの速達便）**。STUN/TURNとインターネットは使わない。Windowsモバイルホットスポットを使い、代替はローカルAP。製品利用と性能受入はWi-Fi前提。USB/ADB reverseは開発・原因切り分け用の任意の補助手段で、通常利用・推奨接続・必須の性能比較にはしない。ADB forward/CDPの制御経路と製品通信を区別する（[判断](docs/develop/decisions/2026-11-09-wifi-product-baseline.md)）。
 - 画面：製品UIと入力・通信・接続エンジンは `apps/web/` のReact + TypeScript strict（Vite）。PR #274の標準URL `/`・`/app` とTauriはReact版。入力エンジンはReact描画から独立させる。従来版は比較・診断・復元用に保全する（`apps/web-static/LEGACY.md`）。AndroidのCDP/dry-run比較と、iPhone・実指・Minecraftの製品受入を区別する。
 - 入力処理の定数（最低押下60ms・最低解放50ms・視点30Hz・補間4ms・切断判定4秒など）は実測に基づくため、根拠なく変えない。
 - 検証：プロトコル単位のシミュレーション（`RECOOPLAY_DRY_RUN=1`）、疑似ゲーム画面による実入力の照合、Android・iPhone・Windowsの実機試験。

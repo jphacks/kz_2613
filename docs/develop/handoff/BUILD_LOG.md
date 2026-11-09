@@ -1560,3 +1560,11 @@
 - 読取/起動の通常権限承認経路が一時的に利用量制限で自動レビュー失敗となったため、その時間は未実行として保持。指定時刻経過後に同じ承認経路で再実行し成功。制限回避、UAC昇格、Firewall/永続ネットワーク設定の変更はしていない。
 - 実Wi-Fi断そのもの、ルーター/距離/混雑/Bluetoothの比較、実指・長時間・iPhone・複数実スマホ・実OS入力/Minecraft・別PCは未受入。dry-runのLAN計測とAT-D07全体の製品受入を分ける。mainマージ・Issue close・正式release・Award Day安定版更新はしない。
 - Wi-Fi試験後、同じ47f6f6fホスト・固定c2e2fe3配信で `android-dry-run.mjs --condition usb-regression-after-wifi --trial 1`（Wi-Fi/benchmark指定なし）を実行。既存USBの15機能項目が成功、host exit0・後片付け失敗0。evidence/pr274-wifi-after/usb-regression.jsonとrawへ分離保存し、旧USB15試行と無線性能値には混ぜない。
+
+## 2026-11-09 — ユーザー判断に従い製品利用・評価をWi-Fi前提へ統一
+
+- ユーザーがUSB有線接続を通常の利用場面に想定しないと明示したため、`2026-11-09-wifi-product-baseline.md` に判断を記録。製品評価は同一Wi-Fi上の旧版/新版、RTC+WS/WS-only、改善前後を中心とし、USB/ADB reverseは開発・切り分け用の任意の補助にした。ADB forward/CDP制御は製品通信と区別する。
+- #276のタイトル・完了条件をWi-Fiの観測区間/計測負荷統一へ変更し、必須のUSB対Wi-Fi追加測定を削除。#275/#277/#157/#264/#235とPR #274も更新。既存IssueはOpen、PRはDraftのまま。実装に新たに着手した扱いにはしない。
+- AGENTS、ENV-07、技術構成、React判断、総合仕様、検証状況、受入README、性能報告、自己レビューへ反映。受入手順はWi-Fiを先に配置し、USB手順は開発用補助として保持。性能報告冒頭にWi-Fiの主結果と残件を掲載した。
+- `python scripts/check-public-docs.py`：17資料/317参照に成功。`python scripts/verify_overlay.py`：39必須ファイルに成功。保存済み証拠の照合で原206行、217項目の集計（OK208/未確認8/別Issue1）、USB15試行、Wi-Fi生データ/SHA256が不変。`git diff --check`：成功。製品コード・入力定数・runner・測定数値は変更しておらず、実機再測定や製品ビルドは不要な文書変更。
+- 新しい合格の追加、mainマージ、Issue close、正式release、Award Day安定版更新は行わない。
