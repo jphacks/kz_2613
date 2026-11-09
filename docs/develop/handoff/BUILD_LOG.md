@@ -1646,3 +1646,10 @@
 - [x] check-static-pagesをビルド済み5 HTML/JS・担当色・PC環境文言の検査へ移植。package-smokeと構造検査も新パスで実行。共有TSは旧ファイルに依存しない。診断・疑似ゲームとoverlayのinline/旧runtimeは次の独立コミット/PRで移植する。
 - `npm run build --prefix apps/web`、host build/test（138成功・2 ignored、probe 4）、desktop build/test（3成功）、rust.ymlに列挙された全Node試験、verify_overlay、check-public-docs成功。shutdown-sim成功、input-probe-sim 12/12。`package.ps1 -Out data/local/package-c` / package-smokeも展開先から全静的配信・正常終了成功。
 - in-app browserで新しい/appを開き、ロゴ・参加待ち4人・QR・設定の描画を目視確認。dry-run環境の緊急停止キー登録エラーの表示は維持。Tauri実窓、実指、iPhone、Minecraft、実無線断はこの時点では未確認。
+
+## 2026-11-09 — #279 PR-A d: overlayのReact/TS化
+
+- overlayをReactのstateとoverlayModelで描画。元のDOM ID・CSS・?position=top・1秒再接続・登録以外は送信しない条件を維持。共有monitorはdecodePcMessageでunknown入力を検証し、古いsocket/破棄後の通知と再接続を停止する。
+- `npm run build --prefix apps/web`、product-web-test（新monitor試験を含む）、check-static-pages成功。`auxiliary-pages-smoke.mjs --pages overlay --bin <構築済みホスト>` 成功: 実headless Chromeで起動・状態描画・不正受信拒否・再接続・pagehide破棄後の非再接続を確認。初回のスモークはfixtureの動的ポート通知設定不足で失敗し、RECOOPLAY_RUNTIME_MEASURE=1を追加して成功した。
+- Tauri実窓を専用ポート18130、dry-run/no-config/fake targetで起動。AXで/app・ロゴ・4人参加待ち・設定と緊急停止表示を確認し、閉じる操作後の窓消失とshutdownログ1件を確認した。これは実入力/Minecraft/実機受入を意味しない。
+- PR-Aの構築・Rust/desktop単体試験・全CI相当Node試験・package-smokeはコミットcで成功。overlay変更に対して上記を追加検証。Android実Wi-Fi前後比較はprivate設定未提供のため未確認。iPhone・実指・Minecraft実入力・実無線断も未確認。旧版は既存タグのみで保持する。
