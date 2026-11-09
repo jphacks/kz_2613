@@ -1653,3 +1653,11 @@
 - `npm run build --prefix apps/web`、product-web-test（新monitor試験を含む）、check-static-pages成功。`auxiliary-pages-smoke.mjs --pages overlay --bin <構築済みホスト>` 成功: 実headless Chromeで起動・状態描画・不正受信拒否・再接続・pagehide破棄後の非再接続を確認。初回のスモークはfixtureの動的ポート通知設定不足で失敗し、RECOOPLAY_RUNTIME_MEASURE=1を追加して成功した。
 - Tauri実窓を専用ポート18130、dry-run/no-config/fake targetで起動。AXで/app・ロゴ・4人参加待ち・設定と緊急停止表示を確認し、閉じる操作後の窓消失とshutdownログ1件を確認した。これは実入力/Minecraft/実機受入を意味しない。
 - PR-Aの構築・Rust/desktop単体試験・全CI相当Node試験・package-smokeはコミットcで成功。overlay変更に対して上記を追加検証。Android実Wi-Fi前後比較はprivate設定未提供のため未確認。iPhone・実指・Minecraft実入力・実無線断も未確認。旧版は既存タグのみで保持する。
+
+## 2026-11-09 — #279 PR-B: 診断画面のReact/TS化
+
+- /hostの既存DOM ID・CSS・統計・経路表示・1000件ログ・自動スクロール・再取得5秒・管理操作を維持。診断画面もReact lifecycleでAPI fetch/interval/monitorを破棄する。旧コードに準備中ラベルがなくundefined表示になった箇所だけ「準備中」と明示した。
+- APIのJSONはunknownからdecodePcInfo、WSはdecodePcMessageで検証。now/slotの統計/RTC統計/注入先/ログを型付け。実ブラウザでRustの非キー出力code:nullの拒否を発見し、nullable契約に合わせて修正・回帰assert追加。秘密情報は記録しない。
+- npm ci / npm run build成功。product-web-test（diagnostics-test追加）成功。全CI相当Node試験はauxiliary-pages-smoke以外成功（protocol-sim 60/60、shutdown、input-probe 12/12含む）。受信互換修正後にproduct-web-testと実headless Chromeのoverlay/diagnosticsスモークを再実行し成功。後者は1005件受信→古い5件除去・文字列escape・phase操作・確認取消時非送信・再接続・pagehide破棄を含む。
+- desktop build/test（3成功）、package.ps1 -Out data/local/package-b / package-smoke成功。hostの初回再構築は検証シェルにPerl/libclangを設定していなかったため失敗した。SETUP_WINDOWSの環境を再設定したhost build/testは再実行中（第三者ライブラリの再構築）。Rust製品ソースはPR-Aから変更していない。
+- Tauri実窓の共通起動・終了はPR-Aで確認済み。Android実Wi-Fiの前後比較はprivate設定なし、実入力照合は許可なしのため実施しない。iPhone・実指・Minecraft・実無線断は未確認。
