@@ -1545,3 +1545,6 @@
 - 改修後の先行ACK診断（F、同じWS-only/host47f、224 ACK）は先行p95 105.6ms/従来106.9ms、観測点間p95 0.8ms/p99 1.2ms。改修前Eの2.3/2.9msより短く、診断通知をdispatch外へ移した効果を観測した。先行側のRTTも変動するため、従来ACKの全改善を表示変更や通信速度へ帰属させない。
 - 通常observerへ戻した再試験の初回は入力60秒/224件を完走したが、視点40秒付近のlook-1200で選択候補ペアのstate/nominated検証に失敗し停止した。直前look-1050までのsnapshotはsucceeded/true、hostログにその区間のRTC close/failedはなく、原因は未特定。未検証の無線経路を成功扱いにせず、ホストexit0で全解放・自己タブ/forwardを終了。元summary/host trace/radioログ/失敗manifestを保全して、成功6本へ混ぜない。
 - 失敗した瞬間のgetStatsもprivateファイルへ保存するようrunnerを補完し、公開する失敗状態には接続/候補stateとnominatedだけを含める。候補ID・アドレス・UDP・成功/nominationの検証は緩めていない。CLI11/11と経路拒否試験、構文検査が成功。次の再実行で同じ事象が出る場合は、その生統計から原因を調査する。
+
+- 2回目の再試験も視点途中で停止し、今度は失敗snapshotを保全できた。現在の選択pairはsucceeded/true、履歴内の1snapshotだけin-progress/true。どちらもpeer/DTLS/ICEはconnected、選択IDとLAN両端は一致し、直前snapshotからpayloadは送信27,441/受信22,756 bytes増えていた。hostにもRTC close/failedはない。[W3C統計仕様](https://www.w3.org/TR/webrtc-stats/)でpair.stateはチェックリスト、transportのiceState/dtlsStateと別で、bytesSent/ReceivedはICE connectivity checkを除くpayloadと確認した。1回目の未保存snapshotも同因だったとは断定しない。
+- 判定器がチェックリストの一時的なin-progressを実接続断と混同していた。選択transport→pair→candidate ID、実peer/ICE/DTLS connected、nomination、正しいUDP LAN両端、双方向payload正値を必須とする判定へ修正。接続中のチェックリスト再検査は値を保存し、failed/waiting/frozen、接続未完、payloadなし、異なるID/経路は拒否する。取得API/間隔/入力負荷は変更しない。経路拒否の単体試験にこれらを追加し成功。主21試行の生入力/時刻は保全し、失敗2回と別に改修後の比較を再開する。

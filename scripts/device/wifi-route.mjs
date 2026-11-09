@@ -52,11 +52,14 @@ export function validateSelectedPairs(stats,network) {
   return stats.map((s,index)=>{
     assert(s.transport?.type==='transport'&&s.transport.selectedCandidatePairId===s.pair.id,'transportと選択候補ペアのIDが一致しない');
     assert(s.pair.localCandidateId===s.local?.id&&s.pair.remoteCandidateId===s.remote?.id,'候補ペアと両端候補IDが一致しない');
-    assert(s.pair.state==='succeeded'&&s.pair.nominated,'選択候補ペアが成功していない: '+JSON.stringify({state:s.pair.state,nominated:s.pair.nominated}));
+    // pair.stateはチェックリスト。選択済みtransportの接続/経路とは分ける（W3C 8.17/8.19）。
+    assert(s.connectionState==='connected'&&s.transport.dtlsState==='connected'&&['connected','completed'].includes(s.transport.iceState),'実際のICE/DTLS接続が成立していない');
+    assert(s.pair.nominated===true&&['succeeded','in-progress'].includes(s.pair.state),'選択候補ペアが利用できない: '+JSON.stringify({state:s.pair.state,nominated:s.pair.nominated}));
+    assert(Number.isFinite(s.pair.bytesSent)&&s.pair.bytesSent>0&&Number.isFinite(s.pair.bytesReceived)&&s.pair.bytesReceived>0,'選択ペアの双方向payloadを確認できない');
     assert(s.local?.address===network.android,'RTC local candidateはAndroid wlan0でなければならない');
     assert(s.remote?.address===network.pc,'RTC remote candidateはPCのWi-Fi LANでなければならない');
     assert.equal(s.local.protocol,'udp');assert.equal(s.remote.protocol,'udp');
-    return {pair:`selected-${index+1}`,selectedBy:'transport.selectedCandidatePairId',state:s.pair.state,nominated:s.pair.nominated,local:{endpoint:'Android wlan0',type:s.local.candidateType,protocol:s.local.protocol,networkType:s.local.networkType},remote:{endpoint:'PC Wi-Fi LAN',type:s.remote.candidateType,protocol:s.remote.protocol},bytesSent:s.pair.bytesSent,bytesReceived:s.pair.bytesReceived,currentRoundTripTimeMs:s.pair.currentRoundTripTime===undefined?undefined:s.pair.currentRoundTripTime*1000};
+    return {pair:`selected-${index+1}`,selectedBy:'transport.selectedCandidatePairId',connectionState:s.connectionState,dtlsState:s.transport.dtlsState,iceState:s.transport.iceState,state:s.pair.state,nominated:s.pair.nominated,local:{endpoint:'Android wlan0',type:s.local.candidateType,protocol:s.local.protocol,networkType:s.local.networkType},remote:{endpoint:'PC Wi-Fi LAN',type:s.remote.candidateType,protocol:s.remote.protocol},bytesSent:s.pair.bytesSent,bytesReceived:s.pair.bytesReceived,currentRoundTripTimeMs:s.pair.currentRoundTripTime===undefined?undefined:s.pair.currentRoundTripTime*1000};
   });
 }
 export function validateHttpWs(events,network,port) {

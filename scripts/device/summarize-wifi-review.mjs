@@ -77,8 +77,8 @@ for(const record of manifest.results){
   // 完全な5秒履歴はrawへ保全。索引は候補の辞書＋重複しない時系列で参照する。
   const pairCatalog=new Map(),pathHistory=new Map();
   const compactPair=p=>{
-    if(!pairCatalog.has(p.pair))pairCatalog.set(p.pair,{pair:p.pair,selectedBy:p.selectedBy,state:p.state,nominated:p.nominated,local:p.local,remote:p.remote});
-    return {pair:p.pair,bytesSent:p.bytesSent,bytesReceived:p.bytesReceived,currentRoundTripTimeMs:p.currentRoundTripTimeMs};
+    if(!pairCatalog.has(p.pair))pairCatalog.set(p.pair,{pair:p.pair,selectedBy:p.selectedBy,local:p.local,remote:p.remote});
+    return {pair:p.pair,connectionState:p.connectionState,dtlsState:p.dtlsState,iceState:p.iceState,state:p.state,nominated:p.nominated,bytesSent:p.bytesSent,bytesReceived:p.bytesReceived,currentRoundTripTimeMs:p.currentRoundTripTimeMs};
   };
   const samples=proof.samples.map(({pathHistory:history,...sample})=>{
     for(const item of history){const pairs=item.selectedPairs.map(compactPair);pathHistory.set(JSON.stringify([item.at,pairs.map(p=>p.pair)]),{at:item.at,pairs});}
