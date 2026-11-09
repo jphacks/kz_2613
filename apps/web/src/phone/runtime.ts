@@ -1,18 +1,18 @@
-import { bindCooperativeInput } from '../input/cooperative.ts';
-import { createFastChannel } from '../transport/fast-channel.ts';
-import { createInputOwners } from '../input/owners.ts';
-import { createPhoneSession } from '../transport/session.ts';
-import { decodeServerMessage } from '../transport/protocol.ts';
-import { recordInputMetric, inputMetrics } from '../input/metrics.ts';
+import { bindCooperativeInput } from '../shared/input/cooperative.ts';
+import { createFastChannel } from '../shared/transport/fast-channel.ts';
+import { createInputOwners } from '../shared/input/owners.ts';
+import { createPhoneSession } from '../shared/transport/session.ts';
+import { decodeServerMessage } from '../shared/transport/protocol.ts';
+import { recordInputMetric, inputMetrics } from '../shared/input/metrics.ts';
 
-import { bindTouchpad } from '../input/touchpad.ts';
-import { myActions } from '../model/actions.ts';
-import { phoneAdvice } from '../model/presentation.ts';
-import {createLifetime} from '../input/lifetime.ts';
-import {byId} from '../dom.ts';
-import type {PhoneViewBindings,PhoneView} from '../contracts.ts';
-import type {InputOwner} from '../input/owners.ts';
-import type {ButtonInput} from '../transport/messages.ts';
+import { bindTouchpad } from '../shared/input/touchpad.ts';
+import { myActions } from '../shared/model/actions.ts';
+import { phoneAdvice } from '../shared/model/presentation.ts';
+import {createLifetime} from '../shared/input/lifetime.ts';
+import {byId} from '../shared/dom.ts';
+import type {PhoneViewBindings,PhoneView} from '../shared/contracts.ts';
+import type {InputOwner} from '../shared/input/owners.ts';
+import type {ButtonInput} from '../shared/transport/messages.ts';
 export function startPhoneController({createView}:{createView(bindings:PhoneViewBindings):PhoneView}) {
   const lifetime=createLifetime();
   const $ = byId;

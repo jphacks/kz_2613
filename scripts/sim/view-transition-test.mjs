@@ -2,7 +2,7 @@
 // 見た目 (色・動き) はブラウザで確認する。OS入力・実端末の検証には使わない。
 //   node scripts/sim/view-transition-test.mjs
 import assert from 'node:assert/strict';
-const {createViewTransition,motionAllowed,transitionDirection,SWAP_MS}=await import(process.env.RECOOPLAY_TEST_TS==='1'?'../../apps/web/src/phone/transition.ts':'../../apps/web-static/scripts/view-transition.js');
+const {createViewTransition,motionAllowed,transitionDirection,SWAP_MS}=await import(process.env.RECOOPLAY_TEST_TS==='1'?'../../apps/web/src/phone/transition.ts':'../../apps/web/static/scripts/view-transition.js');
 
 function fakeWin({ reduce = false } = {}) {
   let now = 0, seq = 0;

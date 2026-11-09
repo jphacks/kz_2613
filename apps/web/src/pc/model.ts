@@ -1,8 +1,8 @@
-import type { PhoneGame, Slot } from '../contracts';
-import { createStore } from '../store';
-import { desktopView, slotViews, shownSlots, playerCards, roleColumns, gameList, gameCard, gameAction, rolesAction, gameLabel, desktopWarning, networkNotice, profileNotice, playerHint, commSettingsView, gamesCountText, isRegistered, roleView, slotDiagnosis, joinUrl, joinGuideView, MIN_PLAYERS, MAX_PLAYERS } from '../model/presentation.ts';
+import type { PhoneGame, Slot } from '../shared/contracts';
+import { createStore } from '../shared/store';
+import { desktopView, slotViews, shownSlots, playerCards, roleColumns, gameList, gameCard, gameAction, rolesAction, gameLabel, desktopWarning, networkNotice, profileNotice, playerHint, commSettingsView, gamesCountText, isRegistered, roleView, slotDiagnosis, joinUrl, joinGuideView, MIN_PLAYERS, MAX_PLAYERS } from '../shared/model/presentation.ts';
 
-import type {InjectionState,HostState,Navigation} from '../model/domain.ts';
+import type {InjectionState,HostState,Navigation} from '../shared/model/domain.ts';
 export interface PcSnapshot {
   ui: Navigation;
   game: PhoneGame | null; inject: InjectionState | null; online: boolean; swapPick: Slot | null;

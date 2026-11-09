@@ -17,7 +17,7 @@
 |:--|:--|
 | `apps/host-rs/` | Rustホスト・入力・認可・状態管理 |
 | `apps/desktop/` | Tauriのプロセス制御・WebView2 |
-| `apps/web-static/` | PC・スマホ・診断・疑似ゲームの画面 |
+| `apps/web/static/` | PC・スマホ・診断・疑似ゲームの画面 |
 | `apps/game-profiles/` | 製品に同梱する操作定義 |
 | `scripts/sim/` | 通信・画面・配布の検証 |
 | `scripts/profiles/` | 操作定義と参考カタログの生成・抽出 |

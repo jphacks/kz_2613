@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {decodePcMessage,decodeHotspotResult} from '../../apps/web/src/transport/pc-messages.ts';
+import {decodePcMessage,decodeHotspotResult} from '../../apps/web/src/shared/transport/pc-messages.ts';
 const game={phase:'lobby',epoch:0,connected:[],profile:null,launch:null};
 const state={type:'state',game,inject:{mode:'off',active:false,emergencyHotkeyError:null},slots:[{name:'P1',assigned:false}]};
 const decode=value=>decodePcMessage(JSON.stringify(value));

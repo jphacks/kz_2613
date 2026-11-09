@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-const { createInputOwners } = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/input/owners.ts' : '../../apps/web-static/scripts/input-owners.js');
+const { createInputOwners } = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/shared/input/owners.ts' : '../../apps/web/static/scripts/input-owners.js');
 
 let passed = 0;
 function test(name, run) { run(); passed++; console.log(`合格: ${name}`); }

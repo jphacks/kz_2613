@@ -6,7 +6,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {WebSocketServer} from './mini-ws.mjs';
-const root=fileURLToPath(new URL('../../apps/web-static/',import.meta.url));
+const root=fileURLToPath(new URL('../../apps/web/static/',import.meta.url));
 const port=Number(process.env.UI_PREVIEW_PORT || 18082);
 const generatedFixture=JSON.parse(await fs.readFile(new URL('./fixtures/profiles/test-pseudo.json',import.meta.url),'utf8'));
 const sizes=['320×568','360×640','360×780','390×844','402×874','430×932','874×402','1280×720','1920×1080'];

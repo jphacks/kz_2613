@@ -1,7 +1,7 @@
 import {Controller} from './Controller';
 import { useSyncExternalStore } from 'react';
 import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked } from './view';
-import { SKINS } from '../model/skin.ts';
+import { SKINS } from '../shared/model/skin.ts';
 
 type PhoneDisplay = ReturnType<typeof display.get>;
 type Status = ReturnType<typeof connection.get>;

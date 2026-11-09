@@ -34,6 +34,6 @@ apps/desktop/target/
 apps/desktop/gen/
 
 # Reactのビルド結果（#235）
-apps/web-static/react/
-apps/web-static/phone-react.html
-apps/web-static/app-react.html
+apps/web/static/react/
+apps/web/static/phone-react.html
+apps/web/static/app-react.html

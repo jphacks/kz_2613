@@ -1,6 +1,6 @@
 // Reactプレイ・編集プレビューの共通モデル。OS入力・通信なし。
 import assert from 'node:assert/strict';
-import { controllerLayout } from '../../apps/web/src/controller-layout.ts';
+import { controllerLayout } from '../../apps/web/src/shared/controller-layout.ts';
 
 const game = {
   profile: { id: 'test', name: '試験', actions: [

@@ -1587,3 +1587,28 @@
 - 検証：`npm run build`（tsc strict + Vite）、ホスト `cargo test` 137合格・2 ignored＋別枠4、protocol-sim 60/60、shutdown-sim、app-view-test 30/30、スマホ画面・スキン・ライフサイクル・入力担当・セッション・境界・ui-input 12/12・静的資産、react-phone-parity・react-pc-parity、product-web-test、controller-layout/preview-test すべて合格。
 - Android実機（Wi-Fi・dry-run・Codexと同じ `android-dry-run.mjs --wifi-network` 経路、60秒計測）：分割前後の2回とも15項目合格（Wi-Fi経路証明、2接点保持、Pause・回転・バックグラウンド・切断・再読み込みの全解放、JSエラーなし）。CDP合成タッチであり実指ではない。
 - 未実施：iPhone（利用者判断で不要）、実指、Minecraft実入力、実無線断。#271/#50（編集可能レイアウトの保存・編集UI）と#272（Rust間の型生成）は本PRでは完成していない。レビュー10件のうち、通常UIのonClick化（1）、表示モデル分割（3）、store/actionsのProvider化（4）、`flushSync`の再点検（5）、DOM所有境界（7）は入力の遅延・安全性への回帰リスクがあるため見送り、別Issueで扱う。
+
+
+## 2026-11-09 — #279 PR-A a: 配信資産と共有TSの移動
+
+- 基点: origin/main `ee77270`。独立worktree `data/local/worktrees/279-web-structure`、`codex/279-web-structure`。元の作業ツリーは変更しない。
+- 利用者の追記に従い、移動とパス/import更新を同一コミットにした。TS化・試験移植は後続。途中のCIと旧試験を保つため、旧配信ルートをまず `apps/web/static` へそのまま移動。旧版削除後に最終の `src`/`public`/`dist` へ整理する。診断・疑似ゲームのinline JSはPR-B/Cまで一時的に維持する。
+- 既存タグ3つの存在と最新mainを確認。Issue #279作成・着手コメント投稿済み。mainへのpush/マージ/Issue closeは行わない。
+- 移動前: `npm ci`/`npm run build`、product-web-test、phone-view-test（8観点）、controller-diagnostics-test（200件）の成功を確認。移動後もWebビルド・同試験・check-static-pages・verify_overlay成功。Rust host build/test: 137成功・2 ignored、probe 4成功。desktop build/test: 3成功。
+- assert数はソース上のassert呼出箇所数（ループ展開前）。動的な観点数・200 packetの各値/連番も維持して後続に対照記録する。
+
+| 移植対象 | 移植前assert箇所 |
+|---|---:|
+| `app-view-test` | 194 |
+| `phone-view-test` | 53 |
+| `controller-diagnostics-test` | 14 |
+| `input-owners-test` | 17 |
+| `phone-session-test` | 39 |
+| `phone-skin-test` | 15 |
+| `protocol-boundary-test` | 21 |
+| `ui-input-test` | 73 |
+| `view-transition-test` | 23 |
+| `phone-lifecycle-test` | 59 |
+
+- Android実Wi-Fiの前後比較は未実施: 指定の `data/local/wifi-network.private.json` が存在せず、サンドボックスからのADB server接続も失敗。実IP・秘密情報は公開しない。実入力試験は許可の範囲外なので実施しない。iPhone・実指・Minecraft・実無線断は未確認。
+`python data/local/run-web-checks.py a` 相当のrust.yml全Node試験（parity含む）・構造/公開docs成功。protocol-sim 60/60、input-probe-sim 12/12。package.ps1 / package-smoke成功。git diff -M --stat HEAD: 131 files、155 insertions、131 deletions（BUILD_LOG追加を除きパス/importのみ）。

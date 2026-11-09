@@ -1,11 +1,11 @@
-import {createVirtualCursor} from '../input/virtual-cursor.ts';
-import {createLifetime} from '../input/lifetime.ts';
-import {byId} from '../dom.ts';
-import {GAMES,SCREENS,gameList,navigate,desktopView,rolesAction,gameAction,isRegistered,shownSlots,screenOnGameUpdate,pcEffects,joinGuideView} from '../model/presentation.ts';
-import {decodePcMessage,decodeHotspotResult} from '../transport/pc-messages.ts';
-import {decodePcInfo} from '../transport/pc-info.ts';
-import type {Slot,PhoneGame} from '../contracts.ts';
-import type {Navigation,HostState,InjectionState,UiAction,EffectState} from '../model/domain.ts';
+import {createVirtualCursor} from '../shared/input/virtual-cursor.ts';
+import {createLifetime} from '../shared/input/lifetime.ts';
+import {byId} from '../shared/dom.ts';
+import {GAMES,SCREENS,gameList,navigate,desktopView,rolesAction,gameAction,isRegistered,shownSlots,screenOnGameUpdate,pcEffects,joinGuideView} from '../shared/model/presentation.ts';
+import {decodePcMessage,decodeHotspotResult} from '../shared/transport/pc-messages.ts';
+import {decodePcInfo} from '../shared/transport/pc-info.ts';
+import type {Slot,PhoneGame} from '../shared/contracts.ts';
+import type {Navigation,HostState,InjectionState,UiAction,EffectState} from '../shared/model/domain.ts';
 import type {PcSnapshot,PcInfo} from './model';
 declare global {interface Window {showHostNotice?:(text:string)=>void}}
 const isSlot=(slot:string|undefined):slot is Slot=>!!slot&&['P1','P2','P3','P4'].includes(slot);

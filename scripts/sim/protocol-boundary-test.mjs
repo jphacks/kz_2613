@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-const { decodeServerMessage } = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/transport/protocol.ts' : '../../apps/web-static/scripts/protocol.js');
+const { decodeServerMessage } = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/shared/transport/protocol.ts' : '../../apps/web/static/scripts/protocol.js');
 import { controllerHarness } from './fixtures/phone-harness.mjs';
 let passed = 0;
 async function test(name, run) { await run(); passed++; console.log(`合格: ${name}`); }

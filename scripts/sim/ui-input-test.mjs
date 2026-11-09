@@ -1,12 +1,12 @@
 // DOMの入力境界・キャンセル・RTC形式を、OS入力なしで検証する。
 import assert from 'node:assert/strict';
-const {bindTouchpad} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/input/touchpad.ts' : '../../apps/web-static/scripts/touchpad.js');
-const {bindCooperativeInput: createCooperativeInput} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/input/cooperative.ts' : '../../apps/web-static/scripts/cooperative-input.js');
-const {stickDirections} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/input/stick.ts' : '../../apps/web-static/scripts/stick.js');
-const {createFastChannel} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/transport/fast-channel.ts' : '../../apps/web-static/scripts/transport.js');
-const {createVirtualCursor}=await import(process.env.RECOOPLAY_TEST_TS==='1'?'../../apps/web/src/input/virtual-cursor.ts':'../../apps/web-static/scripts/virtual-cursor.js');
+const {bindTouchpad} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/shared/input/touchpad.ts' : '../../apps/web/static/scripts/touchpad.js');
+const {bindCooperativeInput: createCooperativeInput} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/shared/input/cooperative.ts' : '../../apps/web/static/scripts/cooperative-input.js');
+const {stickDirections} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/shared/input/stick.ts' : '../../apps/web/static/scripts/stick.js');
+const {createFastChannel} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/shared/transport/fast-channel.ts' : '../../apps/web/static/scripts/transport.js');
+const {createVirtualCursor}=await import(process.env.RECOOPLAY_TEST_TS==='1'?'../../apps/web/src/shared/input/virtual-cursor.ts':'../../apps/web/static/scripts/virtual-cursor.js');
 globalThis.HTMLElement=class {constructor(properties){Object.assign(this,properties)}};
-import {myActions, generatedKey, buildGenerated} from '../../apps/web-static/scripts/generated-controls.js';
+import {myActions, generatedKey, buildGenerated} from '../../apps/web/static/scripts/generated-controls.js';
 const bindCooperativeInput=options=>{const input=createCooperativeInput(options);if(process.env.RECOOPLAY_TEST_TS==='1')input.bindLook(document.getElementById('pad'),document.getElementById('sens'),document.getElementById('sensVal'));return input;};
 const intervals = [];
 const originalInterval = globalThis.setInterval;

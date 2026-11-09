@@ -1,6 +1,6 @@
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
-import { byId } from '../dom';
+import { byId } from '../shared/dom';
 import { PhoneApp } from './PhoneApp';
 import { createReactPhoneView } from './view';
 

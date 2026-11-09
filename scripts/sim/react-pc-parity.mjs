@@ -13,7 +13,7 @@ const arg = (name, fallback) => { const i = process.argv.indexOf(name); return i
 const BIN = arg('--bin', path.join(ROOT, 'apps/host-rs/target/release/recooplay-host.exe'));
 const CHROME = arg('--chrome', ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(p => fs.existsSync(p)));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-assert(fs.existsSync(path.join(ROOT, 'apps/web-static/app-react.html')), 'apps/web で npm run build を実行してください');
+assert(fs.existsSync(path.join(ROOT, 'apps/web/static/app-react.html')), 'apps/web で npm run build を実行してください');
 
 class Ws {
   constructor(port) { this.port = port; this.msgs = []; this.game = null; }
@@ -82,7 +82,7 @@ async function session(url, port, cdpPort) {
     result.roles = {};
     await waitFor(`!!document.querySelector('#qr svg')`, '参加用QR');
     result.productEntry=(await(await fetch(targetUrl)).text()).includes('/react/pc.js');
-    const boundarySource=stripTypeScriptTypes(fs.readFileSync(path.join(ROOT,'apps/web/src/transport/pc-info.ts'),'utf8'),{mode:'strip'}).replace(/^export /gm,'');
+    const boundarySource=stripTypeScriptTypes(fs.readFileSync(path.join(ROOT,'apps/web/src/shared/transport/pc-info.ts'),'utf8'),{mode:'strip'}).replace(/^export /gm,'');
     result.qrBoundary=await ev(`(async()=>{${boundarySource}
       const real=await(await fetch('/api/info')).json();
       const invalid=['<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>','<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>','<svg xmlns="http://www.w3.org/2000/svg"><foreignObject/></svg>','<svg xmlns="http://www.w3.org/2000/svg"><image href="x"/></svg>','<svg xmlns="http://www.w3.org/2000/svg"><path fill="url(x)"/></svg>','<!DOCTYPE svg><svg xmlns="http://www.w3.org/2000/svg"/>'];

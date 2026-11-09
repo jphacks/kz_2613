@@ -28,7 +28,7 @@ try {
     assert.equal((await fetch(`${base}/react/${entry}.js`)).status,200,`${route}: 製品entryを配信する`);
   }
   for(const [route,entry]of [['/index.html','controller'],['/app.html','desktop']])assert((await(await fetch(base+route)).text()).includes(`/scripts/${entry}.js`),'比較用旧版を保全する');
-  const publicDir=path.join(root,'apps/web-static');let count=0,bytes=0;
+  const publicDir=path.join(root,'apps/web/static');let count=0,bytes=0;
   for(const rel of fs.readdirSync(publicDir,{recursive:true}).filter(p=>types[path.extname(p)])){
     const response=await fetch(base+'/'+rel.replaceAll('\\','/'));
     assert.equal(response.status,200,rel);assert(response.headers.get('content-type')?.startsWith(types[path.extname(rel)]),`MIME: ${rel}`);

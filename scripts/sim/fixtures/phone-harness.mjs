@@ -145,7 +145,7 @@ export function controllerHarness() {
   }
   let controller;
   if(process.env.RECOOPLAY_TEST_TS==='1'){
-    const {createPhoneView}=load(path.join(ROOT,'apps/web-static/scripts/phone-view.js'));
+    const {createPhoneView}=load(path.join(ROOT,'apps/web/static/scripts/phone-view.js'));
     const {startPhoneController}=load(path.join(ROOT,'apps/web/src/phone/runtime.ts'));
     controller=startPhoneController({createView(bindings){
       const unbind=bindings.bindLook(el('pad'),el('sens'),el('sensVal'));
@@ -156,7 +156,7 @@ export function controllerHarness() {
       view.dispose=unbind;
       return view;
     }});
-  }else load(path.join(ROOT, 'apps/web-static/scripts/controller.js'));
+  }else load(path.join(ROOT, 'apps/web/static/scripts/controller.js'));
 
   function advance(ms) {
     const end = now + ms;

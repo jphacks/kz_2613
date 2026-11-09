@@ -34,7 +34,7 @@ parts.append('</section></html>')
 (OUT / "index.html").write_text("\n".join(parts), encoding="utf-8")
 
 fingerprints = []
-for file in sorted((ROOT / "apps/web-static").rglob("*")):
+for file in sorted((ROOT / "apps/web/static").rglob("*")):
     if file.is_file() and file.suffix in {".html", ".js", ".css", ".png"}:
         fingerprints.append({"path": file.relative_to(ROOT).as_posix(), "sha256": hashlib.sha256(file.read_bytes()).hexdigest()})
 (OUT / "source-fingerprints.json").write_text(json.dumps(fingerprints, ensure_ascii=False, indent=2), encoding="utf-8")
