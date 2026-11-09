@@ -58,7 +58,7 @@
 | ENV-04 | [E] P0 | **Android ChromeとiPhone Safariの両方**で、参加・全コントローラー・WebRTCが動作する（Android 10 Chrome×2、iOS 18.7 Safari×2で確認） |
 | ENV-05 | [D] P0 | ゲーム映像はPCのディスプレイ・投影を共有する。スマホへゲーム映像を配信しない |
 | ENV-06 | [E] P0 | PC–スマホ間のゲーム操作は**インターネット・クラウドを経由しない**。STUN/TURNも使わない |
-| ENV-07 | [E] P0 | PCをWindowsモバイルホットスポットの親機にし、スマホは標準のWi-Fiで直接接続する。アプリ層は**HTTP＋WebSocket（本体）＋WebRTC DataChannel（速達便）** |
+| ENV-07 | [E]/[D] P0 | PCをWindowsモバイルホットスポットの親機にし、スマホは標準のWi-Fiで直接接続する。アプリ層は**HTTP＋WebSocket（本体）＋WebRTC DataChannel（速達便）**。2026-11-09の[D]：製品利用・性能受入はWi-Fi前提。USBは開発・切り分け用の任意の補助で、通常利用や必須比較に含めない（[判断](../decisions/2026-11-09-wifi-product-baseline.md)） |
 | ENV-08 | [H] P0 | Minecraftは**実機確認済みのバージョン**に固定し、キー設定・Raw Input・感度を記録する。デモ用ワールドを事前に用意する |
 | ENV-09 | [V] P0 | **上流回線なしでのホットスポット起動は未検証**（G2-A）。操作通信にクラウドを使わないことと、ゲームの起動・認証が完全にオフラインで済むかは区別する |
 | ENV-10 | [M] P2 | 将来はWindows上のオフライン一人用ゲーム一般を対象にする |
