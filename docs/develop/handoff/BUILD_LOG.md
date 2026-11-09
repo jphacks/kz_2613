@@ -1694,3 +1694,22 @@
 - 未実施: 実OS入力での疑似ゲーム照合・実ホットキー/Alt+Tab・iPhone・実指・Minecraft実入力・実無線断・複数実端末・別PCの製品受入。明示許可のないOS入力は実施せず、dry-runや固定traceの成功を実入力の合格とは扱わない。
 
 - #279の実測を受け、SETUP_WINDOWSへworktree別target・固定exeハッシュ・展開後package-smokeを追記。通常buildの成功表示だけで配布バイナリの版を判断しない。製品コードと依存関係は変更せず、git diff --checkとcheck-public-docs成功。
+
+## 2026-11-09 — 実装済み・実機待ちIssueの洗い出しとAndroid実機（Wi-Fi）の回帰確認（Claude Code）
+
+- オープン約60件を確認。実装済みで実機確認だけが残るのは #138・#139・#141（残る項目はOutlast・Minecraft・Windows実ウィンドウで、Android 1台では完了できない）。#38・#39・#217・#218・#224 は複数端末・実ゲームが必要で、#262・#261・#197・#264 は未実装または実機計測が必要。
+- 古いexe（16:38ビルド）は標準URL `/` が404だった。StrawberryPerlとLIBCLANG_PATHをPATHへ足して `cargo build --offline --release --locked` で再ビルドし（22:04）、その版で試験した。
+- `node scripts/device/android-dry-run.mjs --bin <exe> --sha256 <hash> --wifi-network data/local/wifi-network.private.json` を、既定（3人）・`--players 2`・`--players 4`・`--ws-only` の4構成で実行。Android 16/Chrome、HTTP/WS/ICEは実Wi-Fi（ADB reverseなし、CDP制御だけADB forward）。各14項目すべて合格：生成操作面・単指/2接点・スティック・Pause/回転/バックグラウンド/切断再接続での全解放・再読み込み・JSエラーなし。
+- 限界：実指ではなくCDP合成タッチ、OS入力なし（dry-run/fake target）、P2以降は模擬参加者。#138・#139・#141・#224の実機完了条件は満たしていない。
+
+## 2026-11-09 — 実Minecraft・実Windows入力・Android実機（実Wi-Fi）の自動確認（Claude Code）
+
+ユーザーが「このPCをフルで利用してよい・ユーザー操作なしで確認」と明示したため、監督者役を兼ねて実入力で確認した。対象はMinecraft Java 26.3（公式ランチャーから起動）の既存クリエイティブワールド（事前に保存フォルダとoptions.txtをバックアップ。終了後のoptions.txt差分なし）。ホストは現ブランチをStrawberryPerl＋LIBCLANG_PATHで再ビルドした通常実入力モード（dry-run・fake target・設定なし。ホットキー有効）。
+
+- **P2・P3を模擬WS、P1を模擬WS**（`data/local/real-mc/scripts/stage2.mjs`）：Ready→coop、P1前進でWの実OS押下/解放、P2視点で画面が回転（目視確認）、P3ホットバー切替、P3左ボタン押下/解放、W＋左ボタン同時保持→Pauseで全解放、Resume直後に旧押下を復元しない、物理Ctrl+Alt+F12（`keybd_event`）でW・左ボタンが解放されhotkey由来の緊急停止ログ、停止後は入力が届かない。13/14合格（残り1件は静止画面ハッシュの安定性で、Minecraft側の画面アニメーションによる試験側の問題。製品の欠陥ではない）。
+- **#138（自動前面化）**：Windows Terminalを前面にした状態でReady/準備を行うと、ボタン操作なしでjavawが前面になることをGetForegroundWindowで確認（Android実機のタップ経由でも同じ）。前面化後はMinecraftがゲームメニュー（pauseOnLostFocus）を開くため、ホストはpreparingのまま「プレイ中の画面まで進めてください」と案内して待つ。これは仕様どおりだが、#261（ゲームメニューのままの入力）の根拠になる。
+- **Android実機をP1（ホスト）、P2・P3を模擬WS**（`stage3a.mjs`）：実機ChromeがWi-Fi（WS＋RTC）でホストへ参加。`adb shell input`の実タッチ（スティック・長押し。制御はUSB、通信はWi-Fi）でMinecraftへ実入力が届くことを確認（スティック上=W、右上=W+D、左=A、Space長押し、Ctrl長押しはそれぞれ実OSで押下・指を離して解放）。#139・#141のうち、Android実機・実指系のスティック入力と3人分担の移動・視点・アクション入力がMinecraftへ届く部分を確認した。8方向のうち確認したのは上・右上・左のみ。Outlast等の他ゲームは未実施。
+- **保持中の安全停止（Android実機、motionevent DOWN→MOVE→保持→UP）**：W保持中に実機がホーム画面へ移ると解放（phaseはcoopのまま）、画面消灯で解放。実Wi-Fi断（`svc wifi disable`）では約5.6秒後に全解放してpaused（4秒切断判定と整合）、Wi-Fi復帰の約6.2秒後に自動復帰し、旧押下は復元しない。全8項目合格。
+- **#262の再現（現状の挙動の記録）**：P3が左ボタンを押している間にP1の実機がフォーカスを失うと、P3の左ボタンも解除された。バグ票どおりの挙動で、修正は未実装。
+- 構成の違い：Wi-Fi断の試験以降、実機がPCのモバイルホットスポットではなくルーター経由の自宅LAN（PCは有線の同一セグメント）へ自動接続し、以降はそのIPで実施した（Wi-Fi断・復帰の試験自体はルーターLAN上で実施）。ホットスポット側での同試験は未実施。
+- 限界：Minecraft 26.3は1版・クリエイティブ・単一PC。P2・P3は模擬、実機は1台。2人・4人の実入力、AT-D05の連続3回の台本、実指の長時間、iPhoneは未実施。#261は未修正。実入力の試験コードは `data/local/real-mc/scripts/`（Git対象外）。
