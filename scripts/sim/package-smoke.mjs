@@ -52,7 +52,8 @@ try {
   assert.equal(checksum[0], hash(fs.readFileSync(zip)), 'zipのSHA-256不一致');
   assert.equal(checksum[1], path.basename(zip));
   const expand = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-    'Expand-Archive -LiteralPath $env:RECOOPLAY_TEST_ZIP -DestinationPath $env:RECOOPLAY_TEST_DEST'],
+    // Archiveモジュールの自動読込に依存せず、通常権限の.NET APIで展開する。
+    'Add-Type -AssemblyName System.IO.Compression.FileSystem; [IO.Compression.ZipFile]::ExtractToDirectory($env:RECOOPLAY_TEST_ZIP, $env:RECOOPLAY_TEST_DEST)'],
   { env: { ...process.env, RECOOPLAY_TEST_ZIP: zip, RECOOPLAY_TEST_DEST: temp }, encoding: 'utf8', windowsHide: true });
   assert.equal(expand.status, 0, expand.stderr || String(expand.error));
   const entries = fs.readdirSync(temp);
@@ -103,6 +104,11 @@ try {
   }
   const app = await fetch(`${url}/app`, { signal: AbortSignal.timeout(3000) });
   assert.equal(app.status, 200, '/appを配信できません');
+  assert((await app.text()).includes('/react/pc.js'),'配布物の /app はReactを起動する');
+  const phone=await fetch(url+'/',{signal:AbortSignal.timeout(3000)});
+  assert.equal(phone.status,200);
+  assert((await phone.text()).includes('/react/phone.js'),'配布物の / はReactを起動する');
+  for(const entry of ['phone','pc'])assert.equal((await fetch(`${url}/react/${entry}.js`)).status,200,'製品entryの同梱と配信');
   child.stdin.end('quit\n');
   assert.equal(await Promise.race([exited, sleep(5000).then(() => 'timeout')]), 0, '正常終了しません');
   const events = inventory(path.join(dir, 'logs')).filter(file => file.endsWith('.jsonl'))

@@ -1,0 +1,5960 @@
+{
+  "version": 1,
+  "complete": true,
+  "status": "completed",
+  "hostSourceCommit": "d7b4b7931201b31385a919e809755d63f8b3c063",
+  "plannedOrder": [
+    {
+      "label": "E-after",
+      "trial": 1
+    },
+    {
+      "label": "E-after-ws",
+      "trial": 1
+    },
+    {
+      "label": "E-after-ws",
+      "trial": 2
+    },
+    {
+      "label": "E-after",
+      "trial": 2
+    },
+    {
+      "label": "E-after",
+      "trial": 3
+    },
+    {
+      "label": "E-after-ws",
+      "trial": 3
+    }
+  ],
+  "trials": [
+    {
+      "condition": "E-after",
+      "trial": 1,
+      "date": "2026-11-09T03:59:04.185Z",
+      "sourceCommit": "c2e2fe380b560f0ece7d5b6ad7164bb44ea0f92b",
+      "runner": {
+        "commit": "c75fda59b5b933b5b288b386c99742ed3eccbffe",
+        "dirty": false,
+        "modules": {
+          "android-dry-run.mjs": "d5778865be4f8b4878fef94fae0b81b6d8ec8b4abbea012a8b6822467addc874",
+          "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+          "wifi-route.mjs": "5f773fc6abfe330bff29b8a48007245666b867a0971b550e429cdc2758134a1f",
+          "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d",
+          "wifi-ack-observer.mjs": "68174363ba3504bbdc1107b6efd08f0440f768947e7b52909f6159a20d6621dd"
+        }
+      },
+      "binarySha256": "47f6f6f85bd3ad76e55f340a9d00d779cc5bb8e3aa7ab90b90b3bb6d85570099",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "Wi-Fi LAN / HTTP+WS (USB CDP control only)",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60320.847299999994,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 19,
+          "p95": 28.399999976158142,
+          "p99": 29.599999964237213,
+          "mean": 18.852777778274483,
+          "max": 29.599999964237213
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 16.400000035762787,
+          "p95": 25.399999976158142,
+          "p99": 27.19999998807907,
+          "mean": 15.401136367158456,
+          "max": 27.19999998807907
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 16.5,
+          "p95": 108.89999997615814,
+          "p99": 111.19999998807907,
+          "mean": 31.13839285394975,
+          "max": 134.9000000357628
+        },
+        "unacked": 0,
+        "firstVia": {
+          "rtc": 7,
+          "ws": 217
+        },
+        "method": "Wi-Fi LAN / CDP合成タッチ。端末内送信時間とACK観測（製品handlerを含む）、ゲーム応答ではない",
+        "excludedAcks": 0,
+        "duplicateAcks": 0,
+        "downObservedToSendMs": {
+          "n": 72,
+          "p50": 1,
+          "p95": 1.600000023841858,
+          "p99": 3,
+          "mean": 0.9944444456034236,
+          "max": 3
+        },
+        "downDispatchDelayMs": {
+          "n": 72,
+          "p50": 18,
+          "p95": 27.299999952316284,
+          "p99": 28.69999998807907,
+          "mean": 17.85833333267106,
+          "max": 28.69999998807907
+        },
+        "upObservedToSendMs": {
+          "n": 88,
+          "p50": 0.9000000357627869,
+          "p95": 1.800000011920929,
+          "p99": 3.400000035762787,
+          "mean": 0.962500005283139,
+          "max": 3.400000035762787
+        },
+        "upDispatchDelayMs": {
+          "n": 88,
+          "p50": 15.400000035762787,
+          "p95": 24.399999976158142,
+          "p99": 26,
+          "mean": 14.438636361875318,
+          "max": 26
+        },
+        "ackByFirstVia": {
+          "ws": {
+            "n": 217,
+            "p50": 16.599999964237213,
+            "p95": 109,
+            "p99": 111.19999998807907,
+            "mean": 30.993087554582253,
+            "max": 134.9000000357628
+          },
+          "rtc": {
+            "n": 7,
+            "p50": 13.799999952316284,
+            "p95": 106.69999998807907,
+            "p99": 106.69999998807907,
+            "mean": 35.642857134342194,
+            "max": 106.69999998807907
+          }
+        }
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicateAccepted": 0,
+        "unacked": 0,
+        "outputMatched": 224
+      },
+      "host": {
+        "epoch": 5,
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicateAccepted": 0,
+        "outputMatched": 224,
+        "outputUnmatched": 0,
+        "orderGapCount": 0,
+        "timing": {
+          "receiveToAcceptMs": {
+            "n": 224,
+            "p50": 0.076,
+            "p95": 0.153,
+            "p99": 0.214,
+            "mean": 0.08490625,
+            "max": 0.374
+          },
+          "bufferToAcceptMs": {
+            "n": 224,
+            "p50": 0.007,
+            "p95": 0.015,
+            "p99": 0.024,
+            "mean": 0.009017857142857136,
+            "max": 0.206
+          },
+          "acceptToDryOutputMs": {
+            "n": 224,
+            "p50": 0.032,
+            "p95": 14.023,
+            "p99": 22.186,
+            "mean": 1.3665446428571426,
+            "max": 31.455
+          },
+          "adapterCallMs": {
+            "n": 224,
+            "p50": 0.002,
+            "p95": 0.007,
+            "p99": 0.014,
+            "mean": 0.0028080357142857165,
+            "max": 0.027
+          }
+        },
+        "arrival": {
+          "ws": {
+            "received": 224,
+            "arrivalIntervalMs": {
+              "n": 223,
+              "p50": 80.373,
+              "p95": 1138.28,
+              "p99": 1246.151,
+              "mean": 266.1694484304932,
+              "max": 1247.503
+            },
+            "intervalVariationMs": {
+              "n": 223,
+              "p50": 0.07300004768371582,
+              "p95": 7.1369999523162875,
+              "p99": 26.85199997615814,
+              "mean": -0.00678475341668384,
+              "max": 127.5370000476837
+            },
+            "absoluteIntervalVariationMs": {
+              "n": 223,
+              "p50": 0.8539999999999992,
+              "p95": 12.459999999999994,
+              "p99": 47.339,
+              "mean": 3.825215247010969,
+              "max": 128.38900002384185
+            },
+            "note": "間隔差の変動。絶対時計差/片道遅延ではない。入力間隔には意図的な休止を含む。"
+          },
+          "rtc": {
+            "received": 223,
+            "arrivalIntervalMs": {
+              "n": 222,
+              "p50": 79.475,
+              "p95": 1138.625,
+              "p99": 1246.117,
+              "mean": 267.3726891891892,
+              "max": 1247.063
+            },
+            "intervalVariationMs": {
+              "n": 222,
+              "p50": -0.04999999999999716,
+              "p95": 5.967000023841855,
+              "p99": 21.938999999999993,
+              "mean": -0.0025360360897317613,
+              "max": 127.74600004768371
+            },
+            "absoluteIntervalVariationMs": {
+              "n": 222,
+              "p50": 1.1889999761581436,
+              "p95": 11.719999976158192,
+              "p99": 26.81499997615815,
+              "mean": 3.765454955008653,
+              "max": 128.26300002384187
+            },
+            "note": "間隔差の変動。絶対時計差/片道遅延ではない。入力間隔には意図的な休止を含む。"
+          }
+        },
+        "look": {
+          "ws": {
+            "received": 0,
+            "arrivalIntervalMs": {
+              "n": 0
+            },
+            "gaps200ms": 0,
+            "maxGapMs": null
+          },
+          "rtc": {
+            "received": 1695,
+            "arrivalIntervalMs": {
+              "n": 1694,
+              "p50": 33.11,
+              "p95": 65.297,
+              "p99": 71.048,
+              "mean": 35.40833884297525,
+              "max": 116.798
+            },
+            "gaps200ms": 0,
+            "maxGapMs": 116.798
+          }
+        }
+      },
+      "look": {
+        "version": 2,
+        "moves": 1800,
+        "companionTaps": 0,
+        "durationMs": 60204,
+        "summary": {
+          "n": 1714,
+          "p50": 33,
+          "p95": 64.30000001192093,
+          "p99": 66.10000002384186,
+          "mean": 34.99591598599767,
+          "max": 97.60000002384186
+        },
+        "gaps200ms": 0,
+        "longestGapMs": 97.60000002384186,
+        "hostLookLost": 20
+      },
+      "network": {
+        "topology": "Windows Wi-Fi Direct / mobile hotspot",
+        "pairCatalog": [
+          {
+            "pair": "pair-1",
+            "selectedBy": "transport.selectedCandidatePairId",
+            "local": {
+              "endpoint": "Android wlan0",
+              "type": "host",
+              "protocol": "udp",
+              "networkType": "unknown"
+            },
+            "remote": {
+              "endpoint": "PC Wi-Fi LAN",
+              "type": "host",
+              "protocol": "udp"
+            }
+          },
+          {
+            "pair": "pair-2",
+            "selectedBy": "transport.selectedCandidatePairId",
+            "local": {
+              "endpoint": "Android wlan0",
+              "type": "host",
+              "protocol": "udp",
+              "networkType": "unknown"
+            },
+            "remote": {
+              "endpoint": "PC Wi-Fi LAN",
+              "type": "host",
+              "protocol": "udp"
+            }
+          }
+        ],
+        "samples": [
+          {
+            "label": "initial",
+            "at": 8797.6633,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 1413,
+                "bytesReceived": 1574,
+                "currentRoundTripTimeMs": 3
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "input-end",
+            "at": 73557.9275,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 169421,
+                "bytesReceived": 184025,
+                "currentRoundTripTimeMs": 10
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 13
+          },
+          {
+            "label": "look-start",
+            "at": 86475.8304,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 3131,
+                "bytesReceived": 3369,
+                "currentRoundTripTimeMs": 3
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-150",
+            "at": 91542.1996,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 30660,
+                "bytesReceived": 24268,
+                "currentRoundTripTimeMs": 53
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 9,
+            "historySamples": 1
+          },
+          {
+            "label": "look-300",
+            "at": 96553.0886,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 57898,
+                "bytesReceived": 47441,
+                "currentRoundTripTimeMs": 6
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 20,
+            "historySamples": 2
+          },
+          {
+            "label": "look-450",
+            "at": 101544.3955,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 84816,
+                "bytesReceived": 71100,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 20,
+            "historySamples": 3
+          },
+          {
+            "label": "look-600",
+            "at": 106566.222,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 110862,
+                "bytesReceived": 94234,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 20,
+            "historySamples": 4
+          },
+          {
+            "label": "look-750",
+            "at": 111544.3357,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 137514,
+                "bytesReceived": 117689,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 20,
+            "historySamples": 5
+          },
+          {
+            "label": "look-900",
+            "at": 116550.9092,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 164283,
+                "bytesReceived": 141093,
+                "currentRoundTripTimeMs": 7
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 20,
+            "historySamples": 6
+          },
+          {
+            "label": "look-1050",
+            "at": 121553.4497,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 190794,
+                "bytesReceived": 164512,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 20,
+            "historySamples": 7
+          },
+          {
+            "label": "look-1200",
+            "at": 126541.2384,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 217774,
+                "bytesReceived": 188024,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 20,
+            "historySamples": 8
+          },
+          {
+            "label": "look-1350",
+            "at": 131551.5011,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 244751,
+                "bytesReceived": 211440,
+                "currentRoundTripTimeMs": 3
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 20,
+            "historySamples": 9
+          },
+          {
+            "label": "look-1500",
+            "at": 136556.6187,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 271542,
+                "bytesReceived": 234778,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 20,
+            "historySamples": 10
+          },
+          {
+            "label": "look-1650",
+            "at": 141550.3907,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 298999,
+                "bytesReceived": 258506,
+                "currentRoundTripTimeMs": 3
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 20,
+            "historySamples": 11
+          },
+          {
+            "label": "look-1800",
+            "at": 146560.7814,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 325269,
+                "bytesReceived": 281592,
+                "currentRoundTripTimeMs": 6
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 20,
+            "historySamples": 12
+          },
+          {
+            "label": "look-end",
+            "at": 146721.5799,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 325693,
+                "bytesReceived": 282111,
+                "currentRoundTripTimeMs": 6
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 20,
+            "historySamples": 12
+          }
+        ],
+        "pathHistory": [
+          {
+            "at": 5059,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 4856,
+                "bytesReceived": 4765,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 10067.200000047684,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 16674,
+                "bytesReceived": 15634,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 15058.300000011921,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 30410,
+                "bytesReceived": 27617,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 20065.80000001192,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 42797,
+                "bytesReceived": 38988,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 25058.5,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 56768,
+                "bytesReceived": 51934,
+                "currentRoundTripTimeMs": 15
+              }
+            ]
+          },
+          {
+            "at": 30064.30000001192,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 71211,
+                "bytesReceived": 67477,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          },
+          {
+            "at": 35058.10000002384,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 83882,
+                "bytesReceived": 82879,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 40061.90000003576,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 97220,
+                "bytesReceived": 98478,
+                "currentRoundTripTimeMs": 6
+              }
+            ]
+          },
+          {
+            "at": 45057.5,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 111131,
+                "bytesReceived": 114693,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 50061.90000003576,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 123691,
+                "bytesReceived": 130143,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 55057.30000001192,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 137048,
+                "bytesReceived": 145624,
+                "currentRoundTripTimeMs": 9
+              }
+            ]
+          },
+          {
+            "at": 60061.30000001192,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 150885,
+                "bytesReceived": 161887,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 65058.5,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 163212,
+                "bytesReceived": 176990,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          },
+          {
+            "at": 5047.300000011921,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 19197,
+                "bytesReceived": 14822,
+                "currentRoundTripTimeMs": 2
+              }
+            ]
+          },
+          {
+            "at": 10048,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 47358,
+                "bytesReceived": 38085,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 15047.600000023842,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 73872,
+                "bytesReceived": 61580,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 20049.100000023842,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 100568,
+                "bytesReceived": 84845,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 25047.5,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 126655,
+                "bytesReceived": 108036,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 30047.900000035763,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 153779,
+                "bytesReceived": 131870,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          },
+          {
+            "at": 35046.700000047684,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 180023,
+                "bytesReceived": 155094,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 40048.10000002384,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 206823,
+                "bytesReceived": 178537,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 45047,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 233872,
+                "bytesReceived": 202034,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 50046.700000047684,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 260595,
+                "bytesReceived": 225327,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 55056.80000001192,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 288136,
+                "bytesReceived": 249031,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 60047.60000002384,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 315081,
+                "bytesReceived": 272504,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          }
+        ],
+        "selectedPairGenerations": 2
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Wi-Fi HTTP/WS/ICE経路と非ループバック認可",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "reconnect": {
+        "slot": "P1",
+        "phase": "paused",
+        "down": [],
+        "reconnects": 2,
+        "releaseAfterMs": 11.026599999997416,
+        "reconnectAfterMs": 722.4839999999967,
+        "timing": "PC process observation including CDP and 100ms polling",
+        "method": "試験タブの実WebSocketを閉じる（Wi-Fi断ではない）"
+      },
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "E-after-1.json.gz",
+      "rawSha256": "7fcfebc7f1bd1d45ce8c95804cad9436d5fded18f592d10dab3b65b1508444f0"
+    },
+    {
+      "condition": "E-after-ws",
+      "trial": 1,
+      "date": "2026-11-09T04:01:34.967Z",
+      "sourceCommit": "c2e2fe380b560f0ece7d5b6ad7164bb44ea0f92b",
+      "runner": {
+        "commit": "c75fda59b5b933b5b288b386c99742ed3eccbffe",
+        "dirty": false,
+        "modules": {
+          "android-dry-run.mjs": "d5778865be4f8b4878fef94fae0b81b6d8ec8b4abbea012a8b6822467addc874",
+          "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+          "wifi-route.mjs": "5f773fc6abfe330bff29b8a48007245666b867a0971b550e429cdc2758134a1f",
+          "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d",
+          "wifi-ack-observer.mjs": "68174363ba3504bbdc1107b6efd08f0440f768947e7b52909f6159a20d6621dd"
+        }
+      },
+      "binarySha256": "47f6f6f85bd3ad76e55f340a9d00d779cc5bb8e3aa7ab90b90b3bb6d85570099",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "Wi-Fi LAN / HTTP+WS (USB CDP control only)",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60319.2424,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 17.099999964237213,
+          "p95": 26.399999976158142,
+          "p99": 27.5,
+          "mean": 17.852777770823902,
+          "max": 27.5
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 14.800000011920929,
+          "p95": 24.799999952316284,
+          "p99": 26.19999998807907,
+          "mean": 14.702272723344239,
+          "max": 26.19999998807907
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 18.30000001192093,
+          "p95": 106.5,
+          "p99": 109.69999998807907,
+          "mean": 31.181249999574252,
+          "max": 111.10000002384186
+        },
+        "unacked": 0,
+        "firstVia": {
+          "ws": 224
+        },
+        "method": "Wi-Fi LAN / CDP合成タッチ。端末内送信時間とACK観測（製品handlerを含む）、ゲーム応答ではない",
+        "excludedAcks": 0,
+        "duplicateAcks": 0,
+        "downObservedToSendMs": {
+          "n": 72,
+          "p50": 0.699999988079071,
+          "p95": 1,
+          "p99": 1.2999999523162842,
+          "mean": 0.7208333313465118,
+          "max": 1.2999999523162842
+        },
+        "downDispatchDelayMs": {
+          "n": 72,
+          "p50": 16.299999952316284,
+          "p95": 25.600000023841858,
+          "p99": 26.5,
+          "mean": 17.13194443947739,
+          "max": 26.5
+        },
+        "upObservedToSendMs": {
+          "n": 88,
+          "p50": 0.699999988079071,
+          "p95": 1.100000023841858,
+          "p99": 1.5999999642372131,
+          "mean": 0.7090909074653279,
+          "max": 1.5999999642372131
+        },
+        "upDispatchDelayMs": {
+          "n": 88,
+          "p50": 14.300000011920929,
+          "p95": 23.599999964237213,
+          "p99": 25.5,
+          "mean": 13.993181815878911,
+          "max": 25.5
+        },
+        "ackByFirstVia": {
+          "ws": {
+            "n": 224,
+            "p50": 18.30000001192093,
+            "p95": 106.5,
+            "p99": 109.69999998807907,
+            "mean": 31.181249999574252,
+            "max": 111.10000002384186
+          },
+          "rtc": {
+            "n": 0
+          }
+        }
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicateAccepted": 0,
+        "unacked": 0,
+        "outputMatched": 224
+      },
+      "host": {
+        "epoch": 5,
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicateAccepted": 0,
+        "outputMatched": 224,
+        "outputUnmatched": 0,
+        "orderGapCount": 0,
+        "timing": {
+          "receiveToAcceptMs": {
+            "n": 224,
+            "p50": 0.077,
+            "p95": 0.157,
+            "p99": 0.201,
+            "mean": 0.08503125000000002,
+            "max": 0.459
+          },
+          "bufferToAcceptMs": {
+            "n": 224,
+            "p50": 0.007,
+            "p95": 0.013,
+            "p99": 0.017,
+            "mean": 0.007642857142857139,
+            "max": 0.046
+          },
+          "acceptToDryOutputMs": {
+            "n": 224,
+            "p50": 0.034,
+            "p95": 17.276,
+            "p99": 50.576,
+            "mean": 2.441901785714286,
+            "max": 61.253
+          },
+          "adapterCallMs": {
+            "n": 224,
+            "p50": 0.002,
+            "p95": 0.01,
+            "p99": 0.017,
+            "mean": 0.0033437500000000025,
+            "max": 0.052
+          }
+        },
+        "arrival": {
+          "ws": {
+            "received": 224,
+            "arrivalIntervalMs": {
+              "n": 223,
+              "p50": 79.039,
+              "p95": 1146.95,
+              "p99": 1233.567,
+              "mean": 266.25968609865487,
+              "max": 1267.851
+            },
+            "intervalVariationMs": {
+              "n": 223,
+              "p50": -0.06800001192092964,
+              "p95": 14.524000023841836,
+              "p99": 38.95100002384197,
+              "mean": -0.059596412502596494,
+              "max": 76.58999995231628
+            },
+            "absoluteIntervalVariationMs": {
+              "n": 223,
+              "p50": 7.508000011920927,
+              "p95": 20.26399998807907,
+              "p99": 62.783999952316286,
+              "mean": 8.383381166507313,
+              "max": 76.58999995231628
+            },
+            "note": "間隔差の変動。絶対時計差/片道遅延ではない。入力間隔には意図的な休止を含む。"
+          },
+          "rtc": {
+            "received": 0,
+            "arrivalIntervalMs": {
+              "n": 0
+            },
+            "intervalVariationMs": {
+              "n": 0
+            },
+            "absoluteIntervalVariationMs": {
+              "n": 0
+            },
+            "note": "間隔差の変動。絶対時計差/片道遅延ではない。入力間隔には意図的な休止を含む。"
+          }
+        },
+        "look": {
+          "ws": {
+            "received": 1741,
+            "arrivalIntervalMs": {
+              "n": 1740,
+              "p50": 33.037,
+              "p95": 63.651,
+              "p99": 69.935,
+              "mean": 34.461045977011494,
+              "max": 108.272
+            },
+            "gaps200ms": 0,
+            "maxGapMs": 108.272
+          },
+          "rtc": {
+            "received": 0,
+            "arrivalIntervalMs": {
+              "n": 0
+            },
+            "gaps200ms": 0,
+            "maxGapMs": null
+          }
+        }
+      },
+      "look": {
+        "version": 2,
+        "moves": 1800,
+        "companionTaps": 0,
+        "durationMs": 60136,
+        "summary": {
+          "n": 1740,
+          "p50": 33,
+          "p95": 35.09999996423721,
+          "p99": 66.10000002384186,
+          "mean": 34.46833333335389,
+          "max": 80.30000001192093
+        },
+        "gaps200ms": 0,
+        "longestGapMs": 80.30000001192093,
+        "hostLookLost": 0
+      },
+      "network": {
+        "topology": "Windows Wi-Fi Direct / mobile hotspot",
+        "pairCatalog": [],
+        "samples": [
+          {
+            "label": "initial",
+            "at": 7957.4584,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "input-end",
+            "at": 73015.785,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-start",
+            "at": 86776.8285,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-150",
+            "at": 91811.9465,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-300",
+            "at": 96812.3706,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-450",
+            "at": 101822.0394,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-600",
+            "at": 106824.5483,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-750",
+            "at": 111824.0573,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-900",
+            "at": 116817.9837,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1050",
+            "at": 121817.834,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1200",
+            "at": 126820.0007,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1350",
+            "at": 131820.4087,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1500",
+            "at": 136805.5612,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1650",
+            "at": 141817.8732,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1800",
+            "at": 146812.5535,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-end",
+            "at": 146939.4919,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          }
+        ],
+        "pathHistory": [],
+        "selectedPairGenerations": 0
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Wi-Fi HTTP/WS/ICE経路と非ループバック認可",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "reconnect": {
+        "slot": "P1",
+        "phase": "paused",
+        "down": [],
+        "reconnects": 2,
+        "releaseAfterMs": 105.28859999999986,
+        "reconnectAfterMs": 732.2026000000042,
+        "timing": "PC process observation including CDP and 100ms polling",
+        "method": "試験タブの実WebSocketを閉じる（Wi-Fi断ではない）"
+      },
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "E-after-ws-1.json.gz",
+      "rawSha256": "68dca81eb3462ec2c9722787c1de2f545007d54f98d9c803b8506773a48e1b92"
+    },
+    {
+      "condition": "E-after-ws",
+      "trial": 2,
+      "date": "2026-11-09T04:04:06.175Z",
+      "sourceCommit": "c2e2fe380b560f0ece7d5b6ad7164bb44ea0f92b",
+      "runner": {
+        "commit": "c75fda59b5b933b5b288b386c99742ed3eccbffe",
+        "dirty": false,
+        "modules": {
+          "android-dry-run.mjs": "d5778865be4f8b4878fef94fae0b81b6d8ec8b4abbea012a8b6822467addc874",
+          "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+          "wifi-route.mjs": "5f773fc6abfe330bff29b8a48007245666b867a0971b550e429cdc2758134a1f",
+          "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d",
+          "wifi-ack-observer.mjs": "68174363ba3504bbdc1107b6efd08f0440f768947e7b52909f6159a20d6621dd"
+        }
+      },
+      "binarySha256": "47f6f6f85bd3ad76e55f340a9d00d779cc5bb8e3aa7ab90b90b3bb6d85570099",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "Wi-Fi LAN / HTTP+WS (USB CDP control only)",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60326.279299999995,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 18.900000035762787,
+          "p95": 26.5,
+          "p99": 28.5,
+          "mean": 18.522222220897675,
+          "max": 28.5
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 15.599999964237213,
+          "p95": 25.100000023841858,
+          "p99": 27.899999976158142,
+          "mean": 14.8352272761139,
+          "max": 27.899999976158142
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 19.099999964237213,
+          "p95": 107.20000004768372,
+          "p99": 109.5,
+          "mean": 33.815624999148504,
+          "max": 236
+        },
+        "unacked": 0,
+        "firstVia": {
+          "ws": 224
+        },
+        "method": "Wi-Fi LAN / CDP合成タッチ。端末内送信時間とACK観測（製品handlerを含む）、ゲーム応答ではない",
+        "excludedAcks": 0,
+        "duplicateAcks": 0,
+        "downObservedToSendMs": {
+          "n": 72,
+          "p50": 0.699999988079071,
+          "p95": 1,
+          "p99": 1.600000023841858,
+          "mean": 0.7236111089587212,
+          "max": 1.600000023841858
+        },
+        "downDispatchDelayMs": {
+          "n": 72,
+          "p50": 18,
+          "p95": 25.69999998807907,
+          "p99": 27.69999998807907,
+          "mean": 17.798611111938953,
+          "max": 27.69999998807907
+        },
+        "upObservedToSendMs": {
+          "n": 88,
+          "p50": 0.7000000476837158,
+          "p95": 1.300000011920929,
+          "p99": 2.200000047683716,
+          "mean": 0.7897727333686568,
+          "max": 2.200000047683716
+        },
+        "upDispatchDelayMs": {
+          "n": 88,
+          "p50": 14.799999952316284,
+          "p95": 24,
+          "p99": 26.399999976158142,
+          "mean": 14.045454542745244,
+          "max": 26.399999976158142
+        },
+        "ackByFirstVia": {
+          "ws": {
+            "n": 224,
+            "p50": 19.099999964237213,
+            "p95": 107.20000004768372,
+            "p99": 109.5,
+            "mean": 33.815624999148504,
+            "max": 236
+          },
+          "rtc": {
+            "n": 0
+          }
+        }
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicateAccepted": 0,
+        "unacked": 0,
+        "outputMatched": 224
+      },
+      "host": {
+        "epoch": 5,
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicateAccepted": 0,
+        "outputMatched": 224,
+        "outputUnmatched": 0,
+        "orderGapCount": 0,
+        "timing": {
+          "receiveToAcceptMs": {
+            "n": 224,
+            "p50": 0.073,
+            "p95": 0.148,
+            "p99": 0.273,
+            "mean": 0.08395535714285719,
+            "max": 0.474
+          },
+          "bufferToAcceptMs": {
+            "n": 224,
+            "p50": 0.006,
+            "p95": 0.013,
+            "p99": 0.017,
+            "mean": 0.007352678571428564,
+            "max": 0.026
+          },
+          "acceptToDryOutputMs": {
+            "n": 224,
+            "p50": 0.028,
+            "p95": 12.47,
+            "p99": 29.838,
+            "mean": 1.7931875000000004,
+            "max": 33.8
+          },
+          "adapterCallMs": {
+            "n": 224,
+            "p50": 0.002,
+            "p95": 0.008,
+            "p99": 0.011,
+            "mean": 0.002544642857142859,
+            "max": 0.012
+          }
+        },
+        "arrival": {
+          "ws": {
+            "received": 224,
+            "arrivalIntervalMs": {
+              "n": 223,
+              "p50": 81.2,
+              "p95": 1141.425,
+              "p99": 1242.719,
+              "mean": 265.9479686098654,
+              "max": 1252.846
+            },
+            "intervalVariationMs": {
+              "n": 223,
+              "p50": -0.04200003576278988,
+              "p95": 16.58199997615816,
+              "p99": 33.522000000000006,
+              "mean": -0.05786098660054474,
+              "max": 229.221
+            },
+            "absoluteIntervalVariationMs": {
+              "n": 223,
+              "p50": 6.461000047683683,
+              "p95": 22.970000047683698,
+              "p99": 220.45000002384185,
+              "mean": 11.452757850580687,
+              "max": 230.80899996423716
+            },
+            "note": "間隔差の変動。絶対時計差/片道遅延ではない。入力間隔には意図的な休止を含む。"
+          },
+          "rtc": {
+            "received": 0,
+            "arrivalIntervalMs": {
+              "n": 0
+            },
+            "intervalVariationMs": {
+              "n": 0
+            },
+            "absoluteIntervalVariationMs": {
+              "n": 0
+            },
+            "note": "間隔差の変動。絶対時計差/片道遅延ではない。入力間隔には意図的な休止を含む。"
+          }
+        },
+        "look": {
+          "ws": {
+            "received": 1756,
+            "arrivalIntervalMs": {
+              "n": 1755,
+              "p50": 33.045,
+              "p95": 45.61,
+              "p99": 70.007,
+              "mean": 34.171340740740746,
+              "max": 270.981
+            },
+            "gaps200ms": 2,
+            "maxGapMs": 270.981
+          },
+          "rtc": {
+            "received": 0,
+            "arrivalIntervalMs": {
+              "n": 0
+            },
+            "gaps200ms": 0,
+            "maxGapMs": null
+          }
+        }
+      },
+      "look": {
+        "version": 2,
+        "moves": 1800,
+        "companionTaps": 0,
+        "durationMs": 60169,
+        "summary": {
+          "n": 1755,
+          "p50": 33,
+          "p95": 34.19999998807907,
+          "p99": 66,
+          "mean": 34.179430199416615,
+          "max": 67
+        },
+        "gaps200ms": 0,
+        "longestGapMs": 67,
+        "hostLookLost": 0
+      },
+      "network": {
+        "topology": "Windows Wi-Fi Direct / mobile hotspot",
+        "pairCatalog": [],
+        "samples": [
+          {
+            "label": "initial",
+            "at": 8028.3365,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "input-end",
+            "at": 73087.9085,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-start",
+            "at": 86829.2824,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-150",
+            "at": 91874.4249,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-300",
+            "at": 96870.6133,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-450",
+            "at": 101860.6775,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-600",
+            "at": 106861.9536,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-750",
+            "at": 111867.4085,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-900",
+            "at": 116873.2364,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1050",
+            "at": 121863.8235,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1200",
+            "at": 126869.8607,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1350",
+            "at": 131885.2488,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1500",
+            "at": 136867.0872,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1650",
+            "at": 141863.2185,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1800",
+            "at": 146870.4129,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-end",
+            "at": 147019.0145,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          }
+        ],
+        "pathHistory": [],
+        "selectedPairGenerations": 0
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Wi-Fi HTTP/WS/ICE経路と非ループバック認可",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "reconnect": {
+        "slot": "P1",
+        "phase": "paused",
+        "down": [],
+        "reconnects": 2,
+        "releaseAfterMs": 9.78509999999369,
+        "reconnectAfterMs": 834.5339999999997,
+        "timing": "PC process observation including CDP and 100ms polling",
+        "method": "試験タブの実WebSocketを閉じる（Wi-Fi断ではない）"
+      },
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "E-after-ws-2.json.gz",
+      "rawSha256": "af061bf152c588b906bd03935499faf527e2110b60f1afc81167be344e06e3aa"
+    },
+    {
+      "condition": "E-after",
+      "trial": 2,
+      "date": "2026-11-09T04:06:37.486Z",
+      "sourceCommit": "c2e2fe380b560f0ece7d5b6ad7164bb44ea0f92b",
+      "runner": {
+        "commit": "c75fda59b5b933b5b288b386c99742ed3eccbffe",
+        "dirty": false,
+        "modules": {
+          "android-dry-run.mjs": "d5778865be4f8b4878fef94fae0b81b6d8ec8b4abbea012a8b6822467addc874",
+          "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+          "wifi-route.mjs": "5f773fc6abfe330bff29b8a48007245666b867a0971b550e429cdc2758134a1f",
+          "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d",
+          "wifi-ack-observer.mjs": "68174363ba3504bbdc1107b6efd08f0440f768947e7b52909f6159a20d6621dd"
+        }
+      },
+      "binarySha256": "47f6f6f85bd3ad76e55f340a9d00d779cc5bb8e3aa7ab90b90b3bb6d85570099",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "Wi-Fi LAN / HTTP+WS (USB CDP control only)",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60319.7004,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 17.100000023841858,
+          "p95": 26.900000035762787,
+          "p99": 29.69999998807907,
+          "mean": 17.695833336975838,
+          "max": 29.69999998807907
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 15.600000023841858,
+          "p95": 26.200000047683716,
+          "p99": 29.100000023841858,
+          "mean": 15.672727275978435,
+          "max": 29.100000023841858
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 17.600000023841858,
+          "p95": 109.09999996423721,
+          "p99": 111,
+          "mean": 31.179017854854465,
+          "max": 111.69999998807907
+        },
+        "unacked": 0,
+        "firstVia": {
+          "ws": 215,
+          "rtc": 9
+        },
+        "method": "Wi-Fi LAN / CDP合成タッチ。端末内送信時間とACK観測（製品handlerを含む）、ゲーム応答ではない",
+        "excludedAcks": 0,
+        "duplicateAcks": 0,
+        "downObservedToSendMs": {
+          "n": 72,
+          "p50": 0.8999999761581421,
+          "p95": 1.199999988079071,
+          "p99": 1.399999976158142,
+          "mean": 0.8750000008278422,
+          "max": 1.399999976158142
+        },
+        "downDispatchDelayMs": {
+          "n": 72,
+          "p50": 16.200000047683716,
+          "p95": 26,
+          "p99": 28.599999964237213,
+          "mean": 16.820833336148,
+          "max": 28.599999964237213
+        },
+        "upObservedToSendMs": {
+          "n": 88,
+          "p50": 1,
+          "p95": 1.5,
+          "p99": 2.099999964237213,
+          "mean": 0.9625000005418604,
+          "max": 2.099999964237213
+        },
+        "upDispatchDelayMs": {
+          "n": 88,
+          "p50": 14.600000023841858,
+          "p95": 25.19999998807907,
+          "p99": 27.80000001192093,
+          "mean": 14.710227275436575,
+          "max": 27.80000001192093
+        },
+        "ackByFirstVia": {
+          "ws": {
+            "n": 215,
+            "p50": 17.5,
+            "p95": 109.19999998807907,
+            "p99": 111,
+            "mean": 30.584186044404674,
+            "max": 111.69999998807907
+          },
+          "rtc": {
+            "n": 9,
+            "p50": 56.30000001192093,
+            "p95": 94.69999998807907,
+            "p99": 94.69999998807907,
+            "mean": 45.38888888226615,
+            "max": 94.69999998807907
+          }
+        }
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicateAccepted": 0,
+        "unacked": 0,
+        "outputMatched": 224
+      },
+      "host": {
+        "epoch": 5,
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicateAccepted": 0,
+        "outputMatched": 224,
+        "outputUnmatched": 0,
+        "orderGapCount": 0,
+        "timing": {
+          "receiveToAcceptMs": {
+            "n": 224,
+            "p50": 0.072,
+            "p95": 0.144,
+            "p99": 0.229,
+            "mean": 0.08055357142857145,
+            "max": 0.3
+          },
+          "bufferToAcceptMs": {
+            "n": 224,
+            "p50": 0.007,
+            "p95": 0.017,
+            "p99": 0.035,
+            "mean": 0.008191964285714276,
+            "max": 0.055
+          },
+          "acceptToDryOutputMs": {
+            "n": 224,
+            "p50": 0.029,
+            "p95": 7.962,
+            "p99": 24.565,
+            "mean": 1.2458482142857144,
+            "max": 29.261
+          },
+          "adapterCallMs": {
+            "n": 224,
+            "p50": 0.002,
+            "p95": 0.007,
+            "p99": 0.011,
+            "mean": 0.002544642857142859,
+            "max": 0.015
+          }
+        },
+        "arrival": {
+          "ws": {
+            "received": 224,
+            "arrivalIntervalMs": {
+              "n": 223,
+              "p50": 81.292,
+              "p95": 1123.53,
+              "p99": 1236.086,
+              "mean": 266.02200000000005,
+              "max": 1246.831
+            },
+            "intervalVariationMs": {
+              "n": 223,
+              "p50": 0.019000011920923043,
+              "p95": 8.195999988079066,
+              "p99": 19.91599998807908,
+              "mean": -0.003112107730232265,
+              "max": 210.21500001192095
+            },
+            "absoluteIntervalVariationMs": {
+              "n": 223,
+              "p50": 0.7870000357627873,
+              "p95": 12.090999999999994,
+              "p99": 53.27999996423722,
+              "mean": 4.5987713025867105,
+              "max": 212.12699997615812
+            },
+            "note": "間隔差の変動。絶対時計差/片道遅延ではない。入力間隔には意図的な休止を含む。"
+          },
+          "rtc": {
+            "received": 224,
+            "arrivalIntervalMs": {
+              "n": 223,
+              "p50": 82.131,
+              "p95": 1123.64,
+              "p99": 1236.237,
+              "mean": 266.01583408071747,
+              "max": 1246.58
+            },
+            "intervalVariationMs": {
+              "n": 223,
+              "p50": -0.0830000119209302,
+              "p95": 7.936,
+              "p99": 19.48499998807904,
+              "mean": -0.009278027012745323,
+              "max": 42.49800001192092
+            },
+            "absoluteIntervalVariationMs": {
+              "n": 223,
+              "p50": 1.0350000238418602,
+              "p95": 12.62100000000001,
+              "p99": 41.19699996423721,
+              "mean": 3.1528116601550553,
+              "max": 43.64099997615813
+            },
+            "note": "間隔差の変動。絶対時計差/片道遅延ではない。入力間隔には意図的な休止を含む。"
+          }
+        },
+        "look": {
+          "ws": {
+            "received": 0,
+            "arrivalIntervalMs": {
+              "n": 0
+            },
+            "gaps200ms": 0,
+            "maxGapMs": null
+          },
+          "rtc": {
+            "received": 1714,
+            "arrivalIntervalMs": {
+              "n": 1713,
+              "p50": 33.079,
+              "p95": 64.159,
+              "p99": 69.933,
+              "mean": 35.00822124927031,
+              "max": 254.547
+            },
+            "gaps200ms": 3,
+            "maxGapMs": 254.547
+          }
+        }
+      },
+      "look": {
+        "version": 2,
+        "moves": 1800,
+        "companionTaps": 0,
+        "durationMs": 60164,
+        "summary": {
+          "n": 1731,
+          "p50": 33,
+          "p95": 36,
+          "p99": 66.09999996423721,
+          "mean": 34.64436741766387,
+          "max": 74.5
+        },
+        "gaps200ms": 0,
+        "longestGapMs": 74.5,
+        "hostLookLost": 18
+      },
+      "network": {
+        "topology": "Windows Wi-Fi Direct / mobile hotspot",
+        "pairCatalog": [
+          {
+            "pair": "pair-1",
+            "selectedBy": "transport.selectedCandidatePairId",
+            "local": {
+              "endpoint": "Android wlan0",
+              "type": "host",
+              "protocol": "udp",
+              "networkType": "unknown"
+            },
+            "remote": {
+              "endpoint": "PC Wi-Fi LAN",
+              "type": "host",
+              "protocol": "udp"
+            }
+          },
+          {
+            "pair": "pair-2",
+            "selectedBy": "transport.selectedCandidatePairId",
+            "local": {
+              "endpoint": "Android wlan0",
+              "type": "host",
+              "protocol": "udp",
+              "networkType": "unknown"
+            },
+            "remote": {
+              "endpoint": "PC Wi-Fi LAN",
+              "type": "host",
+              "protocol": "udp"
+            }
+          }
+        ],
+        "samples": [
+          {
+            "label": "initial",
+            "at": 7970.1681,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 1416,
+                "bytesReceived": 1573,
+                "currentRoundTripTimeMs": 5
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "input-end",
+            "at": 73106.8882,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 169424,
+                "bytesReceived": 163034,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 13
+          },
+          {
+            "label": "look-start",
+            "at": 86869.6634,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 3204,
+                "bytesReceived": 3447,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-150",
+            "at": 91910.5025,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 29589,
+                "bytesReceived": 21540,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 1
+          },
+          {
+            "label": "look-300",
+            "at": 96911.0173,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 56036,
+                "bytesReceived": 39614,
+                "currentRoundTripTimeMs": 5
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 2
+          },
+          {
+            "label": "look-450",
+            "at": 101905.2803,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 82834,
+                "bytesReceived": 57859,
+                "currentRoundTripTimeMs": 6
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 3
+          },
+          {
+            "label": "look-600",
+            "at": 106898.4752,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 109712,
+                "bytesReceived": 76040,
+                "currentRoundTripTimeMs": 3
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 4
+          },
+          {
+            "label": "look-750",
+            "at": 111912.916,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 136248,
+                "bytesReceived": 94191,
+                "currentRoundTripTimeMs": 3
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 5
+          },
+          {
+            "label": "look-900",
+            "at": 116918.9386,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 163783,
+                "bytesReceived": 113407,
+                "currentRoundTripTimeMs": 127
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 6
+          },
+          {
+            "label": "look-1050",
+            "at": 121941.4718,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 191505,
+                "bytesReceived": 136552,
+                "currentRoundTripTimeMs": 5
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 18,
+            "historySamples": 7
+          },
+          {
+            "label": "look-1200",
+            "at": 126923.4796,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 218857,
+                "bytesReceived": 160199,
+                "currentRoundTripTimeMs": 5
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 18,
+            "historySamples": 8
+          },
+          {
+            "label": "look-1350",
+            "at": 131907.7982,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 245415,
+                "bytesReceived": 183146,
+                "currentRoundTripTimeMs": 3
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 18,
+            "historySamples": 9
+          },
+          {
+            "label": "look-1500",
+            "at": 136915.8128,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 272770,
+                "bytesReceived": 206818,
+                "currentRoundTripTimeMs": 7
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 18,
+            "historySamples": 10
+          },
+          {
+            "label": "look-1650",
+            "at": 141913.7225,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 299896,
+                "bytesReceived": 230017,
+                "currentRoundTripTimeMs": 3
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 18,
+            "historySamples": 11
+          },
+          {
+            "label": "look-1800",
+            "at": 146909.5948,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 327027,
+                "bytesReceived": 253394,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 18,
+            "historySamples": 12
+          },
+          {
+            "label": "look-end",
+            "at": 147045.1221,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 327350,
+                "bytesReceived": 253901,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 18,
+            "historySamples": 12
+          }
+        ],
+        "pathHistory": [
+          {
+            "at": 5127.699999988079,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 4383,
+                "bytesReceived": 4218,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 10071.799999952316,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 16565,
+                "bytesReceived": 15451,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          },
+          {
+            "at": 15070.099999964237,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 30406,
+                "bytesReceived": 27502,
+                "currentRoundTripTimeMs": 10
+              }
+            ]
+          },
+          {
+            "at": 20071.599999964237,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 42796,
+                "bytesReceived": 38940,
+                "currentRoundTripTimeMs": 6
+              }
+            ]
+          },
+          {
+            "at": 25069.599999964237,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 56421,
+                "bytesReceived": 50708,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 30070.599999964237,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 70230,
+                "bytesReceived": 62770,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          },
+          {
+            "at": 35068.19999998808,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 82543,
+                "bytesReceived": 74115,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 40068.5,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 96123,
+                "bytesReceived": 85754,
+                "currentRoundTripTimeMs": 6
+              }
+            ]
+          },
+          {
+            "at": 45068.19999998808,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 109782,
+                "bytesReceived": 97676,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 50069,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 122204,
+                "bytesReceived": 109158,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 55069.39999997616,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 136128,
+                "bytesReceived": 123555,
+                "currentRoundTripTimeMs": 6
+              }
+            ]
+          },
+          {
+            "at": 60069,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 149971,
+                "bytesReceived": 139758,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 65068.09999996424,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 162285,
+                "bytesReceived": 155006,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 5032.5,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 17727,
+                "bytesReceived": 13304,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 10034.800000011921,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 44332,
+                "bytesReceived": 31546,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 15034.300000011921,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 71041,
+                "bytesReceived": 49641,
+                "currentRoundTripTimeMs": 9
+              }
+            ]
+          },
+          {
+            "at": 20033.69999998808,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 97694,
+                "bytesReceived": 67822,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 25031.80000001192,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 124168,
+                "bytesReceived": 85871,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 30034.399999976158,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 151326,
+                "bytesReceived": 104179,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 35035.39999997616,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "in-progress",
+                "nominated": true,
+                "bytesSent": 179340,
+                "bytesReceived": 126136,
+                "currentRoundTripTimeMs": 127
+              }
+            ]
+          },
+          {
+            "at": 40035,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 206469,
+                "bytesReceived": 149323,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 45031.89999997616,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 233592,
+                "bytesReceived": 172778,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 50032,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 260396,
+                "bytesReceived": 196023,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 55034.30000001192,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 287893,
+                "bytesReceived": 219619,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          },
+          {
+            "at": 60032.19999998808,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 314744,
+                "bytesReceived": 242717,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          }
+        ],
+        "selectedPairGenerations": 2
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Wi-Fi HTTP/WS/ICE経路と非ループバック認可",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "reconnect": {
+        "slot": "P1",
+        "phase": "paused",
+        "down": [],
+        "reconnects": 2,
+        "releaseAfterMs": 114.1244000000006,
+        "reconnectAfterMs": 725.7502999999997,
+        "timing": "PC process observation including CDP and 100ms polling",
+        "method": "試験タブの実WebSocketを閉じる（Wi-Fi断ではない）"
+      },
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "E-after-2.json.gz",
+      "rawSha256": "9c727cab9c633c941f514b0f9835ddfcd7e89b077d348b9aca99a1c49b3e171b"
+    },
+    {
+      "condition": "E-after",
+      "trial": 3,
+      "date": "2026-11-09T04:09:08.704Z",
+      "sourceCommit": "c2e2fe380b560f0ece7d5b6ad7164bb44ea0f92b",
+      "runner": {
+        "commit": "c75fda59b5b933b5b288b386c99742ed3eccbffe",
+        "dirty": false,
+        "modules": {
+          "android-dry-run.mjs": "d5778865be4f8b4878fef94fae0b81b6d8ec8b4abbea012a8b6822467addc874",
+          "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+          "wifi-route.mjs": "5f773fc6abfe330bff29b8a48007245666b867a0971b550e429cdc2758134a1f",
+          "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d",
+          "wifi-ack-observer.mjs": "68174363ba3504bbdc1107b6efd08f0440f768947e7b52909f6159a20d6621dd"
+        }
+      },
+      "binarySha256": "47f6f6f85bd3ad76e55f340a9d00d779cc5bb8e3aa7ab90b90b3bb6d85570099",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "Wi-Fi LAN / HTTP+WS (USB CDP control only)",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60320.3113,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 16.5,
+          "p95": 27,
+          "p99": 28.30000001192093,
+          "mean": 17.737499999503296,
+          "max": 28.30000001192093
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 17.19999998807907,
+          "p95": 27,
+          "p99": 28.19999998807907,
+          "mean": 16.13409091125835,
+          "max": 28.19999998807907
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 18.099999964237213,
+          "p95": 108.60000002384186,
+          "p99": 111.89999997615814,
+          "mean": 31.313392855493085,
+          "max": 112.30000001192093
+        },
+        "unacked": 0,
+        "firstVia": {
+          "ws": 207,
+          "rtc": 17
+        },
+        "method": "Wi-Fi LAN / CDP合成タッチ。端末内送信時間とACK観測（製品handlerを含む）、ゲーム応答ではない",
+        "excludedAcks": 0,
+        "duplicateAcks": 0,
+        "downObservedToSendMs": {
+          "n": 72,
+          "p50": 0.9000000357627869,
+          "p95": 1.300000011920929,
+          "p99": 1.800000011920929,
+          "mean": 0.9222222235467699,
+          "max": 1.800000011920929
+        },
+        "downDispatchDelayMs": {
+          "n": 72,
+          "p50": 15.799999952316284,
+          "p95": 26.100000023841858,
+          "p99": 27.19999998807907,
+          "mean": 16.815277775956524,
+          "max": 27.19999998807907
+        },
+        "upObservedToSendMs": {
+          "n": 88,
+          "p50": 0.9000000357627869,
+          "p95": 1.5,
+          "p99": 2.200000047683716,
+          "mean": 0.9647727263244715,
+          "max": 2.200000047683716
+        },
+        "upDispatchDelayMs": {
+          "n": 88,
+          "p50": 16.5,
+          "p95": 25.80000001192093,
+          "p99": 27.400000035762787,
+          "mean": 15.169318184933879,
+          "max": 27.400000035762787
+        },
+        "ackByFirstVia": {
+          "ws": {
+            "n": 207,
+            "p50": 18,
+            "p95": 108.60000002384186,
+            "p99": 111.89999997615814,
+            "mean": 30.73381642356587,
+            "max": 112.30000001192093
+          },
+          "rtc": {
+            "n": 17,
+            "p50": 19.899999976158142,
+            "p95": 110.40000003576279,
+            "p99": 110.40000003576279,
+            "mean": 38.37058823248919,
+            "max": 110.40000003576279
+          }
+        }
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicateAccepted": 0,
+        "unacked": 0,
+        "outputMatched": 224
+      },
+      "host": {
+        "epoch": 5,
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicateAccepted": 0,
+        "outputMatched": 224,
+        "outputUnmatched": 0,
+        "orderGapCount": 0,
+        "timing": {
+          "receiveToAcceptMs": {
+            "n": 224,
+            "p50": 0.07,
+            "p95": 0.15,
+            "p99": 0.212,
+            "mean": 0.0789866071428571,
+            "max": 0.229
+          },
+          "bufferToAcceptMs": {
+            "n": 224,
+            "p50": 0.006,
+            "p95": 0.016,
+            "p99": 0.028,
+            "mean": 0.008058035714285707,
+            "max": 0.086
+          },
+          "acceptToDryOutputMs": {
+            "n": 224,
+            "p50": 0.029,
+            "p95": 7.002,
+            "p99": 19.838,
+            "mean": 0.9572499999999999,
+            "max": 22.208
+          },
+          "adapterCallMs": {
+            "n": 224,
+            "p50": 0.002,
+            "p95": 0.006,
+            "p99": 0.01,
+            "mean": 0.0023482142857142872,
+            "max": 0.011
+          }
+        },
+        "arrival": {
+          "ws": {
+            "received": 224,
+            "arrivalIntervalMs": {
+              "n": 223,
+              "p50": 82.032,
+              "p95": 1129.522,
+              "p99": 1230.303,
+              "mean": 266.26663677130045,
+              "max": 1247.531
+            },
+            "intervalVariationMs": {
+              "n": 223,
+              "p50": 0.03099999999994907,
+              "p95": 10.25300002384185,
+              "p99": 39.74599998807908,
+              "mean": 0.007443946134886056,
+              "max": 135.11400001192095
+            },
+            "absoluteIntervalVariationMs": {
+              "n": 223,
+              "p50": 0.8109999880790713,
+              "p95": 15.660999988079084,
+              "p99": 97.64400002384187,
+              "mean": 4.705488789825696,
+              "max": 135.11400001192095
+            },
+            "note": "間隔差の変動。絶対時計差/片道遅延ではない。入力間隔には意図的な休止を含む。"
+          },
+          "rtc": {
+            "received": 224,
+            "arrivalIntervalMs": {
+              "n": 223,
+              "p50": 82.08,
+              "p95": 1129.346,
+              "p99": 1230.91,
+              "mean": 266.26717937219735,
+              "max": 1248.276
+            },
+            "intervalVariationMs": {
+              "n": 223,
+              "p50": 0.08599997615814203,
+              "p95": 7.893999952316278,
+              "p99": 36.82199998807907,
+              "mean": 0.007986547031745237,
+              "max": 45.73800001192092
+            },
+            "absoluteIntervalVariationMs": {
+              "n": 223,
+              "p50": 0.8039999880791129,
+              "p95": 14.948999988079095,
+              "p99": 43.85300002384186,
+              "mean": 3.3180134536097414,
+              "max": 46.081999999999994
+            },
+            "note": "間隔差の変動。絶対時計差/片道遅延ではない。入力間隔には意図的な休止を含む。"
+          }
+        },
+        "look": {
+          "ws": {
+            "received": 0,
+            "arrivalIntervalMs": {
+              "n": 0
+            },
+            "gaps200ms": 0,
+            "maxGapMs": null
+          },
+          "rtc": {
+            "received": 1702,
+            "arrivalIntervalMs": {
+              "n": 1701,
+              "p50": 33.087,
+              "p95": 64.969,
+              "p99": 68.961,
+              "mean": 35.25950382128161,
+              "max": 97.144
+            },
+            "gaps200ms": 0,
+            "maxGapMs": 97.144
+          }
+        }
+      },
+      "look": {
+        "version": 2,
+        "moves": 1800,
+        "companionTaps": 0,
+        "durationMs": 60194,
+        "summary": {
+          "n": 1718,
+          "p50": 33,
+          "p95": 64.30000001192093,
+          "p99": 66.10000002384186,
+          "mean": 34.911292200246706,
+          "max": 96.89999997615814
+        },
+        "gaps200ms": 0,
+        "longestGapMs": 96.89999997615814,
+        "hostLookLost": 17
+      },
+      "network": {
+        "topology": "Windows Wi-Fi Direct / mobile hotspot",
+        "pairCatalog": [
+          {
+            "pair": "pair-1",
+            "selectedBy": "transport.selectedCandidatePairId",
+            "local": {
+              "endpoint": "Android wlan0",
+              "type": "host",
+              "protocol": "udp",
+              "networkType": "unknown"
+            },
+            "remote": {
+              "endpoint": "PC Wi-Fi LAN",
+              "type": "host",
+              "protocol": "udp"
+            }
+          },
+          {
+            "pair": "pair-2",
+            "selectedBy": "transport.selectedCandidatePairId",
+            "local": {
+              "endpoint": "Android wlan0",
+              "type": "host",
+              "protocol": "udp",
+              "networkType": "unknown"
+            },
+            "remote": {
+              "endpoint": "PC Wi-Fi LAN",
+              "type": "host",
+              "protocol": "udp"
+            }
+          }
+        ],
+        "samples": [
+          {
+            "label": "initial",
+            "at": 7980.7598,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 1416,
+                "bytesReceived": 1571,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "input-end",
+            "at": 73025.1185,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 170198,
+                "bytesReceived": 188256,
+                "currentRoundTripTimeMs": 5
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 13
+          },
+          {
+            "label": "look-start",
+            "at": 86832.2603,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 3329,
+                "bytesReceived": 3665,
+                "currentRoundTripTimeMs": 5
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-150",
+            "at": 91887.5198,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 30657,
+                "bytesReceived": 26861,
+                "currentRoundTripTimeMs": 3
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 9,
+            "historySamples": 1
+          },
+          {
+            "label": "look-300",
+            "at": 96901.4119,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 56992,
+                "bytesReceived": 50073,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 9,
+            "historySamples": 2
+          },
+          {
+            "label": "look-450",
+            "at": 101881.2301,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 84104,
+                "bytesReceived": 73780,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 9,
+            "historySamples": 3
+          },
+          {
+            "label": "look-600",
+            "at": 106902.6917,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 110340,
+                "bytesReceived": 96980,
+                "currentRoundTripTimeMs": 8
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 9,
+            "historySamples": 4
+          },
+          {
+            "label": "look-750",
+            "at": 111893.5093,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 137114,
+                "bytesReceived": 120468,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 9,
+            "historySamples": 5
+          },
+          {
+            "label": "look-900",
+            "at": 116890.2848,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 164084,
+                "bytesReceived": 144094,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 9,
+            "historySamples": 6
+          },
+          {
+            "label": "look-1050",
+            "at": 121896.4178,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 190332,
+                "bytesReceived": 167330,
+                "currentRoundTripTimeMs": 2
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 9,
+            "historySamples": 7
+          },
+          {
+            "label": "look-1200",
+            "at": 126886.3049,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 217773,
+                "bytesReceived": 191025,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 9,
+            "historySamples": 8
+          },
+          {
+            "label": "look-1350",
+            "at": 131881.8213,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 244560,
+                "bytesReceived": 214399,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 9,
+            "historySamples": 9
+          },
+          {
+            "label": "look-1500",
+            "at": 136888.1006,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 271436,
+                "bytesReceived": 237782,
+                "currentRoundTripTimeMs": 4
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 9,
+            "historySamples": 10
+          },
+          {
+            "label": "look-1650",
+            "at": 141897.5175,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 298432,
+                "bytesReceived": 261306,
+                "currentRoundTripTimeMs": 5
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 9,
+            "historySamples": 11
+          },
+          {
+            "label": "look-1800",
+            "at": 146895.4265,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 326230,
+                "bytesReceived": 284530,
+                "currentRoundTripTimeMs": 5
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 15,
+            "historySamples": 12
+          },
+          {
+            "label": "look-end",
+            "at": 147053.0142,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 326658,
+                "bytesReceived": 285037,
+                "currentRoundTripTimeMs": 5
+              }
+            ],
+            "wsOnly": false,
+            "hostLookLost": 17,
+            "historySamples": 12
+          }
+        ],
+        "pathHistory": [
+          {
+            "at": 5140.699999988079,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 4052,
+                "bytesReceived": 3918,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          },
+          {
+            "at": 10066.5,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 15486,
+                "bytesReceived": 14465,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 15066.300000011921,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 29456,
+                "bytesReceived": 26524,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          },
+          {
+            "at": 20066.100000023842,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 42210,
+                "bytesReceived": 38492,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          },
+          {
+            "at": 25066,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 56497,
+                "bytesReceived": 53197,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 30065.399999976158,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 70128,
+                "bytesReceived": 69282,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 35065.5,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 82515,
+                "bytesReceived": 84624,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 40066.60000002384,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 96285,
+                "bytesReceived": 100673,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 45065.5,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 110045,
+                "bytesReceived": 116794,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 50065.89999997616,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 122500,
+                "bytesReceived": 132196,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          },
+          {
+            "at": 55065.10000002384,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 136537,
+                "bytesReceived": 148175,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 60065.60000002384,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 150291,
+                "bytesReceived": 164330,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 65066,
+            "pairs": [
+              {
+                "pair": "pair-1",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 163034,
+                "bytesReceived": 180146,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 5031.5,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 18695,
+                "bytesReceived": 16298,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 10031.5,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 45074,
+                "bytesReceived": 39588,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 15031.900000035763,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 71791,
+                "bytesReceived": 63067,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          },
+          {
+            "at": 20040.19999998808,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 99000,
+                "bytesReceived": 86714,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          },
+          {
+            "at": 25031.600000023842,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 124821,
+                "bytesReceived": 109767,
+                "currentRoundTripTimeMs": 3
+              }
+            ]
+          },
+          {
+            "at": 30040.100000023842,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 152167,
+                "bytesReceived": 133519,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          },
+          {
+            "at": 35032.90000003576,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 178411,
+                "bytesReceived": 156812,
+                "currentRoundTripTimeMs": 11
+              }
+            ]
+          },
+          {
+            "at": 40039,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 205353,
+                "bytesReceived": 180243,
+                "currentRoundTripTimeMs": 4
+              }
+            ]
+          },
+          {
+            "at": 45031.80000001192,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 232345,
+                "bytesReceived": 203715,
+                "currentRoundTripTimeMs": 6
+              }
+            ]
+          },
+          {
+            "at": 50038.19999998808,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 259193,
+                "bytesReceived": 227102,
+                "currentRoundTripTimeMs": 6
+              }
+            ]
+          },
+          {
+            "at": 55032.60000002384,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 286375,
+                "bytesReceived": 250788,
+                "currentRoundTripTimeMs": 5
+              }
+            ]
+          },
+          {
+            "at": 60036,
+            "pairs": [
+              {
+                "pair": "pair-2",
+                "connectionState": "connected",
+                "dtlsState": "connected",
+                "iceState": "connected",
+                "state": "succeeded",
+                "nominated": true,
+                "bytesSent": 313339,
+                "bytesReceived": 274171,
+                "currentRoundTripTimeMs": 6
+              }
+            ]
+          }
+        ],
+        "selectedPairGenerations": 2
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Wi-Fi HTTP/WS/ICE経路と非ループバック認可",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "reconnect": {
+        "slot": "P1",
+        "phase": "paused",
+        "down": [],
+        "reconnects": 2,
+        "releaseAfterMs": 14.553499999994528,
+        "reconnectAfterMs": 841.8078999999998,
+        "timing": "PC process observation including CDP and 100ms polling",
+        "method": "試験タブの実WebSocketを閉じる（Wi-Fi断ではない）"
+      },
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "E-after-3.json.gz",
+      "rawSha256": "966e3bc09cb96a9dd717dbd4742e13b486c3ad599fc13cf82a39ef4d7d0cbdbe"
+    },
+    {
+      "condition": "E-after-ws",
+      "trial": 3,
+      "date": "2026-11-09T04:11:39.801Z",
+      "sourceCommit": "c2e2fe380b560f0ece7d5b6ad7164bb44ea0f92b",
+      "runner": {
+        "commit": "c75fda59b5b933b5b288b386c99742ed3eccbffe",
+        "dirty": false,
+        "modules": {
+          "android-dry-run.mjs": "d5778865be4f8b4878fef94fae0b81b6d8ec8b4abbea012a8b6822467addc874",
+          "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+          "wifi-route.mjs": "5f773fc6abfe330bff29b8a48007245666b867a0971b550e429cdc2758134a1f",
+          "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d",
+          "wifi-ack-observer.mjs": "68174363ba3504bbdc1107b6efd08f0440f768947e7b52909f6159a20d6621dd"
+        }
+      },
+      "binarySha256": "47f6f6f85bd3ad76e55f340a9d00d779cc5bb8e3aa7ab90b90b3bb6d85570099",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "Wi-Fi LAN / HTTP+WS (USB CDP control only)",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60318.5536,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 16.69999998807907,
+          "p95": 27.5,
+          "p99": 30.099999964237213,
+          "mean": 17.84305554876725,
+          "max": 30.099999964237213
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 14.600000023841858,
+          "p95": 25.899999976158142,
+          "p99": 27.599999964237213,
+          "mean": 15.6113636337898,
+          "max": 27.599999964237213
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 18.600000023841858,
+          "p95": 106.39999997615814,
+          "p99": 108.80000001192093,
+          "mean": 31.527232142165303,
+          "max": 109.59999996423721
+        },
+        "unacked": 0,
+        "firstVia": {
+          "ws": 224
+        },
+        "method": "Wi-Fi LAN / CDP合成タッチ。端末内送信時間とACK観測（製品handlerを含む）、ゲーム応答ではない",
+        "excludedAcks": 0,
+        "duplicateAcks": 0,
+        "downObservedToSendMs": {
+          "n": 72,
+          "p50": 0.699999988079071,
+          "p95": 1.0999999642372131,
+          "p99": 2,
+          "mean": 0.7541666626930237,
+          "max": 2
+        },
+        "downDispatchDelayMs": {
+          "n": 72,
+          "p50": 16.19999998807907,
+          "p95": 26.099999964237213,
+          "p99": 29.19999998807907,
+          "mean": 17.088888886074226,
+          "max": 29.19999998807907
+        },
+        "upObservedToSendMs": {
+          "n": 88,
+          "p50": 0.7999999523162842,
+          "p95": 1.100000023841858,
+          "p99": 1.7999999523162842,
+          "mean": 0.7647727260535414,
+          "max": 1.7999999523162842
+        },
+        "upDispatchDelayMs": {
+          "n": 88,
+          "p50": 13.900000035762787,
+          "p95": 25.100000023841858,
+          "p99": 27,
+          "mean": 14.846590907736259,
+          "max": 27
+        },
+        "ackByFirstVia": {
+          "ws": {
+            "n": 224,
+            "p50": 18.600000023841858,
+            "p95": 106.39999997615814,
+            "p99": 108.80000001192093,
+            "mean": 31.527232142165303,
+            "max": 109.59999996423721
+          },
+          "rtc": {
+            "n": 0
+          }
+        }
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicateAccepted": 0,
+        "unacked": 0,
+        "outputMatched": 224
+      },
+      "host": {
+        "epoch": 5,
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicateAccepted": 0,
+        "outputMatched": 224,
+        "outputUnmatched": 0,
+        "orderGapCount": 0,
+        "timing": {
+          "receiveToAcceptMs": {
+            "n": 224,
+            "p50": 0.071,
+            "p95": 0.146,
+            "p99": 0.202,
+            "mean": 0.08037500000000004,
+            "max": 0.307
+          },
+          "bufferToAcceptMs": {
+            "n": 224,
+            "p50": 0.006,
+            "p95": 0.013,
+            "p99": 0.017,
+            "mean": 0.0072901785714285655,
+            "max": 0.043
+          },
+          "acceptToDryOutputMs": {
+            "n": 224,
+            "p50": 0.029,
+            "p95": 19.735,
+            "p99": 31.513,
+            "mean": 1.9058437500000003,
+            "max": 33.266
+          },
+          "adapterCallMs": {
+            "n": 224,
+            "p50": 0.002,
+            "p95": 0.007,
+            "p99": 0.011,
+            "mean": 0.002562500000000002,
+            "max": 0.012
+          }
+        },
+        "arrival": {
+          "ws": {
+            "received": 224,
+            "arrivalIntervalMs": {
+              "n": 223,
+              "p50": 79.864,
+              "p95": 1129.586,
+              "p99": 1247.876,
+              "mean": 266.18492376681615,
+              "max": 1251.061
+            },
+            "intervalVariationMs": {
+              "n": 223,
+              "p50": 0.16099998807906957,
+              "p95": 16.446000035762793,
+              "p99": 25.98299997615814,
+              "mean": -0.06216143508449379,
+              "max": 71.28000003576278
+            },
+            "absoluteIntervalVariationMs": {
+              "n": 223,
+              "p50": 4.056999988079071,
+              "p95": 19.190000000000055,
+              "p99": 66.04299999999989,
+              "mean": 7.690233183215015,
+              "max": 71.28000003576278
+            },
+            "note": "間隔差の変動。絶対時計差/片道遅延ではない。入力間隔には意図的な休止を含む。"
+          },
+          "rtc": {
+            "received": 0,
+            "arrivalIntervalMs": {
+              "n": 0
+            },
+            "intervalVariationMs": {
+              "n": 0
+            },
+            "absoluteIntervalVariationMs": {
+              "n": 0
+            },
+            "note": "間隔差の変動。絶対時計差/片道遅延ではない。入力間隔には意図的な休止を含む。"
+          }
+        },
+        "look": {
+          "ws": {
+            "received": 1750,
+            "arrivalIntervalMs": {
+              "n": 1749,
+              "p50": 33.06,
+              "p95": 54.782,
+              "p99": 76.283,
+              "mean": 34.283652944539725,
+              "max": 114.159
+            },
+            "gaps200ms": 0,
+            "maxGapMs": 114.159
+          },
+          "rtc": {
+            "received": 0,
+            "arrivalIntervalMs": {
+              "n": 0
+            },
+            "gaps200ms": 0,
+            "maxGapMs": null
+          }
+        }
+      },
+      "look": {
+        "version": 2,
+        "moves": 1800,
+        "companionTaps": 0,
+        "durationMs": 60144,
+        "summary": {
+          "n": 1749,
+          "p50": 33,
+          "p95": 34.40000003576279,
+          "p99": 66,
+          "mean": 34.29022298454216,
+          "max": 67.59999996423721
+        },
+        "gaps200ms": 0,
+        "longestGapMs": 67.59999996423721,
+        "hostLookLost": 0
+      },
+      "network": {
+        "topology": "Windows Wi-Fi Direct / mobile hotspot",
+        "pairCatalog": [],
+        "samples": [
+          {
+            "label": "initial",
+            "at": 7922.3141,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "input-end",
+            "at": 73115.2457,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-start",
+            "at": 87854.7578,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-150",
+            "at": 92898.7411,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-300",
+            "at": 97903.5336,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-450",
+            "at": 102896.7191,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-600",
+            "at": 107903.9509,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-750",
+            "at": 112900.6724,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-900",
+            "at": 117907.9527,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1050",
+            "at": 122902.7962,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1200",
+            "at": 127900.9421,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1350",
+            "at": 132914.024,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1500",
+            "at": 137898.2288,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1650",
+            "at": 142907.8819,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-1800",
+            "at": 147905.3529,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          },
+          {
+            "label": "look-end",
+            "at": 148028.6313,
+            "http": {
+              "remoteEndpoint": "PC Wi-Fi LAN",
+              "networkResponse": true,
+              "cache": false
+            },
+            "webSocket": {
+              "endpoint": "PC Wi-Fi LAN",
+              "urlUsesLanAddress": true
+            },
+            "adbReverseUsed": false,
+            "selectedPairs": [],
+            "wsOnly": true,
+            "hostLookLost": 0,
+            "historySamples": 0
+          }
+        ],
+        "pathHistory": [],
+        "selectedPairGenerations": 0
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Wi-Fi HTTP/WS/ICE経路と非ループバック認可",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "reconnect": {
+        "slot": "P1",
+        "phase": "paused",
+        "down": [],
+        "reconnects": 2,
+        "releaseAfterMs": 110.13640000000305,
+        "reconnectAfterMs": 859.0264000000025,
+        "timing": "PC process observation including CDP and 100ms polling",
+        "method": "試験タブの実WebSocketを閉じる（Wi-Fi断ではない）"
+      },
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "E-after-ws-3.json.gz",
+      "rawSha256": "c51f15bc22af3b9d19c6fec052d8c7fd4a86aa819f42af49426292bf4b3bfc44"
+    }
+  ],
+  "summaries": {
+    "E-after": {
+      "trials": 3,
+      "downP95": {
+        "n": 3,
+        "min": 26.900000035762787,
+        "max": 28.399999976158142,
+        "mean": 27.433333337306976
+      },
+      "upP95": {
+        "n": 3,
+        "min": 25.399999976158142,
+        "max": 27,
+        "mean": 26.200000007947285
+      },
+      "ackP95": {
+        "n": 3,
+        "min": 108.60000002384186,
+        "max": 109.09999996423721,
+        "mean": 108.86666665474574
+      },
+      "ackP99": {
+        "n": 3,
+        "min": 111,
+        "max": 111.89999997615814,
+        "mean": 111.36666665474574
+      },
+      "receiveToAcceptP95": {
+        "n": 3,
+        "min": 0.144,
+        "max": 0.153,
+        "mean": 0.149
+      },
+      "acceptToDryOutputP95": {
+        "n": 3,
+        "min": 7.002,
+        "max": 14.023,
+        "mean": 9.662333333333333
+      },
+      "lookSendP95": {
+        "n": 3,
+        "min": 36,
+        "max": 64.30000001192093,
+        "mean": 54.86666667461395
+      },
+      "lookArrivalMax": {
+        "n": 3,
+        "min": 97.144,
+        "max": 254.547,
+        "mean": 156.163
+      },
+      "lookArrivalGaps200": 3,
+      "orderGapCount": 0,
+      "usbAckP95": [],
+      "ackMean": {
+        "n": 3,
+        "min": 31.13839285394975,
+        "max": 31.313392855493085,
+        "mean": 31.21026785476577
+      },
+      "ackP50": {
+        "n": 3,
+        "min": 16.5,
+        "max": 18.099999964237213,
+        "mean": 17.399999996026356
+      },
+      "ackMax": {
+        "n": 3,
+        "min": 111.69999998807907,
+        "max": 134.9000000357628,
+        "mean": 119.63333334525426
+      },
+      "downHandlerP95": {
+        "n": 3,
+        "min": 1.199999988079071,
+        "max": 1.600000023841858,
+        "mean": 1.3666666746139526
+      },
+      "receiveToAcceptP99": {
+        "n": 3,
+        "min": 0.212,
+        "max": 0.229,
+        "mean": 0.21833333333333335
+      },
+      "outputP99": {
+        "n": 3,
+        "min": 19.838,
+        "max": 24.565,
+        "mean": 22.19633333333333
+      },
+      "wsJitterP95": {
+        "n": 3,
+        "min": 12.090999999999994,
+        "max": 15.660999988079084,
+        "mean": 13.403999996026357
+      },
+      "rtcJitterP95": {
+        "n": 3,
+        "min": 11.719999976158192,
+        "max": 14.948999988079095,
+        "mean": 13.096666654745766
+      }
+    },
+    "E-after-ws": {
+      "trials": 3,
+      "downP95": {
+        "n": 3,
+        "min": 26.399999976158142,
+        "max": 27.5,
+        "mean": 26.799999992052715
+      },
+      "upP95": {
+        "n": 3,
+        "min": 24.799999952316284,
+        "max": 25.899999976158142,
+        "mean": 25.266666650772095
+      },
+      "ackP95": {
+        "n": 3,
+        "min": 106.39999997615814,
+        "max": 107.20000004768372,
+        "mean": 106.70000000794728
+      },
+      "ackP99": {
+        "n": 3,
+        "min": 108.80000001192093,
+        "max": 109.69999998807907,
+        "mean": 109.33333333333333
+      },
+      "receiveToAcceptP95": {
+        "n": 3,
+        "min": 0.146,
+        "max": 0.157,
+        "mean": 0.15033333333333332
+      },
+      "acceptToDryOutputP95": {
+        "n": 3,
+        "min": 12.47,
+        "max": 19.735,
+        "mean": 16.493666666666666
+      },
+      "lookSendP95": {
+        "n": 3,
+        "min": 34.19999998807907,
+        "max": 35.09999996423721,
+        "mean": 34.566666662693024
+      },
+      "lookArrivalMax": {
+        "n": 3,
+        "min": 108.272,
+        "max": 270.981,
+        "mean": 164.47066666666666
+      },
+      "lookArrivalGaps200": 2,
+      "orderGapCount": 0,
+      "usbAckP95": [],
+      "ackMean": {
+        "n": 3,
+        "min": 31.181249999574252,
+        "max": 33.815624999148504,
+        "mean": 32.17470238029602
+      },
+      "ackP50": {
+        "n": 3,
+        "min": 18.30000001192093,
+        "max": 19.099999964237213,
+        "mean": 18.666666666666668
+      },
+      "ackMax": {
+        "n": 3,
+        "min": 109.59999996423721,
+        "max": 236,
+        "mean": 152.23333332935968
+      },
+      "downHandlerP95": {
+        "n": 3,
+        "min": 1,
+        "max": 1.0999999642372131,
+        "mean": 1.0333333214124043
+      },
+      "receiveToAcceptP99": {
+        "n": 3,
+        "min": 0.201,
+        "max": 0.273,
+        "mean": 0.22533333333333336
+      },
+      "outputP99": {
+        "n": 3,
+        "min": 29.838,
+        "max": 50.576,
+        "mean": 37.309000000000005
+      },
+      "wsJitterP95": {
+        "n": 3,
+        "min": 19.190000000000055,
+        "max": 22.970000047683698,
+        "mean": 20.808000011920942
+      },
+      "rtcJitterP95": {
+        "n": 0,
+        "min": null,
+        "max": null,
+        "mean": null
+      }
+    }
+  },
+  "limitations": [
+    "CDP合成タッチ、dry-run、Android1台＋模擬参加者。実指/Minecraft/実OS入力/複数端末の受入ではない。",
+    "USB側RTC経路は不明。Wi-Fi側には選択経路observerと追加host traceがあり、同一計測負荷の純粋なUSB対Wi-Fi実験ではない。",
+    "到着間隔の差分変動は同期時計の片道遅延ではない。意図的な操作休止を含む。"
+  ]
+}

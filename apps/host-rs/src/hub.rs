@@ -67,7 +67,7 @@ pub enum Event {
     RtcDescription { slot: usize, gen: u64, sdp: String, kind: String },
     RtcCandidate { slot: usize, gen: u64, cand: String, mid: String },
     RtcState { slot: usize, gen: u64, state: RtcSignal },
-    RtcMessage { slot: usize, gen: u64, text: String },
+    RtcMessage { slot: usize, gen: u64, text: String, received_at: Option<Instant> },
     /// 緊急停止 (PC のホットキー / デスクトップアプリ)。全解放して注入を OFF にする
     EmergencyStop { source: &'static str, enqueued_at: Option<Instant> },
     /// 試験用: 前面のウィンドウが入力先かどうかを差し替える (DRY_RUN のときだけ)
@@ -549,6 +549,7 @@ impl Hub {
                     // 終了時は押しっぱなしを残さない
                     let confirmed = self.release_for_shutdown();
                     crate::runtime_measure::finish();
+                    crate::input_trace::finish();
                     std::process::exit(if confirmed { 0 } else { 1 });
                 }
                 Ok(ev) => {
@@ -1200,11 +1201,15 @@ impl Hub {
     fn apply_output(&mut self, idx: usize, down: bool, slot: &str) {
         if down && self.input_fault { return; }
         let o = &OUTPUTS[idx];
+        let trace_start=crate::input_trace::start();
         let ok = match o.kind {
             Kind::Key { scan, ext } => self.input.key(scan, ext, down),
             Kind::Mouse { left } => self.input.mouse_button(left, down),
             Kind::Wheel { .. } => false,
         };
+        if let Some(start)=trace_start {
+            crate::input_trace::event("output",json!({"slot":slot,"out":o.id,"state":if down {"down"} else {"up"},"startedUs":crate::input_trace::stamp(start),"ok":ok}));
+        }
         if !ok {
             self.release_pending.insert(idx);
             if !self.input_fault {
@@ -1962,8 +1967,11 @@ impl Hub {
             Event::WsOpen { id, tx, queued, ip, loopback } => {
                 self.conns.insert(id, Conn { tx, queued, ip, loopback, role: Role::Unknown });
             }
-            Event::WsText { id, text, .. } => {
+            Event::WsText { id, text, enqueued_at } => {
                 if let Some(msg) = protocol::parse_json(&text) {
+                    if let Some(Conn { role:Role::Player {slot}, .. })=self.conns.get(&id) {
+                        crate::input_trace::received(*slot,"ws",&msg,enqueued_at);
+                    }
                     self.on_ws_message(id, msg);
                 }
             }
@@ -1979,9 +1987,10 @@ impl Hub {
                 }
             }
             Event::RtcState { slot, gen, state } => self.on_rtc_state(slot, gen, state),
-            Event::RtcMessage { slot, gen, text } => {
+            Event::RtcMessage { slot, gen, text, received_at } => {
                 if self.rtc_owner(slot, gen).is_some() {
                     if let Some(msg) = protocol::parse_json(&text) {
+                        crate::input_trace::received(slot,"rtc",&msg,received_at);
                         self.handle_player_message(slot, msg, Via::Rtc);
                     }
                 }
@@ -2443,6 +2452,9 @@ impl Hub {
         if iseq < slot.next_iseq || slot.ibuf.contains_key(&iseq) {
             return;
         }
+        if crate::input_trace::start().is_some() {
+            crate::input_trace::event("buffer",json!({"slot":SLOT_NAMES[idx],"epoch":msg.epoch,"iseq":iseq,"via":via.name(),"next":slot.next_iseq}));
+        }
         if slot.ibuf.len() > 200 {
             slot.ibuf.clear();
         }
@@ -2456,6 +2468,10 @@ impl Hub {
     }
 
     fn process_input(&mut self, idx: usize, msg: InputMessage, via: Via) {
+        if crate::input_trace::start().is_some() {
+            let output=self.resolve_control(idx,&msg.button).map(|i| OUTPUTS[i].id);
+            crate::input_trace::event("accepted",json!({"slot":SLOT_NAMES[idx],"epoch":msg.epoch,"iseq":msg.iseq,"via":via.name(),"out":output,"state":msg.state,"stale":msg.epoch!=Some(self.game.epoch)}));
+        }
         let button = msg.button;
         let state = msg.state;
         let burst = msg.burst;

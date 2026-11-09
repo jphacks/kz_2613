@@ -1,17 +1,20 @@
 // DOMの入力境界・キャンセル・RTC形式を、OS入力なしで検証する。
 import assert from 'node:assert/strict';
-import {bindTouchpad} from '../../apps/web-static/scripts/touchpad.js';
-import {bindCooperativeInput} from '../../apps/web-static/scripts/cooperative-input.js';
-import {stickDirections} from '../../apps/web-static/scripts/stick.js';
-import {createFastChannel} from '../../apps/web-static/scripts/transport.js';
-import {createVirtualCursor} from '../../apps/web-static/scripts/virtual-cursor.js';
+const {bindTouchpad} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/input/touchpad.ts' : '../../apps/web-static/scripts/touchpad.js');
+const {bindCooperativeInput: createCooperativeInput} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/input/cooperative.ts' : '../../apps/web-static/scripts/cooperative-input.js');
+const {stickDirections} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/input/stick.ts' : '../../apps/web-static/scripts/stick.js');
+const {createFastChannel} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/transport/fast-channel.ts' : '../../apps/web-static/scripts/transport.js');
+const {createVirtualCursor}=await import(process.env.RECOOPLAY_TEST_TS==='1'?'../../apps/web/src/input/virtual-cursor.ts':'../../apps/web-static/scripts/virtual-cursor.js');
+globalThis.HTMLElement=class {constructor(properties){Object.assign(this,properties)}};
 import {myActions, generatedKey, buildGenerated} from '../../apps/web-static/scripts/generated-controls.js';
+const bindCooperativeInput=options=>{const input=createCooperativeInput(options);if(process.env.RECOOPLAY_TEST_TS==='1')input.bindLook(document.getElementById('pad'),document.getElementById('sens'),document.getElementById('sensVal'));return input;};
 const intervals = [];
 const originalInterval = globalThis.setInterval;
 globalThis.setInterval = (fn,ms) => { intervals.push({fn,ms}); return intervals.length; };
 class Element {
   constructor() { this.handlers = new Map(); this.style = {}; this.value = '2'; this.classList = {add(){},remove(){},toggle(){}}; }
   addEventListener(name,fn) { const list = this.handlers.get(name)||[]; list.push(fn);this.handlers.set(name,list); }
+  removeEventListener(name,fn) { this.handlers.set(name,(this.handlers.get(name)||[]).filter(value=>value!==fn)); }
   querySelector() { return new Element(); }
   querySelectorAll() { return []; }
   setPointerCapture() {}
@@ -193,7 +196,7 @@ try {
     assert.equal(signaled.length,count);assert.equal(rtts.length,3);fast.close();assert.equal(fast.send({type:'input'}),false);
   });
   await test('PC仮想カーソル: 無効ボタンは実行せず、クリックと画面移動・スクロールを区別する',()=>{
-    let clicks=0,scrolled=0;const button={disabled:true,click(){clicks++;}};
+    let clicks=0,scrolled=0;const button=new HTMLElement({disabled:true,click(){clicks++;}});
     globalThis.innerWidth=1280;globalThis.innerHeight=720;
     const page={scrollBy({top}){scrolled+=top;}};
     globalThis.document={createElement:()=>({style:{},setAttribute(){}}),body:{append(){}},documentElement:page,elementFromPoint:()=>({closest:()=>button,parentElement:page,scrollHeight:0,clientHeight:0})};
@@ -210,7 +213,7 @@ try {
     const marker={style:{},setAttribute(){}};
     const body={append(el){el.parentElement=this;}};
     const dialog={append(el){el.parentElement=this;}};
-    globalThis.document={createElement:()=>marker,body,querySelector:()=>opened?dialog:null,elementFromPoint:()=>({closest(selector){assert(selector.includes('summary'));return {disabled:false,click(){clicked++;}};}})};
+    globalThis.document={createElement:()=>marker,body,querySelector:()=>opened?dialog:null,elementFromPoint:()=>({closest(selector){assert(selector.includes('summary'));return new HTMLElement({disabled:false,click(){clicked++;}});}})};
     const cursor=createVirtualCursor();
     cursor.handle({kind:'move',dx:0,dy:0});assert.equal(marker.parentElement,body);
     opened=true;cursor.handle({kind:'move',dx:1,dy:1});assert.equal(marker.parentElement,dialog);
@@ -219,7 +222,7 @@ try {
   });
   await test('PC仮想カーソル: スマホの左クリックで役割交換の列を押せる',()=>{
     let clicks=0;
-    const seat={click(){clicks++;}};
+    const seat=new HTMLElement({click(){clicks++;}});
     const body={append(el){el.parentElement=this;}};
     globalThis.document={createElement:()=>({style:{},setAttribute(){}}),body,querySelector:()=>null,
       elementFromPoint:()=>({closest:selector=>selector.split(',').includes('[data-swap]')?seat:null})};

@@ -11,6 +11,7 @@ mod game_service;
 mod hotkey;
 mod hub;
 mod input;
+mod input_trace;
 mod input_manager;
 mod key_overrides;
 mod keybinds;
@@ -98,6 +99,7 @@ async fn main() {
     let (tx, rx) = std::sync::mpsc::channel::<Event>();
     let log_dir = std::env::var("RECOOPLAY_LOG_DIR").map(PathBuf::from).unwrap_or_else(|_| root.join("logs"));
     runtime_measure::init(&log_dir);
+    input_trace::init(&log_dir);
     let mut hub = match Hub::new(tx.clone(), &config, input, &log_dir) {
         Ok(h) => h,
         Err(e) => {
@@ -304,10 +306,10 @@ async fn api_hotspot(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
 
 async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<SocketAddr>, uri: Uri) -> Response {
     let path = match uri.path() {
-        "/" => "/index.html",
+        "/" => "/phone-react.html",
         "/host" => "/host.html",
         "/game" => "/game.html",
-        "/app" => "/app.html",
+        "/app" => "/app-react.html",
         "/overlay" => "/overlay.html",
         p => p,
     };
@@ -391,7 +393,7 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
     loop {
         tokio::select! {
             incoming = socket.recv() => match incoming {
-                Some(Ok(Message::Text(text))) => app.send(Event::WsText { id, text: text.to_string(), enqueued_at: runtime_measure::start() }),
+                Some(Ok(Message::Text(text))) => app.send(Event::WsText { id, text: text.to_string(), enqueued_at: runtime_measure::start().or_else(input_trace::start) }),
                 Some(Ok(Message::Close(frame))) => {
                     code = frame.map(|f| f.code).unwrap_or(1005);
                     break;

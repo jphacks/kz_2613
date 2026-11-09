@@ -81,10 +81,12 @@ async function session(url, port, cdpPort) {
 
     // DOM: 接続直後の構造。動的な値は比べない。P2の参加がP1の画面へ届いてから取る
     await p1.waitFor(`document.querySelectorAll('#players1 .on').length===2`, 'P1の参加者表示');
-    result.dom = await p1.ev(`(()=>{const out=[];const walk=(e,d)=>{for(const c of e.children){if(['SCRIPT','LINK'].includes(c.tagName)||c.id==='root'){if(c.id==='root')walk(c,d);continue}
+    await p1.waitFor(`document.body.dataset.view==='v-remote'&&!document.getElementById('viewFx').classList.contains('run')`, 'P1ロビーの演出完了');
+    result.productEntry=(await(await fetch(`http://127.0.0.1:${port}${url}`)).text()).includes('/react/phone.js');
+    result.dom = await p1.ev(`(()=>{const out=[];const walk=(e,d)=>{for(const c of e.children){if(['SCRIPT','LINK'].includes(c.tagName)||c.id==='root'||c.id==='lookHome'){if(c.id==='root')walk(c,d);continue}
       out.push([d,c.tagName,c.id,c.className,c.getAttribute('data-ctl')||'',c.getAttribute('data-cmd')||'',c.getAttribute('aria-label')||'',c.getAttribute('role')||'',c.hasAttribute('hidden'),c.disabled===true].join('|'));walk(c,d+1)}};walk(document.body,0);return out})()`);
     // タグの間の改行と img の属性の順序 (Reactは src を最後に設定する) だけは比べない。要素・属性の値・文字は完全に比べる
-    const tidyHtml = async (page, id) => (await page.ev(`document.getElementById('${id}').innerHTML`)).replace(/>\s+</g, '><').replace(/style="display: ?(\w+);?"/g, 'style="display:$1"').replace(/<img ([^>]*)>/g, (_, attrs) => `<img ${attrs.split(/ (?=[\w-]+=)/).sort().join(' ')}>`).trim();
+    const tidyHtml = async (page, id) => (await page.ev(`document.getElementById('${id}').innerHTML`)).replace(/ data-bound="1"/g,'').replace(/>\s+</g, '><').replace(/style="display: ?(\w+);?"/g, 'style="display:$1"').replace(/<img ([^>]*)>/g, (_, attrs) => `<img ${attrs.split(/ (?=[\w-]+=)/).sort().join(' ')}>`).trim();
     const waitHtml = () => tidyHtml(p2, 'v-wait'), remoteHtml = () => tidyHtml(p1, 'v-remote');
     result.waitLobby = await waitHtml();
     result.remoteLobby = await remoteHtml();
@@ -150,7 +152,7 @@ async function session(url, port, cdpPort) {
 
     // 視点: 2秒ドラッグしたときの送信周期
     const pad = await p2.center('#v-gen #pad');
-    await p2.ev(`window.__sent=0;const o=WebSocket.prototype.send;WebSocket.prototype.send=function(d){if(String(d).includes('"look"'))window.__sent++;return o.call(this,d)};const c=RTCDataChannel.prototype.send;RTCDataChannel.prototype.send=function(d){window.__sent++;return c.call(this,d)};1`);
+    await p2.ev(`window.__sent=0;const o=WebSocket.prototype.send;WebSocket.prototype.send=function(d){if(String(d).includes('"look"'))window.__sent++;return o.call(this,d)};const c=RTCDataChannel.prototype.send;RTCDataChannel.prototype.send=function(d){if(String(d).includes('"look"'))window.__sent++;return c.call(this,d)};1`);
     await p2.touch('touchStart', [pad]);
     const lookStart = Date.now(); let i = 0;
     while (Date.now() - lookStart < 2000) { await p2.touch('touchMove', [{ x: pad.x + (i++ % 80) - 40, y: pad.y }]); await sleep(8); }
@@ -178,12 +180,39 @@ async function session(url, port, cdpPort) {
     result.remoteKey = mon.injects.slice(from).map(x => `${x.out}:${x.state}`).join();
     result.remoteSame = await p1.ev(`document.querySelector('#v-remote [data-ctl="ENTER"]').isConnected&&document.getElementById('remotePad').isConnected`);
 
+    // 視点パッドを既存ノードのまま戻し、複数回の再マウントで解放・参照を保つ。
+    for (let cycle = 0; cycle < 2; cycle++) {
+      await p1.ev(`document.getElementById('startBtn').click();1`);
+      await mon.until(m => m.game.phase === 'coop', '再開');
+      await p2.waitFor(`document.body.dataset.view==='v-gen'&&!!document.querySelector('#v-gen #pad')`, '視点再マウント');
+      await sleep(400);
+      const nextPad = await p2.center('#v-gen #pad');
+      await p2.touch('touchStart', [nextPad]);
+      await p2.touch('touchMove', [{x:nextPad.x+25,y:nextPad.y}]);await sleep(80);
+      await p2.touch('touchEnd', []);
+      mon.send({type:'phase',phase:'paused'});
+      await mon.until(m=>m.game.phase==='paused','再停止');
+      await p1.waitFor(`document.body.dataset.view==='v-remote'&&!document.getElementById('viewFx').classList.contains('run')`,'再停止表示');
+      // 各スマホへのgame通知は独立して届く。P1の描画完了をP2の反映済みとは扱わない。
+      await p2.waitFor(`document.body.dataset.phase==='paused'&&(!document.getElementById('pad')||document.getElementById('pad').parentElement.id==='lookHome')`,'P2の再停止反映');
+    }
+    result.remount = await p2.ev(`document.querySelectorAll('#pad').length<=1&&document.querySelectorAll('#sens').length<=1&&(!document.getElementById('pad')||document.getElementById('pad').parentElement.id==='lookHome')`);
+    assert(result.remount, '再マウント後も視点パッド・感度は一つだけ');
+
     // 再接続: 再読み込みで同じ枠へ戻り、停止のまま
     await call('Page.reload', {}, p2.s);
     await p2.waitFor(`document.getElementById('slot')?.textContent==='P2'&&document.getElementById('status').textContent.includes('接続')`, '再読み込み');
     await sleep(500);
     result.reload = await p2.ev(`document.getElementById('slot').textContent+'/'+document.body.dataset.phase`);
     result.finalPhase = mon.game.phase;
+    result.viewports=[];
+    for(const [width,height]of [[320,568],[360,640],[393,873],[430,932],[600,900]]){
+      await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:2,mobile:true},p1.s);await sleep(100);
+      const observed=await p1.ev(`({overflow:document.documentElement.scrollWidth>innerWidth,areas:[...document.querySelectorAll('#v-remote button,#phoneSettingsBtn')].filter(e=>e.getClientRects().length).map(e=>{const r=e.getBoundingClientRect();return [r.width,r.height]})})`);
+      assert.equal(observed.overflow,false,'スマホで横にはみ出さない');
+      assert(observed.areas.every(([w,h])=>w>=44&&h>=44),'小さい画面でも44pxの操作領域');
+      result.viewports.push([width,height]);
+    }
   } finally {
     try { mon.ws.close(); host.stdin.write('quit\n'); } catch {}
     await sleep(300); host.kill(); chrome.kill(); await sleep(300);
@@ -192,9 +221,9 @@ async function session(url, port, cdpPort) {
   return result;
 }
 
-const before = await session('/', 18631, 9361);
+const before = await session('/index.html', 18631, 9361);
 console.log('既存画面の計測を完了');
-const after = await session('/phone-react.html', 18632, 9362);
+const after = await session('/', 18632, 9362);
 console.log('React版の計測を完了');
 const fails = [];
 const limit = (name, ok) => { if (!ok) fails.push(name); console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${name}`); };
@@ -215,10 +244,13 @@ same('押下と解放の順序', before.order, after.order);
 same('スティックの入力', before.stick, after.stick);
 same('保持中のPauseの解放', before.pauseRelease, after.pauseRelease);
 same('再読み込み後の枠と進行', before.reload, after.reload);
+same('操作面の再マウント', before.remount, after.remount);
 same('実行時のエラー', before.errors, after.errors);
 limit(`タップの遅延 p95 が${TOLERANCE_MS}ms以上悪化しない (${before.tap.p95}→${after.tap.p95}ms)`, after.tap.p95 <= before.tap.p95 + TOLERANCE_MS);
 // 悪化だけを不合格にする (React版が速い場合は問題ない)
 limit(`視点の送信周期が落ちない (${before.lookPerSec}→${after.lookPerSec}/秒)`, after.lookPerSec >= before.lookPerSec - 5);
+same('スマホの5種類の画面寸法と44px操作領域',before.viewports,after.viewports);
+limit('標準URLのReact entry',after.productEntry===true);
 console.log(JSON.stringify({ tap: { before: before.tap, after: after.tap }, lookPerSec: [before.lookPerSec, after.lookPerSec], loadMs: [before.loadMs, after.loadMs], dom: before.dom.length }));
 console.log(fails.length ? `不合格: ${fails.join('、')}` : '合格: 既存画面とReact版が一致');
 process.exit(fails.length ? 1 : 0);

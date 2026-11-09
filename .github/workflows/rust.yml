@@ -48,6 +48,19 @@ jobs:
         run: node scripts/sim/shutdown-sim.mjs
       - name: 実WebSocketの非注入計測スモーク
         run: node scripts/sim/runtime-measure.mjs --bin apps/host-rs/target/release/recooplay-host.exe --players 2 --cases normal --duration-ms 1000
+      - name: コントローラー共通描画モデル
+        run: node --experimental-strip-types scripts/sim/controller-layout-test.mjs
+      - name: 共通React部品のプレビューと入力境界
+        run: node --experimental-strip-types scripts/sim/controller-preview-test.mjs
+      - name: 製品TypeScriptの入力・通信・表示・破棄と依存グラフ
+        run: node scripts/sim/product-web-test.mjs
+      - name: Android試験の経路判定とUSBへの誤退避の拒否
+        run: |
+          node scripts/device/android-dry-run-test.mjs
+          node scripts/device/wifi-route-test.mjs
+          node scripts/device/wifi-host-analysis-test.mjs
+          node scripts/device/wifi-trial-acks-test.mjs
+          node scripts/device/wifi-ack-observer-test.mjs
       - name: 既存のスマホ画面とReact版の同等性
         run: node scripts/sim/react-phone-parity.mjs --samples 20 --tolerance-ms 30
       - name: 既存のPC画面とReact版の同等性

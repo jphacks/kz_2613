@@ -38,7 +38,8 @@ impl DataChannelHandler for DcHandler {
     }
     fn on_message(&mut self, msg: &[u8]) {
         if let Ok(text) = std::str::from_utf8(msg) {
-            let _ = self.tx.send(Event::RtcMessage { slot: self.slot, gen: self.gen, text: text.to_string() });
+            let received_at=crate::input_trace::start();
+            let _ = self.tx.send(Event::RtcMessage { slot: self.slot, gen: self.gen, text: text.to_string(), received_at });
         }
     }
 }
