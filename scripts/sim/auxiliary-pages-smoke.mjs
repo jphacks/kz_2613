@@ -42,6 +42,20 @@ try{
    await evaluate(`for(const data of ['壊れたJSON','null','[]','{"type":"state"}'])__pageTest.sockets[0].onmessage({data});`);
    assert.equal(await evaluate(`__pageTest.errors.length`),0,'不正受信で例外を起こさない');
    if(page==='overlay')assert.deepEqual(await evaluate(`__pageTest.sent`),['monitor'],'観客表示は操作を送らない');
+   if(page==='diagnostics'){
+     await evaluate(`document.getElementById('clear').click();`);
+     await evaluate(`for(let i=0;i<1005;i++)__pageTest.sockets[0].onmessage({data:JSON.stringify({type:'log',entry:{t:1000+i,kind:'fixture',value:i,text:'<img onerror=bad()>'}})});`);
+     await until(()=>evaluate(`document.getElementById('log').children.length===1000`),'bounded log');
+     assert(await evaluate(`document.getElementById('log').firstChild.textContent.includes('value=5')`),'先頭の古いログだけを除去する');
+     assert.equal(await evaluate(`document.querySelectorAll('#log img').length`),0,'ログをHTMLとして解釈しない');
+     await evaluate(`document.querySelector('[data-phase="paused"]').click();`);
+     await until(()=>evaluate(`__pageTest.sent.includes('phase')`),'phase command');
+     const before=await evaluate(`__pageTest.sent.length`);
+     await evaluate(`window.confirm=()=>false;document.querySelector('[data-mode="on"]').click();document.getElementById('reset').click();`);
+     assert.equal(await evaluate(`__pageTest.sent.length`),before,'確認を取り消した管理操作は送信しない');
+     await evaluate(`document.getElementById('clear').click();`);
+     await until(()=>evaluate(`document.getElementById('log').children.length===0`),'clear log');
+   }
    await evaluate(`__pageTest.sockets[0].close()`);
    await until(()=>evaluate(`__pageTest.sockets.length===2&&__pageTest.sockets[1].readyState===1`),'reconnect');
    await evaluate(`window.dispatchEvent(new Event('pagehide'))`);
