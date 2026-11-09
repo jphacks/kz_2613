@@ -77,7 +77,7 @@ node scripts/device/android-dry-run.mjs --adb $adbPath --bin $hostPath --sha256 
 
 Wi-Fi指定では `RECOOPLAY_RUNTIME_MEASURE` を子プロセスへ継承せず、通常の `0.0.0.0` 待受を使う。空きポートを選び、起動したPID・LAN Establishedソケットの両端、Chrome HTTPの実接続先とWS URL、PC専用ページ拒否を検証する。HTTPキャッシュやlocalhost URLを経路証明に使わない。`/api/info` は公開APIなので200が正常で、wifi/hotspot/buildのPC限定情報がないことを確認する。
 
-RTC併用ではgetStatsの `transport.selectedCandidatePairId` で選択したペアを特定し、両端が同じWi-Fiアドレスであることを照合する。5秒ごとの候補対も記録する。成立表示や候補一覧だけでは合格させない。`--ws-only` は文書開始時からRTCを無効にし、同じLANのWS経路を確認する。
+RTC併用ではgetStatsの `transport.selectedCandidatePairId` で選択したペアを特定し、両端が同じWi-Fiアドレスであることを照合する。5秒ごとの候補対も記録する。選択IDの対応、peer/ICE/DTLS接続、nomination、双方向payloadを要求し、候補チェックリストの一時的in-progressと実接続断を混同しない。failed/waiting/frozenや誤経路、未接続、payloadなしは拒否する。成立表示や候補一覧だけでは合格させない。`--ws-only` は文書開始時からRTCを無効にし、同じLANのWS経路を確認する。
 
 入力別のホスト時刻には `RECOOPLAY_INPUT_TRACE=1` を使用する。dry-run/no-config/fake targetの全フラグを同時に要求し、runtime-measureのループバック制限を変更しない。入力/視点の連番・受信/受理/出力時刻だけをメモリーに蓄積し終了時に保存する。実OS入力はしない。試行ごとに新しいホスト・タブ・生データ・統計を使い、通常診断の累計や前試行を混ぜない（#259）。
 
@@ -176,3 +176,5 @@ dry-run値・設定読込有無・疑似対象・無注入の確認根拠：
 - [AT-D04の実入力開始前チェック](windows-input-preflight.md)
 - [AT-D04の再開準備記録](evidence/2026-11-06-at-d04-restart.md)
 - [対象11PRと追加受入条件](refactor-matrix.md)
+
+実Wi-Fiの移行比較は[性能報告](2026-11-09-react-performance.md)、[主21試行](evidence/pr274-wifi/trials.json)、[修正後6試行](evidence/pr274-wifi-after/trials.json)を参照。先行ACK診断だけ `--ack-observer` を指定し、通常測定へ混ぜない。修正後集計は `summarize-wifi-review.mjs --batch <manifest> --supplement --out <別folder>` を使用し、失敗と旧USBデータを保持する。
