@@ -1,6 +1,6 @@
 # Web画面の構成整理 設計書（React + TypeScript strict への一本化）
 
-状態: #279 の実装仕様。PR-Aは構成・旧版削除・overlay、PR-B/Cは診断・疑似ゲーム。実機受入は別途未完了。作成: 2026-11-09。実装者: Codex。
+状態: #279 の実装仕様。5画面のReact + TypeScript strictへの移行実装済み。PR-A/B/Cを分離し、自動試験と製品の実機受入を区別する。作成: 2026-11-09。実装者: Codex。
 マージ・Issue close・正式リリースは、利用者の承認を得てから行う。
 
 ## 1. 目的と判断（利用者確定）
@@ -14,7 +14,7 @@
 4. HTML・ディレクトリ・ファイル名は、React + TypeScript strict の標準的な構成として自然な名前にする。
 5. 入力・通信・安全停止の挙動、定数（最低押下60ms・最低解放50ms・視点30Hz・切断判定4秒など）は変更しない。UIの見た目・文言・DOM ID も原則変えない（変えるなら理由を記録）。
 
-## 2. 現状（#274 マージ後 `ee77270`）
+## 2. 変更前の構成（旧構成、タグ `legacy-js-last-with-react`）
 
 ```
 apps/web/                    React + TS strict（Vite）
@@ -181,3 +181,10 @@ apps/web/                         ← 画面の唯一の正本。配信物もこ
 ## 10. 旧版の再現
 
 `git worktree add --detach data/local/legacy-reproduction legacy-js-last-with-react` で独立した旧版を再現できる。React移行前は `legacy-js-before-react`、旧エンジンとの併存点は `legacy-js-engine-before-ts`。元作業ツリーをresetしない。生成物が必要な版ではそのworktreeのapps/webでnpm ciとnpm run buildを実行する。
+
+
+## 11. 5画面移行後の確認範囲
+
+5画面すべてsrc/<画面>/index.htmlとmain.tsxを入口にし、配信ルートをdistへ統一した。疑似ゲームのcanvas/入力照合はReact描画の外で動かし、Reactの静的な殻のunmountで購読・タイマー・フレーム・monitorを破棄する。疑似ゲームのCSSは、共通色と画面色の順をCSS内の@importで固定する（Viteの共有CSS抽出による上書きを防ぐ）。
+
+移行前12系列の固定trace、受信境界・寿命管理、実ブラウザの3画面、通信60件・入力プローブ12件を自動確認した。実OS入力の照合は未実施で、固定traceやdry-runを実入力の合格と読み替えない。Android実Wi-Fi比較の結果と未確認事項はBUILD_LOGを参照する。

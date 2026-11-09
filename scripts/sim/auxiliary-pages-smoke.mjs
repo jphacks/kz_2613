@@ -42,6 +42,11 @@ try{
    await evaluate(`for(const data of ['壊れたJSON','null','[]','{"type":"state"}'])__pageTest.sockets[0].onmessage({data});`);
    assert.equal(await evaluate(`__pageTest.errors.length`),0,'不正受信で例外を起こさない');
    if(page==='overlay')assert.deepEqual(await evaluate(`__pageTest.sent`),['monitor'],'観客表示は操作を送らない');
+   if(page==='pseudo-game'){
+     assert.equal(await evaluate(`getComputedStyle(document.documentElement).getPropertyValue('--panel').trim()`),'#161b22','疑似ゲームの旧配色を共通CSSが上書きしない');
+     assert.equal(await evaluate(`getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()`),'#0b0e12');
+     assert(await evaluate(`document.getElementById('cv').width>0&&document.getElementById('cv').height>0`),'canvasを描画する');
+   }
    if(page==='diagnostics'){
      await evaluate(`document.getElementById('clear').click();`);
      await evaluate(`for(let i=0;i<1005;i++)__pageTest.sockets[0].onmessage({data:JSON.stringify({type:'log',entry:{t:1000+i,kind:'fixture',value:i,text:'<img onerror=bad()>'}})});`);

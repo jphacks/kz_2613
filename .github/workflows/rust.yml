@@ -90,7 +90,7 @@ jobs:
       - name: 画像と外部化したCSS・JSの配信
         run: node scripts/sim/static-assets-sim.mjs
       - name: 観客表示と診断画面の起動・受信境界・破棄
-        run: node scripts/sim/auxiliary-pages-smoke.mjs --pages overlay,diagnostics
+        run: node scripts/sim/auxiliary-pages-smoke.mjs --pages overlay,diagnostics,pseudo-game
       - name: 入力プローブの安全経路（--mock、OS 入力なし）
         run: node scripts/sim/input-probe-sim.mjs
       - uses: actions/cache@v4

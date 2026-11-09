@@ -203,7 +203,7 @@ pub fn builtin_minecraft() -> Profile {
     parse(&v).expect("minecraft-java.json の形式")
 }
 
-/// 診断用の疑似ゲーム画面 (game.html) の定義。Minecraft と同じキー・分担を使う (#141)
+/// 診断用の疑似ゲーム画面 (/game、pseudo-game/index.html) の定義。Minecraft と同じキー・分担を使う (#141)
 pub fn builtin_pseudo() -> Profile {
     let mut p = builtin_minecraft();
     p.id = "pseudo-game".into();

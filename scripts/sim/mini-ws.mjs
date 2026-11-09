@@ -1,4 +1,4 @@
-// 試験・表示確認用の最小の WebSocket サーバー (RFC 6455)。依存なしで ui-preview.mjs が使う。
+// 試験用の最小の WebSocket サーバー (RFC 6455)。Nodeの組み込みモジュールだけを使う。
 // 受け取るのはブラウザが送る分割なしのテキスト・バイナリのフレームだけ。製品のホスト (Rust 版) には使わない。
 import { createHash } from 'node:crypto';
 import { EventEmitter } from 'node:events';

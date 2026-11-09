@@ -7,7 +7,7 @@ const root=path.resolve('apps/web/dist');
 for(const page of ['phone','pc','overlay','diagnostics','pseudo-game']){
   const html=fs.readFileSync(path.join(root,page,'index.html'),'utf8');
   assert.match(html,/<title>[^<]+<\/title>/);
-  if(['phone','pc','overlay','diagnostics'].includes(page))assert.match(html,/id="root"/);
+  assert.match(html,/id="root"/);
   for(const [,asset]of html.matchAll(/(?:src|href)="(\/[^"?#]+)"/g))if(!['/','/app','/host','/game','/overlay'].includes(asset))assert(fs.existsSync(path.join(root,asset)),`${page}: ${asset}`);
   for(const [,body]of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))if(body.trim())new Function(body);
 }

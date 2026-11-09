@@ -7,6 +7,7 @@ const graph=new Map();
 const config=JSON.parse(fs.readFileSync('apps/web/tsconfig.json','utf8'));
 assert.equal(config.compilerOptions.strict,true);
 assert.notEqual(config.compilerOptions.allowJs,true,'製品の型検査からJSを逃さない');
+assert(!walk(root).some(file=>/\.[cm]?jsx?$/.test(file)),'ブラウザへ配るソースはTSだけにする');
 const dependencies=JSON.parse(fs.readFileSync('apps/web/package.json','utf8')).dependencies;
 for(const file of walk(root).filter(f=>/\.tsx?$/.test(f)&&!f.endsWith('.d.ts'))){
   const source=fs.readFileSync(file,'utf8');
