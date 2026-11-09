@@ -1,5 +1,5 @@
 import type {PhoneGame} from '../contracts.ts';
-import type {HostState,InjectionState,LogEntry} from '../model/domain.ts';
+import type {HostState,InjectionState,LogEntry,InjectionNotice,LookNotice} from '../model/domain.ts';
 import {isPhoneGame} from './protocol.ts';
 
 export type RemoteInput = {type:'remote';route:string;epoch:number} & (
@@ -7,7 +7,7 @@ export type RemoteInput = {type:'remote';route:string;epoch:number} & (
   | {kind?:undefined;control:string;state:'down'|'up'});
 export type PcMessage = {type:'state';game:PhoneGame;inject:InjectionState} & HostState
   | {type:'game';game:PhoneGame} | {type:'key_result';ok:boolean}
-  | {type:'manual_result';message:string} | RemoteInput | {type:'log';entry:LogEntry} | {type:'unknown'};
+  | {type:'manual_result';message:string} | RemoteInput | {type:'inject';entry:InjectionNotice} | {type:'look';entry:LookNotice} | {type:'log';entry:LogEntry} | {type:'unknown'};
 const object=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 const optional=(v:Record<string,unknown>,key:string,valid:(v:unknown)=>boolean)=>!(key in v)||valid(v[key]);
 const string=(v:unknown)=>typeof v==='string';
@@ -42,6 +42,8 @@ export function decodePcMessage(text:unknown):PcMessage|null {
         ||!optional(v,'minecraft',v=>v===null||object(v)&&['launchable','image'].every(k=>optional(v,k,boolean)))
         ||!optional(v,'network',v=>object(v)&&optional(v,'bluetoothAudio',boolean))||!optional(v,'gamesScanning',boolean))return null;
       break;
+    case 'inject':if(!object(v.entry)||!['out','slot','label'].every(k=>string((v.entry as Record<string,unknown>)[k]))||!(v.entry.state==='down'||v.entry.state==='up')||!boolean(v.entry.ok))return null;break;
+    case 'look':if(!object(v.entry)||!finite(v.entry.dx)||!finite(v.entry.dy)||!string(v.entry.slot))return null;break;
     case 'log':if(!object(v.entry)||!finite(v.entry.t)||!string(v.entry.kind)||!optional(v.entry,'burst',boolean)||!['slot','cmd','reason','mode'].every(k=>optional(v.entry as Record<string,unknown>,k,string)))return null;break;
     case 'game':if(!isPhoneGame(v.game))return null;break;
     case 'key_result':if(!boolean(v.ok))return null;break;

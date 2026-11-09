@@ -29,9 +29,9 @@ export function createLifetime() {
     document.addEventListener(name,listener);
     return own(()=>document.removeEventListener(name,listener));
   }
-  function listenWindow<K extends keyof WindowEventMap>(name:K, listener:(event:WindowEventMap[K])=>void) {
-    window.addEventListener(name,listener);
-    return own(()=>window.removeEventListener(name,listener));
+  function listenWindow<K extends keyof WindowEventMap>(name:K, listener:(event:WindowEventMap[K])=>void,options?:AddEventListenerOptions) {
+    window.addEventListener(name,listener,options);
+    return own(()=>window.removeEventListener(name,listener,options));
   }
   function timeout(callback: () => void, ms: number) {
     const timer = setTimeout(() => {stop();callback();}, ms);

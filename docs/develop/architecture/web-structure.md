@@ -1,20 +1,20 @@
 # Web画面の構成整理 設計書（React + TypeScript strict への一本化）
 
-状態: #279 の実装仕様。PR-Aは構成・旧版削除・overlay、PR-B/Cは診断・疑似ゲーム。実機受入は別途未完了。作成: 2026-11-09。実装者: Codex。
+状態: #279 の実装仕様。5画面のReact + TypeScript strictへの移行実装済み。PR-A/B/Cを分離し、自動試験と製品の実機受入を区別する。作成: 2026-11-09。実装者: Codex。
 マージ・Issue close・正式リリースは、利用者の承認を得てから行う。
 
 ## 1. 目的と判断（利用者確定）
 
 1. ブラウザへ配信するコードは、すべて TypeScript（React）にする。疑似ゲーム・診断画面・観客表示も対象。
 2. 旧JS版は main から削除する。保持はタグだけで行う（予備の配布zipや `--legacy` の仕組みは作らない）。
-   - `legacy-js-before-react` = `c271ebe`（React移行前のmain）
-   - `legacy-js-engine-before-ts` = `9947391`（React UI＋旧JSエンジン）
-   - `legacy-js-last-with-react` = `ee77270`（#274 マージ直後。React版と旧JSが併存する最後の点）
+   - `legacy-js-before-react` = `702b872`（React移行前のmain。履歴更新前はc271ebe、tree一致）
+   - `legacy-js-engine-before-ts` = `e265745`（React UI＋旧JSエンジン。履歴更新前は9947391、tree一致）
+   - `legacy-js-last-with-react` = `6ad3153`（#274 マージ直後。React版と旧JSが併存する最後の点。履歴更新前はee77270、tree一致）
 3. 旧JSを前提にした配信・試験の土台は、すべてTS版へ置き換える。旧版との比較専用の試験は廃止する。
 4. HTML・ディレクトリ・ファイル名は、React + TypeScript strict の標準的な構成として自然な名前にする。
 5. 入力・通信・安全停止の挙動、定数（最低押下60ms・最低解放50ms・視点30Hz・切断判定4秒など）は変更しない。UIの見た目・文言・DOM ID も原則変えない（変えるなら理由を記録）。
 
-## 2. 現状（#274 マージ後 `ee77270`）
+## 2. 変更前の構成（旧構成、タグ `legacy-js-last-with-react`）
 
 ```
 apps/web/                    React + TS strict（Vite）
@@ -176,8 +176,15 @@ apps/web/                         ← 画面の唯一の正本。配信物もこ
 - PR-A時点ではdiagnostics/pseudo-gameのinline JSを新HTMLに一時保持し、PR-B/CでTS化する。恒久的な互換配信・予備zipは設けない。
 - Vite設定にもstrict型検査を適用する。画像はpublic/assets、CSSはsrc/stylesから各main.tsxが順序を保持してimport。ビルド済みコードはVite既定のハッシュ付きassetsへ出る。
 - PC専用ディレクトリはcanonicalize済みの実体と配信rootから判定し、root外のリンク先も配信しない。HTTP/WSの認可と入力定数は維持する。
-- 実入力照合は明示許可がないため未実施。Android実Wi-Fi前後比較に必要なprivate設定ファイルも未提供であり、全受入完了とはしない。
+- 実入力照合は明示許可がないため未実施。Android実Wi-Fiの移行前/PR-A/B/C比較は各16項目合格（詳細は[比較記録](../acceptance/2026-11-09-web-structure-wifi.md)）。全受入完了とはしない。
 
 ## 10. 旧版の再現
 
 `git worktree add --detach data/local/legacy-reproduction legacy-js-last-with-react` で独立した旧版を再現できる。React移行前は `legacy-js-before-react`、旧エンジンとの併存点は `legacy-js-engine-before-ts`。元作業ツリーをresetしない。生成物が必要な版ではそのworktreeのapps/webでnpm ciとnpm run buildを実行する。
+
+
+## 11. 5画面移行後の確認範囲
+
+5画面すべてsrc/<画面>/index.htmlとmain.tsxを入口にし、配信ルートをdistへ統一した。疑似ゲームのcanvas/入力照合はReact描画の外で動かし、Reactの静的な殻のunmountで購読・タイマー・フレーム・monitorを破棄する。疑似ゲームのCSSは、共通色と画面色の順をCSS内の@importで固定する（Viteの共有CSS抽出による上書きを防ぐ）。
+
+移行前12系列の固定trace、受信境界・寿命管理、実ブラウザの3画面、通信60件・入力プローブ12件を自動確認した。実OS入力の照合は未実施で、固定traceやdry-runを実入力の合格と読み替えない。Android実Wi-Fi比較の結果と未確認事項はBUILD_LOGを参照する。

@@ -1661,3 +1661,36 @@
 - npm ci / npm run build成功。product-web-test（diagnostics-test追加）成功。全CI相当Node試験はauxiliary-pages-smoke以外成功（protocol-sim 60/60、shutdown、input-probe 12/12含む）。受信互換修正後にproduct-web-testと実headless Chromeのoverlay/diagnosticsスモークを再実行し成功。後者は1005件受信→古い5件除去・文字列escape・phase操作・確認取消時非送信・再接続・pagehide破棄を含む。
 - desktop build/test（3成功）、package.ps1 -Out data/local/package-b / package-smoke成功。hostの初回再構築は検証シェルにPerl/libclangを設定していなかったため失敗した。SETUP_WINDOWSの環境を再設定したhost build/testは再実行中（第三者ライブラリの再構築）。Rust製品ソースはPR-Aから変更していない。
 - Tauri実窓の共通起動・終了はPR-Aで確認済み。Android実Wi-Fiの前後比較はprivate設定なし、実入力照合は許可なしのため実施しない。iPhone・実指・Minecraft・実無線断は未確認。
+
+## 2026-11-09 — 利用者依頼による一時停止（#279）
+
+- PR-AはDraft #280、先端1702e60までpush済み。PR-Bは0a07f52をローカルのcodex/279-web-diagnosticsにコミット済み、未push・PR未作成。現在codex/279-web-pseudo-gameでPR-Cの変更を未コミットのまま保存した。
+- PR-CのWeb strict/buildとpseudo-game-testは成功。旧画面の12系列trace（通知/観測先着・down/up・保持時間・視点・未反映等）と一致し、破棄後timer/frameは0。PR-Cの全CI相当スイート・新画面実ブラウザ・配布・実窓は未実施。
+- PR-Bのhost再構築は、Perl/libclangの設定不足で初回失敗、設定後のdatachannel-sys再構築は利用者の停止依頼により中断（終了コード1）。build/testの再実行が必要。Rust製品ソースはPR-Aと同一。PR-Bのdesktop build/test・package-smokeと、code:null修正後のproduct-web-test/overlay・diagnostics実ブラウザ試験は成功済み。
+- 検証用プロセスを終了。元の作業ツリーを変更せず、未コミット差分は保持。再開情報は元ツリーの data/local/codex-handoff/web-structure-resume.md に保存した。mainの更新・マージ・Issue close・リリースはしていない。
+
+
+## 2026-11-09 — #279再開: 履歴更新への追従とPR-C実装
+
+- 停止中にmain/PR-Aのコミット履歴だけが書き換えられた。ee77270と新main 6ad3153、旧A 1702e60と新A 9642c2cのtree一致をgit diff --quietで確認。閉じた#280のコメントから後継Draft #281を確認した。元worktreeを保持し、新worktree data/local/worktrees/279-web-resumedでBをcherry-pick（0a07f52→ae98b05、tree一致）し、保存済みC差分を移植。旧履歴のB作成はGitHub 422で拒否されたが、新ブランチcodex/279-web-diagnostics-resumedではDraft #282を作成できた。mainは変更していない。
+- B単独のTauri実窓で/appロードを確認し終了。shutdownログ1件。中断した依存ライブラリの再構築は約16分で完了し、host build/testが138成功・2 ignored、probe4成功。新worktreeで同コマンドを再実行して同じ結果を確認。desktop build/testも3成功。
+- CはPseudoGame.tsxの静的な殻とruntime.tsのcanvas/入力照合へ分離。照合500ms、保留確認100ms、観測報告500ms、focus報告1秒、ホイール表示150msと操作順序を維持。旧通知・破棄後の購読/タイマー/RAF/再接続を停止。inject/lookをunknownから検証する。
+- [x] 固定時計で移植前の12系列を再生し、ログ・統計・observe送信・canvas文字描画を変換後と照合。通知先着/観測先着、down/up、保持時間、ホイール、視点、物理入力、非選択、未反映、注入失敗、ワールド/ジャンプを含む。旧JSは試験から読み込まず、タグの固定traceだけを保持。テスト用時計はAsia/Tokyoを明示し、TZ=UTCでも一致。
+- [x] 不正inject/lookによる例外・統計変更がないこと、冪等破棄、旧socket通知/イベントが描画・送信を再開しないこと、再接続待ち破棄、timer/RAFが0であることを確認。
+- [x] 実in-app browserでCSS分割による共通色の後勝ちを発見。pseudo-game.css内の@importで共通色→画面色の順を1つのCSSへ固定し、旧配色に戻ったことを目視。ブラウザ試験に--bg/--panelとcanvas寸法を追加。
+- npm run build（strict、Vite設定も検査）、product-web-test、check-static-pages、auxiliary-pages-smoke（overlay/diagnostics/pseudo-game）成功。rust.ymlの全Node試験・verify_overlay・check-public-docsも成功。protocol-sim60/60、shutdown-sim、input-probe-sim12/12。新しい試験のため成功条件や既存assertを削除していない。
+- 利用者が指定したprivate設定の存在と現在のPC/Androidアドレス一致、認可済み1台、縦向き、実wlan0経路、USBテザリング/reverseなしを検証した。接続情報は非公開。移行前/PR-A/PR-B/PR-Cの各60秒Wi-Fi測定は準備中で、結果は後続記録に追記する。OS実入力照合・iPhone・実指・Minecraft・実無線断は未確認。
+- 変換前JSの出典: legacy-js-last-with-reactのapps/web-static/game.html、script SHA-256 `b3b653fde7c332b4fbaf7cea932b7185ce08a5f4b585ef75f928f9ad635310c8`。元に専用自動試験はなく、移植後pseudo-game-testはassert呼出箇所16（ループ展開前）＋12系列全体のdeepEqual。既存input-probe12観点は移植前後で維持。
+
+## 2026-11-09 — #279 最終検証と3つのDraft PR
+
+- DraftはPR-A #281（main向け）、PR-B #282（A向け）、PR-C #283（B向け）。旧#280は他者による履歴更新後の後継#281へ移った。mainの直接push・マージ・Issue close・リリースは実施していない。元作業ツリーと旧worktreeの変更は保持した。
+- `npm ci` / `npm run build --prefix apps/web`、`cargo build --release --locked` / `cargo test --release --locked`（host: 138成功・既存2 ignored、probe4成功、desktop: 3成功）。rust.ymlに列挙された全Node試験とverify_overlay/check-public-docsは成功。protocol-sim60/60、shutdown-sim、input-probe-sim12/12。ローカル集計はdata/local/checks-pr-c-final/results.json（29コマンド、全終了コード0）。実装コミット9642c2c / ae98b05 / 66159e6のGitHub Structure checksとRust host and protocol simulationも全成功。
+- Androidは利用者指定のprivate設定を引数に渡し、現在のPC/Androidアドレス・wlan0経路を検証。`node scripts/device/android-dry-run.mjs --wifi-network <private.json> --benchmark-ms 60000 --bin <exe> --sha256 <hash> --adb <adb.exe> --condition pr279-<条件> --trial <番号>` を移行前/PR-A/B/Cで実行した。最終試行は各16/16合格、各224入力の欠落・重複受理・未ACKは0。ボタン60秒と視点60秒を測定し、USBはCDP制御だけ（reverse/テザリングなし）。回転設定はfinallyで元どおりに復元済み。
+- Androidの途中失敗も保存: A1はLAN文書HTTP待ちで中断、B2は選択ICE経路の双方向payload不足、B3は単指ボタンのdown/upがなく不合格（原画像にブラウザー拡大、反復イベントの多くがcontrol=null）。B4/C4は製品・試験判定を変えずに完走。座標ずれによる空白連打と標準ズームが疑われる。各1回の完走から性能改善・同等性は結論しない。lookLostは0ではなく、ボタン欠落0と区別した。[比較表・公開用集計](../acceptance/2026-11-09-web-structure-wifi.md)に全数値、試験判定、ソース/runner/exeハッシュを記録。接続情報・実IP・端末識別子・生ログはコミットしない。
+- 配布の初回再確認では、比較前後で共用したcargo targetの通常buildが旧exeを再利用しており、package-smokeがJSの404を検出した。失敗zipはdata/local/package-pr-c-finalに保持。復旧では測定前に構築・単体試験しAndroid A/B/Cでも使用した固定exe（SHA-256 `4d562056c2eb6652886c1e86ff7861b456005ebd5f0e871f8821be5abaadcce1`）とdesktop exeをdata/local/verified-package-input/releaseへ隔離。`CARGO_TARGET_DIR=<隔離入力> scripts/windows/package.ps1 -Out data/local/package-pr-c-fixed` と `node scripts/sim/package-smoke.mjs data/local/package-pr-c-fixed/ReCooplay-0.1.0-windows-x64.zip` は成功。同梱一覧・改変/欠落拒否・全資産のHTTP200と内容一致・リポジトリ外の起動と正常終了を確認。zipのdirty印はこの最終記録の追記によるもので、製品コードは66159e6から変更していない。
+- その配布フォルダのdesktopを専用ポート18133、dry-run/no-config/fake targetで起動。RECOOPLAY_ROOT/HOST_EXEは渡さず自動探索を確認。computer-useで実窓の/app・ロゴ・4人参加待ち・設定・緊急停止表示をAX確認し、Alt+F4で窓消失、desktop終了0、shutdown1件（releaseConfirmed=true、unconfirmed=[]）を確認。PR-A/Bもそれぞれ実窓で確認済み。
+- 旧版タグの現在参照先は702b872 / e265745 / 6ad3153。履歴更新前c271ebe / 9947391 / ee77270とそれぞれtree一致をgit diff --quietで確認し、設計書を更新した。
+- 未実施: 実OS入力での疑似ゲーム照合・実ホットキー/Alt+Tab・iPhone・実指・Minecraft実入力・実無線断・複数実端末・別PCの製品受入。明示許可のないOS入力は実施せず、dry-runや固定traceの成功を実入力の合格とは扱わない。
+
+- #279の実測を受け、SETUP_WINDOWSへworktree別target・固定exeハッシュ・展開後package-smokeを追記。通常buildの成功表示だけで配布バイナリの版を判断しない。製品コードと依存関係は変更せず、git diff --checkとcheck-public-docs成功。

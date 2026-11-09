@@ -2,7 +2,7 @@ import type { PlayerCardModel, RoleColumnModel } from '../shared/contracts';
 
 const CHARACTERS = ['blue', 'green', 'purple', 'red'];
 
-// 参加者の表示。内容は app-view.js の playerCards が計算する
+// 参加者の表示。内容は shared/model/presentation.ts の playerCards が計算する
 export function PlayerCard({ card }: { card: PlayerCardModel }) {
   return (
     <article className={card.className} data-slot={card.slot}>
