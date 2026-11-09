@@ -1612,3 +1612,26 @@
 
 - Android実Wi-Fiの前後比較は未実施: 指定の `data/local/wifi-network.private.json` が存在せず、サンドボックスからのADB server接続も失敗。実IP・秘密情報は公開しない。実入力試験は許可の範囲外なので実施しない。iPhone・実指・Minecraft・実無線断は未確認。
 `python data/local/run-web-checks.py a` 相当のrust.yml全Node試験（parity含む）・構造/公開docs成功。protocol-sim 60/60、input-probe-sim 12/12。package.ps1 / package-smoke成功。git diff -M --stat HEAD: 131 files、155 insertions、131 deletions（BUILD_LOG追加を除きパス/importのみ）。
+
+
+## 2026-11-09 — #279 PR-A b: 旧JS依存の試験を製品TSへ移植
+
+- [x] Ready可否・前面化失敗・2/4人ラベル、途中参加の待機、自分の色・担当、ホストだけのPause、診断前停止、未検証/非対応案内、ホストと参加者の案内分離、ゲーム名、INVキー（null/省略含む）。旧DOMモックを製品 `createReactPhoneView` の表示store検査へ置換。53assert箇所を維持。
+- [x] phone-harnessは製品TS runtime/viewだけをVMで実行。Controllerの描画先だけテストDOMへ接続し、保持/解放・30Hz・接続処理は製品コードを使用。16ライフサイクル観点、受信境界7観点を維持。描画失敗注入は旧innerHTMLから製品store購読への例外注入に変更。
+- [x] 診断を開く前のup/release_inputs、epoch=7、診断中のボタン/視点抑止、BURST 200件のstate/button/epoch・iseq連続を維持。仮想時計の進行中は模擬pongを返し、3秒無応答試験と混同しない。
+- [x] 操作割当、方向スティック、ホイール前後、視点、空担当、変更時の再生成キー、Minecraft/汎用の実キー表示をcontroller-layout/model/actionsと実ControllerのReact HTMLで確認。UI入力12観点を維持。
+- [x] owners/session/skin/protocol/transition/app-viewのTS専用化。RECOOPLAY_TEST_TS廃止。shared→画面/画面→別画面の型importを含む禁止を追加し、PcInfoを共有domainへ移動。
+- `node scripts/sim/product-web-test.mjs`、`npm run build --prefix apps/web` 成功。モデル・入力・接続・描画境界を変更したため関連14スイートを実行。TS化/削除していない旧画面はこのコミットで維持。
+
+| 試験 | 移植前assert箇所 | 移植後assert箇所 |
+|---|---:|---:|
+| `app-view-test` | 194 | 194 |
+| `phone-view-test` | 53 | 53 |
+| `controller-diagnostics-test` | 14 | 14 |
+| `input-owners-test` | 17 | 17 |
+| `phone-session-test` | 39 | 39 |
+| `phone-skin-test` | 15 | 15 |
+| `protocol-boundary-test` | 21 | 21 |
+| `ui-input-test` | 73 | 74 |
+| `view-transition-test` | 23 | 23 |
+| `phone-lifecycle-test` | 59 | 59 |

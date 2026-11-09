@@ -1,13 +1,17 @@
 // DOMの入力境界・キャンセル・RTC形式を、OS入力なしで検証する。
 import assert from 'node:assert/strict';
-const {bindTouchpad} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/shared/input/touchpad.ts' : '../../apps/web/static/scripts/touchpad.js');
-const {bindCooperativeInput: createCooperativeInput} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/shared/input/cooperative.ts' : '../../apps/web/static/scripts/cooperative-input.js');
-const {stickDirections} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/shared/input/stick.ts' : '../../apps/web/static/scripts/stick.js');
-const {createFastChannel} = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/shared/transport/fast-channel.ts' : '../../apps/web/static/scripts/transport.js');
-const {createVirtualCursor}=await import(process.env.RECOOPLAY_TEST_TS==='1'?'../../apps/web/src/shared/input/virtual-cursor.ts':'../../apps/web/static/scripts/virtual-cursor.js');
+const {bindTouchpad} = await import('../../apps/web/src/shared/input/touchpad.ts');
+const {bindCooperativeInput: createCooperativeInput} = await import('../../apps/web/src/shared/input/cooperative.ts');
+const {stickDirections} = await import('../../apps/web/src/shared/input/stick.ts');
+const {createFastChannel} = await import('../../apps/web/src/shared/transport/fast-channel.ts');
+const {createVirtualCursor}=await import('../../apps/web/src/shared/input/virtual-cursor.ts');
 globalThis.HTMLElement=class {constructor(properties){Object.assign(this,properties)}};
-import {myActions, generatedKey, buildGenerated} from '../../apps/web/static/scripts/generated-controls.js';
-const bindCooperativeInput=options=>{const input=createCooperativeInput(options);if(process.env.RECOOPLAY_TEST_TS==='1')input.bindLook(document.getElementById('pad'),document.getElementById('sens'),document.getElementById('sensVal'));return input;};
+import {myActions,generatedKey} from '../../apps/web/src/shared/model/actions.ts';
+import {controllerLayout} from '../../apps/web/src/shared/controller-layout.ts';
+import {loadComponent,createElement,renderToStaticMarkup} from './fixtures/react-render.mjs';
+const {Controller}=await loadComponent(new URL('../../apps/web/src/phone/Controller.tsx',import.meta.url));
+const render=groups=>renderToStaticMarkup(createElement(Controller,{groups,bindings:{}}));
+const bindCooperativeInput=options=>{const input=createCooperativeInput(options);input.bindLook(document.getElementById('pad'),document.getElementById('sens'),document.getElementById('sensVal'));return input;};
 const intervals = [];
 const originalInterval = globalThis.setInterval;
 globalThis.setInterval = (fn,ms) => { intervals.push({fn,ms}); return intervals.length; };
@@ -21,17 +25,6 @@ class Element {
   getBoundingClientRect() { return {left:0,top:0,width:200,height:200}; }
   fire(name,extra={}) { for (const fn of this.handlers.get(name)||[]) fn({type:name,pointerId:1,clientX:100,clientY:100,timeStamp:performance.now(),preventDefault(){},...extra}); }
 }
-// 操作定義の画面を作る試験用の、最小の DOM (HTML 文字列を集める)
-class FakeNode {
-  constructor() { this.parts = []; this.className = ''; }
-  set innerHTML(v) { this.parts = v ? [v] : []; }
-  get innerHTML() { return this.parts.map((p) => (typeof p === 'string' ? p : `<div class="${p.className}">${p.innerHTML}</div>`)).join(''); }
-  insertAdjacentHTML(_, html) { this.parts.push(html); }
-  append(...nodes) { this.parts.push(...nodes); }
-  get children() { return this.parts; }
-  querySelectorAll() { return [...this.innerHTML.matchAll(/data-ctl="([^"]+)"/g)].map((m) => ({ ctl: m[1] })); }
-}
-globalThis.document = { createElement: () => new FakeNode() };
 const GAME = {
   phase: 'coop',
   profile: { id: 'test-pseudo', name: '試験', groups: [{ id: 'movement', label: '移動' }, { id: 'gameplay', label: 'アクション' }],
@@ -50,47 +43,37 @@ try {
     assert.deepEqual(myActions(minecraft, 'P4'), [], '担当外の枠へ操作を渡さない');
     assert.equal(myActions({ ...GAME, assigned: {} }, 'P1'), null);
     assert.deepEqual(myActions(GAME, 'P2').map((a) => a.id), ['jump']);
-    const box = new FakeNode(), bound = [], look = [new FakeNode()];
-    const sticks = [];
-    const hasLook = buildGenerated(box, GAME, 'P1', { bindControl: (el) => bound.push(el.ctl), bindStick: (el, codes) => sticks.push([el?.className, codes]), lookParts: look });
-    assert.equal(hasLook, true);
-    assert.deepEqual(bound, ['act:action', 'act:zoom:up', 'act:zoom:down']);
-    // 左・右の 2 方向 → スティック (#139)。ボタンとしては付けない
-    assert.deepEqual(sticks, [['stick gen-stick', { left: 'act:left', right: 'act:right' }]]);
-    const html = box.innerHTML;
-    assert.match(html, /gen-stick/);
-    assert.match(html, /送らない/); // action は送れないキー
-    assert.match(html, />Dキー</); // 実際のキーの表示
-    assert.ok(box.parts.some((g) => g.parts?.includes(look[0])), '視点のパッドを移していない');
-    const p3 = new FakeNode();
-    const none = [];
-    buildGenerated(p3, GAME, 'P3', { bindControl() {}, bindStick: (el) => none.push(el), lookParts: [] });
-    assert.deepEqual(none, [null], '担当がなければ前のスティックを外す');
-    assert.match(p3.innerHTML, /担当する操作がありません/);
-    assert.notEqual(generatedKey(GAME, 'P1'), generatedKey({ ...GAME, keys: { actions: { left: { label: 'Z' } } } }, 'P1'), 'キーが変わったら作り直す');
+    const layout=controllerLayout(GAME,'P1'),parts=layout.flatMap(g=>g.parts);
+    assert.equal(parts.some(p=>p.kind==='look'),true);
+    assert.deepEqual(parts.filter(p=>p.kind==='button').map(p=>p.control),['act:action','act:zoom:up','act:zoom:down']);
+    assert.deepEqual(parts.find(p=>p.kind==='stick').directions.map(d=>[d.name,d.control]),[['left','act:left'],['right','act:right']]);
+    const html=render(layout);
+    assert.match(html,/gen-stick/);assert.match(html,/送らない/);assert.match(html,/>Dキー</);
+    assert.match(html,/class="look-pad"/,'視点パッドを実React部品で描く');
+    const empty=controllerLayout(GAME,'P3');
+    assert.deepEqual(empty,[],'担当がなければスティックを描かない');
+    assert.match(render(empty),/担当する操作がありません/);
+    assert.notEqual(generatedKey(GAME,'P1'),generatedKey({...GAME,keys:{actions:{left:{label:'Z'}}}},'P1'));
   });
-  await test('操作の主表示: Minecraftも別ゲームも実キー・クリック・ホイールを示し、ゲーム内の意味を流用しない (#150)', () => {
-    for (const id of ['minecraft-java', 'generic']) {
-      const game = { ...GAME, profile: { ...GAME.profile, id,
-        groups: [{ id: 'gameplay', label: '攻撃・持ち物' }],
-        actions: [{ id: 'use', label: '置く', group: 'gameplay', type: 'button' },
-          { id: 'inventory', label: 'インベントリ', group: 'gameplay', type: 'button' },
-          { id: 'wheel', label: '持ち物の切り替え', group: 'gameplay', type: 'wheel' }] },
-        assigned: { P1: ['use', 'inventory', 'wheel'] },
-        keys: { actions: { use: { label: '右クリック' }, inventory: { label: 'R' } } } };
-      const box = new FakeNode(), controls = [];
-      buildGenerated(box, game, 'P1', { bindControl: el => controls.push(el.ctl) });
-      assert.deepEqual(controls, ['act:use', 'act:inventory', 'act:wheel:up', 'act:wheel:down']);
-      assert.match(box.innerHTML, /act:use">右クリック<\/button>/);
-      assert.match(box.innerHTML, /act:inventory">Rキー<\/button>/);
-      assert.match(box.innerHTML, /ホイール↑/);
-      assert.doesNotMatch(box.innerHTML, /攻撃|持ち物|置く|インベントリ/);
+  await test('操作の主表示: Minecraftも別ゲームも実キー・クリック・ホイールを示し、ゲーム内の意味を流用しない (#150)',()=>{
+    for(const id of ['minecraft-java','generic']){
+      const game={...GAME,profile:{...GAME.profile,id,groups:[{id:'gameplay',label:'攻撃・持ち物'}],actions:[
+        {id:'use',label:'置く',group:'gameplay',type:'button'},
+        {id:'inventory',label:'インベントリ',group:'gameplay',type:'button'},
+        {id:'wheel',label:'持ち物の切り替え',group:'gameplay',type:'wheel'}]},
+        assigned:{P1:['use','inventory','wheel']},keys:{actions:{use:{label:'右クリック'},inventory:{label:'R'}}}};
+      const groups=controllerLayout(game,'P1'),html=render(groups);
+      assert.deepEqual(groups.flatMap(g=>g.parts).map(p=>p.control),['act:use','act:inventory','act:wheel:up','act:wheel:down']);
+      assert.match(html,/act:use">右クリック<\/button>/);
+      assert.match(html,/act:inventory">Rキー<\/button>/);
+      assert.match(html,/ホイール↑/);assert.match(html,/ホイール↓/);
+      assert.doesNotMatch(html,/攻撃|持ち物|置く|インベントリ/);
     }
   });
   await test('視点: 操作定義の分担があれば、視点を割り当てた人だけが look を送る', () => {
     const pad = new Element(), sent = [];
     let role = 'P1', look = true;
-    globalThis.document.getElementById = (id) => (id === 'pad' ? pad : new Element());
+    globalThis.document = {getElementById: (id) => (id === 'pad' ? pad : new Element())};
     bindCooperativeInput({ getGame: () => ({ phase: 'coop', epoch: 1 }), getRole: () => role, canLook: () => look, isOpen: () => true, ctlDown() {}, ctlUp() {}, sendLook: (m) => sent.push(m) });
     const tick = intervals.at(-1).fn;
     pad.fire('pointerdown'); pad.fire('pointermove', { clientX: 130 }); tick();

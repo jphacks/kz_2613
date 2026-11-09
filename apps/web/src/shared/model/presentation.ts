@@ -1,6 +1,6 @@
 import type {Action,ControllerGame,PhoneGame,Profile,Slot,LaunchState} from '../contracts.ts';
 import type {ClientStats,SlotState,InjectionState,DetectedGame,GameEntry,HostState,Navigation,EffectState,UiAction,ScreenId} from './domain.ts';
-import type {PcInfo} from '../../pc/model';
+import type {PcInfo} from './domain.ts';
 // PC アプリ画面 (app.html) の表示内容を、ホストの状態 (state / game / inject) から作る。
 // 画面の部品に依存しない純粋な関数だけを置き、Node の試験 (scripts/sim/app-view-test.mjs) で表示とサーバー状態の一致を確かめる。
 // 開始・準備・再開できるかはサーバーの canReady・canPrepare・canResume をそのまま使い、画面側で判定し直さない。
