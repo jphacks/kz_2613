@@ -1,6 +1,6 @@
 # PR #274 総合自己レビュー
 
-2026-11-09の追加依頼により、末尾の実Wi-Fi性能11項目を必須レビューへ追加した。従来206項目は保全し、総数は217項目。現在はOK207・未確認9・別Issue1。実Wi-Fiの21試行は完了し、残るACK観測差の調査を続ける。以前のレビュー完了は実Wi-Fi測定の完了を含んでいなかった。
+2026-11-09の追加依頼により、末尾の実Wi-Fi性能11項目を必須レビューへ追加した。従来206項目は保全し、総数は217項目。現在はOK208・未確認8・別Issue1。実Wi-Fiの主比較21試行、ACK追加診断3試行、修正後の通常観測6試行を完了した。以前のレビュー完了は実Wi-Fi測定の完了を含んでいなかった。
 
 判定は OK / 要修正 / 未確認 / 別Issue。依頼プロンプトの全チェック項目を一行ずつ追跡する。未確認を推測でOKにしない。
 
@@ -34,14 +34,14 @@
 
 ## 検証物と未受入の範囲
 
-製品変更の最終コミットは `53b0f59`、標準経路試験まで含む検証済み基点は `0d43517da474d8263491fb1e748674e660eac8eb`。以降は補助試験と記録を整備した。`0d43517` の [Structure checks](https://github.com/jphacks/kz_2613/actions/runs/42514496080) と [Rust/製品回帰/配布CI](https://github.com/jphacks/kz_2613/actions/runs/42514496091) は成功。最終HEADの結果もPRのChecksで追跡する。
+前回レビュー時の製品変更コミットは `53b0f59`、標準経路試験まで含む検証済み基点は `0d43517da474d8263491fb1e748674e660eac8eb`。その後、今回の実Wi-Fi追加レビューでhost traceと診断更新の製品修正（c2e2fe3）、試験・記録を追加した。`0d43517` の [Structure checks](https://github.com/jphacks/kz_2613/actions/runs/42514496080) と [Rust/製品回帰/配布CI](https://github.com/jphacks/kz_2613/actions/runs/42514496091) は成功。最終HEADの結果もPRのChecksで追跡する。
 
 検証zipはversion0.1.0・windows-x64・dirty=false、569ファイル、9,073,844 bytes、SHA256 `5a6036f5d9f5a507fd640ae2aa5c5e5c5996ad70a0e73f919caec0b2fe4f8503`。正式リリースではない。同じPCに既存のWebView2と構築ツールがある条件で、通常トークンからビルド/実窓/展開smokeを実行した。別PCの初期環境へ配布して受入済みとは扱わない。
 
 - iPhone Safari・ノッチsafe area・動的ブラウザーUI：端末を用意できないというユーザー判断で保留。Androidの合格から推定しない。
 - 実指の操作感・TalkBack等の読み上げ・複数実スマホとTauriの同時連携：今回の自動化だけでは未受入。Android1台＋模擬参加者とTauri単独実窓の証拠を分ける。
 - Minecraft/実OS入力・実緊急ホットキー・Alt+Tab・無線断：安全ゲート [#39](https://github.com/jphacks/kz_2613/issues/39) を未受入のまま維持。dry-runの合格で代用しない。
-- 受信ジッター・受理/出力までの入力別時間・順序保留時間・純Wi-Fiと経路別比較・長時間：[性能報告](2026-11-09-react-performance.md) の未測定理由、[#157](https://github.com/jphacks/kz_2613/issues/157) / [#264](https://github.com/jphacks/kz_2613/issues/264)。lookLostの観測を隠さない。
+- 受信ジッター・受理/出力までの入力別時間・順序保留時間・実Wi-FiとWS-only比較は今回R16で追加測定した。物理出力・ルーター比較・長時間：[性能報告](2026-11-09-react-performance.md) の未測定理由、[#157](https://github.com/jphacks/kz_2613/issues/157) / [#264](https://github.com/jphacks/kz_2613/issues/264)。lookLostの観測を隠さない。
 - 編集UI/保存/制約検証は [#50](https://github.com/jphacks/kz_2613/issues/50) / [#271](https://github.com/jphacks/kz_2613/issues/271)、全面型生成は [#272](https://github.com/jphacks/kz_2613/issues/272)。今回の共通描画と通信境界の完成を、それらの機能完成へ拡大しない。
 - [#273](https://github.com/jphacks/kz_2613/pull/273) と共有CSS/BUILD_LOGが重なる。既存PRを変更・マージせず、今回のReact実画面で修正を別に確認した。
 
@@ -313,11 +313,13 @@
 | R16.01 | Wi-Fi接続環境が実際に利用可能か調査した | OK | PCの有効なNative 802.11/Wi-Fi DirectとAndroid wlan0、同一subnet/routeを読み取り確認。既存のモバイルホットスポットを使用し設定変更なし |
 | R16.02 | 製品通信がUSB経路を使わないことを検証した | OK | Wi-Fi専用引数ではreverseを作らず、既存reverseなし・Android USBテザリングなし・wlan0 routeを要求。デバッグ用forwardと製品URLを分離 |
 | R16.03 | HTTP/WSの実LAN経路を確認した | OK | Chrome NetworkのHTTP remoteIPAddress/port、WS URL、所有ホストPIDのLAN Established両端を非公開の生アドレスと照合。/appと/hostは403、infoはLAN用機密項目なし |
-| R16.04 | WebRTCの選択経路を確認した | OK | getStatsのtransport.selectedCandidatePairIdから成功/nominatedの候補対を取得。UDP両端がAndroid wlan0/PC Wi-Fi LANと一致。候補一覧だけでは合格させない |
+| R16.04 | WebRTCの選択経路を確認した | OK | getStatsのtransport.selectedCandidatePairIdから選択対を取得。peer/ICE/DTLS接続・nomination・双方向payloadとチェックリストstateを区別し、UDP両端がAndroid wlan0/PC Wi-Fi LANと一致。候補一覧だけでは合格させない |
 | R16.05 | 実Wi-Fiで移行前後の遅延を測定した | OK | A〜EのRTC併用、A/EのWS-onlyを各3試行、入力/視点各60秒。evidence/pr274-wifi/trials.jsonとlatency.csvに全分位/平均/最大/標本数を保存 |
 | R16.06 | 実Wi-Fiで入力の安定性を測定した | OK | 21試行/4,704入力の受理・出力一致、欠落/重複適用/未ACK0、順序gap待ち0。視点送信200ms空白0だがhost受信200ms空白25件を別記 |
 | R16.07 | WebRTC+WSとWS-onlyを比較した | OK | A/Eとも各3試行。WS-onlyは文書開始前のRTC無効化。RTCコピー/WS先着と視点受信間隔を別記し、ACK viaを単独経路の速度比較としない |
 | R16.08 | USB測定との違いを分析した | OK | 既存USB15試行を保持。旧USBのRTC選択経路は不明、新Wi-Fiは追加observer/host traceあり。同じ端末/操作でも純粋な経路差の因果実験ではないことを明示 |
-| R16.09 | 性能回帰があれば修正・再検証した | 未確認 | 本比較の結果から判断する。runnerの経路証明の不備も修正・再試験する |
+| R16.09 | 性能回帰があれば修正・再検証した | OK | c2e2fe3でACK処理中の診断store通知を次frameへ分離。別診断3本と通常観測RTC+WS/WS-only各3本で再検証。経路判定の誤りによる失敗2回も保全。性能報告とevidence/pr274-wifi-afterを参照 |
 | R16.10 | 生データ・計測方法・結果を記録した | OK | evidence/pr274-wifiに21独立raw gzip/SHA256、trials.json、latency.csv、delivery.csv、匿名無線環境、準備10記録（失敗含む）を保存。private接続情報は公開しない |
 | R16.11 | 次回の自己レビューで無線試験が漏れないようにした | OK | この独立必須ゲート、READMEの自動経路証明、USB誤退避/候補ID不整合/キャッシュの拒否テスト、#259の試行分離テストをCIへ追加。集計は21試行と各3回を要求 |
+
+追加Wi-Fiレビューの製品修正は `c2e2fe3`。35 TSモジュールのstrict/依存グラフ/製品回帰と画面比較を再実行し、主21試行・修正後6試行・別ACK診断3試行を分離保存した。元の206行の判定は変更せず、R16を含む総数217、OK208・未確認8・別Issue1。無線を物理的に切る受入や実指・実ゲームは引き続き未確認。

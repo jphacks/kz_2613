@@ -1548,3 +1548,14 @@
 
 - 2回目の再試験も視点途中で停止し、今度は失敗snapshotを保全できた。現在の選択pairはsucceeded/true、履歴内の1snapshotだけin-progress/true。どちらもpeer/DTLS/ICEはconnected、選択IDとLAN両端は一致し、直前snapshotからpayloadは送信27,441/受信22,756 bytes増えていた。hostにもRTC close/failedはない。[W3C統計仕様](https://www.w3.org/TR/webrtc-stats/)でpair.stateはチェックリスト、transportのiceState/dtlsStateと別で、bytesSent/ReceivedはICE connectivity checkを除くpayloadと確認した。1回目の未保存snapshotも同因だったとは断定しない。
 - 判定器がチェックリストの一時的なin-progressを実接続断と混同していた。選択transport→pair→candidate ID、実peer/ICE/DTLS connected、nomination、正しいUDP LAN両端、双方向payload正値を必須とする判定へ修正。接続中のチェックリスト再検査は値を保存し、failed/waiting/frozen、接続未完、payloadなし、異なるID/経路は拒否する。取得API/間隔/入力負荷は変更しない。経路拒否の単体試験にこれらを追加し成功。主21試行の生入力/時刻は保全し、失敗2回と別に改修後の比較を再開する。
+
+## 2026-11-09 — 実Wi-Fi追加レビューの修正後再検証と記録確定
+
+- 主21試行に加え、製品c2e2fe3（診断telemetry通知を次frameへ集約）をrunner c75fda5から通常の後段ACK観測で再測定。RTC+WS / WS-only各3試行、入力60秒/224件＋視点60秒/1800移動、同じ47f6f6fホスト・Android・Chrome・AP。6試行の入力1,344件が受理/出力一致、欠落/重複適用/未ACK/順序gap待ち0。Pause・切断・復帰で旧入力残留なし、全ホストexit0・cleanupFailuresなし。主21試行と別のevidence/pr274-wifi-afterへ保存。
+- `node scripts/device/summarize-wifi-review.mjs --batch data/local/pr274-wifi/after-batch.json --supplement --out docs/develop/acceptance/evidence/pr274-wifi-after`：全6独立試行のソース/runner・資産・共通exe・経路・224件照合に成功。全分位/平均/最大/標本数CSVとraw gzip/SHA256を生成。途中停止2回を別gzip/索引へ保存し、成功値へ混ぜない。無線環境も別採取して元のAPと同一であることだけを匿名共有。
+- 先行ACK診断はA/E-before/E-after各1回・224件の別データとして保全。製品handler前→後段観測の間隔p95/p99はA 1.1/1.6ms、E-before 2.3/2.9ms、E-after 0.8/1.2ms。ネットワークやゲームの速度改善とは呼ばず、ACK callback中の診断subscriber通知を除いた構造上の改善とする。
+- `node scripts/device/wifi-route-test.mjs`、`wifi-host-analysis-test.mjs`、`wifi-trial-acks-test.mjs`、`wifi-ack-observer-test.mjs`、`android-dry-run-test.mjs`（11/11）：成功。誤経路/未接続/誤ID/未nomination/payloadなし/キャッシュ/USB URLを拒否し、実接続済みの候補再検査を誤って切断扱いしない。#259の連続試行ACK分離も成功。
+- `node scripts/sim/product-web-test.mjs`：成功、35 TSモジュール。診断publisherのframe集約・不変snapshot・冪等破棄・旧callback停止を追加検証。strict/Vite buildとphone parityは製品修正c2e2fe3で成功済み。`python scripts/check-public-docs.py`、`python scripts/verify_overlay.py`、`git diff --check`：成功。原206行とUSB15試行の不変、217項目（OK208/未確認8/別Issue1）、共有gzipのSHA256と接続情報除去を照合。
+- 製品修正c2e2fe3のCIは[Structure checks](https://github.com/jphacks/kz_2613/actions/runs/42548657268) / [Rust・製品回帰・配布](https://github.com/jphacks/kz_2613/actions/runs/42548657277)が成功。最終記録HEADもpush後に追跡する。PR #274の追加着手・完了記録を更新し、Draftを維持する。
+- 読取/起動の通常権限承認経路が一時的に利用量制限で自動レビュー失敗となったため、その時間は未実行として保持。指定時刻経過後に同じ承認経路で再実行し成功。制限回避、UAC昇格、Firewall/永続ネットワーク設定の変更はしていない。
+- 実Wi-Fi断そのもの、ルーター/距離/混雑/Bluetoothの比較、実指・長時間・iPhone・複数実スマホ・実OS入力/Minecraft・別PCは未受入。dry-runのLAN計測とAT-D07全体の製品受入を分ける。mainマージ・Issue close・正式release・Award Day安定版更新はしない。
