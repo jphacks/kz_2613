@@ -64,6 +64,7 @@ if(wifi)report.ackObserver=options.has('--ack-observer');
 if(wifi)report.runner={commit:execFileSync('git',['rev-parse','HEAD'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim(),dirty:execFileSync('git',['status','--porcelain'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim().length>0,modules:Object.fromEntries(['android-dry-run.mjs','android-performance.mjs','wifi-route.mjs','wifi-host-analysis.mjs','wifi-ack-observer.mjs'].map(name=>[name,crypto.createHash('sha256').update(fs.readFileSync(new URL(name,import.meta.url))).digest('hex')]))};
 let wifiNetwork;
 const networkEvents=[],privateNetworkSamples=[];
+const privateNetworkFailures=[];
 const safeError=message=>wifi?privateError(message,[serial,wifiNetwork?.pc,wifiNetwork?.android]):message;
 const check=async(id,fn)=>{try{const observed=await fn();report.tests.push({id,result:'合格',observed});console.log(`${id}: 合格`);}catch(e){report.tests.push({id,result:'不合格',reason:safeError(e.message)});throw e;}};
 function client(){
@@ -101,18 +102,25 @@ async function touch(selector,move=false){
   await sleep(180);await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await sleep(250);
 }
 async function shot(name){const {data}=await page.call('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(OUT,`${name}.png`),Buffer.from(data,'base64'));}
+function saveWifiPrivate(){fs.writeFileSync(path.join(OUT,'network.private.json'),JSON.stringify({network:wifiNetwork,events:networkEvents,samples:privateNetworkSamples,failedAttempts:privateNetworkFailures},null,2));}
 async function collectWifiProof(label) {
   if(!wifi)return;
   const stats=options.has('--ws-only')?[]:await evaluate(rtcStatsExpression);
   const history=await evaluate(`({rows:window.__wifiPathHistory??[],error:!!window.__wifiStatsError})`);
-  assert(!history.error,'ICE統計の定期収集に失敗');
-  const pairs=options.has('--ws-only')?[]:validateSelectedPairs(stats,wifiNetwork);
-  const sample={label,at:performance.now(),...validateHttpWs(networkEvents,wifiNetwork,port),selectedPairs:pairs,wsOnly:options.has('--ws-only')};
-  sample.hostLookLost=mon.state()?.slots?.[0]?.lookLost;
-  sample.pathHistory=history.rows.map(h=>({at:h.at,selectedPairs:validateSelectedPairs(h.stats,wifiNetwork)}));
-  report.networkProof.samples.push(sample);
-  privateNetworkSamples.push({label,stats,history});
-  fs.writeFileSync(path.join(OUT,'network.private.json'),JSON.stringify({network:wifiNetwork,events:networkEvents,samples:privateNetworkSamples},null,2));
+  try {
+    assert(!history.error,'ICE統計の定期収集に失敗');
+    const pairs=options.has('--ws-only')?[]:validateSelectedPairs(stats,wifiNetwork);
+    const sample={label,at:performance.now(),...validateHttpWs(networkEvents,wifiNetwork,port),selectedPairs:pairs,wsOnly:options.has('--ws-only')};
+    sample.hostLookLost=mon.state()?.slots?.[0]?.lookLost;
+    sample.pathHistory=history.rows.map(h=>({at:h.at,selectedPairs:validateSelectedPairs(h.stats,wifiNetwork)}));
+    report.networkProof.samples.push(sample);
+    privateNetworkSamples.push({label,stats,history});
+  } catch(error) {
+    privateNetworkFailures.push({label,stats,history,reason:safeError(error.message)});
+    (report.networkProof.failures??=[]).push({label,reason:safeError(error.message),currentStates:stats.map(s=>({connection:s.connectionState,pair:s.pair.state,nominated:s.pair.nominated})),historyStates:history.rows.map(h=>({at:h.at,states:h.stats.map(s=>({connection:s.connectionState,pair:s.pair.state,nominated:s.pair.nominated}))}))});
+    saveWifiPrivate();throw error;
+  }
+  saveWifiPrivate();
 }
 
 try{
@@ -416,7 +424,7 @@ try{
   process.exitCode = 1;
 } finally {
   if(wifi){
-    fs.writeFileSync(path.join(OUT,'network.private.json'),JSON.stringify({network:wifiNetwork,events:networkEvents,samples:privateNetworkSamples},null,2));
+    saveWifiPrivate();
     if(report.error&&browser){try{await shot('failure');}catch{}}
   }
   const cleanup = async (name, action) => {
