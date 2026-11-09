@@ -7,9 +7,9 @@
 
 1. ブラウザへ配信するコードは、すべて TypeScript（React）にする。疑似ゲーム・診断画面・観客表示も対象。
 2. 旧JS版は main から削除する。保持はタグだけで行う（予備の配布zipや `--legacy` の仕組みは作らない）。
-   - `legacy-js-before-react` = `c271ebe`（React移行前のmain）
-   - `legacy-js-engine-before-ts` = `9947391`（React UI＋旧JSエンジン）
-   - `legacy-js-last-with-react` = `ee77270`（#274 マージ直後。React版と旧JSが併存する最後の点）
+   - `legacy-js-before-react` = `702b872`（React移行前のmain。履歴更新前はc271ebe、tree一致）
+   - `legacy-js-engine-before-ts` = `e265745`（React UI＋旧JSエンジン。履歴更新前は9947391、tree一致）
+   - `legacy-js-last-with-react` = `6ad3153`（#274 マージ直後。React版と旧JSが併存する最後の点。履歴更新前はee77270、tree一致）
 3. 旧JSを前提にした配信・試験の土台は、すべてTS版へ置き換える。旧版との比較専用の試験は廃止する。
 4. HTML・ディレクトリ・ファイル名は、React + TypeScript strict の標準的な構成として自然な名前にする。
 5. 入力・通信・安全停止の挙動、定数（最低押下60ms・最低解放50ms・視点30Hz・切断判定4秒など）は変更しない。UIの見た目・文言・DOM ID も原則変えない（変えるなら理由を記録）。
@@ -176,7 +176,7 @@ apps/web/                         ← 画面の唯一の正本。配信物もこ
 - PR-A時点ではdiagnostics/pseudo-gameのinline JSを新HTMLに一時保持し、PR-B/CでTS化する。恒久的な互換配信・予備zipは設けない。
 - Vite設定にもstrict型検査を適用する。画像はpublic/assets、CSSはsrc/stylesから各main.tsxが順序を保持してimport。ビルド済みコードはVite既定のハッシュ付きassetsへ出る。
 - PC専用ディレクトリはcanonicalize済みの実体と配信rootから判定し、root外のリンク先も配信しない。HTTP/WSの認可と入力定数は維持する。
-- 実入力照合は明示許可がないため未実施。Android実Wi-Fi前後比較に必要なprivate設定ファイルも未提供であり、全受入完了とはしない。
+- 実入力照合は明示許可がないため未実施。Android実Wi-Fiの移行前/PR-A/B/C比較は各16項目合格（詳細は[比較記録](../acceptance/2026-11-09-web-structure-wifi.md)）。全受入完了とはしない。
 
 ## 10. 旧版の再現
 

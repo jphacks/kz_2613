@@ -1,0 +1,510 @@
+[
+  {
+    "stage": "before",
+    "commit": "6ad3153ba4826bf82f06bc1bef77cb31b01eb30d",
+    "dirty": false,
+    "summarySha256": "34093ffdb3f92b1cfa346ecfe27727eecb0fa5df660ae93323d9d9da010b7dc5",
+    "runner": {
+      "commit": "6ad3153ba4826bf82f06bc1bef77cb31b01eb30d",
+      "dirty": false,
+      "modules": {
+        "android-dry-run.mjs": "ed302d6ea068d4320642e0f2f1c8ce1ebdf1fe57876d11a41c811ce3fb402f79",
+        "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+        "wifi-route.mjs": "5f773fc6abfe330bff29b8a48007245666b867a0971b550e429cdc2758134a1f",
+        "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d",
+        "wifi-ack-observer.mjs": "4d19db34a3fdd2b24346a9b0ded22b3c878a6d19ab6e61c9450c5d0eaa648969"
+      }
+    },
+    "safety": {
+      "dryRun": true,
+      "noConfig": true,
+      "fakeTarget": true,
+      "osInput": false,
+      "initialDown": []
+    },
+    "testResults": [
+      {
+        "id": "dry-runホストのHTTPと監視接続",
+        "result": "合格"
+      },
+      {
+        "id": "Android初期表示・P1参加",
+        "result": "合格"
+      },
+      {
+        "id": "Wi-Fi HTTP/WS/ICE経路と非ループバック認可",
+        "result": "合格"
+      },
+      {
+        "id": "Android反復入力の独立性能試行",
+        "result": "合格"
+      },
+      {
+        "id": "Android生成操作面・単指ボタン",
+        "result": "合格"
+      },
+      {
+        "id": "Android同一ボタンの2接点保持",
+        "result": "合格"
+      },
+      {
+        "id": "Androidスティック右・解放",
+        "result": "合格"
+      },
+      {
+        "id": "Android診断表示",
+        "result": "合格"
+      },
+      {
+        "id": "Androidタッチ領域と入力処理時間",
+        "result": "合格"
+      },
+      {
+        "id": "Android保持中のホストPause・全解放",
+        "result": "合格"
+      },
+      {
+        "id": "Android再開と実回転時の全解放",
+        "result": "合格"
+      },
+      {
+        "id": "Androidバックグラウンド時の全解放",
+        "result": "合格"
+      },
+      {
+        "id": "Android保持中の通信切断・同じ枠への再接続",
+        "result": "合格"
+      },
+      {
+        "id": "Android再読み込み・元の管理権",
+        "result": "合格"
+      },
+      {
+        "id": "Android担当変更後の視点パッド・送信周期",
+        "result": "合格"
+      },
+      {
+        "id": "Android JavaScriptエラー",
+        "result": "合格"
+      }
+    ],
+    "binarySha256": "4a24b65c417b9388884fd8ceccd5fd9d6e6a6cd092d9145a1b1cefe345066baf",
+    "trial": "1",
+    "tests": 16,
+    "allPassed": true,
+    "logicalInputs": 224,
+    "accepted": 224,
+    "missing": 0,
+    "duplicateAccepted": 0,
+    "outputUnmatched": 0,
+    "unacked": 0,
+    "downToSendP95Ms": 25,
+    "upToSendP95Ms": 26.69999998807907,
+    "ackRttP95Ms": 121.59999996423721,
+    "lookSendP95Ms": 35.09999996423721,
+    "lookSendGaps200ms": 0,
+    "hostLookLost": 398,
+    "hostLookRtc": {
+      "received": 1337,
+      "arrivalIntervalMs": {
+        "n": 1336,
+        "p50": 32.88,
+        "p95": 93.701,
+        "p99": 189.605,
+        "mean": 44.848038922155645,
+        "max": 393.277
+      },
+      "gaps200ms": 11,
+      "maxGapMs": 393.277
+    },
+    "networkProof": {
+      "pcWifiActive": true,
+      "androidWifiActive": true,
+      "androidRouteViaWlan": true,
+      "usbTethering": false,
+      "adbReverseMappings": 0
+    },
+    "routeSamples": 16
+  },
+  {
+    "stage": "pr-a",
+    "commit": "9642c2c40c664b45c83bfbd9cd0f39f91e21f845",
+    "dirty": false,
+    "summarySha256": "35639385bd1ff8635c42550557546def644212f8938d3a609fc1a0074d7106ea",
+    "runner": {
+      "commit": "9642c2c40c664b45c83bfbd9cd0f39f91e21f845",
+      "dirty": false,
+      "modules": {
+        "android-dry-run.mjs": "3407fc03b0637733eb3052e58f4fa442142e4335f20ef0b74a910ca2d4f8ad1a",
+        "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+        "wifi-route.mjs": "5f773fc6abfe330bff29b8a48007245666b867a0971b550e429cdc2758134a1f",
+        "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d",
+        "wifi-ack-observer.mjs": "4d19db34a3fdd2b24346a9b0ded22b3c878a6d19ab6e61c9450c5d0eaa648969"
+      }
+    },
+    "safety": {
+      "dryRun": true,
+      "noConfig": true,
+      "fakeTarget": true,
+      "osInput": false,
+      "initialDown": []
+    },
+    "testResults": [
+      {
+        "id": "dry-runホストのHTTPと監視接続",
+        "result": "合格"
+      },
+      {
+        "id": "Android初期表示・P1参加",
+        "result": "合格"
+      },
+      {
+        "id": "Wi-Fi HTTP/WS/ICE経路と非ループバック認可",
+        "result": "合格"
+      },
+      {
+        "id": "Android反復入力の独立性能試行",
+        "result": "合格"
+      },
+      {
+        "id": "Android生成操作面・単指ボタン",
+        "result": "合格"
+      },
+      {
+        "id": "Android同一ボタンの2接点保持",
+        "result": "合格"
+      },
+      {
+        "id": "Androidスティック右・解放",
+        "result": "合格"
+      },
+      {
+        "id": "Android診断表示",
+        "result": "合格"
+      },
+      {
+        "id": "Androidタッチ領域と入力処理時間",
+        "result": "合格"
+      },
+      {
+        "id": "Android保持中のホストPause・全解放",
+        "result": "合格"
+      },
+      {
+        "id": "Android再開と実回転時の全解放",
+        "result": "合格"
+      },
+      {
+        "id": "Androidバックグラウンド時の全解放",
+        "result": "合格"
+      },
+      {
+        "id": "Android保持中の通信切断・同じ枠への再接続",
+        "result": "合格"
+      },
+      {
+        "id": "Android再読み込み・元の管理権",
+        "result": "合格"
+      },
+      {
+        "id": "Android担当変更後の視点パッド・送信周期",
+        "result": "合格"
+      },
+      {
+        "id": "Android JavaScriptエラー",
+        "result": "合格"
+      }
+    ],
+    "binarySha256": "4d562056c2eb6652886c1e86ff7861b456005ebd5f0e871f8821be5abaadcce1",
+    "trial": "2",
+    "tests": 16,
+    "allPassed": true,
+    "logicalInputs": 224,
+    "accepted": 224,
+    "missing": 0,
+    "duplicateAccepted": 0,
+    "outputUnmatched": 0,
+    "unacked": 0,
+    "downToSendP95Ms": 28.100000023841858,
+    "upToSendP95Ms": 26.5,
+    "ackRttP95Ms": 112,
+    "lookSendP95Ms": 63.799999952316284,
+    "lookSendGaps200ms": 0,
+    "hostLookLost": 373,
+    "hostLookRtc": {
+      "received": 1355,
+      "arrivalIntervalMs": {
+        "n": 1354,
+        "p50": 32.937,
+        "p95": 84.478,
+        "p99": 155.497,
+        "mean": 44.236906203840476,
+        "max": 297.589
+      },
+      "gaps200ms": 2,
+      "maxGapMs": 297.589
+    },
+    "networkProof": {
+      "pcWifiActive": true,
+      "androidWifiActive": true,
+      "androidRouteViaWlan": true,
+      "usbTethering": false,
+      "adbReverseMappings": 0
+    },
+    "routeSamples": 16
+  },
+  {
+    "stage": "pr-b",
+    "commit": "ae98b05ce7569e80c0eaa26032fd55a924aa01c4",
+    "dirty": false,
+    "summarySha256": "7291652050848154573788c709a25ff8562c7a0d467cebafcd8d8af171fcdec3",
+    "runner": {
+      "commit": "ae98b05ce7569e80c0eaa26032fd55a924aa01c4",
+      "dirty": false,
+      "modules": {
+        "android-dry-run.mjs": "3407fc03b0637733eb3052e58f4fa442142e4335f20ef0b74a910ca2d4f8ad1a",
+        "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+        "wifi-route.mjs": "5f773fc6abfe330bff29b8a48007245666b867a0971b550e429cdc2758134a1f",
+        "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d",
+        "wifi-ack-observer.mjs": "4d19db34a3fdd2b24346a9b0ded22b3c878a6d19ab6e61c9450c5d0eaa648969"
+      }
+    },
+    "safety": {
+      "dryRun": true,
+      "noConfig": true,
+      "fakeTarget": true,
+      "osInput": false,
+      "initialDown": []
+    },
+    "testResults": [
+      {
+        "id": "dry-runホストのHTTPと監視接続",
+        "result": "合格"
+      },
+      {
+        "id": "Android初期表示・P1参加",
+        "result": "合格"
+      },
+      {
+        "id": "Wi-Fi HTTP/WS/ICE経路と非ループバック認可",
+        "result": "合格"
+      },
+      {
+        "id": "Android反復入力の独立性能試行",
+        "result": "合格"
+      },
+      {
+        "id": "Android生成操作面・単指ボタン",
+        "result": "合格"
+      },
+      {
+        "id": "Android同一ボタンの2接点保持",
+        "result": "合格"
+      },
+      {
+        "id": "Androidスティック右・解放",
+        "result": "合格"
+      },
+      {
+        "id": "Android診断表示",
+        "result": "合格"
+      },
+      {
+        "id": "Androidタッチ領域と入力処理時間",
+        "result": "合格"
+      },
+      {
+        "id": "Android保持中のホストPause・全解放",
+        "result": "合格"
+      },
+      {
+        "id": "Android再開と実回転時の全解放",
+        "result": "合格"
+      },
+      {
+        "id": "Androidバックグラウンド時の全解放",
+        "result": "合格"
+      },
+      {
+        "id": "Android保持中の通信切断・同じ枠への再接続",
+        "result": "合格"
+      },
+      {
+        "id": "Android再読み込み・元の管理権",
+        "result": "合格"
+      },
+      {
+        "id": "Android担当変更後の視点パッド・送信周期",
+        "result": "合格"
+      },
+      {
+        "id": "Android JavaScriptエラー",
+        "result": "合格"
+      }
+    ],
+    "binarySha256": "4d562056c2eb6652886c1e86ff7861b456005ebd5f0e871f8821be5abaadcce1",
+    "trial": "4",
+    "tests": 16,
+    "allPassed": true,
+    "logicalInputs": 224,
+    "accepted": 224,
+    "missing": 0,
+    "duplicateAccepted": 0,
+    "outputUnmatched": 0,
+    "unacked": 0,
+    "downToSendP95Ms": 28.099999964237213,
+    "upToSendP95Ms": 23.30000001192093,
+    "ackRttP95Ms": 109.20000004768372,
+    "lookSendP95Ms": 63.5,
+    "lookSendGaps200ms": 0,
+    "hostLookLost": 360,
+    "hostLookRtc": {
+      "received": 1363,
+      "arrivalIntervalMs": {
+        "n": 1362,
+        "p50": 32.604,
+        "p95": 86.536,
+        "p99": 166.444,
+        "mean": 44.00872173274592,
+        "max": 292.33
+      },
+      "gaps200ms": 4,
+      "maxGapMs": 292.33
+    },
+    "networkProof": {
+      "pcWifiActive": true,
+      "androidWifiActive": true,
+      "androidRouteViaWlan": true,
+      "usbTethering": false,
+      "adbReverseMappings": 0
+    },
+    "routeSamples": 16
+  },
+  {
+    "stage": "pr-c",
+    "commit": "66159e606710db799ee7690da2b079ae3bc30742",
+    "dirty": false,
+    "summarySha256": "acfc9c6b7b1e385150feb3331ced55960f5bb0d37da16daf66c78554e431fcb3",
+    "runner": {
+      "commit": "66159e606710db799ee7690da2b079ae3bc30742",
+      "dirty": false,
+      "modules": {
+        "android-dry-run.mjs": "3407fc03b0637733eb3052e58f4fa442142e4335f20ef0b74a910ca2d4f8ad1a",
+        "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+        "wifi-route.mjs": "5f773fc6abfe330bff29b8a48007245666b867a0971b550e429cdc2758134a1f",
+        "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d",
+        "wifi-ack-observer.mjs": "4d19db34a3fdd2b24346a9b0ded22b3c878a6d19ab6e61c9450c5d0eaa648969"
+      }
+    },
+    "safety": {
+      "dryRun": true,
+      "noConfig": true,
+      "fakeTarget": true,
+      "osInput": false,
+      "initialDown": []
+    },
+    "testResults": [
+      {
+        "id": "dry-runホストのHTTPと監視接続",
+        "result": "合格"
+      },
+      {
+        "id": "Android初期表示・P1参加",
+        "result": "合格"
+      },
+      {
+        "id": "Wi-Fi HTTP/WS/ICE経路と非ループバック認可",
+        "result": "合格"
+      },
+      {
+        "id": "Android反復入力の独立性能試行",
+        "result": "合格"
+      },
+      {
+        "id": "Android生成操作面・単指ボタン",
+        "result": "合格"
+      },
+      {
+        "id": "Android同一ボタンの2接点保持",
+        "result": "合格"
+      },
+      {
+        "id": "Androidスティック右・解放",
+        "result": "合格"
+      },
+      {
+        "id": "Android診断表示",
+        "result": "合格"
+      },
+      {
+        "id": "Androidタッチ領域と入力処理時間",
+        "result": "合格"
+      },
+      {
+        "id": "Android保持中のホストPause・全解放",
+        "result": "合格"
+      },
+      {
+        "id": "Android再開と実回転時の全解放",
+        "result": "合格"
+      },
+      {
+        "id": "Androidバックグラウンド時の全解放",
+        "result": "合格"
+      },
+      {
+        "id": "Android保持中の通信切断・同じ枠への再接続",
+        "result": "合格"
+      },
+      {
+        "id": "Android再読み込み・元の管理権",
+        "result": "合格"
+      },
+      {
+        "id": "Android担当変更後の視点パッド・送信周期",
+        "result": "合格"
+      },
+      {
+        "id": "Android JavaScriptエラー",
+        "result": "合格"
+      }
+    ],
+    "binarySha256": "4d562056c2eb6652886c1e86ff7861b456005ebd5f0e871f8821be5abaadcce1",
+    "trial": "4",
+    "tests": 16,
+    "allPassed": true,
+    "logicalInputs": 224,
+    "accepted": 224,
+    "missing": 0,
+    "duplicateAccepted": 0,
+    "outputUnmatched": 0,
+    "unacked": 0,
+    "downToSendP95Ms": 26.600000023841858,
+    "upToSendP95Ms": 26.899999976158142,
+    "ackRttP95Ms": 109,
+    "lookSendP95Ms": 64.19999998807907,
+    "lookSendGaps200ms": 0,
+    "hostLookLost": 324,
+    "hostLookRtc": {
+      "received": 1400,
+      "arrivalIntervalMs": {
+        "n": 1399,
+        "p50": 32.809,
+        "p95": 85.768,
+        "p99": 168.102,
+        "mean": 42.872374553252314,
+        "max": 288.006
+      },
+      "gaps200ms": 6,
+      "maxGapMs": 288.006
+    },
+    "networkProof": {
+      "pcWifiActive": true,
+      "androidWifiActive": true,
+      "androidRouteViaWlan": true,
+      "usbTethering": false,
+      "adbReverseMappings": 0
+    },
+    "routeSamples": 16
+  }
+]
