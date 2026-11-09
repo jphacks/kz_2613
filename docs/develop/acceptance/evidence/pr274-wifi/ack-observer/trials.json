@@ -1,0 +1,113 @@
+{
+  "scope": "別条件の先行ACK診断。主21試行へ混ぜない。各1回・224 ACKの観測。",
+  "trials": [
+    {
+      "condition": "A",
+      "date": "2026-11-09T01:41:59.974Z",
+      "sourceCommit": "c271ebe2335af9bdff5f30d58304a30d74f847f7",
+      "runner": {
+        "commit": "3637d3f0055f1bd1729a65ef87839e93db76d97c",
+        "dirty": false,
+        "modules": {
+          "android-dry-run.mjs": "91df47051b21d50de580b7eedc0a9bc1607afe6367babdecb800fcdbb25e6a3e",
+          "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+          "wifi-route.mjs": "5e4a1a709d75a03b3f18c0c1891f38ed4385677117190b0aa79a67f75a24839e",
+          "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d",
+          "wifi-ack-observer.mjs": "68174363ba3504bbdc1107b6efd08f0440f768947e7b52909f6159a20d6621dd"
+        }
+      },
+      "binarySha256": "47f6f6f85bd3ad76e55f340a9d00d779cc5bb8e3aa7ab90b90b3bb6d85570099",
+      "wsOnly": true,
+      "sourceDirty": false,
+      "ackObserver": true,
+      "phases": {
+        "n": 224,
+        "earlyRttMs": {
+          "n": 224,
+          "p50": 18,
+          "p95": 105.20000004768372,
+          "p99": 107.60000002384186,
+          "mean": 30.11607142990189,
+          "max": 133
+        },
+        "lateRttMs": {
+          "n": 224,
+          "p50": 18.19999998807907,
+          "p95": 106.30000001192093,
+          "p99": 109.20000004768372,
+          "mean": 30.370535715083992,
+          "max": 133.30000001192093
+        },
+        "dispatchMs": {
+          "n": 224,
+          "p50": 0.19999998807907104,
+          "p95": 1.0999999642372131,
+          "p99": 1.600000023841858,
+          "mean": 0.2544642851821014,
+          "max": 2.600000023841858
+        },
+        "method": "WebSocket構築時の先行listener→製品onmessage→従来observer。同一renderer時計。間のmicrotask/配送と観測JSON処理も含み、純network RTTや純React CPU時間ではない。"
+      },
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "A-1.json.gz",
+      "rawSha256": "131d392a1f5c3b470219989dc06ba5e14600c688ad8e705e412552e97d30740d"
+    },
+    {
+      "condition": "E",
+      "date": "2026-11-09T01:44:31.272Z",
+      "sourceCommit": "fe19ecbaf954c239dd6f179a554451cf708be433",
+      "runner": {
+        "commit": "3637d3f0055f1bd1729a65ef87839e93db76d97c",
+        "dirty": false,
+        "modules": {
+          "android-dry-run.mjs": "91df47051b21d50de580b7eedc0a9bc1607afe6367babdecb800fcdbb25e6a3e",
+          "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+          "wifi-route.mjs": "5e4a1a709d75a03b3f18c0c1891f38ed4385677117190b0aa79a67f75a24839e",
+          "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d",
+          "wifi-ack-observer.mjs": "68174363ba3504bbdc1107b6efd08f0440f768947e7b52909f6159a20d6621dd"
+        }
+      },
+      "binarySha256": "47f6f6f85bd3ad76e55f340a9d00d779cc5bb8e3aa7ab90b90b3bb6d85570099",
+      "wsOnly": true,
+      "sourceDirty": false,
+      "ackObserver": true,
+      "phases": {
+        "n": 224,
+        "earlyRttMs": {
+          "n": 224,
+          "p50": 17.80000001192093,
+          "p95": 107.09999996423721,
+          "p99": 110,
+          "mean": 32.80223214120737,
+          "max": 232.5
+        },
+        "lateRttMs": {
+          "n": 224,
+          "p50": 18,
+          "p95": 109.40000003576279,
+          "p99": 112.80000001192093,
+          "mean": 33.184821425005794,
+          "max": 234.80000001192093
+        },
+        "dispatchMs": {
+          "n": 224,
+          "p50": 0.19999998807907104,
+          "p95": 2.300000011920929,
+          "p99": 2.899999976158142,
+          "mean": 0.3825892837984221,
+          "max": 4
+        },
+        "method": "WebSocket構築時の先行listener→製品onmessage→従来observer。同一renderer時計。間のmicrotask/配送と観測JSON処理も含み、純network RTTや純React CPU時間ではない。"
+      },
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "E-1.json.gz",
+      "rawSha256": "2219be5fc47285ff5458d3f1043d5f9bbd220c12ca0b825a5343d50280c044d7"
+    }
+  ]
+}

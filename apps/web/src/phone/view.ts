@@ -9,6 +9,7 @@ import { profileNotice, roleView, gameLabel, outputKeyLabel } from '../model/pre
 import { createViewTransition } from './transition.ts';
 import { createSkinStore, applySkin } from '../model/skin.ts';
 import {controllerLayout,type ControlGroup} from '../controller-layout';
+import {createTelemetryPublisher} from './telemetry.ts';
 
 export interface PhoneDisplay {
   controller: {key:string;groups:ControlGroup[];bindings:PhoneViewBindings} | null;
@@ -37,6 +38,7 @@ export function transferHost(slot: import('../contracts').Slot) {
 export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
   bindings = input;
   const lifetime=createLifetime();
+  const telemetryUpdates=createTelemetryPublisher(telemetry.get(),telemetry.set);
   let lastView: string | null = null, lastKey = '', skinGame: string | undefined;
   const transition = createViewTransition({ layer: byId('viewFx') });
   lifetime.listen(byId('phoneSettingsBtn'), 'click', () => {
@@ -88,9 +90,9 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
   }) as PhoneView;
   render.note = note => flushSync(() => display.set({ ...display.get(), remote: { ...display.get().remote, note } }));
   render.connection=(text,kind)=>{document.body.dataset.connection=kind;flushSync(()=>connection.set({text,kind}));};
-  // 入力/ACKの処理中に診断DOMの同期描画を挟まない。診断部だけが通常のReact更新を購読する。
-  render.telemetry=patch=>telemetry.set({...telemetry.get(),...patch});
+  // external storeの通知による同期更新も、入力/ACKのdispatch区間へ入れない。
+  render.telemetry=telemetryUpdates.patch;
   render.blocked=message=>flushSync(()=>blocked.set({message}));
-  render.dispose=()=>{input.releaseAll();lifetime.dispose();transition.dispose();bindings=undefined;};
+  render.dispose=()=>{input.releaseAll();telemetryUpdates.dispose();lifetime.dispose();transition.dispose();bindings=undefined;};
   return render;
 }

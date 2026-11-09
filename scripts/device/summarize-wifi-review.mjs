@@ -12,11 +12,15 @@ const {validateSelectedPairs}=await import(pathToFileURL(path.join(root,'scripts
 const {trialAcks}=await import(pathToFileURL(path.join(root,'scripts/device/wifi-trial-acks.mjs')));
 const sha=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 const partial=process.argv.includes('--partial');
+const supplement=process.argv.includes('--supplement');
 const option=process.argv.indexOf('--out');
 const output=path.resolve(option<0?'docs/develop/acceptance/evidence/pr274-wifi':process.argv[option+1]);
 if(partial)assert(output.startsWith(path.join(root,'data/local')+path.sep),'部分集計を共有完了記録へ書かない');
-const manifest=JSON.parse(fs.readFileSync(path.join(folder,'batch.json'),'utf8'));
-if(!partial){assert.equal(manifest.status,'completed');assert.equal(manifest.results.length,21);}
+if(supplement)assert(option>=0&&output!==path.resolve('docs/develop/acceptance/evidence/pr274-wifi'),'再試験は主21試行と別の保存先を指定する');
+const batchOption=process.argv.indexOf('--batch');
+const manifest=JSON.parse(fs.readFileSync(batchOption<0?path.join(folder,'batch.json'):process.argv[batchOption+1],'utf8'));
+const conditions=supplement?[...new Set(manifest.order.map(j=>j.label))]:['A','B','C','D','E','A-ws','E-ws'];
+if(!partial){assert.equal(manifest.status,'completed');assert.equal(manifest.results.length,conditions.length*3);}
 fs.mkdirSync(output,{recursive:true});
 const inventory=dir=>Object.fromEntries(fs.readdirSync(dir,{recursive:true}).filter(f=>fs.statSync(path.join(dir,f)).isFile()).sort().map(f=>[f.replaceAll('\\','/'),sha(fs.readFileSync(path.join(dir,f)))]));
 const trials=[];
@@ -70,18 +74,29 @@ for(const record of manifest.results){
   assert(!safe.includes(privateProof.network.pc)&&!safe.includes(privateProof.network.android),'生LANアドレスを含めない');
   const filename=`${record.label}-${record.trial}.json.gz`,bytes=gzipSync(Buffer.from(safe+'\n'),{level:9});
   fs.writeFileSync(path.join(output,filename),bytes);
+  // 完全な5秒履歴はrawへ保全。索引は候補の辞書＋重複しない時系列で参照する。
+  const pairCatalog=new Map(),pathHistory=new Map();
+  const compactPair=p=>{
+    if(!pairCatalog.has(p.pair))pairCatalog.set(p.pair,{pair:p.pair,selectedBy:p.selectedBy,state:p.state,nominated:p.nominated,local:p.local,remote:p.remote});
+    return {pair:p.pair,bytesSent:p.bytesSent,bytesReceived:p.bytesReceived,currentRoundTripTimeMs:p.currentRoundTripTimeMs};
+  };
+  const samples=proof.samples.map(({pathHistory:history,...sample})=>{
+    for(const item of history){const pairs=item.selectedPairs.map(compactPair);pathHistory.set(JSON.stringify([item.at,pairs.map(p=>p.pair)]),{at:item.at,pairs});}
+    return {...sample,selectedPairs:sample.selectedPairs.map(compactPair),historySamples:history.length};
+  });
+  const reconnect=r.tests.find(t=>t.id.includes('保持中の通信切断'))?.observed;
   trials.push({condition:record.label,trial:record.trial,date:r.date,sourceCommit:r.sourceCommit,runner:r.runner,binarySha256:r.binarySha256,device:r.device,connection:r.connection,workload:r.performance.workload,metrics,delivery:{logicalInputs:224,accepted:224,missing:0,duplicateAccepted:0,unacked:0,outputMatched:host.outputMatched},
     host:{...host,rows:undefined},look:{...r.lookPerformance,times:undefined,gaps:undefined,companionPositions:undefined},
-    network:{topology:proof.topology,samples:proof.samples,selectedPairGenerations:aliases.size},tests:r.tests,hostExit:r.hostExit,raw:filename,rawSha256:sha(bytes)});
+    network:{topology:proof.topology,pairCatalog:[...pairCatalog.values()],samples,pathHistory:[...pathHistory.values()],selectedPairGenerations:aliases.size},tests:r.tests.map(({id,result})=>({id,result})),reconnect,hostExit:r.hostExit,raw:filename,rawSha256:sha(bytes)});
   console.log(`${record.label}${record.trial}: ACK p95 ${metrics.ackRttMs.p95.toFixed(1)} / p99 ${metrics.ackRttMs.p99.toFixed(1)}ms; recv→accept p95 ${host.timing.receiveToAcceptMs.p95.toFixed(3)}ms; look recv≥200ms ${Object.values(host.look).reduce((n,v)=>n+v.gaps200ms,0)}`);
 }
 assert(new Set(trials.map(t=>t.binarySha256)).size<=1);
 assert(new Set(trials.map(t=>JSON.stringify(t.device))).size<=1);
 assert(new Set(trials.map(t=>JSON.stringify(t.runner.modules))).size<=1);
-if(!partial)for(const condition of ['A','B','C','D','E','A-ws','E-ws'])assert.deepEqual(trials.filter(t=>t.condition===condition).map(t=>t.trial).sort(),[1,2,3]);
+if(!partial)for(const condition of conditions)assert.deepEqual(trials.filter(t=>t.condition===condition).map(t=>t.trial).sort(),[1,2,3]);
 const usb=JSON.parse(fs.readFileSync('docs/develop/acceptance/evidence/pr274-review/trials.json','utf8')).trials;
 const summaries={};
-for(const condition of ['A','B','C','D','E','A-ws','E-ws']){
+for(const condition of conditions){
   const group=trials.filter(t=>t.condition===condition);if(!group.length)continue;
   const range=fn=>{const values=group.map(fn).filter(Number.isFinite);return {n:values.length,min:Math.min(...values),max:Math.max(...values),mean:values.reduce((a,b)=>a+b,0)/values.length}};
   summaries[condition]={trials:group.length,downP95:range(t=>t.metrics.downToSendMs.p95),upP95:range(t=>t.metrics.upToSendMs.p95),ackP95:range(t=>t.metrics.ackRttMs.p95),ackP99:range(t=>t.metrics.ackRttMs.p99),receiveToAcceptP95:range(t=>t.host.timing.receiveToAcceptMs.p95),acceptToDryOutputP95:range(t=>t.host.timing.acceptToDryOutputMs.p95),lookSendP95:range(t=>t.look.summary.p95),lookArrivalMax:range(t=>Math.max(...Object.values(t.host.look).map(v=>v.maxGapMs??0))),lookArrivalGaps200:group.reduce((n,t)=>n+Object.values(t.host.look).reduce((m,v)=>m+v.gaps200ms,0),0),orderGapCount:group.reduce((n,t)=>n+t.host.orderGapCount,0),usbAckP95:usb.filter(t=>t.condition===condition).map(t=>t.metrics.ackRttMs.p95)};
@@ -107,8 +122,8 @@ for(const t of trials){
 }
 csv('latency.csv',['条件','試行','指標','標本数','p50','p95','p99','平均','最大','単位'],latency);
 csv('delivery.csv',['条件','試行','論理送信','受理','欠落','重複適用','未ACK','出力照合','WS先着','RTC先着','順序gap待ち','視点送信空白200ms以上','視点WS到着空白200ms以上','視点RTC到着空白200ms以上','lookLost'],trials.map(t=>[t.condition,t.trial,224,t.delivery.accepted,t.delivery.missing,t.delivery.duplicateAccepted,t.delivery.unacked,t.delivery.outputMatched,t.metrics.firstVia.ws??0,t.metrics.firstVia.rtc??0,t.host.orderGapCount,t.look.gaps200ms,t.host.look.ws.gaps200ms,t.host.look.rtc.gaps200ms,t.look.hostLookLost]));
-console.log(`独立Wi-Fi試行 ${trials.length}/21 を照合（${partial?'非公開の途中集計':'共有用の最終集計'}）`);
-if(!partial){
+console.log(`独立Wi-Fi試行 ${trials.length}/${conditions.length*3} を照合（${partial?'非公開の途中集計':'共有用の最終集計'}）`);
+if(!partial&&!supplement){
   const failures=[];
   const redact=value=>{
     if(Array.isArray(value))return value.map(redact);
