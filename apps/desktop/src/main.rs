@@ -14,7 +14,7 @@ use std::time::{Duration, Instant};
 
 use tauri::{Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
 
-const WEB_DIR: &str = "apps/web/static";
+const WEB_DIR: &str = "apps/web/dist";
 const HOST_EXE: &str = if cfg!(windows) { "recooplay-host.exe" } else { "recooplay-host" };
 const START_TIMEOUT: Duration = Duration::from_secs(15);
 const QUIT_TIMEOUT: Duration = Duration::from_secs(3);
@@ -31,7 +31,7 @@ struct Host(Mutex<Option<Child>>);
 #[derive(Default)]
 struct StartupError(Mutex<Option<String>>);
 
-/// リポジトリのルート (apps/web/static/ と config.json のある場所)。RECOOPLAY_ROOT で指定も可
+/// リポジトリのルート (apps/web/dist/ と config.json のある場所)。RECOOPLAY_ROOT で指定も可
 fn find_root() -> Option<PathBuf> {
     if let Ok(r) = std::env::var("RECOOPLAY_ROOT") {
         return Some(PathBuf::from(r));
@@ -43,7 +43,7 @@ fn find_root() -> Option<PathBuf> {
     if let Ok(exe) = std::env::current_exe() {
         candidates.extend(exe.ancestors().skip(1).take(6).map(Path::to_path_buf));
     }
-    candidates.into_iter().find(|p| p.join(WEB_DIR).join("index.html").is_file())
+    candidates.into_iter().find(|p| p.join(WEB_DIR).join("phone/index.html").is_file())
 }
 
 /// ホストの実行ファイル: RECOOPLAY_HOST_EXE → アプリと同じフォルダ → リポジトリ内の release ビルド

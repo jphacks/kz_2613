@@ -1,5 +1,5 @@
 // 観客向け表示 (#163)。状態を受け取って描くだけで、ホストへ操作を送らない。
-import { overlayModel } from '../app-view.js';
+import { overlayModel } from './src/shared/model/presentation.ts';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);

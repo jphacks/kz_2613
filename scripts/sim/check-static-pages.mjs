@@ -1,65 +1,23 @@
-// 静的画面 (apps/web/static/*.html) のインラインスクリプトが構文として読めるかを確認する (ブラウザでの表示確認の代わりではない)
-//   node scripts/sim/check-static-pages.mjs
-import { execFileSync } from 'node:child_process';
+// ビルド済み5画面とローカル資産の存在・構文を検査する。実機の代わりにはしない。
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const dir = new URL('../../apps/web/static/', import.meta.url);
-const files = process.argv.length > 2 ? process.argv.slice(2) : fs.readdirSync(dir).filter((f) => f.endsWith('.html')).map((f) => new URL(f, dir));
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-pages-'));
-let failed = 0;
-function checkModule(file) {
-  try { execFileSync(process.execPath,['--check',fileURLToPath(file)],{stdio:'pipe'}); }
-  catch (e) { failed++; console.log(`FAIL ${file}: ${String(e.stderr || e.message).split('\n').slice(0,3).join(' / ')}`); }
+import {execFileSync} from 'node:child_process';
+const root=path.resolve('apps/web/dist');
+for(const page of ['phone','pc','overlay','diagnostics','pseudo-game']){
+  const html=fs.readFileSync(path.join(root,page,'index.html'),'utf8');
+  assert.match(html,/<title>[^<]+<\/title>/);
+  if(['phone','pc'].includes(page))assert.match(html,/id="root"/);
+  for(const [,asset]of html.matchAll(/(?:src|href)="(\/[^"?#]+)"/g))if(!['/','/app','/host','/game','/overlay'].includes(asset))assert(fs.existsSync(path.join(root,asset)),`${page}: ${asset}`);
+  for(const [,body]of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))if(body.trim())new Function(body);
 }
-// 外部化した通信・入力・表示モジュールも対象に含める。
-for (const entry of fs.readdirSync(dir,{recursive:true}).filter(f=>f.endsWith('.js'))) {
-  checkModule(new URL(entry.replaceAll('\\','/'),dir));
-  const source = fs.readFileSync(new URL(entry.replaceAll('\\','/'),dir),'utf8');
-  // JSDocのimport型は実行時の依存ではない。
-  const runtimeSource=source.replace(/\/\*[\s\S]*?\*\//g,'');
-  for (const [,relative] of runtimeSource.matchAll(/(?:from\s*|import\s*\(\s*)['"](\.[^'"]+)['"]/g)) {
-    if (!fs.existsSync(new URL(relative,new URL(entry.replaceAll('\\','/'),dir)))) { failed++; console.log(`FAIL モジュールがありません: ${entry} → ${relative}`); }
-  }
+for(const name of fs.readdirSync(path.join(root,'assets')).filter(n=>n.endsWith('.js')))execFileSync(process.execPath,['--check',path.join(root,'assets',name)],{stdio:'pipe'});
+const colors=fs.readFileSync('apps/web/src/styles/colors.css','utf8');
+const game=fs.readFileSync(fs.existsSync('apps/web/src/pseudo-game/runtime.ts')?'apps/web/src/pseudo-game/runtime.ts':'apps/web/src/pseudo-game/index.html','utf8');
+for(const [slot,name]of [['P1','blue'],['P2','green'],['P3','purple'],['P4','red']]){
+  const hex=colors.match(new RegExp(`--color-character-${name}: (#[0-9A-Fa-f]{6})`))?.[1];
+  assert(hex&&game.includes(`${slot}: '${hex}'`),`${slot}: 担当色を維持`);
 }
-for (const f of files) {
-  const html = fs.readFileSync(f, 'utf8');
-  for (const [,asset] of html.matchAll(/(?:src|href)="(\/(?:styles|scripts|assets|react)\/[^"?#]+)"/g)) {
-    if (!fs.existsSync(new URL(asset.slice(1),dir))) { failed++; console.log(`FAIL 素材がありません: ${asset}`); }
-  }
-  const scripts = [...html.matchAll(/<script( type="module")?>([\s\S]*?)<\/script>/g)];
-  scripts.forEach(([, mod, js], i) => {
-    // モジュールは import を含むので node --check で、通常のスクリプトは関数本体として構文を確認する
-    try {
-      if (mod) {
-        const file = path.join(tmp, `${path.basename(String(f))}.${i}.mjs`);
-        fs.writeFileSync(file, js);
-        execFileSync(process.execPath, ['--check', file], { stdio: 'pipe' });
-      } else new Function(js);
-    } catch (e) {
-      failed++;
-      console.log(`FAIL ${f} script ${i}: ${String(e.stderr || e.message).split('\n').slice(0, 5).join(' / ')}`);
-    }
-  });
-  console.log(`${path.basename(String(f))}: ${scripts.length} script(s)`);
-}
-// 担当色: /game の色はキャラクターの色と同じにする (#215)
-{
-  const colors = fs.readFileSync(new URL('styles/colors.css', dir), 'utf8');
-  const game = fs.readFileSync(new URL('game.html', dir), 'utf8');
-  for (const [slot, name] of [['P1', 'blue'], ['P2', 'green'], ['P3', 'purple'], ['P4', 'red']]) {
-    const hex = colors.match(new RegExp(`--color-character-${name}: (#[0-9A-Fa-f]{6})`))?.[1];
-    if (!hex || !game.includes(`${slot}: '${hex}'`)) { failed++; console.log(`FAIL game.html の ${slot} の色がキャラクターの色 (${hex}) と違う`); }
-  }
-}
-// 動作環境・制限事項: PCアプリ内で確認できる (#226)
-{
-  const app = fs.readFileSync(new URL('app.html', dir), 'utf8');
-  for (const word of ['Windows 11 x64', 'WebView2', 'Visual C++', '2〜4台', 'Ctrl+Alt+F12', '未検証']) {
-    if (!app.includes(word)) { failed++; console.log(`FAIL app.html の動作環境に「${word}」がない`); }
-  }
-}
-console.log(failed ? `${failed} 件の構文エラー` : 'すべて構文OK');
-process.exit(failed ? 1 : 0);
+const app=['PcApp.tsx','parts.tsx'].map(n=>fs.readFileSync(`apps/web/src/pc/${n}`,'utf8')).join('\n');
+for(const word of ['Windows 11 x64','WebView2','Visual C++','2〜4台','Ctrl+Alt+F12','未検証'])assert(app.includes(word),`動作環境: ${word}`);
+console.log('合格: 5画面・ビルド済みJS構文・ローカル資産・担当色・動作環境の案内');

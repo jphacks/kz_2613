@@ -38,7 +38,8 @@ try {
   failure(['--host-only', '--host-only'], /重複/);
   failure(['--unsafe'], /不明な引数/);
   failure(['--players','5'], /players must/);
-  failure(['--legacy','--react'], /exclusive/);
+  failure(['--legacy'], /不明な引数/);
+  failure(['--react'], /不明な引数/);
   failure(['--bin', fixture, '--sha256', '0'.repeat(64)], /ハッシュと異なります/);
   failure(['--bin',fixture,'--sha256',hash,'--wifi-network','unused','--host-only'],/実Android/);
   failure(['--bin',fixture,'--sha256',hash,'--ack-observer'],/先行ACK/);
@@ -46,7 +47,7 @@ try {
   assert.equal(noAdb.hostExit, undefined);
   const noHost = failure(['--bin', fixture, '--sha256', hash, '--host-only'], /dry-runホスト起動失敗/, true);
   assert.notEqual(noHost.hostExit?.code, 0);
-  console.log('11/11 合格（Android補助CLIの入力拒否・Wi-Fiの端末必須・先行ACK条件・ADBなし・ホスト起動失敗）');
+  console.log('12/12 合格（Android補助CLIの入力拒否・Wi-Fiの端末必須・先行ACK条件・ADBなし・ホスト起動失敗）');
 } finally {
   fs.unlinkSync(fixture);
   fs.rmdirSync(dir);

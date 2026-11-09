@@ -21,7 +21,7 @@ body {
   height: 1080px;
   transform: translate(-50%,-50%) scale(var(--pc-scale));
   transform-origin: center;
-  background: url('../assets/pc-stars.png') 0 0 / 1920px 1080px no-repeat;
+  background: url('/assets/pc-stars.png') 0 0 / 1920px 1080px no-repeat;
 }
 
 .sidebar {
@@ -29,7 +29,7 @@ body {
   inset: 0 auto 0 0;
   width: 561px;
   height: 1080px;
-  background: var(--color-paper) url('../assets/pc-sidebar.png') 0 0 / 561px 1080px no-repeat;
+  background: var(--color-paper) url('/assets/pc-sidebar.png') 0 0 / 561px 1080px no-repeat;
   box-shadow: 5px 0 5px var(--color-shadow);
   z-index: 1;
 }

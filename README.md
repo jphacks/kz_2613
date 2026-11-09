@@ -156,7 +156,7 @@ Windows PC（ホスト・ゲーム実行）＋ Android／iPhone（ブラウザ�
 **Hack Dayの2日間で、アイデア決定・開発環境の構築から、実際に動くプロダクトの実装まで行いました。**
 
 - **ゲームごとの操作を共通の仕組みで扱う：** ゲーム別の操作定義を読み込み、対応する設定ファイルから変更済みのキーを取得。定義がないゲームには汎用定義を使い、担当に合った画面を生成します。  
-  [ゲーム操作定義](docs/game-profile-specification.md) ／ [キー設定の取得](apps/host-rs/src/keybinds.rs) ／ [画面生成](apps/web/static/scripts/generated-controls.js)
+  [ゲーム操作定義](docs/game-profile-specification.md) ／ [キー設定の取得](apps/host-rs/src/keybinds.rs) ／ [画面生成](apps/web/src/shared/controller-layout.ts)
 
 - **人数に合わせて操作を分け、入力を統合する：** 操作グループを必要に応じて分割し、重みを考慮して2〜4人に配分。担当外からの入力を受け付けず、各スマホの入力を1つにまとめます。  
   [分担の生成](apps/host-rs/src/profiles.rs) ／ [入力統合・担当確認](apps/host-rs/src/hub.rs) ／ [Windows入力](apps/host-rs/src/input.rs)

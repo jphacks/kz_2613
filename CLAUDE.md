@@ -15,3 +15,6 @@
 **動作準備が整ったと誤報しない。** 通信・役割・入力注入は試作品（リポジトリ外のNode.js参照実装）で実機確認したが、**Rust版はPC上のシミュレーションのみ実施済みで、Minecraft・Tauri・Rust実機は未検証**。ひな形のヘルスチェックはゲーム互換性の証拠ではない。
 
 レビューしやすい小さなコミットと明確な検証結果を残し、引き継ぎは `docs/develop/handoff/BUILD_LOG.md` に記録する。秘密情報・個人トークン・実環境固有のIPをコミットしない。ユーザーの明示的な指示なしに `README.md` と `LICENSE` を上書きしない。
+
+
+Web画面・配信物・共有TSの構成は [Web構成](docs/develop/architecture/web-structure.md) を参照する。

@@ -1,3 +1,8 @@
+import '../styles/colors.css';
+import '../styles/tokens.css';
+import '../styles/shared.css';
+import '../styles/desktop.css';
+import '../styles/improved-desktop.css';
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import { byId } from '../shared/dom';

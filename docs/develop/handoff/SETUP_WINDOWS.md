@@ -16,7 +16,7 @@
 | `apps/host-rs/` | Rust版PCホスト（HTTP・WebSocket・WebRTC・SendInput） | `cargo build --release --locked`、`cargo test --release --locked` |
 | `apps/desktop/` | PCアプリ（Tauri / WebView2）。ホストを起動して画面を表示する | `cargo build --release --locked` |
 | `apps/web/` | React + TypeScript strictの製品画面・入力通信エンジン。PR #274では標準URLで起動 | `npm ci`、`npm run typecheck`、`npm run build`（`apps/web` で実行。buildは型チェックを含む） |
-| `apps/web/static/` | スマホ・PC画面（既存の静的HTML/JS） | `node scripts/sim/check-static-pages.mjs`、`node scripts/sim/app-view-test.mjs` |
+| `apps/web/dist/` | Vite生成物（5画面、直接編集しない） | `node scripts/sim/check-static-pages.mjs`、`node scripts/sim/app-view-test.mjs` |
 | `scripts/sim/` | 通信契約のシミュレーション（注入なし） | `node scripts/sim/protocol-sim.mjs` |
 
 構造確認は `py -3 scripts/verify_overlay.py`。GitHub Actionsでは `checks.yml`（構造確認）と `rust.yml`（上表のビルド・試験）を実行する。どれもOSへの入力を送らず、Minecraft・スマホ実機の合格の代わりにはならない。
@@ -75,4 +75,4 @@ node scripts/sim/protocol-sim.mjs --bin "$env:CARGO_TARGET_DIR\release\recooplay
 
 ## 通常権限の開発経路
 
-繰り返しのビルド・型チェック・dry-runは [WINDOWS_NORMAL_USER_DEV.md](WINDOWS_NORMAL_USER_DEV.md) と `scripts/windows/dev.ps1` を使う。インストーラー・Firewall設定・ツール再導入は通常の検証から分離する。Tauriは標準の `/app` でReact版を開き、環境変数によるUI切替は不要。比較用の旧画面と厳密な復元方法は [LEGACY.md](../../../apps/web/static/LEGACY.md) を参照する。
+繰り返しのビルド・型チェック・dry-runは [WINDOWS_NORMAL_USER_DEV.md](WINDOWS_NORMAL_USER_DEV.md) と `scripts/windows/dev.ps1` を使う。インストーラー・Firewall設定・ツール再導入は通常の検証から分離する。Tauriは標準の `/app` でReact版を開き、環境変数によるUI切替は不要。旧JSの復元は [Web構成](../architecture/web-structure.md) の既存タグを使う。
