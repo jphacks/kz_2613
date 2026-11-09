@@ -89,6 +89,8 @@ jobs:
         run: node scripts/sim/ui-input-test.mjs
       - name: 画像と外部化したCSS・JSの配信
         run: node scripts/sim/static-assets-sim.mjs
+      - name: 観客表示の起動・受信境界・破棄
+        run: node scripts/sim/auxiliary-pages-smoke.mjs --pages overlay
       - name: 入力プローブの安全経路（--mock、OS 入力なし）
         run: node scripts/sim/input-probe-sim.mjs
       - uses: actions/cache@v4
