@@ -169,7 +169,7 @@ try{
   console.log('試験ホストのポート: ' + port);
   base = 'http://127.0.0.1:' + port;
   testUrl = (wifi?`http://${wifiNetwork.pc}:${port}`:base) + (options.has('--legacy')?'/index.html?acceptance=':options.has('--react')?'/phone-react.html?acceptance=':'/?acceptance=') + crypto.randomUUID();
-  await http(base);
+  await http(base+(options.has('--legacy')?'/index.html':options.has('--react')?'/phone-react.html':'/'));
   mon=await open(client());mon.send({type:'monitor',page:'host'});
   await until(()=>mon.state(),'monitor');
   assert.equal(mon.state().inject.target.fake,true,'疑似対象が有効ではありません');
