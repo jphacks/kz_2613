@@ -1533,3 +1533,11 @@
 - `node scripts/device/summarize-wifi-review.mjs`：21試行のソース/runner/端末/exe/資産/入力/ACK/出力/経路を照合し成功。匿名raw gzipとSHA256、全分位/平均/最大/nのCSV、独立集約JSON、準備10記録（成功2/失敗8）と無線環境を `acceptance/evidence/pr274-wifi` へ保存。旧USB15試行は変更していない。ACK集計は当該試行の送信iseqに一致する最初のACKだけを採り、warmup/別試行/二重ACKを除外する（#259）。
 - AのACK観測p95は107.9〜109.4ms、Eは111.3〜112.1ms。WS-onlyのAは106.8〜107.6ms、Eは108.7〜110.4ms。Eのp99には226.7ms/WS-only235.9msの試行もあり、残る差を無回帰と断定しない。製品onmessage前に登録する先行ACK observerを追加し、同じrenderer時計で既存観測点までの処理/配送区間を分ける追加診断を実施する。主21試行には途中でこの観測を追加していない。
 - `wifi-route-test`・`wifi-host-analysis-test`・`wifi-trial-acks-test`・`wifi-ack-observer-test`：成功。CLI拒否試験は11/11。transport/candidateのID関係も明示的に検査し、不一致を拒否。reverse拒否の例外に端末識別子を含めないboolean検証とエラーのprivate値除去を追加した。通常権限の `protocol-sim.mjs --bin <同host>` は60/60成功（制限環境での初回は待受に到達せず失敗し、通常実行で再確認）。752f949のCI Structure42543336466 / Rust42543336455は全成功。
+
+## 2026-11-09 — ACKの前後観測と診断表示のフレーム通知
+
+- 同じWi-Fi/host47fのWS-onlyでA/Eを各1回、先行ACK observer付きで追加診断した（主21試行と別）。Aは先行p95 105.2ms/従来106.3ms、Eは107.1/109.4ms。各224 ACKに対応し、両観測点間のp95はA1.1ms/E2.3ms、p99はA1.6/E2.9ms。先行側にも差があるため全差をReactだけの問題とは断定しないが、製品処理とその間の配送/microtask区間にも差を観測した。原本と匿名化2試行を `evidence/pr274-wifi/ack-observer` へ保存。
+- runtimeのACKが呼ぶrenderStatsは100ms throttle。PhoneViewのtelemetryはflushSyncを除去していたが、外部storeへの通知は同じdispatchからReact購読へ入る。診断値だけを次のrequestAnimationFrameへまとめ、ACK/input callbackから直接通知しないpublisherを追加した。入力保持・通信・認可・画面遷移/安全停止の同期状態は変更しない。破棄時にframe取消し、古いcallback/以後patchを無視する。
+- `node --experimental-strip-types scripts/sim/telemetry-publisher-test.mjs`：成功（callback内の通知なし/複数patch統合/snapshot不変/取消し/破棄後停止/新寿命）。`npm run build --prefix apps/web`：strict/Vite成功。`node scripts/sim/product-web-test.mjs`：全成功、製品TS35モジュール、旧JS依存/循環/型検査回避なし。新publisher試験を共通runner/CIへ含めた。
+- `react-phone-parity.mjs --bin <同host> --samples 20 --tolerance-ms 30`：旧indexと標準/で全比較成功。PC headlessのタップp95 15.9→3.8ms、視点27.5→29.5回/秒、5寸法/44px/再マウント/停止/標準entryに合格。Androidの性能改善やゲーム反応速度の証拠にはしない。Androidでは次の独立再測定で効果を確認する。
+- 主21試行の完全5秒経路履歴はraw gzipに保全し、索引だけを候補辞書と重複排除時系列へ縮約した。生データ/測定値を削除せず、trials.jsonの重複を減らした。再試験用集約は別manifest/保存先を要求し、主21試行を上書きしない。
