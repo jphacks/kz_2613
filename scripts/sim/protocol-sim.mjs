@@ -669,6 +669,60 @@ async function main() {
       p1.input('JUMP', 'up');
     });
 
+    await check('#262 release_inputs(iseq付き)は送信した端末の押下だけを解放し、他の参加者の押下・epochは変えない。解放前の押下が後から届いても適用しない', async () => {
+      p1.input('FWD', 'up'); p3.input('ATTACK', 'up'); await sleep(150);
+      let from = mon.mark();
+      p1.input('FWD', 'down'); p3.input('ATTACK', 'down');
+      await injected(mon, 'KEY_W', 'down', from); await injected(mon, 'MOUSE_L', 'down', from);
+      const epoch = p1.epoch;
+      // P3の端末がフォーカスを失った: P3の押下だけ解放し、P1の前進は続く。epochは進まない
+      from = mon.mark();
+      p3.send({ type: 'release_inputs', epoch, iseq: p3.iseq });
+      await injected(mon, 'MOUSE_L', 'up', from);
+      await sleep(300);
+      assert(!mon.msgs.slice(from).some(m => m.type === 'inject' && m.entry.out === 'KEY_W' && m.entry.state === 'up'), '他の参加者の押下まで解放した');
+      assert(p1.epoch === epoch && p3.epoch === epoch, 'epochを進めた');
+      // 解放要求より前に送られ、遅れて届いた押下 (番号が下限以下) は適用しない。後続の新しい押下は通る
+      const late = p3.iseq + 1;
+      p3.send({ type: 'release_inputs', epoch, iseq: late });
+      await sleep(100);
+      from = mon.mark();
+      p3.rawInput('act:attack', 'down'); // iseq = late
+      await noPress(mon, from, 400);
+      p3.rawInput('act:attack', 'up');
+      from = mon.mark();
+      p3.input('ATTACK', 'down'); await injected(mon, 'MOUSE_L', 'down', from);
+      p3.input('ATTACK', 'up'); await injected(mon, 'MOUSE_L', 'up', from);
+      p1.input('FWD', 'up'); await injected(mon, 'KEY_W', 'up', from);
+    });
+
+    await check('#261 ゲームがマウスを捕捉していない間(カーソル表示)はマウスの押下・ホイール・視点を送らず、キーは送る。捕捉に戻れば再開する', async () => {
+      p1.input('FWD', 'up'); p3.input('ATTACK', 'up'); await sleep(150);
+      let from = mon.mark();
+      p3.input('ATTACK', 'down'); await injected(mon, 'MOUSE_L', 'down', from); // 押したままの状態で切り替わる
+      const gf = p1.mark();
+      host.child.stdin.write('cursor on\n');
+      await injected(mon, 'MOUSE_L', 'up', from); // 押下中のマウスボタンは解放
+      const blocked = await p1.waitFor(m => m.type === 'game' && m.game.mouseBlocked === true, { from: gf, what: 'mouseBlocked' });
+      assert(blocked.game.inputTarget === false, '入力先の前面判定は変えない');
+      p3.input('ATTACK', 'up');
+      from = mon.mark();
+      p3.input('ATTACK', 'down'); p3.input('SLOT_NEXT', 'down'); p3.input('SLOT_NEXT', 'up');
+      p2.send({ type: 'look', lseq: 900, epoch: p2.epoch, cx: 500, cy: 0 });
+      await sleep(400);
+      assert(!mon.msgs.slice(from).some(m => (m.type === 'inject' && ['MOUSE_L', 'WHEEL_DOWN'].includes(m.entry.out)) || m.type === 'look'), 'メニュー表示中にマウス操作を送った');
+      p3.input('ATTACK', 'up');
+      from = mon.mark();
+      p1.input('FWD', 'down'); await injected(mon, 'KEY_W', 'down', from); // キーは止めない (Escで戻れるように)
+      p1.input('FWD', 'up'); await injected(mon, 'KEY_W', 'up', from);
+      const gf2 = p1.mark();
+      host.child.stdin.write('cursor off\n');
+      await p1.waitFor(m => m.type === 'game' && m.game.mouseBlocked === false, { from: gf2, what: 'mouseBlocked解除' });
+      from = mon.mark();
+      p3.input('ATTACK', 'down'); await injected(mon, 'MOUSE_L', 'down', from);
+      p3.input('ATTACK', 'up'); await injected(mon, 'MOUSE_L', 'up', from);
+    });
+
     await check('キャンセル: 非表示・回転・診断の停止要求で全参加者の押下・保留連打・旧入力を即時破棄する', async () => {
       p1.input('FWD','up'); p3.input('ATTACK','up'); await sleep(150);
       const from = mon.mark(), playerFrom = p1.mark(), old = p1.epoch;

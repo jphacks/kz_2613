@@ -54,6 +54,9 @@ impl Look {
         self.py += dy;
     }
 
+    /// 直近に視点を送ってきた枠。他の枠の解放では視点を破棄しない判定に使う (#262)。
+    pub(crate) fn owner(&self) -> &'static str { self.slot }
+
     /// 停止/epoch変更は未処理量と端数のみ破棄する。診断集計と間隔履歴は従来どおり残す。
     pub(crate) fn reset(&mut self) {
         self.px = 0.0; self.py = 0.0; self.fx = 0.0; self.fy = 0.0;

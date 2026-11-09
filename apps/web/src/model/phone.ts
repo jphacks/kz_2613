@@ -21,7 +21,9 @@ export function inputWarnText({ isHost, game, name, notice }: {isHost:boolean;ga
   const target = !game.inputTarget ? '' : isHost
     ? `PCの画面が${name}になっていません。${name}を前面に戻すまで操作は届きません。`
     : `PCの画面が${name}になっていません。ホストが戻すまでお待ちください。`;
-  return [target, isHost ? notice : ''].filter(Boolean).join(' ');
+  // ゲームがメニュー・持ち物などでマウスを捕捉していない間は、ホストがマウス操作 (視点・攻撃・使う) を止めている (#261)
+  const mouse = !game.mouseBlocked ? '' : `${name}がメニューなどを表示中のため、視点・攻撃・使う（マウス操作）は届きません。ゲーム画面に戻してください（Escキーで戻れます）。`;
+  return [target, mouse, isHost ? notice : ''].filter(Boolean).join(' ');
 }
 
 /** 待機画面の内容 */

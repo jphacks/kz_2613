@@ -178,6 +178,13 @@ async fn main() {
                         Ok("target off") => {
                             let _ = tx.send(Event::FakeTarget(false));
                         }
+                        // 試験用 (同上): ゲームがマウスを捕捉していない (メニュー・持ち物を開いている) ことにする
+                        Ok("cursor on") => {
+                            let _ = tx.send(Event::FakeCursor(true));
+                        }
+                        Ok("cursor off") => {
+                            let _ = tx.send(Event::FakeCursor(false));
+                        }
                         Ok("activate on") => {
                             let _ = tx.send(Event::FakeActivate(true));
                         }
