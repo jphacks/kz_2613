@@ -10,6 +10,8 @@ import { myActions } from '../shared/model/actions.ts';
 import { phoneAdvice } from '../shared/model/presentation.ts';
 import {createLifetime} from '../shared/input/lifetime.ts';
 import {byId} from '../shared/dom.ts';
+import {createBurstRecorder,formatBurstResult} from './burst-stats.ts';
+import type {BurstRecorder} from './burst-stats.ts';
 import type {PhoneViewBindings,PhoneView} from '../shared/contracts.ts';
 import type {InputOwner} from '../shared/input/owners.ts';
 import type {ButtonInput} from '../shared/transport/messages.ts';
@@ -26,6 +28,8 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   const pending = new Map<number,number>(); // iseq -> 送信時刻
   const rtts: number[] = [];
   let sent = 0;
+  let lastIseq = 0; // 直近に送った入力の iseq (通信テストが自分の入力だけを集めるため)
+  let burst: BurstRecorder | null = null; // 通信テスト中だけ。1回ごとに作り直す (#259)
 
   const isOpen = session.isOpen;
   function setStatus(text: string, cls: string) {phoneView.connection(text,cls);}
@@ -81,6 +85,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
         if (t0 != null) {
           pending.delete(msg.iseq);
           via[msg.via] = (via[msg.via] || 0) + 1;
+          burst?.ack(msg.iseq, performance.now() - t0, msg.via);
           rtts.push(performance.now() - t0);
           if (rtts.length > 500) rtts.shift();
         }
@@ -198,6 +203,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
     // epoch: 押した時点の進行状態。PC は状態が変わった後に届いた古い入力を処理しない
     const msg = session.input(obj);
     pending.set(msg.iseq, msg.t);
+    lastIseq = msg.iseq;
     sent++;
     fast.send(msg);
     sendWs(msg);
@@ -304,16 +310,17 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   // ---- 通信テスト: 20Hz で 10 秒送る (注入はされない) ----
   lifetime.listen($('burst'), 'click', () => {
     phoneView.telemetry({burstBusy:true});
-    const startSent = sent;
+    const run = createBurstRecorder(); // このテストの200件だけで算出する (前回の値を引き継がない)
+    burst = run;
     let i = 0;
     let stopBurst=()=>{};
     stopBurst=lifetime.interval(() => {
-      sendInput({ button: 'BURST', state: i % 2 ? 'up' : 'down', burst: true });
+      if (sendInput({ button: 'BURST', state: i % 2 ? 'up' : 'down', burst: true })) run.track(lastIseq);
       if (++i >= 200) {
         stopBurst();
         lifetime.timeout(() => {
-          const s = stats();
-          alert(`通信テスト: ${sent - startSent}件 / 未ACK ${pending.size}\nRTT 平均${s?.avg}ms p95 ${s?.p95}ms 最大${s?.max}ms\n先着: WebRTC ${via.rtc} / WS ${via.ws}`);
+          if (burst === run) burst = null;
+          alert(formatBurstResult(run.summary()));
           phoneView.telemetry({burstBusy:false});
         }, 1000);
       }
