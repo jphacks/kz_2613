@@ -1452,6 +1452,122 @@
 - 接続、PREPARE、Ready（協力プレイへ）、一時停止の各切り替えで、帯・水玉・流れ星・中央の星の演出が出て、切り替え後の画面が正常に表示されることを録画で確認した。背景とキャラクター色の枠に配置の崩れはない。操作感は利用者が実機の画面で確認した。
 - 未確認：iPhone Safari、「視差効果を減らす」オン時の動き、横向き、Minecraftへの実入力。
 
+## 2026-11-09 — React + TypeScript strictの製品UI基盤（Codex、#235）
+
+- 2026-11-08のユーザー指示に従いGoal Modeの `create_goal` を実際に設定し、`codex/235-react-typescript` で実装。#235の着手コメントを投稿済み。着手コメントの継続ルールは既存のままで、新しいルールPRは作成していない。
+- スマホ/PC主要画面をTSXへ移し、Islands/Portalとglobal storeを削除。`contracts.ts`、共通コントローラーモデル、Reactボタン/スティック/視点、PCの型付き設定APIを追加。入力の保持・30Hz・WebRTC/WS・epoch・認可は既存エンジン/ホストに残した。新しい本番依存なし。
+- `npm ci --prefix apps/web`、`npm run build --prefix apps/web`：成功（strict型チェック込み、追加開発依存は版固定、audit 0件）。`node --experimental-strip-types scripts/sim/controller-layout-test.mjs`：合格。CIは既存buildに型チェックを含め、共通モデル試験を追加。
+- `CARGO_TARGET_DIR=C:/Users/kumes/AppData/Local/ReCooplay/target-pr-queue` と既存Perl/libclangを使用し、`cargo build --release --locked --manifest-path apps/host-rs/Cargo.toml`、`cargo test --release --locked --manifest-path apps/host-rs/Cargo.toml`：成功。135件合格・2件ignored、input-probe 4件合格。既存のdead_codeとOpenSSL PDB警告あり。
+- `CARGO_TARGET_DIR=C:/Users/kumes/AppData/Local/ReCooplay/target-pr-queue-desktop` で `cargo build --release --locked --offline --manifest-path apps/desktop/Cargo.toml`：成功。管理者トークンでないこと（IsInRole Administrator=false）も確認。`dev.ps1 -Task verify` と `-Task desktop`：成功。過去のUACポップアップの原因は記録不足で断定できないが、今回の通常ビルドでは再現なし。インストーラーやFirewall変更を検証から分離。
+- 上記ホストを `--bin` に指定した `protocol-sim.mjs`：60/60、`react-phone-parity.mjs --samples 20`：DOM/配置/操作/安全停止/再接続/反復再表示に合格。タップp95 20.7→19.3ms、look 29→28回/秒（ka除外、PC上の模擬タッチで実端末遅延ではない）。`react-pc-parity.mjs`：主要画面の文言とボタン状態・設定の変更/復元を含めて一致、演出14回・実行時エラーなし。
+- `phone-lifecycle-test` 16/16、`phone-session-test` 7/7、`input-owners-test` 4/4、`protocol-boundary-test` 7/7、`ui-input-test` 12/12に合格。`phone-view-test`、`controller-diagnostics-test`、`phone-skin-test`、`view-transition-test`、`app-view-test`、`android-dry-run-test`、`check-static-pages`、`verify_overlay.py`、`check-public-docs.py`、`git diff --check`：合格。
+- Android 16 / SDK36、Chrome156.0.8078.79の実機を認可済みADB/CDPで検証。参加/ボタン/2接点保持/スティック/44px領域/診断/Pause全解放/実回転/実非表示と復帰/再読み込み/担当交換後の視点/送信停止/JavaScriptエラーなしを確認。USB経路・P2/P3は模擬・OS入力なし。実指やLAN品質の合格とは扱わない。生の記録は `data/local/device-acceptance/run-24HFRs`、共有用は `acceptance/evidence/react-235/android-summary.json`。
+- Tauri実窓で `/app-react.html`、参加/ゲーム選択/設定をComputer Useで確認。終了後に `shutdown releaseConfirmed:true unconfirmed:[]` とプロセス終了を確認。初回の再ビルドは旧EXEを起動したためロックで失敗したが、終了・再ビルド成功後の新EXEで確認し直した。
+- `static-assets-sim.mjs --bin <上記ホスト>`：57資産のHTTP/MIME/no-store/ローカル参照に合格。`package.ps1 -Out data/local/react-migration/package-235` と同zipの `package-smoke.mjs`：同梱/ハッシュ/改変拒否/リポジトリ外での無注入起動・正常終了に合格。Archiveモジュールの自動読込制限は.NET展開APIで解消し、システムの実行ポリシーは変更していない。
+- 判断は `decisions/2026-11-08-react-typescript-foundation.md`、通常権限の手順は `WINDOWS_NORMAL_USER_DEV.md`、試験条件・証拠・再開手順は `acceptance/2026-11-09-react-typescript.md`。既定URL切替、iPhone Safari・実指・3実端末・Wi-Fi断・Minecraft実入力・配布先PCの受入は未完了。#271/#50/#272は共通描画/型境界を準備した段階で、保存スキーマ/編集UI/型生成の完了とは扱わない。
+- 成果物は draft PR [#274](https://github.com/jphacks/kz_2613/pull/274) に提示した。追加ファイルを含む `git diff --check origin/main` でTSXの末尾空白を検出・除去し、同コマンドとstrictビルドを再実行して成功した。mainマージ・Issueクローズはしていない。
+- 追加確認：`cargo test --release --locked --offline --manifest-path apps/desktop/Cargo.toml`（同じdesktopキャッシュ）：3/3合格。コミット `43e842473227c5d074d9cbfa936f7a5f28714cf5`、dirty=falseの最終zipを `data/local/react-migration/package-235-final` へ作成し、同zipの `package-smoke.mjs` も合格。Android試験のuiAssetsハッシュが最終ビルドと完全一致し、追加資料3件のローカル参照が存在することを照合した。
+- CI追跡で反復再マウントの確認が1回失敗した。試験はP1の停止表示だけを待ってP2のパッド位置を直ちに検査していたため、P2自身のpaused・lookHomeへの反映も明示的に待つよう修正した。個数・配置のassertは維持。`react-phone-parity.mjs --samples 20` を再実行し全項目合格（タップp95 29.3→21.8ms、look 28→27回/秒）。
+
+## 2026-11-09 — 移行基盤の完了監査とプレビュー/実切断の補完（Codex、#235）
+
+- 先行ターンはPR #274・CI成功まで進んだが、完了監査で入力bindingsなしの共通プレビューに視点パッドが出ないことを確認した。同じCSSを使うIDなしの視点/感度表示を追加し、ボタンの見た目を変えるdisabled属性の代わりに全体をinertにした。実入力用data-ctl・IDは出さない。編集UIや保存スキーマの実装ではない。
+- `node --experimental-strip-types scripts/sim/controller-preview-test.mjs`：合格。既存Viteで実TSXを変換してReactで描き、ボタン/スティック/ホイール/視点が存在し、入力属性・重複IDがなくinertであることを確認。`--write-preview` のHTMLを隔離headless Chromeの600px幅で撮影・視認した。CIと `dev.ps1 -Task verify` に追加。
+- `npm run build --prefix apps/web`：strict型チェックとビルド成功。`react-phone-parity.mjs --bin C:/Users/kumes/AppData/Local/ReCooplay/target-pr-queue/release/recooplay-host.exe --samples 20`：全比較に合格。タップp95 14.8→10.1ms、look両版28回/秒。プレビュー用CSSは既存IDと同じ詳細度を維持し、プレイ画面の表示を変えない。
+- Android補助スクリプトへ、再読み込みとは別に「保持中の実WebSocket切断→全解放/paused→同じP1への再接続→旧押下なし」を追加。Wi-Fi断やOS入力とは区別した。従来版とReact版を同じAndroid16/Chrome156で各14項目実施し全合格。Reactは `data/local/device-acceptance/run-037g52`、従来版は `run-XEW5c8`。共有証拠を `acceptance/evidence/react-235` へ更新。
+- 同実機のlook間隔の中央値は従来33.1ms/React33.0ms、p95は66.0/66.1ms。event-to-sendの3標本p95は従来26.5ms/React20.4ms。少標本・USB/CDPのため改善やLANの保証を主張しない。両版ともJavaScriptエラーなし、試験タブ/転送/回転設定を後始末しホスト正常終了。
+- `dev.ps1 -Task verify`（追加プレビュー・入力ライフサイクル16/16・セッション7/7・受信境界7/7を含む）、`android-dry-run-test.mjs` 7/7、`check-static-pages.mjs`、`verify_overlay.py`、`check-public-docs.py`：合格。iPhone/実指/複数実端末/Wi-Fi断/Minecraftと標準URL採用は未完了として保持する。
+- 追加CIのPC比較は、初回がPage.navigateの応答期限超過、失敗ジョブ1回の再実行では従来版の分担決定待ちで失敗した。P1のキー復元通知を受けただけでPC自身の旧epochの描画反映を待っていなかったため、PCの担当キー表示が変更→復元することを確認してから決定するよう試験を修正した。Page.navigateが期限を超えた場合も同じtargetのURLと画面を再観測し、遷移を重複実行しない。比較項目・許容値・認可は変更なし。ローカルの `react-pc-parity.mjs --bin <上記ホスト>` は設定変更/復元・分担・演出14回を含め全合格。
+- 2026-11-09のユーザー回答：「用意できないため実機受入は保留」。接続中のiPhone/iPadも通常権限のPnP一覧で見つからず、iOS用CLIはPATHにないことを確認した。iPhone受入と既定URL切替は保留し、開発PRの独立した検証は継続する。
+
+## 2026-11-09 — PR #274の総合自己レビュー・製品エンジンのTypeScript化（作業中）
+
+- 新しいユーザー依頼で自己レビューを開始し、[着手コメント](https://github.com/jphacks/kz_2613/pull/274#issuecomment-6724900679)を投稿。品質条件を満たせばPRブランチで標準化するという今回の判断を適用する。上記のiPhone保留は継続するが、今回の標準化を一律に禁止する意味にはしない。
+- 最新main `c271ebe` と開始時PR HEAD `9947391` を独立worktreeへ保存。Open PRは #273・#274。#273のスキン修正との重複を確認し、Reactにも影響する共有CSSへ同じ無効ボタン修正を適用した。#273の旧main実機記録をReactの合格とは扱わない。
+- 実装前に `decisions/2026-11-09-react-product-review.md` を追加。入力・通信・接続・モデル・遷移・スマホ/PCランタイムを製品TSへ移し、製品から旧JSのimportを除去。`allowJs/checkJs`を削除し、strictに加えて未使用宣言も検査する。通信方式、入力定数、Rustの認可・OS入力処理は変更していない。
+- 操作面の入れ子rootとパッドのDOM移動を廃止。Reactが操作要素・接続状態・診断値を描画し、型付きbindingで高頻度の押下クラス/ノブ/パッドだけをエンジンへ渡す。入力保持は押下時の操作IDを保存する。エンジンと部品の破棄で全解放・購読解除・タイマー停止を行う。
+- `npm run typecheck --prefix apps/web`、`npm run build --prefix apps/web`：成功。製品TSの実装へ適用した `node scripts/sim/product-web-test.mjs`：成功（保持元4、セッション7、受信境界7、ライフサイクル16、UI入力12、表示判断30、スキン、破棄、PC境界、34モジュールの旧JS依存/循環検査）。遷移試験もTS側で成功し、同runnerへ追加した。
+- `node scripts/sim/react-phone-parity.mjs --bin C:/Users/kumes/AppData/Local/ReCooplay/target-pr-queue/release/recooplay-host.exe --samples 20 --tolerance-ms 30`：成功。p95は参照16.8ms・移行後12.7ms、視点28.5・28回/秒（PC headless、Android性能の証拠ではない）。パッドを隠しhomeへ移す実装依存とdata-bound属性を比較から外し、表示・操作・多重ID・停止後に視点を送らない条件は維持した。
+- `react-pc-parity.mjs --bin <同ホスト>`：最初はQR取得の待機で失敗。追加した境界検証がRustの開発版 `commit:null` とqrcode crateのSVG `version` を拒否していたため、Rustの実装に合わせて修正。再試験は全比較・設定変更/復元・演出14回に合格。
+- Androidの予備比較はA/B/C各60秒×3回、入力と視点を各60秒で完走・未ACK/解放残留なし。ただし時間制御で操作サイクル数が142〜144と異なるため、本比較には採用しない。操作48サイクル（単発・連打・保持・同一/別ボタン2接点・スティック8方向とボタン）、視点1800移動と別操作10タップへ固定した本比較を開始した。試行ごとにホスト/タブ/生データ/統計を独立させ、A/B/Cの順序を交替する。USB/CDP/dry-runであり、実Wi-Fi・実指・Minecraftの検証ではない。
+
+## 2026-11-09 — Android固定回数比較の完了と標準URL切替の検証準備
+
+- A/B/C/D/Eを同じAndroid 16・Chrome156・同じPCとホストexeで各3試行、ボタン60秒＋視点60秒で比較した。A=main c271ebe、B/C=PR旧画面/React 9947391、D=TSエンジン48f180a、E=診断の同期描画を外したdf7e3eb。各試行48サイクル・1800視点移動で、ボタン224件をホストの受理ログと照合し、欠落・重複・未ACKは0。全解放・再接続・回転・非表示を含む後続試験も全合格。
+- 視点の平均送信間隔は全条件34.48〜34.85ms。端末内送信の200ms以上の空白は0。一方、ホストのlookLost（受信連番の空き）は16〜21回を記録した。ボタン欠落と混同せず、実パケット損失率・最終移動量の欠落とも断定しない。累積値で後続までの抜けを補う既存仕様を維持した。
+- DのACK観測p95は109.3〜111.5msで、Cの109.0〜109.1msより数ms高い試行があった。観測点は製品ACK処理後で、診断描画も含む。同期React描画を受信処理内で強制する構造を除去し（df7e3eb）、Eを再測定した。Eのp95は109.2〜111.3msで試行差は残るため、ネットワーク改善や統計的な同等性を主張しない。Eの視点最大間隔は69.3ms（Dは96.8ms）だったが、3試行の観測範囲として記録する。
+- HTTP/WSはADB reverse TCP。RTCはローカルICEで成立したが選択候補対を収集していない。旧CLIの「WebRTCはUSB経路」という説明は不正確だったため、共有した測定記録では訂正した。純Wi-Fi・無線断・実指・実OS入力・Minecraftの試験とは区別する。
+- `node scripts/device/summarize-react-review.mjs`：15試行の端末/Chrome・exeハッシュ・操作回数・資産の一致、ボタン受理の欠落/重複なしを検証して成功。識別子を除いた生データをgzipで保全し、`evidence/pr274-review/trials.json` に統計と各gzipのSHA256を記録した。
+- 標準URLをRustで `/`→phone-react.html、`/app`→app-react.htmlへ変更し、Tauriの環境変数によるUI切替を除去した。旧版は明示URL `/index.html`・`/app.html` と固定worktreeで保存する。mainへはマージしない。以下で標準化後のビルド・Android・Tauri・配布を検証する。
+
+## 2026-11-09 — PR #274の標準化後受入と総合レビュー完了（Codex）
+
+- 最新のユーザー依頼に沿い、PRブランチの `/`・`/app`・TauriをReact標準にした。製品UI・入力/通信/接続・モデル・runtimeは `apps/web/src/` のstrict TS/TSX、旧版は `apps/web-static/LEGACY.md` の比較/診断/復元範囲に分離。全206項目の判定・根拠・未確認理由を `acceptance/2026-11-09-pr274-self-review.md`、試行別rawと制約を `acceptance/2026-11-09-react-performance.md` に整理した。
+- 標準化後、通常ユーザートークン（Administrator=false）と既存Perl/libclang/ビルドキャッシュで `cargo build --offline --release --locked --manifest-path apps/host-rs/Cargo.toml` と同 `cargo test`：成功、135合格/2ignored＋input-probe4。desktop用cacheで同じbuild/test（`apps/desktop/Cargo.toml`）：成功、3合格。既存dead_codeとOpenSSLのPDB LNK4099警告あり。UAC/インストーラー/Firewall変更はなし。
+- `npm ci --prefix apps/web` は制限環境の空キャッシュとDNS到達不可で失敗。既存ユーザーcacheを明示した `npm ci --offline --no-audit --cache C:/Users/kumes/AppData/Local/npm-cache --prefix apps/web` は通常トークンで成功。`npm run build --prefix apps/web` と `npm run typecheck --prefix apps/web`、`node scripts/sim/product-web-test.mjs`：成功。34 TSモジュールの旧JS import/実行時循環/型回避を検査し、入力/通信/表示/破棄の実製品TS回帰も成功。
+- 新ホストを `--bin C:/Users/kumes/AppData/Local/ReCooplay/target-pr-queue/release/recooplay-host.exe` で指定した `node scripts/sim/protocol-sim.mjs`：60/60。`shutdown-sim.mjs`：quit/EOFで全解放・正常終了。`static-assets-sim.mjs`：59資産、2,056,661 bytesのHTTP/MIME/no-store/ローカル参照・React標準/旧版URLを確認。初回はruntime-measureを付けず起動通知を待てなかったため修正（0d43517）し、合格を再確認した。
+- `react-phone-parity.mjs --bin <新ホスト> --samples 20 --tolerance-ms 30`：旧indexと標準/で全比較に合格。タップp95は15.9→9.5ms、look28→29回/秒（PC headless値で実端末/ゲーム遅延ではない）。5画面寸法、横溢れなし、44px領域を追加確認。`react-pc-parity.mjs --bin <新ホスト>`：旧app.htmlと標準/appで設定変更/復元・全画面・演出14回に合格。正常QR受理と攻撃SVG6件拒否、Tab/Escape/フォーカス復帰、4縦横比で横溢れなしを追加確認。
+- 標準URLのAndroid補助試験をクリーンworktree `review-standard`（0d43517）から配信。3人配分は入力60秒＋視点60秒/1800移動で15項目成功。2人配分の視点＋別ボタンは最初の2回で `look companion down: 1 !== 10` と失敗。CDP部分touchEndを「残す接点」と取り違え、攻撃ボタンが約60秒長押しになっていた。Chromium一次実装を確認し「終了するボタン接点」に補助runnerだけを修正。10down/10upのassertを維持した再試験は15項目成功、視点最大115.1ms・200ms以上0。主比較の3人視点には別ボタンがなく影響しない。
+- RTCを文書開始時に無効化した標準WS-onlyも15項目成功。ダーク無効ボタンの色（文字174/180/194、背景51/56/69）と可視性を実Androidで検証しスクリーンショットを目視した。共有CSSは #273 と同じ修正であり、同PRの旧main実機証拠は転用していない。補助5試行（失敗2件を含む）のrawと索引は `evidence/pr274-review/standard-*`。全ホストexit0、後片付け失敗なし。AndroidはCDP合成タッチ・dry-run、HTTP/WSはADB reverse、RTC候補対未収集で、実指/Wi-Fi断/実OS入力の合格ではない。
+- 新Tauri実窓をComputer Useで確認。RootWebAreaのURLは標準 `/app`、参加/ゲーム選択/設定開閉・Escape後のフォーカス復帰を観測。Alt+F4後は実窓消滅、desktop exit0、ホストshutdown releaseConfirmed=true/unconfirmed=[]。同時に実スマホをTauriへ接続した受入ではない。実窓起動もdry-run/no-config/fake targetで無注入。
+- `scripts/windows/package.ps1 -Out data/local/pr274-review/package-0d43517`：クリーン0d43517のzip569ファイルを生成。SHA256 `5a6036f5d9f5a507fd640ae2aa5c5e5c5996ad70a0e73f919caec0b2fe4f8503`。`node scripts/sim/package-smoke.mjs <同zip>`：全内容/ハッシュ/欠落・改変拒否、repo外展開から標準React URLとentryの配信、dry-run正常終了に合格。製品バイナリは標準化ソースを通常権限でビルドしたもの。後続変更は試験/記録のみで正式リリースしない。
+- `node scripts/device/android-dry-run-test.mjs`：9/9。`node scripts/sim/check-static-pages.mjs`、`python scripts/verify_overlay.py`、`python scripts/check-public-docs.py`、`git diff --check`：成功。CIの0d43517はStructure checks（42514496080）とRust host and protocol simulation（42514496091）がともにsuccess。最終記録コミットのCIも追跡しPRのChecksに残す。
+- iPhoneは利用できないため受入保留。実指・スクリーンリーダー・複数実端末/Tauri同時連携・Wi-Fi断/経路別比較・Minecraft/実緊急停止・別PC初期環境・ホスト内入力別時間/到着ジッター/順序保留は未受入/未測定の理由を保持。#50/#271/#272の全機能を完成扱いにしない。mainマージ・Issue close・正式release・Award Day安定版の更新はしていない。
+
+## 2026-11-09 — PR #274の追加必須レビュー：実Wi-Fi計測の準備
+
+- [追加着手コメント](https://github.com/jphacks/kz_2613/pull/274#issuecomment-6729223462)を投稿。前回はREADMEのLAN起動手順とAT-D07を完了ゲートに結び付けず、USB専用runner（runtime-measureによる127.0.0.1待受＋reverse）だけを測定した。利用可能なWi-Fi環境と選択ICEの調査/runner整備を行わず残件へ分類したことが検証漏れ。既存206項目とUSB15試行を保全し、実Wi-Fi11項目を追加必須（総数217）とした。
+- 既存ネットワークを読み取り、PCのNative 802.11 / Microsoft Wi-Fi Direct仮想アダプターとAndroid wlan0が同一subnetで、AndroidからPCへのrouteがwlan0であることを確認。USBテザリングなし、既存ADB reverseなし。Firewall/永続ネットワーク設定は変更していない。生アドレス・serial・接続情報はGit対象外のprivate記録のみ。
+- `wifi-network-discover.mjs`で有効Wi-Fi候補を一意に検出し、`android-dry-run.mjs --wifi-network <private.json>`で通常LAN待受を使う。HTTPのremoteIPAddress/port、WS URL、所有ホストPIDのEstablished両端、PC限定ページ403とinfoの機密項目非公開を照合。getStatsのtransport.selectedCandidatePairIdでUDP候補対の両端を確認し、5秒ごとの履歴も保存する。ADB forwardはCDP制御だけ、reverseは作らない。
+- 経路予備試行1はReact初期読込前のnull参照、2〜5はこのPCのCIMがRustのwildcard socketをState=0と返してListen値と一致しないため失敗。6は公開info APIまで403を要求した誤りで失敗。初期DOM待機、CIMはListenと推測せず所有PIDの実LAN Established両端を照合、infoは200かつwifi/hotspot/buildを非公開という既存仕様へ修正。7は全15項目に成功。失敗のホストも正常終了し転送/タブを片付けた。これらは製品入力の欠陥を修正したという意味ではない。
+- `input_trace.rs`を追加。明示したtrace/dry-run/no-config/fake-targetの4フラグが揃う時だけ有効。runtime-measureとは独立し、LANバインドと入力アルゴリズムを変更しない。WS/RTCのアプリ受信・hub処理・順序buffer・受理・dry-run出力の単調時計を、識別情報/本文を保存せずメモリーへ蓄積し終了時に出力する。上限到達は有効な比較データとして扱わない。
+- 通常権限、既存Perl/libclang/cacheで `cargo test --offline --release --locked --manifest-path apps/host-rs/Cargo.toml`：137合格/2ignored＋probe4。`cargo build --offline --release --locked --manifest-path apps/host-rs/Cargo.toml`：成功。既存dead_code/PDB LNK4099警告あり。`node scripts/device/android-dry-run-test.mjs`：10/10、`wifi-route-test.mjs`、`wifi-host-analysis-test.mjs`、`node --check scripts/device/android-dry-run.mjs`：成功。経路未証明/USB URL/キャッシュ/誤ICE候補の拒否と、未同期時計の原点を動かしてもhost内計測が変わらないことを検査。CIへ追加。
+- 計測付きホストでWi-Fi予備E（入力60秒＋視点60秒）を完走。224入力/受理/出力が一致、順序gap待ち0。受信→受理p95 0.147ms、受理→dry出力p95 8.035ms（最低押下/解放の待ちを含む）。視点ホスト到着に200ms超の空白2件/最大284.521msがあり、本比較で旧JS/TSを同条件で測定する。予備値を本比較の3試行へ黙って混ぜない。
+
+## 2026-11-09 — 実Wi-Fiの21独立試行を完了し、ACK差の追加診断へ進む
+
+- 計測hostはd7b4b79のソース、SHA256 `47f6f6f85bd3ad76e55f340a9d00d779cc5bb8e3aa7ab90b90b3bb6d85570099`。全21試行で同一exeを使用。runnerはクリーンな752f949で固定し、A〜E＋A/E WS-onlyの7条件を各3回、入力60秒/48サイクル/224論理入力、視点60秒/1800移動で測った。順序は7条件の巡回開始を0/2/4ずらした。Eの配信対象はfe19ecbの独立worktreeで、前回Eと同じ9個の製品JSハッシュを保持。
+- 最初の本比較は保全コピーのexe配置先から起動し、LAN文書が届かず2回失敗した。Firewallを読み取ると、同一ハッシュの通常開発パスは有効Allow受信2/Block0、保全コピーのパスはAllow0/Block2だった。規則を変更せず、予備で到達確認済みの通常開発パスへ揃えて再開した。再読込の新Document応答を待つ修正も752f949で固定した。失敗2回はbatch-attempt1/2と元summaryを保全し、成功データへ混ぜない。
+- 全21試行で4,704入力の送信/受理/dry出力が一致、欠落/重複適用/未ACK0、順序gap待ち0、停止/切断/回転/非表示/再接続後の残留なし。視点の送信200ms空白0に対し、hostのアプリ受信には200ms空白が計25件あった。旧/新、RTC/WSで試行差があり、物理パケット損失やMinecraft反映と同一視しない。
+- 無線状態100標本は2412MHz、link72Mbps、RSSI -45〜-40dBmで、全標本のAP識別子は同一（識別子は公開しない）。PCはWi-Fi Direct/mobile hotspot、Androidはwlan0。HTTP/WSの実LAN接続と非ループバック認可、選択ICEのtransport→pair→両端ID/アドレス一致を各試行と5秒履歴で検証。端末はAndroid16/Chrome156.0.8078.79、P2/P3は模擬参加者。実指/実OS入力/実無線断/Minecraftは未受入。
+- `node scripts/device/summarize-wifi-review.mjs`：21試行のソース/runner/端末/exe/資産/入力/ACK/出力/経路を照合し成功。匿名raw gzipとSHA256、全分位/平均/最大/nのCSV、独立集約JSON、準備10記録（成功2/失敗8）と無線環境を `acceptance/evidence/pr274-wifi` へ保存。旧USB15試行は変更していない。ACK集計は当該試行の送信iseqに一致する最初のACKだけを採り、warmup/別試行/二重ACKを除外する（#259）。
+- AのACK観測p95は107.9〜109.4ms、Eは111.3〜112.1ms。WS-onlyのAは106.8〜107.6ms、Eは108.7〜110.4ms。Eのp99には226.7ms/WS-only235.9msの試行もあり、残る差を無回帰と断定しない。製品onmessage前に登録する先行ACK observerを追加し、同じrenderer時計で既存観測点までの処理/配送区間を分ける追加診断を実施する。主21試行には途中でこの観測を追加していない。
+- `wifi-route-test`・`wifi-host-analysis-test`・`wifi-trial-acks-test`・`wifi-ack-observer-test`：成功。CLI拒否試験は11/11。transport/candidateのID関係も明示的に検査し、不一致を拒否。reverse拒否の例外に端末識別子を含めないboolean検証とエラーのprivate値除去を追加した。通常権限の `protocol-sim.mjs --bin <同host>` は60/60成功（制限環境での初回は待受に到達せず失敗し、通常実行で再確認）。752f949のCI Structure42543336466 / Rust42543336455は全成功。
+
+## 2026-11-09 — ACKの前後観測と診断表示のフレーム通知
+
+- 同じWi-Fi/host47fのWS-onlyでA/Eを各1回、先行ACK observer付きで追加診断した（主21試行と別）。Aは先行p95 105.2ms/従来106.3ms、Eは107.1/109.4ms。各224 ACKに対応し、両観測点間のp95はA1.1ms/E2.3ms、p99はA1.6/E2.9ms。先行側にも差があるため全差をReactだけの問題とは断定しないが、製品処理とその間の配送/microtask区間にも差を観測した。原本と匿名化2試行を `evidence/pr274-wifi/ack-observer` へ保存。
+- runtimeのACKが呼ぶrenderStatsは100ms throttle。PhoneViewのtelemetryはflushSyncを除去していたが、外部storeへの通知は同じdispatchからReact購読へ入る。診断値だけを次のrequestAnimationFrameへまとめ、ACK/input callbackから直接通知しないpublisherを追加した。入力保持・通信・認可・画面遷移/安全停止の同期状態は変更しない。破棄時にframe取消し、古いcallback/以後patchを無視する。
+- `node --experimental-strip-types scripts/sim/telemetry-publisher-test.mjs`：成功（callback内の通知なし/複数patch統合/snapshot不変/取消し/破棄後停止/新寿命）。`npm run build --prefix apps/web`：strict/Vite成功。`node scripts/sim/product-web-test.mjs`：全成功、製品TS35モジュール、旧JS依存/循環/型検査回避なし。新publisher試験を共通runner/CIへ含めた。
+- `react-phone-parity.mjs --bin <同host> --samples 20 --tolerance-ms 30`：旧indexと標準/で全比較成功。PC headlessのタップp95 15.9→3.8ms、視点27.5→29.5回/秒、5寸法/44px/再マウント/停止/標準entryに合格。Androidの性能改善やゲーム反応速度の証拠にはしない。Androidでは次の独立再測定で効果を確認する。
+- 主21試行の完全5秒経路履歴はraw gzipに保全し、索引だけを候補辞書と重複排除時系列へ縮約した。生データ/測定値を削除せず、trials.jsonの重複を減らした。再試験用集約は別manifest/保存先を要求し、主21試行を上書きしない。
+
+- 改修後の先行ACK診断（F、同じWS-only/host47f、224 ACK）は先行p95 105.6ms/従来106.9ms、観測点間p95 0.8ms/p99 1.2ms。改修前Eの2.3/2.9msより短く、診断通知をdispatch外へ移した効果を観測した。先行側のRTTも変動するため、従来ACKの全改善を表示変更や通信速度へ帰属させない。
+- 通常observerへ戻した再試験の初回は入力60秒/224件を完走したが、視点40秒付近のlook-1200で選択候補ペアのstate/nominated検証に失敗し停止した。直前look-1050までのsnapshotはsucceeded/true、hostログにその区間のRTC close/failedはなく、原因は未特定。未検証の無線経路を成功扱いにせず、ホストexit0で全解放・自己タブ/forwardを終了。元summary/host trace/radioログ/失敗manifestを保全して、成功6本へ混ぜない。
+- 失敗した瞬間のgetStatsもprivateファイルへ保存するようrunnerを補完し、公開する失敗状態には接続/候補stateとnominatedだけを含める。候補ID・アドレス・UDP・成功/nominationの検証は緩めていない。CLI11/11と経路拒否試験、構文検査が成功。次の再実行で同じ事象が出る場合は、その生統計から原因を調査する。
+
+- 2回目の再試験も視点途中で停止し、今度は失敗snapshotを保全できた。現在の選択pairはsucceeded/true、履歴内の1snapshotだけin-progress/true。どちらもpeer/DTLS/ICEはconnected、選択IDとLAN両端は一致し、直前snapshotからpayloadは送信27,441/受信22,756 bytes増えていた。hostにもRTC close/failedはない。[W3C統計仕様](https://www.w3.org/TR/webrtc-stats/)でpair.stateはチェックリスト、transportのiceState/dtlsStateと別で、bytesSent/ReceivedはICE connectivity checkを除くpayloadと確認した。1回目の未保存snapshotも同因だったとは断定しない。
+- 判定器がチェックリストの一時的なin-progressを実接続断と混同していた。選択transport→pair→candidate ID、実peer/ICE/DTLS connected、nomination、正しいUDP LAN両端、双方向payload正値を必須とする判定へ修正。接続中のチェックリスト再検査は値を保存し、failed/waiting/frozen、接続未完、payloadなし、異なるID/経路は拒否する。取得API/間隔/入力負荷は変更しない。経路拒否の単体試験にこれらを追加し成功。主21試行の生入力/時刻は保全し、失敗2回と別に改修後の比較を再開する。
+
+## 2026-11-09 — 実Wi-Fi追加レビューの修正後再検証と記録確定
+
+- 主21試行に加え、製品c2e2fe3（診断telemetry通知を次frameへ集約）をrunner c75fda5から通常の後段ACK観測で再測定。RTC+WS / WS-only各3試行、入力60秒/224件＋視点60秒/1800移動、同じ47f6f6fホスト・Android・Chrome・AP。6試行の入力1,344件が受理/出力一致、欠落/重複適用/未ACK/順序gap待ち0。Pause・切断・復帰で旧入力残留なし、全ホストexit0・cleanupFailuresなし。主21試行と別のevidence/pr274-wifi-afterへ保存。
+- `node scripts/device/summarize-wifi-review.mjs --batch data/local/pr274-wifi/after-batch.json --supplement --out docs/develop/acceptance/evidence/pr274-wifi-after`：全6独立試行のソース/runner・資産・共通exe・経路・224件照合に成功。全分位/平均/最大/標本数CSVとraw gzip/SHA256を生成。途中停止2回を別gzip/索引へ保存し、成功値へ混ぜない。無線環境も別採取して元のAPと同一であることだけを匿名共有。
+- 先行ACK診断はA/E-before/E-after各1回・224件の別データとして保全。製品handler前→後段観測の間隔p95/p99はA 1.1/1.6ms、E-before 2.3/2.9ms、E-after 0.8/1.2ms。ネットワークやゲームの速度改善とは呼ばず、ACK callback中の診断subscriber通知を除いた構造上の改善とする。
+- `node scripts/device/wifi-route-test.mjs`、`wifi-host-analysis-test.mjs`、`wifi-trial-acks-test.mjs`、`wifi-ack-observer-test.mjs`、`android-dry-run-test.mjs`（11/11）：成功。誤経路/未接続/誤ID/未nomination/payloadなし/キャッシュ/USB URLを拒否し、実接続済みの候補再検査を誤って切断扱いしない。#259の連続試行ACK分離も成功。
+- `node scripts/sim/product-web-test.mjs`：成功、35 TSモジュール。診断publisherのframe集約・不変snapshot・冪等破棄・旧callback停止を追加検証。strict/Vite buildとphone parityは製品修正c2e2fe3で成功済み。`python scripts/check-public-docs.py`、`python scripts/verify_overlay.py`、`git diff --check`：成功。原206行とUSB15試行の不変、217項目（OK208/未確認8/別Issue1）、共有gzipのSHA256と接続情報除去を照合。
+- 製品修正c2e2fe3のCIは[Structure checks](https://github.com/jphacks/kz_2613/actions/runs/42548657268) / [Rust・製品回帰・配布](https://github.com/jphacks/kz_2613/actions/runs/42548657277)が成功。最終記録HEADもpush後に追跡する。PR #274の追加着手・完了記録を更新し、Draftを維持する。
+- 読取/起動の通常権限承認経路が一時的に利用量制限で自動レビュー失敗となったため、その時間は未実行として保持。指定時刻経過後に同じ承認経路で再実行し成功。制限回避、UAC昇格、Firewall/永続ネットワーク設定の変更はしていない。
+- 実Wi-Fi断そのもの、ルーター/距離/混雑/Bluetoothの比較、実指・長時間・iPhone・複数実スマホ・実OS入力/Minecraft・別PCは未受入。dry-runのLAN計測とAT-D07全体の製品受入を分ける。mainマージ・Issue close・正式release・Award Day安定版更新はしない。
+- Wi-Fi試験後、同じ47f6f6fホスト・固定c2e2fe3配信で `android-dry-run.mjs --condition usb-regression-after-wifi --trial 1`（Wi-Fi/benchmark指定なし）を実行。既存USBの15機能項目が成功、host exit0・後片付け失敗0。evidence/pr274-wifi-after/usb-regression.jsonとrawへ分離保存し、旧USB15試行と無線性能値には混ぜない。
+
+## 2026-11-09 — ユーザー判断に従い製品利用・評価をWi-Fi前提へ統一
+
+- ユーザーがUSB有線接続を通常の利用場面に想定しないと明示したため、`2026-11-09-wifi-product-baseline.md` に判断を記録。製品評価は同一Wi-Fi上の旧版/新版、RTC+WS/WS-only、改善前後を中心とし、USB/ADB reverseは開発・切り分け用の任意の補助にした。ADB forward/CDP制御は製品通信と区別する。
+- #276のタイトル・完了条件をWi-Fiの観測区間/計測負荷統一へ変更し、必須のUSB対Wi-Fi追加測定を削除。#275/#277/#157/#264/#235とPR #274も更新。既存IssueはOpen、PRはDraftのまま。実装に新たに着手した扱いにはしない。
+- AGENTS、ENV-07、技術構成、React判断、総合仕様、検証状況、受入README、性能報告、自己レビューへ反映。受入手順はWi-Fiを先に配置し、USB手順は開発用補助として保持。性能報告冒頭にWi-Fiの主結果と残件を掲載した。
+- `python scripts/check-public-docs.py`：17資料/317参照に成功。`python scripts/verify_overlay.py`：39必須ファイルに成功。保存済み証拠の照合で原206行、217項目の集計（OK208/未確認8/別Issue1）、USB15試行、Wi-Fi生データ/SHA256が不変。`git diff --check`：成功。製品コード・入力定数・runner・測定数値は変更しておらず、実機再測定や製品ビルドは不要な文書変更。
+- 新しい合格の追加、mainマージ、Issue close、正式release、Award Day安定版更新は行わない。
 ## 2026-11-08 — Android・iPhone実機での受入確認（Claude Code、#10・#159・#213・#223・#233・#238）
 
 - 対象：main `c271ebe`（ホストは `cargo build --release --locked` の成果物）。ホストはdry-run（OS入力なし）、PCのモバイルホットスポット経由。端末はAndroid 16（Chrome 156.0.8078.79）とiPhone（iOS 26.5、Safari）。Minecraft・実OS入力は使っていない。
@@ -1462,3 +1578,12 @@
 - リセット（#213）：PCのリセットで両端末が「PCでリセットされました。参加するときはページを再読み込みしてください。」を表示し、自動再接続しない。iPhoneを先に再読み込みするとP1、Androidを後にするとP2になった。
 - 基本の表示とタッチ（#10）：iPhoneは利用者が実指で操作し、すべて意図どおりだった（Space長押し約5秒＝押下1・解放1、同じボタンに2本指で片指を離しても保持、別ボタンの同時押しで独立した解放、ホームへ戻すと約1.2秒で解放、横向きへ回すと解放）。Androidは実機のChromeへCDP（`Input.dispatchTouchEvent`）でタッチを送り、非表示はホームボタン、回転は画面の回転設定で実施した（実指ではない）。長押し5.05秒、2本指で片指を離しても保持、別ボタンの同時押しで独立、非表示で約1秒後に解放、回転の約0.2秒後に解放し、全系列で残留なし。
 - 未確認：Minecraftへの実入力、実Wi-Fi・長時間、Androidの実指の複数操作、ゲームごとのスキンの保存・復元の実機確認、iPhoneのスキン再読み込み後の保持。
+
+## 2026-11-09 PR #274: main統合後の再検証と画面部品の分割（Claude Code）
+
+- mainの#273を取り込んだ（競合は `phone-skins.css` のコメント1行のみ。Codex側が同じダーク無効ボタン修正を入れていたため内容は同一）。
+- 型の厳密化：`Navigation.screen` を `ScreenId`（join/game/roles）、`UiAction.kind` を `UiActionKind` のリテラルUnionにした。`data-go` は `SCREENS` に含まれる値だけ受理する。外部ゲームの操作IDは列挙していない。
+- 画面の分割：`PhoneApp` を `Header`・`HostRemoteScreen`・`WaitingScreen`・`GameplayScreen`・`DiagnosticsDialog`、`PcApp` を `Sidebar`・`Workspace`・`SettingsDialog`・`RenameDialog`・`ConnectionHelpDialog` に分けた。DOM ID・文言・入力エンジンは変更していない（描画の移動のみ）。
+- 検証：`npm run build`（tsc strict + Vite）、ホスト `cargo test` 137合格・2 ignored＋別枠4、protocol-sim 60/60、shutdown-sim、app-view-test 30/30、スマホ画面・スキン・ライフサイクル・入力担当・セッション・境界・ui-input 12/12・静的資産、react-phone-parity・react-pc-parity、product-web-test、controller-layout/preview-test すべて合格。
+- Android実機（Wi-Fi・dry-run・Codexと同じ `android-dry-run.mjs --wifi-network` 経路、60秒計測）：分割前後の2回とも15項目合格（Wi-Fi経路証明、2接点保持、Pause・回転・バックグラウンド・切断・再読み込みの全解放、JSエラーなし）。CDP合成タッチであり実指ではない。
+- 未実施：iPhone（利用者判断で不要）、実指、Minecraft実入力、実無線断。#271/#50（編集可能レイアウトの保存・編集UI）と#272（Rust間の型生成）は本PRでは完成していない。レビュー10件のうち、通常UIのonClick化（1）、表示モデル分割（3）、store/actionsのProvider化（4）、`flushSync`の再点検（5）、DOM所有境界（7）は入力の遅延・安全性への回帰リスクがあるため見送り、別Issueで扱う。

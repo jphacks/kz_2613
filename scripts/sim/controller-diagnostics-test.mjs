@@ -48,8 +48,8 @@ try {
     myActions:()=>null,recordInputMetric(){},inputMetrics:{summary:()=>({})},
     createFastChannel:()=>({isOpen:()=>false,start(){},close(){},signal(){},send:()=>false}),
   };
-  const source=fs.readFileSync(new URL('../../apps/web-static/scripts/controller.js',import.meta.url),'utf8');
-  vm.runInNewContext(source.replace(/^import .*$/gm,''),context);
+  const source=fs.readFileSync(new URL('../../apps/web-static/scripts/phone-runtime.js',import.meta.url),'utf8');
+  vm.runInNewContext(source.replace(/^import .*$/gm,'').replace('export function startPhoneController', 'function startPhoneController') + '\nstartPhoneController({createView:createPhoneView});',context);
   Socket.last.onmessage({data:JSON.stringify({type:'game',game:{phase:'coop',epoch:7,connected:['P1','P2','P3'],profile:{id:'test',name:'試験',actions:[]}}})});
   assert.equal(cooperative.isOpen(),true);
   attack.fire('pointerdown');

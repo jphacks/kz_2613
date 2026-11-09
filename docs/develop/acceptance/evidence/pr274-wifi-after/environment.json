@@ -1,0 +1,25 @@
+{
+  "topology": "Windows Wi-Fi Direct / mobile hotspot → Android wlan0",
+  "samples": 30,
+  "start": "2026-11-09T03:59:45.955Z",
+  "end": "2026-11-09T04:14:19.628Z",
+  "frequencyMHz": [
+    2412
+  ],
+  "rssiDbm": {
+    "n": 30,
+    "p50": -41,
+    "p95": -41,
+    "p99": -40,
+    "mean": -41.833333333333336,
+    "max": -40,
+    "min": -45
+  },
+  "linkSpeedMbps": [
+    72
+  ],
+  "accessPointIdentityCaptured": 30,
+  "allCapturedAccessPointIdentitiesEqual": true,
+  "sameAccessPointAsPrimary": true,
+  "note": "主比較より後の時間ブロック。APは同じでも混雑・距離・時間経過を制御した因果実験ではない。SSID/BSSIDを公開しない。"
+}

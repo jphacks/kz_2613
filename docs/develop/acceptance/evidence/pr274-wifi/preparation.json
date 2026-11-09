@@ -1,0 +1,183 @@
+{
+  "scope": "予備/失敗記録。本比較21試行へ混ぜない。元のprivateログはローカル保持。",
+  "records": [
+    {
+      "kind": "wifi-route-probe",
+      "condition": "wifi-route-probe",
+      "trial": "1",
+      "date": "2026-11-09T00:21:54.435Z",
+      "error": "Uncaught",
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "sourceCommit": "0d43517da474d8263491fb1e748674e660eac8eb",
+      "runner": "当時の予備runnerはcommit/module hashを記録していない。最終比較には採用しない。",
+      "raw": "preparation-1.json.gz",
+      "rawSha256": "93a99c11b6ebd3920636b9617c7bf08d33103a3abfa5dbe826d489d245bfa302"
+    },
+    {
+      "kind": "wifi-route-probe",
+      "condition": "wifi-route-probe",
+      "trial": "2",
+      "date": "2026-11-09T00:22:42.331Z",
+      "error": "起動したホストのLAN待受を確認できない",
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "sourceCommit": "0d43517da474d8263491fb1e748674e660eac8eb",
+      "runner": "当時の予備runnerはcommit/module hashを記録していない。最終比較には採用しない。",
+      "raw": "preparation-2.json.gz",
+      "rawSha256": "912a976f817c3fce7a6f862ad4e06638c80a11a8f310bf00550c5759752d6d9d"
+    },
+    {
+      "kind": "wifi-route-probe",
+      "condition": "wifi-route-probe",
+      "trial": "3",
+      "date": "2026-11-09T00:23:19.603Z",
+      "error": "起動したホストのLAN待受を確認できない: [{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":null,\"any\":true}]",
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "sourceCommit": "0d43517da474d8263491fb1e748674e660eac8eb",
+      "runner": "当時の予備runnerはcommit/module hashを記録していない。最終比較には採用しない。",
+      "raw": "preparation-3.json.gz",
+      "rawSha256": "8644f2e9302fe068ae529e64dd9077c0ba235df14cdabefb0ec7eb4133bd3373"
+    },
+    {
+      "kind": "wifi-route-probe",
+      "condition": "wifi-route-probe",
+      "trial": "4",
+      "date": "2026-11-09T00:23:52.387Z",
+      "error": "起動したホストのLAN待受を確認できない",
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "sourceCommit": "0d43517da474d8263491fb1e748674e660eac8eb",
+      "runner": "当時の予備runnerはcommit/module hashを記録していない。最終比較には採用しない。",
+      "raw": "preparation-4.json.gz",
+      "rawSha256": "eda760b11064a10bba7e07ddddfaadf0cb61402f73da74f93d461123d0ea0ea1"
+    },
+    {
+      "kind": "wifi-route-probe",
+      "condition": "wifi-route-probe",
+      "trial": "5",
+      "date": "2026-11-09T00:25:10.671Z",
+      "error": "起動したホストのLAN待受を確認できない: [{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":5,\"any\":false},{\"state\":0,\"any\":true}]",
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "sourceCommit": "0d43517da474d8263491fb1e748674e660eac8eb",
+      "runner": "当時の予備runnerはcommit/module hashを記録していない。最終比較には採用しない。",
+      "raw": "preparation-5.json.gz",
+      "rawSha256": "15df0d51b815864920101b2f6901d86c7b2d3e3403bdacd9616399850d7036b4"
+    },
+    {
+      "kind": "wifi-route-probe",
+      "condition": "wifi-route-probe",
+      "trial": "6",
+      "date": "2026-11-09T00:25:51.714Z",
+      "error": "LAN端末はPC専用ページ/APIを取得できてはならない",
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "sourceCommit": "0d43517da474d8263491fb1e748674e660eac8eb",
+      "runner": "当時の予備runnerはcommit/module hashを記録していない。最終比較には採用しない。",
+      "raw": "preparation-6.json.gz",
+      "rawSha256": "a1a5611b269bdaaa1c13cc71b16585c03300284410673751c7f7e7c4b87e80a7"
+    },
+    {
+      "kind": "wifi-route-probe",
+      "condition": "wifi-route-probe",
+      "trial": "7",
+      "date": "2026-11-09T00:26:38.735Z",
+      "error": null,
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "sourceCommit": "0d43517da474d8263491fb1e748674e660eac8eb",
+      "runner": "当時の予備runnerはcommit/module hashを記録していない。最終比較には採用しない。",
+      "raw": "preparation-7.json.gz",
+      "rawSha256": "111970f68820f360ab0fbf65be4b86fa11ce760d4dac016f93a87bc2c51f11d6"
+    },
+    {
+      "kind": "wifi-pilot-E",
+      "condition": "wifi-pilot-E",
+      "trial": "1",
+      "date": "2026-11-09T00:31:56.483Z",
+      "error": null,
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "sourceCommit": "0d43517da474d8263491fb1e748674e660eac8eb",
+      "runner": "当時の予備runnerはcommit/module hashを記録していない。最終比較には採用しない。",
+      "raw": "preparation-8.json.gz",
+      "rawSha256": "ccccfc825b31a00a985b7de26c3e90e65b3f6abc9ef101675a3cfdd65c99a672"
+    },
+    {
+      "kind": "measurement startup / blocked copy path",
+      "condition": "A-wifi-fixed",
+      "trial": "1",
+      "date": "2026-11-09T00:37:53.934Z",
+      "error": "CDP timeout: Runtime.evaluate",
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "sourceCommit": "c271ebe2335af9bdff5f30d58304a30d74f847f7",
+      "runner": {
+        "commit": "2889cd007ed84a63b30ee499d15ae4cde833686c",
+        "dirty": false,
+        "modules": {
+          "android-dry-run.mjs": "d090fc0cf9603beea06b665d27e31cae94dd3964990ec9328aedbd62af09c4d6",
+          "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+          "wifi-route.mjs": "033b148a6095005b129acbb6b62c1b0ff8c71adc9c1f4619f9a41ed2e8b24c9c",
+          "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d"
+        }
+      },
+      "raw": "preparation-9.json.gz",
+      "rawSha256": "a381b8c51d31f4396074066628ed64112427e84a9d15db0c76e965bd3d2af32d"
+    },
+    {
+      "kind": "measurement startup / blocked copy path",
+      "condition": "A-wifi-fixed",
+      "trial": "1",
+      "date": "2026-11-09T00:40:48.323Z",
+      "error": "待機失敗: LANの新文書HTTP応答",
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "sourceCommit": "c271ebe2335af9bdff5f30d58304a30d74f847f7",
+      "runner": {
+        "commit": "752f9495aa85f3c52cb57962661eab2c94e2e0e3",
+        "dirty": false,
+        "modules": {
+          "android-dry-run.mjs": "453cce8065172ed91865e49ef6824c4266289cdec82303c3b402436fe5044bdc",
+          "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+          "wifi-route.mjs": "033b148a6095005b129acbb6b62c1b0ff8c71adc9c1f4619f9a41ed2e8b24c9c",
+          "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d"
+        }
+      },
+      "raw": "preparation-10.json.gz",
+      "rawSha256": "2fbc734030e7dfb8d26e5dc4a5e1ae7b3d56bf8d8997d6d225d1269b50a576eb"
+    }
+  ]
+}

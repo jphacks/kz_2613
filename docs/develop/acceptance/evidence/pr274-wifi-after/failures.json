@@ -1,0 +1,53 @@
+{
+  "scope": "途中停止2回。成功した修正後6試行と混ぜない。1回目の失敗瞬間statsは未保存。2回目はprivateに保持し公開summaryの状態flagsを参照。",
+  "records": [
+    {
+      "attempt": 1,
+      "date": "2026-11-09T02:02:34.805Z",
+      "error": "選択候補ペアが成功していない",
+      "sourceCommit": "c2e2fe380b560f0ece7d5b6ad7164bb44ea0f92b",
+      "runner": {
+        "commit": "c2e2fe380b560f0ece7d5b6ad7164bb44ea0f92b",
+        "dirty": false,
+        "modules": {
+          "android-dry-run.mjs": "91df47051b21d50de580b7eedc0a9bc1607afe6367babdecb800fcdbb25e6a3e",
+          "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+          "wifi-route.mjs": "5e4a1a709d75a03b3f18c0c1891f38ed4385677117190b0aa79a67f75a24839e",
+          "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d",
+          "wifi-ack-observer.mjs": "68174363ba3504bbdc1107b6efd08f0440f768947e7b52909f6159a20d6621dd"
+        }
+      },
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "raw": "failed-attempt-1.json.gz",
+      "rawSha256": "dba3adc62173cf5330b1f38210624708d8af1599d58447d0679b9dacea710a9a"
+    },
+    {
+      "attempt": 2,
+      "date": "2026-11-09T02:12:29.494Z",
+      "error": "選択候補ペアが成功していない: {\"state\":\"in-progress\",\"nominated\":true}",
+      "sourceCommit": "c2e2fe380b560f0ece7d5b6ad7164bb44ea0f92b",
+      "runner": {
+        "commit": "8935aec9747e01acbe4b226bedd62cca794b87ed",
+        "dirty": false,
+        "modules": {
+          "android-dry-run.mjs": "d5778865be4f8b4878fef94fae0b81b6d8ec8b4abbea012a8b6822467addc874",
+          "android-performance.mjs": "b81037da298bfd1a2ff5ad987dfe6e16b6e56aef8dc10f6ba8cc1169f15f89c4",
+          "wifi-route.mjs": "7856ec5f9d594446cc785dbb9cb7dc54afc55700582851911904e9bec0cb1100",
+          "wifi-host-analysis.mjs": "81d8c0c73bdc629f12c8e7ebe550cbb44a57d32b77abb9faedabbc64520ded2d",
+          "wifi-ack-observer.mjs": "68174363ba3504bbdc1107b6efd08f0440f768947e7b52909f6159a20d6621dd"
+        }
+      },
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "cleanupFailures": [],
+      "raw": "failed-attempt-2.json.gz",
+      "rawSha256": "7e76527989c3bf665587c56f4a05b4b0f96c7bc055b149d6821ecb54630235d7"
+    }
+  ]
+}

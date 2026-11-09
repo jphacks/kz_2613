@@ -1,0 +1,74 @@
+{
+  "scope": "Wi-Fi runner追加後の既存USB機能スモーク1回。旧15試行/無線性能値には混ぜない。",
+  "sourceCommit": "c2e2fe380b560f0ece7d5b6ad7164bb44ea0f92b",
+  "binarySha256": "47f6f6f85bd3ad76e55f340a9d00d779cc5bb8e3aa7ab90b90b3bb6d85570099",
+  "tests": [
+    {
+      "id": "dry-runホストのHTTPと監視接続",
+      "result": "合格"
+    },
+    {
+      "id": "Android初期表示・P1参加",
+      "result": "合格"
+    },
+    {
+      "id": "Android生成操作面・単指ボタン",
+      "result": "合格"
+    },
+    {
+      "id": "Android同一ボタンの2接点保持",
+      "result": "合格"
+    },
+    {
+      "id": "Androidスティック右・解放",
+      "result": "合格"
+    },
+    {
+      "id": "Android診断表示",
+      "result": "合格"
+    },
+    {
+      "id": "Androidタッチ領域と入力処理時間",
+      "result": "合格"
+    },
+    {
+      "id": "Android保持中のホストPause・全解放",
+      "result": "合格"
+    },
+    {
+      "id": "Androidダーク配色の無効ボタン",
+      "result": "合格"
+    },
+    {
+      "id": "Android再開と実回転時の全解放",
+      "result": "合格"
+    },
+    {
+      "id": "Androidバックグラウンド時の全解放",
+      "result": "合格"
+    },
+    {
+      "id": "Android保持中の通信切断・同じ枠への再接続",
+      "result": "合格"
+    },
+    {
+      "id": "Android再読み込み・元の管理権",
+      "result": "合格"
+    },
+    {
+      "id": "Android担当変更後の視点パッド・送信周期",
+      "result": "合格"
+    },
+    {
+      "id": "Android JavaScriptエラー",
+      "result": "合格"
+    }
+  ],
+  "hostExit": {
+    "code": 0,
+    "signal": null
+  },
+  "cleanupFailures": [],
+  "raw": "usb-regression.json.gz",
+  "rawSha256": "258fcbfb81faebf3da0e4a33e5183e84dce4b709654fa8551889f4466dbb6b63"
+}

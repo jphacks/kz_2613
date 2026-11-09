@@ -1,0 +1,24 @@
+{
+  "topology": "Windows Wi-Fi Direct / mobile hotspot → Android wlan0",
+  "samples": 100,
+  "start": "2026-11-09T00:44:34.333Z",
+  "end": "2026-11-09T01:35:51.854Z",
+  "frequencyMHz": [
+    2412
+  ],
+  "rssiDbm": {
+    "n": 100,
+    "p50": -42,
+    "p95": -41,
+    "p99": -40,
+    "mean": -41.86,
+    "max": -40,
+    "min": -45
+  },
+  "linkSpeedMbps": [
+    72
+  ],
+  "accessPointIdentityCaptured": 100,
+  "allCapturedAccessPointIdentitiesEqual": true,
+  "note": "生SSID/BSSID/アドレスは公開しない。30秒間隔の読み取りと初期snapshot。距離/混雑/他機器の負荷は制御していない。"
+}

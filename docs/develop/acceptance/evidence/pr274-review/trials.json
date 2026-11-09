@@ -1,0 +1,2480 @@
+{
+  "date": "2026-11-08T19:05:41.756Z",
+  "trials": [
+    {
+      "condition": "A",
+      "trial": 1,
+      "sourceCommit": "c271ebe2335af9bdff5f30d58304a30d74f847f7",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60325.3285,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 17.5,
+          "p95": 27,
+          "p99": 28.400000035762787,
+          "mean": 17.145833334161175,
+          "max": 28.400000035762787
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 16.600000023841858,
+          "p95": 26.5,
+          "p99": 30.100000023841858,
+          "mean": 15.90000000054186,
+          "max": 30.100000023841858
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 17,
+          "p95": 107.89999997615814,
+          "p99": 110.09999996423721,
+          "mean": 29.699999999521033,
+          "max": 113.80000001192093
+        },
+        "unacked": 0,
+        "firstVia": {
+          "rtc": 110,
+          "ws": 114
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 14.800000011920929,
+          "p95": 28.400000035762787,
+          "p99": 28.400000035762787,
+          "mean": 16.60000000728501,
+          "max": 28.400000035762787
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 18.100000023841858,
+          "p95": 26.5,
+          "p99": 26.5,
+          "mean": 17.877777771817314,
+          "max": 26.5
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1734,
+        "p50": 33,
+        "p95": 34.80000001192093,
+        "p99": 66.09999996423721,
+        "mean": 34.60409457900808,
+        "max": 68.60000002384186,
+        "gaps200ms": 0,
+        "longestGapMs": 68.60000002384186,
+        "hostLookLost": 19
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "A-1.json.gz",
+      "rawSha256": "f18ef5ee35796fd9354a53adc98765926d2dc4f9d70dc4e5adaf550e0c9271f5"
+    },
+    {
+      "condition": "A",
+      "trial": 2,
+      "sourceCommit": "c271ebe2335af9bdff5f30d58304a30d74f847f7",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60321.6738,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 16.80000001192093,
+          "p95": 27.19999998807907,
+          "p99": 27.900000035762787,
+          "mean": 16.172222226030296,
+          "max": 27.900000035762787
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 14.699999988079071,
+          "p95": 24.5,
+          "p99": 26.19999998807907,
+          "mean": 15.223863639614798,
+          "max": 26.19999998807907
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 16.900000035762787,
+          "p95": 108.89999997615814,
+          "p99": 111.69999998807907,
+          "mean": 29.237499998882413,
+          "max": 114
+        },
+        "unacked": 0,
+        "firstVia": {
+          "rtc": 120,
+          "ws": 104
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 17.100000023841858,
+          "p95": 27.900000035762787,
+          "p99": 27.900000035762787,
+          "mean": 16.555555562178295,
+          "max": 27.900000035762787
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 18.30000001192093,
+          "p95": 27.600000023841858,
+          "p99": 27.600000023841858,
+          "mean": 18.06666666931576,
+          "max": 27.600000023841858
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1728,
+        "p50": 33,
+        "p95": 63.89999997615814,
+        "p99": 66.09999996423721,
+        "mean": 34.70815972224982,
+        "max": 66.59999996423721,
+        "gaps200ms": 0,
+        "longestGapMs": 66.59999996423721,
+        "hostLookLost": 19
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "A-2.json.gz",
+      "rawSha256": "dd30236512f449eaf61d0b636b5eed808f96c4622ed07cb1998e95c8f3cc4580"
+    },
+    {
+      "condition": "A",
+      "trial": 3,
+      "sourceCommit": "c271ebe2335af9bdff5f30d58304a30d74f847f7",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60321.216100000005,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 14.899999976158142,
+          "p95": 26.400000035762787,
+          "p99": 27.5,
+          "mean": 15.524999996026358,
+          "max": 27.5
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 16.899999976158142,
+          "p95": 25.19999998807907,
+          "p99": 27.19999998807907,
+          "mean": 16.131818176670507,
+          "max": 27.19999998807907
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 16.600000023841858,
+          "p95": 108.59999996423721,
+          "p99": 112.10000002384186,
+          "mean": 29.487053572599375,
+          "max": 113.5
+        },
+        "unacked": 0,
+        "firstVia": {
+          "rtc": 116,
+          "ws": 108
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 13.300000011920929,
+          "p95": 26.400000035762787,
+          "p99": 26.400000035762787,
+          "mean": 14.483333332671059,
+          "max": 26.400000035762787
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 15.399999976158142,
+          "p95": 27.5,
+          "p99": 27.5,
+          "mean": 16.27777777777778,
+          "max": 27.5
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1722,
+        "p50": 33,
+        "p95": 64.60000002384186,
+        "p99": 66.19999998807907,
+        "mean": 34.84715447155164,
+        "max": 72.20000004768372,
+        "gaps200ms": 0,
+        "longestGapMs": 72.20000004768372,
+        "hostLookLost": 16
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "A-3.json.gz",
+      "rawSha256": "13f83bf5a71a334f37c78ec9d6b91b4c21998e84a02bc1093f4d627303517ce8"
+    },
+    {
+      "condition": "B",
+      "trial": 1,
+      "sourceCommit": "9947391eb430dcc949877170e926b20e6a9d303b",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60314.29410000001,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 16,
+          "p95": 26.69999998807907,
+          "p99": 29.899999976158142,
+          "mean": 16.51249999966886,
+          "max": 29.899999976158142
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 16.900000035762787,
+          "p95": 25.30000001192093,
+          "p99": 27.19999998807907,
+          "mean": 16.12159090827812,
+          "max": 27.19999998807907
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 16.700000047683716,
+          "p95": 108.59999996423721,
+          "p99": 111.40000003576279,
+          "mean": 29.425446428624646,
+          "max": 128.10000002384186
+        },
+        "unacked": 0,
+        "firstVia": {
+          "rtc": 148,
+          "ws": 76
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 15.5,
+          "p95": 26.69999998807907,
+          "p99": 26.69999998807907,
+          "mean": 16.45555556151602,
+          "max": 26.69999998807907
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 15.099999964237213,
+          "p95": 24.400000035762787,
+          "p99": 24.400000035762787,
+          "mean": 15.649999992714989,
+          "max": 24.400000035762787
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1734,
+        "p50": 33,
+        "p95": 35.40000003576279,
+        "p99": 66.10000002384186,
+        "mean": 34.582122260655225,
+        "max": 67.80000001192093,
+        "gaps200ms": 0,
+        "longestGapMs": 67.80000001192093,
+        "hostLookLost": 16
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "B-1.json.gz",
+      "rawSha256": "b0f8d59ce93670b3344b5709c8ab52b560d0c2c739056420be34c5736ad7976d"
+    },
+    {
+      "condition": "B",
+      "trial": 2,
+      "sourceCommit": "9947391eb430dcc949877170e926b20e6a9d303b",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60328.0082,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 16.69999998807907,
+          "p95": 25.900000035762787,
+          "p99": 28.69999998807907,
+          "mean": 17.000000004967053,
+          "max": 28.69999998807907
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 16.899999976158142,
+          "p95": 25.80000001192093,
+          "p99": 28,
+          "mean": 16.457954546944663,
+          "max": 28
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 16.69999998807907,
+          "p95": 108.5,
+          "p99": 111.19999998807907,
+          "mean": 28.54910713886576,
+          "max": 111.30000001192093
+        },
+        "unacked": 0,
+        "firstVia": {
+          "ws": 104,
+          "rtc": 120
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 17,
+          "p95": 26.100000023841858,
+          "p99": 26.100000023841858,
+          "mean": 16.71666667196486,
+          "max": 26.100000023841858
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 19.5,
+          "p95": 28.69999998807907,
+          "p99": 28.69999998807907,
+          "mean": 18.566666666004394,
+          "max": 28.69999998807907
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1729,
+        "p50": 33,
+        "p95": 64,
+        "p99": 66.10000002384186,
+        "mean": 34.707287449378924,
+        "max": 73.39999997615814,
+        "gaps200ms": 0,
+        "longestGapMs": 73.39999997615814,
+        "hostLookLost": 20
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "B-2.json.gz",
+      "rawSha256": "0d29b61d8f5633776789a20de61f88ac25a0a99211914cbd4224771974413c85"
+    },
+    {
+      "condition": "B",
+      "trial": 3,
+      "sourceCommit": "9947391eb430dcc949877170e926b20e6a9d303b",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60312.46070000001,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 15.600000023841858,
+          "p95": 24.200000047683716,
+          "p99": 25.5,
+          "mean": 16.1000000031458,
+          "max": 25.5
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 16.30000001192093,
+          "p95": 24.599999964237213,
+          "p99": 28.19999998807907,
+          "mean": 15.425000003793023,
+          "max": 28.19999998807907
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 17,
+          "p95": 108.70000004768372,
+          "p99": 112.10000002384186,
+          "mean": 29.714732144560134,
+          "max": 112.5
+        },
+        "unacked": 0,
+        "firstVia": {
+          "ws": 112,
+          "rtc": 112
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 15.099999964237213,
+          "p95": 25.5,
+          "p99": 25.5,
+          "mean": 16.011111113760208,
+          "max": 25.5
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 15.100000023841858,
+          "p95": 25.400000035762787,
+          "p99": 25.400000035762787,
+          "mean": 15.927777787049612,
+          "max": 25.400000035762787
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1737,
+        "p50": 33,
+        "p95": 35.30000001192093,
+        "p99": 66.09999996423721,
+        "mean": 34.54519286125504,
+        "max": 70.19999998807907,
+        "gaps200ms": 0,
+        "longestGapMs": 70.19999998807907,
+        "hostLookLost": 16
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "B-3.json.gz",
+      "rawSha256": "1ce804523f93e4366d2fa5c20f43edfca1eb7446e9d003c504647bb5c6f3e87a"
+    },
+    {
+      "condition": "C",
+      "trial": 1,
+      "sourceCommit": "9947391eb430dcc949877170e926b20e6a9d303b",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60318.52360000001,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 18.69999998807907,
+          "p95": 26.80000001192093,
+          "p99": 29.400000035762787,
+          "mean": 18.054166667163372,
+          "max": 29.400000035762787
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 14.800000011920929,
+          "p95": 25.5,
+          "p99": 27.19999998807907,
+          "mean": 14.817045457661152,
+          "max": 27.19999998807907
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 16.400000035762787,
+          "p95": 109,
+          "p99": 112.80000001192093,
+          "mean": 29.905357141047716,
+          "max": 131.5
+        },
+        "unacked": 0,
+        "firstVia": {
+          "rtc": 128,
+          "ws": 96
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 16.900000035762787,
+          "p95": 29.400000035762787,
+          "p99": 29.400000035762787,
+          "mean": 16.944444451067184,
+          "max": 29.400000035762787
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 17.400000035762787,
+          "p95": 25.799999952316284,
+          "p99": 25.799999952316284,
+          "mean": 17.21111109852791,
+          "max": 25.799999952316284
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1726,
+        "p50": 33,
+        "p95": 63.5,
+        "p99": 66.09999996423721,
+        "mean": 34.767844727701,
+        "max": 68.10000002384186,
+        "gaps200ms": 0,
+        "longestGapMs": 68.10000002384186,
+        "hostLookLost": 19
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "C-1.json.gz",
+      "rawSha256": "6b7da67fd4b2c66365e20b9ae88247325b570f7b1d2758928c9f3344e3d7f796"
+    },
+    {
+      "condition": "C",
+      "trial": 2,
+      "sourceCommit": "9947391eb430dcc949877170e926b20e6a9d303b",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60315.3727,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 20.80000001192093,
+          "p95": 28.100000023841858,
+          "p99": 29.399999976158142,
+          "mean": 19.71388888690207,
+          "max": 29.399999976158142
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 15.800000011920929,
+          "p95": 25.30000001192093,
+          "p99": 27.30000001192093,
+          "mean": 15.868181816556238,
+          "max": 27.30000001192093
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 16.30000001192093,
+          "p95": 109.10000002384186,
+          "p99": 111.09999996423721,
+          "mean": 30.129910716254795,
+          "max": 127.60000002384186
+        },
+        "unacked": 0,
+        "firstVia": {
+          "ws": 111,
+          "rtc": 113
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 21.100000023841858,
+          "p95": 29.399999976158142,
+          "p99": 29.399999976158142,
+          "mean": 20.988888892862533,
+          "max": 29.399999976158142
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 18.5,
+          "p95": 28.100000023841858,
+          "p99": 28.100000023841858,
+          "mean": 18.93333333068424,
+          "max": 28.100000023841858
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1738,
+        "p50": 33,
+        "p95": 35.19999998807907,
+        "p99": 66,
+        "mean": 34.512370540851556,
+        "max": 67,
+        "gaps200ms": 0,
+        "longestGapMs": 67,
+        "hostLookLost": 17
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "C-2.json.gz",
+      "rawSha256": "11445d48a19863be3a5d44d3087a54059e9b47351cb629e00fd8e897afdf69d4"
+    },
+    {
+      "condition": "C",
+      "trial": 3,
+      "sourceCommit": "9947391eb430dcc949877170e926b20e6a9d303b",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60319.160099999994,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 18,
+          "p95": 28,
+          "p99": 28.80000001192093,
+          "mean": 18.679166672130425,
+          "max": 28.80000001192093
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 16.5,
+          "p95": 24.69999998807907,
+          "p99": 27.30000001192093,
+          "mean": 15.57727272469889,
+          "max": 27.30000001192093
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 16.400000035762787,
+          "p95": 109.09999996423721,
+          "p99": 111.5,
+          "mean": 30.203125001064368,
+          "max": 128.29999995231628
+        },
+        "unacked": 0,
+        "firstVia": {
+          "ws": 90,
+          "rtc": 134
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 18,
+          "p95": 25.400000035762787,
+          "p99": 25.400000035762787,
+          "mean": 19.17777778704961,
+          "max": 25.400000035762787
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 17.399999976158142,
+          "p95": 28.80000001192093,
+          "p99": 28.80000001192093,
+          "mean": 19.200000004635918,
+          "max": 28.80000001192093
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1740,
+        "p50": 33,
+        "p95": 35.10000002384186,
+        "p99": 66.09999996423721,
+        "mean": 34.48275862068966,
+        "max": 72.5,
+        "gaps200ms": 0,
+        "longestGapMs": 72.5,
+        "hostLookLost": 21
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "C-3.json.gz",
+      "rawSha256": "82bfe368e655ae0d9fdce7de90cbb8e919b89e512eba0b2daa1b2f45028a94d8"
+    },
+    {
+      "condition": "D",
+      "trial": 1,
+      "sourceCommit": "48f180ad87834e84d12d43f46c15e85ea4272d71",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60313.68830000001,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 18.69999998807907,
+          "p95": 28,
+          "p99": 31,
+          "mean": 18.74305555307203,
+          "max": 31
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 16.19999998807907,
+          "p95": 24.69999998807907,
+          "p99": 28,
+          "mean": 16.13863635875962,
+          "max": 28
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 17.100000023841858,
+          "p95": 109.30000001192093,
+          "p99": 113.89999997615814,
+          "mean": 30.750892858420098,
+          "max": 115.10000002384186
+        },
+        "unacked": 0,
+        "firstVia": {
+          "rtc": 117,
+          "ws": 107
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 19.19999998807907,
+          "p95": 27,
+          "p99": 27,
+          "mean": 18.649999999337727,
+          "max": 27
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 19.69999998807907,
+          "p95": 31,
+          "p99": 31,
+          "mean": 19.611111104488373,
+          "max": 31
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1729,
+        "p50": 33,
+        "p95": 63,
+        "p99": 66.09999996423721,
+        "mean": 34.68796992481203,
+        "max": 96.80000001192093,
+        "gaps200ms": 0,
+        "longestGapMs": 96.80000001192093,
+        "hostLookLost": 16
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "D-1.json.gz",
+      "rawSha256": "ff14e365fab958f95481f738871c1a44b6037bee9a307655cd70c59afefa6963"
+    },
+    {
+      "condition": "D",
+      "trial": 2,
+      "sourceCommit": "48f180ad87834e84d12d43f46c15e85ea4272d71",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60323.321099999994,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 18.80000001192093,
+          "p95": 27.200000047683716,
+          "p99": 30.400000035762787,
+          "mean": 19.018055555721123,
+          "max": 30.400000035762787
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 17.899999976158142,
+          "p95": 26.19999998807907,
+          "p99": 29.099999964237213,
+          "mean": 17.535227272320878,
+          "max": 29.099999964237213
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 16.69999998807907,
+          "p95": 111.19999998807907,
+          "p99": 113.30000001192093,
+          "mean": 30.32321428560785,
+          "max": 128.0999999642372
+        },
+        "unacked": 0,
+        "firstVia": {
+          "rtc": 109,
+          "ws": 115
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 19.599999964237213,
+          "p95": 27.200000047683716,
+          "p99": 27.200000047683716,
+          "mean": 19.072222216261757,
+          "max": 27.200000047683716
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 17.400000035762787,
+          "p95": 30.400000035762787,
+          "p99": 30.400000035762787,
+          "mean": 19.20555556482739,
+          "max": 30.400000035762787
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1732,
+        "p50": 33,
+        "p95": 43,
+        "p99": 66.09999996423721,
+        "mean": 34.62615473441109,
+        "max": 67.09999996423721,
+        "gaps200ms": 0,
+        "longestGapMs": 67.09999996423721,
+        "hostLookLost": 16
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "D-2.json.gz",
+      "rawSha256": "d1f8df874ce1565ccd106b046eaca3d868238753f755be3503914f1b4e026684"
+    },
+    {
+      "condition": "D",
+      "trial": 3,
+      "sourceCommit": "48f180ad87834e84d12d43f46c15e85ea4272d71",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60314.946200000006,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 17.400000035762787,
+          "p95": 26.30000001192093,
+          "p99": 28.5,
+          "mean": 17.997222219904263,
+          "max": 28.5
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 15.600000023841858,
+          "p95": 24,
+          "p99": 27.099999964237213,
+          "mean": 16.196590904485095,
+          "max": 27.099999964237213
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 16.5,
+          "p95": 111.5,
+          "p99": 113.10000002384186,
+          "mean": 30.681249998509884,
+          "max": 114.80000001192093
+        },
+        "unacked": 0,
+        "firstVia": {
+          "ws": 103,
+          "rtc": 121
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 17.400000035762787,
+          "p95": 25.899999976158142,
+          "p99": 25.899999976158142,
+          "mean": 17.938888887564342,
+          "max": 25.899999976158142
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 17.5,
+          "p95": 28.5,
+          "p99": 28.5,
+          "mean": 18.13888888226615,
+          "max": 28.5
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1730,
+        "p50": 33,
+        "p95": 63.60000002384186,
+        "p99": 66.10000002384186,
+        "mean": 34.68728323699422,
+        "max": 75.30000001192093,
+        "gaps200ms": 0,
+        "longestGapMs": 75.30000001192093,
+        "hostLookLost": 21
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "D-3.json.gz",
+      "rawSha256": "31e0dd4acfa75c4e60752492b782cc636af957d8eaf8dd1a35b40f0a3a1a7255"
+    },
+    {
+      "condition": "E",
+      "trial": 1,
+      "sourceCommit": "df7e3eb988c95d7e403f30556ceb845cbbcea6ea",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60318.0894,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 19.30000001192093,
+          "p95": 26.899999976158142,
+          "p99": 32.39999997615814,
+          "mean": 19.42083333267106,
+          "max": 32.39999997615814
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 17.399999976158142,
+          "p95": 24.69999998807907,
+          "p99": 30.099999964237213,
+          "mean": 16.740909083323047,
+          "max": 30.099999964237213
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 16.600000023841858,
+          "p95": 109.19999998807907,
+          "p99": 113.10000002384186,
+          "mean": 29.86741071407284,
+          "max": 114
+        },
+        "unacked": 0,
+        "firstVia": {
+          "ws": 106,
+          "rtc": 118
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 19.099999964237213,
+          "p95": 27.5,
+          "p99": 27.5,
+          "mean": 19.472222218910854,
+          "max": 27.5
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 20.69999998807907,
+          "p95": 32.39999997615814,
+          "p99": 32.39999997615814,
+          "mean": 20.561111112435658,
+          "max": 32.39999997615814
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1724,
+        "p50": 33,
+        "p95": 63.700000047683716,
+        "p99": 66.10000002384186,
+        "mean": 34.79535962879796,
+        "max": 69.29999995231628,
+        "gaps200ms": 0,
+        "longestGapMs": 69.29999995231628,
+        "hostLookLost": 18
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "E-1.json.gz",
+      "rawSha256": "a5206e7648cab00bc2682ddaf3bb0212e5cc7cb72ed7f1d4455d02eff1973412"
+    },
+    {
+      "condition": "E",
+      "trial": 2,
+      "sourceCommit": "df7e3eb988c95d7e403f30556ceb845cbbcea6ea",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60317.16660000001,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 20.099999964237213,
+          "p95": 27.799999952316284,
+          "p99": 28.5,
+          "mean": 19.743055556383396,
+          "max": 28.5
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 14.300000011920929,
+          "p95": 25.19999998807907,
+          "p99": 27,
+          "mean": 14.881818184121089,
+          "max": 27
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 16.799999952316284,
+          "p95": 111.30000001192093,
+          "p99": 113.69999998807907,
+          "mean": 30.020535715190427,
+          "max": 131
+        },
+        "unacked": 0,
+        "firstVia": {
+          "rtc": 128,
+          "ws": 96
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 21.899999976158142,
+          "p95": 27.799999952316284,
+          "p99": 27.799999952316284,
+          "mean": 20.89444444908036,
+          "max": 27.799999952316284
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 19.400000035762787,
+          "p95": 28.5,
+          "p99": 28.5,
+          "mean": 20.35000000728501,
+          "max": 28.5
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1726,
+        "p50": 33,
+        "p95": 64.19999998807907,
+        "p99": 66.19999998807907,
+        "mean": 34.753707995385724,
+        "max": 68.29999995231628,
+        "gaps200ms": 0,
+        "longestGapMs": 68.29999995231628,
+        "hostLookLost": 20
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "E-2.json.gz",
+      "rawSha256": "805f694c33c969e6853f936dbb9ceff9b006a9b5fabe4105ba435427731c7c40"
+    },
+    {
+      "condition": "E",
+      "trial": 3,
+      "sourceCommit": "df7e3eb988c95d7e403f30556ceb845cbbcea6ea",
+      "binarySha256": "da1bdf8d0681281b669b9969211f02dcc70338ebf1873aefcf7a5ce429585668",
+      "device": {
+        "android": "16",
+        "sdk": "36",
+        "size": "Physical size: 1080x2392",
+        "density": "Physical density: 450",
+        "chrome": "Chrome/156.0.8078.79"
+      },
+      "connection": "ADB reverse TCP / WebSocket",
+      "workload": {
+        "version": 2,
+        "elapsedMs": 60300.2295,
+        "cycles": 48,
+        "patterns": {
+          "tap": 8,
+          "rapid3": 8,
+          "hold1200ms": 8,
+          "sameButtonTwoContacts": 8,
+          "differentButtons": 8,
+          "stickEightDirectionsWithButton": 8
+        }
+      },
+      "metrics": {
+        "downToSendMs": {
+          "n": 72,
+          "p50": 15.699999988079071,
+          "p95": 27.400000035762787,
+          "p99": 30.299999952316284,
+          "mean": 17.26666666732894,
+          "max": 30.299999952316284
+        },
+        "upToSendMs": {
+          "n": 88,
+          "p50": 17,
+          "p95": 25.099999964237213,
+          "p99": 27.30000001192093,
+          "mean": 16.28636363487352,
+          "max": 27.30000001192093
+        },
+        "ackRttMs": {
+          "n": 224,
+          "p50": 16.599999964237213,
+          "p95": 110.20000004768372,
+          "p99": 112.80000001192093,
+          "mean": 30.048660717372382,
+          "max": 114.80000001192093
+        },
+        "unacked": 0,
+        "firstVia": {
+          "rtc": 119,
+          "ws": 105
+        },
+        "method": "Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない"
+      },
+      "delivery": {
+        "logicalInputs": 224,
+        "accepted": 224,
+        "missing": 0,
+        "duplicates": 0,
+        "orderBufferWait": "未測定：ホストに対応する公開計測点がない"
+      },
+      "trend": {
+        "first15s": {
+          "n": 18,
+          "p50": 17.69999998807907,
+          "p95": 24.80000001192093,
+          "p99": 24.80000001192093,
+          "mean": 18.194444447755814,
+          "max": 24.80000001192093
+        },
+        "last15s": {
+          "n": 18,
+          "p50": 15.400000035762787,
+          "p95": 27.799999952316284,
+          "p99": 27.799999952316284,
+          "mean": 17.277777774466408,
+          "max": 27.799999952316284
+        }
+      },
+      "look": {
+        "moves": 1800,
+        "companionTaps": 0,
+        "n": 1726,
+        "p50": 33,
+        "p95": 63.5,
+        "p99": 66.09999996423721,
+        "mean": 34.74345307067676,
+        "max": 68.59999996423721,
+        "gaps200ms": 0,
+        "longestGapMs": 68.59999996423721,
+        "hostLookLost": 21
+      },
+      "tests": [
+        {
+          "id": "dry-runホストのHTTPと監視接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android初期表示・P1参加",
+          "result": "合格"
+        },
+        {
+          "id": "Android反復入力の独立性能試行",
+          "result": "合格"
+        },
+        {
+          "id": "Android生成操作面・単指ボタン",
+          "result": "合格"
+        },
+        {
+          "id": "Android同一ボタンの2接点保持",
+          "result": "合格"
+        },
+        {
+          "id": "Androidスティック右・解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android診断表示",
+          "result": "合格"
+        },
+        {
+          "id": "Androidタッチ領域と入力処理時間",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中のホストPause・全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android再開と実回転時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Androidバックグラウンド時の全解放",
+          "result": "合格"
+        },
+        {
+          "id": "Android保持中の通信切断・同じ枠への再接続",
+          "result": "合格"
+        },
+        {
+          "id": "Android再読み込み・元の管理権",
+          "result": "合格"
+        },
+        {
+          "id": "Android担当変更後の視点パッド・送信周期",
+          "result": "合格"
+        },
+        {
+          "id": "Android JavaScriptエラー",
+          "result": "合格"
+        }
+      ],
+      "hostExit": {
+        "code": 0,
+        "signal": null
+      },
+      "raw": "E-3.json.gz",
+      "rawSha256": "2ad0a4343e24aef250784860d84846de74097f8e77c1aa0b15fb0067f8f89f31"
+    }
+  ]
+}

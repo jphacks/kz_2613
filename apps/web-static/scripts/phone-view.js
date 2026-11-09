@@ -1,11 +1,11 @@
-import { myActions, generatedKey, buildGenerated } from './generated-controls.js';
+import { myActions, generatedKey, buildGenerated as buildLegacyGenerated } from './generated-controls.js';
 import { SKINS, applySkin, createSkinStore } from './phone-skin.js';
 import { inputWarnText, remoteModel, waitModel } from './phone-model.js';
 
 // 低頻度の状態描画。ポインター送信から独立させ、役割変更時だけ操作面を切り替える。
 import {profileNotice,roleView,gameLabel,outputKeyLabel} from '../app-view.js';
 import { createViewTransition } from './view-transition.js';
-export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindControl,bindStick=()=>{},onRoleOk=()=>{},onTransferHost=()=>{}}) {
+export function createPhoneView({buildGenerated=buildLegacyGenerated,releaseAll,onDiagnosticsOpen=releaseAll,bindControl,bindStick=()=>{},onRoleOk=()=>{},onTransferHost=()=>{}}) {
   const $ = id => document.getElementById(id);
   let lastView = null, lastGen = '', lastTransfer = '', skinGame = null;
   // 画面の色はゲームごとに端末へ保存する (#159)。診断を開くと保持入力は解放済みで、入力の処理には触れない
@@ -26,12 +26,9 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
   // 視点のパッドと感度は、操作定義の画面で視点を担当するときだけそちらへ移す
   const lookParts = [$('pad'), document.querySelector('#lookHome .sens')].filter(Boolean);
   const lookHome = $('lookHome');
-  const reactStore = globalThis.__recooplayPhoneStore;
-  const reactRemote = globalThis.__recooplayRemoteStore;
   // 画面の切り替えの演出 (ワイプ＋流れ星の群れ)。帯は本人のキャラクターの色
   const transition = createViewTransition({ layer: $('viewFx') });
   const transferHost = (p) => { if (confirm(`${p}にホストを譲りますか？`)) onTransferHost(p); };
-  if (reactRemote) reactRemote.transfer = transferHost;
   $('phoneSettingsBtn').addEventListener('click',()=>{
     onDiagnosticsOpen();
     $('phoneConnection').textContent=[$('status').textContent,$('phase').textContent,$('slot').textContent].join('・');
@@ -90,9 +87,8 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
     document.body.dataset.host = String(!!isHost); // 表示の切替だけに使う。権限はホストが判定する
     const wait = waitModel({ me, game, roleTitle: role.title, joined, autoWait });
     const remote = remoteModel({ me, isHost, game, name, autoWait });
-    // React版では待機画面とリモコン画面の表示をReactだけが描く。両方から書くと表示が壊れる (#235)
-    if (reactStore) { reactStore.set(wait); reactRemote.set(remote); }
-    else {
+    // 従来版の比較用描画。React版はこのモジュールを読み込まない。
+    {
       const players = remote.players.map((p) => `<span class="${p.on ? 'on' : ''}">${p.label}</span>`).join('');
       $('waitCharacter').src = wait.character;
       $('waitHeading').textContent = wait.heading;
@@ -131,8 +127,7 @@ export function createPhoneView({releaseAll,onDiagnosticsOpen=releaseAll,bindCon
   }
   /** サーバーが拒否した理由を案内へ出す。次の状態の更新で通常の案内へ戻る */
   render.note = (text) => {
-    if (reactRemote) reactRemote.set({ ...reactRemote.get(), note: text });
-    else $('remoteNote').textContent = text;
+    $('remoteNote').textContent = text;
   };
   return render;
 }

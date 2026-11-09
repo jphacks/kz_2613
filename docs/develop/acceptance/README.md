@@ -2,10 +2,12 @@
 
 2026-11-15の実演、11-12のデモ版固定に向けた実施用手順。既存の[検証状況](../../verification.md)と[実機ゲート](../architecture/validation-gates.md)を補完する。過去の観測やIssueの開閉は、そのまま最新版の合格を意味しない。
 
+製品利用・性能受入は[Wi-Fi前提のユーザー判断](../decisions/2026-11-09-wifi-product-baseline.md)に従う。標準の実機性能試験は下記「Androidの実Wi-Fi経路を検証する自動比較」を使い、同じWi-Fi内で旧版/新版、RTC+WS/WS-only、修正前/後を比べる。USB試験は開発・切り分け用の任意の補助で、利用者向けの接続手段や必須比較にはしない。
+
 ## 実施の境界と順序
 
 1. 対象コミット・exeのSHA-256・操作定義・Minecraft設定を固定し、既存自動試験を実行する。
-2. Android 1台＋dry-runで表示・実通信・入力ライフサイクルを調べる。
+2. Android 1台＋実Wi-Fi＋dry-runで表示・実通信・入力ライフサイクルを調べる。
 3. 人がPCに常駐し、疑似ゲーム画面で実Windows入力と停止を確認する。
 4. Android・iPhoneを含む3台で無線接続・管理権・障害復旧を確認する。
 5. Minecraftの短いデモを反復し、本番配布物で別PCでも確認する。
@@ -22,7 +24,50 @@
 - [画面統一](../decisions/2026-10-26-unify-controls.md)：3人Minecraftも生成画面と`act:<ID>`を使う。役割・入力先・epoch・通信契約は[通信仕様](../../protocol-specification.md)を参照する。
 - 自動復帰は実装初期値と採用判断を分ける。ON/OFF、期限内/外、ホストPAUSEを別々に試す。ユーザー判断でON・期限15秒を採用した（[判断](../decisions/2026-11-06-host-reset-auto-resume.md)）。判断は実機の合格を意味しない。
 
-## Android USB dry-runの再実行
+## 製品前提のWi-Fi dry-run
+
+全ケース共通：次節の記録票を複製し、期待結果と実測を分ける。端末にはA/B/Cの別名を付ける。実Windows入力以降は人が停止操作できる状態を必須とする。
+
+Wi-Fiでdry-runを行う場合は、信頼できる同一LANにPCと端末を接続し、試験用PowerShellから起動する。USB用スクリプトと分けて、LANから到達できる既存のホスト起動経路を使う。
+
+```powershell
+# 同じコミットからビルドしたexeと画面資産を使用する。
+$hostPath = (Resolve-Path apps/host-rs/target/release/recooplay-host.exe).Path
+$env:RECOOPLAY_ROOT = (Get-Location).Path
+$env:RECOOPLAY_DRY_RUN = '1'
+$env:RECOOPLAY_NO_CONFIG = '1'
+$env:RECOOPLAY_FAKE_TARGET = '1'
+$env:RECOOPLAY_STDIN_CONTROL = '1'
+Remove-Item Env:RECOOPLAY_RUNTIME_MEASURE -ErrorAction SilentlyContinue
+& $hostPath
+```
+
+PCの `/app` に表示されるQRで参加し、PCの `/host` で状態と入力を観測する。入力先の疑似喪失はホストの標準入力に `target off`、復帰は `target on`、停止は `stop`、終了は `quit` を入力する。ホットキーと実際の前面切替はAT-D04で別に確認する。終了後は試験用PowerShellを閉じる。監督下の実入力試験は、別の起動で[構築手順の実入力と緊急停止の案内](../handoff/SETUP_WINDOWS.md)に従う。
+
+### Androidの実Wi-Fi経路を検証する自動比較
+
+USB/CDPは操作だけに使用し、製品のHTTP/WS/RTCはLANへ接続する。Wi-Fi性能レビューではUSB専用試験の成功を代替にせず、以下の経路証明を必須にする。端末が利用できる場合はrunner未整備だけを理由に未実施で終えない。
+
+```powershell
+# 既存の認可済みADB、同じソースからビルドしたexeを使用する。
+$adbPath = "$env:LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe"
+$hostPath = (Resolve-Path apps/host-rs/target/release/recooplay-host.exe).Path
+$hostHash = (Get-FileHash -LiteralPath $hostPath -Algorithm SHA256).Hash
+node scripts/device/wifi-network-discover.mjs --adb $adbPath --output data/local/wifi-network.private.json
+node scripts/device/android-dry-run.mjs --adb $adbPath --bin $hostPath --sha256 $hostHash --wifi-network data/local/wifi-network.private.json --benchmark-ms 60000 --condition E-wifi --trial 1
+```
+
+検出は有効なPC Wi-FiアダプターとAndroid wlan0の同一subnetから一意な候補を選び、生アドレスをGit対象外へ保存する。曖昧なら停止して調査する。既存reverse転送やUSBテザリングがある場合は試験を拒否し、他者の転送は削除しない。Firewall/ルーター/ホットスポット設定は変更しない。
+
+Wi-Fi指定では `RECOOPLAY_RUNTIME_MEASURE` を子プロセスへ継承せず、通常の `0.0.0.0` 待受を使う。空きポートを選び、起動したPID・LAN Establishedソケットの両端、Chrome HTTPの実接続先とWS URL、PC専用ページ拒否を検証する。HTTPキャッシュやlocalhost URLを経路証明に使わない。`/api/info` は公開APIなので200が正常で、wifi/hotspot/buildのPC限定情報がないことを確認する。
+
+RTC併用ではgetStatsの `transport.selectedCandidatePairId` で選択したペアを特定し、両端が同じWi-Fiアドレスであることを照合する。5秒ごとの候補対も記録する。選択IDの対応、peer/ICE/DTLS接続、nomination、双方向payloadを要求し、候補チェックリストの一時的in-progressと実接続断を混同しない。failed/waiting/frozenや誤経路、未接続、payloadなしは拒否する。成立表示や候補一覧だけでは合格させない。`--ws-only` は文書開始時からRTCを無効にし、同じLANのWS経路を確認する。
+
+入力別のホスト時刻には `RECOOPLAY_INPUT_TRACE=1` を使用する。dry-run/no-config/fake targetの全フラグを同時に要求し、runtime-measureのループバック制限を変更しない。入力/視点の連番・受信/受理/出力時刻だけをメモリーに蓄積し終了時に保存する。実OS入力はしない。試行ごとに新しいホスト・タブ・生データ・統計を使い、通常診断の累計や前試行を混ぜない（#259）。
+
+共有前に生アドレス・serial・token・接続URLを除去し、残した経路の照合結果と測定値・raw SHA256を記録する。`network.private.json`、元sessionログ、未確認画像をそのまま公開しない。比較を含む完了レビューは、実Wi-Fi必須項目の全判定と経路証拠が揃うまで完了扱いにしない。
+
+## 補助：開発用Android USB dry-runの再実行
 
 既存Node 22以上・認可済みADB・Chrome・確認したソースからビルドしたRust exeを用いる。新しいアプリや依存パッケージは不要。
 
@@ -46,23 +91,6 @@ node scripts/device/android-dry-run.mjs --adb $adbPath --bin $hostPath --sha256 
 結果・画像・ホストログはGit対象外の`data/local/device-acceptance/`へ保存する。raw画像・ログには個人情報が混在する可能性があり、そのまま公開しない。公開は必要な値だけを選んだ記録にする。スクリプトは自分が作成した転送・テストタブ・ホストだけを片付ける。ADBサーバーや既存Chrome全体を停止しない。異常終了時は、自分の実行記録のポートだけ`adb reverse --remove tcp:<port>` / `adb forward --remove tcp:<port>`で除去する。
 
 ## 受入ケース
-
-全ケース共通：次節の記録票を複製し、期待結果と実測を分ける。端末にはA/B/Cの別名を付ける。実Windows入力以降は人が停止操作できる状態を必須とする。
-
-Wi-Fiでdry-runを行う場合は、信頼できる同一LANにPCと端末を接続し、試験用PowerShellから起動する。USB用スクリプトと分けて、LANから到達できる既存のホスト起動経路を使う。
-
-```powershell
-# 同じコミットからビルドしたexeと画面資産を使用する。
-$env:RECOOPLAY_ROOT = (Get-Location).Path
-$env:RECOOPLAY_DRY_RUN = '1'
-$env:RECOOPLAY_NO_CONFIG = '1'
-$env:RECOOPLAY_FAKE_TARGET = '1'
-$env:RECOOPLAY_STDIN_CONTROL = '1'
-Remove-Item Env:RECOOPLAY_RUNTIME_MEASURE -ErrorAction SilentlyContinue
-& $hostPath
-```
-
-PCの `/app` に表示されるQRで参加し、PCの `/host` で状態と入力を観測する。入力先の疑似喪失はホストの標準入力に `target off`、復帰は `target on`、停止は `stop`、終了は `quit` を入力する。ホットキーと実際の前面切替はAT-D04で別に確認する。終了後は試験用PowerShellを閉じる。監督下の実入力試験は、別の起動で[構築手順の実入力と緊急停止の案内](../handoff/SETUP_WINDOWS.md)に従う。
 
 ### AT-D01：端末表示・Pointer（#10）
 
@@ -126,7 +154,7 @@ PCの `/app` に表示されるQRで参加し、PCの `/host` で状態と入力
 PC OS・アプリ実行方式・必要ランタイム：
 端末A/B/CのOS・ブラウザ版・画面・向き：
 Minecraft版・ワールド・Raw Input・感度・キー設定（該当時）：
-経路（USB/無線、WS/RTC、補助の模擬参加者数）：
+製品経路（Wi-Fi構成、WS/RTC、選択ICE、補助の模擬参加者数）／別記するデバッグ制御経路：
 dry-run値・設定読込有無・疑似対象・無注入の確認根拠：
 停止手段・監督者・復帰設定：
 操作手順 / 期待結果 / 合格基準：
@@ -148,6 +176,8 @@ dry-run値・設定読込有無・疑似対象・無注入の確認根拠：
 
 ## 今回の証拠
 
+- [PR #274の総合自己レビューと標準化](2026-11-09-pr274-self-review.md)
+- [PR #274のAndroid入力・通信性能比較](2026-11-09-react-performance.md)
 - [2026-11-06の実行記録](evidence/2026-11-06.md)
 - [Android USBでの実機受入記録](evidence/2026-11-06-android-usb.md)
 - [Android・iOSの2台受入記録](evidence/2026-11-06-two-phones.md)
@@ -155,3 +185,5 @@ dry-run値・設定読込有無・疑似対象・無注入の確認根拠：
 - [AT-D04の実入力開始前チェック](windows-input-preflight.md)
 - [AT-D04の再開準備記録](evidence/2026-11-06-at-d04-restart.md)
 - [対象11PRと追加受入条件](refactor-matrix.md)
+
+実Wi-Fiの移行比較は[性能報告](2026-11-09-react-performance.md)、[主21試行](evidence/pr274-wifi/trials.json)、[修正後6試行](evidence/pr274-wifi-after/trials.json)を参照。先行ACK診断だけ `--ack-observer` を指定し、通常測定へ混ぜない。修正後集計は `summarize-wifi-review.mjs --batch <manifest> --supplement --out <別folder>` を使用し、失敗と旧USBデータを保持する。
