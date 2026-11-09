@@ -73,7 +73,7 @@ package=root/'.venv/branding-verified-dist/ReCooplay-0.1.0-windows-x64.zip'
 with zipfile.ZipFile(package) as z:
     prefix='ReCooplay-0.1.0-windows-x64/'
     checks=[]
-    for f in (root/'apps/web-static').rglob('*'):
+    for f in (root/'apps/web/static').rglob('*'):
         if f.is_file():
             rel=f.relative_to(root).as_posix();data=z.read(prefix+rel)
             assert data==f.read_bytes(),rel

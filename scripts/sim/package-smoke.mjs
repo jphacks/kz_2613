@@ -24,7 +24,7 @@ function inventory(dir, prefix = '') {
   }).sort();
 }
 const expected = ['recooplay-desktop.exe', 'recooplay-host.exe', 'config.example.json',
-  'allow-firewall.ps1', 'LICENSE', 'README.txt', ...['apps/web-static', 'apps/game-profiles']
+  'allow-firewall.ps1', 'LICENSE', 'README.txt', ...['apps/web/static', 'apps/game-profiles']
     .flatMap(dir => inventory(path.join(root, dir)).map(file => `${dir}/${file}`))].sort();
 function verify(dir) {
   const manifest = readJson(path.join(dir, 'package-manifest.json'));
@@ -63,7 +63,7 @@ try {
   console.log('合格: 全同梱物・操作定義・画面・SHA-256を照合');
 
   // 欠落・改変が検査で検出されることを、展開したコピーだけで確認する。
-  const sample = path.join(dir, 'apps/web-static/index.html');
+  const sample = path.join(dir, 'apps/web/static/index.html');
   const bytes = fs.readFileSync(sample);
   fs.writeFileSync(sample, '破損した画面');
   assert.throws(() => verify(dir), /SHA-256不一致/);
@@ -97,10 +97,10 @@ try {
     await sleep(100);
   }
   assert(ready && outcome === undefined, `展開先で起動できません: ${outcome} ${stderr}`);
-  for (const file of inventory(path.join(dir, 'apps/web-static'))) {
+  for (const file of inventory(path.join(dir, 'apps/web/static'))) {
     const response = await fetch(`${url}/${file}`, { signal: AbortSignal.timeout(3000) });
     assert.equal(response.status, 200, `配信失敗: ${file}`);
-    assert.deepEqual(Buffer.from(await response.arrayBuffer()), fs.readFileSync(path.join(dir, 'apps/web-static', file)), `配信内容不一致: ${file}`);
+    assert.deepEqual(Buffer.from(await response.arrayBuffer()), fs.readFileSync(path.join(dir, 'apps/web/static', file)), `配信内容不一致: ${file}`);
   }
   const app = await fetch(`${url}/app`, { signal: AbortSignal.timeout(3000) });
   assert.equal(app.status, 200, '/appを配信できません');

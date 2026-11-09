@@ -1,4 +1,4 @@
-import type {PcInfo} from '../pc/model';
+import type {PcInfo} from '../../pc/model';
 const object=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 const text=(v:unknown):v is string=>typeof v==='string';
 // ホスト由来でも、HTML挿入の前にQR用SVGの要素・属性だけを許可する。

@@ -17,7 +17,7 @@ const TOLERANCE_MS = Number(arg('--tolerance-ms', '10')); // ループバック�
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const percentile = (v, p) => { const s = [...v].sort((a, b) => a - b); return s.length ? s[Math.min(s.length - 1, Math.floor(s.length * p))] : NaN; };
 const round = n => Math.round(n * 10) / 10;
-assert(fs.existsSync(path.join(ROOT, 'apps/web-static/react/phone.js')), 'apps/web で npm run build を実行してください');
+assert(fs.existsSync(path.join(ROOT, 'apps/web/static/react/phone.js')), 'apps/web で npm run build を実行してください');
 
 class Monitor {
   constructor(port) { this.port = port; this.injects = []; this.game = null; this.state = null; }

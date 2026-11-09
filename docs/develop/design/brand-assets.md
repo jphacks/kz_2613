@@ -13,8 +13,8 @@
 | 再利用するSVG | `apps/desktop/icons/icon.svg` | 2048×2048、原PNGをdata URIで無劣化埋め込み |
 | Windowsアプリ | `apps/desktop/icons/32x32.png`、`128x128.png`、`icon.png` | 32・128・256px |
 | Windows実行ファイルのアイコン | `apps/desktop/icons/icon.ico` | 16・24・32・48・64・128・256px、透過あり |
-| ブラウザfavicon | `apps/web-static/assets/icon.png` | 192px |
-| iPhoneホーム画面用 | `apps/web-static/assets/apple-touch-icon.png` | 180px |
+| ブラウザfavicon | `apps/web/static/assets/icon.png` | 192px |
+| iPhoneホーム画面用 | `apps/web/static/assets/apple-touch-icon.png` | 180px |
 | Tauri起動画面favicon | `apps/desktop/ui/assets/icon.png` | 192px |
 
 SVGはパス化したベクター画像ではなく、PNGを内包する自己完結したSVG。自動トレースによる外観の変化を避けるため、この形式を採用した。外部ファイル・フォント・通信は不要だが、拡大時の情報量は原PNGの2048pxまで。約1.18MBあるためブラウザfaviconには既存の縮小PNGを使い続ける。Windows用ICOの各サイズは、256pxを経由せず原画像から直接縮小する。
@@ -45,7 +45,7 @@ python scripts/sim/verify-brand-assets.py --exe apps/desktop/target/release/reco
 
 | 用途 | 提供ファイル | リポジトリ内の原画像 | SHA256 |
 | --- | --- | --- | --- |
-| ロゴ | `C:/Users/kumes/Downloads/新しいフォルダー/新しいフォルダー/rogo.png` | `apps/web-static/assets/logo.png` | `4534d328a5feb9eeacb32342bef486d8ffa4208b1a33a9fe0338c158a028c99d` |
+| ロゴ | `C:/Users/kumes/Downloads/新しいフォルダー/新しいフォルダー/rogo.png` | `apps/web/static/assets/logo.png` | `4534d328a5feb9eeacb32342bef486d8ffa4208b1a33a9fe0338c158a028c99d` |
 | アイコン | `C:/Users/kumes/Downloads/新しいフォルダー/新しいフォルダー/icon.png` | `apps/desktop/icons/icon-source.png` | `8ff959350eae161ab9eda1d01e554dc2824e1e03187eaa7f7492589055a0bed6` |
 
 原画像は変更せず保存。ロゴ3200×2400、アイコン1774×1774。ロゴはPC左上、スマホヘッダー、Tauri起動画面へ配置し、object-fit:containで縦横比と全体を保つ。PCの専用領域は左列の上部112px。巨大見出し・QR・CTAとは重ならない。スマホは高さに応じて48px／36pxへ縮小し、従来どおり高さ600px以下では操作領域を優先してヘッダーロゴを非表示にする。ページのアイコンはその場合も有効。

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
-import type {ControlGroup,ControlPart} from '../controller-layout';
-import type { InputBindings } from '../contracts';
+import type {ControlGroup,ControlPart} from '../shared/controller-layout';
+import type { InputBindings } from '../shared/contracts';
 
 function Stick({ part, bindings }: { part: Extract<ControlPart, { kind: 'stick' }>; bindings?: InputBindings }) {
   const ref = useRef<HTMLDivElement>(null);

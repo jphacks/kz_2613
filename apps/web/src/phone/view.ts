@@ -1,14 +1,14 @@
-import {createLifetime} from '../input/lifetime.ts';
+import {createLifetime} from '../shared/input/lifetime.ts';
 import { flushSync } from 'react-dom';
-import type { PhoneSnapshot, PhoneView, PhoneViewBindings, WaitModel, RemoteModel,PhoneTelemetry } from '../contracts';
-import { createStore } from '../store';
-import { byId } from '../dom';
-import { generatedKey } from '../model/actions.ts';
-import { inputWarnText, waitModel, remoteModel } from '../model/phone.ts';
-import { profileNotice, roleView, gameLabel, outputKeyLabel } from '../model/presentation.ts';
+import type { PhoneSnapshot, PhoneView, PhoneViewBindings, WaitModel, RemoteModel,PhoneTelemetry } from '../shared/contracts';
+import { createStore } from '../shared/store';
+import { byId } from '../shared/dom';
+import { generatedKey } from '../shared/model/actions.ts';
+import { inputWarnText, waitModel, remoteModel } from '../shared/model/phone.ts';
+import { profileNotice, roleView, gameLabel, outputKeyLabel } from '../shared/model/presentation.ts';
 import { createViewTransition } from './transition.ts';
-import { createSkinStore, applySkin } from '../model/skin.ts';
-import {controllerLayout,type ControlGroup} from '../controller-layout';
+import { createSkinStore, applySkin } from '../shared/model/skin.ts';
+import {controllerLayout,type ControlGroup} from '../shared/controller-layout';
 import {createTelemetryPublisher} from './telemetry.ts';
 
 export interface PhoneDisplay {
@@ -30,7 +30,7 @@ export const blocked=createStore<{message?:string}|null>(null);
 export function chooseSkin(id: string) {
   skins.set(display.get().snapshot.game?.title, id); applySkin(document.documentElement, id); skin.set(id);
 }
-export function transferHost(slot: import('../contracts').Slot) {
+export function transferHost(slot: import('../shared/contracts').Slot) {
   if (confirm(`${slot}にホストを譲りますか？`)) bindings?.onTransferHost(slot);
 }
 

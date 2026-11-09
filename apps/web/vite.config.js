@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const webStatic = fileURLToPath(new URL('../web-static/', import.meta.url));
+const webStatic = fileURLToPath(new URL('static/', import.meta.url));
 
 // 製品HTMLを正本にする。比較用の旧HTML/JSをビルド入力へ混ぜない。
 const PAGES = [['phone.html','phone-react.html','phone'],['pc.html','app-react.html','pc']];

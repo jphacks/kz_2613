@@ -1,7 +1,7 @@
 // 表示変更がReadyの権限・Pause・診断を開く際の解放を壊さないことを確認する。
 // OS入力・ブラウザ描画・実端末の検証には使わない。
 import assert from 'node:assert/strict';
-import {createPhoneView} from '../../apps/web-static/scripts/phone-view.js';
+import {createPhoneView} from '../../apps/web/static/scripts/phone-view.js';
 class Element {
   constructor(id='') { this.id=id; this.dataset={}; this.style={}; this.handlers={}; this.textContent=''; this.hidden=false; this.children=[]; this.classList={toggle:(name,on)=>{this[name]=on;}}; }
   addEventListener(name,fn) { this.handlers[name]=fn; }

@@ -14,7 +14,7 @@ const trials=[];
 for(const [condition,folder] of Object.entries(roots)){
   const root=path.resolve('data/local',folder),dir=path.join(root,'data/local/device-acceptance');
   const candidates=fs.readdirSync(dir).map(name=>path.join(dir,name,'summary.json')).filter(f=>fs.existsSync(f)).map(file=>({file,report:JSON.parse(fs.readFileSync(file,'utf8'))}));
-  const assets=inventory(path.join(root,'apps/web-static'));
+  const assets=inventory(path.join(root,'apps/web/static'));
   for(let trial=1;trial<=3;trial++){
     const matches=candidates.filter(({report:r})=>r.condition===condition+'-fixed'&&Number(r.trial)===trial&&r.performance?.workload.version===2&&!r.error);
     assert.equal(matches.length,1,`${condition}${trial}: 成功した独立試行が一つ必要`);

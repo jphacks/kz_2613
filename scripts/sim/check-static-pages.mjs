@@ -1,4 +1,4 @@
-// 静的画面 (apps/web-static/*.html) のインラインスクリプトが構文として読めるかを確認する (ブラウザでの表示確認の代わりではない)
+// 静的画面 (apps/web/static/*.html) のインラインスクリプトが構文として読めるかを確認する (ブラウザでの表示確認の代わりではない)
 //   node scripts/sim/check-static-pages.mjs
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const dir = new URL('../../apps/web-static/', import.meta.url);
+const dir = new URL('../../apps/web/static/', import.meta.url);
 const files = process.argv.length > 2 ? process.argv.slice(2) : fs.readdirSync(dir).filter((f) => f.endsWith('.html')).map((f) => new URL(f, dir));
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-pages-'));
 let failed = 0;

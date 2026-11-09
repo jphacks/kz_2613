@@ -1,9 +1,9 @@
 import { Fragment, useSyncExternalStore, type CSSProperties } from 'react';
-import type { PlayerCardModel, RoleColumnModel } from '../contracts';
+import type { PlayerCardModel, RoleColumnModel } from '../shared/contracts';
 import { PlayerCard, RoleColumn } from './PlayerCards';
 import { pcState, pcModel, connectionState, connectionModel, settingsActions } from './model';
 import { GameTile, KeyEditor, NetworkDiagnostics, Lines } from './parts';
-import { SCREENS, SCREEN_TITLES, GAMES } from '../model/presentation.ts';
+import { SCREENS, SCREEN_TITLES, GAMES } from '../shared/model/presentation.ts';
 
 type PcState = ReturnType<typeof pcState.get>;
 type PcModel = ReturnType<typeof pcModel>;

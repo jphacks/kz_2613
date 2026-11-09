@@ -41,7 +41,7 @@ use axum::Router;
 use crate::config::Config;
 use crate::hub::{Event, Hub, Out};
 
-const WEB_DIR: &str = "apps/web-static";
+const WEB_DIR: &str = "apps/web/static";
 
 #[derive(Clone)]
 struct App {
@@ -62,7 +62,7 @@ impl App {
     }
 }
 
-/// 画面 (apps/web-static/) のある場所 (= リポジトリのルート) を探す。RECOOPLAY_ROOT で指定も可
+/// 画面 (apps/web/static/) のある場所 (= リポジトリのルート) を探す。RECOOPLAY_ROOT で指定も可
 fn find_root() -> PathBuf {
     if let Ok(r) = std::env::var("RECOOPLAY_ROOT") {
         return PathBuf::from(r);
