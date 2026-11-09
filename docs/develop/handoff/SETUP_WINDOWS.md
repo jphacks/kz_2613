@@ -38,6 +38,8 @@
 
 **注意：** `target/` を別の場所からコピーして流用しない。libdatachannelのCMakeキャッシュが元の絶対パスを保持しているため、再ビルドが失敗する。
 
+複数worktreeの比較では、worktreeごとに別の `CARGO_TARGET_DIR` を指定してその場所で構築する。同じtargetを交互に使うと、通常のbuildが完了しても別worktreeのexeを再利用する事例があった（#279では配布試験が資産404を検出）。配布・Android試験には構築直後にSHA-256を固定したexeを使い、`package-smoke.mjs` で展開先の全資産と起動を照合する。依存キャッシュ全体をコピーせず、ビルド環境のPATH・LIBCLANG_PATHも同じ表記で再利用する。
+
 ### このPCでのRust環境
 
 Rustは公式rustupでユーザー領域に導入する。Visual Studio 2022のC++ツールを使用し、Strawberry Perlのポータブル版は `%LOCALAPPDATA%\ReCooplay\StrawberryPerl` に展開する。libclangは開発用のPython仮想環境（例：`%LOCALAPPDATA%\ReCooplay\tools-venv`）へ `python -m pip install libclang` で導入でき、製品の依存関係には含めない。LLVMを導入済みなら `C:\Program Files\LLVM\bin` を指定してもよい（GitHub Actionsはこちら）。

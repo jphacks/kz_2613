@@ -1692,3 +1692,5 @@
 - その配布フォルダのdesktopを専用ポート18133、dry-run/no-config/fake targetで起動。RECOOPLAY_ROOT/HOST_EXEは渡さず自動探索を確認。computer-useで実窓の/app・ロゴ・4人参加待ち・設定・緊急停止表示をAX確認し、Alt+F4で窓消失、desktop終了0、shutdown1件（releaseConfirmed=true、unconfirmed=[]）を確認。PR-A/Bもそれぞれ実窓で確認済み。
 - 旧版タグの現在参照先は702b872 / e265745 / 6ad3153。履歴更新前c271ebe / 9947391 / ee77270とそれぞれtree一致をgit diff --quietで確認し、設計書を更新した。
 - 未実施: 実OS入力での疑似ゲーム照合・実ホットキー/Alt+Tab・iPhone・実指・Minecraft実入力・実無線断・複数実端末・別PCの製品受入。明示許可のないOS入力は実施せず、dry-runや固定traceの成功を実入力の合格とは扱わない。
+
+- #279の実測を受け、SETUP_WINDOWSへworktree別target・固定exeハッシュ・展開後package-smokeを追記。通常buildの成功表示だけで配布バイナリの版を判断しない。製品コードと依存関係は変更せず、git diff --checkとcheck-public-docs成功。
