@@ -206,7 +206,11 @@ try{
       await page.call('Page.reload',{ignoreCache:true});
       await until(async()=>await evaluate(`!!document.getElementById('status')&&document.getElementById('status').textContent.includes('接続')`),'WS-only page');
     }
-    else if(wifi)await page.call('Page.reload',{ignoreCache:true});
+    else if(wifi){
+      await page.call('Page.reload',{ignoreCache:true});
+      // reloadの返却は新しい文書の読込完了ではない。破棄中の旧contextへ評価を送らない。
+      await until(()=>networkEvents.some(e=>e.method==='Network.responseReceived'&&e.params.type==='Document'&&e.params.response.url===testUrl&&e.params.response.status===200),'LANの新文書HTTP応答',20000);
+    }
     report.device.chrome=(await (await http('http://127.0.0.1:' + cdpPort + '/json/version')).json()).Browser;
     await check('Android初期表示・P1参加',async()=>{await until(async()=>await evaluate(`document.getElementById('slot')?.textContent==='P1'&&['接続OK','再接続OK'].includes(document.getElementById('status').textContent)`),'P1');await shot('01-p1-lobby');const view=await evaluate(`({slot:document.getElementById('slot').textContent,status:document.getElementById('status').textContent,path:document.getElementById('path').textContent,width:innerWidth,height:innerHeight,overflow:document.documentElement.scrollWidth>innerWidth})`);assert.equal(view.overflow,false);return view;});
     if(wifi)await check('Wi-Fi HTTP/WS/ICE経路と非ループバック認可',async()=>{
