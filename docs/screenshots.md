@@ -5,7 +5,7 @@
 [製品紹介](../README.md) ／ [ギャラリー](gallery.md) ／ [使い方](usage.md) ／ [フロントエンド仕様書](frontend-specification.md)
 
 > **撮影について**
-> - 2026年10月26日に、最新のRustホストと画面（`apps/web/static`）を使って撮影しました。PCは1920×1080、スマホは402×874（2倍の解像度）です。
+> - 2026年10月26日に、最新のRustホストと画面（`apps/web-static`）を使って撮影しました。PCは1920×1080、スマホは402×874（2倍の解像度）です。
 > - ホストを試験用の設定（dry-run）で動かして撮影しました。PCへのキー入力やゲームの操作は行っていません。そのため、ゲームのウィンドウは疑似のものです。ゲーム選択の画面だけは、開発PCで動かしたPCアプリ（Steam・Epicで13件を検出）の画面です。
 > - QRコード・URLのIPアドレスは説明用のアドレス（192.0.2.10）に、Wi-Fiの名前は「ReCooplay-Demo」に差し替えています。このQRを読み取っても接続できません。
 > - 3人で遊ぶ例です（P1がiPhone、P2がAndroid、P3がiPhone）。2〜4人で遊べるので、4人目の枠は「参加待ち」と表示されています。
@@ -128,3 +128,6 @@ PCのキーボードで Ctrl+Alt+F12 を押すと、すぐに入力を止めて�
 ---
 
 <sub>撮影し直すときは、ホストをビルドしてから `node scripts/sim/capture-screens.mjs --bin apps/host-rs/target/release/recooplay-host.exe` を実行します（Chrome または Edge を使います）。画像は `docs/screenshots/` に保存されます。この撮影はPC上のシミュレーションで、実機での動作確認やゲームとの互換性を示すものではありません。</sub>
+
+
+注記: この撮影記録は旧構成（タグ `legacy-js-last-with-react`）のもの。新構成での実機受入とは区別する。

@@ -15,15 +15,14 @@ const SCRIPT_ROOT=fileURLToPath(new URL('../../',import.meta.url));
 const options = new Map();
 for (let i = 2; i < process.argv.length; i++) {
   const key = process.argv[i];
-  assert(['--bin', '--adb', '--sha256', '--host-only', '--react', '--root', '--benchmark-ms', '--condition', '--trial', '--players', '--legacy', '--ws-only', '--wifi-network', '--ack-observer'].includes(key), '不明な引数');
+  assert(['--bin', '--adb', '--sha256', '--host-only', '--root', '--benchmark-ms', '--condition', '--trial', '--players', '--ws-only', '--wifi-network', '--ack-observer'].includes(key), '不明な引数');
   assert(!options.has(key), '重複した引数');
-  const value = ['--host-only', '--react', '--legacy', '--ws-only', '--ack-observer'].includes(key) ? true : process.argv[++i];
+  const value = ['--host-only', '--ws-only', '--ack-observer'].includes(key) ? true : process.argv[++i];
   assert(value && (value === true || !value.startsWith('--')), '引数の値が必要です');
   options.set(key, value);
 }
 const playerCount=Number(options.get('--players')??3);
 assert([2,3,4].includes(playerCount),'players must be 2, 3 or 4');
-assert(!(options.has('--legacy')&&options.has('--react')),'legacy and react are exclusive');
 const ROOT=path.resolve(options.get('--root') ?? SCRIPT_ROOT);
 const benchmarkMs=Number(options.get('--benchmark-ms') ?? 0);
 assert(benchmarkMs===0 || Number.isInteger(benchmarkMs)&&benchmarkMs>=1000&&benchmarkMs<=120000,'計測時間が不正です');
@@ -54,8 +53,8 @@ let port, cdpPort, base, testUrl, hostClosed, serial;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const until=async(fn,label,ms=10000)=>{const end=Date.now()+ms;while(Date.now()<end){if(await fn())return;await sleep(100);}throw Error(`待機失敗: ${label}`);};
 const report={players:playerCount,wsOnly:options.has('--ws-only'),condition:options.get('--condition'),trial:options.get('--trial'),benchmarkMs,date:new Date().toISOString(),sourceCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:ROOT,encoding:'utf8'}).trim(),sourceDirty:execFileSync('git',['status','--porcelain'],{cwd:ROOT,encoding:'utf8'}).trim().length>0,binarySha256:hash,
-  uiAssets:!options.has('--legacy')&&fs.existsSync(path.join(ROOT,'apps/web/static/react'))?Object.fromEntries(fs.readdirSync(path.join(ROOT,'apps/web/static/react')).filter(f=>f.endsWith('.js')).map(f=>[f,crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT,'apps/web/static/react',f))).digest('hex')])):undefined,
-  safety:{dryRun:true,noConfig:true,fakeTarget:true,osInput:false},ui: options.has('--legacy') ? 'legacy' : options.has('--react') ? 'React + TypeScript alias' : 'React + TypeScript standard',connection:hostOnly ? 'PCループバック' : 'ADB reverse TCP / WebSocket',tests:[],limitations:['実指・iPhone・3実端末・Wi-Fi断・実Windows入力・Minecraft・別PCは未検証。HTTP/WS: ADB reverse TCP; RTC: selected candidate pair not collected']};
+  uiAssets:Object.fromEntries(fs.readdirSync(path.join(ROOT,'apps/web/dist/assets')).filter(f=>f.endsWith('.js')).map(f=>[f,crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT,'apps/web/dist/assets',f))).digest('hex')])),
+  safety:{dryRun:true,noConfig:true,fakeTarget:true,osInput:false},ui:'React + TypeScript standard',connection:hostOnly ? 'PCループバック' : 'ADB reverse TCP / WebSocket',tests:[],limitations:['実指・iPhone・3実端末・Wi-Fi断・実Windows入力・Minecraft・別PCは未検証。HTTP/WS: ADB reverse TCP; RTC: selected candidate pair not collected']};
 let host, mon, browser, tabId, forwarded=false,reversed=false, ping;
 const clients=[];
 const pageErrors=[];
@@ -180,8 +179,8 @@ try{
   report.hostPort = port;
   console.log('試験ホストのポート: ' + port);
   base = 'http://127.0.0.1:' + port;
-  testUrl = (wifi?`http://${wifiNetwork.pc}:${port}`:base) + (options.has('--legacy')?'/index.html?acceptance=':options.has('--react')?'/phone-react.html?acceptance=':'/?acceptance=') + crypto.randomUUID();
-  await http(base+(options.has('--legacy')?'/index.html':options.has('--react')?'/phone-react.html':'/'));
+  testUrl = (wifi?`http://${wifiNetwork.pc}:${port}`:base) + '/?acceptance=' + crypto.randomUUID();
+  await http(base+'/');
   mon=await open(client());mon.send({type:'monitor',page:'host'});
   await until(()=>mon.state(),'monitor');
   assert.equal(mon.state().inject.target.fake,true,'疑似対象が有効ではありません');

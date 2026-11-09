@@ -16,8 +16,8 @@ body[data-slot=P4] { --me: var(--color-character-red); }
 /* 満員・横向きの画面も同じ背景にする。星の模様は ::after で重ねる (#full::before はロゴ) */
 #full, #rotatePrompt { background: inherit; }
 #full::after, #rotatePrompt::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: var(--color-bg-star);
-  -webkit-mask: url('../assets/phone-stars.svg') center / cover no-repeat; mask: url('../assets/phone-stars.svg') center / cover no-repeat; }
+  -webkit-mask: url('/assets/phone-stars.svg') center / cover no-repeat; mask: url('/assets/phone-stars.svg') center / cover no-repeat; }
 .phone-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
 /* 星と流れ星の模様。形は phone-stars.svg、色は白の半透明。光らせない */
 .phone-bg-stars { position: absolute; inset: 0; background: var(--color-bg-star);
-  -webkit-mask: url('../assets/phone-stars.svg') center / cover no-repeat; mask: url('../assets/phone-stars.svg') center / cover no-repeat; }
+  -webkit-mask: url('/assets/phone-stars.svg') center / cover no-repeat; mask: url('/assets/phone-stars.svg') center / cover no-repeat; }

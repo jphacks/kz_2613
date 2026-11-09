@@ -191,3 +191,6 @@ PCホストとTauriアプリをRustでビルドし、静的画面・操作定義
 操作定義やゲームの検出は、実際にそのゲームへ入力が届くことを保証しません。ゲームのキー設定、実行権限、前面ウィンドウ、入力方式によって挙動が異なります。Windows以外のPCホスト、遠隔プレイ、ゲーム映像の配信は対象外です。
 
 実装：[ホスト](../apps/host-rs/src/main.rs) ／ [入力統合](../apps/host-rs/src/hub.rs) ／ [PCアプリ](../apps/desktop/src/main.rs)
+
+
+Web画面・配信物・共有TSの構成は [Web構成](develop/architecture/web-structure.md) を参照する。

@@ -1635,3 +1635,14 @@
 | `ui-input-test` | 73 | 74 |
 | `view-transition-test` | 23 | 23 |
 | `phone-lifecycle-test` | 59 | 59 |
+
+
+## 2026-11-09 — #279 PR-A c: 旧版削除と最終配信構成への切替
+
+- 旧JS/HTMLと比較専用parityを削除。旧表示専用ui-preview・build-ui-gallery・report-pc-fidelityは旧構成依存のため廃止。capture-screensは標準URLと実DOMを使うため維持し、audit-pc-fidelity/measure-pc-referenceは提供画像の解析用として維持。
+- Viteをroot=src / publicDir=public / outDir=distの5 HTML入力にし、phone/pcのCSSをmain.tsxから元と同順序でimport。Vite設定自身もtsconfig.node.jsonのstrict検査へ追加（新依存なし）。Rust/Tauriの探索目印はdist/phone/index.html。package.ps1も同じ配置に更新。
+- [x] 静的配信: 5 HTML、ハッシュ付きJS/CSS、画像、MIME、no-store、CSS背景参照、旧URL404。PC限定のcanonicalizeした実体ディレクトリ検査とroot外拒否。LANの大文字/末尾ドット/::$DATA/重複スラッシュ/直接パスをprotocol-simで検査（60/60）。
+- [x] Android runnerは旧版/alias切替を廃止し標準URLとdistの資産ハッシュを使用。CLI拒否は12/12。実Wi-Fiはprivate設定なしのため未実施。
+- [x] check-static-pagesをビルド済み5 HTML/JS・担当色・PC環境文言の検査へ移植。package-smokeと構造検査も新パスで実行。共有TSは旧ファイルに依存しない。診断・疑似ゲームとoverlayのinline/旧runtimeは次の独立コミット/PRで移植する。
+- `npm run build --prefix apps/web`、host build/test（138成功・2 ignored、probe 4）、desktop build/test（3成功）、rust.ymlに列挙された全Node試験、verify_overlay、check-public-docs成功。shutdown-sim成功、input-probe-sim 12/12。`package.ps1 -Out data/local/package-c` / package-smokeも展開先から全静的配信・正常終了成功。
+- in-app browserで新しい/appを開き、ロゴ・参加待ち4人・QR・設定の描画を目視確認。dry-run環境の緊急停止キー登録エラーの表示は維持。Tauri実窓、実指、iPhone、Minecraft、実無線断はこの時点では未確認。

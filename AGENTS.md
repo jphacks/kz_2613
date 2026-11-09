@@ -31,11 +31,11 @@
 - Windows入力：Win32 `SendInput`（スキャンコードのキー、相対マウス移動、左右ボタン、ホイール）、`timeBeginPeriod(1)`。疑似ゲーム画面で検証済み、Minecraftでは**未検証**。
 - PCホスト：**Rust**（tokio＋axum、状態はhubスレッド1本、`windows` crate、WebRTCは `datachannel`＝libdatachannel）。Rust版はPC上のシミュレーションのみ実施済みで、Rust実機・Minecraft・Tauriは未検証。
 - 通信：ローカルWi-Fi。**WebSocket（JSON、本体）＋WebRTC DataChannel（順序保証・再送なしの速達便）**。STUN/TURNとインターネットは使わない。Windowsモバイルホットスポットを使い、代替はローカルAP。製品利用と性能受入はWi-Fi前提。USB/ADB reverseは開発・原因切り分け用の任意の補助手段で、通常利用・推奨接続・必須の性能比較にはしない。ADB forward/CDPの制御経路と製品通信を区別する（[判断](docs/develop/decisions/2026-11-09-wifi-product-baseline.md)）。
-- 画面：製品UIと入力・通信・接続エンジンは `apps/web/` のReact + TypeScript strict（Vite）。PR #274の標準URL `/`・`/app` とTauriはReact版。入力エンジンはReact描画から独立させる。従来版は比較・診断・復元用に保全する（`apps/web/static/LEGACY.md`）。AndroidのCDP/dry-run比較と、iPhone・実指・Minecraftの製品受入を区別する。
+- 画面：製品UIと入力・通信・接続エンジンは `apps/web/` のReact + TypeScript strict（Vite）。PR #274の標準URL `/`・`/app` とTauriはReact版。入力エンジンはReact描画から独立させる。旧JSは削除し、既存タグ3つでのみ保持する（[構成](docs/develop/architecture/web-structure.md)）。AndroidのCDP/dry-run比較と、iPhone・実指・Minecraftの製品受入を区別する。
 - 入力処理の定数（最低押下60ms・最低解放50ms・視点30Hz・補間4ms・切断判定4秒など）は実測に基づくため、根拠なく変えない。
 - 検証：プロトコル単位のシミュレーション（`RECOOPLAY_DRY_RUN=1`）、疑似ゲーム画面による実入力の照合、Android・iPhone・Windowsの実機試験。
 
-- MVPの画面はNode.js試作品で実機確認した静的HTML/CSS/JavaScriptを基準とし、`apps/web/static/` に取り込んだ。2026-11-07のユーザー判断でReactへ移行し、2026-11-09の依頼でPRブランチの標準化を進めた（[判断](docs/develop/decisions/2026-11-09-react-product-review.md)）。入力・接続の処理はReactの状態管理に載せない。main採用・実ゲームの製品受入とは区別する。
+- MVPの画面はNode.js試作品で実機確認した静的HTML/CSS/JavaScriptを基準にしている。旧構成の観測はタグ `legacy-js-last-with-react` で保持する。2026-11-07のユーザー判断でReactへ移行し、2026-11-09の依頼でPRブランチの標準化を進めた（[判断](docs/develop/decisions/2026-11-09-react-product-review.md)）。入力・接続の処理はReactの状態管理に載せない。main採用・実ゲームの製品受入とは区別する。
 - 協力プレイから一時停止へ移るときは、切断者だけでなく全参加者の合成キー・マウスボタンを直ちに解放する。最低押下時間・連打キューより安全停止を優先し、待機中の入力キュー・視点の未処理分を破棄する。再開時は旧押下を復元せず、新しい押下から始める。
 - 試作品では自動復帰ONで、通信切断後15秒以内に全員が戻ると復帰する挙動を3回確認した。これは観測事実であり、Minecraft実運用での採用判断ではない。実運用の自動復帰はユーザー判断でON、期限15秒とした（[判断](docs/develop/decisions/2026-11-06-host-reset-auto-resume.md)）。ONの実機確認は未実施で、判断は実機の合格を意味しない。ホストの明示PAUSEは設定のON/OFFによらず自動復帰しない。
 - Rust版には入力先ウィンドウ確認とPCの緊急停止を実装し、dry-runで全解放・旧入力破棄を確認した。Minecraft実入力、実際のホットキー、Alt+Tabでの挙動は未検証の安全ゲートとして保持し、完了扱いしない。
@@ -44,8 +44,8 @@
 
 - `apps/host-rs/`：Rust版PCホスト。今後の実装先。
 - `apps/desktop/`：TauriのPCアプリ。Rustホストの子プロセスを起動・終了する。
-- `apps/web/src/`：現役のReact + TypeScript製品UI・入力通信エンジン。`apps/web/pages/` は製品HTML。
-- `apps/web/static/`：MVPのスマホ画面・PC管理画面・疑似ゲーム画面。
+- `apps/web/src/`：現役のReact + TypeScript製品UI・入力通信エンジン。各画面フォルダの `index.html` は製品HTML。
+- `apps/web/public/assets/`：画像。`apps/web/src/styles/`：CSS。`apps/web/dist/`：Vite生成物（Git対象外）。スマホ・PC・overlay・診断・疑似ゲームの5エントリ。
 - `scripts/sim/`：通信契約のシミュレーションと画面の試験（OS入力なし）。
 - 旧Python（FastAPI）・Reactのひな形は #68 で削除した。
 - `docs/`：共有要件、判断、設計、検証の証拠。

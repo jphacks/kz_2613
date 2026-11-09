@@ -36,7 +36,7 @@ if (process.argv.includes('--write-preview')) {
   const out = new URL('../../data/local/react-migration/', import.meta.url);
   fs.mkdirSync(out, {recursive:true});
   const styles = ['colors','tokens','shared','mobile','improved-mobile','phone-skins'].map(name =>
-    `<link rel="stylesheet" href="${new URL(`../../apps/web/static/styles/${name}.css`, import.meta.url).href}">`).join('');
+    `<link rel="stylesheet" href="${new URL(`../../apps/web/src/styles/${name}.css`, import.meta.url).href}">`).join('');
   fs.writeFileSync(new URL('controller-preview.html',out), `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${styles}</head><body data-view="v-gen"><main><section class="view show" id="v-gen"><div id="genControls">${html}</div></section></main></body></html>`);
 }
 console.log('合格: 共通React部品のプレビューはボタン・スティック・視点を描き、実入力へ接続しない');

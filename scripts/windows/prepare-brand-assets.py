@@ -6,7 +6,7 @@ import shutil
 
 root = Path(__file__).resolve().parents[2]
 icons = root / 'apps/desktop/icons'
-web = root / 'apps/web/static/assets'
+web = root / 'apps/web/dist/assets'
 startup = root / 'apps/desktop/ui/assets'
 startup.mkdir(exist_ok=True)
 source_path = icons / 'icon-source.png'

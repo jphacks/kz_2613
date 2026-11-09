@@ -17,7 +17,7 @@
 |:--|:--|
 | `apps/host-rs/` | Rustホスト・入力・認可・状態管理 |
 | `apps/desktop/` | Tauriのプロセス制御・WebView2 |
-| `apps/web/static/` | PC・スマホ・診断・疑似ゲームの画面 |
+| `apps/web/dist/` | PC・スマホ・診断・疑似ゲームの画面 |
 | `apps/game-profiles/` | 製品に同梱する操作定義 |
 | `scripts/sim/` | 通信・画面・配布の検証 |
 | `scripts/profiles/` | 操作定義と参考カタログの生成・抽出 |
@@ -46,3 +46,6 @@ python scripts/verify_overlay.py
 - [開発・引継ぎ資料](handoff/README.md)
 
 現行の契約は[通信仕様](../protocol-specification.md)と[操作定義仕様](../game-profile-specification.md)を参照する。過去の観測・判断は記録を保ち、現在の挙動と異なる場合は日付と適用範囲を併記する。
+
+
+Web画面・配信物・共有TSの構成は [Web構成](architecture/web-structure.md) を参照する。

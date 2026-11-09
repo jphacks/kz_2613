@@ -1,4 +1,4 @@
-// PC アプリ画面の表示ロジック (apps/web/static/app-view.js) の試験。
+// PC アプリ画面の表示ロジック (apps/web/src/shared/model/presentation.ts) の試験。
 // 参加状態・開始可否の表示が、ホストから届く状態 (state.slots / game.canReady など) と一致することを確かめる。
 //   node scripts/sim/app-view-test.mjs
 

@@ -179,7 +179,7 @@ sequenceDiagram
 
 定義の検証状態は定義に付く記録であり、現行プログラム・全人数・全端末の受入結果ではありません。カタログ502件は502タイトルの動作保証ではありません。Unrealの修飾キー付き複合入力、Sourceのexec・aliasの評価、個々のゲームの設定階層や保護機構への対応には制約があります。
 
-実装：[定義・割当](../apps/host-rs/src/profiles.rs) ／ [設定読取り](../apps/host-rs/src/keybinds.rs) ／ [生成画面](../apps/web/static/scripts/generated-controls.js) ／ [カタログ照合](../scripts/sim/profile-catalog-test.mjs)
+実装：[定義・割当](../apps/host-rs/src/profiles.rs) ／ [設定読取り](../apps/host-rs/src/keybinds.rs) ／ [生成画面](../apps/web/src/shared/controller-layout.ts) ／ [カタログ照合](../scripts/sim/profile-catalog-test.mjs)
 
 ---
 

@@ -108,3 +108,6 @@ flowchart LR
 - Rust版はCtrl+Cで終了するとき、全出力を解放してからログを書き出して終了する。
 - PCアプリの枠はTauri（WebView2）を予定している。使えない場合は通常のブラウザで `http://localhost:8080/host` と `/game` を開く。
 - 外部CDN・フォント・クラウドは使わない。
+
+
+画面の正本は `apps/web/src/<画面>/`、共有処理は `shared/`、配信物は `apps/web/dist/`。詳細は [Web構成](web-structure.md) を参照する。
