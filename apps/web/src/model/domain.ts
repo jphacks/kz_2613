@@ -14,6 +14,8 @@ export interface HostState {
   slots?:SlotState[];games?:DetectedGame[];minecraft?:{launchable?:boolean;image?:boolean}|null;
   network?:{bluetoothAudio?:boolean};gamesScanning?:boolean;game?:PhoneGame;inject?:InjectionState;
 }
-export interface Navigation {screen:string;game:string|null;swap:boolean}
+export type ScreenId='join'|'game'|'roles';
+export interface Navigation {screen:ScreenId;game:string|null;swap:boolean}
 export interface EffectState {view:string;connected:Slot[];lineupOk:boolean}
-export interface UiAction {kind:string;label:string;disabled?:boolean;note?:string;id?:string;alt?:UiAction}
+export type UiActionKind='none'|'next'|'back'|'confirm'|'prepare'|'launch'|'wait'|'swap';
+export interface UiAction {kind:UiActionKind;label:string;disabled?:boolean;note?:string;id?:string;alt?:UiAction}

@@ -1,11 +1,11 @@
 import type {Action,ControllerGame,PhoneGame,Profile,Slot,LaunchState} from '../contracts.ts';
-import type {ClientStats,SlotState,InjectionState,DetectedGame,GameEntry,HostState,Navigation,EffectState,UiAction} from './domain.ts';
+import type {ClientStats,SlotState,InjectionState,DetectedGame,GameEntry,HostState,Navigation,EffectState,UiAction,ScreenId} from './domain.ts';
 import type {PcInfo} from '../pc/model';
 // PC アプリ画面 (app.html) の表示内容を、ホストの状態 (state / game / inject) から作る。
 // 画面の部品に依存しない純粋な関数だけを置き、Node の試験 (scripts/sim/app-view-test.mjs) で表示とサーバー状態の一致を確かめる。
 // 開始・準備・再開できるかはサーバーの canReady・canPrepare・canResume をそのまま使い、画面側で判定し直さない。
 
-export const SCREENS = ['join', 'game', 'roles'];
+export const SCREENS: readonly ScreenId[] = ['join', 'game', 'roles'];
 
 // 参加人数 (#57)。2〜4人で遊び、Ready の時点で接続している人数で分担を決める (ホストが判定する)
 export const MIN_PLAYERS = 2;
@@ -326,7 +326,7 @@ export function rolesAction(game: PhoneGame | null, list: GameEntry[]): UiAction
   }
   if (game.phase !== 'lobby') return { kind: 'none', label: '準備中', disabled: true };
   const entry = list.find((g) => g.id === game.title);
-  const prepare = { kind: 'prepare', label: 'ゲームを準備する', disabled: !game.canPrepare };
+  const prepare: UiAction = { kind: 'prepare', label: 'ゲームを準備する', disabled: !game.canPrepare };
   if (!entry?.launchable) return { ...prepare, note: `${entry?.name || 'ゲーム'}は自動で起動できません。手動で起動してから準備してください` };
   const launch = launchView(game.launch, entry.id);
   if (!launch) return { kind: 'launch', label: 'ゲームを起動する', id: entry.id, disabled: !game.canLaunch };
