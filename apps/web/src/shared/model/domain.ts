@@ -19,3 +19,9 @@ export interface Navigation {screen:ScreenId;game:string|null;swap:boolean}
 export interface EffectState {view:string;connected:Slot[];lineupOk:boolean}
 export type UiActionKind='none'|'next'|'back'|'confirm'|'prepare'|'launch'|'wait'|'swap';
 export interface UiAction {kind:UiActionKind;label:string;disabled?:boolean;note?:string;id?:string;alt?:UiAction}
+
+export interface PcInfo {
+  port: number; build?: {version: string; commit?: string|null};
+  wifi?: {ssid: string; qr: string}|null; hotspot?: {on: boolean}|null;
+  urls?: {url: string; qr: string; hotspot?: boolean}[];
+}

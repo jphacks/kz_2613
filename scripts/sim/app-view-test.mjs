@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-const { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } = await import(process.env.RECOOPLAY_TEST_TS === '1' ? '../../apps/web/src/shared/model/presentation.ts' : '../../apps/web/static/app-view.js');
+const { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } = await import('../../apps/web/src/shared/model/presentation.ts');
 
 const results = [];
 function test(name, fn) {

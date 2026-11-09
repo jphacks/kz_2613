@@ -22,11 +22,8 @@ export const settingsActions: PcActions = {
   setRotation: seconds => actions?.setRotation(seconds),
   setKey: (action, output) => actions?.setKey(action, output),
 };
-export interface PcInfo {
-  port: number; build?: {version: string; commit?: string|null};
-  wifi?: {ssid: string; qr: string}|null; hotspot?: {on: boolean}|null;
-  urls?: {url: string; qr: string; hotspot?: boolean}[];
-}
+export type {PcInfo} from '../shared/model/domain.ts';
+import type {PcInfo} from '../shared/model/domain.ts';
 export const connectionState = createStore<{info: PcInfo | null; message: string; busy: boolean; loaded: boolean}>({info: null, message: '', busy: false, loaded: false});
 export function connectionModel() {
   const {info, message, busy, loaded} = connectionState.get();

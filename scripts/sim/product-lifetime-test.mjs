@@ -1,6 +1,6 @@
 // 製品TSランタイムを停止した後、旧イベント・タイマーが送信を再開しないことを確認する。
 import assert from 'node:assert/strict';
-process.env.RECOOPLAY_TEST_TS='1';
+
 const {controllerHarness}=await import('./fixtures/phone-harness.mjs');
 const h=controllerHarness();await h.ready();
 const button=h.control('act:jump');button.fire('pointerdown');
