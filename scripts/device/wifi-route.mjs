@@ -52,7 +52,7 @@ export function validateSelectedPairs(stats,network) {
   return stats.map((s,index)=>{
     assert(s.transport?.type==='transport'&&s.transport.selectedCandidatePairId===s.pair.id,'transportと選択候補ペアのIDが一致しない');
     assert(s.pair.localCandidateId===s.local?.id&&s.pair.remoteCandidateId===s.remote?.id,'候補ペアと両端候補IDが一致しない');
-    assert(s.pair.state==='succeeded'&&s.pair.nominated,'選択候補ペアが成功していない');
+    assert(s.pair.state==='succeeded'&&s.pair.nominated,'選択候補ペアが成功していない: '+JSON.stringify({state:s.pair.state,nominated:s.pair.nominated}));
     assert(s.local?.address===network.android,'RTC local candidateはAndroid wlan0でなければならない');
     assert(s.remote?.address===network.pc,'RTC remote candidateはPCのWi-Fi LANでなければならない');
     assert.equal(s.local.protocol,'udp');assert.equal(s.remote.protocol,'udp');

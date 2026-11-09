@@ -1541,3 +1541,7 @@
 - `node --experimental-strip-types scripts/sim/telemetry-publisher-test.mjs`：成功（callback内の通知なし/複数patch統合/snapshot不変/取消し/破棄後停止/新寿命）。`npm run build --prefix apps/web`：strict/Vite成功。`node scripts/sim/product-web-test.mjs`：全成功、製品TS35モジュール、旧JS依存/循環/型検査回避なし。新publisher試験を共通runner/CIへ含めた。
 - `react-phone-parity.mjs --bin <同host> --samples 20 --tolerance-ms 30`：旧indexと標準/で全比較成功。PC headlessのタップp95 15.9→3.8ms、視点27.5→29.5回/秒、5寸法/44px/再マウント/停止/標準entryに合格。Androidの性能改善やゲーム反応速度の証拠にはしない。Androidでは次の独立再測定で効果を確認する。
 - 主21試行の完全5秒経路履歴はraw gzipに保全し、索引だけを候補辞書と重複排除時系列へ縮約した。生データ/測定値を削除せず、trials.jsonの重複を減らした。再試験用集約は別manifest/保存先を要求し、主21試行を上書きしない。
+
+- 改修後の先行ACK診断（F、同じWS-only/host47f、224 ACK）は先行p95 105.6ms/従来106.9ms、観測点間p95 0.8ms/p99 1.2ms。改修前Eの2.3/2.9msより短く、診断通知をdispatch外へ移した効果を観測した。先行側のRTTも変動するため、従来ACKの全改善を表示変更や通信速度へ帰属させない。
+- 通常observerへ戻した再試験の初回は入力60秒/224件を完走したが、視点40秒付近のlook-1200で選択候補ペアのstate/nominated検証に失敗し停止した。直前look-1050までのsnapshotはsucceeded/true、hostログにその区間のRTC close/failedはなく、原因は未特定。未検証の無線経路を成功扱いにせず、ホストexit0で全解放・自己タブ/forwardを終了。元summary/host trace/radioログ/失敗manifestを保全して、成功6本へ混ぜない。
+- 失敗した瞬間のgetStatsもprivateファイルへ保存するようrunnerを補完し、公開する失敗状態には接続/候補stateとnominatedだけを含める。候補ID・アドレス・UDP・成功/nominationの検証は緩めていない。CLI11/11と経路拒否試験、構文検査が成功。次の再実行で同じ事象が出る場合は、その生統計から原因を調査する。
