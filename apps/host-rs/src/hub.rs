@@ -72,6 +72,7 @@ pub enum Event {
     EmergencyStop { source: &'static str, enqueued_at: Option<Instant> },
     /// 試験用: 前面のウィンドウが入力先かどうかを差し替える (DRY_RUN のときだけ)
     FakeTarget(bool),
+    FakeCursor(bool),
     FakeActivate(bool),
     /// 既定の音の出力先が Bluetooth か (#131)。実機では定期的に調べ、試験では標準入力の "bt on/off" で差し替える
     BluetoothAudio(bool),
@@ -197,6 +198,7 @@ struct Slot {
     rtc_gen: u64,
     rtc_state: &'static str,
     next_iseq: i64, // 次に処理する入力番号 (WebSocket / WebRTC のどちらで届いても番号順に 1 回だけ処理する)
+    release_floor: i64, // 本人の release_inputs 以前に送った入力の最大番号。これ以下の押下は解放後に届いても適用しない (#262)
     ibuf: BTreeMap<i64, (InputMessage, Via)>,
     via_ws: u64,
     via_rtc: u64,
@@ -232,6 +234,7 @@ impl Slot {
             rtc_gen: 0,
             rtc_state: "none",
             next_iseq: 1,
+            release_floor: 0,
             ibuf: BTreeMap::new(),
             via_ws: 0,
             via_rtc: 0,
@@ -315,6 +318,8 @@ pub struct Hub {
     target_fg: Option<Foreground>,
     target_ok: bool,
     fake_target: Option<bool>, // 試験用 (DRY_RUN のときだけ)。Some なら OS に問い合わせない
+    fake_cursor: bool, // 試験用: マウスカーソルが表示されている (ゲームがマウスを捕捉していない) ことにする
+    cursor_free: bool, // 入力先でマウスカーソルが表示されている。マウスを捕捉する定義のゲームではマウス入力を送らない (#261)
     fake_activate: bool,
     // ゲームのキー設定に合わせた、操作 → 送るキーの対応 (#101)。準備・Ready・再開のたびに読み直す
     keybinds: Keybinds,
@@ -440,6 +445,8 @@ impl Hub {
                 .ok()
                 .filter(|_| std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1"))
                 .map(|v| v == "1"),
+            fake_cursor: false,
+            cursor_free: false,
             app_focused: false,
             desktop: std::env::var("RECOOPLAY_DESKTOP").as_deref() == Ok("1"),
         };
@@ -747,6 +754,8 @@ impl Hub {
             // 入力が PC に届く状態か (注入モード・入力先のウィンドウ)。スマホに「届いていない」ことを知らせる
             "inputActive": self.can_inject(),
             "inputTarget": self.inject == InjectMode::On && !self.target_ok,
+            // ゲームがメニュー・持ち物などでマウスを捕捉していないため、マウス操作を止めている (#261)
+            "mouseBlocked": self.mouse_blocked(),
         })
     }
 
@@ -793,6 +802,12 @@ impl Hub {
                 // 常時 ON でも、前面のウィンドウが入力先 (Minecraft) のときだけ
                 InjectMode::On => self.target_ok,
             }
+    }
+
+    /// 入力先がマウスを捕捉していない (メニュー・持ち物を開いている) ため、マウスの押下・ホイール・視点を送らない (#261)。
+    /// キーは止めない (Escで戻れるように)。カーソルの表示状態は入力先の前面確認と同じ周期で調べる
+    fn mouse_blocked(&self) -> bool {
+        self.inject == InjectMode::On && self.target_ok && self.cursor_free && self.profile.as_ref().is_some_and(|p| p.captures_mouse)
     }
 
     fn inject_snapshot(&self) -> Value {
@@ -1249,6 +1264,19 @@ impl Hub {
         self.pump(idx);
     }
 
+    /// スマホ1台のblur・回転・非表示などで、その端末の押下だけを解放する (#262)。
+    /// 解放要求より前に送られた入力が後から届いても押下を適用しないよう、番号の下限を記録する。
+    fn release_slot_inputs(&mut self, idx: usize, floor: i64) {
+        let name = SLOT_NAMES[idx];
+        let Some(slot) = self.slots[idx].as_mut() else { return };
+        slot.release_floor = slot.release_floor.max(floor);
+        slot.pressed.clear();
+        self.release_outputs(Some(name));
+        if self.look.owner() == name { self.reset_look(); }
+        self.log("release_inputs", json!({ "slot": name, "iseq": floor }));
+        self.push_game();
+    }
+
     /// 切断・停止時のup要求は、出力ごとの状態を無効化した直後に順次送る。
     fn release_outputs(&mut self, slot: Option<&'static str>) {
         for idx in 0..OUTPUTS.len() {
@@ -1269,7 +1297,7 @@ impl Hub {
         let down = state == "down";
         let o = &OUTPUTS[idx];
         if let Kind::Wheel { notches } = o.kind {
-            if !down || !self.can_inject() {
+            if !down || !self.can_inject() || self.mouse_blocked() {
                 return;
             }
             let ok = self.input.wheel(notches);
@@ -1282,6 +1310,9 @@ impl Hub {
         }
         // 押下は注入可能な時だけ受け付ける。解放は常に通す (押しっぱなしを残さない)
         if down && !self.can_inject() {
+            return;
+        }
+        if down && matches!(o.kind, Kind::Mouse { .. }) && self.mouse_blocked() {
             return;
         }
         self.set_output(idx, SLOT_NAMES[slot], down);
@@ -1338,7 +1369,7 @@ impl Hub {
     }
 
     fn look_tick(&mut self) {
-        let allowed = self.game.phase == Phase::Coop && self.can_inject();
+        let allowed = self.game.phase == Phase::Coop && self.can_inject() && !self.mouse_blocked();
         if let Some(movement) = self.look.tick(Instant::now(), allowed) {
             self.input.mouse_move(movement.dx, movement.dy);
             self.look.record_output(movement);
@@ -1403,6 +1434,30 @@ impl Hub {
             self.target_fg = fg;
             self.push_state_throttled();
         }
+        self.check_cursor();
+    }
+
+    /// 入力先でマウスカーソルが表示されている (ゲームがマウスを捕捉していない) か (#261)。マウスを捕捉する定義のゲームだけ調べる
+    fn check_cursor(&mut self) {
+        let captures = self.profile.as_ref().is_some_and(|p| p.captures_mouse);
+        let free = self.target_ok && captures && match self.fake_target {
+            Some(_) => self.fake_cursor,
+            None => crate::focus::cursor_visible().unwrap_or(false),
+        };
+        if free == self.cursor_free { return; }
+        self.cursor_free = free;
+        if self.mouse_blocked() {
+            // 押したままのマウスボタンと視点の未処理分を捨てる。キーと進行状態(epoch)は変えない
+            for idx in 0..OUTPUTS.len() {
+                if matches!(OUTPUTS[idx].kind, Kind::Mouse { .. }) && self.outputs[idx].release(None, Instant::now()) {
+                    self.apply_output(idx, false, "system");
+                }
+            }
+            self.reset_look();
+        }
+        self.log("mouse_capture", json!({ "free": free }));
+        self.push_game();
+        self.push_state();
     }
 
     // ---------- ゲームの一覧・選択・起動 (#54・#93) ----------
@@ -2011,6 +2066,12 @@ impl Hub {
                     self.check_target();
                 }
             }
+            Event::FakeCursor(free) => {
+                if self.fake_target.is_some() {
+                    self.fake_cursor = free;
+                    self.check_target();
+                }
+            }
             Event::FakeActivate(ok) => {
                 if self.fake_target.is_some() { self.fake_activate = ok; }
             }
@@ -2312,6 +2373,7 @@ impl Hub {
         slot.last_seen = now;
         slot.last_seq = 0;
         slot.next_iseq = num(msg, "nextIseq").map(|n| n as i64).filter(|&n| n >= 1).unwrap_or(1);
+        slot.release_floor = 0;
         slot.look_seq = 0;
         slot.look_cx = 0.0;
         slot.look_cy = 0.0;
@@ -2396,7 +2458,12 @@ impl Hub {
             }
             "release_inputs" if via == Via::Ws => {
                 if msg.get("epoch").and_then(Value::as_u64) == Some(self.game.epoch) {
-                    self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game();
+                    match msg.get("iseq").and_then(Value::as_i64) {
+                        // 送信した本人の入力だけを解放する。他の参加者の押しっぱなしと進行状態(epoch)は変えない (#262)
+                        Some(floor) => self.release_slot_inputs(idx, floor),
+                        // 旧版のスマホ (iseqなし) は従来どおり全参加者を解放してepochを進める
+                        None => { self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); }
+                    }
                 }
             }
             "remote" if via == Via::Ws => self.remote_message(idx, &msg),
@@ -2486,6 +2553,13 @@ impl Hub {
                 "stale_input",
                 json!({ "slot": SLOT_NAMES[idx], "button": button, "state": state, "epoch": epoch, "current": current }),
             );
+            return;
+        }
+        // 本人の解放要求より前に送られた押下が、順序待ちの後に届いたもの。解放後に押しっぱなしを復活させない (#262)
+        if state == "down" && msg.iseq <= self.slots[idx].as_ref().unwrap().release_floor {
+            let conn = self.slots[idx].as_ref().unwrap().conn;
+            self.send(conn, &json!({ "type": "ack", "iseq": msg.raw.get("iseq"), "t": msg.raw.get("t"), "via": via.name(), "stale": true }));
+            self.record("stale_input", json!({ "slot": SLOT_NAMES[idx], "button": button, "state": state, "reason": "released" }));
             return;
         }
         let slot = self.slots[idx].as_mut().unwrap();
@@ -2633,6 +2707,8 @@ mod tests {
             rotation_at: 0,
             role_ack: Vec::new(),
             fake_target: Some(true),
+            fake_cursor: false,
+            cursor_free: false,
             app_focused: false,
             desktop: false,
         };

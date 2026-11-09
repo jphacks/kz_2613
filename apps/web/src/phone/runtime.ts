@@ -276,7 +276,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   function command(cmd: string) { if (isOpen()) session.send({ type: 'command', cmd, epoch: session.game?.epoch }); }
 
   lifetime.listenEvent(document, 'contextmenu', (e) => e.preventDefault());
-  function stopRemote() { releaseAll(); if (isOpen()) session.send({type:'release_inputs',epoch:session.game?.epoch}); }
+  function stopRemote() { releaseAll(); if (isOpen()) session.send({type:'release_inputs',epoch:session.game?.epoch,iseq:lastIseq}); } // iseq: この端末の入力だけを解放し、他の参加者の押下とepochは変えない (#262)
   lifetime.listenEvent(document, 'pointercancel', stopRemote);
   lifetime.listenEvent(portrait, 'change', stopRemote);
   lifetime.listenEvent(window, 'orientationchange', stopRemote);

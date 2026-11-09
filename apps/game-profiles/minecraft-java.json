@@ -9,6 +9,7 @@
     "titleContains": "Minecraft"
   },
   "suitability": "good",
+  "capturesMouse": true,
   "userBindings": { "reader": "minecraft-options", "path": "%APPDATA%/.minecraft/options.txt" },
   "groups": [
     { "id": "movement", "label": "移動", "role": "P1" },

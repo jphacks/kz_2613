@@ -103,7 +103,7 @@ sequenceDiagram
 | `ka` | RTC | `t`。共同操作中50msごとの生存確認 |
 | `rtc-offer / rtc-cand` | WS | `sdp`、または`cand`, `mid` |
 | `remote` | WS | `epoch`, `rseq`, `kind:move/scroll/release`, `dx`, `dy`。P1の非coop時のみ |
-| `release_inputs` | WS | 現在`epoch`。認証済み端末から全解放・保留破棄を要求 |
+| `release_inputs` | WS | 現在`epoch`、`iseq`（その端末が直近に送った入力番号）。`iseq`付きは**送信した端末の押下だけ**を解放し、他の参加者の押下とepochは変えない。この番号以下の押下が解放後に届いても適用しない（#262）。`iseq`なし（旧版のスマホ）は従来どおり全参加者の全解放・保留破棄・epoch更新 |
 | `role_ok` | WS | 現在`epoch`。担当が変わった本人による確認 |
 
 PREPARE / READY / RESUME / OPEN_GAMEは現在epochを必須とします。PREPAREは分担決定後にpreparingへ移すだけで、READYが開始条件を満たしたときだけcoopへ進みます。監視画面からcoopを強制できません。
@@ -143,6 +143,7 @@ PREPARE / READY / RESUME / OPEN_GAMEは現在epochを必須とします。PREPAR
 | `hostReady / prepareStatus / canLaunch` | 準備・起動の状態 |
 | `remoteRoute` | app / game / none |
 | `inputActive / inputTarget` | 入力可能か、onだが対象が前面でないか |
+| `mouseBlocked` | 入力先がマウスを捕捉していない（メニュー・持ち物を開いていてカーソルが表示されている）ため、マウスの押下・ホイール・視点を止めているか（#261）。操作定義が`capturesMouse: true`のゲームだけ。キーは止めない |
 | `autoResume / autoResumeMs / autoResumeUntil` | 自動復帰設定、待機時間、期限 |
 
 `keys.actions`は操作IDから実出力の`{out,label}`またはnullへの対応です。`profile.assignment`は現在接続者への案、`profile.assignments`は人数別の案です。`assigned`が現在の共同操作の認可に使う確定値です。
@@ -298,7 +299,7 @@ P1のリモコンはPC画面と対象ゲームへ排他的に送ります。PC�
 
 ## 安全停止の境界
 
-入力OFF、対象喪失、セッション変更、終了時は合成入力と保留分を解放・破棄します。古いepochの`release_inputs`は新しいセッションに影響させません。ホストのPC経路とゲーム経路は排他的です。未検証の操作定義であっても開始条件が成立すればReadyできますが、割当不能・非対応の種類は拒否します。
+入力OFF、対象喪失、セッション変更、終了時は合成入力と保留分を解放・破棄します。端末ごとのblur・回転・非表示（`release_inputs`）は、その端末の押下だけを解放します（#262）。入力先がマウスを捕捉していない間はマウス入力を送らず、捕捉が戻るまで再開しません（#261）。古いepochの`release_inputs`は新しいセッションに影響させません。ホストのPC経路とゲーム経路は排他的です。未検証の操作定義であっても開始条件が成立すればReadyできますが、割当不能・非対応の種類は拒否します。
 
 実装：[受付](../apps/host-rs/src/main.rs) ／ [通信・認可](../apps/host-rs/src/hub.rs) ／ [DataChannel](../apps/host-rs/src/rtc.rs) ／ [通信試験](../scripts/sim/protocol-sim.mjs)
 
