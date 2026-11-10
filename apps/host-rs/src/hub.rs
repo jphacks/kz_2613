@@ -2826,6 +2826,18 @@ mod tests {
         assert_eq!(h.look.px, 0.0, "解放前の視点を復活させない");
     }
 
+    #[test]
+    fn review_launcher_requires_registered_emergency_hotkey() {
+        let (mut h, _rx) = fixture();
+        h.game.title = "minecraft-java".into();
+        h.game.phase = Phase::Lobby;
+        h.fake_target = None;
+        h.target_ok = false;
+        h.launcher_fg = true;
+        h.hotkey = Err("レビュー用: 登録失敗".into());
+        assert!(!h.remote_launcher_active(), "緊急停止未登録でランチャーへの入力を許可しない");
+    }
+
     fn injections(rx: &mut UnboundedReceiver<Out>) -> Vec<Value> {
         let mut result = Vec::new();
         while let Ok(Out::Text(t)) = rx.try_recv() {
