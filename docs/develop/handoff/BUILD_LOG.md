@@ -1839,3 +1839,12 @@
 - この4件だけの最終組合せで `npm run build --prefix apps/web`（型確認含む）、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/profile-catalog-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/check-public-docs.py`、`git diff --check` は成功。
 - #320のfull.retryMsは任意の非負有限値、端末側の既定満員表示との区別を確認。参加番号の詰め直しは対象外。実スマホ表示は作者の報告と独立追試を区別する。
 - #284/#313のホスト全体の独立ビルドは、sandboxのMSBuildがChecking Build System後に終了1となり、同じ専用targetを通常環境で再構築中。そこから成功を推定せず、旧入力・緊急停止の指摘PRをこの4件に混ぜない。
+
+## 2026-11-11 修正PRの独立再レビュー再開：#284
+
+- 再取得したorigin/mainは155e01c。#284=27c4131、#313=ea44ed1（27c4131を含む）、#314=797f211、#311=75b96a1、#315=31e9319、#321=9332f39。全PRのCIは成功。#284/#315の競合は残る。既存279-web-structureとClaudeの302 worktreeに未コミット変更があり未変更。
+- 既存Codex専用worktreeでcodex/review-resume-20261111を27c4131から作成し、main155e01cを履歴ごとmerge。ローカルのmerge=unionでBUILD_LOGの双方を保持でき、製品コード競合なし。作者ブランチは変更していない。
+- 過去の再現試験をrelease_inputsのlseq/cx/cy境界に合わせ、実Hubを呼ぶreview_resume_tests.rsを追加。RECOOPLAY_DRY_RUN=1、以前から同じworktreeで使う専用CARGO_TARGET_DIRで `cargo test --offline --release --locked --manifest-path apps/host-rs/Cargo.toml review_resume_` を実行。3成功・3失敗。
+- 成功：元の遅着視点拒否＋新累積基準、元の新押下追越し保持、他者保持とPause/緊急停止/前面喪失での全体停止・旧epoch拒否。
+- 追加失敗：新look3(cx105)が解放mark2(cx100)を追い越すと、旧補間待ちも残り期待5に対し105。新down5を保持して解放floor4を適用すると旧down3の連打キューも残り、解放後にdownが2回。iseqありlseqなしの旧クライアントは解放後も旧lookで期待0に対し90。
+- これは実Hubの順序・出力キュー検証であり、実スマホ・実RTC通信・Minecraft・OS入力の受入ではない。再現用のレビュー試験だけを追加し、製品機能は変更していない。

@@ -2627,6 +2627,7 @@ impl Hub {
 
 #[cfg(test)]
 mod tests {
+    include!("review_resume_tests.rs");
     use super::*;
     use std::collections::VecDeque;
     use crate::input::Input;
