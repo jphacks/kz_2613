@@ -299,7 +299,9 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   function command(cmd: string) { if (isOpen()) session.send({ type: 'command', cmd, epoch: session.game?.epoch }); }
 
   lifetime.listenEvent(document, 'contextmenu', (e) => e.preventDefault());
-  function stopRemote() { releaseAll(); if (isOpen()) session.send({type:'release_inputs',epoch:session.game?.epoch,iseq:lastIseq}); } // iseq: この端末の入力だけを解放し、他の参加者の押下とepochは変えない (#262)
+  // iseq: この端末の入力だけを解放し、他の参加者の押下とepochは変えない (#262)。lseq・cx・cy: 解放時点で送り終えた視点。
+  // 解放要求より遅れて届く解放前の視点をホストが捨て、新しいタッチをこの累積値から数えるために送る
+  function stopRemote() { releaseAll(); if (isOpen()) session.send({type:'release_inputs',epoch:session.game?.epoch,iseq:lastIseq,...roleInput.lookMark()}); }
   lifetime.listenEvent(document, 'pointercancel', stopRemote);
   // 止めた指が離れたら案内を消す。次の新しいタッチから入力を受け付ける (stopRemote より後に登録する)
   for (const type of ['pointerup', 'pointercancel'] as const) lifetime.listenEvent(document, type, (e) => { if (needLift.delete((e as PointerEvent).pointerId)) showLiftHint(); });

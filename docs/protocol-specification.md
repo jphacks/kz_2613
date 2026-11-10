@@ -103,7 +103,7 @@ sequenceDiagram
 | `ka` | RTC | `t`。共同操作中50msごとの生存確認 |
 | `rtc-offer / rtc-cand` | WS | `sdp`、または`cand`, `mid` |
 | `remote` | WS | `epoch`, `rseq`, `kind:move/scroll/release`, `dx`, `dy`。P1の非coop時のみ |
-| `release_inputs` | WS | 現在`epoch`、`iseq`（その端末が直近に送った入力番号）。`iseq`付きは**送信した端末の押下だけ**を解放し、他の参加者の押下とepochは変えない。この番号以下の押下が解放後に届いても適用しない（#262）。`iseq`なし（旧版のスマホ）は従来どおり全参加者の全解放・保留破棄・epoch更新 |
+| `release_inputs` | WS | 現在`epoch`、`iseq`（その端末が直近に送った入力番号）、`lseq`・`cx`・`cy`（直近に送った視点の番号と累積値）。`iseq`付きは**送信した端末の押下だけ**を解放し、他の参加者の押下とepochは変えない。この番号以下の押下が解放後に届いても適用しない。解放要求を追い越して先に処理された、この番号より後の押下は残す。`lseq`以下の視点は解放後に届いても適用せず、新しい視点は`cx`・`cy`を基準に差分を取る（#262）。`iseq`なし（旧版のスマホ）は従来どおり全参加者の全解放・保留破棄・epoch更新 |
 | `role_ok` | WS | 現在`epoch`。担当が変わった本人による確認 |
 
 PREPARE / READY / RESUME / OPEN_GAMEは現在epochを必須とします。PREPAREは分担決定後にpreparingへ移すだけで、READYが開始条件を満たしたときだけcoopへ進みます。監視画面からcoopを強制できません。

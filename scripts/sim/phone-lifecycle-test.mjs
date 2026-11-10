@@ -49,6 +49,15 @@ if (process.argv.includes('--repro-shared-pointer')) {
       assert.equal(h.messages().filter(message => message.type === 'release_inputs').length, 1);
     }
   });
+  await test('本人の解放: 送り終えた視点の番号と累積値を載せ、未送信の移動は捨てる (#262 レビュー)', async () => {
+    const h = controllerHarness(); await h.ready(); const pad = h.el('pad');
+    pad.fire('pointerdown'); pad.fire('pointermove', { clientX: 110, clientY: 95 }); h.advance(33);
+    pad.fire('pointermove', { clientX: 140, clientY: 95 }); // 送る前に blur する移動
+    h.window.fire('blur');
+    const looks = h.messages().filter(m => m.type === 'look'), release = h.messages().find(m => m.type === 'release_inputs');
+    assert.deepEqual({ lseq: release.lseq, cx: release.cx, cy: release.cy }, { lseq: looks.at(-1).lseq, cx: looks.at(-1).cx, cy: looks.at(-1).cy });
+    h.advance(100); assert.equal(h.messages().filter(m => m.type === 'look').length, looks.length, '未送信の移動を解放後に送らない');
+  });
   await test('停止境界: 非表示・回転・pagehide・blurで全解放し、非表示/横向きでは新規押下しない', async () => {
     for (const reason of ['hidden', 'portrait', 'orientationchange', 'pagehide', 'blur']) {
       const h = controllerHarness(); await h.ready();

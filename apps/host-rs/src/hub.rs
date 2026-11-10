@@ -208,6 +208,7 @@ struct Slot {
     look_cx: f64, // 視点の累積移動量 (パケットが欠けても次のパケットで取り戻せる)
     look_cy: f64,
     look_lost: u64,
+    press_iseq: BTreeMap<String, i64>, // 押している操作 → その押下の入力番号。古い解放要求で新しい押下を消さない (#262)
 }
 
 impl Slot {
@@ -246,6 +247,7 @@ impl Slot {
             look_cx: 0.0,
             look_cy: 0.0,
             look_lost: 0,
+            press_iseq: BTreeMap::new(),
         }
     }
 }
@@ -1258,14 +1260,33 @@ impl Hub {
 
     /// スマホ1台のblur・回転・非表示などで、その端末の押下だけを解放する (#262)。
     /// 解放要求より前に送られた入力が後から届いても押下を適用しないよう、番号の下限を記録する。
-    fn release_slot_inputs(&mut self, idx: usize, floor: i64) {
+    /// 本人の入力だけを解放する (#262)。floor は端末が解放の時点で送り終えていた入力番号、look はその時点の
+    /// 視点の番号と累積値。解放要求より遅れて届く・先に届く入力の両方の逆順に備える:
+    /// - floor 以下の押下は解放する。floor より後の押下 (解放要求を追い越した新しいタッチ) は残す
+    /// - 視点は look の番号以下を今後受け付けず、累積値の基準を解放時点へ進める (解放前の移動を後から適用しない)
+    fn release_slot_inputs(&mut self, idx: usize, floor: i64, look: Option<(i64, f64, f64)>) {
         let name = SLOT_NAMES[idx];
         let Some(slot) = self.slots[idx].as_mut() else { return };
         slot.release_floor = slot.release_floor.max(floor);
-        slot.pressed.clear();
-        self.release_outputs(Some(name));
-        if self.look.owner() == name { self.reset_look(); }
-        self.log("release_inputs", json!({ "slot": name, "iseq": floor }));
+        let kept: Vec<String> = slot.press_iseq.iter().filter(|(_, &i)| i > floor).map(|(b, _)| b.clone()).collect();
+        slot.pressed.retain(|b| kept.contains(b));
+        slot.press_iseq.retain(|_, i| *i > floor);
+        // 視点: 解放時点までの番号と累積値を基準にする。解放より新しい視点が既に届いていれば、そちらを保つ
+        let newer_look = match look {
+            Some((lseq, cx, cy)) if lseq >= slot.look_seq => {
+                slot.look_seq = lseq; slot.look_cx = cx; slot.look_cy = cy; false
+            }
+            Some(_) => true,
+            None => false,
+        };
+        let now = Instant::now();
+        let keep: BTreeSet<usize> = kept.iter().filter_map(|b| self.resolve_control(idx, b)).collect();
+        for o in 0..OUTPUTS.len() {
+            if keep.contains(&o) { continue; }
+            if self.outputs[o].release(Some(name), now) { self.apply_output(o, false, name); }
+        }
+        if self.look.owner() == name && !newer_look { self.reset_look(); }
+        self.log("release_inputs", json!({ "slot": name, "iseq": floor, "kept": kept, "lseq": look.map(|l| l.0) }));
         self.push_game();
     }
 
@@ -2333,6 +2354,7 @@ impl Hub {
         slot.last_seq = 0;
         slot.next_iseq = num(msg, "nextIseq").map(|n| n as i64).filter(|&n| n >= 1).unwrap_or(1);
         slot.release_floor = 0;
+        slot.press_iseq.clear();
         slot.look_seq = 0;
         slot.look_cx = 0.0;
         slot.look_cy = 0.0;
@@ -2422,7 +2444,13 @@ impl Hub {
                 if msg.get("epoch").and_then(Value::as_u64) == Some(self.game.epoch) {
                     match msg.get("iseq").and_then(Value::as_i64) {
                         // 送信した本人の入力だけを解放する。他の参加者の押しっぱなしと進行状態(epoch)は変えない (#262)
-                        Some(floor) => self.release_slot_inputs(idx, floor),
+                        Some(floor) => {
+                            let look = match (msg.get("lseq").and_then(Value::as_i64), num(&msg, "cx"), num(&msg, "cy")) {
+                                (Some(l), Some(x), Some(y)) if x.is_finite() && y.is_finite() => Some((l, x, y)),
+                                _ => None,
+                            };
+                            self.release_slot_inputs(idx, floor, look)
+                        }
                         // 旧版のスマホ (iseqなし) は従来どおり全参加者を解放してepochを進める
                         None => { self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); }
                     }
@@ -2547,8 +2575,10 @@ impl Hub {
         }
         if state == "down" {
             slot.pressed.insert(button.clone());
+            slot.press_iseq.insert(button.clone(), msg.iseq);
         } else {
             slot.pressed.remove(&button);
+            slot.press_iseq.remove(&button);
         }
         let conn = slot.conn;
         self.send(conn, &json!({ "type": "ack", "iseq": msg.raw.get("iseq"), "t": msg.raw.get("t"), "via": via.name() }));
@@ -2905,6 +2935,50 @@ mod tests {
         assert_eq!((h.look.px, h.look.py), (10.0, 4.0));
         h.accept_look(1, &json!({"epoch":0,"lseq":2,"cx":100,"cy":400}));
         assert_eq!((h.look.px, h.look.py), (10.0, 4.0));
+    }
+
+    #[test]
+    fn own_release_rejects_a_late_look_sent_before_it_and_keeps_the_new_touch_baseline() {
+        // P1 (レビュー指摘): 解放前に送った視点が、WS の解放要求より後に RTC で届いても適用しない
+        let (mut h, _rx) = fixture();
+        h.accept_look(1, &json!({"epoch":1,"lseq":1,"cx":10,"cy":0}));
+        assert_eq!(h.look.px, 10.0);
+        let epoch = h.game.epoch;
+        h.handle_player_message(1, json!({"type":"release_inputs","epoch":1,"iseq":0,"lseq":2,"cx":100,"cy":0}), Via::Ws);
+        assert_eq!((h.look.px, h.game.epoch), (0.0, epoch), "本人の視点の未処理分を捨て、epochは変えない");
+        h.accept_look(1, &json!({"epoch":1,"lseq":2,"cx":100,"cy":0}));
+        assert_eq!(h.look.px, 0.0, "解放前に送った視点を後から適用しない");
+        // 新しいタッチは解放時点の累積値から数える (捨てた移動を混ぜない)
+        h.accept_look(1, &json!({"epoch":1,"lseq":3,"cx":105,"cy":2}));
+        assert_eq!((h.look.px, h.look.py), (5.0, 2.0));
+        // 旧版のスマホ (lseq なし) は視点の基準を変えない
+        h.handle_player_message(1, json!({"type":"release_inputs","epoch":1,"iseq":0}), Via::Ws);
+        h.accept_look(1, &json!({"epoch":1,"lseq":4,"cx":106,"cy":2}));
+        assert_eq!(h.look.px, 1.0);
+    }
+
+    #[test]
+    fn late_own_release_keeps_a_press_that_overtook_it_and_releases_older_ones() {
+        // P2 (レビュー指摘): 新しいタッチの押下 (RTC) が、それより前に送った解放要求 (WS) を追い越しても消さない
+        let (mut h, _rx) = fixture();
+        h.keybinds = Keybinds::build(h.profile.as_ref().unwrap(), None);
+        let w = index("KEY_W");
+        let input = |iseq: i64, state: &str| json!({"iseq":iseq,"epoch":1,"button":"act:forward","state":state,"t":1.0});
+        h.accept_input(0, input(1, "down"), Via::Ws);
+        h.accept_input(0, input(2, "up"), Via::Ws);
+        h.accept_input(0, input(3, "down"), Via::Rtc); // 新しい指
+        h.handle_player_message(0, json!({"type":"release_inputs","epoch":1,"iseq":2}), Via::Ws);
+        assert!(h.slots[0].as_ref().unwrap().pressed.contains("act:forward"), "解放より後の押下の論理保持を残す");
+        assert!(h.outputs[w].holders.contains("P1"), "解放より後の押下の出力を残す");
+        h.accept_input(0, input(3, "down"), Via::Ws); // 同じ番号のWS側は重複として捨てる
+        assert!(h.outputs[w].holders.contains("P1"));
+        // 解放の時点で押していた押下は離す
+        h.accept_input(0, input(4, "up"), Via::Ws);
+        h.accept_input(0, input(5, "down"), Via::Ws);
+        h.handle_player_message(0, json!({"type":"release_inputs","epoch":1,"iseq":5}), Via::Ws);
+        assert!(!h.slots[0].as_ref().unwrap().pressed.contains("act:forward"));
+        assert!(!h.outputs[w].holders.contains("P1"));
+        h.release_outputs(None);
     }
 
     #[test]
