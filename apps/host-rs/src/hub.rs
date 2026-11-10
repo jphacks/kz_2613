@@ -932,7 +932,12 @@ impl Hub {
 
     /// 選んだゲームが閉じたら、ロビーでは PC アプリを前面に戻す (#292)。1回閉じるごとに1回だけ
     fn watch_game_exit(&mut self) {
-        if !self.desktop || self.fake_target.is_some() || dry_run() { return; }
+        if self.fake_target.is_some() || dry_run() { return; }
+        self.return_to_app_after_game_exit();
+    }
+
+    fn return_to_app_after_game_exit(&mut self) {
+        if !self.desktop { return; }
         if self.target_ok || self.game_service.exists(&self.target) { self.game_window_seen = true; return; }
         if !self.game_window_seen || self.game.phase != Phase::Lobby { return; }
         self.game_window_seen = false;
@@ -2992,24 +2997,24 @@ mod tests {
         let (mut h, _rx) = fixture();
         h.game_service = GameService::with_backend(backend.clone());
         h.fake_target = None; h.desktop = true; h.game.phase = Phase::Paused;
-        h.watch_game_exit();
+        h.return_to_app_after_game_exit();
         assert!(h.game_window_seen);
         // 一時停止中に閉じても前面を変えず、ロビーへ戻ってから PC アプリを前面にする
         *backend.open.lock().unwrap() = false; h.target_ok = false;
-        h.watch_game_exit();
+        h.return_to_app_after_game_exit();
         assert!(backend.activated.lock().unwrap().is_empty());
         h.game.phase = Phase::Lobby;
-        h.watch_game_exit();
+        h.return_to_app_after_game_exit();
         assert_eq!(*backend.activated.lock().unwrap(), vec![vec![DESKTOP_PROCESS.to_string()]]);
         // 閉じたままなら繰り返さない
-        h.watch_game_exit();
+        h.return_to_app_after_game_exit();
         assert_eq!(backend.activated.lock().unwrap().len(), 1);
         // ゲームを見ていないまま (未起動) なら前面を変えない
         let (mut h, _rx) = fixture();
         let idle = std::sync::Arc::new(Windows { open: std::sync::Mutex::new(false), activated: Default::default() });
         h.game_service = GameService::with_backend(idle.clone());
         h.fake_target = None; h.target_ok = false; h.desktop = true; h.game.phase = Phase::Lobby;
-        h.watch_game_exit();
+        h.return_to_app_after_game_exit();
         assert!(idle.activated.lock().unwrap().is_empty());
     }
 
