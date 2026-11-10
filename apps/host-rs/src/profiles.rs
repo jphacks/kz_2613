@@ -532,6 +532,24 @@ mod representative_tests {
         }).collect()
     }
 
+    /// Among Us はタスク・緊急ボタンにマウスが、閉じるのにEscが要る (#293)。
+    /// 協力プレイ中は誰かの担当に入っていないと押せないので、2〜4人のどれでも全操作を誰かが持つ
+    #[test]
+    fn among_us_gives_mouse_and_escape_to_a_participant_for_every_player_count() {
+        let p = load("steam-945360");
+        assert!(p.groups.iter().all(|g| g.role.starts_with('P')), "協力プレイ中に押せないグループを作らない");
+        for n in 2..=4 {
+            let a = assignment_for(&p, n);
+            let all: Vec<&String> = a.iter().flatten().collect();
+            for id in ["cursor", "click", "use", "pause", "map", "forward", "left"] {
+                assert_eq!(all.iter().filter(|x| **x == id).count(), 1, "{n}人: {id}");
+            }
+            // カーソルとクリックは同じ人が持つ (ドラッグするタスクがある)
+            assert!(a.iter().any(|s| s.contains(&"cursor".to_string()) && s.contains(&"click".to_string())), "{n}人: {a:?}");
+            assert!(a.iter().all(|s| !s.is_empty()), "{n}人: {a:?}");
+        }
+    }
+
     #[test]
     fn representative_types_follow_rules_and_stay_balanced() {
         for (kind, id) in REPRESENTATIVES {
