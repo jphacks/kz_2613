@@ -176,7 +176,7 @@ if (process.argv.includes('--repro-shared-pointer')) {
     const h = controllerHarness(); await h.ready({ phase: 'paused' }); const socket = h.sockets[0];
     const commands = () => socket.sent.filter(message => message.type === 'command' && message.cmd === 'END');
     h.el('endBtn').fire('click');
-    assert(h.el('phoneConfirm').open); assert.match(h.confirmation.get().message, /ロビーに戻りますか/); assert.equal(commands().length, 0);
+    assert(h.el('phoneConfirm').open); assert.match(h.confirmation.get().message, /分担の画面に戻りますか/); assert.equal(commands().length, 0);
     const pings = socket.sent.filter(message => message.type === 'ping').length;
     for (let i = 0; i < 12; i++) { h.advance(1000); socket.receive({ type: 'pong', t: 0 }); }
     assert(socket.sent.filter(message => message.type === 'ping').length >= pings + 10, '確認の表示中もハートビートを止めない');
