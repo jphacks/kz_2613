@@ -221,9 +221,11 @@ export function roleView(game: PhoneGame | null, slot: Slot) {
     byGroup.get(label)!.items.push(inputKeyLabel(game, a));
   }
   const groups = [...byGroup.values()];
+  // 見出しが入力の種類なので、内容は実際の入力名だけを並べる。「キー：Aキー」のような重複を出さない (#290)
+  const items = [...new Set(groups.flatMap((g) => g.items))];
   return {
     title: groups.map((g) => g.label).join('・') || (ids.length ? '' : '担当なし'),
-    lines: groups.map((g) => `${g.label}：${g.items.join('、')}`),
+    lines: items.length ? [items.join('、')] : [],
   };
 }
 
