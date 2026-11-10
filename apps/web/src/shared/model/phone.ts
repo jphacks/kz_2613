@@ -40,7 +40,7 @@ export function waitModel({ me, game, roleTitle, joined, autoWait }: {me:Slot;ga
 export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHost:boolean;game:PhoneGame;name:string;autoWait?:boolean}) {
   const phase = game.phase;
   let note = game.canReady
-    ? (phase === 'paused' ? `一時停止中${game.reason ? '（' + reasonText(game.reason) + '）' : ''}。リモコンで操作でき、RESUME で協力プレイに戻ります。` : `${name}のメニューを閉じ、プレイ中の画面にしてから、ホストだけがReadyを押します。`)
+    ? (phase === 'paused' ? `一時停止中${game.reason ? '（' + reasonText(game.reason) + '）' : ''}。リモコンで操作でき、RESUME で協力プレイに戻ります。` : `${name}をプレイ中の画面まで進めた後、ホストだけがReadyを押します。`)
     : phase === 'lobby' ? (game.lineupOk
       ? `メンバーと分担を決定しました（${game.connected.length}人）。PCの画面でゲームを起動してから準備へ進めます。`
       : `PCの画面でゲームを選び、メンバーと分担を決定してください（${game.connected.length}人接続、${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べます）。`)
