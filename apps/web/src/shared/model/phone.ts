@@ -33,8 +33,10 @@ export function inputWarnText({ isHost, game, name, notice }: {isHost:boolean;ga
 function routeText(game: PhoneGame, name: string) {
   if (game.remoteRoute === 'app') return 'PCアプリを操作中';
   if (game.remoteRoute === 'game') return `${name}のメニューを操作中`;
+  // Minecraft の公式ランチャー (#287)。PC のマウスを使わずに「プレイ」を押せる
+  if (game.remoteRoute === 'launcher') return 'Minecraftのランチャーを操作中（「プレイ」を押してください）';
   if (game.remoteRoute !== 'none') return '';
-  if (!sendsToGame(game)) return 'PCアプリが前面にないため、リモコンは届きません（ロビーではPCアプリだけを操作します）';
+  if (!sendsToGame(game)) return `PCアプリが前面にないため、リモコンは届きません（ロビーでは${game.title === 'minecraft-java' ? 'PCアプリとMinecraftのランチャー' : 'PCアプリ'}だけを操作します）`;
   if (game.inputTarget) return `${name}が前面にないため、リモコンは届きません`;
   return `リモコンは今は届きません${game.readyReasons?.length ? `（${game.readyReasons[0]}）` : ''}`;
 }

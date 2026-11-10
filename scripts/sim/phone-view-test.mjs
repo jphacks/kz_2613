@@ -100,6 +100,9 @@ const shown=[view().remote.route,view().remote.openGameLabel,view().warning,view
 assert.match(shown,/Outlastのメニューを操作中/);
 assert.match(shown,/Outlastを前面にする/);
 assert.doesNotMatch(shown,/Minecraft|ワールド/);
+// Minecraftのランチャーもリモコンで操作できる (#287)
+update('P1',{phase:'lobby',remoteRoute:'launcher'});
+assert.match(view().remote.route,/ランチャーを操作中/);assert.equal(view().remote.routeBlocked,false);
 // ゲームが前面に残っても、ホストのスマホだけでPCアプリへ戻れる (#292)
 update('P1',{phase:'lobby',remoteRoute:'none',canOpenApp:true});
 assert.equal(view().remote.openAppHidden,false);
