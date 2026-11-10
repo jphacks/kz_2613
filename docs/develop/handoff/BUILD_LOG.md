@@ -1763,3 +1763,10 @@
 - この4件だけの最終組合せで `npm run build --prefix apps/web`（型確認含む）、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/profile-catalog-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/check-public-docs.py`、`git diff --check` は成功。
 - #320のfull.retryMsは任意の非負有限値、端末側の既定満員表示との区別を確認。参加番号の詰め直しは対象外。実スマホ表示は作者の報告と独立追試を区別する。
 - #284/#313のホスト全体の独立ビルドは、sandboxのMSBuildがChecking Build System後に終了1となり、同じ専用targetを通常環境で再構築中。そこから成功を推定せず、旧入力・緊急停止の指摘PRをこの4件に混ぜない。
+
+## 2026-11-11 — #298 ゲーム一覧の誤検出・重複・件数を直す
+
+- 「beta／Battle.net」は、Battle.netアプリ自身の更新用の製品（`agent_beta`、場所 `Agent\beta`）だった。除外を完全一致から前方一致（`agent`・`bna`・`battle.net`）にした。このPCの実際の product.db で、修正前は試験が失敗し、修正後に合格した。
+- Xboxアプリの「Minecraft: Java Edition」（`Microsoft.MinecraftJavaEdition`）は、固定の「Minecraft Java Edition（公式ランチャー）」と同じゲームなので一覧から外した（`Microsoft.4297127D64EC6` のランチャーは以前から除外）。Minecraftのバージョンは一覧に出さず、従来どおり公式ランチャーで選ぶ。統合版の「Minecraft for Windows」（`Microsoft.MinecraftUWP`）は別のゲームなので残す。
+- 一覧の見出しを、並んだ項目の数と合わせた（例「全 7 件（Minecraft、Steam・Epic など 5 件、手動登録 1 件）」）。左の説明は語の途中で折り返さないよう改行位置を決めた。
+- このPCで修正後のホストを起動し、一覧が固定のMinecraft＋6件（Steam 4件、Xboxの統合版、手動登録1件）になることを確認した。`cargo test --release --locked launchers::`（RECOOPLAY_DRY_RUN=1）、`app-view-test` 30/30、`product-web-test`、`check-static-pages`、`npx tsc`・`npm run build` が成功。PCアプリの実画面での目視は未実施。

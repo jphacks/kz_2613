@@ -259,13 +259,13 @@ const SOURCE_LABELS: Record<string,string> = { steam: 'Steam', epic: 'Epic Games
 /** 手動で登録したゲーム (#49・#56)。名前の変更・登録の解除ができる */
 export const isRegistered = (id: string | null) => typeof id === 'string' && id.startsWith('manual:');
 
-/** 一覧の見出しの件数 (ランチャーで見つけたものと手動登録を分けて数える。固定の Minecraft の項目は数えない) */
+/** 一覧の見出しの件数 (ランチャーで見つけたものと手動登録を分けて数える)。先頭の固定の Minecraft も含めて、並んだ項目の数と合わせる (#298) */
 export function gamesCountText(list: GameEntry[], scanning: boolean) {
   if (scanning) return 'インストール済みのゲームを探しています…';
   const found = list.filter((g) => SOURCE_LABELS[g.source] && !['registered', 'manual', 'minecraft'].includes(g.source)).length;
   const registered = list.filter((g) => g.source === 'registered').length;
   if (!found) return registered ? `手動登録 ${registered} 件（Steam・Epic などのランチャーでは見つかりませんでした）` : 'Steam・Epic などのランチャーでゲームは見つかりませんでした';
-  return registered ? `Steam・Epic など ${found} 件・手動登録 ${registered} 件` : `Steam・Epic などで ${found} 件見つかりました`;
+  return `全 ${list.length} 件（Minecraft、Steam・Epic など ${found} 件${registered ? `、手動登録 ${registered} 件` : ''}）`;
 }
 const LAUNCH_TITLES: Record<string,string> = { launching: '起動中…', started: '起動しました', failed: '起動できませんでした', timeout: '起動を確認できませんでした' };
 
