@@ -1746,3 +1746,13 @@
 - **明示的なONの保持**：PC画面の操作設定で「切断から戻ったら自動で再開する」をONにすると、ホストに反映され、`config.json` が `autoResume: true`・`settingsVersion: 2` になった。PCアプリを再起動しても、ホストとPC画面ともONのまま。ONの状態で短い切断（約6秒）を起こすと、`auto resume` で協力プレイへ戻った。
 - 後片付け：試験用の `config.json` は削除した。PCアプリと子ホストは残存なしで終了。
 - 限界：実入力（Minecraft）はなし（dry-run）。iPhone・実機2台以上は未実施。Wi-Fi復帰時に端末が別の保存済みネットワークを選ぶ問題は、製品の範囲外の端末設定だが、会場での運用上の注意になる。
+
+## 2026-11-11 独立PRレビュー・統合準備（途中記録）
+
+- main 4e668d2から専用worktree2つを作成。全Open PR14件・関連Open Issue・レビュー・コメント・CIを取得。作者ブランチとmainは未変更。詳細は `PR_REVIEW_2026-11-11.md`。
+- 候補9件のローカル統合は競合なし。`npm ci`、`npm run build --prefix apps/web`、`node scripts/sim/product-web-test.mjs`、`node scripts/device/look-gap-analysis-test.mjs`、`node scripts/sim/profile-catalog-test.mjs`（502定義）、`node scripts/sim/check-static-pages.mjs`、`python scripts/verify_overlay.py`、`python scripts/check-public-docs.py` は成功。npm offlineはviteのキャッシュ欠落で失敗し、通常取得で復旧。
+- #316は27試行の入力ファイル名を明示列挙して分析スクリプトを再実行し、空白30件（delayed10/mixed20）を再現。全gzを指定すると準備・失敗試行も混ざりtimes欠落で失敗するため、対象27試行に限定した。
+- `node scripts/sim/auxiliary-pages-smoke.mjs --pages overlay,diagnostics,pseudo-game --bin <既存target-284のhost>` はsandboxでChrome起動待ち失敗、通常環境で3画面成功。候補Web資産の描画検証だけであり、候補Rust版・実機入力の証拠ではない。
+- #313の製品runtimeを既存controllerHarnessで実行し、古いstale ACKが押し直した新しい指を解除する不具合を追加試験で再現。#314のsession.rsを `rustc --test` で実行し既存14件成功、Q46のP1担当→P2の追加受入試験は失敗。#315のランチャー経路で緊急停止登録を確認していないことを差分検査で確認。3件とも具体的なPR指摘を投稿。
+- #319のCI失敗実ログはbrowser起動待ち。`gh run rerun 42827051998 --failed` はGitHubの「This workflow run cannot be retried」で失敗。解消済みとは扱わない。
+- #284/#313の `scripts/windows/dev.ps1 -Task host` は初回Perl未検出で失敗、既存ツールの絶対パスと専用CARGO_TARGET_DIRで再構築中。Rust試験と遅着視点の追加再現試験は構築完了後に実行する。実機入力試験・外部マージは未実施。
