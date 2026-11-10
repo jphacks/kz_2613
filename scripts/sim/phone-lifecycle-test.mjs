@@ -211,5 +211,45 @@ if (process.argv.includes('--repro-shared-pointer')) {
     const up = h.inputs().at(-1); socket.receive({ type: 'ack', iseq: up.iseq, via: 'ws', stale: true });
     assert.equal(h.liftHint.get(), false);
   });
+  await test('遅延破棄: 古い押下のstaleは、離して押し直した新しい押下を止めない (#285 レビュー)', async () => {
+    const h = controllerHarness(); await h.ready(); const socket = h.sockets[0];
+    const attack = h.control('act:attack');
+    attack.fire('pointerdown', { pointerId: 1 }); attack.fire('pointerup', { pointerId: 1 });
+    const first = h.inputs().find(m => m.button === 'act:attack' && m.state === 'down');
+    attack.fire('pointerdown', { pointerId: 2 });
+    socket.receive({ type: 'ack', iseq: first.iseq, via: 'ws', stale: true });
+    assert(attack.classList.contains('down'), '新しい押下の表示を残す');
+    assert.deepEqual(states(h, 'act:attack'), ['down', 'up', 'down'], '新しい押下にupを送らない');
+    assert.equal(h.liftHint.get(), false, '案内を出さない');
+    // 同じ押下が続いている間の stale は止める
+    const second = h.inputs().filter(m => m.button === 'act:attack' && m.state === 'down').at(-1);
+    socket.receive({ type: 'ack', iseq: second.iseq, via: 'ws', stale: true });
+    assert(!attack.classList.contains('down')); assert.deepEqual(states(h, 'act:attack'), ['down', 'up', 'down', 'up']);
+    assert.equal(h.liftHint.get(), true);
+    attack.fire('pointerup', { pointerId: 2 }); assert.equal(h.liftHint.get(), false);
+  });
+  await test('遅延破棄: 同じ操作を複数の指で押していれば、最初の押下のstaleで全員を止める (ホスト側に押下がないため)', async () => {
+    const h = controllerHarness(); await h.ready(); const socket = h.sockets[0];
+    const attack = h.control('act:attack');
+    attack.fire('pointerdown', { pointerId: 1 }); attack.fire('pointerdown', { pointerId: 2 }); attack.fire('pointerup', { pointerId: 1 });
+    const down = h.inputs().find(m => m.button === 'act:attack' && m.state === 'down');
+    assert.deepEqual(states(h, 'act:attack'), ['down'], '2本目の指は同じ押下を続ける');
+    socket.receive({ type: 'ack', iseq: down.iseq, via: 'ws', stale: true });
+    assert.deepEqual(states(h, 'act:attack'), ['down', 'up']); assert.equal(h.liftHint.get(), true);
+    attack.fire('pointerup', { pointerId: 2 }); assert.equal(h.liftHint.get(), false);
+  });
+  await test('遅延破棄: スティックで戻して倒し直した後の古いstaleは、新しい押下を止めない', async () => {
+    const h = controllerHarness(); await h.ready(); const socket = h.sockets[0]; const stick = h.document.querySelectorAll('.gen-stick')[0];
+    stick.fire('pointerdown', { pointerId: 1, clientX: 190, clientY: 10 });
+    const first = h.inputs().find(m => m.button === 'act:forward' && m.state === 'down');
+    stick.fire('pointermove', { pointerId: 1, clientX: 100, clientY: 100 });
+    stick.fire('pointermove', { pointerId: 1, clientX: 190, clientY: 10 });
+    assert.deepEqual(states(h, 'act:forward'), ['down', 'up', 'down']);
+    socket.receive({ type: 'ack', iseq: first.iseq, via: 'ws', stale: true });
+    assert.deepEqual(states(h, 'act:forward'), ['down', 'up', 'down'], '倒し直した押下を続ける'); assert.equal(h.liftHint.get(), false);
+    const again = h.inputs().filter(m => m.button === 'act:forward' && m.state === 'down').at(-1);
+    socket.receive({ type: 'ack', iseq: again.iseq, via: 'ws', stale: true });
+    assert.equal(states(h, 'act:forward').at(-1), 'up', '続いている押下のstaleでは止める'); assert.equal(h.liftHint.get(), true);
+  });
   console.log(`${passed}/${passed} 合格（スマホ入力ライフサイクル、複数保持元の回帰を含む、OS入力なし）`);
 }

@@ -84,7 +84,8 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
         const t0 = pending.get(msg.iseq);
         const downControl = downs.get(msg.iseq); downs.delete(msg.iseq);
         // ホストが遅れた押下として実行しなかった (#285 Q25)。押したままの表示を残さず、指を離すよう案内する
-        if (msg.stale && downControl) dropStaleDown(downControl);
+        // 破棄された押下が今も続いているときだけ止める。離して押し直した新しい押下は止めない
+        if (msg.stale && downControl && pressing.get(downControl) === msg.iseq) dropStaleDown(downControl);
         if (t0 != null) {
           pending.delete(msg.iseq);
           via[msg.via] = (via[msg.via] || 0) + 1;
@@ -206,7 +207,8 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
     // epoch: 押した時点の進行状態。PC は状態が変わった後に届いた古い入力を処理しない
     const msg = session.input(obj);
     pending.set(msg.iseq, msg.t);
-    if (obj.state === 'down' && !obj.burst) downs.set(msg.iseq, obj.button);
+    if (obj.state === 'down' && !obj.burst) { downs.set(msg.iseq, obj.button); pressing.set(obj.button, msg.iseq); }
+    else if (obj.state === 'up') pressing.delete(obj.button);
     lastIseq = msg.iseq;
     sent++;
     fast.send(msg);
@@ -247,6 +249,8 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   }
   // 押下の番号 → 操作。ホストが遅れた押下を破棄したと分かるように持つ (ACKで消す)
   const downs = new Map<number,string>();
+  // 操作 → 今続いている押下の番号。ホストが破棄した押下と、押し直した新しい押下を区別する
+  const pressing = new Map<string,number>();
   // 入力を強制的に止めたときに画面へ触れていた指。離すまで「指を離して操作を再開」を出す (#285 Q27)
   const needLift = new Set<number>();
   function showLiftHint() { phoneView.liftHint(needLift.size > 0); }
@@ -263,7 +267,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
     for (const id of [...held.keys()]) releasePointer(id);
 
     owners.releaseAll();
-    downs.clear();
+    downs.clear(); pressing.clear();
     if (needLift.size) showLiftHint();
   }
 
