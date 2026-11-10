@@ -114,6 +114,18 @@ update('P1',{phase:'lobby',remoteRoute:'none',canOpenApp:false});
 assert.equal(view().remote.openAppHidden,true,'PCアプリから起動していなければ出さない');
 update('P2',{phase:'lobby',remoteRoute:'none',canOpenApp:true});
 assert.equal(view().remote.openAppHidden,true,'ホスト以外には出さない');
+// 時間制の役割交代: 予告で次の担当、交代の直後に新しい担当を短く示す。止まっている間・参加していない人には出さない (#161)
+update('P2',{phase:'coop',participants:['P1','P2','P3'],assigned,rotationCount:0});
+assert.equal(h.rotationNotice.get(),'');
+update('P2',{phase:'coop',participants:['P1','P2','P3'],assigned,rotationCount:0,rotationSoon:true,rotationNext:{P1:['look'],P2:['attack'],P3:['forward']}});
+assert.match(h.rotationNotice.get(),/まもなく担当を交代：次は「.+」/);
+const rotated={P1:['look'],P2:['attack'],P3:['forward']};
+update('P2',{phase:'coop',participants:['P1','P2','P3'],assigned:rotated,rotationCount:1});
+assert.match(h.rotationNotice.get(),/担当が交代しました。あなたは「.+」/);
+update('P2',{phase:'paused',participants:['P1','P2','P3'],assigned:rotated,rotationCount:1});
+assert.equal(h.rotationNotice.get(),'','一時停止中は出さない');
+update('P4',{phase:'coop',participants:['P1','P2','P3'],connected:['P1','P2','P3','P4'],assigned:rotated,rotationCount:1,rotationSoon:true,rotationNext:assigned});
+assert.equal(h.rotationNotice.get(),'','参加していない人には出さない');
 update('P1',{phase:'preparing',keys:{controls:{INV:{out:'KEY_R',label:'R'}}}});
 assert.equal(view().inventory,'Rキー','リモコンもゲーム内設定の実際のキーを出す');
 update('P1',{phase:'preparing',keys:{controls:{INV:null}}});

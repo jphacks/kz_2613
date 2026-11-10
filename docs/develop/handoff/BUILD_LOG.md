@@ -1859,3 +1859,12 @@
 - 未確認：実際のランチャーへの実入力で「プレイ」を押せること、ワールドに入るまでスマホだけで進められること、Steam等の他ランチャーで人の操作が要る場面の洗い出し（Among Usは不要だった：#287のコメント）。
 - 2026-11-11 レビュー指摘（P1）への対応：`remote_launcher_active()` が緊急停止ホットキーの登録結果を見ていなかった。ゲームの経路（`remote_game_active()`）と同じく `self.hotkey.is_ok() || self.fake_target.is_some()` を必須にした。試験 `launcher_route_needs_the_emergency_hotkey_like_the_game_route` を追加：疑似入力先なし・登録失敗・記録用InputAdapterで、ランチャーの前面を観測しても `remoteRoute=none` となり、キー・クリック・移動・ホイールのどれも送らないこと、登録成功なら `launcher` になることを確認。修正を外すと失敗することも確認した。`cargo test --release --locked`（RECOOPLAY_DRY_RUN=1、143件成功・2件ignored）。
 - 2026-11-11 レビュー指摘（P2）への対応：古い押下のstale ACKが、離して押し直した新しい押下まで止めていた。スマホは操作ごとに「今続いている押下の番号」（`pressing`）を持ち、upを送ると消す。stale ACKの番号がその操作の今の押下と一致するときだけ止めて案内を出す。同じ操作を複数の指で押している場合は、ホストには最初の押下しかないので、そのstaleで全員を止める（従来どおり）。試験3件（押し直し・複数の指・スティックの倒し直し）を追加し、修正を外すと失敗することを確認。`node scripts/sim/product-web-test.mjs`（phone-lifecycle 21/21）、`npx tsc --noEmit -p apps/web` が成功。
+## 2026-11-10 — #161 時間制の役割交代をQ42/Q44/Q46に合わせる
+
+- 既存実装（1〜3分を選べ、交代のたびに一時停止して全員の確認とホストの再開を待つ）を確定仕様へ変更。間隔は60秒固定（`ROTATION_CHOICES = [0, 60]`）・初期OFF。ロビーへ戻るとOFFに戻す（Q44）。
+- 交代時は協力プレイを止めず、全員の入力を解放→未処理入力・視点を破棄→epochを進めて旧入力を無効化→参加者の順に担当を1つずらす（Q46、N人でN回で元に戻る）。ホスト権限・P番号・キー割当は移さない。確認待ち（roleAck）は使わない。
+- 交代5秒前から `rotationSoon`・`rotationNext` で次の担当を予告し、交代ごとに `rotationCount` を増やす。スマホは非モーダルの案内（`#rotationNotice`、タッチ透過）で予告と交代直後の担当を示す（交代直後の案内は4秒で消える）。一時停止中は数えず、再開で残りから数える。
+- 自動試験：`cargo test --release --locked`（host 139成功・2 ignored、probe 4成功。交代の予告・継続・全解放・巡回・停止中の残り・OFFへの復帰を追加し、旧方式の試験を置換）、`node scripts/sim/protocol-sim.mjs` 60/60（交代の試験を新仕様へ置換）、`node scripts/sim/product-web-test.mjs`、`npm run typecheck/build`、`check-static-pages.mjs`、`check-public-docs.py` 成功。
+- 実機（Android Chrome 1台＝P1、アプリ通信はホットスポットのWi-Fi、USBのCDPで観測、dry-run・疑似入力先、模擬P2）：実時間で待ち、56.5秒時点で予告、60.6秒で交代（一時停止なし）、P1の画面が移動から視点・クリック等へ切り替わり、交代の案内は約5秒後に消えた。
+- 未確認：実スマホ2〜4人での2周期以上、iPhone、Minecraft実入力での操作感、交代中の切断・Wi-Fi断。第三者の試遊（#167）。
+- 2026-11-11 レビュー指摘（P2）への対応：交代の向きが逆だった（3人で元のP1の担当がP3へ移っていた）。`rotated_seats` を、枠の番号順で1つ前の参加者の席（＝担当）を受け継ぐ向きに直した。#161の「現在の参加者順で循環（P1→P2→P3→P1）」に合わせ、席順ではなく枠の番号順で回すので、手動の入れ替え後も P1→P2→P3 の向きになる。単体試験に3人・4人・欠番・入れ替え後を加え、Hubの試験 `role_rotation_follows_slot_order_with_gaps_four_players_and_after_a_manual_swap` で、予告 `rotationNext` と実際の交代の一致、N回で元に戻ることを確認した。protocol-simの確認も「P1の担当がP2へ」に直した。`cargo test --release --locked`（RECOOPLAY_DRY_RUN=1）、`node scripts/sim/protocol-sim.mjs`（60/60）が成功。

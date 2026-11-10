@@ -88,7 +88,7 @@ function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;co
     <p id="commInfo" role="status">{model.comm.text}</p>
   </details>
   <details id="ruleDetails"><summary>遊び方</summary>
-    <label className="comm-setting">時間で担当を交代する <select id="rotationSetting" value={String(game?.rotationSeconds ?? 0)} disabled={model.locked} onChange={event => settingsActions.setRotation(Number(event.currentTarget.value))}><option value="0">しない</option><option value="60">1分ごと</option><option value="120">2分ごと</option><option value="180">3分ごと</option></select></label>
+    <label className="comm-setting">時間で担当を交代する <select id="rotationSetting" value={String(game?.rotationSeconds ?? 0)} disabled={model.locked} onChange={event => settingsActions.setRotation(Number(event.currentTarget.value))}><option value="0">しない</option><option value="60">60秒ごと</option></select></label>
     <p>時間になると一時停止して、全員が新しい担当を確認した後、ホストが再開します。協力プレイ中は変更できません。</p>
   </details>
   <details id="overlayDetails"><summary>観客向け表示（配信・録画）</summary><p>OBSなどのブラウザソースに <code>http://127.0.0.1:ポート/overlay</code> を追加すると、担当と操作を透過で重ねられます。上に出すときは末尾に <code>?position=top</code> を付けます。ゲームの画面には描画しません。</p></details>

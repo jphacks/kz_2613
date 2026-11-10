@@ -1,6 +1,6 @@
 import {Controller} from './Controller';
 import { useSyncExternalStore } from 'react';
-import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked,liftHint,offline,confirmation,answerConfirm } from './view';
+import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked,rotationNotice,liftHint,offline,confirmation,answerConfirm } from './view';
 import { SKINS } from '../shared/model/skin.ts';
 
 type PhoneDisplay = ReturnType<typeof display.get>;
@@ -39,6 +39,7 @@ export function PhoneApp() {
 <OfflineMessage/>
 <FullMessage/>
 <LiftHint/>
+<RotationNotice/>
 </>;
 }
 
@@ -146,6 +147,12 @@ function ConfirmDialog({status}:{status:Status}){
 function OfflineMessage(){
   const visible=useSyncExternalStore(offline.subscribe,offline.get);
   return <div id="offline" role="alert" hidden={!visible}><div className="phone-message"><b>PCのアプリとつながっていません</b><br />再接続しています…<br /><small>PCでRe:Cooplayが起動しているか、スマホが同じWi-Fiにつながっているか確認してください。</small></div></div>;
+}
+
+// 役割交代の予告・交代後の案内 (#161)。非モーダルで、タッチを受け取らない
+function RotationNotice(){
+  const text=useSyncExternalStore(rotationNotice.subscribe,rotationNotice.get);
+  return <div id="rotationNotice" className="rotation-notice" role="status" hidden={!text}>{text}</div>;
 }
 
 function FullMessage(){
