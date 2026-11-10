@@ -87,5 +87,7 @@ export function bindCooperativeInput({getGame,getRole,canLook=()=>getRole()==='P
 
   function release() { stickRelease(); padId = null; accX = accY = 0; moveAt = null; pad?.classList.remove('active'); if(dot)dot.style.display = 'none'; }
   function resetEpoch() { release(); look.seq = look.cx = look.cy = 0; }
-  return {release, resetEpoch, setGeneratedStick, bindLook, dispose(){release();genStick?.dispose();genStick=null;lifetime.dispose();}};
+  // 今入力に使っている指 (スティック・視点パッド)。強制的に止めたとき、指を離すまで再開しないことを案内する (#285 Q27)
+  function activePointers() { return [genStick?.active(), padId].filter((id): id is number => id != null); }
+  return {release, resetEpoch, setGeneratedStick, bindLook, activePointers, dispose(){release();genStick?.dispose();genStick=null;lifetime.dispose();}};
 }

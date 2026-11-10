@@ -172,5 +172,44 @@ if (process.argv.includes('--repro-shared-pointer')) {
     assert.deepEqual(JSON.parse(JSON.stringify(h.peers[1].config)), { iceServers: [] });
     assert.deepEqual(JSON.parse(JSON.stringify(h.peers[1].options)), { ordered: false, maxRetransmits: 0 });
   });
+  await test('復旧: 押したままの指で通信が切れても、再接続後に旧押下・視点を再開せず、離すまで案内を出す (#285 Q26/Q27)', async () => {
+    const h = controllerHarness(); await h.ready(); const old = h.sockets[0];
+    const attack = h.control('act:attack'), pad = h.el('pad');
+    attack.fire('pointerdown', { pointerId: 1 }); pad.fire('pointerdown', { pointerId: 2 });
+    assert.equal(h.liftHint.get(), false, '通常の押下では案内しない');
+    old.close(); h.advance(250);
+    assert.equal(h.liftHint.get(), true, '切断で止めた指に案内を出す');
+    const current = h.sockets.at(-1); current.open();
+    current.receive({ type: 'welcome', slot: 'P1', role: 'ホスト', isHost: true, token: 'test-token', reconnected: true });
+    current.receive({ type: 'game', game: h.game({ epoch: 8 }) });
+    // 同じ指を動かし続けても視点は送らず、押下も復元しない
+    pad.fire('pointermove', { pointerId: 2, clientX: 180 }); h.advance(100);
+    assert.equal(current.sent.filter(m => m.type === 'look' || m.type === 'input').length, 0, '旧タッチで再開しない');
+    assert.equal(h.liftHint.get(), true);
+    attack.fire('pointerup', { pointerId: 1 });
+    assert.equal(h.liftHint.get(), true, 'まだ視点の指が残っている');
+    pad.fire('pointerup', { pointerId: 2 });
+    assert.equal(h.liftHint.get(), false, '全て離したら自動で消す');
+    assert.equal(current.sent.filter(m => m.type === 'input').length, 0);
+    attack.fire('pointerdown', { pointerId: 3 });
+    assert.deepEqual(current.sent.filter(m => m.type === 'input').map(m => [m.button, m.state, m.epoch]), [['act:attack', 'down', 8]], '新しいタッチは入力できる');
+  });
+  await test('遅延破棄: ホストが押下をstaleで返したら押したままの表示を解き、離すまで案内する (#285 Q25/Q27)', async () => {
+    const h = controllerHarness(); await h.ready(); const socket = h.sockets[0];
+    const attack = h.control('act:attack'), jump = h.control('act:jump');
+    attack.fire('pointerdown', { pointerId: 1 }); jump.fire('pointerdown', { pointerId: 2 });
+    const down = h.inputs().find(m => m.button === 'act:attack' && m.state === 'down');
+    socket.receive({ type: 'ack', iseq: down.iseq, via: 'ws', stale: true });
+    assert(!attack.classList.contains('down'), '押下中の表示を解く'); assert(jump.classList.contains('down'), '他の押下は続ける');
+    assert.deepEqual(states(h, 'act:attack'), ['down', 'up']); assert.deepEqual(states(h, 'act:jump'), ['down']);
+    assert.equal(h.liftHint.get(), true);
+    attack.fire('pointerup', { pointerId: 1 }); assert.equal(h.liftHint.get(), false);
+    assert.deepEqual(states(h, 'act:attack'), ['down', 'up'], '離したときに重ねてupを送らない');
+    // 通常のACK・解放のstaleでは何もしない
+    const jumpDown = h.inputs().find(m => m.button === 'act:jump' && m.state === 'down');
+    socket.receive({ type: 'ack', iseq: jumpDown.iseq, via: 'ws' }); jump.fire('pointerup', { pointerId: 2 });
+    const up = h.inputs().at(-1); socket.receive({ type: 'ack', iseq: up.iseq, via: 'ws', stale: true });
+    assert.equal(h.liftHint.get(), false);
+  });
   console.log(`${passed}/${passed} 合格（スマホ入力ライフサイクル、複数保持元の回帰を含む、OS入力なし）`);
 }

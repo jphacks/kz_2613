@@ -82,6 +82,9 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
         if (rtts.length > 500) rtts.shift();
       } else if (msg.type === 'ack') {
         const t0 = pending.get(msg.iseq);
+        const downControl = downs.get(msg.iseq); downs.delete(msg.iseq);
+        // ホストが遅れた押下として実行しなかった (#285 Q25)。押したままの表示を残さず、指を離すよう案内する
+        if (msg.stale && downControl) dropStaleDown(downControl);
         if (t0 != null) {
           pending.delete(msg.iseq);
           via[msg.via] = (via[msg.via] || 0) + 1;
@@ -203,6 +206,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
     // epoch: 押した時点の進行状態。PC は状態が変わった後に届いた古い入力を処理しない
     const msg = session.input(obj);
     pending.set(msg.iseq, msg.t);
+    if (obj.state === 'down' && !obj.burst) downs.set(msg.iseq, obj.button);
     lastIseq = msg.iseq;
     sent++;
     fast.send(msg);
@@ -241,11 +245,26 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
     if (![...held.values()].some(value=>value.element===el)) el.classList.remove('down');
     ctlUp(press.control, pointerId);
   }
+  // 押下の番号 → 操作。ホストが遅れた押下を破棄したと分かるように持つ (ACKで消す)
+  const downs = new Map<number,string>();
+  // 入力を強制的に止めたときに画面へ触れていた指。離すまで「指を離して操作を再開」を出す (#285 Q27)
+  const needLift = new Set<number>();
+  function showLiftHint() { phoneView.liftHint(needLift.size > 0); }
+  function holdingPointers() { return [...held.keys(), ...roleInput.activePointers()]; }
+  function dropStaleDown(control: string) {
+    if (!owners.isHeld(control)) return;
+    for (const [id, press] of [...held]) if (press.control === control) { needLift.add(id); releasePointer(id); }
+    if (owners.isHeld(control)) { for (const id of roleInput.activePointers()) needLift.add(id); roleInput.release(); }
+    showLiftHint();
+  }
   function releaseAll() {
+    for (const id of holdingPointers()) needLift.add(id);
     touchpad.reset(); roleInput.release();
     for (const id of [...held.keys()]) releasePointer(id);
 
     owners.releaseAll();
+    downs.clear();
+    if (needLift.size) showLiftHint();
   }
 
   // 操作ボタンに押下・解放を付ける (操作定義から作ったボタンにも後から付ける、#60)
@@ -278,6 +297,8 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   lifetime.listenEvent(document, 'contextmenu', (e) => e.preventDefault());
   function stopRemote() { releaseAll(); if (isOpen()) session.send({type:'release_inputs',epoch:session.game?.epoch,iseq:lastIseq}); } // iseq: この端末の入力だけを解放し、他の参加者の押下とepochは変えない (#262)
   lifetime.listenEvent(document, 'pointercancel', stopRemote);
+  // 止めた指が離れたら案内を消す。次の新しいタッチから入力を受け付ける (stopRemote より後に登録する)
+  for (const type of ['pointerup', 'pointercancel'] as const) lifetime.listenEvent(document, type, (e) => { if (needLift.delete((e as PointerEvent).pointerId)) showLiftHint(); });
   lifetime.listenEvent(portrait, 'change', stopRemote);
   lifetime.listenEvent(window, 'orientationchange', stopRemote);
   lifetime.listenEvent(window, 'pagehide', stopRemote);

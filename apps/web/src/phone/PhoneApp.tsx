@@ -1,6 +1,6 @@
 import {Controller} from './Controller';
 import { useSyncExternalStore } from 'react';
-import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked } from './view';
+import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked,liftHint } from './view';
 import { SKINS } from '../shared/model/skin.ts';
 
 type PhoneDisplay = ReturnType<typeof display.get>;
@@ -34,6 +34,7 @@ export function PhoneApp() {
 
 <div id="rotatePrompt" role="status"><b>スマホを縦にしてください</b><p>操作を停止し、押していたキーを離しました。<br />縦向きに戻して、新しい押下から再開します。</p></div>
 <FullMessage/>
+<LiftHint/>
 </>;
 }
 
@@ -116,6 +117,12 @@ function PhoneDiagnostics({phase}:{phase:string|undefined}) {
   <p id="phoneNetAdvice" role="status">{data.advice}</p>
   <output id="inputMetrics" hidden aria-hidden="true">{data.inputMetrics}</output>
 </footer>;
+}
+
+// 通信の復旧・遅れた押下の破棄の後、押したままの指では操作を再開しない。離せば自動で消える (#285 Q27)
+function LiftHint(){
+  const visible=useSyncExternalStore(liftHint.subscribe,liftHint.get);
+  return <div id="liftHint" className="lift-hint" role="status" hidden={!visible}>指を離して操作を再開</div>;
 }
 
 function FullMessage(){

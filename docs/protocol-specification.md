@@ -124,7 +124,7 @@ PREPARE / READY / RESUME / OPEN_GAMEは現在epochを必須とします。PREPAR
 | `error / full` | 拒否理由。errorは`code`と必要に応じてホストの版 |
 | `game` | セッション状態`game` |
 | `command_result` | `cmd`, `accepted`, `reasons` |
-| `ack` | `iseq`, `t`, `via:ws/rtc`、旧epochなら`stale:true` |
+| `ack` | `iseq`, `t`, `via:ws/rtc`、旧epoch・解放済み・遅れた押下なら`stale:true` |
 | `pong / kpong` | 対応する`t` |
 | `rtc-answer / rtc-cand` | `sdp`, `sdpType`、または`cand`, `mid` |
 
@@ -188,6 +188,8 @@ sequenceDiagram
 ```
 
 枠ごとの`nextIseq`により番号が欠けたときは後続を保留します。旧epochも番号を消費しますが、押下・解放は実行せずstale ACKを返します。視点は累積値の差分を使い、同じepoch内の欠落を次の値で補います。epoch変更ではスマホとホストの視点累積値・順序基準をリセットします。
+
+同じepoch内でも、通信の詰まり・復旧でまとめて遅れて届いた押下（down）は実行しません（#285）。ホストは接続ごとに「受信時刻−スマホの送信時刻`t`（`performance.now`）」の最小値を、`ping`・`ka`・`input`の到着から直近15〜30秒で求め、押下を処理する時点でこの基準から500ms以上遅れていればstale ACKを返します。時計の差は基準で打ち消し、片道遅延としては扱いません。500msは実Wi-Fi計測（2026-11-09）の正常時ACK往復の最大384msを上回る値です。`t`を解釈できない・基準がない押下も実行しません。解放（up）は常に適用します。スマホは押下のstale ACKを受けたら、その操作の押下表示を解き、指を離すまで「指を離して操作を再開」を出します。通信断などで入力を止めたときに押したままの指も同様に扱い、離した後の新しいタッチから再開します。
 
 ---
 

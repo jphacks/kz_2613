@@ -46,6 +46,7 @@ export type PhoneView = ((snapshot: PhoneSnapshot) => void) & {
   connection(text:string,kind:string):void;
   telemetry(patch:Partial<PhoneTelemetry>):void;
   blocked(message?:string):void;
+  liftHint(visible:boolean):void;
 };
 export type Direction = 'up' | 'left' | 'right' | 'down';
 export interface InputBindings {
