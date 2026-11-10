@@ -1779,3 +1779,5 @@
 - `sync_rotation_clock()` を追加した。協力プレイ中に `can_inject()` が偽になったら残り時間を凍結し（`rotation_at=0`、`rotation_left` に保存、予告も取り消す）、真に戻ったら残りから数える。前面の変化（`check_target`・`on_focus_change`）、毎秒の交代確認、協力プレイへの移行（`set_phase`）で呼ぶ。注入OFF・入力の障害など、前面以外の理由も1秒以内に反映する。Pause・切断・緊急停止の既存の扱い（協力プレイを離れたら残りを保存）は変えていない。
 - 試験 `role_rotation_counts_only_while_the_target_game_can_be_operated` を追加：前面喪失で凍結→長時間（最大 `u64::MAX/2`）経過しても予告・交代なし→復帰で残りから数え、残りを操作したら1回だけ交代→前面にないまま一時停止・再開しても数えない。修正を外すと失敗することを確認。
 - main（155e01c）を取り込んだ。競合した `PhoneApp.tsx`・`phone.ts`・`phone-harness.mjs` は、Codexが #324（cf7cd3c）で同じ組み合わせを解消した内容を使った。
+
+- 2026-11-11 独立再レビュー（#314、797f211 + 最新main155e01c）：実Hubに独立の仮想時計試験3件を追加。前面喪失中の時計凍結、10分後の残り時間再開・旧期限で交代しないこと、P1→P2→P3→P1（参加配列を逆順にして検査）、各交代の全解放・旧epoch入力拒否、Pause・切断・緊急停止を確認。fixtureの接続状態と正式分担を揃えた最終試験は `RECOOPLAY_DRY_RUN=1 cargo test --offline --release --locked --manifest-path apps/host-rs/Cargo.toml` が150成功・2ignored、probe4成功。`cargo build`成功。Web型・ビルド・product-web成功（同SHAを別専用worktreeで実行）。実スマホ2〜4人2周期、iPhone、Minecraft実入力・Wi-Fi断・実緊急停止は未確認、Issue #161はOpenを維持。旧Draft #324との差は新しい時計修正とログのみで、直接#314を候補にする。
