@@ -33,10 +33,22 @@ export function inputWarnText({ isHost, game, name, notice }: {isHost:boolean;ga
 function routeText(game: PhoneGame, name: string) {
   if (game.remoteRoute === 'app') return 'PCアプリを操作中';
   if (game.remoteRoute === 'game') return `${name}のメニューを操作中`;
+  // Minecraft の公式ランチャー (#287)。PC のマウスを使わずに「プレイ」を押せる
+  if (game.remoteRoute === 'launcher') return 'Minecraftのランチャーを操作中（「プレイ」を押してください）';
   if (game.remoteRoute !== 'none') return '';
-  if (!sendsToGame(game)) return 'PCアプリが前面にないため、リモコンは届きません（ロビーではPCアプリだけを操作します）';
+  if (!sendsToGame(game)) return `PCアプリが前面にないため、リモコンは届きません（ロビーでは${game.title === 'minecraft-java' ? 'PCアプリとMinecraftのランチャー' : 'PCアプリ'}だけを操作します）`;
   if (game.inputTarget) return `${name}が前面にないため、リモコンは届きません`;
   return `リモコンは今は届きません${game.readyReasons?.length ? `（${game.readyReasons[0]}）` : ''}`;
+}
+
+/**
+ * 時間制の役割交代の短い案内 (#161)。協力プレイ中の参加者だけ。予告では次の担当、交代の直後は新しい担当を示す。
+ * 画面を覆わず、操作を止めない
+ */
+export function rotationText({ game, joined, rotated, title }: {game:PhoneGame;joined:boolean;rotated:boolean;title:(game:PhoneGame)=>string}) {
+  if (game.phase !== 'coop' || !joined) return '';
+  if (game.rotationSoon && game.rotationNext) return `まもなく担当を交代：次は「${title({ ...game, assigned: game.rotationNext })}」`;
+  return rotated ? `担当が交代しました。あなたは「${title(game)}」` : '';
 }
 
 /** 待機画面の内容 */
@@ -66,6 +78,8 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
   return {
     players: playerChips(game, me),
     route: routeText(game, name), routeBlocked: game.remoteRoute === 'none', notice: '',
+    // ゲームが前面に残っても、スマホだけでPCアプリへ戻れるようにする (#292)
+    openAppHidden: !isHost || !game.canOpenApp || game.remoteRoute === 'app',
     startLabel: phase === 'paused' ? '再開する' : phase === 'preparing' ? `Ready・${game.connected.length}人で操作を始める` : 'ゲームを開く・準備する',
     startDisabled: !(phase === 'paused' ? game.canResume : phase === 'preparing' ? game.canReady : game.canPrepare),
     openGameLabel: `${name}を前面にする`,

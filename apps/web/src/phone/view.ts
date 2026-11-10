@@ -4,7 +4,7 @@ import type { PhoneSnapshot, PhoneView, PhoneViewBindings, WaitModel, RemoteMode
 import { createStore } from '../shared/store';
 import { byId } from '../shared/dom';
 import { generatedKey } from '../shared/model/actions.ts';
-import { inputWarnText, waitModel, remoteModel } from '../shared/model/phone.ts';
+import { inputWarnText, waitModel, remoteModel, rotationText } from '../shared/model/phone.ts';
 import { profileNotice, roleView, gameLabel, outputKeyLabel } from '../shared/model/presentation.ts';
 import { createViewTransition } from './transition.ts';
 import { createSkinStore, applySkin } from '../shared/model/skin.ts';
@@ -19,7 +19,7 @@ export interface PhoneDisplay {
 export const display = createStore<PhoneDisplay>({
   controller:null, snapshot: { me: null, isHost: false, game: null }, view: null, controllerHost: false, controllerTitle: '', role: '接続中…', roleCopy: '', roleNotice: '', warning: '', inventory: 'Eキー',
   wait: { character: '/assets/characters/blue.png', heading: '接続完了!!', role: '', title: 'ホストの準備を待っています', players: [] },
-  remote: { players: [], route: '', routeBlocked: false, notice: '', startLabel: 'START', startDisabled: false, openGameLabel: 'ゲームを前面にする', openGameHidden: true, endVisible: false, transferTo: [], note: 'ゲームをプレイ中の画面まで進めた後、ホストだけがReadyを押します。' },
+  remote: { players: [], route: '', routeBlocked: false, notice: '', openAppHidden: true, startLabel: 'START', startDisabled: false, openGameLabel: 'ゲームを前面にする', openGameHidden: true, endVisible: false, transferTo: [], note: 'ゲームをプレイ中の画面まで進めた後、ホストだけがReadyを押します。' },
 });
 let bindings: PhoneViewBindings | undefined;
 const skins = createSkinStore({ getItem: (key: string) => localStorage.getItem(key), setItem: (key: string, value: string) => localStorage.setItem(key, value) });
@@ -27,6 +27,9 @@ export const skin = createStore('standard');
 export const connection=createStore({text:'接続中',kind:'warn'});
 export const telemetry=createStore<PhoneTelemetry>({rtt:'-',rttAvg:'-',sent:0,unacked:0,path:'-',advice:'',inputMetrics:'',burstBusy:false});
 export const blocked=createStore<{message?:string}|null>(null);
+// 役割交代の予告・交代後の案内 (#161)
+export const rotationNotice=createStore('');
+export const offline=createStore(false);
 export function chooseSkin(id: string) {
   skins.set(display.get().snapshot.game?.title, id); applySkin(document.documentElement, id); skin.set(id);
 }
@@ -59,6 +62,8 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
   const lifetime=createLifetime();
   const telemetryUpdates=createTelemetryPublisher(telemetry.get(),telemetry.set);
   let lastView: string | null = null, lastKey = '', skinGame: string | undefined;
+  // 交代の回数。途中から開いた画面では「交代しました」を出さない
+  let rotationCount: number | undefined, rotatedUntil = 0, clearRotated = () => {};
   const transition = createViewTransition({ layer: byId('viewFx') });
   lifetime.listen(byId('phoneSettingsBtn'), 'click', () => {
     input.onDiagnosticsOpen();
@@ -83,6 +88,14 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
       if (view === 'v-gen'&&!game.profile) throw new Error('協力操作の定義がありません');
     }
     const autoWait = game.phase === 'paused' && game.autoResume && game.reason?.endsWith('disconnected');
+    if (rotationCount !== undefined && (game.rotationCount ?? 0) > rotationCount) {
+      // 交代の直後の案内は4秒で消す
+      rotatedUntil = performance.now() + 4000; clearRotated();
+      clearRotated = lifetime.timeout(() => { rotatedUntil = 0; rotationNotice.set(''); }, 4000);
+    }
+    rotationCount = game.rotationCount ?? 0;
+    const rotation = rotationText({ game, joined, rotated: performance.now() < rotatedUntil, title: g => roleView(g, me).title });
+    if (rotation !== rotationNotice.get()) flushSync(() => rotationNotice.set(rotation));
     const name = gameLabel(game);
     const next: PhoneDisplay = {
       snapshot, view: display.get().view,
@@ -113,7 +126,14 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
   render.connection=(text,kind)=>{document.body.dataset.connection=kind;flushSync(()=>connection.set({text,kind}));};
   // external storeの通知による同期更新も、入力/ACKのdispatch区間へ入れない。
   render.telemetry=telemetryUpdates.patch;
-  render.blocked=message=>flushSync(()=>blocked.set({message}));
+  // 満員・版不一致・リセット・PCアプリの終了など、再接続しない終端の案内。モーダルの確認・診断はトップレイヤーで
+  // 案内より手前に残るため閉じ、確認した操作も捨てる (#302)。一時的な通信断 (offline) では閉じない
+  render.blocked=message=>{
+    closeConfirm();
+    const diagnostics=byId<HTMLDialogElement>('phoneDiagnostics');if(diagnostics.open)diagnostics.close();
+    flushSync(()=>blocked.set({message}));
+  };
+  render.offline=visible=>{if(offline.get()!==visible)flushSync(()=>offline.set(visible));};
   render.confirm=askConfirm;
   render.dispose=()=>{closeConfirm();input.releaseAll();telemetryUpdates.dispose();lifetime.dispose();transition.dispose();bindings=undefined;};
   return render;

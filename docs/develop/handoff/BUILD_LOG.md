@@ -1695,6 +1695,22 @@
 
 - #279の実測を受け、SETUP_WINDOWSへworktree別target・固定exeハッシュ・展開後package-smokeを追記。通常buildの成功表示だけで配布バイナリの版を判断しない。製品コードと依存関係は変更せず、git diff --checkとcheck-public-docs成功。
 
+## 2026-11-10 — #161 時間制の役割交代をQ42/Q44/Q46に合わせる
+
+- 既存実装（1〜3分を選べ、交代のたびに一時停止して全員の確認とホストの再開を待つ）を確定仕様へ変更。間隔は60秒固定（`ROTATION_CHOICES = [0, 60]`）・初期OFF。ロビーへ戻るとOFFに戻す（Q44）。
+- 交代時は協力プレイを止めず、全員の入力を解放→未処理入力・視点を破棄→epochを進めて旧入力を無効化→参加者の順に担当を1つずらす（Q46、N人でN回で元に戻る）。ホスト権限・P番号・キー割当は移さない。確認待ち（roleAck）は使わない。
+- 交代5秒前から `rotationSoon`・`rotationNext` で次の担当を予告し、交代ごとに `rotationCount` を増やす。スマホは非モーダルの案内（`#rotationNotice`、タッチ透過）で予告と交代直後の担当を示す（交代直後の案内は4秒で消える）。一時停止中は数えず、再開で残りから数える。
+- 自動試験：`cargo test --release --locked`（host 139成功・2 ignored、probe 4成功。交代の予告・継続・全解放・巡回・停止中の残り・OFFへの復帰を追加し、旧方式の試験を置換）、`node scripts/sim/protocol-sim.mjs` 60/60（交代の試験を新仕様へ置換）、`node scripts/sim/product-web-test.mjs`、`npm run typecheck/build`、`check-static-pages.mjs`、`check-public-docs.py` 成功。
+- 実機（Android Chrome 1台＝P1、アプリ通信はホットスポットのWi-Fi、USBのCDPで観測、dry-run・疑似入力先、模擬P2）：実時間で待ち、56.5秒時点で予告、60.6秒で交代（一時停止なし）、P1の画面が移動から視点・クリック等へ切り替わり、交代の案内は約5秒後に消えた。
+- 未確認：実スマホ2〜4人での2周期以上、iPhone、Minecraft実入力での操作感、交代中の切断・Wi-Fi断。第三者の試遊（#167）。
+- 2026-11-11 レビュー指摘（P2）への対応：交代の向きが逆だった（3人で元のP1の担当がP3へ移っていた）。`rotated_seats` を、枠の番号順で1つ前の参加者の席（＝担当）を受け継ぐ向きに直した。#161の「現在の参加者順で循環（P1→P2→P3→P1）」に合わせ、席順ではなく枠の番号順で回すので、手動の入れ替え後も P1→P2→P3 の向きになる。単体試験に3人・4人・欠番・入れ替え後を加え、Hubの試験 `role_rotation_follows_slot_order_with_gaps_four_players_and_after_a_manual_swap` で、予告 `rotationNext` と実際の交代の一致、N回で元に戻ることを確認した。protocol-simの確認も「P1の担当がP2へ」に直した。`cargo test --release --locked`（RECOOPLAY_DRY_RUN=1）、`node scripts/sim/protocol-sim.mjs`（60/60）が成功。
+## 2026-11-11 — #302 PCアプリの終了と通信断をスマホの画面全体で示す
+
+- ホストは終了時（デスクトップの `quit`・標準入力のEOF）に、全解放の後でスマホの接続を終了コード4009で閉じ、送信のため200ms待ってから終える。解放の順序と終了コードは変えていない。
+- スマホは4009で再接続をやめ（次に起動したアプリへ勝手につながらない）、「PCのアプリが終了しました。…再読み込みしてください。」を画面全体に出す。参加できない案内（満員・版不一致・終了など）を出している間は、下の操作画面を隠す（`#full` は背景が透けるため、押せそうに見えていた）。
+- 4009以外の切断が3秒続いたら、「PCのアプリとつながっていません／再接続しています…」で操作を覆う。再接続は続け、welcomeで消す。満員などで止まったときは覆わない。
+- `node scripts/sim/product-web-test.mjs`（phone-lifecycle 18/18、#302の試験2件を追加）、`npx tsc --noEmit -p apps/web`、`node scripts/sim/check-static-pages.mjs`、`cargo build --release --locked`、`node scripts/sim/shutdown-sim.mjs`（quit・EOFの両方でスマホが4009を受けることを追加）、`node scripts/sim/protocol-sim.mjs`（60/60）が成功。
+- 実機確認：Android Chrome 1台（アプリ通信はモバイルホットスポットのWi-Fi、操作はUSBのCDP）、dry-run・疑似入力先のホスト。ホストを強制終了すると1.5秒後は覆わず、3.8秒後に覆いが出た。ホストを再起動すると自動で再接続して覆いが消えた。`quit` で終了すると（終了コード0）終了の案内が出て、下の操作画面は隠れた。その後に新しいホストを起動しても再接続しなかった。iPhone・デスクトップアプリの×ボタンからの終了は未確認。
 ## 2026-11-10 — #275 視点受信の空白の再分析（保存データ）
 
 - `scripts/device/look-gap-analysis.mjs`（＋合成データの試験、CIに追加）で、PR #274 の主21試行＋修正後6試行の視点受信の200ms以上の空白30件を、端末の送信時刻・`lseq`・まとめ着・相対遅れ（最小値基準、時計の直接差は使わない）に対応付けた。
@@ -1718,6 +1734,12 @@
 - 自動試験：`npm run typecheck --prefix apps/web`、`node scripts/sim/product-web-test.mjs`（`phone-view-test` の警告の観点を新仕様へ更新・追加）、`npm run build --prefix apps/web`、`node scripts/sim/check-static-pages.mjs` 成功。
 - 実機（Android Chrome、ホットスポットのWi-Fi、USBのCDPで観測）：dry-runホストのロビーで上部警告なし、状態欄に「PCアプリが前面にないため、リモコンは届きません（ロビーではPCアプリだけを操作します）」を表示。準備中・協力プレイ中の実ゲームでの表示は未確認。
 
+## 2026-11-10 — #292 ホストのスマホからPCアプリへ戻る
+
+- ホストに `OPEN_APP`（P1のみ、協力プレイ中以外、現在epoch必須）を追加。PCアプリ（`recooplay-desktop.exe`）のウィンドウを前面にするだけで入力は送らない。失敗時は理由を `command_result.reasons` で返す。状態に `canOpenApp` を追加し、スマホのリモコンに「PCアプリを前面にする」を出す（PCアプリが前面のときは隠す）。
+- PCアプリから起動したホストは、選んだゲームのウィンドウを一度見た後に閉じたら、ロビーでPCアプリを1回だけ前面に戻す（一時停止中に閉じた場合はロビーへ戻った後）。ゲーム自体をスマホから終了する操作は追加していない。
+- 自動試験：`cargo test --release --locked`（host 140成功・2 ignored、probe 4成功。`OPEN_APP` の段階・ホスト限定、ゲーム終了時の1回だけの前面化を追加）、`node scripts/sim/product-web-test.mjs`、`npm run typecheck/build --prefix apps/web`、`check-static-pages.mjs`、`check-public-docs.py` 成功。
+- 実機（Android Chrome、ホットスポットのWi-Fi、USBのCDPで操作）：dry-run・疑似入力先で、PCアプリの背面を標準入力 `app blur` で模擬。ロビーでボタンが表示され、押すと `open_app ok` となり表示が「PCアプリを操作中」に変わりボタンが消えた。実ウィンドウ（Tauri）の前面化と、実ゲームを閉じたときの自動復帰は未確認。
 ## 2026-11-11 承認済みPRの競合解消と統合前確認
 
 - ユーザーが #317・#316・#318・#309・#310 のマージを明示承認。#317は `4e650fc`、#316は `89ce980` としてmainへマージした。いずれも直前のhead SHAと全CI成功を確認し、マージ後にorigin/mainを再取得した。
@@ -1763,3 +1785,22 @@
 - この4件だけの最終組合せで `npm run build --prefix apps/web`（型確認含む）、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/profile-catalog-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/check-public-docs.py`、`git diff --check` は成功。
 - #320のfull.retryMsは任意の非負有限値、端末側の既定満員表示との区別を確認。参加番号の詰め直しは対象外。実スマホ表示は作者の報告と独立追試を区別する。
 - #284/#313のホスト全体の独立ビルドは、sandboxのMSBuildがChecking Build System後に終了1となり、同じ専用targetを通常環境で再構築中。そこから成功を推定せず、旧入力・緊急停止の指摘PRをこの4件に混ぜない。
+
+## 2026-11-11 — #314 前面にない間は役割交代の時計を止める（レビュー指摘P2）
+
+- 協力プレイのまま対象ゲームが前面から外れると（`check_target()` は入力を解放してepochを進めるが、phaseはCoopのまま）、`rotate_roles_if_due()` がphaseと期限だけを見ていたため、操作できない間も60秒の時計が進んで担当が交代していた。
+- `sync_rotation_clock()` を追加した。協力プレイ中に `can_inject()` が偽になったら残り時間を凍結し（`rotation_at=0`、`rotation_left` に保存、予告も取り消す）、真に戻ったら残りから数える。前面の変化（`check_target`・`on_focus_change`）、毎秒の交代確認、協力プレイへの移行（`set_phase`）で呼ぶ。注入OFF・入力の障害など、前面以外の理由も1秒以内に反映する。Pause・切断・緊急停止の既存の扱い（協力プレイを離れたら残りを保存）は変えていない。
+- 試験 `role_rotation_counts_only_while_the_target_game_can_be_operated` を追加：前面喪失で凍結→長時間（最大 `u64::MAX/2`）経過しても予告・交代なし→復帰で残りから数え、残りを操作したら1回だけ交代→前面にないまま一時停止・再開しても数えない。修正を外すと失敗することを確認。
+- main（155e01c）を取り込んだ。競合した `PhoneApp.tsx`・`phone.ts`・`phone-harness.mjs` は、Codexが #324（cf7cd3c）で同じ組み合わせを解消した内容を使った。
+
+## 2026-11-10 — #287 Minecraftのランチャーをホストのリモコンで操作する（#311 に積み重ね）
+
+- この PC で公式ランチャーを一時的に開き、ウィンドウを確認した（入力は送らず閉じた）：`C:\Program Files\WindowsApps\Microsoft.4297127D64EC6_2.6.2.0_x64__8wekyb3d8bbwe\Minecraft.exe`、タイトル「Minecraft Launcher」。起動直後に同じタイトルの `GamingServicesUI.exe` が一時的に前面になった。
+- ホスト：Minecraftを選んだロビー・準備中に、`minecraft.exe`/`minecraftlauncher.exe` かつタイトルに「Minecraft Launcher」を含むウィンドウが前面なら、ホストのリモコン（キー・クリック・タッチパッド・ホイール）をランチャーへ送る（`remoteRoute: "launcher"`）。PCアプリが前面ならそちらを優先。ランチャーが前面から外れた・戻ったときは全解放してepochを進める。起動時の案内を「ホストのスマホのリモコンで「プレイ」を押してください」に変更。
+- 自動試験：`RECOOPLAY_DRY_RUN=1 cargo test --release --locked`（host 142成功・2 ignored、probe 4成功。ランチャーの照合、ホスト限定・協力プレイ中と他ゲームで無効・前面から外れたら解放、を追加）、`node scripts/sim/protocol-sim.mjs` 60/60、`node scripts/sim/product-web-test.mjs`、`npm run typecheck/build`、`check-static-pages.mjs`、`check-public-docs.py` 成功。
+- 実機（Android Chrome、ホットスポットのWi-Fi、USBのCDPで操作、dry-run・疑似入力先）：標準入力 `launcher focus` でランチャーが前面の想定にし、スマホの表示が「Minecraftのランチャーを操作中」に変わり、Enter（down/up）とタッチパッドの移動がランチャー経路で注入された。`launcher blur` で表示が戻った。
+- 未確認：実際のランチャーへの実入力で「プレイ」を押せること、ワールドに入るまでスマホだけで進められること、Steam等の他ランチャーで人の操作が要る場面の洗い出し（Among Usは不要だった：#287のコメント）。
+- 2026-11-11 レビュー指摘（P1）への対応：`remote_launcher_active()` が緊急停止ホットキーの登録結果を見ていなかった。ゲームの経路（`remote_game_active()`）と同じく `self.hotkey.is_ok() || self.fake_target.is_some()` を必須にした。試験 `launcher_route_needs_the_emergency_hotkey_like_the_game_route` を追加：疑似入力先なし・登録失敗・記録用InputAdapterで、ランチャーの前面を観測しても `remoteRoute=none` となり、キー・クリック・移動・ホイールのどれも送らないこと、登録成功なら `launcher` になることを確認。修正を外すと失敗することも確認した。`cargo test --release --locked`（RECOOPLAY_DRY_RUN=1、143件成功・2件ignored）。
+- 2026-11-11 レビュー指摘（P2）への対応：#309の確認ダイアログ（`showModal()` のトップレイヤー）を開いたままPCアプリが終了すると、終了の案内（`#full`）より手前に確認が残り、「PCとの通信が戻るまでお待ちください」と再接続しない終了が矛盾していた。`render.blocked`（満員・版不一致・リセット・参加情報の不一致・PCアプリの終了など、再接続しない終端の案内）で、確認を閉じて未実行の要求を捨て、診断の画面も閉じるようにした。一時的な通信断（覆いの表示）では閉じず、#309の「確認を保留し、再接続後の現在epochで実行」を保つ。試験2件を追加し、修正前は「終了の案内より手前に確認を残さない」で失敗、修正後に合格（phone-lifecycle 25/25）。実機確認：Android Chrome 1台（アプリ通信はホットスポットのWi-Fi、操作はUSBのCDP）、dry-run。ホスト譲渡の確認を開いたまま `quit` で終了すると、確認が閉じて終了の案内が前面に出た。
+
+- 2026-11-11 独立統合再レビュー：#314 797f211、#311 75b96a1、#315 31e9319、#321 257f53fの祖先を保持して競合解消。Rust157成功・2ignored（独立時計3＋ランチャー2を含む）、probe4成功、release build成功。通信60/60、shutdown-simのquit/EOFで全解放→4009通知→正常終了。Web型・build・product-web・静的5画面、独立終端6系列成功。実Chrome DOM 390×844で確認・診断の2モーダル閉鎖、要求破棄、終了案内の最前面・全画面表示と、一時断の確認保持を確認。実Tauri・実ランチャー・Minecraft・iPhoneは未確認。詳細はPR_REVIEW_RESUME_2026-11-11.md。#324は古い時計修正前のDraftなのでマージせずCloseした。#284/#313は追加P1の3条件が独立再現し保留（通常試験成功とは区別）。
