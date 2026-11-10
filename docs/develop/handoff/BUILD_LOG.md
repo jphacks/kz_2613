@@ -1700,3 +1700,9 @@
 - 終了（`END`）とホスト譲渡の確認を `confirm()` から `<dialog id="phoneConfirm">` へ置き換えた。切断中はOKを無効にして要求を保持し、段階や参加者が変わり操作が成り立たなくなったら閉じる。通信契約・ホストは変更なし。
 - 自動試験：`npm run typecheck --prefix apps/web`、`node scripts/sim/product-web-test.mjs`（`phone-lifecycle-test` 20/20、#289の4件を追加）、`npm run build --prefix apps/web`、`node scripts/sim/check-static-pages.mjs` 成功。ハーネスの `confirm()` は呼ぶと失敗する。
 - 実機（Android Chrome 1台、アプリ通信はWindowsモバイルホットスポットのWi-Fi、操作はUSBのCDP）：dry-run・疑似入力先のホストへ、模擬P2（PC上のWSクライアント）と2人で準備→Ready→一時停止→「ロビーに戻る」。確認を12秒表示してもP1の切断・再接続は0回（ホストログにも切断なし）、OKで `host end` によりロビーへ戻った。実ゲーム・iPhone・ホスト譲渡の実機操作は未確認。
+
+## 2026-11-10 — #306 終了ボタンの名前を戻り先に合わせる
+
+- ホストの `END` は `Phase::Lobby` に戻し、PCアプリは分担の画面（「分担しよう！」）になる。スマホのボタン「ロビーに戻る（協力プレイ終了）」と確認文の「ロビー」は戻り先と合わなかった。
+- 戻り先は変えず（参加画面へ戻すと接続中の参加者を選び直す手間が増えるため）、ボタンを「協力プレイを終了（分担に戻る）」、確認文を「協力プレイを終了して、分担の画面に戻りますか？」、OKを「終了して分担に戻る」にした。#309（ページ内の確認）に積み重ねた。
+- `node scripts/sim/product-web-test.mjs`（phone-lifecycle-testを含む）と `node scripts/sim/check-static-pages.mjs` が成功。実機での目視は未実施。
