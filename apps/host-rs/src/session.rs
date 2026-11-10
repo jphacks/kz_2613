@@ -139,12 +139,13 @@ pub(crate) fn command_allowed(slot: usize, cmd: &str, phase: Phase, prepare: boo
         "RESUME" => phase == Phase::Paused && resume,
         "PAUSE" => matches!(phase, Phase::Coop | Phase::Paused),
         "OPEN_GAME" => matches!(phase, Phase::Preparing | Phase::Paused),
+        "OPEN_APP" => phase != Phase::Coop,
         "END" => phase != Phase::Lobby,
         _ => false,
     }
 }
 pub(crate) fn command_epoch_valid(cmd: &str, epoch: Option<u64>, current: u64) -> bool {
-    !matches!(cmd, "PREPARE" | "READY" | "RESUME" | "OPEN_GAME") || epoch == Some(current)
+    !matches!(cmd, "PREPARE" | "READY" | "RESUME" | "OPEN_GAME" | "OPEN_APP") || epoch == Some(current)
 }
 pub(crate) struct PhaseChange { pub clear_lineup: bool }
 pub(crate) fn phase_change(from: Phase, to: Phase) -> Option<PhaseChange> {
@@ -269,13 +270,13 @@ mod tests {
     #[test]
     fn commands_require_the_host_and_the_existing_phase_for_every_transition() {
         let cases = [
-            (Phase::Lobby, vec!["PREPARE"]),
-            (Phase::Preparing, vec!["READY", "OPEN_GAME", "END"]),
+            (Phase::Lobby, vec!["PREPARE", "OPEN_APP"]),
+            (Phase::Preparing, vec!["READY", "OPEN_GAME", "OPEN_APP", "END"]),
             (Phase::Coop, vec!["PAUSE", "END"]),
-            (Phase::Paused, vec!["RESUME", "PAUSE", "OPEN_GAME", "END"]),
+            (Phase::Paused, vec!["RESUME", "PAUSE", "OPEN_GAME", "OPEN_APP", "END"]),
         ];
         for (phase, allowed) in cases {
-            for cmd in ["PREPARE", "READY", "RESUME", "PAUSE", "OPEN_GAME", "END", "START", "unknown"] {
+            for cmd in ["PREPARE", "READY", "RESUME", "PAUSE", "OPEN_GAME", "OPEN_APP", "END", "START", "unknown"] {
                 assert_eq!(command_allowed(0, cmd, phase, true, true, true), allowed.contains(&cmd));
                 for slot in 1..4 { assert!(!command_allowed(slot, cmd, phase, true, true, true)); }
             }
@@ -337,7 +338,7 @@ mod tests {
 
     #[test]
     fn epoch_rejects_old_start_requests_but_always_preserves_stop_priority() {
-        for cmd in ["PREPARE", "READY", "RESUME", "OPEN_GAME"] {
+        for cmd in ["PREPARE", "READY", "RESUME", "OPEN_GAME", "OPEN_APP"] {
             assert!(command_epoch_valid(cmd, Some(7), 7));
             for epoch in [None, Some(6), Some(8)] { assert!(!command_epoch_valid(cmd, epoch, 7)); }
         }

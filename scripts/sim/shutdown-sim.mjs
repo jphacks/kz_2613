@@ -30,6 +30,7 @@ async function check(mode) {
     const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
     ws.messages = [];
     ws.addEventListener('message', ev => ws.messages.push(JSON.parse(ev.data)));
+    ws.addEventListener('close', ev => { ws.closeCode = ev.code; });
     clients.push(ws);
     await until(() => ws.readyState === 1, '接続できない');
     ws.sendJson = m => ws.send(JSON.stringify(m));
@@ -65,6 +66,8 @@ async function check(mode) {
     const up = events.findIndex(e => e.kind === 'inject' && e.out === 'KEY_W' && e.state === 'up');
     const shutdown = events.findIndex(e => e.kind === 'shutdown');
     assert(up >= 0 && shutdown > up, `${mode}: 全解放後のshutdownがない`);
+    await until(() => p1.closeCode, `${mode}: スマホの接続が閉じない`);
+    assert(p1.closeCode === 4009, `${mode}: スマホへPCアプリの終了 (4009) を知らせない (#302): ${p1.closeCode}`);
     console.log(`合格: ${mode}で全解放して正常終了`);
   } finally { for (const ws of clients) ws.close(); child.kill(); }
 }

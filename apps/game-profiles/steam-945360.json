@@ -38,14 +38,14 @@
       ]
     },
     {
+      "id": "pointer",
+      "label": "マウス（タスク・ボタン）",
+      "role": "P2"
+    },
+    {
       "id": "gameplay",
       "label": "使う・役職の操作",
       "role": "P3"
-    },
-    {
-      "id": "menu",
-      "label": "メニュー",
-      "role": "host"
     }
   ],
   "actions": [
@@ -78,6 +78,19 @@
       "default": "KEY_D"
     },
     {
+      "id": "cursor",
+      "label": "カーソル",
+      "group": "pointer",
+      "type": "mouseDelta"
+    },
+    {
+      "id": "click",
+      "label": "クリック",
+      "group": "pointer",
+      "type": "button",
+      "default": "MOUSE_L"
+    },
+    {
       "id": "use",
       "label": "使う",
       "group": "gameplay",
@@ -101,14 +114,14 @@
     {
       "id": "map",
       "label": "マップ",
-      "group": "menu",
+      "group": "gameplay",
       "type": "button",
       "default": "TAB"
     },
     {
       "id": "pause",
-      "label": "メニュー",
-      "group": "menu",
+      "label": "閉じる・メニュー",
+      "group": "gameplay",
       "type": "button",
       "default": "ESC"
     }
@@ -117,7 +130,8 @@
     "status": "unverified",
     "date": "2026-10-25",
     "sources": [
-      "広く知られた初期設定（未検証・実機未確認）"
+      "広く知られた初期設定（未検証・実機未確認）",
+      "2026-11-10 遊ぶ流れの通し確認で、タスク・緊急ボタンにマウスのクリックが、閉じるのにEscが必要と観測（#293）"
     ]
   },
   "catalog": {

@@ -13,7 +13,7 @@ assert(chrome,'ChromeまたはEdgeが必要です');
 const pages=arg('--pages','overlay').split(',');
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'recooplay-auxiliary-'));
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const until=async(fn,label)=>{for(let n=0;n<100;n++){if(await fn())return;await sleep(100);}throw Error('待機失敗: '+label);};
+const until=async(fn,label,tries=100)=>{for(let n=0;n<tries;n++){if(await fn())return;await sleep(100);}throw Error('待機失敗: '+label);};
 let port,host,child,cdp;
 const requests=new Map();let seq=0;
 const call=(method,params={})=>new Promise((resolve,reject)=>{const id=++seq;const timer=setTimeout(()=>{requests.delete(id);reject(Error('CDP timeout: '+method));},10000);requests.set(id,{resolve,reject,timer});cdp.send(JSON.stringify({id,method,params}));});
@@ -25,7 +25,8 @@ try{
  await until(()=>{assert(host.exitCode===null,'dry-runホスト起動失敗');return !!port;},'host');
  const profile=path.join(temp,'browser');
  child=spawn(chrome,['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
- await until(()=>fs.existsSync(path.join(profile,'DevToolsActivePort')),'browser');
+ // CIのWindowsではヘッドレスChromeの初回起動が10秒を超えることがある (2026-11-10に3回)。起動待ちだけ30秒にする
+ await until(()=>fs.existsSync(path.join(profile,'DevToolsActivePort')),'browser',300);
  const debugPort=fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0];
  const target=await(await fetch(`http://127.0.0.1:${debugPort}/json/new?about:blank`,{method:'PUT'})).json();
  cdp=new WebSocket(target.webSocketDebuggerUrl);await until(()=>cdp.readyState===1,'CDP');

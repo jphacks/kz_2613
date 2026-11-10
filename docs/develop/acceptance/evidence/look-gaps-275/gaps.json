@@ -1,0 +1,1118 @@
+[
+ {
+  "condition": "A-wifi-fixed",
+  "trial": "1",
+  "wsOnly": false,
+  "sent": 1736,
+  "received": 1715,
+  "lost": 21,
+  "gaps": 1,
+  "kinds": {
+   "mixed": 1
+  },
+  "excessMs": {
+   "p50": 1.2,
+   "p95": 5.6,
+   "p99": 14.4,
+   "max": 196.1
+  },
+  "detail": [
+   {
+    "atMs": 37537,
+    "arrivalGapMs": 261.3,
+    "sendSpanMs": 66.2,
+    "maxSendGapMs": 33.2,
+    "prevLseq": 1089,
+    "nextLseq": 1091,
+    "sentInGap": 7,
+    "lostInGap": 1,
+    "burst": 7,
+    "delayedAfter": 3,
+    "nextExcessMs": 196.1,
+    "maxBurstExcessMs": 196.1,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   }
+  ]
+ },
+ {
+  "condition": "A-wifi-fixed",
+  "trial": "2",
+  "wsOnly": false,
+  "sent": 1744,
+  "received": 1727,
+  "lost": 17,
+  "gaps": 2,
+  "kinds": {
+   "mixed": 2
+  },
+  "excessMs": {
+   "p50": 1.4,
+   "p95": 6.9,
+   "p99": 19.2,
+   "max": 216.4
+  },
+  "detail": [
+   {
+    "atMs": 21672,
+    "arrivalGapMs": 280.2,
+    "sendSpanMs": 66,
+    "maxSendGapMs": 33,
+    "prevLseq": 631,
+    "nextLseq": 633,
+    "sentInGap": 8,
+    "lostInGap": 1,
+    "burst": 7,
+    "delayedAfter": 4,
+    "nextExcessMs": 216.4,
+    "maxBurstExcessMs": 216.4,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   },
+   {
+    "atMs": 22529,
+    "arrivalGapMs": 311.8,
+    "sendSpanMs": 99.7,
+    "maxSendGapMs": 66.9,
+    "prevLseq": 657,
+    "nextLseq": 659,
+    "sentInGap": 7,
+    "lostInGap": 1,
+    "burst": 6,
+    "delayedAfter": 4,
+    "nextExcessMs": 213.1,
+    "maxBurstExcessMs": 213.1,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   }
+  ]
+ },
+ {
+  "condition": "A-wifi-fixed",
+  "trial": "3",
+  "wsOnly": false,
+  "sent": 1742,
+  "received": 1723,
+  "lost": 19,
+  "gaps": 2,
+  "kinds": {
+   "mixed": 1,
+   "delayed": 1
+  },
+  "excessMs": {
+   "p50": 1.2,
+   "p95": 6.1,
+   "p99": 15,
+   "max": 249.9
+  },
+  "detail": [
+   {
+    "atMs": 48403,
+    "arrivalGapMs": 214.8,
+    "sendSpanMs": 65.7,
+    "maxSendGapMs": 33.6,
+    "prevLseq": 1408,
+    "nextLseq": 1410,
+    "sentInGap": 5,
+    "lostInGap": 2,
+    "burst": 3,
+    "delayedAfter": 2,
+    "nextExcessMs": 151.1,
+    "maxBurstExcessMs": 151.1,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   },
+   {
+    "atMs": 49491,
+    "arrivalGapMs": 281.1,
+    "sendSpanMs": 33,
+    "maxSendGapMs": 33,
+    "prevLseq": 1440,
+    "nextLseq": 1441,
+    "sentInGap": 8,
+    "lostInGap": 0,
+    "burst": 8,
+    "delayedAfter": 5,
+    "nextExcessMs": 249.9,
+    "maxBurstExcessMs": 249.9,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "delayed"
+   }
+  ]
+ },
+ {
+  "condition": "A-ws-wifi-fixed",
+  "trial": "1",
+  "wsOnly": true,
+  "sent": 1744,
+  "received": 1744,
+  "lost": 0,
+  "gaps": 2,
+  "kinds": {
+   "delayed": 2
+  },
+  "excessMs": {
+   "p50": 1.3,
+   "p95": 7.2,
+   "p99": 49.5,
+   "max": 335.8
+  },
+  "detail": [
+   {
+    "atMs": 1216,
+    "arrivalGapMs": 367.7,
+    "sendSpanMs": 33,
+    "maxSendGapMs": 33,
+    "prevLseq": 37,
+    "nextLseq": 38,
+    "sentInGap": 11,
+    "lostInGap": 0,
+    "burst": 11,
+    "delayedAfter": 8,
+    "nextExcessMs": 335.8,
+    "maxBurstExcessMs": 335.8,
+    "outOfOrder": false,
+    "via": [
+     "ws"
+    ],
+    "viaSwitch": false,
+    "kind": "delayed"
+   },
+   {
+    "atMs": 5836,
+    "arrivalGapMs": 277.6,
+    "sendSpanMs": 33,
+    "maxSendGapMs": 33,
+    "prevLseq": 173,
+    "nextLseq": 174,
+    "sentInGap": 8,
+    "lostInGap": 0,
+    "burst": 8,
+    "delayedAfter": 5,
+    "nextExcessMs": 245.8,
+    "maxBurstExcessMs": 245.8,
+    "outOfOrder": false,
+    "via": [
+     "ws"
+    ],
+    "viaSwitch": false,
+    "kind": "delayed"
+   }
+  ]
+ },
+ {
+  "condition": "A-ws-wifi-fixed",
+  "trial": "2",
+  "wsOnly": true,
+  "sent": 1752,
+  "received": 1752,
+  "lost": 0,
+  "gaps": 0,
+  "kinds": {},
+  "excessMs": {
+   "p50": 1.2,
+   "p95": 6.4,
+   "p99": 36,
+   "max": 69.8
+  },
+  "detail": []
+ },
+ {
+  "condition": "A-ws-wifi-fixed",
+  "trial": "3",
+  "wsOnly": true,
+  "sent": 1743,
+  "received": 1743,
+  "lost": 0,
+  "gaps": 1,
+  "kinds": {
+   "delayed": 1
+  },
+  "excessMs": {
+   "p50": 1.1,
+   "p95": 7.7,
+   "p99": 41.6,
+   "max": 378
+  },
+  "detail": [
+   {
+    "atMs": 48191,
+    "arrivalGapMs": 410.8,
+    "sendSpanMs": 33.5,
+    "maxSendGapMs": 33.5,
+    "prevLseq": 1401,
+    "nextLseq": 1402,
+    "sentInGap": 10,
+    "lostInGap": 0,
+    "burst": 10,
+    "delayedAfter": 7,
+    "nextExcessMs": 378,
+    "maxBurstExcessMs": 378,
+    "outOfOrder": false,
+    "via": [
+     "ws"
+    ],
+    "viaSwitch": false,
+    "kind": "delayed"
+   }
+  ]
+ },
+ {
+  "condition": "B-wifi-fixed",
+  "trial": "1",
+  "wsOnly": false,
+  "sent": 1720,
+  "received": 1703,
+  "lost": 17,
+  "gaps": 1,
+  "kinds": {
+   "mixed": 1
+  },
+  "excessMs": {
+   "p50": 1.5,
+   "p95": 5.9,
+   "p99": 13.5,
+   "max": 155.4
+  },
+  "detail": [
+   {
+    "atMs": 10202,
+    "arrivalGapMs": 210.6,
+    "sendSpanMs": 66,
+    "maxSendGapMs": 33,
+    "prevLseq": 293,
+    "nextLseq": 295,
+    "sentInGap": 6,
+    "lostInGap": 1,
+    "burst": 6,
+    "delayedAfter": 2,
+    "nextExcessMs": 155.4,
+    "maxBurstExcessMs": 155.4,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   }
+  ]
+ },
+ {
+  "condition": "B-wifi-fixed",
+  "trial": "2",
+  "wsOnly": false,
+  "sent": 1738,
+  "received": 1719,
+  "lost": 19,
+  "gaps": 0,
+  "kinds": {},
+  "excessMs": {
+   "p50": 1.3,
+   "p95": 6.5,
+   "p99": 12.7,
+   "max": 23.5
+  },
+  "detail": []
+ },
+ {
+  "condition": "B-wifi-fixed",
+  "trial": "3",
+  "wsOnly": false,
+  "sent": 1740,
+  "received": 1718,
+  "lost": 22,
+  "gaps": 2,
+  "kinds": {
+   "mixed": 2
+  },
+  "excessMs": {
+   "p50": 1.3,
+   "p95": 6.2,
+   "p99": 16.1,
+   "max": 194.7
+  },
+  "detail": [
+   {
+    "atMs": 13743,
+    "arrivalGapMs": 204.5,
+    "sendSpanMs": 65.8,
+    "maxSendGapMs": 33.3,
+    "prevLseq": 401,
+    "nextLseq": 403,
+    "sentInGap": 6,
+    "lostInGap": 2,
+    "burst": 4,
+    "delayedAfter": 2,
+    "nextExcessMs": 139.7,
+    "maxBurstExcessMs": 139.7,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   },
+   {
+    "atMs": 18396,
+    "arrivalGapMs": 259.8,
+    "sendSpanMs": 66,
+    "maxSendGapMs": 33.4,
+    "prevLseq": 534,
+    "nextLseq": 536,
+    "sentInGap": 6,
+    "lostInGap": 1,
+    "burst": 6,
+    "delayedAfter": 2,
+    "nextExcessMs": 194.7,
+    "maxBurstExcessMs": 194.7,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   }
+  ]
+ },
+ {
+  "condition": "C-wifi-fixed",
+  "trial": "1",
+  "wsOnly": false,
+  "sent": 1733,
+  "received": 1714,
+  "lost": 19,
+  "gaps": 1,
+  "kinds": {
+   "mixed": 1
+  },
+  "excessMs": {
+   "p50": 1.4,
+   "p95": 6.7,
+   "p99": 14.5,
+   "max": 171.7
+  },
+  "detail": [
+   {
+    "atMs": 35868,
+    "arrivalGapMs": 234.3,
+    "sendSpanMs": 65.9,
+    "maxSendGapMs": 33,
+    "prevLseq": 1033,
+    "nextLseq": 1035,
+    "sentInGap": 7,
+    "lostInGap": 2,
+    "burst": 5,
+    "delayedAfter": 3,
+    "nextExcessMs": 171.7,
+    "maxBurstExcessMs": 171.7,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   }
+  ]
+ },
+ {
+  "condition": "C-wifi-fixed",
+  "trial": "2",
+  "wsOnly": false,
+  "sent": 1740,
+  "received": 1718,
+  "lost": 22,
+  "gaps": 1,
+  "kinds": {
+   "mixed": 1
+  },
+  "excessMs": {
+   "p50": 1.4,
+   "p95": 6,
+   "p99": 14.1,
+   "max": 139.5
+  },
+  "detail": [
+   {
+    "atMs": 1470,
+    "arrivalGapMs": 204.7,
+    "sendSpanMs": 66.1,
+    "maxSendGapMs": 33.1,
+    "prevLseq": 45,
+    "nextLseq": 47,
+    "sentInGap": 6,
+    "lostInGap": 2,
+    "burst": 4,
+    "delayedAfter": 2,
+    "nextExcessMs": 139.5,
+    "maxBurstExcessMs": 139.5,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   }
+  ]
+ },
+ {
+  "condition": "C-wifi-fixed",
+  "trial": "3",
+  "wsOnly": false,
+  "sent": 1721,
+  "received": 1697,
+  "lost": 24,
+  "gaps": 0,
+  "kinds": {},
+  "excessMs": {
+   "p50": 1.2,
+   "p95": 5.9,
+   "p99": 14.5,
+   "max": 150.2
+  },
+  "detail": []
+ },
+ {
+  "condition": "D-wifi-fixed",
+  "trial": "1",
+  "wsOnly": false,
+  "sent": 1719,
+  "received": 1699,
+  "lost": 20,
+  "gaps": 2,
+  "kinds": {
+   "delayed": 1,
+   "mixed": 1
+  },
+  "excessMs": {
+   "p50": 1.4,
+   "p95": 5.5,
+   "p99": 15,
+   "max": 231.9
+  },
+  "detail": [
+   {
+    "atMs": 2237,
+    "arrivalGapMs": 263.3,
+    "sendSpanMs": 32.9,
+    "maxSendGapMs": 32.9,
+    "prevLseq": 67,
+    "nextLseq": 68,
+    "sentInGap": 6,
+    "lostInGap": 0,
+    "burst": 7,
+    "delayedAfter": 5,
+    "nextExcessMs": 231.9,
+    "maxBurstExcessMs": 231.9,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "delayed"
+   },
+   {
+    "atMs": 5604,
+    "arrivalGapMs": 283.1,
+    "sendSpanMs": 66,
+    "maxSendGapMs": 33,
+    "prevLseq": 163,
+    "nextLseq": 165,
+    "sentInGap": 7,
+    "lostInGap": 1,
+    "burst": 6,
+    "delayedAfter": 4,
+    "nextExcessMs": 219.2,
+    "maxBurstExcessMs": 219.2,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   }
+  ]
+ },
+ {
+  "condition": "D-wifi-fixed",
+  "trial": "2",
+  "wsOnly": false,
+  "sent": 1733,
+  "received": 1712,
+  "lost": 21,
+  "gaps": 3,
+  "kinds": {
+   "mixed": 2,
+   "delayed": 1
+  },
+  "excessMs": {
+   "p50": 1.5,
+   "p95": 6.1,
+   "p99": 28,
+   "max": 260.7
+  },
+  "detail": [
+   {
+    "atMs": 26550,
+    "arrivalGapMs": 326.1,
+    "sendSpanMs": 66.1,
+    "maxSendGapMs": 33.1,
+    "prevLseq": 770,
+    "nextLseq": 772,
+    "sentInGap": 9,
+    "lostInGap": 1,
+    "burst": 4,
+    "delayedAfter": 4,
+    "nextExcessMs": 260.7,
+    "maxBurstExcessMs": 260.7,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   },
+   {
+    "atMs": 28597,
+    "arrivalGapMs": 200.2,
+    "sendSpanMs": 66.1,
+    "maxSendGapMs": 66.1,
+    "prevLseq": 830,
+    "nextLseq": 831,
+    "sentInGap": 5,
+    "lostInGap": 1,
+    "burst": 4,
+    "delayedAfter": 2,
+    "nextExcessMs": 135.6,
+    "maxBurstExcessMs": 135.6,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   },
+   {
+    "atMs": 29323,
+    "arrivalGapMs": 242.7,
+    "sendSpanMs": 34.4,
+    "maxSendGapMs": 34.4,
+    "prevLseq": 849,
+    "nextLseq": 850,
+    "sentInGap": 6,
+    "lostInGap": 0,
+    "burst": 6,
+    "delayedAfter": 3,
+    "nextExcessMs": 209.4,
+    "maxBurstExcessMs": 209.4,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "delayed"
+   }
+  ]
+ },
+ {
+  "condition": "D-wifi-fixed",
+  "trial": "3",
+  "wsOnly": false,
+  "sent": 1743,
+  "received": 1722,
+  "lost": 21,
+  "gaps": 3,
+  "kinds": {
+   "mixed": 3
+  },
+  "excessMs": {
+   "p50": 1.3,
+   "p95": 6,
+   "p99": 15.8,
+   "max": 177
+  },
+  "detail": [
+   {
+    "atMs": 10271,
+    "arrivalGapMs": 211.3,
+    "sendSpanMs": 66.1,
+    "maxSendGapMs": 33.1,
+    "prevLseq": 303,
+    "nextLseq": 305,
+    "sentInGap": 5,
+    "lostInGap": 2,
+    "burst": 3,
+    "delayedAfter": 2,
+    "nextExcessMs": 146.1,
+    "maxBurstExcessMs": 146.1,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   },
+   {
+    "atMs": 12220,
+    "arrivalGapMs": 207.3,
+    "sendSpanMs": 32.9,
+    "maxSendGapMs": 32.9,
+    "prevLseq": 360,
+    "nextLseq": 361,
+    "sentInGap": 6,
+    "lostInGap": 1,
+    "burst": 5,
+    "delayedAfter": 3,
+    "nextExcessMs": 177,
+    "maxBurstExcessMs": 177,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   },
+   {
+    "atMs": 14925,
+    "arrivalGapMs": 229,
+    "sendSpanMs": 65.9,
+    "maxSendGapMs": 33,
+    "prevLseq": 435,
+    "nextLseq": 437,
+    "sentInGap": 6,
+    "lostInGap": 2,
+    "burst": 5,
+    "delayedAfter": 2,
+    "nextExcessMs": 164.6,
+    "maxBurstExcessMs": 164.6,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   }
+  ]
+ },
+ {
+  "condition": "E-wifi-fixed",
+  "trial": "1",
+  "wsOnly": false,
+  "sent": 1730,
+  "received": 1710,
+  "lost": 20,
+  "gaps": 0,
+  "kinds": {},
+  "excessMs": {
+   "p50": 1.4,
+   "p95": 5.8,
+   "p99": 12.9,
+   "max": 29.5
+  },
+  "detail": []
+ },
+ {
+  "condition": "E-wifi-fixed",
+  "trial": "2",
+  "wsOnly": false,
+  "sent": 1729,
+  "received": 1709,
+  "lost": 20,
+  "gaps": 1,
+  "kinds": {
+   "mixed": 1
+  },
+  "excessMs": {
+   "p50": 1.5,
+   "p95": 7,
+   "p99": 14.6,
+   "max": 221.1
+  },
+  "detail": [
+   {
+    "atMs": 55508,
+    "arrivalGapMs": 284.3,
+    "sendSpanMs": 66.3,
+    "maxSendGapMs": 33.4,
+    "prevLseq": 1602,
+    "nextLseq": 1604,
+    "sentInGap": 8,
+    "lostInGap": 1,
+    "burst": 7,
+    "delayedAfter": 4,
+    "nextExcessMs": 221.1,
+    "maxBurstExcessMs": 221.1,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   }
+  ]
+ },
+ {
+  "condition": "E-wifi-fixed",
+  "trial": "3",
+  "wsOnly": false,
+  "sent": 1734,
+  "received": 1715,
+  "lost": 19,
+  "gaps": 1,
+  "kinds": {
+   "mixed": 1
+  },
+  "excessMs": {
+   "p50": 1.4,
+   "p95": 5.2,
+   "p99": 13.1,
+   "max": 200.2
+  },
+  "detail": [
+   {
+    "atMs": 21504,
+    "arrivalGapMs": 263.3,
+    "sendSpanMs": 66.1,
+    "maxSendGapMs": 33.2,
+    "prevLseq": 625,
+    "nextLseq": 627,
+    "sentInGap": 7,
+    "lostInGap": 1,
+    "burst": 7,
+    "delayedAfter": 4,
+    "nextExcessMs": 200.2,
+    "maxBurstExcessMs": 200.2,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   }
+  ]
+ },
+ {
+  "condition": "E-ws-wifi-fixed",
+  "trial": "1",
+  "wsOnly": true,
+  "sent": 1751,
+  "received": 1751,
+  "lost": 0,
+  "gaps": 1,
+  "kinds": {
+   "delayed": 1
+  },
+  "excessMs": {
+   "p50": 1.2,
+   "p95": 6.7,
+   "p99": 39.8,
+   "max": 225
+  },
+  "detail": [
+   {
+    "atMs": 29940,
+    "arrivalGapMs": 257.2,
+    "sendSpanMs": 33,
+    "maxSendGapMs": 33,
+    "prevLseq": 876,
+    "nextLseq": 877,
+    "sentInGap": 7,
+    "lostInGap": 0,
+    "burst": 8,
+    "delayedAfter": 4,
+    "nextExcessMs": 225,
+    "maxBurstExcessMs": 225,
+    "outOfOrder": false,
+    "via": [
+     "ws"
+    ],
+    "viaSwitch": false,
+    "kind": "delayed"
+   }
+  ]
+ },
+ {
+  "condition": "E-ws-wifi-fixed",
+  "trial": "2",
+  "wsOnly": true,
+  "sent": 1748,
+  "received": 1748,
+  "lost": 0,
+  "gaps": 1,
+  "kinds": {
+   "delayed": 1
+  },
+  "excessMs": {
+   "p50": 1.2,
+   "p95": 6,
+   "p99": 24.5,
+   "max": 184
+  },
+  "detail": [
+   {
+    "atMs": 53092,
+    "arrivalGapMs": 247.8,
+    "sendSpanMs": 66,
+    "maxSendGapMs": 66,
+    "prevLseq": 1551,
+    "nextLseq": 1552,
+    "sentInGap": 6,
+    "lostInGap": 0,
+    "burst": 6,
+    "delayedAfter": 3,
+    "nextExcessMs": 184,
+    "maxBurstExcessMs": 184,
+    "outOfOrder": false,
+    "via": [
+     "ws"
+    ],
+    "viaSwitch": false,
+    "kind": "delayed"
+   }
+  ]
+ },
+ {
+  "condition": "E-ws-wifi-fixed",
+  "trial": "3",
+  "wsOnly": true,
+  "sent": 1741,
+  "received": 1741,
+  "lost": 0,
+  "gaps": 0,
+  "kinds": {},
+  "excessMs": {
+   "p50": 1.1,
+   "p95": 6.7,
+   "p99": 37.7,
+   "max": 68
+  },
+  "detail": []
+ },
+ {
+  "condition": "E-after-wifi-fixed",
+  "trial": "1",
+  "wsOnly": false,
+  "sent": 1715,
+  "received": 1695,
+  "lost": 20,
+  "gaps": 0,
+  "kinds": {},
+  "excessMs": {
+   "p50": 1.3,
+   "p95": 5.3,
+   "p99": 10.5,
+   "max": 28.8
+  },
+  "detail": []
+ },
+ {
+  "condition": "E-after-wifi-fixed",
+  "trial": "2",
+  "wsOnly": false,
+  "sent": 1732,
+  "received": 1714,
+  "lost": 18,
+  "gaps": 3,
+  "kinds": {
+   "mixed": 3
+  },
+  "excessMs": {
+   "p50": 1.3,
+   "p95": 7.3,
+   "p99": 17.8,
+   "max": 189.2
+  },
+  "detail": [
+   {
+    "atMs": 29280,
+    "arrivalGapMs": 229.8,
+    "sendSpanMs": 65.9,
+    "maxSendGapMs": 33,
+    "prevLseq": 848,
+    "nextLseq": 850,
+    "sentInGap": 6,
+    "lostInGap": 2,
+    "burst": 5,
+    "delayedAfter": 2,
+    "nextExcessMs": 165.2,
+    "maxBurstExcessMs": 165.2,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   },
+   {
+    "atMs": 30533,
+    "arrivalGapMs": 204.4,
+    "sendSpanMs": 67.1,
+    "maxSendGapMs": 34.2,
+    "prevLseq": 883,
+    "nextLseq": 885,
+    "sentInGap": 5,
+    "lostInGap": 1,
+    "burst": 4,
+    "delayedAfter": 2,
+    "nextExcessMs": 137.8,
+    "maxBurstExcessMs": 137.8,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   },
+   {
+    "atMs": 32315,
+    "arrivalGapMs": 254.5,
+    "sendSpanMs": 66,
+    "maxSendGapMs": 33,
+    "prevLseq": 934,
+    "nextLseq": 936,
+    "sentInGap": 7,
+    "lostInGap": 1,
+    "burst": 7,
+    "delayedAfter": 3,
+    "nextExcessMs": 189.2,
+    "maxBurstExcessMs": 189.2,
+    "outOfOrder": false,
+    "via": [
+     "rtc"
+    ],
+    "viaSwitch": false,
+    "kind": "mixed"
+   }
+  ]
+ },
+ {
+  "condition": "E-after-wifi-fixed",
+  "trial": "3",
+  "wsOnly": false,
+  "sent": 1719,
+  "received": 1702,
+  "lost": 17,
+  "gaps": 0,
+  "kinds": {},
+  "excessMs": {
+   "p50": 1.3,
+   "p95": 6,
+   "p99": 12.2,
+   "max": 29.4
+  },
+  "detail": []
+ },
+ {
+  "condition": "E-after-ws-wifi-fixed",
+  "trial": "1",
+  "wsOnly": true,
+  "sent": 1741,
+  "received": 1741,
+  "lost": 0,
+  "gaps": 0,
+  "kinds": {},
+  "excessMs": {
+   "p50": 1.2,
+   "p95": 8.1,
+   "p99": 37.3,
+   "max": 70.1
+  },
+  "detail": []
+ },
+ {
+  "condition": "E-after-ws-wifi-fixed",
+  "trial": "2",
+  "wsOnly": true,
+  "sent": 1756,
+  "received": 1756,
+  "lost": 0,
+  "gaps": 2,
+  "kinds": {
+   "delayed": 2
+  },
+  "excessMs": {
+   "p50": 1.2,
+   "p95": 8.4,
+   "p99": 44,
+   "max": 238.9
+  },
+  "detail": [
+   {
+    "atMs": 340,
+    "arrivalGapMs": 209.1,
+    "sendSpanMs": 33,
+    "maxSendGapMs": 33,
+    "prevLseq": 11,
+    "nextLseq": 12,
+    "sentInGap": 6,
+    "lostInGap": 0,
+    "burst": 6,
+    "delayedAfter": 3,
+    "nextExcessMs": 178.1,
+    "maxBurstExcessMs": 178.1,
+    "outOfOrder": false,
+    "via": [
+     "ws"
+    ],
+    "viaSwitch": false,
+    "kind": "delayed"
+   },
+   {
+    "atMs": 3672,
+    "arrivalGapMs": 271,
+    "sendSpanMs": 33,
+    "maxSendGapMs": 33,
+    "prevLseq": 110,
+    "nextLseq": 111,
+    "sentInGap": 8,
+    "lostInGap": 0,
+    "burst": 8,
+    "delayedAfter": 5,
+    "nextExcessMs": 238.9,
+    "maxBurstExcessMs": 238.9,
+    "outOfOrder": false,
+    "via": [
+     "ws"
+    ],
+    "viaSwitch": false,
+    "kind": "delayed"
+   }
+  ]
+ },
+ {
+  "condition": "E-after-ws-wifi-fixed",
+  "trial": "3",
+  "wsOnly": true,
+  "sent": 1750,
+  "received": 1750,
+  "lost": 0,
+  "gaps": 0,
+  "kinds": {},
+  "excessMs": {
+   "p50": 1.4,
+   "p95": 8.2,
+   "p99": 38.6,
+   "max": 84.5
+  },
+  "detail": []
+ }
+]
