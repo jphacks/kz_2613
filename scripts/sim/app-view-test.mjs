@@ -106,7 +106,7 @@ test('人数: どの人数・どのゲームも操作定義の分担を表示す
   assert.deepEqual(roleView(null, 'P1'), { title: '', lines: [] }, '状態が届く前');
   const two = { phase: 'lobby', profile: { ...mc, assignment: { P1: ['forward'], P2: ['look', 'attack', 'drop'] } }, connected: ['P1', 'P2'], keys: { actions: { attack: { label: '左クリック' } } } };
   assert.equal(roleView(two, 'P2').title, 'マウス移動・クリック・キー');
-  assert.match(roleView(two, 'P2').lines.join(), /クリック：左クリック/);
+  assert.deepEqual(roleView(two, 'P2').lines, ['マウス移動、左クリック、送らない'], '見出しの入力の種類を内容で繰り返さない (#290)');
   assert.equal(roleView(two, 'P3').title, '担当なし');
   const three = { phase: 'lobby', profile: { ...mc, assignment: { P1: ['forward'], P2: ['look'], P3: ['attack', 'drop'] } }, connected: ['P1', 'P2', 'P3'] };
   assert.deepEqual(['P1', 'P2', 'P3'].map((s) => roleView(three, s).title), ['キー', 'マウス移動', 'キー']);
@@ -133,11 +133,12 @@ test('分担の確認: 操作定義があれば分担の案 (協力プレイ中�
   const keys = { actions: { left: { label: 'A' } } };
   const v = roleView({ profile, keys }, 'P1');
   assert.equal(v.title, 'キー');
-  assert.deepEqual(v.lines, ['キー：Aキー']);
-  assert.deepEqual(roleView({ profile, keys }, 'P2').lines, ['マウス移動：マウス移動', 'ホイール：ホイール']);
+  assert.deepEqual(v.lines, ['Aキー']);
+  assert.deepEqual(roleView({ profile, keys }, 'P2').lines, ['マウス移動、ホイール']);
+  assert.deepEqual(roleView({ profile, keys }, 'P3').lines, []);
   assert.equal(roleView({ profile, keys }, 'P3').title, '担当なし');
-  assert.deepEqual(roleView({ phase:'coop', profile, keys, assigned: { P1: ['aim'] } }, 'P1').lines, ['マウス移動：マウス移動']);
-  assert.deepEqual(roleView({phase:'lobby',profile,keys,assigned:{P1:['aim']}},'P1').lines,['キー：Aキー']);
+  assert.deepEqual(roleView({ phase:'coop', profile, keys, assigned: { P1: ['aim'] } }, 'P1').lines, ['マウス移動']);
+  assert.deepEqual(roleView({phase:'lobby',profile,keys,assigned:{P1:['aim']}},'P1').lines,['Aキー']);
 });
 
 test('リモコン: 右・Enter で次、左・Esc で前の画面へ。端で止まる', () => {

@@ -1694,3 +1694,9 @@
 - 未実施: 実OS入力での疑似ゲーム照合・実ホットキー/Alt+Tab・iPhone・実指・Minecraft実入力・実無線断・複数実端末・別PCの製品受入。明示許可のないOS入力は実施せず、dry-runや固定traceの成功を実入力の合格とは扱わない。
 
 - #279の実測を受け、SETUP_WINDOWSへworktree別target・固定exeハッシュ・展開後package-smokeを追記。通常buildの成功表示だけで配布バイナリの版を判断しない。製品コードと依存関係は変更せず、git diff --checkとcheck-public-docs成功。
+
+## 2026-11-10 — #290 担当の内容から入力の種類の重複を除く
+
+- 2026-11-10、ユーザーが#290の扱いについて「キー名のまま（#150を維持）」を選んだ。操作定義の名前（使う・キル等）は主表示に戻さず、`docs/develop/decisions/2026-10-26-input-key-labels.md` を維持する。#290では「キー：Aキー」のような重複表記の解消だけを行う。
+- `roleView` の内容を、見出し（入力の種類）を繰り返さない1行（例「Aキー、Dキー」「マウス移動、左クリック」）にした。PCの分担カードは従来 `lines[0]` だけを出しており、複数種類の担当で一部しか表示されなかったが、1行にまとめたので全入力が出る。
+- `node --experimental-strip-types scripts/sim/app-view-test.mjs`（30/30）、`npx tsc --noEmit -p apps/web`、`node scripts/sim/product-web-test.mjs` が成功。実機・Among Usでの目視は未実施。
