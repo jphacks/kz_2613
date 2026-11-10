@@ -69,7 +69,7 @@ export function decodeServerMessage(text: unknown): ServerMessage | null {
       break;
     case 'rtc-answer': if (typeof message.sdp !== 'string') return null; break;
     case 'rtc-cand': if (typeof message.cand !== 'string' || !optional(message, 'mid', v => v === null || typeof v === 'string')) return null; break;
-    case 'full': break;
+    case 'full': if (!optional(message, 'retryMs', v => v === null || (typeof v === 'number' && Number.isFinite(v) && v >= 0))) return null; break;
     case 'error': if (typeof message.code !== 'string') return null; break;
     default: return {type:'unknown', originalType:message.type};
   }

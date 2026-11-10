@@ -79,3 +79,13 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
     note,
   };
 }
+
+/**
+ * 満員で参加できないときの案内 (#297)。切断した人の枠をロビーで保持しているだけなら、満員ではなく空く見込みを示す。
+ * 保持中の枠がなければ undefined (画面の既定の「満員」の案内を使う)
+ */
+export function fullText(retryMs: number | null | undefined) {
+  if (retryMs == null) return undefined;
+  const sec = Math.max(1, Math.ceil(retryMs / 1000));
+  return `切断した人の再接続を待っているため、今は参加できません。${sec}秒ほど待ってから再読み込みしてください。`;
+}

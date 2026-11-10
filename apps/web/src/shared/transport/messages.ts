@@ -8,7 +8,7 @@ export type ServerMessage = Welcome | RtcSignal
   | {type:'command_result';accepted:boolean;reasons?:string[]}
   | {type:'pong'|'kpong';t:number}
   | {type:'ack';iseq:number;via:'ws'|'rtc';stale?:boolean}
-  | {type:'full'} | {type:'error';code:string}
+  | {type:'full';retryMs?:number|null} | {type:'error';code:string}
   | {type:'unknown';originalType:string};
 export interface ButtonInput {button:string;state:'down'|'up';burst?:boolean}
 export interface LookInput {type:'look';lseq:number;epoch:number;cx:number;cy:number}
