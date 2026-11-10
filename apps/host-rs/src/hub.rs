@@ -81,6 +81,7 @@ pub enum Event {
     ManualPicked(Option<PathBuf>),
     /// 試験用: PC アプリのウィンドウが前面になった・外れた (DRY_RUN のときだけ。実際は前面のプロセス名で判定する)
     FakeAppWindow(bool),
+    FakeLauncher(bool),
     /// インストール済みのゲームを探し終えた (別スレッドから)
     GamesDetected(games::Detected),
     /// ランチャーへの起動要求が終わった (別スレッドから。Err は理由)
@@ -109,6 +110,12 @@ fn now_ms() -> u64 {
 /// PC アプリ (デスクトップアプリ) のウィンドウ。前面の判定 (check_target) と同じくプロセス名で照合する
 fn desktop_target() -> Target {
     Target { processes: vec![DESKTOP_PROCESS.into()], title_contains: String::new(), dir: None, executable: None }
+}
+
+/// Minecraft の公式ランチャーのウィンドウ (#287)。Xbox アプリ版は Minecraft.exe、旧版は MinecraftLauncher.exe。
+/// 起動直後に同じタイトルで出る GamingServicesUI (更新の確認) はプロセス名で除く。Bedrock 版は Minecraft.Windows.exe で別
+fn launcher_target() -> Target {
+    Target { processes: vec!["minecraft.exe".into(), "minecraftlauncher.exe".into()], title_contains: "Minecraft Launcher".into(), dir: None, executable: None }
 }
 
 fn dry_run() -> bool {
@@ -318,6 +325,7 @@ pub struct Hub {
     launch: Option<Launch>,
     launch_gen: u64,
     target_fg: Option<Foreground>,
+    launcher_fg: bool, // Minecraft の公式ランチャーが前面か (#287)
     target_ok: bool,
     fake_target: Option<bool>, // 試験用 (DRY_RUN のときだけ)。Some なら OS に問い合わせない
     fake_activate: bool,
@@ -427,6 +435,7 @@ impl Hub {
             launch: None,
             launch_gen: 0,
             target_fg: None,
+            launcher_fg: false,
             target_ok: false,
             fake_activate: true,
             keybinds: Keybinds::none(),
@@ -752,7 +761,7 @@ impl Hub {
             "prepareStatus": self.game.prepare_status,
             "titleName": self.game_name(),
             "launch": self.launch.as_ref().map(|l| json!({ "id": l.id, "state": l.state, "message": l.message })),
-            "remoteRoute": if self.remote_app_active() { "app" } else if self.remote_game_active() { "game" } else { "none" },
+            "remoteRoute": if self.remote_app_active() { "app" } else if self.remote_game_active() { "game" } else if self.remote_launcher_active() { "launcher" } else { "none" },
             // 入力が PC に届く状態か (注入モード・入力先のウィンドウ)。スマホに「届いていない」ことを知らせる
             "inputActive": self.can_inject(),
             "inputTarget": self.inject == InjectMode::On && !self.target_ok,
@@ -1035,7 +1044,7 @@ impl Hub {
             // ゲームのキー設定に合わせて送る。Minecraft の固定の操作名 (FWD など) は受け付けない
             if !control.starts_with("act:") || !self.uses_generated_controls() { return None; }
             self.action_output(slot, control)
-        } else if slot == 0 && self.remote_game_active() {
+        } else if slot == 0 && (self.remote_game_active() || self.remote_launcher_active()) {
             let default = controls::remote_control(control)?;
             // メニューでの「持ち物」はインベントリのキー (Minecraft の設定に合わせる)
             if control == "REMOTE_E" { self.keybinds.output_for("INV").unwrap_or(Some(default)) } else { Some(default) }
@@ -1317,7 +1326,7 @@ impl Hub {
         let down = state == "down";
         let o = &OUTPUTS[idx];
         if let Kind::Wheel { notches } = o.kind {
-            if !down || !self.can_inject() {
+            if !down || !(self.can_inject() || self.remote_launcher_active()) {
                 return;
             }
             let ok = self.input.wheel(notches);
@@ -1328,8 +1337,8 @@ impl Hub {
             self.broadcast_monitors(&json!({ "type": "inject", "entry": entry }));
             return;
         }
-        // 押下は注入可能な時だけ受け付ける。解放は常に通す (押しっぱなしを残さない)
-        if down && !self.can_inject() {
+        // 押下は注入可能な時 (ランチャーへのリモコン入力を含む) だけ受け付ける。解放は常に通す (押しっぱなしを残さない)
+        if down && !(self.can_inject() || (slot == 0 && self.remote_launcher_active())) {
             return;
         }
         self.set_output(idx, SLOT_NAMES[slot], down);
@@ -1342,6 +1351,23 @@ impl Hub {
         let page = self.conns.values().any(|c| matches!(c.role, Role::Monitor {page:Page::App,focused:true}));
         page && (self.fake_target.is_some() || self.game_service.foreground().is_some_and(|f|
             ["msedge.exe", "chrome.exe", "firefox.exe"].contains(&f.process.as_str()) && f.title.contains("Re:Cooplay")))
+    }
+
+    /// ランチャーへのリモコン入力 (#287) も、前面から外れた・戻ったときに押下と旧入力を持ち越さない
+    fn on_launcher_focus(&mut self, launcher: bool) {
+        if launcher == self.launcher_fg { return; }
+        self.launcher_fg = launcher;
+        if self.inject == InjectMode::On { self.release_outputs(None); self.reset_look(); self.advance_epoch(); }
+        self.log("launcher_focus", json!({ "ok": launcher }));
+        self.push_game();
+    }
+
+    /// Minecraft の公式ランチャーをホストのリモコンで操作できるか (#287)。「プレイ」を押すのに PC のマウスを使わない。
+    /// Minecraft を選んだロビー・準備中に、ランチャーが前面のときだけ。PC アプリが前面ならそちらを優先する
+    fn remote_launcher_active(&self) -> bool {
+        self.game.title == "minecraft-java" && matches!(self.game.phase, Phase::Lobby | Phase::Preparing) && self.launcher_fg
+            && !self.remote_app_active() && self.inject == InjectMode::On && self.input.available() && !self.input_fault
+            && self.release_pending.is_empty()
     }
 
     fn remote_game_active(&self) -> bool {
@@ -1365,7 +1391,7 @@ impl Hub {
         if !matches!(kind.as_str(), "move" | "scroll") { return; }
         if self.remote_app_active() {
             self.broadcast_monitors(&json!({"type":"remote","route":"app","epoch":self.game.epoch,"kind":kind,"dx":x,"dy":y}));
-        } else if self.remote_game_active() {
+        } else if self.remote_game_active() || self.remote_launcher_active() {
             // スクロール量に合わせてホイールを 1〜3 段送る (40px で 1 段、#122)。下へのスクロールはホイールの負の向き
             let notches = if kind == "scroll" { ((y.abs() / 40.0).ceil() as i32).clamp(0, 3) * if y > 0.0 { -1 } else { 1 } } else { 0 };
             let ok = if kind == "move" { self.input.mouse_move(x.round() as i32,y.round() as i32) } else { self.input.wheel(notches) };
@@ -1420,20 +1446,22 @@ impl Hub {
 
     /// 前面のウィンドウが入力先かを確認する。外れたら (常時 ON で注入中なら) 全キーを離し、PC 画面とスマホに知らせる
     fn check_target(&mut self) {
-        let (fg, ok) = match self.fake_target {
-            Some(ok) => (None, ok),
+        let (fg, ok, launcher) = match self.fake_target {
+            Some(ok) => (None, ok, self.launcher_fg),  // 試験では FakeLauncher で変える
             None => {
                 let fg = self.game_service.foreground();
                 let ok = fg.as_ref().is_some_and(|f| self.target.matches(f));
+                let launcher = fg.as_ref().is_some_and(|f| launcher_target().matches(f));
                 // PC アプリ (デスクトップアプリ) が前面か。WebView2 の画面は背面になっても blur を受け取らないため、
                 // 手動復帰の判定は前面のプロセス名で行う
                 if self.desktop {
                     let app = fg.as_ref().is_some_and(|f| f.process.eq_ignore_ascii_case(DESKTOP_PROCESS));
                     self.on_app_focus(app);
                 }
-                (fg, ok)
+                (fg, ok, launcher)
             }
         };
+        self.on_launcher_focus(launcher);
         if ok != self.target_ok {
             self.target_ok = ok;
             if self.inject == InjectMode::On {
@@ -1644,7 +1672,7 @@ impl Hub {
         let gen = self.launch_gen;
         let minecraft = entry.source == games::MINECRAFT_SOURCE;
         let message = if dry_run() { format!("dry-run：{}は起動しません", entry.name) }
-            else if minecraft { "Minecraftのランチャーを開きました。ランチャーで「プレイ」を押してください".into() }
+            else if minecraft { "Minecraftのランチャーを開きました。ホストのスマホのリモコンで「プレイ」を押してください".into() }
             else { format!("{}を起動しています", entry.name) };
         self.log("launch_game", json!({ "id": entry.id, "source": entry.source }));
         // ランチャーへの要求 (ShellExecuteW) は Steam の起動待ちで数秒かかる (実機で約5秒)。
@@ -2063,6 +2091,9 @@ impl Hub {
             }
             Event::FakeActivate(ok) => {
                 if self.fake_target.is_some() { self.fake_activate = ok; }
+            }
+            Event::FakeLauncher(f) => {
+                if self.fake_target.is_some() { self.on_launcher_focus(f); }
             }
             Event::FakeAppWindow(f) => {
                 // 試験では、この知らせが来たら PC アプリから起動された扱いにする
@@ -2667,6 +2698,7 @@ mod tests {
             launch: None,
             launch_gen: 0,
             target_fg: None,
+            launcher_fg: false,
             target_ok: true,
             fake_activate: true,
             keybinds: Keybinds::none(),
@@ -2956,6 +2988,47 @@ mod tests {
         assert!(h.outputs.iter().all(|s| !s.physical && s.queue.is_empty())); assert_eq!(h.look.px, 0.0);
         h.on_launched(7, Err("切替前の結果".into())); h.watch_launch(7);
         assert!(h.launch.is_none()); assert_eq!(h.game.title, "pseudo-game");
+    }
+
+    #[test]
+    fn launcher_window_matches_only_the_official_minecraft_launcher() {
+        let fg = |process: &str, title: &str| Foreground { process: process.into(), path: String::new(), title: title.into() };
+        assert!(launcher_target().matches(&fg("minecraft.exe", "Minecraft Launcher")));
+        assert!(launcher_target().matches(&fg("minecraftlauncher.exe", "Minecraft Launcher")));
+        // 実機で起動直後に同じタイトルで出た更新確認・ゲーム本体・Bedrock 版は対象にしない
+        assert!(!launcher_target().matches(&fg("gamingservicesui.exe", "Minecraft Launcher")));
+        assert!(!launcher_target().matches(&fg("javaw.exe", "Minecraft 1.21")));
+        assert!(!launcher_target().matches(&fg("minecraft.windows.exe", "Minecraft")));
+    }
+
+    #[test]
+    fn host_remote_reaches_the_minecraft_launcher_only_before_coop_and_releases_when_it_leaves() {
+        let (mut h, _rx) = fixture();
+        h.game.title = "minecraft-java".into();
+        h.game.phase = Phase::Lobby;
+        h.fake_target = Some(false); // ゲーム本体は前面ではない
+        h.check_target();
+        assert!(!h.remote_launcher_active());
+        h.on_event(Event::FakeLauncher(true));
+        assert!(h.remote_launcher_active());
+        assert_eq!(h.game_snapshot()["remoteRoute"], "launcher");
+        h.handle_control(1, "ENTER", "down");
+        assert!(!h.outputs[index("ENTER")].physical, "ホスト以外は操作できない");
+        h.handle_control(0, "ENTER", "down");
+        assert!(h.outputs[index("ENTER")].physical, "ホストのリモコンでランチャーの「プレイ」を押せる");
+        let epoch = h.game.epoch;
+        h.on_event(Event::FakeLauncher(false));
+        assert!(!h.outputs[index("ENTER")].physical, "ランチャーが前面から外れたら離す");
+        assert!(h.game.epoch > epoch);
+        assert_eq!(h.game_snapshot()["remoteRoute"], "none");
+        h.on_event(Event::FakeLauncher(true));
+        h.game.phase = Phase::Coop;
+        assert!(!h.remote_launcher_active(), "協力プレイ中は使わない");
+        h.game.phase = Phase::Preparing;
+        assert!(h.remote_launcher_active());
+        h.game.title = "pseudo-game".into();
+        assert!(!h.remote_launcher_active(), "Minecraft 以外を選んでいるときは使わない");
+        h.release_outputs(None);
     }
 
     #[test]

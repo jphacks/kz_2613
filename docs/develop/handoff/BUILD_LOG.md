@@ -1708,3 +1708,11 @@
 - PCアプリから起動したホストは、選んだゲームのウィンドウを一度見た後に閉じたら、ロビーでPCアプリを1回だけ前面に戻す（一時停止中に閉じた場合はロビーへ戻った後）。ゲーム自体をスマホから終了する操作は追加していない。
 - 自動試験：`cargo test --release --locked`（host 140成功・2 ignored、probe 4成功。`OPEN_APP` の段階・ホスト限定、ゲーム終了時の1回だけの前面化を追加）、`node scripts/sim/product-web-test.mjs`、`npm run typecheck/build --prefix apps/web`、`check-static-pages.mjs`、`check-public-docs.py` 成功。
 - 実機（Android Chrome、ホットスポットのWi-Fi、USBのCDPで操作）：dry-run・疑似入力先で、PCアプリの背面を標準入力 `app blur` で模擬。ロビーでボタンが表示され、押すと `open_app ok` となり表示が「PCアプリを操作中」に変わりボタンが消えた。実ウィンドウ（Tauri）の前面化と、実ゲームを閉じたときの自動復帰は未確認。
+
+## 2026-11-10 — #287 Minecraftのランチャーをホストのリモコンで操作する（#311 に積み重ね）
+
+- この PC で公式ランチャーを一時的に開き、ウィンドウを確認した（入力は送らず閉じた）：`C:\Program Files\WindowsApps\Microsoft.4297127D64EC6_2.6.2.0_x64__8wekyb3d8bbwe\Minecraft.exe`、タイトル「Minecraft Launcher」。起動直後に同じタイトルの `GamingServicesUI.exe` が一時的に前面になった。
+- ホスト：Minecraftを選んだロビー・準備中に、`minecraft.exe`/`minecraftlauncher.exe` かつタイトルに「Minecraft Launcher」を含むウィンドウが前面なら、ホストのリモコン（キー・クリック・タッチパッド・ホイール）をランチャーへ送る（`remoteRoute: "launcher"`）。PCアプリが前面ならそちらを優先。ランチャーが前面から外れた・戻ったときは全解放してepochを進める。起動時の案内を「ホストのスマホのリモコンで「プレイ」を押してください」に変更。
+- 自動試験：`RECOOPLAY_DRY_RUN=1 cargo test --release --locked`（host 142成功・2 ignored、probe 4成功。ランチャーの照合、ホスト限定・協力プレイ中と他ゲームで無効・前面から外れたら解放、を追加）、`node scripts/sim/protocol-sim.mjs` 60/60、`node scripts/sim/product-web-test.mjs`、`npm run typecheck/build`、`check-static-pages.mjs`、`check-public-docs.py` 成功。
+- 実機（Android Chrome、ホットスポットのWi-Fi、USBのCDPで操作、dry-run・疑似入力先）：標準入力 `launcher focus` でランチャーが前面の想定にし、スマホの表示が「Minecraftのランチャーを操作中」に変わり、Enter（down/up）とタッチパッドの移動がランチャー経路で注入された。`launcher blur` で表示が戻った。
+- 未確認：実際のランチャーへの実入力で「プレイ」を押せること、ワールドに入るまでスマホだけで進められること、Steam等の他ランチャーで人の操作が要る場面の洗い出し（Among Usは不要だった：#287のコメント）。
