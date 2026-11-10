@@ -13,15 +13,30 @@ export function playerChips(game: PhoneGame, me: Slot) {
   return SLOT_NAMES.map((name) => ({ name, on: game.connected.includes(name), label: `${name}${name === me ? '（自分）' : ''}` }));
 }
 
+/** ゲームへ入力を送る段階か。ロビーでは前面の案内を出さない (#291) */
+export const sendsToGame = (game: PhoneGame) => game.phase !== 'lobby';
+
 /**
  * 画面上部の注意 (#238)。見ている人が行えることに合わせる。参加者は待つだけでよい。
- * ゲームの検証状況はホストが判断する情報なので、参加者には出さない。安全の表示ではない
+ * ゲームの検証状況はホストが判断する情報なので、参加者には出さない。安全の表示ではない。
+ * ホストのリモコン画面では上部に出さず、remoteModel の alert として下の状態欄に出す。
+ * 警告の有無でリモコンのボタン位置を動かさないため (#291)
  */
 export function inputWarnText({ isHost, game, name, notice }: {isHost:boolean;game:PhoneGame;name:string;notice:string}) {
-  const target = !game.inputTarget ? '' : isHost
+  const target = !game.inputTarget || !sendsToGame(game) ? '' : isHost
     ? `PCの画面が${name}になっていません。${name}を前面に戻すまで操作は届きません。`
     : `PCの画面が${name}になっていません。ホストが戻すまでお待ちください。`;
   return [target, isHost ? notice : ''].filter(Boolean).join(' ');
+}
+
+/** リモコンの操作先。前面にあるのに「前面にしてください」と出さず、届かない理由を段階に合わせて示す (#291) */
+function routeText(game: PhoneGame, name: string) {
+  if (game.remoteRoute === 'app') return 'PCアプリを操作中';
+  if (game.remoteRoute === 'game') return `${name}のメニューを操作中`;
+  if (game.remoteRoute !== 'none') return '';
+  if (!sendsToGame(game)) return 'PCアプリが前面にないため、リモコンは届きません（ロビーではPCアプリだけを操作します）';
+  if (game.inputTarget) return `${name}が前面にないため、リモコンは届きません`;
+  return `リモコンは今は届きません${game.readyReasons?.length ? `（${game.readyReasons[0]}）` : ''}`;
 }
 
 /**
@@ -60,7 +75,7 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
   if (phase === 'paused' && game.inputTarget && game.prepareStatus) note += `。${game.prepareStatus}`;
   return {
     players: playerChips(game, me),
-    route: { app: 'PCアプリを操作中', game: `${name}のメニューを操作中`, none: `PCアプリまたは${name}を前面にしてください` }[game.remoteRoute as 'app'|'game'|'none'] || '',
+    route: routeText(game, name), routeBlocked: game.remoteRoute === 'none', notice: '',
     startLabel: phase === 'paused' ? '再開する' : phase === 'preparing' ? `Ready・${game.connected.length}人で操作を始める` : 'ゲームを開く・準備する',
     startDisabled: !(phase === 'paused' ? game.canResume : phase === 'preparing' ? game.canReady : game.canPrepare),
     openGameLabel: `${name}を前面にする`,
@@ -71,4 +86,14 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
     transferTo: isHost && phase === 'lobby' ? game.connected.filter((p) => p !== me) : [],
     note,
   };
+}
+
+/**
+ * 満員で参加できないときの案内 (#297)。切断した人の枠をロビーで保持しているだけなら、満員ではなく空く見込みを示す。
+ * 保持中の枠がなければ undefined (画面の既定の「満員」の案内を使う)
+ */
+export function fullText(retryMs: number | null | undefined) {
+  if (retryMs == null) return undefined;
+  const sec = Math.max(1, Math.ceil(retryMs / 1000));
+  return `切断した人の再接続を待っているため、今は参加できません。${sec}秒ほど待ってから再読み込みしてください。`;
 }

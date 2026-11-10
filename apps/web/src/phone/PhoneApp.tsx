@@ -1,6 +1,6 @@
 import {Controller} from './Controller';
 import { useSyncExternalStore } from 'react';
-import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked,rotationNotice } from './view';
+import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked,rotationNotice,confirmation,answerConfirm } from './view';
 import { SKINS } from '../shared/model/skin.ts';
 
 type PhoneDisplay = ReturnType<typeof display.get>;
@@ -31,6 +31,7 @@ export function PhoneApp() {
 </main>
 
 <DiagnosticsDialog state={state} status={status} selectedSkin={selectedSkin}/>
+<ConfirmDialog status={status}/>
 
 <div id="rotatePrompt" role="status"><b>スマホを縦にしてください</b><p>操作を停止し、押していたキーを離しました。<br />縦向きに戻して、新しい押下から再開します。</p></div>
 <FullMessage/>
@@ -73,12 +74,13 @@ function HostRemoteScreen({state}:{state:PhoneDisplay}) {
       <button className="key" data-ctl="REMOTE_LEFT">左クリック</button><button className="key" data-ctl="REMOTE_RIGHT">右クリック</button><button className="key" data-ctl="REMOTE_E">{state.inventory}</button>
       <button className="key" data-ctl="REMOTE_WHEEL_UP">ホイール↑</button><button className="key" data-ctl="REMOTE_WHEEL_DOWN">ホイール↓</button>
     </div>
-    <div id="remoteRoute" className="note">{state.remote.route}</div>
+    <div id="remoteRoute" className={`note${state.remote.routeBlocked ? ' route-blocked' : ''}`} role="status">{state.remote.route}</div>
     <button className="cmd" id="startBtn" disabled={state.remote.startDisabled}>{state.remote.startLabel}</button>
     <button className="cmd sub" id="openGameBtn" data-cmd="OPEN_GAME" hidden={state.remote.openGameHidden}>{state.remote.openGameLabel}</button>
-    <button className="cmd sub" id="endBtn" style={{display: state.remote.endVisible ? 'block' : 'none'}}>ロビーに戻る（協力プレイ終了）</button>
+    <button className="cmd sub" id="endBtn" style={{display: state.remote.endVisible ? 'block' : 'none'}}>協力プレイを終了（分担に戻る）</button>
     <div id="hostTransfer" className="host-transfer" hidden={!state.remote.transferTo.length}>{state.remote.transferTo.length ? 'ホストを譲る：' : null}{state.remote.transferTo.map(p => <button className="key" key={p} onClick={() => transferHost(p)}>{p}</button>)}</div>
     <div className="note" id="remoteNote">{state.remote.note}</div>
+    <div className="note" id="remoteNotice" hidden={!state.remote.notice}>{state.remote.notice}</div>
   </section>;
 }
 
@@ -117,6 +119,17 @@ function PhoneDiagnostics({phase}:{phase:string|undefined}) {
   <p id="phoneNetAdvice" role="status">{data.advice}</p>
   <output id="inputMetrics" hidden aria-hidden="true">{data.inputMetrics}</output>
 </footer>;
+}
+
+// ブラウザ標準の confirm() はJSを止めて切断扱いになるため、ページ内で確認する (#289)
+function ConfirmDialog({status}:{status:Status}){
+  const request=useSyncExternalStore(confirmation.subscribe,confirmation.get);
+  const online=status.kind==='ok';
+  return <dialog id="phoneConfirm" className="phone-confirm" aria-labelledby="phoneConfirmText" onCancel={e=>{e.preventDefault();answerConfirm(false);}}>
+    <p id="phoneConfirmText">{request?.message}</p>
+    <p id="phoneConfirmWait" role="status" hidden={online}>PCとの通信が戻るまでお待ちください。</p>
+    <div className="phone-confirm-buttons"><button id="phoneConfirmCancel" onClick={()=>answerConfirm(false)}>やめる</button><button id="phoneConfirmOk" className="cmd" disabled={!online} onClick={()=>answerConfirm(true)}>{request?.ok}</button></div>
+  </dialog>;
 }
 
 // 役割交代の予告・交代後の案内 (#161)。非モーダルで、タッチを受け取らない
