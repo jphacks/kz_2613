@@ -1368,6 +1368,8 @@ impl Hub {
         self.game.title == "minecraft-java" && matches!(self.game.phase, Phase::Lobby | Phase::Preparing) && self.launcher_fg
             && !self.remote_app_active() && self.inject == InjectMode::On && self.input.available() && !self.input_fault
             && self.release_pending.is_empty()
+            // ゲームの経路と同じく、緊急停止のホットキーが使えないときは実入力を送らない (疑似入力先を除く)
+            && (self.hotkey.is_ok() || self.fake_target.is_some())
     }
 
     fn remote_game_active(&self) -> bool {
@@ -3028,6 +3030,30 @@ mod tests {
         assert!(h.remote_launcher_active());
         h.game.title = "pseudo-game".into();
         assert!(!h.remote_launcher_active(), "Minecraft 以外を選んでいるときは使わない");
+        h.release_outputs(None);
+    }
+
+    #[test]
+    fn launcher_route_needs_the_emergency_hotkey_like_the_game_route() {
+        let recorder = RecordingInput::default();
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.game.title = "minecraft-java".into();
+        h.game.phase = Phase::Lobby;
+        h.fake_target = None; // 実際の入力先 (疑似入力先ではない)
+        h.hotkey = Err("他のアプリが使用中".into());
+        h.on_launcher_focus(true); // ランチャーが前面に来た観測だけを模擬する
+        assert!(h.launcher_fg);
+        assert!(!h.remote_launcher_active(), "緊急停止が使えないのにランチャーへ送らない");
+        assert_eq!(h.game_snapshot()["remoteRoute"], "none");
+        let epoch = h.game.epoch;
+        h.handle_control(0, "ENTER", "down");
+        h.handle_control(0, "MOUSE_L", "down");
+        h.remote_message(0, &json!({"epoch":epoch,"rseq":1,"kind":"move","dx":5,"dy":5}));
+        h.remote_message(0, &json!({"epoch":epoch,"rseq":2,"kind":"scroll","dy":80}));
+        assert!(recorder.calls().is_empty(), "キー・クリック・移動・ホイールのどれも送らない: {:?}", recorder.calls());
+        h.hotkey = Ok(());
+        assert!(h.remote_launcher_active(), "登録できていればランチャーへ送れる");
+        assert_eq!(h.game_snapshot()["remoteRoute"], "launcher");
         h.release_outputs(None);
     }
 
