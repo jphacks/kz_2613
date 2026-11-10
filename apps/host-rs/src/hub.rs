@@ -199,6 +199,8 @@ struct Slot {
     next_iseq: i64, // 次に処理する入力番号 (WebSocket / WebRTC のどちらで届いても番号順に 1 回だけ処理する)
     release_floor: i64, // 本人の release_inputs 以前に送った入力の最大番号。これ以下の押下は解放後に届いても適用しない (#262)
     ibuf: BTreeMap<i64, (InputMessage, Via)>,
+    clock: crate::freshness::ClockBase, // 遅れて届いた押下の判定の基準 (#285)。接続ごとに作り直す
+    stale_downs: u64,
     via_ws: u64,
     via_rtc: u64,
     look_seq: i64,
@@ -235,6 +237,8 @@ impl Slot {
             next_iseq: 1,
             release_floor: 0,
             ibuf: BTreeMap::new(),
+            clock: Default::default(),
+            stale_downs: 0,
             via_ws: 0,
             via_rtc: 0,
             look_seq: 0,
@@ -770,6 +774,7 @@ impl Hub {
                         "pressed": s.pressed,
                         "events": s.events,
                         "lost": s.lost,
+                        "staleDowns": s.stale_downs,
                         "outOfOrder": s.out_of_order,
                         "clientStats": s.client_stats,
                         "rtcState": s.rtc_state,
@@ -2332,6 +2337,7 @@ impl Hub {
         slot.look_cx = 0.0;
         slot.look_cy = 0.0;
         slot.ibuf.clear();
+        slot.clock = Default::default(); // 再読み込みでスマホの時計 (performance.now) の起点が変わる
         slot.rtc = None;
         slot.rtc_state = "none";
         let token = slot.token.clone();
@@ -2384,11 +2390,13 @@ impl Hub {
                 if let Some(stats) = msg.get("stats") {
                     slot.client_stats = stats.clone();
                 }
+                slot.clock.observe(crate::freshness::mono_ms(), num(&msg, "t"));
                 let conn = slot.conn;
                 self.send(conn, &json!({ "type": "pong", "t": msg.get("t") }));
             }
             "ka" => {
                 // WebRTC の生存確認 (スマホの無線を起こしておく役目も兼ねる)
+                slot.clock.observe(crate::freshness::mono_ms(), num(&msg, "t"));
                 if let Some(peer) = &slot.rtc {
                     peer.send(&json!({ "type": "kpong", "t": msg.get("t") }).to_string());
                 }
@@ -2470,6 +2478,8 @@ impl Hub {
         let Some(msg) = InputMessage::decode(msg) else { return };
         let iseq = msg.iseq;
         let slot = self.slots[idx].as_mut().unwrap();
+        // 届いた時刻で基準を更新する。重複 (WS/RTCの後着) も届いた事実として使える
+        slot.clock.observe(crate::freshness::mono_ms(), num(&msg.raw, "t"));
         if iseq < slot.next_iseq || slot.ibuf.contains_key(&iseq) {
             return;
         }
@@ -2515,6 +2525,19 @@ impl Hub {
             self.send(conn, &json!({ "type": "ack", "iseq": msg.raw.get("iseq"), "t": msg.raw.get("t"), "via": via.name(), "stale": true }));
             self.record("stale_input", json!({ "slot": SLOT_NAMES[idx], "button": button, "state": state, "reason": "released" }));
             return;
+        }
+        // 同じepoch内でも、通信の詰まり・復旧でまとめて遅れて届いた押下は実行しない (#285 Q25)。
+        // 順序待ちの後に処理する時点で判定する。解放 (up) は常に適用する
+        if state == "down" && !burst {
+            let slot = self.slots[idx].as_mut().unwrap();
+            let delay = slot.clock.delay(crate::freshness::mono_ms(), num(&msg.raw, "t"));
+            if !delay.is_some_and(|d| d < crate::freshness::STALE_DOWN_MS) {
+                slot.stale_downs += 1;
+                let conn = slot.conn;
+                self.send(conn, &json!({ "type": "ack", "iseq": msg.raw.get("iseq"), "t": msg.raw.get("t"), "via": via.name(), "stale": true }));
+                self.record("stale_input", json!({ "slot": SLOT_NAMES[idx], "button": button, "state": state, "reason": "late", "delayMs": delay.map(|d| d.round()) }));
+                return;
+            }
         }
         let slot = self.slots[idx].as_mut().unwrap();
         slot.events += 1;
@@ -2894,13 +2917,45 @@ mod tests {
         h.accept_input(0, json!({"iseq":"NaN","epoch":1,"button":"act:forward","state":"down"}), Via::Rtc);
         assert_eq!(h.slots[0].as_ref().unwrap().next_iseq, 1);
         assert!(h.slots[0].as_ref().unwrap().ibuf.is_empty());
-        h.accept_input(0, json!({"iseq":"1.9","epoch":1,"button":"act:forward","state":"down","t":"wire-time"}), Via::Ws);
+        // 送信時刻を解釈できない押下は鮮度を判定できないので適用しない (#285)。ACKは原値のまま返す
+        h.accept_input(0, json!({"iseq":"1","epoch":1,"button":"act:forward","state":"down","t":"wire-time"}), Via::Ws);
         let Out::Text(text) = rx.try_recv().unwrap() else { panic!("ACKが必要") };
         let ack: Value = serde_json::from_str(&text).unwrap();
-        assert_eq!(ack["iseq"], "1.9"); assert_eq!(ack["t"], "wire-time");
+        assert_eq!(ack["t"], "wire-time"); assert_eq!(ack["stale"], true);
+        assert!(!h.outputs[index("KEY_W")].physical);
+        h.accept_input(0, json!({"iseq":"2.9","epoch":1,"button":"act:forward","state":"down","t":"12.5"}), Via::Ws);
+        let Out::Text(text) = rx.try_recv().unwrap() else { panic!("ACKが必要") };
+        let ack: Value = serde_json::from_str(&text).unwrap();
+        assert_eq!(ack["iseq"], "2.9"); assert_eq!(ack["t"], "12.5"); assert!(ack.get("stale").is_none());
         assert!(h.outputs[index("KEY_W")].physical);
-        h.accept_input(0, json!({"iseq":1,"epoch":1,"button":"act:forward","state":"up"}), Via::Rtc);
+        h.accept_input(0, json!({"iseq":2,"epoch":1,"button":"act:forward","state":"up"}), Via::Rtc);
         assert!(h.outputs[index("KEY_W")].physical); // 後着重複は解放しない。
+        h.release_outputs(None);
+    }
+
+    #[test]
+    fn late_down_in_the_same_epoch_is_dropped_but_release_and_others_hold_continue() {
+        use crate::freshness::mono_ms;
+        let (mut h, _rx) = fixture();
+        h.keybinds = Keybinds::build(h.profile.as_ref().unwrap(), None);
+        let epoch = h.game.epoch;
+        // P2 (視点の担当) の保持は P1 の遅延とは無関係に続く
+        h.set_output(index("MOUSE_L"), "P2", true);
+        // ping で基準を作る (スマホの時計は PC と同期していない想定で大きくずらす)
+        let skew = 5_000_000.0;
+        h.slots[0].as_mut().unwrap().clock.observe(mono_ms(), Some(mono_ms() + skew));
+        // 2秒前に押した押下が、詰まりの後にまとめて届いた: 実行しない
+        h.accept_input(0, json!({"iseq":1,"epoch":epoch,"button":"act:forward","state":"down","t":mono_ms() + skew - 2000.0}), Via::Ws);
+        assert!(!h.outputs[index("KEY_W")].physical, "遅れた押下を実行しない");
+        assert!(!h.slots[0].as_ref().unwrap().pressed.contains("act:forward"));
+        assert_eq!(h.slots[0].as_ref().unwrap().stale_downs, 1);
+        // その解放は常に適用し (何も押していないので変化なし)、番号は進める
+        h.accept_input(0, json!({"iseq":2,"epoch":epoch,"button":"act:forward","state":"up","t":mono_ms() + skew - 1900.0}), Via::Ws);
+        assert_eq!(h.slots[0].as_ref().unwrap().next_iseq, 3);
+        // 指を離した後の新しい押下は正常に入力できる
+        h.accept_input(0, json!({"iseq":3,"epoch":epoch,"button":"act:forward","state":"down","t":mono_ms() + skew}), Via::Ws);
+        assert!(h.outputs[index("KEY_W")].physical, "新しい押下は入力できる");
+        assert!(h.outputs[index("MOUSE_L")].physical, "他の参加者の保持を解放しない");
         h.release_outputs(None);
     }
 
