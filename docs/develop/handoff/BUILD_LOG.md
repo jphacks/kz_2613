@@ -1731,3 +1731,9 @@
 - 番号の飛び（P1・P2・P4）は、番号が担当色・トークン・再接続の識別に使われているため変えていない。
 - `cargo test --release --locked full_room`（RECOOPLAY_DRY_RUN=1）、`node scripts/sim/protocol-sim.mjs`（60/60）、`node --experimental-strip-types scripts/sim/protocol-boundary-test.mjs`、`node scripts/sim/product-web-test.mjs`、`npx tsc --noEmit -p apps/web` が成功。実機での表示は未確認。
 - 実機確認（2026-11-10）：Android Chrome 1台（アプリ通信はモバイルホットスポットのWi-Fi、操作はUSBのCDP）、dry-run・疑似入力先のホスト。P1＝実機、P2〜P4＝模擬で満員にし、P4を切断した直後に実機を新しい参加者（参加情報を消して再読み込み）として接続した。「切断した人の再接続を待っているため、今は参加できません。13秒ほど待ってから再読み込みしてください。」が表示され（ホストログ reject_full）、案内どおり14秒後に再読み込みすると参加できた（slot_released P4の後）。実機の参加情報は試験後に戻した。iPhoneは未確認。
+## 2026-11-10 — #275 視点受信の空白の再分析（保存データ）
+
+- `scripts/device/look-gap-analysis.mjs`（＋合成データの試験、CIに追加）で、PR #274 の主21試行＋修正後6試行の視点受信の200ms以上の空白30件を、端末の送信時刻・`lseq`・まとめ着・相対遅れ（最小値基準、時計の直接差は使わない）に対応付けた。
+- 結果：送信側の空白0件（端末の送信間隔は最大66.9ms）。30件すべてで空白中に送ったパケットが直後に3〜11個まとめて届き（相対遅れ135.6〜378.0ms）、RTCでは20件で1〜2個の欠落を伴った。WSは欠落なしの遅着のみ。逆順・経路切替は0件。ハブの処理・経路切替が原因ではなく、無線区間での滞留が推測される（機器・仕組みは未確定）。
+- 記録：`docs/develop/acceptance/2026-11-10-look-gap-analysis.md`、`docs/develop/acceptance/evidence/look-gaps-275/gaps.json`。製品コードは変更していない。新たな実機測定は未実施。
+- 試験：`node scripts/device/look-gap-analysis-test.mjs` 合格、`python scripts/check-public-docs.py` を実行。
