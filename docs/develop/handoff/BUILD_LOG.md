@@ -1785,3 +1785,12 @@
 - `sync_rotation_clock()` を追加した。協力プレイ中に `can_inject()` が偽になったら残り時間を凍結し（`rotation_at=0`、`rotation_left` に保存、予告も取り消す）、真に戻ったら残りから数える。前面の変化（`check_target`・`on_focus_change`）、毎秒の交代確認、協力プレイへの移行（`set_phase`）で呼ぶ。注入OFF・入力の障害など、前面以外の理由も1秒以内に反映する。Pause・切断・緊急停止の既存の扱い（協力プレイを離れたら残りを保存）は変えていない。
 - 試験 `role_rotation_counts_only_while_the_target_game_can_be_operated` を追加：前面喪失で凍結→長時間（最大 `u64::MAX/2`）経過しても予告・交代なし→復帰で残りから数え、残りを操作したら1回だけ交代→前面にないまま一時停止・再開しても数えない。修正を外すと失敗することを確認。
 - main（155e01c）を取り込んだ。競合した `PhoneApp.tsx`・`phone.ts`・`phone-harness.mjs` は、Codexが #324（cf7cd3c）で同じ組み合わせを解消した内容を使った。
+
+## 2026-11-10 — #287 Minecraftのランチャーをホストのリモコンで操作する（#311 に積み重ね）
+
+- この PC で公式ランチャーを一時的に開き、ウィンドウを確認した（入力は送らず閉じた）：`C:\Program Files\WindowsApps\Microsoft.4297127D64EC6_2.6.2.0_x64__8wekyb3d8bbwe\Minecraft.exe`、タイトル「Minecraft Launcher」。起動直後に同じタイトルの `GamingServicesUI.exe` が一時的に前面になった。
+- ホスト：Minecraftを選んだロビー・準備中に、`minecraft.exe`/`minecraftlauncher.exe` かつタイトルに「Minecraft Launcher」を含むウィンドウが前面なら、ホストのリモコン（キー・クリック・タッチパッド・ホイール）をランチャーへ送る（`remoteRoute: "launcher"`）。PCアプリが前面ならそちらを優先。ランチャーが前面から外れた・戻ったときは全解放してepochを進める。起動時の案内を「ホストのスマホのリモコンで「プレイ」を押してください」に変更。
+- 自動試験：`RECOOPLAY_DRY_RUN=1 cargo test --release --locked`（host 142成功・2 ignored、probe 4成功。ランチャーの照合、ホスト限定・協力プレイ中と他ゲームで無効・前面から外れたら解放、を追加）、`node scripts/sim/protocol-sim.mjs` 60/60、`node scripts/sim/product-web-test.mjs`、`npm run typecheck/build`、`check-static-pages.mjs`、`check-public-docs.py` 成功。
+- 実機（Android Chrome、ホットスポットのWi-Fi、USBのCDPで操作、dry-run・疑似入力先）：標準入力 `launcher focus` でランチャーが前面の想定にし、スマホの表示が「Minecraftのランチャーを操作中」に変わり、Enter（down/up）とタッチパッドの移動がランチャー経路で注入された。`launcher blur` で表示が戻った。
+- 未確認：実際のランチャーへの実入力で「プレイ」を押せること、ワールドに入るまでスマホだけで進められること、Steam等の他ランチャーで人の操作が要る場面の洗い出し（Among Usは不要だった：#287のコメント）。
+- 2026-11-11 レビュー指摘（P1）への対応：`remote_launcher_active()` が緊急停止ホットキーの登録結果を見ていなかった。ゲームの経路（`remote_game_active()`）と同じく `self.hotkey.is_ok() || self.fake_target.is_some()` を必須にした。試験 `launcher_route_needs_the_emergency_hotkey_like_the_game_route` を追加：疑似入力先なし・登録失敗・記録用InputAdapterで、ランチャーの前面を観測しても `remoteRoute=none` となり、キー・クリック・移動・ホイールのどれも送らないこと、登録成功なら `launcher` になることを確認。修正を外すと失敗することも確認した。`cargo test --release --locked`（RECOOPLAY_DRY_RUN=1、143件成功・2件ignored）。

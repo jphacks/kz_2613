@@ -141,7 +141,7 @@ PREPARE / READY / RESUME / OPEN_GAME / OPEN_APPは現在epochを必須としま�
 | `roleOf / roleAck / canSwap` | 枠と席順、本人確認待ち、交換可否 |
 | `keys / profile` | 実キー・読取り警告、操作定義の要約・分担案 |
 | `hostReady / prepareStatus / canLaunch` | 準備・起動の状態 |
-| `remoteRoute` | app / game / none |
+| `remoteRoute` | app / game / launcher / none。launcherはMinecraftを選んだロビー・準備中に公式ランチャー（`Minecraft.exe`・タイトル「Minecraft Launcher」）が前面のとき（#287）。ホストのリモコン入力をランチャーへ送り、前面から外れたら全解放してepochを進める |
 | `inputActive / inputTarget` | 入力可能か、onだが対象が前面でないか |
 | `autoResume / autoResumeMs / autoResumeUntil` | 自動復帰設定（初期OFF）、待機時間、期限 |
 
