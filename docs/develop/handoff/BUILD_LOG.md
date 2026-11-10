@@ -1733,3 +1733,9 @@
 - **明示的なONの保持**：PC画面の操作設定で「切断から戻ったら自動で再開する」をONにすると、ホストに反映され、`config.json` が `autoResume: true`・`settingsVersion: 2` になった。PCアプリを再起動しても、ホストとPC画面ともONのまま。ONの状態で短い切断（約6秒）を起こすと、`auto resume` で協力プレイへ戻った。
 - 後片付け：試験用の `config.json` は削除した。PCアプリと子ホストは残存なしで終了。
 - 限界：実入力（Minecraft）はなし（dry-run）。iPhone・実機2台以上は未実施。Wi-Fi復帰時に端末が別の保存済みネットワークを選ぶ問題は、製品の範囲外の端末設定だが、会場での運用上の注意になる。
+## 2026-11-10 — #293 Among Usの操作定義にマウスの担当を加える
+
+- `scripts/profiles/overrides/steam-945360.json` と生成物 `apps/game-profiles/steam-945360.json` を同じ内容で更新（カタログの再生成は公開データの取得が要るため実行せず、該当2ファイルの groups/actions/sources だけを変更）。
+- 「マウス（タスク・ボタン）」（P2：カーソル `mouseDelta`＋左クリック）を追加。協力プレイ中に誰も押せなかった「メニュー」（host）を廃止し、マップ（Tab）と「閉じる・メニュー」（Esc）を「使う・役職の操作」（P3）へ移した。分担の案は2人：P1移動＋使う等／P2マウス、3人：P1移動／P2マウス／P3使う等、4人：左右／上下／マウス／使う等。
+- 自動試験：`cargo test --release --locked`（2〜4人の全員分担でマウス・Esc・使うが必ず誰かに入り、カーソルとクリックが同じ人になる試験を追加）、`node scripts/sim/profile-catalog-test.mjs` 成功。
+- 定義の検証状態は `unverified` のまま。Among Usの実ゲームでマウスのタスク操作が成立するかは未確認。
