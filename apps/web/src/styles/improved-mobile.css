@@ -108,3 +108,8 @@ body[data-host=false] #phoneDiagnostics footer > span, body[data-host=false] #bu
   #waitTitle { margin-top: 20px; }
   #v-remote { overflow-y: auto; }
 }
+
+/* PC のアプリと3秒以上つながらないとき、操作を覆う (#302)。満員・版不一致などの #full より下に置く */
+#offline { position: fixed; inset: 0; z-index: calc(var(--z-dialog) - 1); display: flex; align-items: center; justify-content: center; padding: max(24px, env(safe-area-inset-top)) 24px; background: rgb(0 0 0 / .45); text-align: center; line-height: 1.8; touch-action: none; }
+#offline[hidden] { display: none; }
+#offline small { display: block; margin-top: 8px; font-size: 14px; line-height: 1.6; }

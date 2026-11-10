@@ -48,6 +48,7 @@ const CLOSE_BAD_TOKEN: u16 = 4006;
 /// 接続ごとの送信待ちの上限。健全な接続は溜まらず、読取りが止まった接続だけが達する (#197)
 pub const WS_QUEUE_LIMIT: usize = 4096;
 const CLOSE_HOST_HANDOVER: u16 = 4008;
+const CLOSE_HOST_SHUTDOWN: u16 = 4009; // PC アプリ (ホスト) の終了。スマホは再接続しない (#302)
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
 const RTC_TIMEOUT: Duration = Duration::from_secs(5);
 const FOCUS_CHECK: Duration = Duration::from_millis(100); // 前面のウィンドウを確認する間隔
@@ -548,6 +549,7 @@ impl Hub {
                 Ok(Event::Shutdown) => {
                     // 終了時は押しっぱなしを残さない
                     let confirmed = self.release_for_shutdown();
+                    self.close_players_for_shutdown();
                     crate::runtime_measure::finish();
                     crate::input_trace::finish();
                     std::process::exit(if confirmed { 0 } else { 1 });
@@ -568,7 +570,7 @@ impl Hub {
                     crate::runtime_measure::elapsed(total_metric, enqueued_at);
                 }
                 Err(RecvTimeoutError::Timeout) => {}
-                Err(RecvTimeoutError::Disconnected) => { self.release_for_shutdown(); break; }
+                Err(RecvTimeoutError::Disconnected) => { self.release_for_shutdown(); self.close_players_for_shutdown(); break; }
             }
         }
     }
@@ -1729,6 +1731,14 @@ impl Hub {
         self.log("shutdown", json!({ "releaseConfirmed": confirmed,
             "unconfirmed": self.release_pending.iter().map(|&i| OUTPUTS[i].id).collect::<Vec<_>>() }));
         let _ = self.log_file.flush(); confirmed
+    }
+
+    /// 解放の後、スマホへ PC アプリの終了を知らせる (#302)。スマホは再接続をやめ、画面全体で終了を示す。
+    /// 送信は接続ごとのタスクが行うので、プロセスを終える前に少しだけ待つ
+    fn close_players_for_shutdown(&self) {
+        let players: Vec<u64> = self.conns.iter().filter(|(_, c)| matches!(c.role, Role::Player { .. })).map(|(&id, _)| id).collect();
+        for &id in &players { self.close(Some(id), CLOSE_HOST_SHUTDOWN, "host shutdown"); }
+        if !players.is_empty() { std::thread::sleep(Duration::from_millis(200)); }
     }
 
     fn on_focus_change(&mut self) {

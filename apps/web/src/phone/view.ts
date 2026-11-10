@@ -27,6 +27,7 @@ export const skin = createStore('standard');
 export const connection=createStore({text:'接続中',kind:'warn'});
 export const telemetry=createStore<PhoneTelemetry>({rtt:'-',rttAvg:'-',sent:0,unacked:0,path:'-',advice:'',inputMetrics:'',burstBusy:false});
 export const blocked=createStore<{message?:string}|null>(null);
+export const offline=createStore(false);
 export function chooseSkin(id: string) {
   skins.set(display.get().snapshot.game?.title, id); applySkin(document.documentElement, id); skin.set(id);
 }
@@ -93,6 +94,7 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
   // external storeの通知による同期更新も、入力/ACKのdispatch区間へ入れない。
   render.telemetry=telemetryUpdates.patch;
   render.blocked=message=>flushSync(()=>blocked.set({message}));
+  render.offline=visible=>{if(offline.get()!==visible)flushSync(()=>offline.set(visible));};
   render.dispose=()=>{input.releaseAll();telemetryUpdates.dispose();lifetime.dispose();transition.dispose();bindings=undefined;};
   return render;
 }

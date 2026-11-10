@@ -156,6 +156,24 @@ if (process.argv.includes('--repro-shared-pointer')) {
       h.control('act:attack').fire('pointerup'); assert.equal(h.inputs().length, 1);
     }
   });
+  await test('PCアプリの終了 (4009): 再接続せず、画面全体で終了と再読み込みを案内する (#302)', async () => {
+    const h = controllerHarness(); await h.ready(); h.control('act:attack').fire('pointerdown');
+    h.sockets[0].close(4009); h.advance(10000);
+    assert.equal(h.sockets.length, 1, '終了したPCアプリへ再接続しない'); assert(h.peers[0].closed);
+    assert.equal(h.el('full').style.display, 'flex'); assert.match(h.el('fullMessage').textContent, /PCのアプリが終了しました.*再読み込み/);
+    assert.equal(h.el('status').textContent, 'PCアプリが終了しました'); assert(h.el('offline').hidden, '終了の案内と再接続中の表示を重ねない');
+    h.control('act:attack').fire('pointerup'); assert.equal(h.inputs().length, 1);
+  });
+  await test('通信断: 3秒続いたら操作を覆い、再接続しても welcome までは覆ったまま (#302)', async () => {
+    const h = controllerHarness(); await h.ready();
+    h.sockets[0].close(1006); h.advance(2400);
+    assert(h.el('offline').hidden, '短い切断では覆わない');
+    h.advance(1200); assert(!h.el('offline').hidden, '3秒続いたら覆う');
+    const next = h.sockets.at(-1); assert.notEqual(next, h.sockets[0], '再接続を続ける');
+    next.open(); h.advance(100); assert(!h.el('offline').hidden);
+    next.receive({ type: 'welcome', slot: 'P1', isHost: true, role: 'ホスト', token: 'test-token' });
+    assert(h.el('offline').hidden, '再接続したら消す');
+  });
   await test('WebRTC: 旧候補と非同期旧Blob通知が現在の接続へ反映されない', async () => {
     const h = controllerHarness(); await h.ready(); const first = h.peers[0]; first.channel.readyState = 'open';
     let finish;
