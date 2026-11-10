@@ -1770,3 +1770,5 @@
 - Xboxアプリの「Minecraft: Java Edition」（`Microsoft.MinecraftJavaEdition`）は、固定の「Minecraft Java Edition（公式ランチャー）」と同じゲームなので一覧から外した（`Microsoft.4297127D64EC6` のランチャーは以前から除外）。Minecraftのバージョンは一覧に出さず、従来どおり公式ランチャーで選ぶ。統合版の「Minecraft for Windows」（`Microsoft.MinecraftUWP`）は別のゲームなので残す。
 - 一覧の見出しを、並んだ項目の数と合わせた（例「全 7 件（Minecraft、Steam・Epic など 5 件、手動登録 1 件）」）。左の説明は語の途中で折り返さないよう改行位置を決めた。
 - このPCで修正後のホストを起動し、一覧が固定のMinecraft＋6件（Steam 4件、Xboxの統合版、手動登録1件）になることを確認した。`cargo test --release --locked launchers::`（RECOOPLAY_DRY_RUN=1）、`app-view-test` 30/30、`product-web-test`、`check-static-pages`、`npx tsc`・`npm run build` が成功。PCアプリの実画面での目視は未実施。
+
+- 2026-11-11 #325 ba24882dの独立レビュー：`node --experimental-strip-types scripts/sim/app-view-test.mjs` 30/30、Web型/build成功、同SHAのランチャーRust9/9成功（Rust専用worktree）。一方、`review-game-count.mjs` は固定Minecraftだけの1タイルで総数が表示されず失敗し、固定＋手動の2タイルでも表示が手動1件だけになることを確認。P2を https://github.com/jphacks/kz_2613/pull/325#issuecomment-6775037271 に指摘し、修正はClaude担当。統合#326へは含めない。最初のNode22の実行はTypeScript拡張未対応で失敗したため、明示の--experimental-strip-typesを付けて再実行した。
