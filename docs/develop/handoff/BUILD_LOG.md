@@ -1770,3 +1770,4 @@
 - この4件だけの最終組合せで `npm run build --prefix apps/web`（型確認含む）、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/profile-catalog-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/check-public-docs.py`、`git diff --check` は成功。
 - #320のfull.retryMsは任意の非負有限値、端末側の既定満員表示との区別を確認。参加番号の詰め直しは対象外。実スマホ表示は作者の報告と独立追試を区別する。
 - #284/#313のホスト全体の独立ビルドは、sandboxのMSBuildがChecking Build System後に終了1となり、同じ専用targetを通常環境で再構築中。そこから成功を推定せず、旧入力・緊急停止の指摘PRをこの4件に混ぜない。
+- 2026-11-11 レビュー指摘（P2）への対応：#309の確認ダイアログ（`showModal()` のトップレイヤー）を開いたままPCアプリが終了すると、終了の案内（`#full`）より手前に確認が残り、「PCとの通信が戻るまでお待ちください」と再接続しない終了が矛盾していた。`render.blocked`（満員・版不一致・リセット・参加情報の不一致・PCアプリの終了など、再接続しない終端の案内）で、確認を閉じて未実行の要求を捨て、診断の画面も閉じるようにした。一時的な通信断（覆いの表示）では閉じず、#309の「確認を保留し、再接続後の現在epochで実行」を保つ。試験2件を追加し、修正前は「終了の案内より手前に確認を残さない」で失敗、修正後に合格（phone-lifecycle 25/25）。実機確認：Android Chrome 1台（アプリ通信はホットスポットのWi-Fi、操作はUSBのCDP）、dry-run。ホスト譲渡の確認を開いたまま `quit` で終了すると、確認が閉じて終了の案内が前面に出た。

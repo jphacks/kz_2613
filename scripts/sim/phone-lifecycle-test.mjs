@@ -226,6 +226,30 @@ if (process.argv.includes('--repro-shared-pointer')) {
     const end = current.sent.filter(message => message.type === 'command' && message.cmd === 'END');
     assert.equal(end.length, 1); assert.equal(end[0].epoch, 9);
   });
+  await test('終端の案内: PCアプリの終了・満員などでは確認と診断の画面を閉じ、確認した操作を後から送らない (#302 レビュー)', async () => {
+    for (const end of [h => h.sockets[0].close(4009), h => h.sockets[0].receive({ type: 'full', retryMs: null }), h => h.sockets[0].close(4005), h => h.sockets[0].close(4001)]) {
+      const h = controllerHarness(); await h.ready({ phase: 'paused' });
+      h.el('endBtn').fire('click'); assert(h.el('phoneConfirm').open);
+      end(h);
+      assert.equal(h.el('full').style.display, 'flex');
+      assert(!h.el('phoneConfirm').open, '終了の案内より手前に確認を残さない'); assert.equal(h.confirmation.get(), null, '未実行の要求を捨てる');
+      h.answerConfirm(true); h.advance(10000);
+      assert.equal(h.messages().filter(m => m.type === 'command' && m.cmd === 'END').length, 0, '確認した操作を後から送らない');
+    }
+    // 譲渡の確認・診断の画面も同じ
+    const h = controllerHarness(); await h.ready({ phase: 'lobby', connected: ['P1', 'P2'] });
+    h.transferHost('P2'); assert(h.el('phoneConfirm').open);
+    h.el('phoneSettingsBtn').fire('click'); assert(h.el('phoneDiagnostics').open);
+    h.sockets[0].close(4009);
+    assert(!h.el('phoneConfirm').open && !h.el('phoneDiagnostics').open, '終了の案内を最前面に見せる');
+    assert.equal(h.messages().filter(m => m.type === 'transfer_host').length, 0);
+  });
+  await test('一時的な通信断: 確認の画面は閉じず、案内の覆いだけを出す (#289・#302)', async () => {
+    const h = controllerHarness(); await h.ready({ phase: 'paused' });
+    h.el('endBtn').fire('click'); h.sockets[0].close(1006); h.advance(3600);
+    assert(!h.el('offline').hidden); assert(h.el('phoneConfirm').open, '再接続後に実行できるよう確認を保つ');
+    assert.notEqual(h.confirmation.get(), null);
+  });
   await test('終了の確認: 一時停止でなくなったら閉じて送らない。やめるでも送らない (#289)', async () => {
     const h = controllerHarness(); await h.ready({ phase: 'paused' }); const socket = h.sockets[0];
     h.el('endBtn').fire('click'); socket.receive({ type: 'game', game: h.game({ phase: 'coop', epoch: 8 }) });
