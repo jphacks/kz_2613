@@ -10,6 +10,7 @@ export interface WaitModel { character: string; heading: string; role: string; t
 export interface RemoteModel {
   players: PlayerChip[]; route: string; startLabel: string; startDisabled: boolean;
   openGameLabel: string; openGameHidden: boolean; endVisible: boolean; transferTo: Slot[]; note: string;
+  routeBlocked: boolean; notice: string;
 }
 export interface PlayerCardModel { slot: Slot; index: number; className: string; badge: string; name: string; role: string; device: string }
 export interface RoleColumnModel { slot: Slot; index: number; picked: boolean; swap: boolean; title: string; line: string; ack: boolean }
@@ -48,7 +49,10 @@ export type PhoneView = ((snapshot: PhoneSnapshot) => void) & {
   blocked(message?:string):void;
   /** PC のアプリと一定時間つながらないとき、画面全体を覆って操作を止める (#302) */
   offline(visible:boolean):void;
+  confirm(request:ConfirmRequest):void;
 };
+// ページ内の確認。confirm() はJSを止めてハートビートが途切れるため使わない (#289)
+export interface ConfirmRequest {message:string;ok:string;valid(remote:RemoteModel):boolean;run():void}
 export type Direction = 'up' | 'left' | 'right' | 'down';
 export interface InputBindings {
   releaseAll(): void;
