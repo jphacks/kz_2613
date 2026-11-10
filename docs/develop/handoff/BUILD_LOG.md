@@ -1712,3 +1712,9 @@
 - 戻り先は変えず（参加画面へ戻すと接続中の参加者を選び直す手間が増えるため）、ボタンを「協力プレイを終了（分担に戻る）」、確認文を「協力プレイを終了して、分担の画面に戻りますか？」、OKを「終了して分担に戻る」にした。#309（ページ内の確認）に積み重ねた。
 - `node scripts/sim/product-web-test.mjs`（phone-lifecycle-testを含む）と `node scripts/sim/check-static-pages.mjs` が成功。実機での目視は未実施。
 - 実機確認（2026-11-10）：Android Chrome 1台（アプリ通信はモバイルホットスポットのWi-Fi、操作はUSBのCDP）、dry-run・疑似入力先のホスト、模擬P2。一時停止中のボタンが「協力プレイを終了（分担に戻る）」で1行に収まり、確認ダイアログの文と「終了して分担に戻る」が表示され、OKで `host end` によりロビーへ戻った。iPhone・実ゲームは未確認。
+## 2026-11-10 — #291 前面の案内を進行の段階に合わせる
+
+- 前面の警告（`inputTarget`）はゲームへ入力する段階（準備中・協力プレイ中・一時停止中）だけに出す。ロビーでは出さず、未選択時の既定タイトル（Minecraft）も出さない。
+- ホストのリモコン画面では上部の警告を出さず、操作先（`#remoteRoute`）に届かない理由を段階別に示し、ゲームの検証状況は下の `#remoteNotice` に出す。警告の有無で矢印・Enter・Escの位置が動かない。前面にあるのに「前面にしてください」とは出さない。
+- 自動試験：`npm run typecheck --prefix apps/web`、`node scripts/sim/product-web-test.mjs`（`phone-view-test` の警告の観点を新仕様へ更新・追加）、`npm run build --prefix apps/web`、`node scripts/sim/check-static-pages.mjs` 成功。
+- 実機（Android Chrome、ホットスポットのWi-Fi、USBのCDPで観測）：dry-runホストのロビーで上部警告なし、状態欄に「PCアプリが前面にないため、リモコンは届きません（ロビーではPCアプリだけを操作します）」を表示。準備中・協力プレイ中の実ゲームでの表示は未確認。
