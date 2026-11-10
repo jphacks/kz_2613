@@ -1706,3 +1706,8 @@
 - 2026-11-10、ユーザーが#290の扱いについて「キー名のまま（#150を維持）」を選んだ。操作定義の名前（使う・キル等）は主表示に戻さず、`docs/develop/decisions/2026-10-26-input-key-labels.md` を維持する。#290では「キー：Aキー」のような重複表記の解消だけを行う。
 - `roleView` の内容を、見出し（入力の種類）を繰り返さない1行（例「Aキー、Dキー」「マウス移動、左クリック」）にした。PCの分担カードは従来 `lines[0]` だけを出しており、複数種類の担当で一部しか表示されなかったが、1行にまとめたので全入力が出る。
 - `node --experimental-strip-types scripts/sim/app-view-test.mjs`（30/30）、`npx tsc --noEmit -p apps/web`、`node scripts/sim/product-web-test.mjs` が成功。実機・Among Usでの目視は未実施。
+## 2026-11-10 — #289 終了・ホスト譲渡の確認をページ内ダイアログへ
+
+- 終了（`END`）とホスト譲渡の確認を `confirm()` から `<dialog id="phoneConfirm">` へ置き換えた。切断中はOKを無効にして要求を保持し、段階や参加者が変わり操作が成り立たなくなったら閉じる。通信契約・ホストは変更なし。
+- 自動試験：`npm run typecheck --prefix apps/web`、`node scripts/sim/product-web-test.mjs`（`phone-lifecycle-test` 20/20、#289の4件を追加）、`npm run build --prefix apps/web`、`node scripts/sim/check-static-pages.mjs` 成功。ハーネスの `confirm()` は呼ぶと失敗する。
+- 実機（Android Chrome 1台、アプリ通信はWindowsモバイルホットスポットのWi-Fi、操作はUSBのCDP）：dry-run・疑似入力先のホストへ、模擬P2（PC上のWSクライアント）と2人で準備→Ready→一時停止→「ロビーに戻る」。確認を12秒表示してもP1の切断・再接続は0回（ホストログにも切断なし）、OKで `host end` によりロビーへ戻った。実ゲーム・iPhone・ホスト譲渡の実機操作は未確認。

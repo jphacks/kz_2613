@@ -266,7 +266,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   document.querySelectorAll<HTMLElement>('[data-ctl]').forEach(bindControl);
   document.querySelectorAll<HTMLElement>('[data-cmd]').forEach((el) => lifetime.listen(el, 'click', () => command(el.dataset.cmd!)));
   lifetime.listen($('startBtn'), 'click', () => command(session.game?.phase === 'paused' ? 'RESUME' : session.game?.phase === 'preparing' ? 'READY' : 'PREPARE'));
-  lifetime.listen($('endBtn'), 'click', () => { if (confirm('協力プレイを終了してロビーに戻りますか？')) command('END'); });
+  lifetime.listen($('endBtn'), 'click', () => phoneView.confirm({message:'協力プレイを終了してロビーに戻りますか？',ok:'ロビーに戻る',valid:remote=>remote.endVisible,run:()=>command('END')}));
   function command(cmd: string) { if (isOpen()) session.send({ type: 'command', cmd, epoch: session.game?.epoch }); }
 
   lifetime.listenEvent(document, 'contextmenu', (e) => e.preventDefault());
