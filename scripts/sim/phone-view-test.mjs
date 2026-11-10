@@ -112,6 +112,17 @@ update('P2',{phase:'paused',participants:['P1','P2','P3'],assigned:rotated,rotat
 assert.equal(h.rotationNotice.get(),'','一時停止中は出さない');
 update('P4',{phase:'coop',participants:['P1','P2','P3'],connected:['P1','P2','P3','P4'],assigned:rotated,rotationCount:1,rotationSoon:true,rotationNext:assigned});
 assert.equal(h.rotationNotice.get(),'','参加していない人には出さない');
+// ゲームが前面に残っても、ホストのスマホだけでPCアプリへ戻れる (#292)
+update('P1',{phase:'lobby',remoteRoute:'none',canOpenApp:true});
+assert.equal(view().remote.openAppHidden,false);
+update('P1',{phase:'lobby',remoteRoute:'app',canOpenApp:true});
+assert.equal(view().remote.openAppHidden,true,'PCアプリが前面なら出さない');
+update('P1',{phase:'paused',remoteRoute:'game',canOpenApp:true});
+assert.equal(view().remote.openAppHidden,false);
+update('P1',{phase:'lobby',remoteRoute:'none',canOpenApp:false});
+assert.equal(view().remote.openAppHidden,true,'PCアプリから起動していなければ出さない');
+update('P2',{phase:'lobby',remoteRoute:'none',canOpenApp:true});
+assert.equal(view().remote.openAppHidden,true,'ホスト以外には出さない');
 update('P1',{phase:'preparing',keys:{controls:{INV:{out:'KEY_R',label:'R'}}}});
 assert.equal(view().inventory,'Rキー','リモコンもゲーム内設定の実際のキーを出す');
 update('P1',{phase:'preparing',keys:{controls:{INV:null}}});

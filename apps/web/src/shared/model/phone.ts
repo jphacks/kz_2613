@@ -76,6 +76,8 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
   return {
     players: playerChips(game, me),
     route: routeText(game, name), routeBlocked: game.remoteRoute === 'none', notice: '',
+    // ゲームが前面に残っても、スマホだけでPCアプリへ戻れるようにする (#292)
+    openAppHidden: !isHost || !game.canOpenApp || game.remoteRoute === 'app',
     startLabel: phase === 'paused' ? '再開する' : phase === 'preparing' ? `Ready・${game.connected.length}人で操作を始める` : 'ゲームを開く・準備する',
     startDisabled: !(phase === 'paused' ? game.canResume : phase === 'preparing' ? game.canReady : game.canPrepare),
     openGameLabel: `${name}を前面にする`,
