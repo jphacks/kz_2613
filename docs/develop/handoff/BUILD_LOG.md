@@ -1868,3 +1868,22 @@
 - 実機（Android Chrome 1台＝P1、アプリ通信はホットスポットのWi-Fi、USBのCDPで観測、dry-run・疑似入力先、模擬P2）：実時間で待ち、56.5秒時点で予告、60.6秒で交代（一時停止なし）、P1の画面が移動から視点・クリック等へ切り替わり、交代の案内は約5秒後に消えた。
 - 未確認：実スマホ2〜4人での2周期以上、iPhone、Minecraft実入力での操作感、交代中の切断・Wi-Fi断。第三者の試遊（#167）。
 - 2026-11-11 レビュー指摘（P2）への対応：交代の向きが逆だった（3人で元のP1の担当がP3へ移っていた）。`rotated_seats` を、枠の番号順で1つ前の参加者の席（＝担当）を受け継ぐ向きに直した。#161の「現在の参加者順で循環（P1→P2→P3→P1）」に合わせ、席順ではなく枠の番号順で回すので、手動の入れ替え後も P1→P2→P3 の向きになる。単体試験に3人・4人・欠番・入れ替え後を加え、Hubの試験 `role_rotation_follows_slot_order_with_gaps_four_players_and_after_a_manual_swap` で、予告 `rotationNext` と実際の交代の一致、N回で元に戻ることを確認した。protocol-simの確認も「P1の担当がP2へ」に直した。`cargo test --release --locked`（RECOOPLAY_DRY_RUN=1）、`node scripts/sim/protocol-sim.mjs`（60/60）が成功。
+
+## 2026-11-11 独立レビュー・9件の統合と修正再レビュー
+
+- ユーザー承認済み9件をmainへ統合：#317→4e650fc、#316→89ce980、#318/#309/#310→#322(e38a681)、#286/#312/#319/#320→#323(155e01c)。各マージ直前のhead固定・全CI成功、マージ後のorigin/main・PR・Issue状態を確認した。最新main155e01cのhost-rs/desktop/structureも成功。元PR9件はMERGED、Issue #290/#289/#291/#225/#293/#306/#297はCLOSED。作者ブランチと元作業ツリーは未変更。
+- 専用targetで#284+#313（製品338a14e）を独立構築。初回はPerl未検出、補正後sandboxのMSBuildがChecking Build Systemで失敗し、通常環境で構築成功。`cargo test --offline --release --locked --manifest-path apps/host-rs/Cargo.toml -- --skip review_release_must_reject_late_look_from_before_blur` は142成功・2ignored＋probe4成功。`node scripts/sim/protocol-sim.mjs --bin <専用exe>` は62/62。
+- 同じ実Hubの追加 `review_release_must_reject_late_look_from_before_blur` は、本人解放後に解放前の視点を受けると補間待ちが期待0に対して90となり失敗。#284へP1と独立証拠を投稿した。追加 `review_late_release_must_preserve_press_after_its_floor` も、解放要求floor2より先に新down3を処理すると新しい論理保持を消し、期待で失敗。P2として追記。実RTCネットワークやOS入力の観測ではなく、Via::Rtc入力を実Hubへ与えた順序試験。
+- #313のP2（古いstale ACKが新しい押下を解除）は45b3e6eで解消。独立 `review-stale-ack.mjs` は修正前失敗・修正後成功。#314のP2（Q46巡回逆）は98e42a5で解消。独立Q46受入試験は修正前失敗・修正後成功、実session.rsの独立試験15/15。#315のP1（緊急停止未登録でも入力）は31e9319で解消。独立 `review_launcher_requires_registered_emergency_hotkey` と記録用InputAdapterの試験が成功。各PRへ再レビュー結果を投稿した。
+- 上記3修正と#311/#321等を専用ローカル統合して `cargo build/test --offline --release --locked`（既知の#284視点失敗試験だけ別実行）を実行し、Rust156成功・2ignored＋probe4成功。`node scripts/sim/protocol-sim.mjs --bin <同exe>` は62/62、`node scripts/sim/shutdown-sim.mjs --bin <同exe>` はquit/EOF双方で全解放→4009通知→正常終了。Web build（型含む）・product-web回帰成功。追加した#284の2失敗試験を成功と扱わない。
+- #321はmain#309との組合せで、4009終了通知でも確認modalが残って終了案内を覆うことを `review-terminal-dialog.mjs` で再現しP2指摘。a4d5582はmain追従mergeであり解消とはしない。#311は実Tauriの全画面裏からの前面化・実ゲーム終了後復帰が未検証なので、実機証拠かCloses #292→Refsの変更を依頼した。
+- #314だけを最新main155e01cへ組み合わせた統合PR #324（cf7cd3c）を作成。単独組合せのWeb build/typecheck・product-web・check-static-pages・check-public-docs・diff-checkは成功。CIとユーザー承認待ちで未マージ。#161の実機受入（Android/iPhone、2〜4人、2周期以上、Minecraft、切断/Pause）は未実施。初期OFFを維持する。
+- 再開用の全PR表・指摘リンク・ソースSHA・試験結果・worktree/target・次の行動は `PR_REVIEW_2026-11-11.md` に記録。今回、新しい製品依存、実OS入力、スマホ実機、Minecraft、実Tauri窓の追加受入は行っていない。
+
+## 2026-11-11 時間制交代の追加受入でマージ保留
+
+- #161の本文を再照合し「coopで実際に操作できる期間だけ数える」と前面喪失の受入が明示されていることを確認。
+- 実Hubの追加 `review_rotation_must_stop_counting_while_target_is_unfocused` を `cargo test --offline --release --locked --manifest-path apps/host-rs/Cargo.toml review_rotation_must_stop_counting_while_target_is_unfocused`（RECOOPLAY_DRY_RUN=1）で実行。check_targetで前面喪失→can_inject=false・phase=Coopの状態を作り、deadlineで交代関数を呼ぶと、期待rotation_count=0に対し実値1となり失敗。ログはtarget_focus ok:falseの後にrole_rotation count:1。
+- #314へP2を投稿（https://github.com/jphacks/kz_2613/pull/314#issuecomment-6773368074）。入力不可中の単純スキップだけでは復帰直後の古いdeadline発火を防げないため、停止時間の除外と残り時間からの復帰を求めた。
+- #324はユーザー承認を依頼せずDraftへ戻し、タイトル・本文・コメントに保留理由を明記した。Q46の方向修正は確認済みだが、PR全体の受入完了とはしない。未承認PRはマージしていない。
+- 未解決の独立再現は#284のP1遅着視点とP2古い解放による新押下取り消し、#314のP2操作不可中の時計、#321のP2終了modal。#313のP2と#315のP1、#314の巡回方向P2は修正を再検証済み。最新の一覧はPR_REVIEW_2026-11-11.md。

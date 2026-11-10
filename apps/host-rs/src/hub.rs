@@ -2895,6 +2895,34 @@ mod tests {
         assert!(!h.remote_launcher_active(), "緊急停止未登録でランチャーへの入力を許可しない");
     }
 
+    #[test]
+    fn review_late_release_must_preserve_press_after_its_floor() {
+        let (mut h, _rx) = fixture();
+        h.keybinds = Keybinds::build(h.profile.as_ref().unwrap(), None);
+        let epoch = h.game.epoch;
+        for (iseq, state) in [(1, "down"), (2, "up"), (3, "down")] {
+            h.accept_input(0, json!({"iseq":iseq,"epoch":epoch,"button":"act:forward","state":state,"t":crate::freshness::mono_ms()+1_000_000.0}), Via::Rtc);
+        }
+        assert!(h.slots[0].as_ref().unwrap().pressed.contains("act:forward"));
+        // blurで送ったWS解放要求が、新しいタッチのRTC downより後に届く。
+        h.release_slot_inputs(0, 2);
+        assert!(h.slots[0].as_ref().unwrap().pressed.contains("act:forward"), "解放境界より新しい押下を取り消さない");
+    }
+
+    #[test]
+    fn review_rotation_must_stop_counting_while_target_is_unfocused() {
+        let (mut h, _rx) = fixture();
+        h.participants = vec![0, 1, 2];
+        h.rotation_secs = 60;
+        h.rotation_at = 10_000;
+        h.fake_target = Some(false);
+        h.check_target();
+        assert!(h.game.phase == Phase::Coop);
+        assert!(!h.can_inject());
+        h.rotate_roles_if_due(10_000);
+        assert_eq!(h.rotation_count, 0, "実際に操作できない前面喪失中は交代しない");
+    }
+
     fn injections(rx: &mut UnboundedReceiver<Out>) -> Vec<Value> {
         let mut result = Vec::new();
         while let Ok(Out::Text(t)) = rx.try_recv() {
