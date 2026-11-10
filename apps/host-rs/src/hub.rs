@@ -891,6 +891,8 @@ impl Hub {
         } else { 0 };
         if phase == Phase::Coop { self.rotation_left = 0; }
         self.rotation_soon = false;
+        // 操作できない状態で協力プレイに入った (再開した) ときは、操作できるようになるまで数えない
+        self.sync_rotation_clock(now);
         self.log("phase", json!({ "phase": phase.name(), "reason": reason, "epoch": self.game.epoch }));
         self.update_low_latency();
         self.push_game();
@@ -1113,11 +1115,29 @@ impl Hub {
         v
     }
 
+    /// 交代の時計を、実際に操作できる期間だけ進める (#161)。協力プレイ中でも、対象ゲームが前面にない・注入OFF・
+    /// 入力の障害などで操作できない間は残り時間を凍結し、予告も取り消す。操作できるようになったら残りから数える
+    fn sync_rotation_clock(&mut self, now: u64) {
+        if self.game.phase != Phase::Coop { return; }
+        let active = self.can_inject();
+        if !active && self.rotation_at != 0 {
+            self.rotation_left = self.rotation_at.saturating_sub(now).max(1);
+            self.rotation_at = 0;
+            self.rotation_soon = false;
+            self.push_game();
+        } else if active && self.rotation_at == 0 && self.rotation_left != 0 && self.rotation_secs != 0 {
+            self.rotation_at = now + self.rotation_left;
+            self.rotation_left = 0;
+            self.push_game();
+        }
+    }
+
     /// 時間制の役割交代 (#161・Q42/Q46)。協力プレイを止めずに、全員の入力を解放して未処理の入力・視点を捨て、
     /// epoch を進めてから担当をずらす。旧担当の遅れた入力・押したままの指は新しい epoch では効かず、
     /// 指を離した後の新しいタッチだけを受け付ける。ホストの権限・席の番号 (P1〜P4)・キー割当は移らない。
     /// 交代の少し前に次の担当を予告する。Pause・切断・緊急停止の間は協力プレイでないので進まない
     fn rotate_roles_if_due(&mut self, now: u64) {
+        self.sync_rotation_clock(now);
         if self.game.phase != Phase::Coop || self.rotation_at == 0 { return; }
         if !session::rotation_due(self.game.phase, self.rotation_at, now) {
             if !self.rotation_soon && now + session::ROTATION_NOTICE_MS >= self.rotation_at {
@@ -1448,6 +1468,7 @@ impl Hub {
                 // 外れた時も戻った時も、通信中・受信待ちの旧入力と視点を持ち越さない。
                 self.advance_epoch();
             }
+            self.sync_rotation_clock(now_ms());
             // ウィンドウのタイトル (ワールド名など) はログに残さない
             self.log("target_focus", json!({ "ok": ok, "process": fg.as_ref().map(|f| f.process.clone()) }));
             self.target_fg = fg;
@@ -1789,6 +1810,7 @@ impl Hub {
         if !self.can_inject() {
             self.release_outputs(None);
         }
+        self.sync_rotation_clock(now_ms());
         self.push_state();
     }
 
@@ -3377,6 +3399,42 @@ mod tests {
             for _ in 1..participants.len() { let at = h.rotation_at; h.rotate_roles_if_due(at); }
             assert_eq!(h.assigned, first, "{participants:?}: N人でN回交代すると元に戻る");
         }
+    }
+
+    #[test]
+    fn role_rotation_counts_only_while_the_target_game_can_be_operated() {
+        let (mut h, _rx) = fixture();
+        h.participants = vec![0, 1];
+        h.assigned = h.proposal_for(&h.profile.clone().unwrap(), &[0, 1]);
+        h.rotation_secs = 60;
+        h.fake_target = Some(true); h.check_target();
+        assert!(h.can_inject() && h.game.phase == Phase::Coop);
+        let start = now_ms();
+        h.rotation_at = start + 20_000; // 残り20秒
+        // 対象ゲームが前面から外れる (Alt+Tab 等)。協力プレイのまま操作できなくなる
+        h.fake_target = Some(false); h.check_target();
+        assert!(!h.can_inject() && h.game.phase == Phase::Coop);
+        assert_eq!(h.rotation_at, 0, "操作できない間は数えない");
+        let left = h.rotation_left;
+        assert!(left > 19_000 && left <= 20_000, "残り時間を凍結する: {left}");
+        // 長い時間が経っても、予告も交代もしない
+        for t in [start + 20_000, start + 600_000, u64::MAX / 2] { h.rotate_roles_if_due(t); }
+        assert_eq!((h.rotation_count, h.rotation_soon, h.rotation_at), (0, false, 0));
+        assert_eq!(h.game_snapshot()["rotationSoon"], false);
+        // 前面に戻ったら、凍結した残りから数える
+        h.fake_target = Some(true); h.check_target();
+        let resumed = now_ms();
+        assert!(h.rotation_at >= resumed + left - 1_000 && h.rotation_at <= resumed + left, "残りから数える");
+        assert_eq!(h.rotation_left, 0);
+        h.rotate_roles_if_due(h.rotation_at - 1);
+        assert_eq!(h.rotation_count, 0, "残りを操作するまでは交代しない");
+        let at = h.rotation_at; h.rotate_roles_if_due(at);
+        assert_eq!(h.rotation_count, 1, "残りを操作したら1回だけ交代する");
+        // 前面にないまま一時停止・再開しても数えない
+        h.fake_target = Some(false); h.check_target();
+        h.set_phase(Phase::Paused, "host pause"); h.set_phase(Phase::Coop, "resume");
+        assert_eq!(h.rotation_at, 0, "操作できないまま再開しても数えない");
+        assert!(h.rotation_left > 0);
     }
 
     #[test]
