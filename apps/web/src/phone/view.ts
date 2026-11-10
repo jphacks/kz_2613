@@ -19,7 +19,7 @@ export interface PhoneDisplay {
 export const display = createStore<PhoneDisplay>({
   controller:null, snapshot: { me: null, isHost: false, game: null }, view: null, controllerHost: false, controllerTitle: '', role: '接続中…', roleCopy: '', roleNotice: '', warning: '', inventory: 'Eキー',
   wait: { character: '/assets/characters/blue.png', heading: '接続完了!!', role: '', title: 'ホストの準備を待っています', players: [] },
-  remote: { players: [], route: '', startLabel: 'START', startDisabled: false, openGameLabel: 'ゲームを前面にする', openGameHidden: true, endVisible: false, transferTo: [], note: 'ゲームをプレイ中の画面まで進めた後、ホストだけがReadyを押します。' },
+  remote: { players: [], route: '', routeBlocked: false, notice: '', startLabel: 'START', startDisabled: false, openGameLabel: 'ゲームを前面にする', openGameHidden: true, endVisible: false, transferTo: [], note: 'ゲームをプレイ中の画面まで進めた後、ホストだけがReadyを押します。' },
 });
 let bindings: PhoneViewBindings | undefined;
 const skins = createSkinStore({ getItem: (key: string) => localStorage.getItem(key), setItem: (key: string, value: string) => localStorage.setItem(key, value) });
@@ -90,11 +90,12 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
       controllerHost: view === 'v-gen' ? isHost : display.get().controllerHost,
       controllerTitle: view === 'v-gen' ? `${game.profile?.name}（${me}${isHost ? '・ホスト' : ''}）` : display.get().controllerTitle,
       wait: waitModel({ me, game, roleTitle: role.title, joined, autoWait }),
-      remote: remoteModel({ me, isHost, game, name, autoWait }),
+      // リモコン画面では上部に警告を出さず、ゲームの検証状況だけを下の状態欄に出す (#291)
+      remote: { ...remoteModel({ me, isHost, game, name, autoWait }), notice: view === 'v-remote' ? profileNotice(game.profile) : '' },
       role: role.title + (isHost ? '（ホスト）' : ''),
       roleCopy: game.phase === 'coop' ? '確定した分担の操作だけを送信します' : game.phase === 'paused' ? '確定した分担（再開時に確認）' : '分担案（Readyで確定）',
       roleNotice: game.roleAck?.includes(me) ? `${game.reason === 'role rotation' ? '時間で担当が交代しました' : 'ホストが担当を入れ替えました'}。あなたの担当は「${role.title}」です。` : '',
-      warning: inputWarnText({ isHost, game, name, notice: profileNotice(game.profile) }),
+      warning: view === 'v-remote' ? '' : inputWarnText({ isHost, game, name, notice: profileNotice(game.profile) }),
       inventory: game.keys && 'controls' in game.keys && game.keys.controls && Object.hasOwn(game.keys.controls, 'INV') ? outputKeyLabel(game.keys.controls.INV) : 'Eキー',
     };
     document.body.dataset.phase = game.phase; document.body.dataset.slot = me; document.body.dataset.host = String(isHost);

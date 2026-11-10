@@ -1711,3 +1711,9 @@
 - 終了（`END`）とホスト譲渡の確認を `confirm()` から `<dialog id="phoneConfirm">` へ置き換えた。切断中はOKを無効にして要求を保持し、段階や参加者が変わり操作が成り立たなくなったら閉じる。通信契約・ホストは変更なし。
 - 自動試験：`npm run typecheck --prefix apps/web`、`node scripts/sim/product-web-test.mjs`（`phone-lifecycle-test` 20/20、#289の4件を追加）、`npm run build --prefix apps/web`、`node scripts/sim/check-static-pages.mjs` 成功。ハーネスの `confirm()` は呼ぶと失敗する。
 - 実機（Android Chrome 1台、アプリ通信はWindowsモバイルホットスポットのWi-Fi、操作はUSBのCDP）：dry-run・疑似入力先のホストへ、模擬P2（PC上のWSクライアント）と2人で準備→Ready→一時停止→「ロビーに戻る」。確認を12秒表示してもP1の切断・再接続は0回（ホストログにも切断なし）、OKで `host end` によりロビーへ戻った。実ゲーム・iPhone・ホスト譲渡の実機操作は未確認。
+## 2026-11-10 — #291 前面の案内を進行の段階に合わせる
+
+- 前面の警告（`inputTarget`）はゲームへ入力する段階（準備中・協力プレイ中・一時停止中）だけに出す。ロビーでは出さず、未選択時の既定タイトル（Minecraft）も出さない。
+- ホストのリモコン画面では上部の警告を出さず、操作先（`#remoteRoute`）に届かない理由を段階別に示し、ゲームの検証状況は下の `#remoteNotice` に出す。警告の有無で矢印・Enter・Escの位置が動かない。前面にあるのに「前面にしてください」とは出さない。
+- 自動試験：`npm run typecheck --prefix apps/web`、`node scripts/sim/product-web-test.mjs`（`phone-view-test` の警告の観点を新仕様へ更新・追加）、`npm run build --prefix apps/web`、`node scripts/sim/check-static-pages.mjs` 成功。
+- 実機（Android Chrome、ホットスポットのWi-Fi、USBのCDPで観測）：dry-runホストのロビーで上部警告なし、状態欄に「PCアプリが前面にないため、リモコンは届きません（ロビーではPCアプリだけを操作します）」を表示。準備中・協力プレイ中の実ゲームでの表示は未確認。

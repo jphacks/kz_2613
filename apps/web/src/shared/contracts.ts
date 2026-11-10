@@ -10,6 +10,7 @@ export interface WaitModel { character: string; heading: string; role: string; t
 export interface RemoteModel {
   players: PlayerChip[]; route: string; startLabel: string; startDisabled: boolean;
   openGameLabel: string; openGameHidden: boolean; endVisible: boolean; transferTo: Slot[]; note: string;
+  routeBlocked: boolean; notice: string;
 }
 export interface PlayerCardModel { slot: Slot; index: number; className: string; badge: string; name: string; role: string; device: string }
 export interface RoleColumnModel { slot: Slot; index: number; picked: boolean; swap: boolean; title: string; line: string; ack: boolean }
