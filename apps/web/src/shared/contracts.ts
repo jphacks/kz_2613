@@ -32,7 +32,7 @@ export interface PhoneGame extends Omit<ControllerGame, 'profile'> {
   reason?: string | null; autoResume?: boolean; inputTarget?: boolean; prepareStatus?: string;
   canReady?: boolean; canPrepare?: boolean; canResume?: boolean; lineupOk?: boolean;
   readyReasons?: string[]; remoteRoute?: string;
-  canSwap?: boolean; canChangePlayers?: boolean; canLaunch?:boolean; rotationSeconds?: number; launch?: LaunchState|null;
+  canSwap?: boolean; canChangePlayers?: boolean; canLaunch?:boolean; rotationSeconds?: number; rotationSoon?: boolean; rotationNext?: Partial<Record<Slot, string[]>> | null; rotationCount?: number; launch?: LaunchState|null;
   required?:number; autoResumeMs?:number;
 }
 export interface LaunchState {id?:string;state:string;title?:string;message?:string}

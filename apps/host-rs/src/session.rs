@@ -151,7 +151,10 @@ pub(crate) fn phase_change(from: Phase, to: Phase) -> Option<PhaseChange> {
     (from != to).then_some(PhaseChange { clear_lineup: to == Phase::Lobby })
 }
 /// 時間制の役割交代で選べる間隔 (秒)。0 は交代しない (#161)
-pub(crate) const ROTATION_CHOICES: [u64; 4] = [0, 60, 120, 180];
+/// 時間制の役割交代は 60 秒固定 (Q42)。0 はしない (初期値)
+pub(crate) const ROTATION_CHOICES: [u64; 2] = [0, 60];
+/// 交代の何ms前から次の担当を予告するか (Q42: 予告の秒数は技術者が選べる)
+pub(crate) const ROTATION_NOTICE_MS: u64 = 5_000;
 
 /// 交代の時刻になったか。協力プレイ中だけ
 pub(crate) fn rotation_due(phase: Phase, at: u64, now: u64) -> bool {

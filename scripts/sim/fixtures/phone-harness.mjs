@@ -144,7 +144,7 @@ export function controllerHarness({viewOnly=false}={}) {
     const run = new vm.Script(`(function(imports) {\n${source}\nreturn {${names.join(',')}};\n})`, { filename: absolute }).runInContext(context);
     const exports = run(imports); modules.set(absolute, exports); return exports;
   }
-  const {createReactPhoneView,display,connection,telemetry,blocked}=load(path.join(ROOT,'apps/web/src/phone/view.ts'));
+  const {createReactPhoneView,display,connection,telemetry,blocked,rotationNotice}=load(path.join(ROOT,'apps/web/src/phone/view.ts'));
   let bound=[],lastController=null;
   const materialize=()=>{
     const data=display.get();
@@ -205,5 +205,5 @@ export function controllerHarness({viewOnly=false}={}) {
     sockets[0].receive({ type: 'game', game: game(overrides) });
     await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
   }
-  return {render,display,calls,dispose:()=>controller?.dispose(),activeTimers:()=>timers.size, document, window, portrait, el, sockets, peers, storage, advance, game, ready, inputs, messages, control };
+  return {render,display,rotationNotice,calls,dispose:()=>controller?.dispose(),activeTimers:()=>timers.size, document, window, portrait, el, sockets, peers, storage, advance, game, ready, inputs, messages, control };
 }

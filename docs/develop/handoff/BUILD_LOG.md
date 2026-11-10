@@ -1694,3 +1694,12 @@
 - 未実施: 実OS入力での疑似ゲーム照合・実ホットキー/Alt+Tab・iPhone・実指・Minecraft実入力・実無線断・複数実端末・別PCの製品受入。明示許可のないOS入力は実施せず、dry-runや固定traceの成功を実入力の合格とは扱わない。
 
 - #279の実測を受け、SETUP_WINDOWSへworktree別target・固定exeハッシュ・展開後package-smokeを追記。通常buildの成功表示だけで配布バイナリの版を判断しない。製品コードと依存関係は変更せず、git diff --checkとcheck-public-docs成功。
+
+## 2026-11-10 — #161 時間制の役割交代をQ42/Q44/Q46に合わせる
+
+- 既存実装（1〜3分を選べ、交代のたびに一時停止して全員の確認とホストの再開を待つ）を確定仕様へ変更。間隔は60秒固定（`ROTATION_CHOICES = [0, 60]`）・初期OFF。ロビーへ戻るとOFFに戻す（Q44）。
+- 交代時は協力プレイを止めず、全員の入力を解放→未処理入力・視点を破棄→epochを進めて旧入力を無効化→参加者の順に担当を1つずらす（Q46、N人でN回で元に戻る）。ホスト権限・P番号・キー割当は移さない。確認待ち（roleAck）は使わない。
+- 交代5秒前から `rotationSoon`・`rotationNext` で次の担当を予告し、交代ごとに `rotationCount` を増やす。スマホは非モーダルの案内（`#rotationNotice`、タッチ透過）で予告と交代直後の担当を示す（交代直後の案内は4秒で消える）。一時停止中は数えず、再開で残りから数える。
+- 自動試験：`cargo test --release --locked`（host 139成功・2 ignored、probe 4成功。交代の予告・継続・全解放・巡回・停止中の残り・OFFへの復帰を追加し、旧方式の試験を置換）、`node scripts/sim/protocol-sim.mjs` 60/60（交代の試験を新仕様へ置換）、`node scripts/sim/product-web-test.mjs`、`npm run typecheck/build`、`check-static-pages.mjs`、`check-public-docs.py` 成功。
+- 実機（Android Chrome 1台＝P1、アプリ通信はホットスポットのWi-Fi、USBのCDPで観測、dry-run・疑似入力先、模擬P2）：実時間で待ち、56.5秒時点で予告、60.6秒で交代（一時停止なし）、P1の画面が移動から視点・クリック等へ切り替わり、交代の案内は約5秒後に消えた。
+- 未確認：実スマホ2〜4人での2周期以上、iPhone、Minecraft実入力での操作感、交代中の切断・Wi-Fi断。第三者の試遊（#167）。

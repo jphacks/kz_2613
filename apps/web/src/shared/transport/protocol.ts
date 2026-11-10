@@ -22,7 +22,7 @@ export function isPhoneGame(value: unknown): value is PhoneGame {
   for (const key of ['title', 'titleName', 'prepareStatus', 'remoteRoute']) {
     if (!optional(value, key, v => typeof v === 'string')) return false;
   }
-  for (const key of ['canPrepare', 'canReady', 'canResume', 'inputTarget', 'inputActive', 'autoResume', 'lineupOk', 'hostReady', 'canSwap', 'canChangePlayers', 'canLaunch']) {
+  for (const key of ['canPrepare', 'canReady', 'canResume', 'inputTarget', 'inputActive', 'autoResume', 'lineupOk', 'hostReady', 'canSwap', 'canChangePlayers', 'canLaunch', 'rotationSoon']) {
     if (!optional(value, key, v => typeof v === 'boolean')) return false;
   }
   if (!optional(value, 'assigned', assignment)) return false;
@@ -30,7 +30,8 @@ export function isPhoneGame(value: unknown): value is PhoneGame {
   if (!optional(value, 'keys', v => object(v) && optional(v, 'actions', outputs)
       && optional(v, 'controls', c => outputs(c) && Object.keys(c).every(key => /^[A-Za-z0-9_:-]+$/.test(key)))
       && optional(v, 'warnings', strings) && optional(v, 'edited', strings))) return false;
-  if (!optional(value, 'rotationSeconds', finite)) return false;
+  if (!optional(value, 'rotationSeconds', finite) || !optional(value, 'rotationCount', finite)) return false;
+  if (!optional(value, 'rotationNext', v => v === null || assignment(v))) return false;
   for(const key of ['required','autoResumeMs'])if(!optional(value,key,finite))return false;
   if (!optional(value, 'launch', v => v===null||object(v) && typeof v.state === 'string' && ['title','id','message'].every(k=>optional(v,k,v=>typeof v==='string')))) return false;
   if (value.phase === 'coop' && !object(value.profile)) return false;
