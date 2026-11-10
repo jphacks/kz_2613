@@ -1694,3 +1694,10 @@
 - 未実施: 実OS入力での疑似ゲーム照合・実ホットキー/Alt+Tab・iPhone・実指・Minecraft実入力・実無線断・複数実端末・別PCの製品受入。明示許可のないOS入力は実施せず、dry-runや固定traceの成功を実入力の合格とは扱わない。
 
 - #279の実測を受け、SETUP_WINDOWSへworktree別target・固定exeハッシュ・展開後package-smokeを追記。通常buildの成功表示だけで配布バイナリの版を判断しない。製品コードと依存関係は変更せず、git diff --checkとcheck-public-docs成功。
+
+## 2026-11-10 — #291 前面の案内を進行の段階に合わせる
+
+- 前面の警告（`inputTarget`）はゲームへ入力する段階（準備中・協力プレイ中・一時停止中）だけに出す。ロビーでは出さず、未選択時の既定タイトル（Minecraft）も出さない。
+- ホストのリモコン画面では上部の警告を出さず、操作先（`#remoteRoute`）に届かない理由を段階別に示し、ゲームの検証状況は下の `#remoteNotice` に出す。警告の有無で矢印・Enter・Escの位置が動かない。前面にあるのに「前面にしてください」とは出さない。
+- 自動試験：`npm run typecheck --prefix apps/web`、`node scripts/sim/product-web-test.mjs`（`phone-view-test` の警告の観点を新仕様へ更新・追加）、`npm run build --prefix apps/web`、`node scripts/sim/check-static-pages.mjs` 成功。
+- 実機（Android Chrome、ホットスポットのWi-Fi、USBのCDPで観測）：dry-runホストのロビーで上部警告なし、状態欄に「PCアプリが前面にないため、リモコンは届きません（ロビーではPCアプリだけを操作します）」を表示。準備中・協力プレイ中の実ゲームでの表示は未確認。
