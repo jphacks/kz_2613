@@ -47,6 +47,8 @@ export type PhoneView = ((snapshot: PhoneSnapshot) => void) & {
   connection(text:string,kind:string):void;
   telemetry(patch:Partial<PhoneTelemetry>):void;
   blocked(message?:string):void;
+  /** PC のアプリと一定時間つながらないとき、画面全体を覆って操作を止める (#302) */
+  offline(visible:boolean):void;
   confirm(request:ConfirmRequest):void;
 };
 // ページ内の確認。confirm() はJSを止めてハートビートが途切れるため使わない (#289)
