@@ -29,7 +29,7 @@ export interface PhoneGame extends Omit<ControllerGame, 'profile'> {
   profile?: ControllerGame['profile'] | null;
   phase: 'lobby' | 'preparing' | 'coop' | 'paused'; epoch: number; title?: string; titleName?:string;
   connected: Slot[]; participants?: Slot[]; roleAck?: Slot[]; roleOf?: Partial<Record<Slot, Slot>>;
-  reason?: string | null; autoResume?: boolean; inputTarget?: boolean; mouseBlocked?: boolean; prepareStatus?: string;
+  reason?: string | null; autoResume?: boolean; inputTarget?: boolean; prepareStatus?: string;
   canReady?: boolean; canPrepare?: boolean; canResume?: boolean; lineupOk?: boolean;
   readyReasons?: string[]; remoteRoute?: string;
   canSwap?: boolean; canChangePlayers?: boolean; canLaunch?:boolean; rotationSeconds?: number; launch?: LaunchState|null;

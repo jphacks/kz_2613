@@ -68,8 +68,6 @@ pub struct Profile {
     pub status: String,
     pub verified_date: Option<String>,
     pub game_version: Option<String>,
-    /// 視点操作中はゲームがマウスを捕捉する (カーソルが非表示になる)。カーソルが表示されている間はマウス入力を送らない (#261)
-    pub captures_mouse: bool,
 }
 
 fn s(v: &Value, k: &str) -> Option<String> {
@@ -196,7 +194,6 @@ pub fn parse(v: &Value) -> Result<Profile, String> {
         status,
         verified_date: ver.and_then(|x| s(x, "date")),
         game_version: ver.and_then(|x| s(x, "gameVersion")),
-        captures_mouse: v.get("capturesMouse").and_then(Value::as_bool).unwrap_or(false),
     })
 }
 
@@ -216,7 +213,6 @@ pub fn builtin_pseudo() -> Profile {
     p.processes.clear();
     p.title_contains = None;
     p.user_bindings = None;
-    p.captures_mouse = false;
     p
 }
 

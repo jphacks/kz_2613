@@ -72,7 +72,6 @@ pub enum Event {
     EmergencyStop { source: &'static str, enqueued_at: Option<Instant> },
     /// 試験用: 前面のウィンドウが入力先かどうかを差し替える (DRY_RUN のときだけ)
     FakeTarget(bool),
-    FakeCursor(bool),
     FakeActivate(bool),
     /// 既定の音の出力先が Bluetooth か (#131)。実機では定期的に調べ、試験では標準入力の "bt on/off" で差し替える
     BluetoothAudio(bool),
@@ -318,8 +317,6 @@ pub struct Hub {
     target_fg: Option<Foreground>,
     target_ok: bool,
     fake_target: Option<bool>, // 試験用 (DRY_RUN のときだけ)。Some なら OS に問い合わせない
-    fake_cursor: bool, // 試験用: マウスカーソルが表示されている (ゲームがマウスを捕捉していない) ことにする
-    cursor_free: bool, // 入力先でマウスカーソルが表示されている。マウスを捕捉する定義のゲームではマウス入力を送らない (#261)
     fake_activate: bool,
     // ゲームのキー設定に合わせた、操作 → 送るキーの対応 (#101)。準備・Ready・再開のたびに読み直す
     keybinds: Keybinds,
@@ -445,8 +442,6 @@ impl Hub {
                 .ok()
                 .filter(|_| std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1"))
                 .map(|v| v == "1"),
-            fake_cursor: false,
-            cursor_free: false,
             app_focused: false,
             desktop: std::env::var("RECOOPLAY_DESKTOP").as_deref() == Ok("1"),
         };
@@ -754,8 +749,6 @@ impl Hub {
             // 入力が PC に届く状態か (注入モード・入力先のウィンドウ)。スマホに「届いていない」ことを知らせる
             "inputActive": self.can_inject(),
             "inputTarget": self.inject == InjectMode::On && !self.target_ok,
-            // ゲームがメニュー・持ち物などでマウスを捕捉していないため、マウス操作を止めている (#261)
-            "mouseBlocked": self.mouse_blocked(),
         })
     }
 
@@ -802,12 +795,6 @@ impl Hub {
                 // 常時 ON でも、前面のウィンドウが入力先 (Minecraft) のときだけ
                 InjectMode::On => self.target_ok,
             }
-    }
-
-    /// 入力先がマウスを捕捉していない (メニュー・持ち物を開いている) ため、マウスの押下・ホイール・視点を送らない (#261)。
-    /// キーは止めない (Escで戻れるように)。カーソルの表示状態は入力先の前面確認と同じ周期で調べる
-    fn mouse_blocked(&self) -> bool {
-        self.inject == InjectMode::On && self.target_ok && self.cursor_free && self.profile.as_ref().is_some_and(|p| p.captures_mouse)
     }
 
     fn inject_snapshot(&self) -> Value {
@@ -1297,7 +1284,7 @@ impl Hub {
         let down = state == "down";
         let o = &OUTPUTS[idx];
         if let Kind::Wheel { notches } = o.kind {
-            if !down || !self.can_inject() || self.mouse_blocked() {
+            if !down || !self.can_inject() {
                 return;
             }
             let ok = self.input.wheel(notches);
@@ -1310,9 +1297,6 @@ impl Hub {
         }
         // 押下は注入可能な時だけ受け付ける。解放は常に通す (押しっぱなしを残さない)
         if down && !self.can_inject() {
-            return;
-        }
-        if down && matches!(o.kind, Kind::Mouse { .. }) && self.mouse_blocked() {
             return;
         }
         self.set_output(idx, SLOT_NAMES[slot], down);
@@ -1369,7 +1353,7 @@ impl Hub {
     }
 
     fn look_tick(&mut self) {
-        let allowed = self.game.phase == Phase::Coop && self.can_inject() && !self.mouse_blocked();
+        let allowed = self.game.phase == Phase::Coop && self.can_inject();
         if let Some(movement) = self.look.tick(Instant::now(), allowed) {
             self.input.mouse_move(movement.dx, movement.dy);
             self.look.record_output(movement);
@@ -1434,30 +1418,7 @@ impl Hub {
             self.target_fg = fg;
             self.push_state_throttled();
         }
-        self.check_cursor();
     }
-
-    /// 入力先でマウスカーソルが表示されている (ゲームがマウスを捕捉していない) か (#261)。マウスを捕捉する定義のゲームだけ調べる
-    fn check_cursor(&mut self) {
-        let captures = self.profile.as_ref().is_some_and(|p| p.captures_mouse);
-        let free = self.target_ok && captures && match self.fake_target {
-            Some(_) => self.fake_cursor,
-            None => crate::focus::cursor_visible().unwrap_or(false),
-        };
-        if free == self.cursor_free { return; }
-        self.cursor_free = free;
-        if self.mouse_blocked() {
-            // 押したままのマウスボタンと視点の未処理分を捨てる。キーと進行状態(epoch)は変えない
-            for idx in 0..OUTPUTS.len() {
-                if matches!(OUTPUTS[idx].kind, Kind::Mouse { .. }) && self.outputs[idx].release(None, Instant::now()) {
-                    self.apply_output(idx, false, "system");
-                }
-            }
-            self.reset_look();
-        }
-        self.log("mouse_capture", json!({ "free": free }));
-        self.push_game();
-        self.push_state();
     }
 
     // ---------- ゲームの一覧・選択・起動 (#54・#93) ----------
@@ -2063,12 +2024,6 @@ impl Hub {
             Event::FakeTarget(ok) => {
                 if self.fake_target.is_some() {
                     self.fake_target = Some(ok);
-                    self.check_target();
-                }
-            }
-            Event::FakeCursor(free) => {
-                if self.fake_target.is_some() {
-                    self.fake_cursor = free;
                     self.check_target();
                 }
             }
@@ -2707,8 +2662,6 @@ mod tests {
             rotation_at: 0,
             role_ack: Vec::new(),
             fake_target: Some(true),
-            fake_cursor: false,
-            cursor_free: false,
             app_focused: false,
             desktop: false,
         };

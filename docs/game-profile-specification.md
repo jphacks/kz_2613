@@ -93,7 +93,6 @@ Steam・Epic Gamesの検出情報はゲーム選択と入力先の判定に用�
 | `match.ids` / `match.steamAppIds` | このゲームを指すID・Steam AppID |
 | `match.processes` / `match.titleContains` | 対象照合に使うプロセス名・タイトルの条件。検出ゲームの入力先はホストのゲーム情報に基づいて決まる |
 | `suitability` | 分担に向くか：`good` / `limited` / `unsuitable`（マウスだけ・ターン制等）/ `unknown` |
-| `capturesMouse` | 省略可（既定`false`）。`true`のゲームは、視点操作中にゲームがマウスを捕捉する（カーソルが非表示）。ホストはカーソルが表示されている間（メニュー・持ち物を開いている間）、マウスの押下・ホイール・視点を送らない（キーは送る）。Minecraftが`true` |
 | `userBindings.reader` | ユーザーの設定の読み方：`minecraft-options`・`terraria-input-profiles`・`es3-keybindings`（Unity＋Easy Save）・`unity-inputsystem-json`（SaveBindingOverridesAsJson）・`ue-input-ini`（Unreal Engine 4）・`source-cfg`・`none` |
 | `userBindings.path` | 設定ファイルの場所。`%APPDATA%`・`%LOCALAPPDATA%`・`%USERPROFILE%`・`%LOCALLOW%`・`%DOCUMENTS%`（OneDriveへ移した場合も含む）を使える |
 | `groups[].role` | 分担の案：`P1`・`P2`・`P3`・`host`（メニュー＝ホストのリモコン）・`none`（分担しない） |

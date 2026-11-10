@@ -1724,7 +1724,16 @@
 ## 2026-11-09 — #262（端末ごとの解放）と #261（メニュー表示中のマウス抑止）の修正（Claude Code）
 
 - **#262（案1）**：`release_inputs` に端末が直近に送った入力番号 `iseq` を付け、`iseq`付きは**送信した端末の押下だけ**を解放し、他の参加者の押下とepochは変えない（`hub.rs` の `release_slot_inputs`）。解放要求より前に送られ、順序待ちの後に届いた押下は `release_floor`（番号の下限）で適用しない。`iseq`なし（旧版のスマホ）は従来どおり全解放・epoch更新。切断・Pause・緊急停止・入力先喪失の全解放は変更していない。フロントは `stopRemote` で `iseq: lastIseq` を付ける。
-- **#261（案の「案内と手順」ではなく、ホストがカーソル表示で判定）**：操作定義に `capturesMouse`（Minecraftが `true`）を追加し、`GetCursorInfo` で入力先がマウスを捕捉していない（カーソルが表示されている＝ゲームメニュー・持ち物）と判定した間は、マウスの押下・ホイール・視点を送らない。キーは送る（Escで戻れる）。切り替わった時点で押下中のマウスボタンと視点の未処理分を解放し、epochは変えない。`mouseBlocked` をgame状態で通知し、スマホに案内を出す。画像認識は使わない。
+- **【2026-11-10撤回・Q48】以下の #261 の実装（カーソル表示の判定でマウス入力を止める方式）は採用しない。コードから削除済み。下の検証・実Minecraftの結果のうち #261 に関する部分は、撤回した実装の記録である。** **#261（案の「案内と手順」ではなく、ホストがカーソル表示で判定）**：操作定義に `capturesMouse`（Minecraftが `true`）を追加し、`GetCursorInfo` で入力先がマウスを捕捉していない（カーソルが表示されている＝ゲームメニュー・持ち物）と判定した間は、マウスの押下・ホイール・視点を送らない。キーは送る（Escで戻れる）。切り替わった時点で押下中のマウスボタンと視点の未処理分を解放し、epochは変えない。`mouseBlocked` をgame状態で通知し、スマホに案内を出す。画像認識は使わない。
 - 検証：`cargo build/test --offline --release --locked`：成功、137合格/2ignored＋4。`node scripts/sim/protocol-sim.mjs --bin <同ホスト>`：62/62（#262・#261の試験を追加。`cursor on|off` はdry-run＋fake targetの標準入力だけ）。`npm run typecheck/build --prefix apps/web`、`node scripts/sim/product-web-test.mjs`（`phone-warning-test` を追加）、`check-static-pages.mjs`、`verify_overlay.py`、`check-public-docs.py`、`profile-catalog-test.mjs`：成功。
 - **実Minecraft 26.3（実入力）**：メニュー表示中にP3の左クリックを送っても左ボタンは押されず、メニュー（統計など）は変化しない（目視）。メニュー中もWは通り、Escで閉じるとマウス操作が再開する（7/7）。**Android実機（P1・Wi-Fi）**：P3が左ボタンを押している間に実機がホームへ移っても、P3の押下は続きepochは4のまま、P3が離すと解放される。実機のスティックでW保持中にホームへ移るとP1自身のWは解放される（6/6）。
 - 限界：画面消灯の再試験は、Chromeが背面で切断・再接続（epoch更新を伴う従来の全解放）したため試験の前提が崩れ、合否を判定していない。4秒以上の背面化・切断は従来どおり全員の停止になる。`GetCursorInfo` は入力先のウィンドウが前面のときのカーソル表示状態で、Minecraft 26.3以外・ウィンドウ化以外の表示形態は未検証。持ち物を開いている間もマウスを止める（持ち物はEキーで開閉できる）。Minecraftのカーソルの判定が合わない版・環境があれば、`mouse_capture` ログで確認する。
+
+## 2026-11-10 — PR #284：#261の旧判定を撤回し、#259・#262を維持（Claude Code）
+
+- 根拠：Q48（kume確定）。ゲームのメニュー・カーソル状態でReadyや入力の可否を決める機能は不要。Readyはメニューの状態にかかわらず受理し、ゲームのメニューを閉じてからReadyする運用を、非ブロッキングの案内で示す。Minecraft専用の機構は製品標準に残さない。
+- 撤回：`capturesMouse`（操作定義・`profiles.rs`）、`GetCursorInfo`（`focus.rs` の `cursor_visible`）、`mouse_blocked`・`check_cursor`・`cursor_free`・`FakeCursor` と標準入力 `cursor on/off`（`hub.rs`・`main.rs`）、`mouseBlocked`（状態・型・通信境界・スマホの案内文）、`protocol-sim` の #261 試験、`phone-warning-test.mjs`、関連の仕様書の記述。
+- 維持：#259（通信テストの1回ごとの分離・p50・p99）、#262（`release_inputs` の `iseq` による本人のみ解放と、解放前の押下の遅着拒否）。全員解放（切断・Pause・緊急停止・入力先喪失）は変更していない。
+- 案内：スマホのリモコンの準備中の説明を「ゲームのメニューを閉じ、操作できる画面にしてから、ホストだけがReadyを押します」へ更新した。Readyの可否には連動しない。
+- 残るリスク：メニューを開いたままReadyすると、協力入力の攻撃・使うがメニューをクリックするおそれがある（2026-11-09の観測：「統計」ボタンが押された）。自動対策済みとは主張しない。制限事項として扱う。
+- 未実施：撤回後の実Minecraft・実機の再確認（Ready受理とメニューを閉じた後の入力）は未実施。

@@ -143,7 +143,6 @@ PREPARE / READY / RESUME / OPEN_GAMEは現在epochを必須とします。PREPAR
 | `hostReady / prepareStatus / canLaunch` | 準備・起動の状態 |
 | `remoteRoute` | app / game / none |
 | `inputActive / inputTarget` | 入力可能か、onだが対象が前面でないか |
-| `mouseBlocked` | 入力先がマウスを捕捉していない（メニュー・持ち物を開いていてカーソルが表示されている）ため、マウスの押下・ホイール・視点を止めているか（#261）。操作定義が`capturesMouse: true`のゲームだけ。キーは止めない |
 | `autoResume / autoResumeMs / autoResumeUntil` | 自動復帰設定、待機時間、期限 |
 
 `keys.actions`は操作IDから実出力の`{out,label}`またはnullへの対応です。`profile.assignment`は現在接続者への案、`profile.assignments`は人数別の案です。`assigned`が現在の共同操作の認可に使う確定値です。
@@ -299,7 +298,7 @@ P1のリモコンはPC画面と対象ゲームへ排他的に送ります。PC�
 
 ## 安全停止の境界
 
-入力OFF、対象喪失、セッション変更、終了時は合成入力と保留分を解放・破棄します。端末ごとのblur・回転・非表示（`release_inputs`）は、その端末の押下だけを解放します（#262）。入力先がマウスを捕捉していない間はマウス入力を送らず、捕捉が戻るまで再開しません（#261）。古いepochの`release_inputs`は新しいセッションに影響させません。ホストのPC経路とゲーム経路は排他的です。未検証の操作定義であっても開始条件が成立すればReadyできますが、割当不能・非対応の種類は拒否します。
+入力OFF、対象喪失、セッション変更、終了時は合成入力と保留分を解放・破棄します。端末ごとのblur・回転・非表示（`release_inputs`）は、その端末の押下だけを解放します（#262）。古いepochの`release_inputs`は新しいセッションに影響させません。ホストのPC経路とゲーム経路は排他的です。未検証の操作定義であっても開始条件が成立すればReadyできますが、割当不能・非対応の種類は拒否します。
 
 実装：[受付](../apps/host-rs/src/main.rs) ／ [通信・認可](../apps/host-rs/src/hub.rs) ／ [DataChannel](../apps/host-rs/src/rtc.rs) ／ [通信試験](../scripts/sim/protocol-sim.mjs)
 

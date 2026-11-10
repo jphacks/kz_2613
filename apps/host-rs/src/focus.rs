@@ -79,12 +79,6 @@ pub fn foreground() -> Option<Foreground> {
     imp::foreground()
 }
 
-/// マウスカーソルが表示されているか。ゲームがマウスを捕捉している間 (視点操作中) は非表示で、
-/// メニュー・持ち物などを開くと表示される (#261)。取得できないときは None (判定せず従来どおり扱う)
-pub fn cursor_visible() -> Option<bool> {
-    imp::cursor_visible()
-}
-
 /// 許可された既存ゲームだけを前面にする。任意のパスの起動は受け付けない。
 pub fn activate(target: &Target) -> Result<(), String> {
     imp::activate(target)
@@ -114,13 +108,6 @@ mod imp {
 
     pub fn foreground() -> Option<Foreground> {
         describe(unsafe { GetForegroundWindow() })
-    }
-
-    pub fn cursor_visible() -> Option<bool> {
-        use windows::Win32::UI::WindowsAndMessaging::{GetCursorInfo, CURSORINFO, CURSOR_SHOWING};
-        let mut info = CURSORINFO { cbSize: std::mem::size_of::<CURSORINFO>() as u32, ..Default::default() };
-        unsafe { GetCursorInfo(&mut info).ok()?; }
-        Some(info.flags.0 & CURSOR_SHOWING.0 != 0)
     }
 
     fn describe(hwnd: HWND) -> Option<Foreground> {
@@ -214,7 +201,6 @@ mod imp {
 #[cfg(not(windows))]
 mod imp {
     pub fn activate(_: &super::Target) -> Result<(), String> { Err("Windows以外では前面化できません".into()) }
-    pub fn cursor_visible() -> Option<bool> { None }
     pub fn find(_: &super::Target) -> Option<()> {
         None
     }
