@@ -1694,3 +1694,10 @@
 - 未実施: 実OS入力での疑似ゲーム照合・実ホットキー/Alt+Tab・iPhone・実指・Minecraft実入力・実無線断・複数実端末・別PCの製品受入。明示許可のないOS入力は実施せず、dry-runや固定traceの成功を実入力の合格とは扱わない。
 
 - #279の実測を受け、SETUP_WINDOWSへworktree別target・固定exeハッシュ・展開後package-smokeを追記。通常buildの成功表示だけで配布バイナリの版を判断しない。製品コードと依存関係は変更せず、git diff --checkとcheck-public-docs成功。
+
+## 2026-11-10 — #275 視点受信の空白の再分析（保存データ）
+
+- `scripts/device/look-gap-analysis.mjs`（＋合成データの試験、CIに追加）で、PR #274 の主21試行＋修正後6試行の視点受信の200ms以上の空白30件を、端末の送信時刻・`lseq`・まとめ着・相対遅れ（最小値基準、時計の直接差は使わない）に対応付けた。
+- 結果：送信側の空白0件（端末の送信間隔は最大66.9ms）。30件すべてで空白中に送ったパケットが直後に3〜11個まとめて届き（相対遅れ135.6〜378.0ms）、RTCでは20件で1〜2個の欠落を伴った。WSは欠落なしの遅着のみ。逆順・経路切替は0件。ハブの処理・経路切替が原因ではなく、無線区間での滞留が推測される（機器・仕組みは未確定）。
+- 記録：`docs/develop/acceptance/2026-11-10-look-gap-analysis.md`、`docs/develop/acceptance/evidence/look-gaps-275/gaps.json`。製品コードは変更していない。新たな実機測定は未実施。
+- 試験：`node scripts/device/look-gap-analysis-test.mjs` 合格、`python scripts/check-public-docs.py` を実行。
