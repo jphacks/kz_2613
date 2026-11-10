@@ -1771,6 +1771,6 @@
 - 既存の安全ゲートの照合：旧epochの入力はstale ACKで不実行、本人の `release_inputs` 以前の押下は不実行（#284）、通信断・epoch変更でスマホが全保持を失効し、同じ指のpointermove/pointerupでは押下・視点を再開しない（ボタン・スティック・視点パッド）、`protocolVersion` は完全一致必須（不一致は 4005 で拒否）。不足は「同じepoch内で大きく遅れて届いた押下」と「Q27の案内」だった。
 - ホスト：`apps/host-rs/src/freshness.rs` を追加。接続ごとに「受信時刻−スマホの送信時刻 `t`」の最小値（`ping`・`ka`・`input` の到着、15秒×2区間）を基準とし、押下の処理時点で基準から500ms以上遅れていればstale ACKを返して実行しない。`t` 不正・基準なしも不実行。解放は常に適用。500msは2026-11-09の実Wi-Fi計測で正常時ACK往復の最大384ms（E-ws）を上回る値。スロットの診断に `staleDowns` を追加。
 - スマホ：押下のstale ACKで該当操作の押下表示を解き、通信断・epoch変更などで入力を止めたときに触れていた指とあわせて、離すまで「指を離して操作を再開」（`#liftHint`、非モーダル・タッチ透過・画面上部）を出す。
-- 自動試験：`cargo test --release --locked`（host 145成功・2 ignored、鮮度判定3件と遅延押下の破棄・他者保持の継続を追加）、`node scripts/sim/protocol-sim.mjs` 62/62（遅れた押下の破棄を追加。手書き入力の `t: 0` を現在時刻へ修正）、`node scripts/sim/product-web-test.mjs`（`phone-lifecycle-test` に復旧・遅延破棄の2件を追加）、`npm run typecheck/build`、`check-static-pages.mjs` 成功。
+- 自動試験：`cargo test --release --locked`（host 142成功・2 ignored、probe 4成功。鮮度判定3件と遅延押下の破棄・他者保持の継続を追加）、`node scripts/sim/protocol-sim.mjs` 62/62（遅れた押下の破棄を追加。手書き入力の `t: 0` を現在時刻へ修正）、`node scripts/sim/product-web-test.mjs`（`phone-lifecycle-test` に復旧・遅延破棄の2件を追加）、`npm run typecheck/build`、`check-static-pages.mjs` 成功。
 - 実機（Android Chrome 1台、アプリ通信はホットスポットのWi-Fi、操作はUSBのCDPタッチとadb、dry-run・疑似入力先、模擬P2）：協力プレイ中にジャンプを押したまま `svc wifi disable` → 約4秒で切断扱い・`act:jump` 解放・一時停止。Wi-Fi復帰後に自動復帰しても、押したままの指では押下が再開せず（ホストの `pressed` 空）、案内を表示。指を離すと案内が消えた。
 - 未確認：iPhone Safari、実端末2〜4台、Minecraft実入力、実際のバースト損失で500ms閾値が正常な押下を捨てないか（今回の閾値は既存計測からの選定で、新たな測定はしていない）。
