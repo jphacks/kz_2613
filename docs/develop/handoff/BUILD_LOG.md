@@ -1694,3 +1694,10 @@
 - 未実施: 実OS入力での疑似ゲーム照合・実ホットキー/Alt+Tab・iPhone・実指・Minecraft実入力・実無線断・複数実端末・別PCの製品受入。明示許可のないOS入力は実施せず、dry-runや固定traceの成功を実入力の合格とは扱わない。
 
 - #279の実測を受け、SETUP_WINDOWSへworktree別target・固定exeハッシュ・展開後package-smokeを追記。通常buildの成功表示だけで配布バイナリの版を判断しない。製品コードと依存関係は変更せず、git diff --checkとcheck-public-docs成功。
+
+## 2026-11-10 — #293 Among Usの操作定義にマウスの担当を加える
+
+- `scripts/profiles/overrides/steam-945360.json` と生成物 `apps/game-profiles/steam-945360.json` を同じ内容で更新（カタログの再生成は公開データの取得が要るため実行せず、該当2ファイルの groups/actions/sources だけを変更）。
+- 「マウス（タスク・ボタン）」（P2：カーソル `mouseDelta`＋左クリック）を追加。協力プレイ中に誰も押せなかった「メニュー」（host）を廃止し、マップ（Tab）と「閉じる・メニュー」（Esc）を「使う・役職の操作」（P3）へ移した。分担の案は2人：P1移動＋使う等／P2マウス、3人：P1移動／P2マウス／P3使う等、4人：左右／上下／マウス／使う等。
+- 自動試験：`cargo test --release --locked`（2〜4人の全員分担でマウス・Esc・使うが必ず誰かに入り、カーソルとクリックが同じ人になる試験を追加）、`node scripts/sim/profile-catalog-test.mjs` 成功。
+- 定義の検証状態は `unverified` のまま。Among Usの実ゲームでマウスのタスク操作が成立するかは未確認。
