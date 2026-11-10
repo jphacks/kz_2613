@@ -1763,3 +1763,21 @@
 - この4件だけの最終組合せで `npm run build --prefix apps/web`（型確認含む）、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/profile-catalog-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/check-public-docs.py`、`git diff --check` は成功。
 - #320のfull.retryMsは任意の非負有限値、端末側の既定満員表示との区別を確認。参加番号の詰め直しは対象外。実スマホ表示は作者の報告と独立追試を区別する。
 - #284/#313のホスト全体の独立ビルドは、sandboxのMSBuildがChecking Build System後に終了1となり、同じ専用targetを通常環境で再構築中。そこから成功を推定せず、旧入力・緊急停止の指摘PRをこの4件に混ぜない。
+## 2026-11-10 — #161 時間制の役割交代をQ42/Q44/Q46に合わせる
+
+- 既存実装（1〜3分を選べ、交代のたびに一時停止して全員の確認とホストの再開を待つ）を確定仕様へ変更。間隔は60秒固定（`ROTATION_CHOICES = [0, 60]`）・初期OFF。ロビーへ戻るとOFFに戻す（Q44）。
+- 交代時は協力プレイを止めず、全員の入力を解放→未処理入力・視点を破棄→epochを進めて旧入力を無効化→参加者の順に担当を1つずらす（Q46、N人でN回で元に戻る）。ホスト権限・P番号・キー割当は移さない。確認待ち（roleAck）は使わない。
+- 交代5秒前から `rotationSoon`・`rotationNext` で次の担当を予告し、交代ごとに `rotationCount` を増やす。スマホは非モーダルの案内（`#rotationNotice`、タッチ透過）で予告と交代直後の担当を示す（交代直後の案内は4秒で消える）。一時停止中は数えず、再開で残りから数える。
+- 自動試験：`cargo test --release --locked`（host 139成功・2 ignored、probe 4成功。交代の予告・継続・全解放・巡回・停止中の残り・OFFへの復帰を追加し、旧方式の試験を置換）、`node scripts/sim/protocol-sim.mjs` 60/60（交代の試験を新仕様へ置換）、`node scripts/sim/product-web-test.mjs`、`npm run typecheck/build`、`check-static-pages.mjs`、`check-public-docs.py` 成功。
+- 実機（Android Chrome 1台＝P1、アプリ通信はホットスポットのWi-Fi、USBのCDPで観測、dry-run・疑似入力先、模擬P2）：実時間で待ち、56.5秒時点で予告、60.6秒で交代（一時停止なし）、P1の画面が移動から視点・クリック等へ切り替わり、交代の案内は約5秒後に消えた。
+- 未確認：実スマホ2〜4人での2周期以上、iPhone、Minecraft実入力での操作感、交代中の切断・Wi-Fi断。第三者の試遊（#167）。
+- 2026-11-11 レビュー指摘（P2）への対応：交代の向きが逆だった（3人で元のP1の担当がP3へ移っていた）。`rotated_seats` を、枠の番号順で1つ前の参加者の席（＝担当）を受け継ぐ向きに直した。#161の「現在の参加者順で循環（P1→P2→P3→P1）」に合わせ、席順ではなく枠の番号順で回すので、手動の入れ替え後も P1→P2→P3 の向きになる。単体試験に3人・4人・欠番・入れ替え後を加え、Hubの試験 `role_rotation_follows_slot_order_with_gaps_four_players_and_after_a_manual_swap` で、予告 `rotationNext` と実際の交代の一致、N回で元に戻ることを確認した。protocol-simの確認も「P1の担当がP2へ」に直した。`cargo test --release --locked`（RECOOPLAY_DRY_RUN=1）、`node scripts/sim/protocol-sim.mjs`（60/60）が成功。
+
+## 2026-11-11 時間制役割交代の再レビューと単独統合準備（#314、未承認）
+
+- #314のQ46巡回方向の不一致を独立レビューで発見。修正98e42a5を再レビューし、元P1担当→P2の独立受入試験は修正前失敗・修正後成功、実session.rsの独立Rust試験15/15が成功。枠順、4人・欠番・手動交換後・予告との一致も検査した。
+- #313の押し直し後stale ACKは45b3e6eで、#315の緊急停止未登録時のランチャー入力許可は31e9319で解消を確認。専用レビュー統合では3件の修正と他候補を組み合わせ、Rust156成功・2 ignored＋プローブ4成功、通信契約62/62、quit/EOF全解放後4009終了、Web型・ビルド・回帰が成功。#284の追加した遅着視点の失敗試験は別扱いで、これを通過と扱わない。
+- #284は本人解放後の古い視点で補間待ちが0から90へ復活することを独立Rust試験で再現し、PRへP1の修正依頼を投稿。#321はmainの#309との組合せで、PC終了時も確認modalが残ることを製品runtimeで再現してP2指摘。#311は実Tauriの前面化証拠がなく、実機受入またはRefs #292への変更を依頼。これらは今回の単独統合に含めない。
+- 最新main155e01c（承認済み9件統合後、CI全成功）から、#314の作者コミット98e42a5だけを取り込んだ。前面案内と交代案内、ページ内確認と交代案内の競合を両方保持して解消。作者ブランチは変更せず、新しい仕様も加えていない。
+- この単独組合せで `npm run build --prefix apps/web`（型確認含む）、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/check-public-docs.py`、`git diff --check` は成功。
+- 初期OFF、60秒固定、全解放・未処理破棄・epoch更新、ホスト権限不変、次のプレイでOFFを維持。Android/iPhone・2〜4人・2周期以上・Minecraft・通信断/Pauseの実機受入は未実施で#161を継続する。統合CIを確認し、残る実機項目を提示してユーザー承認を得てからマージする。

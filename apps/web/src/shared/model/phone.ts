@@ -39,6 +39,16 @@ function routeText(game: PhoneGame, name: string) {
   return `リモコンは今は届きません${game.readyReasons?.length ? `（${game.readyReasons[0]}）` : ''}`;
 }
 
+/**
+ * 時間制の役割交代の短い案内 (#161)。協力プレイ中の参加者だけ。予告では次の担当、交代の直後は新しい担当を示す。
+ * 画面を覆わず、操作を止めない
+ */
+export function rotationText({ game, joined, rotated, title }: {game:PhoneGame;joined:boolean;rotated:boolean;title:(game:PhoneGame)=>string}) {
+  if (game.phase !== 'coop' || !joined) return '';
+  if (game.rotationSoon && game.rotationNext) return `まもなく担当を交代：次は「${title({ ...game, assigned: game.rotationNext })}」`;
+  return rotated ? `担当が交代しました。あなたは「${title(game)}」` : '';
+}
+
 /** 待機画面の内容 */
 export function waitModel({ me, game, roleTitle, joined, autoWait }: {me:Slot;game:PhoneGame;roleTitle:string;joined:boolean;autoWait?:boolean}) {
   const phase = game.phase;

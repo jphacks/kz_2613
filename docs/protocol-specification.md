@@ -243,7 +243,7 @@ sequenceDiagram
 | 画面 → ホスト | `auto_resume` | 自動復帰の有効・無効 |
 | 画面 → ホスト | `phase` | `lobby`への終了、`paused`への停止。coopの強制は禁止 |
 | 画面 → ホスト | `reset` | 全枠・セッションをリセット |
-| 画面 → ホスト | `rotation` | 時間制の役割交代の間隔。`seconds` は0・60・120・180。協力プレイ中は変更不可 |
+| 画面 → ホスト | `rotation` | 時間制の役割交代（#161、Q42/Q44/Q46）。`seconds` は0（しない、初期値）か60だけ。協力プレイ中は変更不可。ロビーへ戻るとOFFに戻る。ONでは協力プレイを止めずに、60秒ごとに全員の入力を解放して未処理入力・視点を捨て、epochを進めてから参加者の順に担当を1つずらす。交代の5秒前からゲームの状態に `rotationSoon:true` と次の分担 `rotationNext` を付け、交代ごとに `rotationCount` を増やす。一時停止中は数えず、再開で残りから数える |
 | 画面 → ホスト | `set_key` / `reset_keys` | 操作に割り当てるキーの変更（`action`, `output`。nullは送らない）と初期値への復帰。協力プレイ中は不可。変更時は全解放・epoch更新。ゲームごとに `%LOCALAPPDATA%\Re-Cooplay\key-overrides.json` へ保存 |
 | 画面 → ホスト | `change_players` | 一時停止中に今の接続で参加者と分担を決め直す。`epoch` 必須。全員の確認と明示の再開が必要 |
 | 画面 → ホスト | `observe` | 疑似ゲームで受信した入力の照合結果 |

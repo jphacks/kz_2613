@@ -1,6 +1,6 @@
 import {Controller} from './Controller';
 import { useSyncExternalStore } from 'react';
-import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked,confirmation,answerConfirm } from './view';
+import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked,rotationNotice,confirmation,answerConfirm } from './view';
 import { SKINS } from '../shared/model/skin.ts';
 
 type PhoneDisplay = ReturnType<typeof display.get>;
@@ -35,6 +35,7 @@ export function PhoneApp() {
 
 <div id="rotatePrompt" role="status"><b>スマホを縦にしてください</b><p>操作を停止し、押していたキーを離しました。<br />縦向きに戻して、新しい押下から再開します。</p></div>
 <FullMessage/>
+<RotationNotice/>
 </>;
 }
 
@@ -129,6 +130,12 @@ function ConfirmDialog({status}:{status:Status}){
     <p id="phoneConfirmWait" role="status" hidden={online}>PCとの通信が戻るまでお待ちください。</p>
     <div className="phone-confirm-buttons"><button id="phoneConfirmCancel" onClick={()=>answerConfirm(false)}>やめる</button><button id="phoneConfirmOk" className="cmd" disabled={!online} onClick={()=>answerConfirm(true)}>{request?.ok}</button></div>
   </dialog>;
+}
+
+// 役割交代の予告・交代後の案内 (#161)。非モーダルで、タッチを受け取らない
+function RotationNotice(){
+  const text=useSyncExternalStore(rotationNotice.subscribe,rotationNotice.get);
+  return <div id="rotationNotice" className="rotation-notice" role="status" hidden={!text}>{text}</div>;
 }
 
 function FullMessage(){

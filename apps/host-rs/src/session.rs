@@ -151,20 +151,25 @@ pub(crate) fn phase_change(from: Phase, to: Phase) -> Option<PhaseChange> {
     (from != to).then_some(PhaseChange { clear_lineup: to == Phase::Lobby })
 }
 /// 時間制の役割交代で選べる間隔 (秒)。0 は交代しない (#161)
-pub(crate) const ROTATION_CHOICES: [u64; 4] = [0, 60, 120, 180];
+/// 時間制の役割交代は 60 秒固定 (Q42)。0 はしない (初期値)
+pub(crate) const ROTATION_CHOICES: [u64; 2] = [0, 60];
+/// 交代の何ms前から次の担当を予告するか (Q42: 予告の秒数は技術者が選べる)
+pub(crate) const ROTATION_NOTICE_MS: u64 = 5_000;
 
 /// 交代の時刻になったか。協力プレイ中だけ
 pub(crate) fn rotation_due(phase: Phase, at: u64, now: u64) -> bool {
     phase == Phase::Coop && at != 0 && now >= at
 }
 
-/// 参加者の間で担当を 1 つずらす。参加者でない枠の席は変えない
+/// 参加者の間で担当を 1 つずらす (Q46：担当操作が P1→P2→P3→P1 へ移る)。各参加者は、枠の番号順で
+/// 1 つ前の人の席 (= 担当) を受け継ぐ。手動の入れ替え後も番号順に回す。参加者でない枠の席は変えない
 pub(crate) fn rotated_seats(seats: [usize; 4], participants: &[usize]) -> [usize; 4] {
     let mut order = participants.to_vec();
-    order.sort_by_key(|&i| seats[i]);
+    order.sort_unstable();
     let mut next = seats;
+    let n = order.len();
     for (k, &slot) in order.iter().enumerate() {
-        next[slot] = seats[order[(k + 1) % order.len()]];
+        next[slot] = seats[order[(k + n - 1) % n]];
     }
     next
 }
@@ -250,8 +255,13 @@ mod tests {
         assert!(!rotation_due(Phase::Coop, 100, 99));
         assert!(!rotation_due(Phase::Coop, 0, 100), "OFF");
         for phase in [Phase::Lobby, Phase::Preparing, Phase::Paused] { assert!(!rotation_due(phase, 100, 200)); }
-        assert_eq!(rotated_seats([0, 1, 2, 3], &[0, 1, 2]), [1, 2, 0, 3]);
-        assert_eq!(rotated_seats([1, 2, 0, 3], &[0, 1, 2]), [2, 0, 1, 3]);
+        // 席 0 (P1 の担当) は P2 へ、P2 の担当は P3 へ、P3 の担当は P1 へ移る (Q46)
+        assert_eq!(rotated_seats([0, 1, 2, 3], &[0, 1, 2]), [2, 0, 1, 3]);
+        assert_eq!(rotated_seats([0, 1, 2, 3], &[0, 1, 2])[1], 0, "P1 の担当は P2 へ");
+        assert_eq!(rotated_seats([2, 0, 1, 3], &[0, 1, 2]), [1, 2, 0, 3]);
+        assert_eq!(rotated_seats([0, 1, 2, 3], &[0, 1, 2, 3]), [3, 0, 1, 2], "4人も同じ向き");
+        assert_eq!(rotated_seats([0, 1, 2, 3], &[0, 2, 3]), [3, 1, 0, 2], "欠番があっても参加者の順で次の人へ");
+        assert_eq!(rotated_seats([1, 0, 2, 3], &[0, 1, 2]), [2, 1, 0, 3], "手動の入れ替え後も今の席順で次の人へ");
         assert_eq!(rotated_seats([0, 1, 2, 3], &[0, 3]), [3, 1, 2, 0], "参加者でない枠は変えない");
         let mut seats = [0, 1, 2, 3];
         for _ in 0..3 { seats = rotated_seats(seats, &[0, 1, 2]); }

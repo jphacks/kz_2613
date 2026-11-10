@@ -339,6 +339,9 @@ pub struct Hub {
     // 時間制の役割交代 (#161)。既定は OFF
     rotation_secs: u64,
     rotation_at: u64,
+    rotation_left: u64,   // 協力プレイを止めたときの交代までの残り (ms)。再開で続きから数え、交代を積み増さない
+    rotation_count: u64,  // 交代した回数 (スマホの「交代しました」の表示に使う)
+    rotation_soon: bool,  // 予告中
     // 担当が変わり、本人がスマホで「確認しました」を押していない枠。押すまで Ready・再開できない
     role_ack: Vec<usize>,
     app_focused: bool,           // PC アプリが前面か (手動復帰の判定に使う)
@@ -436,6 +439,9 @@ impl Hub {
             key_overrides: crate::key_overrides::load(crate::key_overrides::default_path().as_deref()),
             rotation_secs: 0,
             rotation_at: 0,
+            rotation_left: 0,
+            rotation_count: 0,
+            rotation_soon: false,
             role_ack: Vec::new(),
             settings_root: config.settings_root.clone(),
             fake_target: std::env::var("RECOOPLAY_FAKE_TARGET")
@@ -716,6 +722,10 @@ impl Hub {
             "roleOf": self.role_slots().iter().filter_map(|&i| self.role_rank(i).map(|k| (SLOT_NAMES[i].to_string(), json!(SLOT_NAMES[k])))).collect::<Map<String, Value>>(),
             "roleAck": self.role_ack.iter().map(|&i| SLOT_NAMES[i]).collect::<Vec<_>>(),
             "rotationSeconds": self.rotation_secs,
+            // 交代の予告と、交代した回数 (#161)。予告中だけ次の分担を付ける
+            "rotationSoon": self.rotation_soon,
+            "rotationNext": if self.rotation_soon { self.slot_map(&self.rotation_next().1) } else { Value::Null },
+            "rotationCount": self.rotation_count,
             "canChangePlayers": session::can_change_players(self.game.phase, &self.connected_slots(), &self.participants),
             "canSwap": matches!(self.game.phase, Phase::Lobby | Phase::Preparing) || (self.game.phase == Phase::Paused && !self.participants.is_empty()),
             "canLaunch": self.can_launch(),
@@ -865,6 +875,9 @@ impl Hub {
 
     fn set_phase(&mut self, phase: Phase, reason: &str) {
         let Some(change) = session::phase_change(self.game.phase, phase) else { return };
+        let now = now_ms();
+        // 協力プレイを止めたら交代までの残りを覚え、再開で続きから数える (止まっている間は進めない)
+        if self.game.phase == Phase::Coop && self.rotation_at != 0 { self.rotation_left = self.rotation_at.saturating_sub(now).max(1); }
         self.release_outputs(None);
         self.reset_look();
         if phase == Phase::Coop && self.input_fault { self.stop_input_failure(); return; }
@@ -872,8 +885,14 @@ impl Hub {
         if change.clear_lineup { self.assigned.clear(); self.participants.clear(); self.lineup = None; }
         self.game.reason = Some(reason.to_string());
         self.advance_epoch();
-        // 協力プレイに入るたびに数え直す。止まっている間は交代しない
-        self.rotation_at = if phase == Phase::Coop && self.rotation_secs != 0 { now_ms() + self.rotation_secs * 1000 } else { 0 };
+        // 新しいプレイ (ロビーへ戻る・準備から始める) では残りを捨てる。ロビーでは交代を OFF に戻す (Q44)
+        if phase == Phase::Lobby { self.rotation_secs = 0; }
+        if matches!(phase, Phase::Lobby | Phase::Preparing) { self.rotation_left = 0; }
+        self.rotation_at = if phase == Phase::Coop && self.rotation_secs != 0 {
+            now + if self.rotation_left != 0 { self.rotation_left } else { self.rotation_secs * 1000 }
+        } else { 0 };
+        if phase == Phase::Coop { self.rotation_left = 0; }
+        self.rotation_soon = false;
         self.log("phase", json!({ "phase": phase.name(), "reason": reason, "epoch": self.game.epoch }));
         self.update_low_latency();
         self.push_game();
@@ -1073,20 +1092,53 @@ impl Hub {
         self.ranked(&self.role_slots()).iter().position(|&i| i == slot)
     }
 
-    /// 2 人の担当を入れ替える (#47)。開始前 (ロビー・準備中) と一時停止中だけ。全解放して epoch を進め、
-    /// 2 人がスマホで新しい担当を確認するまで Ready・再開できない。ロビーでは分担の決定もやり直しになる
-    /// 時間制の役割交代 (#161)。協力プレイを止めて全員の入力を解放し、担当をずらして全員の確認を待つ。
-    /// 再開はホストの明示操作だけで、自動復帰しない。ホストの権限は移らない
+    /// 次の交代で使う席順と分担 (参加者の順に担当を 1 つずらす、Q46)
+    fn rotation_next(&self) -> ([usize; 4], Vec<Vec<String>>) {
+        let seats = session::rotated_seats(self.seats, &self.participants);
+        let next = Self::ranked_by(&seats, &self.participants);
+        let assigned = match &self.profile {
+            Some(p) => {
+                let mut out = vec![Vec::new(); MAX_SLOTS];
+                for (k, a) in profiles::assignment_for(p, next.len().max(1)).into_iter().enumerate() {
+                    if let Some(&i) = next.get(k) { out[i] = a; }
+                }
+                out
+            }
+            None => self.assigned.clone(),
+        };
+        (seats, assigned)
+    }
+
+    fn ranked_by(seats: &[usize; 4], slots: &[usize]) -> Vec<usize> {
+        let mut v = slots.to_vec();
+        v.sort_by_key(|&i| seats[i]);
+        v
+    }
+
+    /// 時間制の役割交代 (#161・Q42/Q46)。協力プレイを止めずに、全員の入力を解放して未処理の入力・視点を捨て、
+    /// epoch を進めてから担当をずらす。旧担当の遅れた入力・押したままの指は新しい epoch では効かず、
+    /// 指を離した後の新しいタッチだけを受け付ける。ホストの権限・席の番号 (P1〜P4)・キー割当は移らない。
+    /// 交代の少し前に次の担当を予告する。Pause・切断・緊急停止の間は協力プレイでないので進まない
     fn rotate_roles_if_due(&mut self, now: u64) {
-        if !session::rotation_due(self.game.phase, self.rotation_at, now) { return; }
-        self.set_phase(Phase::Paused, "role rotation");
-        if self.game.phase != Phase::Paused { return; }
-        self.seats = session::rotated_seats(self.seats, &self.participants);
-        if let Some(p) = self.profile.clone() { self.assigned = self.proposal_for(&p, &self.participants.clone()); }
-        self.game.auto_resume_until = 0;
-        self.role_ack = self.participants.clone();
+        if self.game.phase != Phase::Coop || self.rotation_at == 0 { return; }
+        if !session::rotation_due(self.game.phase, self.rotation_at, now) {
+            if !self.rotation_soon && now + session::ROTATION_NOTICE_MS >= self.rotation_at {
+                self.rotation_soon = true;
+                self.push_game();
+            }
+            return;
+        }
+        self.release_outputs(None);
+        self.reset_look();
+        if self.input_fault { return; }
+        let (seats, assigned) = self.rotation_next();
+        self.seats = seats;
+        if self.profile.is_some() { self.assigned = assigned; }
         self.advance_epoch();
-        self.log("role_rotation", json!({ "epoch": self.game.epoch }));
+        self.rotation_count += 1;
+        self.rotation_soon = false;
+        self.rotation_at = now + self.rotation_secs * 1000;
+        self.log("role_rotation", json!({ "epoch": self.game.epoch, "count": self.rotation_count }));
         self.push_game();
         self.push_state();
     }
@@ -1122,6 +1174,8 @@ impl Hub {
         self.push_state();
     }
 
+    /// 2 人の担当を入れ替える (#47)。開始前 (ロビー・準備中) と一時停止中だけ。全解放して epoch を進め、
+    /// 2 人がスマホで新しい担当を確認するまで Ready・再開できない。ロビーでは分担の決定もやり直しになる
     fn swap_roles(&mut self, a: usize, b: usize) {
         if !session::can_swap(self.game.phase, &self.connected_slots(), &self.participants, a, b) { return; }
         self.seats.swap(a, b);
@@ -2007,7 +2061,7 @@ impl Hub {
             }
             Event::EmergencyStop { source, .. } => self.emergency_stop(source),
             Event::ManualPicked(picked) => self.on_manual_picked(picked),
-            Event::FakeRotationDue => { if self.rotation_at != 0 { self.rotation_at = 1; self.rotate_roles_if_due(now_ms()); } }
+            Event::FakeRotationDue => { if self.rotation_at != 0 { self.rotation_at = now_ms(); self.rotate_roles_if_due(now_ms()); } }
             Event::BluetoothAudio(on) => {
                 if self.bluetooth_audio != on {
                     self.bluetooth_audio = on;
@@ -2649,6 +2703,9 @@ mod tests {
             key_overrides: Default::default(),
             rotation_secs: 0,
             rotation_at: 0,
+            rotation_left: 0,
+            rotation_count: 0,
+            rotation_soon: false,
             role_ack: Vec::new(),
             settings_root: None,
             fake_target: Some(true),
@@ -3298,23 +3355,85 @@ mod tests {
     }
 
     #[test]
-    fn role_rotation_stops_input_moves_roles_and_waits_for_everyone() {
+    fn role_rotation_keeps_coop_releases_all_and_moves_roles_in_participant_order() {
+        let (mut h, _rx) = fixture();
+        h.participants = vec![0, 1, 2];
+        h.assigned = h.proposal_for(&h.profile.clone().unwrap(), &[0, 1, 2]);
+        let first = h.assigned.clone();
+        h.rotation_secs = 60;
+        h.rotation_at = 10_000;
+        h.set_output(index("KEY_W"), "P1", true);
+        h.look.px = 30.0;
+        let epoch = h.game.epoch;
+        h.rotate_roles_if_due(4_000);
+        assert!(!h.rotation_soon && h.game.epoch == epoch, "予告の前は何もしない");
+        h.rotate_roles_if_due(5_000);
+        assert!(h.rotation_soon, "5秒前に予告する");
+        assert_eq!(h.game_snapshot()["rotationNext"]["P2"], json!(first[0]), "予告で次の担当を示す (P1 の担当が P2 へ)");
+        assert_eq!(h.game_snapshot()["rotationNext"]["P1"], json!(first[2]));
+        assert!(h.outputs[index("KEY_W")].physical, "予告では入力を止めない");
+        h.rotate_roles_if_due(10_000);
+        assert!(h.game.phase == Phase::Coop, "交代で一時停止しない");
+        assert!(h.outputs.iter().all(|o| !o.physical && o.queue.is_empty()), "全員の入力を解放し保留を捨てる");
+        assert_eq!(h.look.px, 0.0);
+        assert!(h.game.epoch > epoch, "旧担当の遅れた入力を新しい epoch で効かせない");
+        assert!(h.role_ack.is_empty(), "確認・明示の再開を待たない");
+        // P1→P2→P3→P1 の順に担当が隣へ移る。3回で元に戻る
+        assert_eq!((h.assigned[0].clone(), h.assigned[1].clone(), h.assigned[2].clone()), (first[2].clone(), first[0].clone(), first[1].clone()));
+        assert_eq!((h.rotation_at, h.rotation_count, h.rotation_soon), (70_000, 1, false));
+        h.rotate_roles_if_due(70_000); h.rotate_roles_if_due(130_000);
+        assert_eq!(h.assigned[..3], first[..3], "N人でN回交代すると元に戻る");
+    }
+
+    #[test]
+    fn role_rotation_follows_slot_order_with_gaps_four_players_and_after_a_manual_swap() {
+        for (participants, seats) in [(vec![0, 1, 2, 3], [0, 1, 2, 3]), (vec![0, 1, 3], [0, 1, 2, 3]), (vec![0, 1, 2], [1, 0, 2, 3])] {
+            let (mut h, _rx) = fixture();
+            h.participants = participants.clone();
+            h.seats = seats;
+            let ranked = Hub::ranked_by(&h.seats, &participants);
+            h.assigned = vec![Vec::new(); MAX_SLOTS];
+            for (k, a) in profiles::assignment_for(&h.profile.clone().unwrap(), participants.len()).into_iter().enumerate() { h.assigned[ranked[k]] = a; }
+            let first = h.assigned.clone();
+            h.rotation_secs = 60;
+            h.rotation_at = 10_000;
+            h.rotate_roles_if_due(5_000);
+            let next = h.game_snapshot()["rotationNext"].clone();
+            h.rotate_roles_if_due(10_000);
+            // 枠の番号順に、1つ前の参加者の担当を受け継ぐ (P1→P2→…→最後→P1)
+            for (k, &slot) in participants.iter().enumerate() {
+                let prev = participants[(k + participants.len() - 1) % participants.len()];
+                assert_eq!(h.assigned[slot], first[prev], "{participants:?} {seats:?}: {} は {} の担当を受け継ぐ", SLOT_NAMES[slot], SLOT_NAMES[prev]);
+                assert_eq!(next[SLOT_NAMES[slot]], json!(first[prev]), "予告と実際の交代が一致する");
+            }
+            for _ in 1..participants.len() { let at = h.rotation_at; h.rotate_roles_if_due(at); }
+            assert_eq!(h.assigned, first, "{participants:?}: N人でN回交代すると元に戻る");
+        }
+    }
+
+    #[test]
+    fn role_rotation_does_not_count_while_stopped_and_resets_to_off_for_a_new_play() {
         let (mut h, _rx) = fixture();
         h.participants = vec![0, 1];
         h.rotation_secs = 60;
-        h.rotation_at = 1_000;
-        h.set_output(index("KEY_W"), "P1", true);
+        h.game.phase = Phase::Paused;
+        h.set_phase(Phase::Coop, "host resume");
+        let at = h.rotation_at;
+        assert!(at != 0);
+        h.rotation_at = now_ms() + 20_000; // 残り20秒で止める
+        h.set_phase(Phase::Paused, "host pause");
+        assert_eq!(h.rotation_at, 0, "止まっている間は数えない");
+        let left = h.rotation_left;
+        assert!((19_000..=20_000).contains(&left));
+        h.set_phase(Phase::Coop, "host resume");
+        assert!(h.rotation_at <= now_ms() + left && h.rotation_at + 2_000 >= now_ms() + left, "再開で残りから数え、交代を積み増さない");
+        h.set_phase(Phase::Lobby, "host end");
+        assert_eq!((h.rotation_secs, h.rotation_at, h.rotation_left), (0, 0, 0), "新しいプレイでは OFF から始める (Q44)");
+        // OFF では交代も予告もしない
+        h.game.phase = Phase::Coop; h.rotation_at = 0;
         let epoch = h.game.epoch;
-        h.rotate_roles_if_due(999);
-        assert!(h.game.phase == Phase::Coop); // 時刻の前は何もしない
-        h.rotate_roles_if_due(1_000);
-        assert!(h.game.phase == Phase::Paused);
-        assert_eq!(h.game.reason.as_deref(), Some("role rotation"));
-        assert!(h.outputs.iter().all(|o| !o.physical)); // 全員の入力を解放する
-        assert_eq!(h.seats, [1, 0, 2, 3]);
-        assert_eq!(h.role_ack, vec![0, 1]); // 全員の確認が要る
-        assert_eq!((h.rotation_at, h.game.auto_resume_until), (0, 0)); // 止まっている間は数えず、自動で再開しない
-        assert!(h.game.epoch > epoch);
+        h.rotate_roles_if_due(u64::MAX);
+        assert!(!h.rotation_soon && h.game.epoch == epoch);
     }
 
     #[test]
