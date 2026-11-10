@@ -48,6 +48,8 @@ export type PhoneView = ((snapshot: PhoneSnapshot) => void) & {
   telemetry(patch:Partial<PhoneTelemetry>):void;
   blocked(message?:string):void;
   confirm(request:ConfirmRequest):void;
+  /** PC のアプリと一定時間つながらないとき、画面全体を覆って操作を止める (#302) */
+  offline(visible:boolean):void;
 };
 // ページ内の確認。confirm() はJSを止めてハートビートが途切れるため使わない (#289)
 export interface ConfirmRequest {message:string;ok:string;valid(remote:RemoteModel):boolean;run():void}

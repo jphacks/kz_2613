@@ -1756,3 +1756,10 @@
 - #313の製品runtimeを既存controllerHarnessで実行し、古いstale ACKが押し直した新しい指を解除する不具合を追加試験で再現。#314のsession.rsを `rustc --test` で実行し既存14件成功、Q46のP1担当→P2の追加受入試験は失敗。#315のランチャー経路で緊急停止登録を確認していないことを差分検査で確認。3件とも具体的なPR指摘を投稿。
 - #319のCI失敗実ログはbrowser起動待ち。`gh run rerun 42827051998 --failed` はGitHubの「This workflow run cannot be retried」で失敗。解消済みとは扱わない。
 - #284/#313の `scripts/windows/dev.ps1 -Task host` は初回Perl未検出で失敗、既存ツールの絶対パスと専用CARGO_TARGET_DIRで再構築中。Rust試験と遅着視点の追加再現試験は構築完了後に実行する。実機入力試験・外部マージは未実施。
+## 2026-11-11 — #302 PCアプリの終了と通信断をスマホの画面全体で示す
+
+- ホストは終了時（デスクトップの `quit`・標準入力のEOF）に、全解放の後でスマホの接続を終了コード4009で閉じ、送信のため200ms待ってから終える。解放の順序と終了コードは変えていない。
+- スマホは4009で再接続をやめ（次に起動したアプリへ勝手につながらない）、「PCのアプリが終了しました。…再読み込みしてください。」を画面全体に出す。参加できない案内（満員・版不一致・終了など）を出している間は、下の操作画面を隠す（`#full` は背景が透けるため、押せそうに見えていた）。
+- 4009以外の切断が3秒続いたら、「PCのアプリとつながっていません／再接続しています…」で操作を覆う。再接続は続け、welcomeで消す。満員などで止まったときは覆わない。
+- `node scripts/sim/product-web-test.mjs`（phone-lifecycle 18/18、#302の試験2件を追加）、`npx tsc --noEmit -p apps/web`、`node scripts/sim/check-static-pages.mjs`、`cargo build --release --locked`、`node scripts/sim/shutdown-sim.mjs`（quit・EOFの両方でスマホが4009を受けることを追加）、`node scripts/sim/protocol-sim.mjs`（60/60）が成功。
+- 実機確認：Android Chrome 1台（アプリ通信はモバイルホットスポットのWi-Fi、操作はUSBのCDP）、dry-run・疑似入力先のホスト。ホストを強制終了すると1.5秒後は覆わず、3.8秒後に覆いが出た。ホストを再起動すると自動で再接続して覆いが消えた。`quit` で終了すると（終了コード0）終了の案内が出て、下の操作画面は隠れた。その後に新しいホストを起動しても再接続しなかった。iPhone・デスクトップアプリの×ボタンからの終了は未確認。
