@@ -156,6 +156,24 @@ if (process.argv.includes('--repro-shared-pointer')) {
       h.control('act:attack').fire('pointerup'); assert.equal(h.inputs().length, 1);
     }
   });
+  await test('PCアプリの終了 (4009): 再接続せず、画面全体で終了と再読み込みを案内する (#302)', async () => {
+    const h = controllerHarness(); await h.ready(); h.control('act:attack').fire('pointerdown');
+    h.sockets[0].close(4009); h.advance(10000);
+    assert.equal(h.sockets.length, 1, '終了したPCアプリへ再接続しない'); assert(h.peers[0].closed);
+    assert.equal(h.el('full').style.display, 'flex'); assert.match(h.el('fullMessage').textContent, /PCのアプリが終了しました.*再読み込み/);
+    assert.equal(h.el('status').textContent, 'PCアプリが終了しました'); assert(h.el('offline').hidden, '終了の案内と再接続中の表示を重ねない');
+    h.control('act:attack').fire('pointerup'); assert.equal(h.inputs().length, 1);
+  });
+  await test('通信断: 3秒続いたら操作を覆い、再接続しても welcome までは覆ったまま (#302)', async () => {
+    const h = controllerHarness(); await h.ready();
+    h.sockets[0].close(1006); h.advance(2400);
+    assert(h.el('offline').hidden, '短い切断では覆わない');
+    h.advance(1200); assert(!h.el('offline').hidden, '3秒続いたら覆う');
+    const next = h.sockets.at(-1); assert.notEqual(next, h.sockets[0], '再接続を続ける');
+    next.open(); h.advance(100); assert(!h.el('offline').hidden);
+    next.receive({ type: 'welcome', slot: 'P1', isHost: true, role: 'ホスト', token: 'test-token' });
+    assert(h.el('offline').hidden, '再接続したら消す');
+  });
   await test('満員: 切断した人の枠を保持しているだけなら、空く見込みの秒数を案内する (#297)', async () => {
     const h = controllerHarness(); await h.ready();
     h.sockets[0].receive({ type: 'full', retryMs: 6200 });
@@ -207,6 +225,30 @@ if (process.argv.includes('--repro-shared-pointer')) {
     h.answerConfirm(true);
     const end = current.sent.filter(message => message.type === 'command' && message.cmd === 'END');
     assert.equal(end.length, 1); assert.equal(end[0].epoch, 9);
+  });
+  await test('終端の案内: PCアプリの終了・満員などでは確認と診断の画面を閉じ、確認した操作を後から送らない (#302 レビュー)', async () => {
+    for (const end of [h => h.sockets[0].close(4009), h => h.sockets[0].receive({ type: 'full', retryMs: null }), h => h.sockets[0].close(4005), h => h.sockets[0].close(4001)]) {
+      const h = controllerHarness(); await h.ready({ phase: 'paused' });
+      h.el('endBtn').fire('click'); assert(h.el('phoneConfirm').open);
+      end(h);
+      assert.equal(h.el('full').style.display, 'flex');
+      assert(!h.el('phoneConfirm').open, '終了の案内より手前に確認を残さない'); assert.equal(h.confirmation.get(), null, '未実行の要求を捨てる');
+      h.answerConfirm(true); h.advance(10000);
+      assert.equal(h.messages().filter(m => m.type === 'command' && m.cmd === 'END').length, 0, '確認した操作を後から送らない');
+    }
+    // 譲渡の確認・診断の画面も同じ
+    const h = controllerHarness(); await h.ready({ phase: 'lobby', connected: ['P1', 'P2'] });
+    h.transferHost('P2'); assert(h.el('phoneConfirm').open);
+    h.el('phoneSettingsBtn').fire('click'); assert(h.el('phoneDiagnostics').open);
+    h.sockets[0].close(4009);
+    assert(!h.el('phoneConfirm').open && !h.el('phoneDiagnostics').open, '終了の案内を最前面に見せる');
+    assert.equal(h.messages().filter(m => m.type === 'transfer_host').length, 0);
+  });
+  await test('一時的な通信断: 確認の画面は閉じず、案内の覆いだけを出す (#289・#302)', async () => {
+    const h = controllerHarness(); await h.ready({ phase: 'paused' });
+    h.el('endBtn').fire('click'); h.sockets[0].close(1006); h.advance(3600);
+    assert(!h.el('offline').hidden); assert(h.el('phoneConfirm').open, '再接続後に実行できるよう確認を保つ');
+    assert.notEqual(h.confirmation.get(), null);
   });
   await test('終了の確認: 一時停止でなくなったら閉じて送らない。やめるでも送らない (#289)', async () => {
     const h = controllerHarness(); await h.ready({ phase: 'paused' }); const socket = h.sockets[0];

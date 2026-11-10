@@ -29,6 +29,7 @@ export const telemetry=createStore<PhoneTelemetry>({rtt:'-',rttAvg:'-',sent:0,un
 export const blocked=createStore<{message?:string}|null>(null);
 // 役割交代の予告・交代後の案内 (#161)
 export const rotationNotice=createStore('');
+export const offline=createStore(false);
 export function chooseSkin(id: string) {
   skins.set(display.get().snapshot.game?.title, id); applySkin(document.documentElement, id); skin.set(id);
 }
@@ -125,7 +126,14 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
   render.connection=(text,kind)=>{document.body.dataset.connection=kind;flushSync(()=>connection.set({text,kind}));};
   // external storeの通知による同期更新も、入力/ACKのdispatch区間へ入れない。
   render.telemetry=telemetryUpdates.patch;
-  render.blocked=message=>flushSync(()=>blocked.set({message}));
+  // 満員・版不一致・リセット・PCアプリの終了など、再接続しない終端の案内。モーダルの確認・診断はトップレイヤーで
+  // 案内より手前に残るため閉じ、確認した操作も捨てる (#302)。一時的な通信断 (offline) では閉じない
+  render.blocked=message=>{
+    closeConfirm();
+    const diagnostics=byId<HTMLDialogElement>('phoneDiagnostics');if(diagnostics.open)diagnostics.close();
+    flushSync(()=>blocked.set({message}));
+  };
+  render.offline=visible=>{if(offline.get()!==visible)flushSync(()=>offline.set(visible));};
   render.confirm=askConfirm;
   render.dispose=()=>{closeConfirm();input.releaseAll();telemetryUpdates.dispose();lifetime.dispose();transition.dispose();bindings=undefined;};
   return render;
