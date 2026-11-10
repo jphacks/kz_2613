@@ -1753,3 +1753,13 @@
 - 番号の飛び（P1・P2・P4）は、番号が担当色・トークン・再接続の識別に使われているため変えていない。
 - `cargo test --release --locked full_room`（RECOOPLAY_DRY_RUN=1）、`node scripts/sim/protocol-sim.mjs`（60/60）、`node --experimental-strip-types scripts/sim/protocol-boundary-test.mjs`、`node scripts/sim/product-web-test.mjs`、`npx tsc --noEmit -p apps/web` が成功。実機での表示は未確認。
 - 実機確認（2026-11-10）：Android Chrome 1台（アプリ通信はモバイルホットスポットのWi-Fi、操作はUSBのCDP）、dry-run・疑似入力先のホスト。P1＝実機、P2〜P4＝模擬で満員にし、P4を切断した直後に実機を新しい参加者（参加情報を消して再読み込み）として接続した。「切断した人の再接続を待っているため、今は参加できません。13秒ほど待ってから再読み込みしてください。」が表示され（ホストログ reject_full）、案内どおり14秒後に再読み込みすると参加できた（slot_released P4の後）。実機の参加情報は試験後に戻した。iPhoneは未確認。
+
+## 2026-11-11 次の4件の独立レビュー・統合準備（未承認）
+
+- 対象は #286（221c8f0）、#312（156a1e3）、#319（fb58eb3）、#320（bf46b70）。main e38a681を基準に作者コミットを履歴ごと保持して取り込んだ。製品コードの競合なし、BUILD_LOGは両側の追記を保持。作者ブランチは未変更。
+- #286のconfig.rsとfocus.rsを実ソース参照で `rustc --edition=2021 --test ... -C lto=thin -C opt-level=3 -C codegen-units=4` と、専用targetで構築済みの既存serde_json/windows依存にリンクして独立実行し、8/8成功。旧設定の一度だけOFF移行、欠落OFF、明示ON/OFFの再起動保持、他設定保持、フォーカス照合を確認。ホスト全体の試験ではない。初回はreleaseのthin LTOに合わせない実行でLNK2019/LNK1107となり、同じprofile指定で復旧した。
+- #312のprofiles.rsとcontrols.rsも同じ方法で実ソース参照の独立試験を実行し、13成功・1ignored。Among Usの2〜4人の各分担でマウス移動とクリックが同一担当、Esc等が各1人に入ることを確認。既存502定義のカタログ試験も成功。実ゲームのタスク操作は未確認。
+- #319は親#309マージ後にbaseだけmainへ変更し、差分が文言・試験・ログだけであることを再確認。以前失敗したCIは最新状態で全成功となっている。#311のbaseも親#310マージ後にmainへ変更したが、今回の4件には含めない。
+- この4件だけの最終組合せで `npm run build --prefix apps/web`（型確認含む）、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/profile-catalog-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/check-public-docs.py`、`git diff --check` は成功。
+- #320のfull.retryMsは任意の非負有限値、端末側の既定満員表示との区別を確認。参加番号の詰め直しは対象外。実スマホ表示は作者の報告と独立追試を区別する。
+- #284/#313のホスト全体の独立ビルドは、sandboxのMSBuildがChecking Build System後に終了1となり、同じ専用targetを通常環境で再構築中。そこから成功を推定せず、旧入力・緊急停止の指摘PRをこの4件に混ぜない。
