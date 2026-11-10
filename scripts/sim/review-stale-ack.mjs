@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {controllerHarness} from './fixtures/phone-harness.mjs';
+const h=controllerHarness(); await h.ready();
+const button=h.control('act:attack');
+button.fire('pointerdown',{pointerId:1});
+const old=h.inputs().at(-1);
+button.fire('pointerup',{pointerId:1});
+button.fire('pointerdown',{pointerId:2});
+h.sockets[0].receive({type:'ack',iseq:old.iseq,via:'ws',stale:true});
+assert(button.classList.contains('down'),'古い押下のstale ACKは新しい指の押下を解除しない');
+assert.equal(h.inputs().filter(m=>m.state==='up').length,1,'新しい押下に余分なupを送らない');

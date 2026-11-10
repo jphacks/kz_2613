@@ -2700,6 +2700,18 @@ mod tests {
 
     fn index(id: &str) -> usize { OUTPUTS.iter().position(|o| o.id == id).unwrap() }
 
+    #[test]
+    fn review_release_must_reject_late_look_from_before_blur() {
+        let (mut h, _rx) = fixture();
+        let epoch = h.game.epoch;
+        h.accept_look(1, &json!({"epoch":epoch,"lseq":1,"cx":10,"cy":0}));
+        h.release_slot_inputs(1, 0);
+        assert_eq!(h.look.px, 0.0);
+        // blurより前に送ったRTC視点が、WSのrelease_inputsより後に到着する。
+        h.accept_look(1, &json!({"epoch":epoch,"lseq":2,"cx":100,"cy":0}));
+        assert_eq!(h.look.px, 0.0, "解放前の視点を復活させない");
+    }
+
     fn injections(rx: &mut UnboundedReceiver<Out>) -> Vec<Value> {
         let mut result = Vec::new();
         while let Ok(Out::Text(t)) = rx.try_recv() {
