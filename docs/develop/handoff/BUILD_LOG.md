@@ -1701,3 +1701,8 @@
 - 結果：送信側の空白0件（端末の送信間隔は最大66.9ms）。30件すべてで空白中に送ったパケットが直後に3〜11個まとめて届き（相対遅れ135.6〜378.0ms）、RTCでは20件で1〜2個の欠落を伴った。WSは欠落なしの遅着のみ。逆順・経路切替は0件。ハブの処理・経路切替が原因ではなく、無線区間での滞留が推測される（機器・仕組みは未確定）。
 - 記録：`docs/develop/acceptance/2026-11-10-look-gap-analysis.md`、`docs/develop/acceptance/evidence/look-gaps-275/gaps.json`。製品コードは変更していない。新たな実機測定は未実施。
 - 試験：`node scripts/device/look-gap-analysis-test.mjs` 合格、`python scripts/check-public-docs.py` を実行。
+## 2026-11-10 — #290 担当の内容から入力の種類の重複を除く
+
+- 2026-11-10、ユーザーが#290の扱いについて「キー名のまま（#150を維持）」を選んだ。操作定義の名前（使う・キル等）は主表示に戻さず、`docs/develop/decisions/2026-10-26-input-key-labels.md` を維持する。#290では「キー：Aキー」のような重複表記の解消だけを行う。
+- `roleView` の内容を、見出し（入力の種類）を繰り返さない1行（例「Aキー、Dキー」「マウス移動、左クリック」）にした。PCの分担カードは従来 `lines[0]` だけを出しており、複数種類の担当で一部しか表示されなかったが、1行にまとめたので全入力が出る。
+- `node --experimental-strip-types scripts/sim/app-view-test.mjs`（30/30）、`npx tsc --noEmit -p apps/web`、`node scripts/sim/product-web-test.mjs` が成功。実機・Among Usでの目視は未実施。
