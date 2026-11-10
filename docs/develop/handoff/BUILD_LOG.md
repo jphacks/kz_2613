@@ -1717,3 +1717,10 @@
 - ホストのリモコン画面では上部の警告を出さず、操作先（`#remoteRoute`）に届かない理由を段階別に示し、ゲームの検証状況は下の `#remoteNotice` に出す。警告の有無で矢印・Enter・Escの位置が動かない。前面にあるのに「前面にしてください」とは出さない。
 - 自動試験：`npm run typecheck --prefix apps/web`、`node scripts/sim/product-web-test.mjs`（`phone-view-test` の警告の観点を新仕様へ更新・追加）、`npm run build --prefix apps/web`、`node scripts/sim/check-static-pages.mjs` 成功。
 - 実機（Android Chrome、ホットスポットのWi-Fi、USBのCDPで観測）：dry-runホストのロビーで上部警告なし、状態欄に「PCアプリが前面にないため、リモコンは届きません（ロビーではPCアプリだけを操作します）」を表示。準備中・協力プレイ中の実ゲームでの表示は未確認。
+
+## 2026-11-11 承認済みPRの競合解消と統合前確認
+
+- ユーザーが #317・#316・#318・#309・#310 のマージを明示承認。#317は `4e650fc`、#316は `89ce980` としてmainへマージした。いずれも直前のhead SHAと全CI成功を確認し、マージ後にorigin/mainを再取得した。
+- その後、GitHubでは#318/#309/#310がBUILD_LOGの追記競合となった。ローカルの `.gitattributes` の `merge=union` とGitHub上の判定の違いを確認。作者ブランチを更新せず、最新mainから `codex/approved-prs-20261111` に3件の作者コミットをmergeで取り込み、双方のログを保持した。承認範囲外の製品変更は含めていない。
+- 最終組合せで `npm ci --prefix apps/web`、`npm run build --prefix apps/web`（型確認を含む）、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/check-public-docs.py`、`git diff --check` はすべて成功。
+- 実スマホの表示・Minecraftの通し確認は未実施。OS入力を送る変更・Rust製品コードの変更はない。統合PRの最新CIを確認してから、既に承認された3件の範囲で統合する。
