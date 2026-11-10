@@ -8,6 +8,7 @@ import { recordInputMetric, inputMetrics } from '../shared/input/metrics.ts';
 import { bindTouchpad } from '../shared/input/touchpad.ts';
 import { myActions } from '../shared/model/actions.ts';
 import { phoneAdvice } from '../shared/model/presentation.ts';
+import { fullText } from '../shared/model/phone.ts';
 import {createLifetime} from '../shared/input/lifetime.ts';
 import {byId} from '../shared/dom.ts';
 import type {PhoneViewBindings,PhoneView} from '../shared/contracts.ts';
@@ -88,7 +89,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
       } else if (msg.type === 'full') {
         releaseAll();closeRtc();
         session.stop();
-        phoneView.blocked();
+        phoneView.blocked(fullText(msg.retryMs));
       } else if (msg.type === 'error' && msg.code === 'protocol_version') {
         showVersionMismatch();
       } else if (msg.type === 'error' && msg.code === 'bad_token') {
@@ -266,7 +267,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   document.querySelectorAll<HTMLElement>('[data-ctl]').forEach(bindControl);
   document.querySelectorAll<HTMLElement>('[data-cmd]').forEach((el) => lifetime.listen(el, 'click', () => command(el.dataset.cmd!)));
   lifetime.listen($('startBtn'), 'click', () => command(session.game?.phase === 'paused' ? 'RESUME' : session.game?.phase === 'preparing' ? 'READY' : 'PREPARE'));
-  lifetime.listen($('endBtn'), 'click', () => phoneView.confirm({message:'協力プレイを終了してロビーに戻りますか？',ok:'ロビーに戻る',valid:remote=>remote.endVisible,run:()=>command('END')}));
+  lifetime.listen($('endBtn'), 'click', () => phoneView.confirm({message:'協力プレイを終了して、分担の画面に戻りますか？',ok:'終了して分担に戻る',valid:remote=>remote.endVisible,run:()=>command('END')}));
   function command(cmd: string) { if (isOpen()) session.send({ type: 'command', cmd, epoch: session.game?.epoch }); }
 
   lifetime.listenEvent(document, 'contextmenu', (e) => e.preventDefault());

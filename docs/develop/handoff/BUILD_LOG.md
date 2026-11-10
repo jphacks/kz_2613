@@ -1724,3 +1724,42 @@
 - その後、GitHubでは#318/#309/#310がBUILD_LOGの追記競合となった。ローカルの `.gitattributes` の `merge=union` とGitHub上の判定の違いを確認。作者ブランチを更新せず、最新mainから `codex/approved-prs-20261111` に3件の作者コミットをmergeで取り込み、双方のログを保持した。承認範囲外の製品変更は含めていない。
 - 最終組合せで `npm ci --prefix apps/web`、`npm run build --prefix apps/web`（型確認を含む）、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/check-public-docs.py`、`git diff --check` はすべて成功。
 - 実スマホの表示・Minecraftの通し確認は未実施。OS入力を送る変更・Rust製品コードの変更はない。統合PRの最新CIを確認してから、既に承認された3件の範囲で統合する。
+## 2026-11-10 — #225（PR #286）の実機確認：自動復帰の初期OFFと設定移行（実Wi-Fi・dry-run、Claude Code）
+
+- 構成：ホスト `825b18a` のリリースビルドを、PCアプリ（Tauri、既存ビルド）から子プロセスとして起動。`RECOOPLAY_DRY_RUN=1`・`RECOOPLAY_FAKE_TARGET=1`（OS入力なし）。Android実機（Chrome）をWindowsのモバイルホットスポット経由の実Wi-Fiで接続し、P1＝実機、P2・P3＝PC上の模擬WS。ADBは画面のタップ・状態取得・Wi-Fiの切替だけに使った。
+- **旧設定の移行**：リポジトリのルートに版なしの `config.json`（`{"port": 8080, "autoResume": true}`）を置いて起動すると、`{"autoResume": false, "port": 8080, "settingsVersion": 2}` に書き換わった（他の項目は保持）。ホストの状態とPC画面の「切断から戻ったら自動で再開する」はOFF。
+- **初期OFF・実Wi-Fi断**：協力プレイ中に実機のスティックでWを保持し、実機のWi-Fiを切ると、約4秒で `P1 disconnected` の一時停止と全解放（Wの解放をホストのログで確認）。Wi-Fiを戻すと、実機はPCのホットスポットではなく別の保存済みネットワーク（研究室のルーター）へ自動接続し、P1は戻れなかった。保存済みのホットスポットへ接続し直した後にP1が再参加し、36秒間 `paused` のまま（canResume=true）。
+- **初期OFF・期限内の復帰**：スマホで再開した後、ページを離れて約6秒で戻る短い切断を起こすと、34秒間 `paused` のまま自動で再開しなかった（期限15秒以内の復帰でも、ホストの明示RESUMEを待つ）。再開時に旧いWの押下は復元されなかった。
+- **明示的なONの保持**：PC画面の操作設定で「切断から戻ったら自動で再開する」をONにすると、ホストに反映され、`config.json` が `autoResume: true`・`settingsVersion: 2` になった。PCアプリを再起動しても、ホストとPC画面ともONのまま。ONの状態で短い切断（約6秒）を起こすと、`auto resume` で協力プレイへ戻った。
+- 後片付け：試験用の `config.json` は削除した。PCアプリと子ホストは残存なしで終了。
+- 限界：実入力（Minecraft）はなし（dry-run）。iPhone・実機2台以上は未実施。Wi-Fi復帰時に端末が別の保存済みネットワークを選ぶ問題は、製品の範囲外の端末設定だが、会場での運用上の注意になる。
+## 2026-11-10 — #293 Among Usの操作定義にマウスの担当を加える
+
+- `scripts/profiles/overrides/steam-945360.json` と生成物 `apps/game-profiles/steam-945360.json` を同じ内容で更新（カタログの再生成は公開データの取得が要るため実行せず、該当2ファイルの groups/actions/sources だけを変更）。
+- 「マウス（タスク・ボタン）」（P2：カーソル `mouseDelta`＋左クリック）を追加。協力プレイ中に誰も押せなかった「メニュー」（host）を廃止し、マップ（Tab）と「閉じる・メニュー」（Esc）を「使う・役職の操作」（P3）へ移した。分担の案は2人：P1移動＋使う等／P2マウス、3人：P1移動／P2マウス／P3使う等、4人：左右／上下／マウス／使う等。
+- 自動試験：`cargo test --release --locked`（2〜4人の全員分担でマウス・Esc・使うが必ず誰かに入り、カーソルとクリックが同じ人になる試験を追加）、`node scripts/sim/profile-catalog-test.mjs` 成功。
+- 定義の検証状態は `unverified` のまま。Among Usの実ゲームでマウスのタスク操作が成立するかは未確認。
+
+## 2026-11-10 — #306 終了ボタンの名前を戻り先に合わせる
+
+- ホストの `END` は `Phase::Lobby` に戻し、PCアプリは分担の画面（「分担しよう！」）になる。スマホのボタン「ロビーに戻る（協力プレイ終了）」と確認文の「ロビー」は戻り先と合わなかった。
+- 戻り先は変えず（参加画面へ戻すと接続中の参加者を選び直す手間が増えるため）、ボタンを「協力プレイを終了（分担に戻る）」、確認文を「協力プレイを終了して、分担の画面に戻りますか？」、OKを「終了して分担に戻る」にした。#309（ページ内の確認）に積み重ねた。
+- `node scripts/sim/product-web-test.mjs`（phone-lifecycle-testを含む）と `node scripts/sim/check-static-pages.mjs` が成功。実機での目視は未実施。
+- 実機確認（2026-11-10）：Android Chrome 1台（アプリ通信はモバイルホットスポットのWi-Fi、操作はUSBのCDP）、dry-run・疑似入力先のホスト、模擬P2。一時停止中のボタンが「協力プレイを終了（分担に戻る）」で1行に収まり、確認ダイアログの文と「終了して分担に戻る」が表示され、OKで `host end` によりロビーへ戻った。iPhone・実ゲームは未確認。
+## 2026-11-10 — #297 保持中の切断枠で参加できないときの案内
+
+- ロビーでは切断した枠を15秒保持する（#223）。その間に5台目が来ると、接続中が2人でも「部屋が満員です」と出ていた。
+- ホストの `full` に `retryMs`（ロビーで保持中の切断枠が最も早く空くまでのms、なければ `null`）を加えた。スマホは `retryMs` があれば「切断した人の再接続を待っているため、今は参加できません。N秒ほど待ってから再読み込みしてください。」と出す。デコーダーは負数・文字列を拒否する。
+- 番号の飛び（P1・P2・P4）は、番号が担当色・トークン・再接続の識別に使われているため変えていない。
+- `cargo test --release --locked full_room`（RECOOPLAY_DRY_RUN=1）、`node scripts/sim/protocol-sim.mjs`（60/60）、`node --experimental-strip-types scripts/sim/protocol-boundary-test.mjs`、`node scripts/sim/product-web-test.mjs`、`npx tsc --noEmit -p apps/web` が成功。実機での表示は未確認。
+- 実機確認（2026-11-10）：Android Chrome 1台（アプリ通信はモバイルホットスポットのWi-Fi、操作はUSBのCDP）、dry-run・疑似入力先のホスト。P1＝実機、P2〜P4＝模擬で満員にし、P4を切断した直後に実機を新しい参加者（参加情報を消して再読み込み）として接続した。「切断した人の再接続を待っているため、今は参加できません。13秒ほど待ってから再読み込みしてください。」が表示され（ホストログ reject_full）、案内どおり14秒後に再読み込みすると参加できた（slot_released P4の後）。実機の参加情報は試験後に戻した。iPhoneは未確認。
+
+## 2026-11-11 次の4件の独立レビュー・統合準備（未承認）
+
+- 対象は #286（221c8f0）、#312（156a1e3）、#319（fb58eb3）、#320（bf46b70）。main e38a681を基準に作者コミットを履歴ごと保持して取り込んだ。製品コードの競合なし、BUILD_LOGは両側の追記を保持。作者ブランチは未変更。
+- #286のconfig.rsとfocus.rsを実ソース参照で `rustc --edition=2021 --test ... -C lto=thin -C opt-level=3 -C codegen-units=4` と、専用targetで構築済みの既存serde_json/windows依存にリンクして独立実行し、8/8成功。旧設定の一度だけOFF移行、欠落OFF、明示ON/OFFの再起動保持、他設定保持、フォーカス照合を確認。ホスト全体の試験ではない。初回はreleaseのthin LTOに合わせない実行でLNK2019/LNK1107となり、同じprofile指定で復旧した。
+- #312のprofiles.rsとcontrols.rsも同じ方法で実ソース参照の独立試験を実行し、13成功・1ignored。Among Usの2〜4人の各分担でマウス移動とクリックが同一担当、Esc等が各1人に入ることを確認。既存502定義のカタログ試験も成功。実ゲームのタスク操作は未確認。
+- #319は親#309マージ後にbaseだけmainへ変更し、差分が文言・試験・ログだけであることを再確認。以前失敗したCIは最新状態で全成功となっている。#311のbaseも親#310マージ後にmainへ変更したが、今回の4件には含めない。
+- この4件だけの最終組合せで `npm run build --prefix apps/web`（型確認含む）、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/profile-catalog-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/check-public-docs.py`、`git diff --check` は成功。
+- #320のfull.retryMsは任意の非負有限値、端末側の既定満員表示との区別を確認。参加番号の詰め直しは対象外。実スマホ表示は作者の報告と独立追試を区別する。
+- #284/#313のホスト全体の独立ビルドは、sandboxのMSBuildがChecking Build System後に終了1となり、同じ専用targetを通常環境で再構築中。そこから成功を推定せず、旧入力・緊急停止の指摘PRをこの4件に混ぜない。
