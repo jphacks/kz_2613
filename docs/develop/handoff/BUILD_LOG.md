@@ -1694,3 +1694,10 @@
 - 未実施: 実OS入力での疑似ゲーム照合・実ホットキー/Alt+Tab・iPhone・実指・Minecraft実入力・実無線断・複数実端末・別PCの製品受入。明示許可のないOS入力は実施せず、dry-runや固定traceの成功を実入力の合格とは扱わない。
 
 - #279の実測を受け、SETUP_WINDOWSへworktree別target・固定exeハッシュ・展開後package-smokeを追記。通常buildの成功表示だけで配布バイナリの版を判断しない。製品コードと依存関係は変更せず、git diff --checkとcheck-public-docs成功。
+
+## 2026-11-10 — #297 保持中の切断枠で参加できないときの案内
+
+- ロビーでは切断した枠を15秒保持する（#223）。その間に5台目が来ると、接続中が2人でも「部屋が満員です」と出ていた。
+- ホストの `full` に `retryMs`（ロビーで保持中の切断枠が最も早く空くまでのms、なければ `null`）を加えた。スマホは `retryMs` があれば「切断した人の再接続を待っているため、今は参加できません。N秒ほど待ってから再読み込みしてください。」と出す。デコーダーは負数・文字列を拒否する。
+- 番号の飛び（P1・P2・P4）は、番号が担当色・トークン・再接続の識別に使われているため変えていない。
+- `cargo test --release --locked full_room`（RECOOPLAY_DRY_RUN=1）、`node scripts/sim/protocol-sim.mjs`（60/60）、`node --experimental-strip-types scripts/sim/protocol-boundary-test.mjs`、`node scripts/sim/product-web-test.mjs`、`npx tsc --noEmit -p apps/web` が成功。実機での表示は未確認。

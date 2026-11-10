@@ -391,6 +391,7 @@ async function main() {
       const c = await join('P5');
       const w = await c.waitFor((m) => m.type === 'full', { what: 'full' });
       assert(w, 'full が来ない');
+      assert(w.retryMs === null, `全員接続中なのに空く見込みを示した (#297): ${JSON.stringify(w)}`);
       assert((await c.waitClose()) === 4004, '終了コードが 4004 でない');
       const from = mon.mark();
       p4.close();
@@ -403,6 +404,7 @@ async function main() {
       x.send({ type: 'hello', clientId: 'sim-intruder', protocolVersion: PROTOCOL_VERSION, slot: 'P1', isHost: true });
       const w = await x.waitFor((m) => m.type === 'full' || m.type === 'welcome', { what: 'full' });
       assert(w.type === 'full', `満員なのに受け付けた: ${JSON.stringify(w)}`);
+      assert(typeof w.retryMs === 'number' && w.retryMs > 0 && w.retryMs <= 15000, `切断した P4 の枠が空く見込みを示さない (#297): ${JSON.stringify(w)}`);
     });
 
     await check('PC画面: ロビーでは P1 のリモコン操作だけを PC 画面へ remote で知らせる', async () => {
