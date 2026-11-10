@@ -314,6 +314,7 @@ pub struct Hub {
     launch_gen: u64,
     target_fg: Option<Foreground>,
     target_ok: bool,
+    settings_root: Option<std::path::PathBuf>, // 自動復帰の明示的な選択を config.json へ保存する場所 (None なら保存しない)
     fake_target: Option<bool>, // 試験用 (DRY_RUN のときだけ)。Some なら OS に問い合わせない
     fake_activate: bool,
     // ゲームのキー設定に合わせた、操作 → 送るキーの対応 (#101)。準備・Ready・再開のたびに読み直す
@@ -436,6 +437,7 @@ impl Hub {
             rotation_secs: 0,
             rotation_at: 0,
             role_ack: Vec::new(),
+            settings_root: config.settings_root.clone(),
             fake_target: std::env::var("RECOOPLAY_FAKE_TARGET")
                 .ok()
                 .filter(|_| std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1"))
@@ -2200,6 +2202,12 @@ impl Hub {
             "auto_resume" => {
                 self.game.auto_resume = msg.get("on").and_then(Value::as_bool).unwrap_or(false);
                 self.log("auto_resume", json!({ "on": self.game.auto_resume }));
+                // 利用者の明示的な選択として保存し、次回以降の起動で勝手にOFFへ戻さない (#225)
+                if let Some(root) = &self.settings_root {
+                    if let Err(e) = crate::config::save_auto_resume(root, self.game.auto_resume) {
+                        self.log("auto_resume_save_failed", json!({ "error": e.to_string() }));
+                    }
+                }
                 self.push_game();
             }
             "phase" => {
@@ -2632,6 +2640,7 @@ mod tests {
             rotation_secs: 0,
             rotation_at: 0,
             role_ack: Vec::new(),
+            settings_root: None,
             fake_target: Some(true),
             app_focused: false,
             desktop: false,
