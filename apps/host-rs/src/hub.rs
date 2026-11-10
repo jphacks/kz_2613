@@ -1838,6 +1838,14 @@ impl Hub {
         self.push_state();
     }
 
+    /// ロビーで保持中の切断枠のうち、最も早く空く枠までの時間。保持中の枠がなければ None (#297)
+    fn held_slot_retry_ms(&self, now: u64) -> Option<u64> {
+        if self.game.phase != Phase::Lobby { return None; }
+        self.slots.iter().flatten().filter(|s| !s.connected)
+            .map(|s| session::LOBBY_SLOT_HOLD_MS.saturating_sub(now.saturating_sub(s.disconnected_at)))
+            .min()
+    }
+
     /// ロビーで戻らない枠を解放し、P1 が空いたら接続中で最も若い枠をホストにする (#223)。
     /// P1 = ホストの前提を変えないよう枠ごと P1 へ移し、接続は 4008 で閉じる。スマホは通常の再接続で
     /// 同じトークンのまま P1 として戻り、welcome と WebRTC が作り直される。元のホストは参加者として戻る。
@@ -2284,7 +2292,9 @@ impl Hub {
                     i
                 }
                 None => {
-                    self.send(Some(id), &json!({ "type": "full" }));
+                    // 切断した人の枠をロビーで保持しているだけなら、満員ではなく空く見込みの時間を知らせる (#297)
+                    let retry_ms = self.held_slot_retry_ms(now_ms());
+                    self.send(Some(id), &json!({ "type": "full", "retryMs": retry_ms }));
                     let device = device_kind(&s(msg, "ua").unwrap_or_default());
                     self.log("reject_full", json!({ "device": device }));
                     return self.close(Some(id), 4004, "room full");
@@ -3188,6 +3198,19 @@ mod tests {
         assert_eq!((host.client_id.as_str(), host.token.as_str(), host.connected), ("client1", "token1", false));
         assert!(h.slots[1].is_none() && h.slots[2].is_some());
         assert_eq!(h.game.epoch, epoch + 1);
+    }
+
+    #[test]
+    fn full_room_reports_when_the_earliest_held_slot_is_released() {
+        let mut h = lobby_with(&[(0, true), (1, false), (2, true), (3, true)], 1_000);
+        h.slots[3].as_mut().unwrap().connected = false;
+        h.slots[3].as_mut().unwrap().disconnected_at = 6_000;
+        assert_eq!(h.held_slot_retry_ms(9_000), Some(session::LOBBY_SLOT_HOLD_MS - 8_000)); // 早く切断した P2 が先に空く
+        assert_eq!(h.held_slot_retry_ms(1_000 + session::LOBBY_SLOT_HOLD_MS + 5), Some(0));
+        h.game.phase = Phase::Paused; // 協力プレイの開始後は枠を空けないので、待つ時間を示さない
+        assert_eq!(h.held_slot_retry_ms(9_000), None);
+        let h = lobby_with(&[(0, true), (1, true), (2, true), (3, true)], 0);
+        assert_eq!(h.held_slot_retry_ms(9_000), None); // 全員接続中なら本当に満員
     }
 
     #[test]

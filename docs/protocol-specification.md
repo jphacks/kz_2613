@@ -121,7 +121,7 @@ PREPARE / READY / RESUME / OPEN_GAMEは現在epochを必須とします。PREPAR
 | type | 主な項目 |
 |:--|:--|
 | `welcome` | `protocolVersion`, `token`, `slot`, `role`, `isHost`, `reconnected` |
-| `error / full` | 拒否理由。errorは`code`と必要に応じてホストの版 |
+| `error / full` | 拒否理由。errorは`code`と必要に応じてホストの版。fullの`retryMs`は、ロビーで保持中の切断枠が最も早く空くまでの時間（ms）。保持中の枠がなければ`null`（本当に満員） |
 | `game` | セッション状態`game` |
 | `command_result` | `cmd`, `accepted`, `reasons` |
 | `ack` | `iseq`, `t`, `via:ws/rtc`、旧epochなら`stale:true` |

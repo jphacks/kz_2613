@@ -156,6 +156,16 @@ if (process.argv.includes('--repro-shared-pointer')) {
       h.control('act:attack').fire('pointerup'); assert.equal(h.inputs().length, 1);
     }
   });
+  await test('満員: 切断した人の枠を保持しているだけなら、空く見込みの秒数を案内する (#297)', async () => {
+    const h = controllerHarness(); await h.ready();
+    h.sockets[0].receive({ type: 'full', retryMs: 6200 });
+    assert.equal(h.el('full').style.display, 'flex');
+    assert.match(h.el('fullMessage').textContent, /再接続を待っている.*7秒ほど待って/);
+    assert.doesNotMatch(h.el('fullMessage').textContent, /満員/);
+    const g = controllerHarness(); await g.ready();
+    g.sockets[0].receive({ type: 'full', retryMs: null });
+    assert.equal(g.el('fullMessage').textContent, undefined, '保持中の枠がなければ画面既定の「満員」の案内');
+  });
   await test('WebRTC: 旧候補と非同期旧Blob通知が現在の接続へ反映されない', async () => {
     const h = controllerHarness(); await h.ready(); const first = h.peers[0]; first.channel.readyState = 'open';
     let finish;
