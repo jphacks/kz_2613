@@ -121,7 +121,7 @@ PREPARE / READY / RESUME / OPEN_GAMEは現在epochを必須とします。PREPAR
 | type | 主な項目 |
 |:--|:--|
 | `welcome` | `protocolVersion`, `token`, `slot`, `role`, `isHost`, `reconnected` |
-| `error / full` | 拒否理由。errorは`code`と必要に応じてホストの版 |
+| `error / full` | 拒否理由。errorは`code`と必要に応じてホストの版。fullの`retryMs`は、ロビーで保持中の切断枠が最も早く空くまでの時間（ms）。保持中の枠がなければ`null`（本当に満員） |
 | `game` | セッション状態`game` |
 | `command_result` | `cmd`, `accepted`, `reasons` |
 | `ack` | `iseq`, `t`, `via:ws/rtc`、旧epochなら`stale:true` |
@@ -143,7 +143,7 @@ PREPARE / READY / RESUME / OPEN_GAMEは現在epochを必須とします。PREPAR
 | `hostReady / prepareStatus / canLaunch` | 準備・起動の状態 |
 | `remoteRoute` | app / game / none |
 | `inputActive / inputTarget` | 入力可能か、onだが対象が前面でないか |
-| `autoResume / autoResumeMs / autoResumeUntil` | 自動復帰設定、待機時間、期限 |
+| `autoResume / autoResumeMs / autoResumeUntil` | 自動復帰設定（初期OFF）、待機時間、期限 |
 
 `keys.actions`は操作IDから実出力の`{out,label}`またはnullへの対応です。`profile.assignment`は現在接続者への案、`profile.assignments`は人数別の案です。`assigned`が現在の共同操作の認可に使う確定値です。
 
@@ -218,7 +218,7 @@ sequenceDiagram
 
 スマホは3秒応答がないと再接続します。ホストは4秒無受信で切断とし、coopからpausedへ移ると全員分を即時解放します。最低押下時間・連打キューより停止を優先します。
 
-設定の既定値は`autoResume:true`、待機時間15秒です。通信切断による停止で、期限内に参加者・担当確認・入力条件が揃い、WebRTCの接続処理が落ち着くと自動復帰を試みます。期限内の別参加者の切断は期限を延長しますが、接続の置き換えや期限後の再接続は期限を復活させません。手動PAUSE、PC画面への復帰、緊急停止は自動復帰しません。前面化に失敗した場合も期限を解除して明示操作を待ちます。
+設定の既定値は`autoResume:false`（初期OFF、2026-11-10 Q40）、待機時間15秒です。OFFでは通信が戻ってもホストの明示RESUMEまで再開しません。利用者が明示的にONにした場合に限り、通信切断による停止で、期限内に参加者・担当確認・入力条件が揃い、WebRTCの接続処理が落ち着くと自動復帰を試みます。期限内の別参加者の切断は期限を延長しますが、接続の置き換えや期限後の再接続は期限を復活させません。手動PAUSE、PC画面への復帰、緊急停止は自動復帰しません。前面化に失敗した場合も期限を解除して明示操作を待ちます。
 
 ---
 

@@ -61,6 +61,7 @@ jobs:
           node scripts/device/wifi-host-analysis-test.mjs
           node scripts/device/wifi-trial-acks-test.mjs
           node scripts/device/wifi-ack-observer-test.mjs
+          node scripts/device/look-gap-analysis-test.mjs
       - name: PC 画面の表示ロジック
         run: node scripts/sim/app-view-test.mjs
       - name: スマホのReady・待機・停止と診断前の解放
