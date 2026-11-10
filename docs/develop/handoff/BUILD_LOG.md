@@ -1694,3 +1694,13 @@
 - 未実施: 実OS入力での疑似ゲーム照合・実ホットキー/Alt+Tab・iPhone・実指・Minecraft実入力・実無線断・複数実端末・別PCの製品受入。明示許可のないOS入力は実施せず、dry-runや固定traceの成功を実入力の合格とは扱わない。
 
 - #279の実測を受け、SETUP_WINDOWSへworktree別target・固定exeハッシュ・展開後package-smokeを追記。通常buildの成功表示だけで配布バイナリの版を判断しない。製品コードと依存関係は変更せず、git diff --checkとcheck-public-docs成功。
+
+## 2026-11-10 — #225（PR #286）の実機確認：自動復帰の初期OFFと設定移行（実Wi-Fi・dry-run、Claude Code）
+
+- 構成：ホスト `825b18a` のリリースビルドを、PCアプリ（Tauri、既存ビルド）から子プロセスとして起動。`RECOOPLAY_DRY_RUN=1`・`RECOOPLAY_FAKE_TARGET=1`（OS入力なし）。Android実機（Chrome）をWindowsのモバイルホットスポット経由の実Wi-Fiで接続し、P1＝実機、P2・P3＝PC上の模擬WS。ADBは画面のタップ・状態取得・Wi-Fiの切替だけに使った。
+- **旧設定の移行**：リポジトリのルートに版なしの `config.json`（`{"port": 8080, "autoResume": true}`）を置いて起動すると、`{"autoResume": false, "port": 8080, "settingsVersion": 2}` に書き換わった（他の項目は保持）。ホストの状態とPC画面の「切断から戻ったら自動で再開する」はOFF。
+- **初期OFF・実Wi-Fi断**：協力プレイ中に実機のスティックでWを保持し、実機のWi-Fiを切ると、約4秒で `P1 disconnected` の一時停止と全解放（Wの解放をホストのログで確認）。Wi-Fiを戻すと、実機はPCのホットスポットではなく別の保存済みネットワーク（研究室のルーター）へ自動接続し、P1は戻れなかった。保存済みのホットスポットへ接続し直した後にP1が再参加し、36秒間 `paused` のまま（canResume=true）。
+- **初期OFF・期限内の復帰**：スマホで再開した後、ページを離れて約6秒で戻る短い切断を起こすと、34秒間 `paused` のまま自動で再開しなかった（期限15秒以内の復帰でも、ホストの明示RESUMEを待つ）。再開時に旧いWの押下は復元されなかった。
+- **明示的なONの保持**：PC画面の操作設定で「切断から戻ったら自動で再開する」をONにすると、ホストに反映され、`config.json` が `autoResume: true`・`settingsVersion: 2` になった。PCアプリを再起動しても、ホストとPC画面ともONのまま。ONの状態で短い切断（約6秒）を起こすと、`auto resume` で協力プレイへ戻った。
+- 後片付け：試験用の `config.json` は削除した。PCアプリと子ホストは残存なしで終了。
+- 限界：実入力（Minecraft）はなし（dry-run）。iPhone・実機2台以上は未実施。Wi-Fi復帰時に端末が別の保存済みネットワークを選ぶ問題は、製品の範囲外の端末設定だが、会場での運用上の注意になる。
