@@ -1913,7 +1913,7 @@ async function main() {
       assert(rotated.game.epoch > before.epoch, 'epochが進まない');
       assert(!rotated.game.roleAck?.length, '確認を待っている');
       assert(JSON.stringify(rotated.game.assigned) !== JSON.stringify(before.assigned), '担当が変わっていない');
-      assert(JSON.stringify(rotated.game.assigned.P1) === JSON.stringify(before.assigned.P2), 'P1がP2の担当へ移っていない');
+      assert(JSON.stringify(rotated.game.assigned.P2) === JSON.stringify(before.assigned.P1), 'P1の担当がP2へ移っていない (Q46)');
       await injected(mon, 'KEY_W', 'up', mfrom);
       const late = mon.mark(); a.epoch = before.epoch; a.input('FWD', 'up'); a.input('FWD', 'down'); await sleep(150);
       assert(!mon.msgs.slice(late).some((m) => m.type === 'inject' && m.entry.state === 'down'), '旧epochの押下を注入した');

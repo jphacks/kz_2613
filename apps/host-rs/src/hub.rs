@@ -3337,7 +3337,8 @@ mod tests {
         assert!(!h.rotation_soon && h.game.epoch == epoch, "予告の前は何もしない");
         h.rotate_roles_if_due(5_000);
         assert!(h.rotation_soon, "5秒前に予告する");
-        assert_eq!(h.game_snapshot()["rotationNext"]["P1"], json!(first[1]), "予告で次の担当を示す");
+        assert_eq!(h.game_snapshot()["rotationNext"]["P2"], json!(first[0]), "予告で次の担当を示す (P1 の担当が P2 へ)");
+        assert_eq!(h.game_snapshot()["rotationNext"]["P1"], json!(first[2]));
         assert!(h.outputs[index("KEY_W")].physical, "予告では入力を止めない");
         h.rotate_roles_if_due(10_000);
         assert!(h.game.phase == Phase::Coop, "交代で一時停止しない");
@@ -3346,10 +3347,36 @@ mod tests {
         assert!(h.game.epoch > epoch, "旧担当の遅れた入力を新しい epoch で効かせない");
         assert!(h.role_ack.is_empty(), "確認・明示の再開を待たない");
         // P1→P2→P3→P1 の順に担当が隣へ移る。3回で元に戻る
-        assert_eq!((h.assigned[0].clone(), h.assigned[1].clone(), h.assigned[2].clone()), (first[1].clone(), first[2].clone(), first[0].clone()));
+        assert_eq!((h.assigned[0].clone(), h.assigned[1].clone(), h.assigned[2].clone()), (first[2].clone(), first[0].clone(), first[1].clone()));
         assert_eq!((h.rotation_at, h.rotation_count, h.rotation_soon), (70_000, 1, false));
         h.rotate_roles_if_due(70_000); h.rotate_roles_if_due(130_000);
         assert_eq!(h.assigned[..3], first[..3], "N人でN回交代すると元に戻る");
+    }
+
+    #[test]
+    fn role_rotation_follows_slot_order_with_gaps_four_players_and_after_a_manual_swap() {
+        for (participants, seats) in [(vec![0, 1, 2, 3], [0, 1, 2, 3]), (vec![0, 1, 3], [0, 1, 2, 3]), (vec![0, 1, 2], [1, 0, 2, 3])] {
+            let (mut h, _rx) = fixture();
+            h.participants = participants.clone();
+            h.seats = seats;
+            let ranked = Hub::ranked_by(&h.seats, &participants);
+            h.assigned = vec![Vec::new(); MAX_SLOTS];
+            for (k, a) in profiles::assignment_for(&h.profile.clone().unwrap(), participants.len()).into_iter().enumerate() { h.assigned[ranked[k]] = a; }
+            let first = h.assigned.clone();
+            h.rotation_secs = 60;
+            h.rotation_at = 10_000;
+            h.rotate_roles_if_due(5_000);
+            let next = h.game_snapshot()["rotationNext"].clone();
+            h.rotate_roles_if_due(10_000);
+            // 枠の番号順に、1つ前の参加者の担当を受け継ぐ (P1→P2→…→最後→P1)
+            for (k, &slot) in participants.iter().enumerate() {
+                let prev = participants[(k + participants.len() - 1) % participants.len()];
+                assert_eq!(h.assigned[slot], first[prev], "{participants:?} {seats:?}: {} は {} の担当を受け継ぐ", SLOT_NAMES[slot], SLOT_NAMES[prev]);
+                assert_eq!(next[SLOT_NAMES[slot]], json!(first[prev]), "予告と実際の交代が一致する");
+            }
+            for _ in 1..participants.len() { let at = h.rotation_at; h.rotate_roles_if_due(at); }
+            assert_eq!(h.assigned, first, "{participants:?}: N人でN回交代すると元に戻る");
+        }
     }
 
     #[test]
