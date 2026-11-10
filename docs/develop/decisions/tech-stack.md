@@ -26,7 +26,7 @@
 | スマホ・PC画面 | [React + TypeScript strict](2026-11-09-react-product-review.md)（`apps/web/`、Vite）。入力・接続・通信もTS、Pointer EventsはReact描画から独立。診断は静的HTML | PR #274の `/`・`/app`・TauriをReactへ標準化。AndroidはCDP/dry-runで同条件比較。iPhone・実指・Minecraftの受入は未完了 | 外部CDNなし。旧JSは比較・復元用に保全。mainの採用・正式リリースは別の判断 |
 | PCアプリの枠 | Tauri 2（WebView2）。代替は通常のブラウザ | 採用（このPCでビルド・起動・終了を確認。スマホ実機・配布は未検証） | `apps/desktop`。Rust版ホストを子プロセスとして起動し、同じHTMLをそのまま表示する。終了・異常終了時はホストが全解放してから終了する |
 | QR | 参加URLのQRとWi-Fi接続用のQR（`WIFI:T:WPA;S:..;P:..;;`）をSVGで生成する | **検証済み**（URL QR） | オフラインで生成する。Wi-Fi接続用QRは `config.json` に記載した場合だけ表示する |
-| 設定 | `config.json`（port、wifi、injectMode、autoResume、lookSmoothMin/MaxMs。requiredPlayers は #115 で廃止） | **検証済み** | Node・Rustで共通の項目 |
+| 設定 | `config.json`（port、wifi、injectMode、autoResume（初期OFF）、settingsVersion、lookSmoothMin/MaxMs。requiredPlayers は #115 で廃止） | **検証済み** | Node・Rustで共通の項目 |
 | ログ | セッションごとのJSONL（`logs/session-*.jsonl`） | **検証済み** | 入力・注入・照合結果・接続を記録し、事後分析に使う。Rust版はIP・User-Agent・clientId・再接続トークンを記録せず、枠名と端末の種類（iOS/Android/Windows/other）だけを残す（#22、PC上のシミュレーションで確認）。Node参照実装は試作品のまま記録する |
 | 検証方法 | ①プロトコル単位のシミュレーション（注入なしの `RECOOPLAY_DRY_RUN=1` で動作）②疑似ゲーム画面による実入力の照合 ③実機3台 | **検証済み** | シミュレーションは言語に依存しないため、Rust版の合格判定にもそのまま使う |
 | 配布 | Tauriのバンドル、または単一exe | 未検証 | |
@@ -43,7 +43,7 @@
 | 視点の補間 | 4ms周期。時定数は30〜120msで、直近2秒の最長の途切れ×0.5で自動調整 | 安定した端末は遅延を小さく、途切れがちな端末は滑らかさを優先する |
 | 生存確認 | WebSocketのpingは1秒ごと。協力プレイ中はWebRTCで50msごとの `ka` | 遅延の計測と、スマホの無線が省電力で眠るのを防ぐため |
 | 切断判定 | サーバーは4秒受信がなければ切断扱い。スマホは3秒応答がなければ自分から接続し直す | 復帰は1秒以内（実測） |
-| 自動復帰 | Node試作品ではON設定・通信切断後15秒以内の復帰を3回観測 | Minecraft実運用の初期値・使用条件は未決定。ホストPAUSEは常に非自動、OFF・期限外は明示RESUME |
+| 自動復帰 | Node試作品ではON設定・通信切断後15秒以内の復帰を3回観測 | 実運用の初期値はOFF（2026-11-10の判断、Q40）。ホストPAUSEは常に非自動、OFF・期限外は明示RESUME |
 
 ## 3. 採用しない候補と理由
 

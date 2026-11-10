@@ -1737,3 +1737,12 @@
 - 結果：送信側の空白0件（端末の送信間隔は最大66.9ms）。30件すべてで空白中に送ったパケットが直後に3〜11個まとめて届き（相対遅れ135.6〜378.0ms）、RTCでは20件で1〜2個の欠落を伴った。WSは欠落なしの遅着のみ。逆順・経路切替は0件。ハブの処理・経路切替が原因ではなく、無線区間での滞留が推測される（機器・仕組みは未確定）。
 - 記録：`docs/develop/acceptance/2026-11-10-look-gap-analysis.md`、`docs/develop/acceptance/evidence/look-gaps-275/gaps.json`。製品コードは変更していない。新たな実機測定は未実施。
 - 試験：`node scripts/device/look-gap-analysis-test.mjs` 合格、`python scripts/check-public-docs.py` を実行。
+## 2026-11-10 — #225（PR #286）の実機確認：自動復帰の初期OFFと設定移行（実Wi-Fi・dry-run、Claude Code）
+
+- 構成：ホスト `825b18a` のリリースビルドを、PCアプリ（Tauri、既存ビルド）から子プロセスとして起動。`RECOOPLAY_DRY_RUN=1`・`RECOOPLAY_FAKE_TARGET=1`（OS入力なし）。Android実機（Chrome）をWindowsのモバイルホットスポット経由の実Wi-Fiで接続し、P1＝実機、P2・P3＝PC上の模擬WS。ADBは画面のタップ・状態取得・Wi-Fiの切替だけに使った。
+- **旧設定の移行**：リポジトリのルートに版なしの `config.json`（`{"port": 8080, "autoResume": true}`）を置いて起動すると、`{"autoResume": false, "port": 8080, "settingsVersion": 2}` に書き換わった（他の項目は保持）。ホストの状態とPC画面の「切断から戻ったら自動で再開する」はOFF。
+- **初期OFF・実Wi-Fi断**：協力プレイ中に実機のスティックでWを保持し、実機のWi-Fiを切ると、約4秒で `P1 disconnected` の一時停止と全解放（Wの解放をホストのログで確認）。Wi-Fiを戻すと、実機はPCのホットスポットではなく別の保存済みネットワーク（研究室のルーター）へ自動接続し、P1は戻れなかった。保存済みのホットスポットへ接続し直した後にP1が再参加し、36秒間 `paused` のまま（canResume=true）。
+- **初期OFF・期限内の復帰**：スマホで再開した後、ページを離れて約6秒で戻る短い切断を起こすと、34秒間 `paused` のまま自動で再開しなかった（期限15秒以内の復帰でも、ホストの明示RESUMEを待つ）。再開時に旧いWの押下は復元されなかった。
+- **明示的なONの保持**：PC画面の操作設定で「切断から戻ったら自動で再開する」をONにすると、ホストに反映され、`config.json` が `autoResume: true`・`settingsVersion: 2` になった。PCアプリを再起動しても、ホストとPC画面ともONのまま。ONの状態で短い切断（約6秒）を起こすと、`auto resume` で協力プレイへ戻った。
+- 後片付け：試験用の `config.json` は削除した。PCアプリと子ホストは残存なしで終了。
+- 限界：実入力（Minecraft）はなし（dry-run）。iPhone・実機2台以上は未実施。Wi-Fi復帰時に端末が別の保存済みネットワークを選ぶ問題は、製品の範囲外の端末設定だが、会場での運用上の注意になる。
