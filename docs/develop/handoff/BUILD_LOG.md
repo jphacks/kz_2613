@@ -1763,3 +1763,10 @@
 - 4009以外の切断が3秒続いたら、「PCのアプリとつながっていません／再接続しています…」で操作を覆う。再接続は続け、welcomeで消す。満員などで止まったときは覆わない。
 - `node scripts/sim/product-web-test.mjs`（phone-lifecycle 18/18、#302の試験2件を追加）、`npx tsc --noEmit -p apps/web`、`node scripts/sim/check-static-pages.mjs`、`cargo build --release --locked`、`node scripts/sim/shutdown-sim.mjs`（quit・EOFの両方でスマホが4009を受けることを追加）、`node scripts/sim/protocol-sim.mjs`（60/60）が成功。
 - 実機確認：Android Chrome 1台（アプリ通信はモバイルホットスポットのWi-Fi、操作はUSBのCDP）、dry-run・疑似入力先のホスト。ホストを強制終了すると1.5秒後は覆わず、3.8秒後に覆いが出た。ホストを再起動すると自動で再接続して覆いが消えた。`quit` で終了すると（終了コード0）終了の案内が出て、下の操作画面は隠れた。その後に新しいホストを起動しても再接続しなかった。iPhone・デスクトップアプリの×ボタンからの終了は未確認。
+
+## 2026-11-10 — #292 ホストのスマホからPCアプリへ戻る
+
+- ホストに `OPEN_APP`（P1のみ、協力プレイ中以外、現在epoch必須）を追加。PCアプリ（`recooplay-desktop.exe`）のウィンドウを前面にするだけで入力は送らない。失敗時は理由を `command_result.reasons` で返す。状態に `canOpenApp` を追加し、スマホのリモコンに「PCアプリを前面にする」を出す（PCアプリが前面のときは隠す）。
+- PCアプリから起動したホストは、選んだゲームのウィンドウを一度見た後に閉じたら、ロビーでPCアプリを1回だけ前面に戻す（一時停止中に閉じた場合はロビーへ戻った後）。ゲーム自体をスマホから終了する操作は追加していない。
+- 自動試験：`cargo test --release --locked`（host 140成功・2 ignored、probe 4成功。`OPEN_APP` の段階・ホスト限定、ゲーム終了時の1回だけの前面化を追加）、`node scripts/sim/product-web-test.mjs`、`npm run typecheck/build --prefix apps/web`、`check-static-pages.mjs`、`check-public-docs.py` 成功。
+- 実機（Android Chrome、ホットスポットのWi-Fi、USBのCDPで操作）：dry-run・疑似入力先で、PCアプリの背面を標準入力 `app blur` で模擬。ロビーでボタンが表示され、押すと `open_app ok` となり表示が「PCアプリを操作中」に変わりボタンが消えた。実ウィンドウ（Tauri）の前面化と、実ゲームを閉じたときの自動復帰は未確認。
