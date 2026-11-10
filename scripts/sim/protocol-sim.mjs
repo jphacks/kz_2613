@@ -939,6 +939,8 @@ async function main() {
     });
 
     await check('PCアプリ: 通信切断待ちにPC画面へ戻ったら自動復帰を解除し、全員戻っても明示RESUMEまで再開しない', async () => {
+      const initial = await mon.waitFor(m => m.type === 'game', { what: '初期のgame' });
+      assert(initial.game.autoResume === false, '自動復帰が初期OFFでない (Q40)');
       mon.send({ type: 'auto_resume', on: true });
       await mon.waitFor(m => m.type === 'game' && m.game.autoResume, { what: 'autoResume on' });
       let from = p1.mark();
