@@ -100,6 +100,17 @@ const shown=[view().remote.route,view().remote.openGameLabel,view().warning,view
 assert.match(shown,/Outlastのメニューを操作中/);
 assert.match(shown,/Outlastを前面にする/);
 assert.doesNotMatch(shown,/Minecraft|ワールド/);
+// ゲームが前面に残っても、ホストのスマホだけでPCアプリへ戻れる (#292)
+update('P1',{phase:'lobby',remoteRoute:'none',canOpenApp:true});
+assert.equal(view().remote.openAppHidden,false);
+update('P1',{phase:'lobby',remoteRoute:'app',canOpenApp:true});
+assert.equal(view().remote.openAppHidden,true,'PCアプリが前面なら出さない');
+update('P1',{phase:'paused',remoteRoute:'game',canOpenApp:true});
+assert.equal(view().remote.openAppHidden,false);
+update('P1',{phase:'lobby',remoteRoute:'none',canOpenApp:false});
+assert.equal(view().remote.openAppHidden,true,'PCアプリから起動していなければ出さない');
+update('P2',{phase:'lobby',remoteRoute:'none',canOpenApp:true});
+assert.equal(view().remote.openAppHidden,true,'ホスト以外には出さない');
 update('P1',{phase:'preparing',keys:{controls:{INV:{out:'KEY_R',label:'R'}}}});
 assert.equal(view().inventory,'Rキー','リモコンもゲーム内設定の実際のキーを出す');
 update('P1',{phase:'preparing',keys:{controls:{INV:null}}});

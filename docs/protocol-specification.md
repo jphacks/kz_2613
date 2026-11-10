@@ -97,7 +97,7 @@ sequenceDiagram
 | `hello` | WS | `protocolVersion`, `clientId`, `token`, `ua`, `nextIseq`。参加・再接続 |
 | `ping` | WS | `t`, `stats`。1秒ごとの生存確認・通信統計 |
 | `transfer_host` | WS | `to`, `epoch`。ロビーの現在のホストだけが、接続中の参加者へ譲る。2つの枠を入れ替える |
-| `command` | WS | `cmd`, `epoch`。P1のみ。PREPARE / READY / PAUSE / RESUME / END / OPEN_GAME |
+| `command` | WS | `cmd`, `epoch`。P1のみ。PREPARE / READY / PAUSE / RESUME / END / OPEN_GAME / OPEN_APP |
 | `input` | WS＋RTC | `iseq`, `epoch`, `button`, `state:down/up`, `t`。WS版は`seq`も使用 |
 | `look` | RTC、未接続時WS | `lseq`, `epoch`, `cx`, `cy`。30Hzの累積視点移動 |
 | `ka` | RTC | `t`。共同操作中50msごとの生存確認 |
@@ -106,7 +106,7 @@ sequenceDiagram
 | `release_inputs` | WS | 現在`epoch`。認証済み端末から全解放・保留破棄を要求 |
 | `role_ok` | WS | 現在`epoch`。担当が変わった本人による確認 |
 
-PREPARE / READY / RESUME / OPEN_GAMEは現在epochを必須とします。PREPAREは分担決定後にpreparingへ移すだけで、READYが開始条件を満たしたときだけcoopへ進みます。監視画面からcoopを強制できません。
+PREPARE / READY / RESUME / OPEN_GAME / OPEN_APPは現在epochを必須とします。OPEN_APPは協力プレイ中以外に、PCアプリ（`recooplay-desktop.exe`）のウィンドウを前面にするだけで入力は送りません。PCアプリから起動していないとき・前面化に失敗したときは `command_result` の `reasons` に理由を返します。ゲームの状態の `canOpenApp` が真のときだけスマホにボタンを出します。PCアプリから起動したホストは、選んだゲームのウィンドウが閉じたらロビーでPCアプリを1回だけ前面に戻します（#292）。PREPAREは分担決定後にpreparingへ移すだけで、READYが開始条件を満たしたときだけcoopへ進みます。監視画面からcoopを強制できません。
 
 ### 操作の認可
 

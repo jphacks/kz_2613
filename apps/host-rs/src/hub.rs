@@ -106,6 +106,11 @@ fn now_ms() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0)
 }
 
+/// PC アプリ (デスクトップアプリ) のウィンドウ。前面の判定 (check_target) と同じくプロセス名で照合する
+fn desktop_target() -> Target {
+    Target { processes: vec![DESKTOP_PROCESS.into()], title_contains: String::new(), dir: None, executable: None }
+}
+
 fn dry_run() -> bool {
     std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1")
 }
@@ -341,6 +346,7 @@ pub struct Hub {
     // 担当が変わり、本人がスマホで「確認しました」を押していない枠。押すまで Ready・再開できない
     role_ack: Vec<usize>,
     app_focused: bool,           // PC アプリが前面か (手動復帰の判定に使う)
+    game_window_seen: bool,      // 選んだゲームのウィンドウを見たか。閉じたらロビーで PC アプリを前面に戻す (#292)
     // PC アプリ (デスクトップアプリ) から起動されたか。そのときは前面のプロセス名で PC アプリの前面を判定し、
     // 画面 (WebView2 は背面でも focused のまま) の知らせは使わない
     desktop: bool,
@@ -441,6 +447,7 @@ impl Hub {
                 .filter(|_| std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1"))
                 .map(|v| v == "1"),
             app_focused: false,
+            game_window_seen: false,
             desktop: std::env::var("RECOOPLAY_DESKTOP").as_deref() == Ok("1"),
         };
         let (mut list, errors) = profiles::load_dir(&config.profiles_dir);
@@ -717,6 +724,8 @@ impl Hub {
             "canChangePlayers": session::can_change_players(self.game.phase, &self.connected_slots(), &self.participants),
             "canSwap": matches!(self.game.phase, Phase::Lobby | Phase::Preparing) || (self.game.phase == Phase::Paused && !self.participants.is_empty()),
             "canLaunch": self.can_launch(),
+            // ホストのスマホから PC アプリを前面にできるか (#292)
+            "canOpenApp": self.desktop && self.game.phase != Phase::Coop,
             "reason": self.game.reason,
             "autoResume": self.game.auto_resume,
             "autoResumeMs": self.game.auto_resume_ms,
@@ -905,6 +914,34 @@ impl Hub {
         ok
     }
 
+    /// PC アプリ (デスクトップアプリ) のウィンドウを前面にする (#292)。入力は送らず、前面にするだけ
+    fn open_app(&mut self) -> Result<(), String> {
+        if !self.desktop { return Err("PCアプリから起動したときだけ使えます".into()); }
+        let result = if self.fake_target.is_some() {
+            if self.fake_activate { Ok(()) } else { Err("シミュレーション：前面化を拒否しました".into()) }
+        } else if dry_run() {
+            Err("dry-run：実ウィンドウは操作しません".into())
+        } else {
+            self.game_service.activate(&desktop_target()).map_err(|reason|
+                if reason.contains("見つかりません") { "PCアプリのウィンドウが見つかりません".into() } else { reason })
+        };
+        self.log("open_app", json!({ "ok": result.is_ok() }));
+        if self.fake_target.is_some() { if result.is_ok() { self.on_app_focus(true); } } else { self.check_target(); }
+        result.map_err(|reason| format!("{reason}。PCでReCooplayを前面にしてください"))
+    }
+
+    /// 選んだゲームが閉じたら、ロビーでは PC アプリを前面に戻す (#292)。1回閉じるごとに1回だけ
+    fn watch_game_exit(&mut self) {
+        if !self.desktop || self.fake_target.is_some() || dry_run() { return; }
+        if self.target_ok || self.game_service.exists(&self.target) { self.game_window_seen = true; return; }
+        if !self.game_window_seen || self.game.phase != Phase::Lobby { return; }
+        self.game_window_seen = false;
+        if self.app_focused { return; }
+        let ok = self.game_service.activate(&desktop_target()).is_ok();
+        self.log("app_return", json!({ "ok": ok, "reason": "game exit" }));
+        self.check_target();
+    }
+
     fn maybe_auto_resume(&mut self) {
         // 再接続とPCアプリへの手動復帰が重なっても、前面の観測で復帰解除を先に確定する。
         self.check_target();
@@ -928,6 +965,7 @@ impl Hub {
             cmd == "PREPARE" && self.game.phase == Phase::Lobby && self.can_prepare(),
             cmd == "READY" && self.game.phase == Phase::Preparing && self.can_ready(),
             cmd == "RESUME" && self.game.phase == Phase::Paused && self.can_resume());
+        let mut rejected: Option<String> = None;
         let accepted = allowed && match (cmd, self.game.phase) {
             ("OPEN_GAME", Phase::Preparing | Phase::Paused) => {
                 self.game.prepare_status = if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
@@ -967,6 +1005,11 @@ impl Hub {
                 if self.game.phase == Phase::Paused { self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); }
                 else { self.set_phase(Phase::Paused, "host pause"); } true
             }
+            // PC アプリを前面にする (#292)。ロビー・準備中・一時停止中にスマホだけで PC アプリへ戻れるようにする
+            ("OPEN_APP", p) if p != Phase::Coop => match self.open_app() {
+                Ok(()) => true,
+                Err(reason) => { rejected = Some(reason); false }
+            },
             ("END", p) if p != Phase::Lobby => {
                 self.game.host_ready = false;
                 self.game.auto_resume_until = 0;
@@ -976,7 +1019,7 @@ impl Hub {
         };
         self.send(self.slots[slot].as_ref().and_then(|s| s.conn), &json!({
             "type": "command_result", "cmd": cmd, "accepted": accepted,
-            "reasons": if accepted { vec![] } else { self.ready_reasons(true) },
+            "reasons": if accepted { vec![] } else if let Some(reason) = rejected { vec![reason] } else { self.ready_reasons(true) },
         }));
     }
 
@@ -1439,6 +1482,7 @@ impl Hub {
     /// 入力先を選んだゲームに合わせる。一覧のゲームはインストール先のフォルダ内のプロセスだけを対象にする
     fn apply_target(&mut self) {
         self.target = game_service::target_for(&self.games, &self.game.title, &self.base_target);
+        self.game_window_seen = false;
         self.check_target();
         self.push_state();
     }
@@ -1923,6 +1967,7 @@ impl Hub {
                     }
                 }
                 self.release_lobby_slots(now);
+                self.watch_game_exit();
                 self.rotate_roles_if_due(now);
                 self.update_low_latency();
                 self.net_tick += 1;
@@ -2634,6 +2679,7 @@ mod tests {
             role_ack: Vec::new(),
             fake_target: Some(true),
             app_focused: false,
+            game_window_seen: false,
             desktop: false,
         };
         let (monitor_tx, monitor_rx) = unbounded_channel();
@@ -2905,6 +2951,66 @@ mod tests {
         assert!(h.outputs.iter().all(|s| !s.physical && s.queue.is_empty())); assert_eq!(h.look.px, 0.0);
         h.on_launched(7, Err("切替前の結果".into())); h.watch_launch(7);
         assert!(h.launch.is_none()); assert_eq!(h.game.title, "pseudo-game");
+    }
+
+    #[test]
+    fn host_can_bring_the_desktop_app_to_front_outside_coop_only() {
+        let (mut h, _rx) = fixture();
+        // PC アプリから起動していなければ使えない
+        h.game.phase = Phase::Lobby;
+        assert!(h.open_app().unwrap_err().contains("PCアプリから起動したときだけ"));
+        h.desktop = true;
+        h.command(0, "OPEN_APP");
+        assert!(h.app_focused, "ロビーではPCアプリを前面にできる");
+        // 協力プレイ中は受け付けない (前面を奪って一時停止させない)
+        h.app_focused = false; h.game.phase = Phase::Coop;
+        h.command(0, "OPEN_APP"); assert!(!h.app_focused);
+        // ホスト以外は使えない
+        h.game.phase = Phase::Paused;
+        h.command(1, "OPEN_APP"); assert!(!h.app_focused);
+        h.fake_activate = false;
+        assert!(h.open_app().unwrap_err().contains("前面化を拒否"));
+        h.fake_activate = true;
+        h.command(0, "OPEN_APP"); assert!(h.app_focused);
+        assert_eq!(h.game_snapshot()["canOpenApp"], true);
+        h.game.phase = Phase::Coop; assert_eq!(h.game_snapshot()["canOpenApp"], false);
+    }
+
+    #[test]
+    fn closing_the_game_returns_the_desktop_app_to_front_once_in_lobby() {
+        struct Windows { open: std::sync::Mutex<bool>, activated: std::sync::Mutex<Vec<Vec<String>>> }
+        impl game_service::GameBackend for Windows {
+            fn roots(&self) -> games::Roots { panic!("探索しない") }
+            fn detect(&self, _: &games::Roots) -> games::Detected { panic!("探索しない") }
+            fn foreground(&self) -> Option<Foreground> { None }
+            fn exists(&self, _: &Target) -> bool { *self.open.lock().unwrap() }
+            fn activate(&self, t: &Target) -> Result<(), String> { self.activated.lock().unwrap().push(t.processes.clone()); Ok(()) }
+            fn launch(&self, _: &Entry) -> Result<(), String> { panic!("起動しない") }
+            fn pick_exe(&self) -> Option<PathBuf> { panic!("選択しない") }
+        }
+        let backend = std::sync::Arc::new(Windows { open: std::sync::Mutex::new(true), activated: Default::default() });
+        let (mut h, _rx) = fixture();
+        h.game_service = GameService::with_backend(backend.clone());
+        h.fake_target = None; h.desktop = true; h.game.phase = Phase::Paused;
+        h.watch_game_exit();
+        assert!(h.game_window_seen);
+        // 一時停止中に閉じても前面を変えず、ロビーへ戻ってから PC アプリを前面にする
+        *backend.open.lock().unwrap() = false; h.target_ok = false;
+        h.watch_game_exit();
+        assert!(backend.activated.lock().unwrap().is_empty());
+        h.game.phase = Phase::Lobby;
+        h.watch_game_exit();
+        assert_eq!(*backend.activated.lock().unwrap(), vec![vec![DESKTOP_PROCESS.to_string()]]);
+        // 閉じたままなら繰り返さない
+        h.watch_game_exit();
+        assert_eq!(backend.activated.lock().unwrap().len(), 1);
+        // ゲームを見ていないまま (未起動) なら前面を変えない
+        let (mut h, _rx) = fixture();
+        let idle = std::sync::Arc::new(Windows { open: std::sync::Mutex::new(false), activated: Default::default() });
+        h.game_service = GameService::with_backend(idle.clone());
+        h.fake_target = None; h.target_ok = false; h.desktop = true; h.game.phase = Phase::Lobby;
+        h.watch_game_exit();
+        assert!(idle.activated.lock().unwrap().is_empty());
     }
 
     #[test]

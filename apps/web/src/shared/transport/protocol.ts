@@ -22,7 +22,7 @@ export function isPhoneGame(value: unknown): value is PhoneGame {
   for (const key of ['title', 'titleName', 'prepareStatus', 'remoteRoute']) {
     if (!optional(value, key, v => typeof v === 'string')) return false;
   }
-  for (const key of ['canPrepare', 'canReady', 'canResume', 'inputTarget', 'inputActive', 'autoResume', 'lineupOk', 'hostReady', 'canSwap', 'canChangePlayers', 'canLaunch']) {
+  for (const key of ['canPrepare', 'canReady', 'canResume', 'inputTarget', 'inputActive', 'autoResume', 'lineupOk', 'hostReady', 'canSwap', 'canChangePlayers', 'canLaunch', 'canOpenApp']) {
     if (!optional(value, key, v => typeof v === 'boolean')) return false;
   }
   if (!optional(value, 'assigned', assignment)) return false;
