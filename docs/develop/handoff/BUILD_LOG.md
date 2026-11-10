@@ -1746,3 +1746,10 @@
 - 戻り先は変えず（参加画面へ戻すと接続中の参加者を選び直す手間が増えるため）、ボタンを「協力プレイを終了（分担に戻る）」、確認文を「協力プレイを終了して、分担の画面に戻りますか？」、OKを「終了して分担に戻る」にした。#309（ページ内の確認）に積み重ねた。
 - `node scripts/sim/product-web-test.mjs`（phone-lifecycle-testを含む）と `node scripts/sim/check-static-pages.mjs` が成功。実機での目視は未実施。
 - 実機確認（2026-11-10）：Android Chrome 1台（アプリ通信はモバイルホットスポットのWi-Fi、操作はUSBのCDP）、dry-run・疑似入力先のホスト、模擬P2。一時停止中のボタンが「協力プレイを終了（分担に戻る）」で1行に収まり、確認ダイアログの文と「終了して分担に戻る」が表示され、OKで `host end` によりロビーへ戻った。iPhone・実ゲームは未確認。
+## 2026-11-10 — #297 保持中の切断枠で参加できないときの案内
+
+- ロビーでは切断した枠を15秒保持する（#223）。その間に5台目が来ると、接続中が2人でも「部屋が満員です」と出ていた。
+- ホストの `full` に `retryMs`（ロビーで保持中の切断枠が最も早く空くまでのms、なければ `null`）を加えた。スマホは `retryMs` があれば「切断した人の再接続を待っているため、今は参加できません。N秒ほど待ってから再読み込みしてください。」と出す。デコーダーは負数・文字列を拒否する。
+- 番号の飛び（P1・P2・P4）は、番号が担当色・トークン・再接続の識別に使われているため変えていない。
+- `cargo test --release --locked full_room`（RECOOPLAY_DRY_RUN=1）、`node scripts/sim/protocol-sim.mjs`（60/60）、`node --experimental-strip-types scripts/sim/protocol-boundary-test.mjs`、`node scripts/sim/product-web-test.mjs`、`npx tsc --noEmit -p apps/web` が成功。実機での表示は未確認。
+- 実機確認（2026-11-10）：Android Chrome 1台（アプリ通信はモバイルホットスポットのWi-Fi、操作はUSBのCDP）、dry-run・疑似入力先のホスト。P1＝実機、P2〜P4＝模擬で満員にし、P4を切断した直後に実機を新しい参加者（参加情報を消して再読み込み）として接続した。「切断した人の再接続を待っているため、今は参加できません。13秒ほど待ってから再読み込みしてください。」が表示され（ホストログ reject_full）、案内どおり14秒後に再読み込みすると参加できた（slot_released P4の後）。実機の参加情報は試験後に戻した。iPhoneは未確認。

@@ -8,6 +8,7 @@ import { recordInputMetric, inputMetrics } from '../shared/input/metrics.ts';
 import { bindTouchpad } from '../shared/input/touchpad.ts';
 import { myActions } from '../shared/model/actions.ts';
 import { phoneAdvice } from '../shared/model/presentation.ts';
+import { fullText } from '../shared/model/phone.ts';
 import {createLifetime} from '../shared/input/lifetime.ts';
 import {byId} from '../shared/dom.ts';
 import type {PhoneViewBindings,PhoneView} from '../shared/contracts.ts';
@@ -88,7 +89,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
       } else if (msg.type === 'full') {
         releaseAll();closeRtc();
         session.stop();
-        phoneView.blocked();
+        phoneView.blocked(fullText(msg.retryMs));
       } else if (msg.type === 'error' && msg.code === 'protocol_version') {
         showVersionMismatch();
       } else if (msg.type === 'error' && msg.code === 'bad_token') {
