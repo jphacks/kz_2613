@@ -2078,3 +2078,8 @@
 - `node --check scripts/sim/protocol-sim.mjs` と `git diff --check` は合格。ホストを起動する通信シミュレーション全体はGitHub Actionsで確認する。
 - 実Wi-Fi、Android・iPhoneのblur、実Windows入力の受入は未実施。
 - 統合（Claude Code）：#366をレビューし指摘なし。試験だけの変更で、使う `release_inputs`（`hub.rs`）と `injected`・`noPress` は既存。`protocol-sim.mjs` の構文検査が合格し、ホストとの実行はCIで確認する。
+
+## 2026-11-11 — Wi-Fiの観測負荷の集計（#276）
+
+- 試行計画と実行順・資産・経路を照合してACK、ホスト内区間、ICE RTTを個別に集計する。
+- `node scripts/device/summarize-wifi-overhead-test.mjs` と関連する計画・ACK・経路・ホスト分析の短時間試験が合格。実Wi-Fiの比較測定は未実施。
