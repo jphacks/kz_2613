@@ -1886,6 +1886,12 @@
 - #320のfull.retryMsは任意の非負有限値、端末側の既定満員表示との区別を確認。参加番号の詰め直しは対象外。実スマホ表示は作者の報告と独立追試を区別する。
 - #284/#313のホスト全体の独立ビルドは、sandboxのMSBuildがChecking Build System後に終了1となり、同じ専用targetを通常環境で再構築中。そこから成功を推定せず、旧入力・緊急停止の指摘PRをこの4件に混ぜない。
 
+## 2026-11-11 ホストのリモコンの案内（#300）
+
+- ロビー・ゲーム起動後・準備・一時停止の次の操作を実際のボタン名で表示し、インベントリキーはMinecraftのゲーム操作中に表示する。
+- `npm.cmd run build`、`node scripts/sim/phone-view-test.mjs`、`node scripts/sim/phone-lifecycle-test.mjs`（31/31）、`node --experimental-strip-types scripts/sim/ui-input-test.mjs`（12/12）が合格。Chromeの402×874の模擬表示で、準備と一時停止の案内およびタイトルごとのキー表示を確認。
+- Android・iPhoneの実機操作は未実施。準備直後にタッチパッドが反応しなかった観測は、既存の入力試験で原因を特定できていない。
+
 ## 2026-11-11 — #298 ゲーム一覧の誤検出・重複・件数を直す
 
 - 「beta／Battle.net」は、Battle.netアプリ自身の更新用の製品（`agent_beta`、場所 `Agent\beta`）だった。除外を完全一致から前方一致（`agent`・`bna`・`battle.net`）にした。このPCの実際の product.db で、修正前は試験が失敗し、修正後に合格した。
