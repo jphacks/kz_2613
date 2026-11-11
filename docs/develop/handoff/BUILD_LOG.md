@@ -2039,3 +2039,21 @@
 - 指摘【低】：アンインストール時の削除確認で、`%LOCALAPPDATA%\Re-Cooplay` を「手動で登録したゲーム」とだけ示していた。実際にはキーの設定（`key-overrides.json`）も入り、zip版とも共有する。確認の文言と `apps/desktop/README.md` を直した。
 - 試験：NSISが手元にないため、インストーラーの作成と `installer-smoke.mjs` はCIで確認する。
 - 未確認：対話の画面、ランタイムが実際に不足したPC、開発環境のない別のWindows 11 x64での導入からアンインストールまで（#219の受入ゲート）。
+
+## 2026-11-11 RTC単独切断とWSフォールバックの観測（#277）
+
+- Wi-Fi用dry-runに `--rtc-fault-observe` を追加。試験タブのfast DataChannelを閉じ、同じWS・同じepochのまま新しいジャンプの押下と解放がWSで受理され、ホストの押下状態が空に戻ることを確認する。DataChannelとICEを別々に記録する。
+- Web型チェック・ビルド、Android補助CLI 17/17、通信経路・障害時系列・RTC単独観測の試験が合格。Chrome内のローカルPeerConnection間で、試作フックによるDataChannel閉鎖とICE接続の継続を確認。
+- 実Android・Wi-Fiでの実行、実Wi-Fi断と復元、全参加者の保持・キュー・視点、復帰設定別の受入は残る。
+## 2026-11-11 — 同一Wi-Fi性能比較の試行計画（#276）
+
+- 比較軸を1項目に固定し、60秒×各3回の順序と既存runnerの引数を生成する。先行ACK診断は別系列にする。
+- `node scripts/device/wifi-comparison-plan-test.mjs` で順序・回数・比較軸・引数を確認した。
+- `node scripts/device/wifi-route-test.mjs` と `node scripts/device/wifi-trial-acks-test.mjs` が合格した。
+- 実Wi-Fi・Android測定、トレースと定期ICE観測の個別負荷、集計・匿名化は未実施。
+
+## 2026-11-11 RTC単独切断の観測（#359）と同一Wi-Fi比較の試行計画（#360）の統合（Claude Code）
+
+- どちらも試験・計測用のツールだけの変更で、製品の動作は変えない。指摘なし。
+- #360の `wifi-comparison-plan-test.mjs` がCIで実行されていなかったので、`rust.yml` の「Android試験の経路判定…」の手順に追加した。
+- 手元で `android-dry-run-test.mjs` 17/17、`wifi-route-test.mjs`、`fault-timeline-test.mjs`、`rtc-fault-observer-test.mjs`、`wifi-trial-acks-test.mjs`、`wifi-comparison-plan-test.mjs` が合格（`android-dry-run-test.mjs` は `apps/web/dist` のビルド後）。

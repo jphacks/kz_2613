@@ -59,8 +59,10 @@ jobs:
           node scripts/device/android-dry-run-test.mjs
           node scripts/device/wifi-route-test.mjs
           node scripts/device/fault-timeline-test.mjs
+          node scripts/device/rtc-fault-observer-test.mjs
           node scripts/device/wifi-host-analysis-test.mjs
           node scripts/device/wifi-trial-acks-test.mjs
+          node scripts/device/wifi-comparison-plan-test.mjs
           node scripts/device/wifi-ack-observer-test.mjs
           node scripts/device/look-gap-analysis-test.mjs
       - name: PC 画面の表示ロジック
