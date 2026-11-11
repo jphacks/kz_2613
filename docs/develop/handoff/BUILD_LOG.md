@@ -2057,3 +2057,9 @@
 - どちらも試験・計測用のツールだけの変更で、製品の動作は変えない。指摘なし。
 - #360の `wifi-comparison-plan-test.mjs` がCIで実行されていなかったので、`rust.yml` の「Android試験の経路判定…」の手順に追加した。
 - 手元で `android-dry-run-test.mjs` 17/17、`wifi-route-test.mjs`、`fault-timeline-test.mjs`、`rtc-fault-observer-test.mjs`、`wifi-trial-acks-test.mjs`、`wifi-comparison-plan-test.mjs` が合格（`android-dry-run-test.mjs` は `apps/web/dist` のビルド後）。
+
+## 2026-11-11 — 定期ICE観測の負荷を比較する試行（#276）
+
+- `periodicIce` 比較軸を追加し、RTCありのWi-Fi性能試行で5秒間隔のICE観測を切り替える。明示的な経路照合とホスト入力トレースは両条件で維持する。
+- `node scripts/device/` 配下の `android-dry-run-test.mjs` 20/20、`wifi-route-test.mjs`、`wifi-comparison-plan-test.mjs`、`fault-timeline-test.mjs`、`rtc-fault-observer-test.mjs`、`wifi-trial-acks-test.mjs` が合格。CLI試験の資産は照合済みCI配布zipから取得。
+- 実Wi-Fi・Androidでの負荷比較、ホスト入力トレースの負荷比較、新データセットの集計・匿名化は未実施。
