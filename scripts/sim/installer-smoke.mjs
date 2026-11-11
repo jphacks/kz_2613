@@ -158,4 +158,4 @@ try {
   await sleep(300);
   fs.rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 }
-console.log(`${passed}/5 合格（インストーラー、OS設定の変更なし）`);
+console.log(`${passed}/6 合格（インストーラー、OS設定の変更なし）`);
