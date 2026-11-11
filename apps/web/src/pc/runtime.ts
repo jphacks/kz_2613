@@ -6,7 +6,7 @@ import {decodePcMessage,decodeHotspotResult} from '../shared/transport/pc-messag
 import {decodePcInfo} from '../shared/transport/pc-info.ts';
 import type {Slot,PhoneGame} from '../shared/contracts.ts';
 import type {Navigation,HostState,InjectionState,UiAction,EffectState} from '../shared/model/domain.ts';
-import type {PcSnapshot,PcInfo} from './model';
+import {joinStatus, type PcSnapshot, type PcInfo} from './model';
 declare global {interface Window {showHostNotice?:(text:string)=>void}}
 const isSlot=(slot:string|undefined):slot is Slot=>!!slot&&['P1','P2','P3','P4'].includes(slot);
 export function startDesktopController({renderView,renderInfo}:{renderView(snapshot:PcSnapshot):void;renderInfo(info:PcInfo|null|undefined,message:string,busy:boolean):void}) {
@@ -25,6 +25,7 @@ let infoPort:number|null=null;
 const games=()=>gameList(state?.games,state?.minecraft);
 const send=(m:object)=>{if(ws?.readyState===1)ws.send(JSON.stringify(m));};
 function setUi(next:Navigation){
+  if(ui.screen==='join'&&next.screen!=='join'&&!joinStatus(state).canAdvance)return;
   if(next.game!==ui.game)send({type:'select_game',title:next.game});
   // 分担の画面から戻ったら決定を取り消す (戻った後の古い決定で起動・準備しない、#109)
   if(ui.screen==='roles'&&next.screen!=='roles'&&game?.lineupOk&&game.phase==='lobby')send({type:'unconfirm_lineup'});
@@ -37,8 +38,15 @@ lifetime.listenWindow('focus',sendFocus);lifetime.listenWindow('blur',sendFocus)
 function fit(){document.body.style.setProperty('--pc-scale',String(Math.min(innerWidth/1920,innerHeight/1080)));}
 lifetime.listenWindow('resize',fit);fit();
 function openDialog(dialog:HTMLDialogElement){document.querySelectorAll<HTMLDialogElement>('dialog[open]').forEach(d=>d.close());dialog.showModal();}
-lifetime.listen($('settingsBtn'), 'click',()=>openDialog($<HTMLDialogElement>('settings')));
-lifetime.listen($('keyBindingsBtn'), 'click',()=>{$<HTMLDetailsElement>('keyDetails').open=true;openDialog($<HTMLDialogElement>('settings'));});
+function openSettings(showKeys: boolean) {
+  const keys = $<HTMLDetailsElement>('keyDetails');
+  if (showKeys) keys.open = true;
+  openDialog($<HTMLDialogElement>('settings'));
+  if (showKeys) keys.querySelector('summary')?.focus();
+  else $('settingsTitle').focus();
+}
+lifetime.listen($('settingsBtn'), 'click',()=>openSettings(false));
+lifetime.listen($('keyBindingsBtn'), 'click',()=>openSettings(true));
 lifetime.listen($('closeSettings'), 'click',()=>$<HTMLDialogElement>('settings').close());
 lifetime.listen($('connectionHelpBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
 lifetime.listen($('settingsConnectionBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
@@ -123,7 +131,10 @@ lifetime.listenDocument('click',e=>{
   }
   const el=(e.target instanceof Element ? e.target : null)?.closest<HTMLElement>('[data-go],[data-game],[data-mode]');if(!el)return;
   const go=SCREENS.find(id=>id===el.dataset.go);
-  if(go)setUi({...ui,screen:go});
+  if(go){
+    setUi({...ui,screen:go});
+    if (ui.screen === go) $<HTMLDialogElement>('settings').close();
+  }
   if(el.dataset.game)setUi({...ui,game:el.dataset.game});
   // スマホの仮想カーソルが生成したクリックには入力再開を許可しない。
   if(el.dataset.mode&&(el.dataset.mode==='off'||e.isTrusted))send({type:'inject_mode',mode:el.dataset.mode});

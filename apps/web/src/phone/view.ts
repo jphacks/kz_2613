@@ -14,10 +14,10 @@ import {createTelemetryPublisher} from './telemetry.ts';
 export interface PhoneDisplay {
   controller: {key:string;groups:ControlGroup[];bindings:PhoneViewBindings} | null;
   snapshot: PhoneSnapshot; wait: WaitModel; remote: RemoteModel; view: string | null;
-  controllerHost: boolean; controllerTitle: string; role: string; roleCopy: string; roleNotice: string; warning: string; inventory: string;
+  controllerHost: boolean; controllerTitle: string; role: string; roleCopy: string; roleNotice: string; warning: string; inventory: string | null;
 }
 export const display = createStore<PhoneDisplay>({
-  controller:null, snapshot: { me: null, isHost: false, game: null }, view: null, controllerHost: false, controllerTitle: '', role: '接続中…', roleCopy: '', roleNotice: '', warning: '', inventory: 'Eキー',
+  controller:null, snapshot: { me: null, isHost: false, game: null }, view: null, controllerHost: false, controllerTitle: '', role: '接続中…', roleCopy: '', roleNotice: '', warning: '', inventory: null,
   wait: { character: '/assets/characters/blue.png', heading: '接続完了!!', role: '', title: 'ホストの準備を待っています', players: [] },
   remote: { players: [], route: '', routeBlocked: false, notice: '', openAppHidden: true, startLabel: 'START', startDisabled: false, openGameLabel: 'ゲームを前面にする', openGameHidden: true, endVisible: false, transferTo: [], note: 'ゲームをプレイ中の画面まで進めた後、ホストだけがReadyを押します。' },
 });
@@ -111,7 +111,9 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
       roleCopy: game.phase === 'coop' ? '確定した分担の操作だけを送信します' : game.phase === 'paused' ? '確定した分担（再開時に確認）' : '分担案（Readyで確定）',
       roleNotice: game.roleAck?.includes(me) ? `${game.reason === 'role rotation' ? '時間で担当が交代しました' : 'ホストが担当を入れ替えました'}。あなたの担当は「${role.title}」です。` : '',
       warning: view === 'v-remote' ? '' : inputWarnText({ isHost, game, name, notice: profileNotice(game.profile) }),
-      inventory: game.keys && 'controls' in game.keys && game.keys.controls && Object.hasOwn(game.keys.controls, 'INV') ? outputKeyLabel(game.keys.controls.INV) : 'Eキー',
+      inventory: game.title === 'minecraft-java' && game.remoteRoute === 'game'
+        ? game.keys?.controls && Object.hasOwn(game.keys.controls, 'INV') ? outputKeyLabel(game.keys.controls.INV) : 'Eキー'
+        : null,
     };
     document.body.dataset.phase = game.phase; document.body.dataset.slot = me; document.body.dataset.host = String(isHost);
     flushSync(() => display.set(next));

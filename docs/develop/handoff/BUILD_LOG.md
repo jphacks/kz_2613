@@ -1871,6 +1871,11 @@
 - `cargo test --release --locked full_room`（RECOOPLAY_DRY_RUN=1）、`node scripts/sim/protocol-sim.mjs`（60/60）、`node --experimental-strip-types scripts/sim/protocol-boundary-test.mjs`、`node scripts/sim/product-web-test.mjs`、`npx tsc --noEmit -p apps/web` が成功。実機での表示は未確認。
 - 実機確認（2026-11-10）：Android Chrome 1台（アプリ通信はモバイルホットスポットのWi-Fi、操作はUSBのCDP）、dry-run・疑似入力先のホスト。P1＝実機、P2〜P4＝模擬で満員にし、P4を切断した直後に実機を新しい参加者（参加情報を消して再読み込み）として接続した。「切断した人の再接続を待っているため、今は参加できません。13秒ほど待ってから再読み込みしてください。」が表示され（ホストログ reject_full）、案内どおり14秒後に再読み込みすると参加できた（slot_released P4の後）。実機の参加情報は試験後に戻した。iPhoneは未確認。
 
+## 2026-11-11 分担画面の決定前後と注意の配置（#296）
+
+- 決定前後で見出しと案内を切り替え、1人のときは参加待ちを表示した。決定後は入れ替え操作の案内を外し、注意は分担帯の中へ移動した。
+- `npm.cmd run build` と `node --experimental-strip-types scripts/sim/app-view-test.mjs`（31/31）が合格。Chrome（1280×720）の模擬状態で、1・3・4人の表示、決定前後、注意とイラストの位置を確認。Windows配布版での通し確認は未実施。
+
 ## 2026-11-11 次の4件の独立レビュー・統合準備（未承認）
 
 - 対象は #286（221c8f0）、#312（156a1e3）、#319（fb58eb3）、#320（bf46b70）。main e38a681を基準に作者コミットを履歴ごと保持して取り込んだ。製品コードの競合なし、BUILD_LOGは両側の追記を保持。作者ブランチは未変更。
@@ -1881,6 +1886,12 @@
 - #320のfull.retryMsは任意の非負有限値、端末側の既定満員表示との区別を確認。参加番号の詰め直しは対象外。実スマホ表示は作者の報告と独立追試を区別する。
 - #284/#313のホスト全体の独立ビルドは、sandboxのMSBuildがChecking Build System後に終了1となり、同じ専用targetを通常環境で再構築中。そこから成功を推定せず、旧入力・緊急停止の指摘PRをこの4件に混ぜない。
 
+## 2026-11-11 ホストのリモコンの案内（#300）
+
+- ロビー・ゲーム起動後・準備・一時停止の次の操作を実際のボタン名で表示し、インベントリキーはMinecraftのゲーム操作中に表示する。
+- `npm.cmd run build`、`node scripts/sim/phone-view-test.mjs`、`node scripts/sim/phone-lifecycle-test.mjs`（31/31）、`node --experimental-strip-types scripts/sim/ui-input-test.mjs`（12/12）が合格。Chromeの402×874の模擬表示で、準備と一時停止の案内およびタイトルごとのキー表示を確認。
+- Android・iPhoneの実機操作は未実施。準備直後にタッチパッドが反応しなかった観測は、既存の入力試験で原因を特定できていない。
+
 ## 2026-11-11 — #298 ゲーム一覧の誤検出・重複・件数を直す
 
 - 「beta／Battle.net」は、Battle.netアプリ自身の更新用の製品（`agent_beta`、場所 `Agent\beta`）だった。除外を完全一致から前方一致（`agent`・`bna`・`battle.net`）にした。このPCの実際の product.db で、修正前は試験が失敗し、修正後に合格した。
@@ -1888,12 +1899,23 @@
 - 一覧の見出しを、並んだ項目の数と合わせた（例「全 7 件（Minecraft、Steam・Epic など 5 件、手動登録 1 件）」）。左の説明は語の途中で折り返さないよう改行位置を決めた。
 - このPCで修正後のホストを起動し、一覧が固定のMinecraft＋6件（Steam 4件、Xboxの統合版、手動登録1件）になることを確認した。`cargo test --release --locked launchers::`（RECOOPLAY_DRY_RUN=1）、`app-view-test` 30/30、`product-web-test`、`check-static-pages`、`npx tsc`・`npm run build` が成功。PCアプリの実画面での目視は未実施。
 - 2026-11-11 レビュー指摘（P2）への対応：自動検出0件の早期returnで総数が出なかった。0件でも「全 N 件（Minecraft、手動登録 M 件。Steam・Epic などのランチャーでは見つかりませんでした）」と並んだ項目の数を出す。固定だけ・固定＋手動・固定＋自動・全部の4条件を `app-view-test` に追加し、修正前は「固定だけ」で失敗（29/30）、修正後30/30。Codexの `review-game-count.mjs` も合格。mainを取り込み（競合なし）、`launchers` 9件・`npx tsc`・`npm run build` 成功。
+## 2026-11-11 操作設定の案内（#299）
+
+- Minecraftの手順はMinecraft選択時に表示し、それ以外は共通の手順を案内する。待機中の表示、実ポートの観客向けURL、キー設定を直接開いたときのフォーカスを見直した。画面移動は折りたたみ内から利用できる。
+- `npm.cmd run build` と `node --experimental-strip-types scripts/sim/app-view-test.mjs`（31/31）が合格。ChromeでAmong Usの模擬通知とポート18080を使い、表示とフォーカスを確認。Tauri配布版・OBSでの確認は未実施。
+
 ## 2026-11-11 — #314 前面にない間は役割交代の時計を止める（レビュー指摘P2）
 
 - 協力プレイのまま対象ゲームが前面から外れると（`check_target()` は入力を解放してepochを進めるが、phaseはCoopのまま）、`rotate_roles_if_due()` がphaseと期限だけを見ていたため、操作できない間も60秒の時計が進んで担当が交代していた。
 - `sync_rotation_clock()` を追加した。協力プレイ中に `can_inject()` が偽になったら残り時間を凍結し（`rotation_at=0`、`rotation_left` に保存、予告も取り消す）、真に戻ったら残りから数える。前面の変化（`check_target`・`on_focus_change`）、毎秒の交代確認、協力プレイへの移行（`set_phase`）で呼ぶ。注入OFF・入力の障害など、前面以外の理由も1秒以内に反映する。Pause・切断・緊急停止の既存の扱い（協力プレイを離れたら残りを保存）は変えていない。
 - 試験 `role_rotation_counts_only_while_the_target_game_can_be_operated` を追加：前面喪失で凍結→長時間（最大 `u64::MAX/2`）経過しても予告・交代なし→復帰で残りから数え、残りを操作したら1回だけ交代→前面にないまま一時停止・再開しても数えない。修正を外すと失敗することを確認。
 - main（155e01c）を取り込んだ。競合した `PhoneApp.tsx`・`phone.ts`・`phone-harness.mjs` は、Codexが #324（cf7cd3c）で同じ組み合わせを解消した内容を使った。
+
+## 2026-11-11 PC参加画面の進行条件とカード表示（#295）
+
+- 接続中の2人がそろうまでOKと参加画面からの移動を無効にし、必要な人数を1か所に表示した。参加カードはホストと端末を示し、担当はゲーム選択後の画面で確認する。
+- `npm.cmd run build`（`apps/web`、型チェックとViteビルド）、`node --experimental-strip-types scripts/sim/app-view-test.mjs`（31/31）、`node --experimental-strip-types scripts/sim/pc-boundary-test.mjs` が合格。
+- Chrome（1280×720）でホスト通知を模擬し、0・1人ではOK・Enter・ホストのリモコン・設定内ナビから進めず、2人でOKからゲーム選択へ進むことを確認した。ホスト・端末の表示とカード内の収まりも確認した。Windows配布版と実機Wi-Fiでの参加は未実施。画面全体の縦横比対応は #270。
 
 ## 2026-11-10 — #287 Minecraftのランチャーをホストのリモコンで操作する（#311 に積み重ね）
 
@@ -1909,3 +1931,19 @@
 
 - 2026-11-11 #284 a83a9f1・#313 c160865の修正再レビュー後、ユーザー承認で共有出力の残件もCodexが修正。最新main5603e24を取り込み、P3が同じKEY_Wを保持する間のP1本人解放で、P1の保留辺だけを破棄してP3の保持とepochを維持するようにした。修正前はP1の旧down3が再生された。回帰は製品のキー割当構築と実Hubの順序処理を使う `own_release_discards_old_tap_even_when_another_slot_holds_the_same_key`。元の独立6系列、他者の保留辺と60ms/50ms、全体停止の既存試験も維持。ローカル `product-web-test`・`npm run build --prefix apps/web`・終了時独立6系列成功。修正前はRust175成功・通信62/62（親）、共有出力の追加1件だけ失敗（親子）。修正後Rustのローカル再実行はMSVC環境のdbghelp.lib解決とnmake検出に失敗したため、Windows CIでRust/通信/配布の最終確認を行う。実入力・iPhone復帰案内・複数実端末の受入は #285 に残す。
 - 共有出力の修正確認中に、本人の保持・保留がない出力へも解放が及び、別の枠の最低押下待ちが消える経路を確認した。本人が関与しない出力は処理対象から外し、別の枠の短いタップが通常の60ms待ち後に本人のupとして出る回帰を追加。
+
+## 2026-11-11 参加者の待機・再開案内と少数ボタンの配置（#301）
+
+- 待機画面で自分の枠と、ロビー・準備・一時停止に応じた次の操作を表示。ボタンだけで構成される1〜3操作の担当では、縦に並べた高さ64px以上のボタンを画面下部に配置した。
+- `npm.cmd run build`（`apps/web`、型チェックとViteビルド）と `node scripts/sim/phone-view-test.mjs` が合格。
+- Chromeの402×874の模擬表示で、一時停止時のP2表示・再開案内と、Among Us相当の3ボタン配置を確認した。Android・iPhoneでの片手操作とWindows配布版での通し確認は未実施。前面の警告は #291 の既存条件を使用。
+
+## 2026-11-11 UI表記5件（#328〜#332）の独立レビューと統合（Claude Code）
+
+- 統合ブランチ `claude/integration-ui-20261111`（main `4f63eaa` 起点）に、#329（`f7f484d`）→#331（`c7816fb`）→#332（`5ad5a0e`）→#328（`72d46b7`）→#330（`a3a7924`）の順でマージした。
+- 競合は `apps/web/src/pc/model.ts` と `PcApp.tsx` の2回。#329の参加人数による進行制限（OK・設定内ナビの無効化と `canAdvance`）、#331の折りたたみ式の画面移動・`GAMES`・`gameSteps`・`overlayUrl`、#332の分担画面の見出しと案内を、どれも捨てずに合成した。参加画面の文言は#329、分担画面の文言は#332を採用した。
+- レビューで確認した点：参加画面の進行制限は `setUi` だけにかかり、サーバー状態による画面復元（`screenOnGameUpdate`）は塞がない。lobbyの「送信しません」表示は、緊急停止（`inject.mode==='off'`）を先に判定するため誤表示しない。スマホの案内に書いたボタン名（「再開する」「協力プレイを終了（分担に戻る）」「ゲームを開く・準備する」）は実際のボタン表示と一致する。
+- Claude Codeの追加修正（#301の範囲）：参加者の待機文で、(1) 自動復帰待ちの文から切断理由（例：「P2 が切断」）が消えていたのを戻し、(2) 分担決定後のロビーでも「ゲームと分担を決めるまで」と出ていたのを「ゲームを起動するまで」に変えた。`scripts/sim/phone-view-test.mjs` に回帰を追加し、修正前に失敗することを確認した。
+- 結果：`npm run build`（`apps/web`）、`app-view-test.mjs` 33/33、`phone-view-test.mjs`（8観点）、`phone-lifecycle-test.mjs` 31/31、`ui-input-test.mjs` 12/12、`pc-boundary-test.mjs`、`check-static-pages.mjs` が合格。Rustの変更はないため、Rust・通信契約・配布はCIで確認する。
+- 軽微な残件：#332で分担画面から人数の参考（`playerHint`、#166）を外したため、製品では未使用になった（試験からだけ参照）。
+- 未確認：Windows配布版・Tauriでの表示、Android・iPhoneでの片手操作と表示、OBSからの観客向け表示。各Issue（#295・#296・#299・#300・#301）はこれらの受入まで開いたままにする。
