@@ -112,6 +112,16 @@ node scripts/device/android-dry-run.mjs --adb $adbPath --bin $hostPath --sha256 
 - 操作：全員がキー/マウス保持＋視点移動中に、A/B/Cそれぞれのタブ閉鎖・非表示・スリープ・Wi-Fi切断を一つずつ試す。ONで期限内/外、OFF、P1不在、RTC未成立、対象外、緊急停止後、明示PAUSEを別系列にする。期限の起点はホストの切断検知時刻も保存する。WSだけの遮断、RTCだけの不成立と両方の断を区別する。
 - 期待・合格：検知時に全員の合成入力を解放し、連打待ち・視点待ちを破棄。復帰後も同じ枠と管理権。OFF・期限外・明示PAUSEは明示RESUMEまで停止。ON期限内も安全条件が揃わなければ再開しない。旧epoch再送・旧RTC世代からの入力は反映しない。各系列3回で残留ゼロ。ブラウザ・ホストの検知時刻/停止時刻・epoch・押下集合・復帰画面を保存する。4秒は監視の設定値で、物理停止時間の保証と呼ばない。
 
+#### WS単独切断の記録（#277）
+
+Wi-Fi試験で `--wifi-network` と `--ws-fault-observe` を併用する。製品通信はWi-Fi、USBはCDP制御のみ。RTCを有効にし、`--benchmark-ms` は指定しない。手元の端末を1台だけ認可し、対象ホストexeのSHA-256を指定する。
+
+```powershell
+node scripts/device/android-dry-run.mjs --adb $adbPath --bin $hostPath --sha256 $hostHash --wifi-network data/local/wifi-network.private.json --ws-fault-observe
+```
+
+`summary.json` の `wsFault.events` に、試験タブのWS閉鎖、新しいWSでの同枠復帰、ホストのphase・epoch・押下数、前後の選択ICEペアを検証した観測点が残る。観測時刻はPC側の単調時計で、CDP往復と100msポーリングを含む。Wi-Fiの無線リンクは切断しない。WS切断に伴うRTCの終了はRTC単独断の結果に含めない。実Wi-Fi断とRTC単独の試験は別系列として扱う。
+
 ### AT-D04：実Windows入力・対象・緊急停止（#39）
 
 - 前提：操作者がPCの前に常駐、Minecraft等を閉じ、疑似ゲーム画面を対象にする。未保存の作業を退避し、`Ctrl+Alt+F12`と物理キーボードを手元に置く。登録不能時は試験を開始しない。
