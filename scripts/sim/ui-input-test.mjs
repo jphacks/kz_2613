@@ -92,6 +92,26 @@ try {
     pad.fire('pointerdown');pad.fire('pointermove',{clientX:160}); enabled=false;tick();enabled=true;tick();
     assert.equal(messages.length,1);
   });
+  await test('タッチパッド: 操作先がない間に置いた指も、操作先ができた後の動きは送る。一瞬の無効化でスワイプを捨てない (#345)',()=>{
+    const pad = new Element(), messages=[]; let enabled=false;
+    bindTouchpad(pad,{enabled:()=>enabled,send:m=>messages.push(m),tap:()=>{}});
+    const tick=intervals.at(-1).fn;
+    pad.fire('pointerdown',{clientX:100});pad.fire('pointermove',{clientX:140});tick();
+    assert.equal(messages.length,0,'操作先がない間の動きは送らない');
+    enabled=true;pad.fire('pointermove',{clientX:150});tick();
+    assert.deepEqual(messages.map(m=>[m.kind,m.dx]),[['move',10]],'操作先ができた後の動きだけを送る');
+    enabled=false;pad.fire('pointermove',{clientX:170});tick();enabled=true;pad.fire('pointermove',{clientX:175});tick();
+    assert.deepEqual(messages.map(m=>[m.kind,m.dx]),[['move',10],['move',5]],'一瞬の無効化の後も同じ指の動きを送り、無効中の動きは捨てる');
+    enabled=false;pad.fire('pointercancel');tick();
+    assert.equal(messages.length,2,'操作先がない間の取り消しでは、ホストへ解放を送らない');
+  });
+  await test('タッチパッド: 操作先がない間に大きく動かした指を、操作先ができた直後に離してもクリックにしない (#345)',()=>{
+    const pad = new Element(); let enabled=false, taps=0;
+    bindTouchpad(pad,{enabled:()=>enabled,send:()=>{},tap:()=>taps++});
+    pad.fire('pointerdown',{clientX:100});pad.fire('pointermove',{clientX:200});
+    enabled=true;pad.fire('pointermove',{clientX:202});pad.fire('pointerup',{clientX:202});
+    assert.equal(taps,0);
+  });
   await test('タッチパッド: 2本指でナチュラルな向きにスクロールし、カーソルは動かさない。2本指のタップは右クリック (#122)',()=>{
     const pad = new Element(), messages=[]; let taps=0,rights=0;
     bindTouchpad(pad,{enabled:()=>true,send:m=>messages.push(m),tap:()=>taps++,rightTap:()=>rights++});
