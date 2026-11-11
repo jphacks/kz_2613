@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-const { createPhoneSession, PHONE_PROTOCOL_VERSION } = await import('../../apps/web/src/shared/transport/session.ts');
+import {PHONE_PROTOCOL_VERSION} from '../../apps/web/src/shared/transport/version.ts';
+const { createPhoneSession } = await import('../../apps/web/src/shared/transport/session.ts');
 import { controllerHarness } from './fixtures/phone-harness.mjs';
 
 let passed = 0;
@@ -39,8 +40,8 @@ if (process.argv.includes('--repro-stale-open')) {
 } else {
   await test('参加情報: 保存済みidentity/tokenとhelloの版・nextIseqを維持する', () => {
     const f = fixture({ 'recooplay.clientId': 'saved-client', 'recooplay.token': 'saved-token' });
-    assert.equal(f.created(), 0); assert.equal(PHONE_PROTOCOL_VERSION, 4);
-    assert.deepEqual(f.session.open('test-agent'), { type: 'hello', protocolVersion: 4, clientId: 'saved-client', token: 'saved-token', ua: 'test-agent', nextIseq: 1 });
+    assert.equal(f.created(), 0);
+    assert.deepEqual(f.session.open('test-agent'), { type: 'hello', protocolVersion: PHONE_PROTOCOL_VERSION, clientId: 'saved-client', token: 'saved-token', ua: 'test-agent', nextIseq: 1 });
     f.session.authenticate({ token: 'updated-token' }); assert.equal(f.values.get('recooplay.token'), 'updated-token');
     assert.equal(f.session.open('test-agent').token, 'updated-token');
   });
