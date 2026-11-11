@@ -90,8 +90,13 @@ test('手動登録: 一覧に「手動登録」「未検証」と出し、件数
   const card = gameCard(list[2], null, null);
   assert.deepEqual(card.badges, ['手動登録', '未検証']);
   assert.deepEqual([isRegistered('manual:ab'), isRegistered('steam:1'), isRegistered(null)], [true, false, false]);
-  assert.equal(gamesCountText(list, false), 'Steam・Epic など 1 件・手動登録 1 件');
-  assert.equal(gamesCountText(list.slice(0, 1), false), 'Steam・Epic などのランチャーでゲームは見つかりませんでした');
+  assert.equal(gamesCountText(list, false), '全 3 件（Minecraft、Steam・Epic など 1 件、手動登録 1 件）', '並んだ項目の数と合わせる (#298)');
+  // 自動検出が0件でも、総数は並んだ項目の数と合わせる (固定だけ・固定＋手動・固定＋自動・全部)
+  const steam = list[1], manual = list[2];
+  assert.equal(gamesCountText([list[0]], false), '全 1 件（Minecraft。Steam・Epic などのランチャーでは見つかりませんでした）', '固定だけ');
+  assert.equal(gamesCountText([list[0], manual], false), '全 2 件（Minecraft、手動登録 1 件。Steam・Epic などのランチャーでは見つかりませんでした）', '固定＋手動');
+  assert.equal(gamesCountText([list[0], steam], false), '全 2 件（Minecraft、Steam・Epic など 1 件）', '固定＋自動');
+  for (const l of [[list[0]], [list[0], manual], [list[0], steam], list]) assert.match(gamesCountText(l, false), new RegExp(`^全 ${l.length} 件`), '全部の条件でタイルの数');
   assert.match(gamesCountText(list, true), /探しています/);
 });
 
@@ -99,7 +104,7 @@ test('ほかのランチャー: 出所の名前を出し、ランチャーの件
   const others = [['steam-shortcut', 'Steam（追加したゲーム）'], ['gog', 'GOG'], ['ubisoft', 'Ubisoft Connect'], ['ea', 'EA app'], ['battlenet', 'Battle.net'], ['xbox', 'Xbox']];
   const list = gameList(others.map(([source], i) => ({ id: `${source}:${i}`, name: `G${i}`, source, launchable: true })), null);
   others.forEach(([, label], i) => assert.deepEqual(gameCard(list[i + 1], null, null).badges, [label, '未検証'], label));
-  assert.equal(gamesCountText(list, false), 'Steam・Epic などで 6 件見つかりました');
+  assert.equal(gamesCountText(list, false), '全 7 件（Minecraft、Steam・Epic など 6 件）');
 });
 
 test('人数: どの人数・どのゲームも操作定義の分担を表示する (Minecraft の3人も、#141)', () => {
