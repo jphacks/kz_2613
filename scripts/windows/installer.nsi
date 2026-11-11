@@ -466,9 +466,10 @@ Section "Uninstall"
   Delete "$SMPROGRAMS\${APP_KEY}.lnk"
   Delete "$DESKTOP\${APP_KEY}.lnk"
 
-  ; 利用者のデータ (設定・ログ・手動登録したゲーム) は初期値で残す
+  ; 利用者のデータ (設定・ログ・手動登録したゲーム・キーの設定) は初期値で残す。
+  ; %LOCALAPPDATA%\Re-Cooplay はホストが書く場所で zip版と共通なので、消す前にそのことを示す
   MessageBox MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2 \
-    "設定とログも削除しますか？$\r$\n  $INSTDIR\config.json$\r$\n  $INSTDIR\logs$\r$\n  $LOCALAPPDATA\Re-Cooplay（手動で登録したゲーム）$\r$\n$\r$\n「いいえ」を選ぶと残します。" \
+    "設定とログも削除しますか？$\r$\n  $INSTDIR\config.json$\r$\n  $INSTDIR\logs$\r$\n  $LOCALAPPDATA\Re-Cooplay（手動で登録したゲームとキーの設定。zip版と共通）$\r$\n$\r$\n「いいえ」を選ぶと残します。" \
     /SD IDNO IDYES un_delete_data
   Goto un_keep_data
   un_delete_data:
