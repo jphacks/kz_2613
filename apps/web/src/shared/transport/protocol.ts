@@ -17,6 +17,7 @@ export function isPhoneGame(value: unknown): value is PhoneGame {
   if (!object(value) || !(typeof value.phase === 'string' && ['lobby', 'preparing', 'coop', 'paused'].includes(value.phase))
       || !(typeof value.epoch === 'number' && Number.isSafeInteger(value.epoch)) || value.epoch < 0) return false;
   if (!slots(value.connected) || !optional(value, 'participants', slots)
+      || !optional(value, 'lineupDisconnected', slots)
       || !optional(value, 'roleAck', slots) || !optional(value, 'readyReasons', strings)) return false;
   if (!optional(value, 'reason', v => v === null || typeof v === 'string')) return false;
   for (const key of ['title', 'titleName', 'prepareStatus', 'remoteRoute']) {

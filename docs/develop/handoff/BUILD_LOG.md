@@ -1947,3 +1947,10 @@
 - 結果：`npm run build`（`apps/web`）、`app-view-test.mjs` 33/33、`phone-view-test.mjs`（8観点）、`phone-lifecycle-test.mjs` 31/31、`ui-input-test.mjs` 12/12、`pc-boundary-test.mjs`、`check-static-pages.mjs` が合格。Rustの変更はないため、Rust・通信契約・配布はCIで確認する。
 - 軽微な残件：#332で分担画面から人数の参考（`playerHint`、#166）を外したため、製品では未使用になった（試験からだけ参照）。
 - 未確認：Windows配布版・Tauriでの表示、Android・iPhoneでの片手操作と表示、OBSからの観客向け表示。各Issue（#295・#296・#299・#300・#301）はこれらの受入まで開いたままにする。
+
+## 2026-11-11 分担決定後の切断と別端末の参加（#305）
+
+- 決定済みの参加者が切断した場合、PCの分担画面に対象の枠と再決定の案内を表示する。ロビーの枠保持中に同じ端末が戻る既存の挙動を維持し、保持期限後に別端末が入った場合は準備・起動に再決定を要求する。
+- `npm.cmd run build`（型チェック・Vite）、`node --experimental-strip-types scripts/sim/app-view-test.mjs`（34/34）、`node --experimental-strip-types scripts/sim/pc-boundary-test.mjs`、`node scripts/sim/check-static-pages.mjs` が合格。Chrome（1280×720）の模擬通知で、複数枠の切断案内、人数不足時のボタン無効化、復帰後の案内消去を確認。
+- 既存の修正前dry-runホストでは、保持期限後に別端末が同じ枠に入ると旧決定で準備に進めた。修正後のRust単体試験に保持中の復帰、別端末への交代、明示的な再決定を追加した。
+- ローカルのRustビルドはVisual StudioのCMake自動検出失敗後に再試行し、ユーザー方針に従って停止した。Rustビルド・単体試験・通信契約試験はGitHub Actionsで確認する。Windows配布版と実機Wi-Fiでの再接続・別端末参加は未実施。
