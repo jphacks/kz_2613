@@ -2,7 +2,7 @@ import { Fragment, useSyncExternalStore, type CSSProperties } from 'react';
 import type { PlayerCardModel, RoleColumnModel } from '../shared/contracts';
 import { PlayerCard, RoleColumn } from './PlayerCards';
 import { pcState, pcModel, connectionState, connectionModel, settingsActions } from './model';
-import { GameTile, KeyEditor, NetworkDiagnostics, Lines } from './parts';
+import { GameTile, KeyEditor, NetworkDiagnostics, Lines, DesktopOverlaySetting } from './parts';
 import { SCREENS, SCREEN_TITLES } from '../shared/model/presentation.ts';
 
 type PcState = ReturnType<typeof pcState.get>;
@@ -94,7 +94,7 @@ function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;co
     <label className="comm-setting">時間で担当を交代する <select id="rotationSetting" value={String(game?.rotationSeconds ?? 0)} disabled={model.locked} onChange={event => settingsActions.setRotation(Number(event.currentTarget.value))}><option value="0">しない</option><option value="60">60秒ごと</option></select></label>
     <p>時間になると一時停止して、全員が新しい担当を確認した後、ホストが再開します。協力プレイ中は変更できません。</p>
   </details>
-  <details id="overlayDetails"><summary>観客向け表示（配信・録画）</summary>{model.overlayUrl ? <p>OBSなどのブラウザソースに <code id="overlayUrl">{model.overlayUrl}</code> を追加すると、担当と操作を透過で重ねられます。上に出すときは末尾に <code>?position=top</code> を付けます。</p> : <p>PCホストにつながるとURLが表示されます。</p>}</details>
+  <details id="overlayDetails"><summary>観客向け表示（配信・録画）</summary><DesktopOverlaySetting locked={game?.phase === 'coop'} />{model.overlayUrl ? <p>OBSなどのブラウザソースに <code id="overlayUrl">{model.overlayUrl}</code> を追加すると、担当と操作を透過で重ねられます。上に出すときは末尾に <code>?position=top</code> を付けます。</p> : <p>PCホストにつながるとURLが表示されます。</p>}</details>
   <details id="netDetails"><summary>通信の診断</summary><div id="netDiag" role="status"><NetworkDiagnostics model={model} bluetooth={!!state.state?.network?.bluetoothAudio} /></div></details>
   <details id="inputDetails"><summary>入力の一時停止（診断・緊急用）</summary><div className="seg" id="modeSeg"><button data-mode="off" aria-pressed={state.inject?.mode === 'off'}>入力を止める</button><button data-mode="on" aria-pressed={state.inject?.mode === 'on'}>入力を再開する</button></div></details>
   <details><summary>手順・詳しい確認</summary><ol id="gameSteps">{model.gameSteps.map(step => <li key={step}>{step}</li>)}</ol><p id="gameStatus">{game?.prepareStatus || ''}</p><p><a href="/host">診断画面を開く</a></p></details>
