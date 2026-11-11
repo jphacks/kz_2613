@@ -2032,3 +2032,10 @@
 - 試験：`react-dom/client` を最小限のDOM（`scripts/sim/fixtures/react-dom-lite.mjs`）で動かし、描き直しでのつなぎ直しと解放の回数を数える。`phone-layout-test.mjs` に3項目を足し、修正前は失敗、修正後は13/13合格。typecheck、`ui-input-test.mjs` 18/18、`app-view-test.mjs` 36/36、`phone-view-test.mjs`、`phone-lifecycle-test.mjs` 31/31、`product-web-test.mjs` が合格。
 - 判断待ち（#356の記載）：横向きで配置を使うには、縦固定（#52）をやめる判断が要る。今回は変えていない。
 - 未確認：Android Chrome・iPhone Safariの実機で、指での編集・複数指・保存後の操作遅延と視点の周期。
+
+## 2026-11-11 Windowsインストーラー（#354）の統合（Claude Code）
+
+- レビュー：一般ユーザー権限の導入先、ランタイム取得先の固定とMicrosoft署名の確認、同意なし（`/S`）で取得・ファイアウォール変更をしないこと、ファイアウォールの許可がローカルサブネットだけであること、アンインストールが自分の入れたファイルだけを消すことを確認した。
+- 指摘【低】：アンインストール時の削除確認で、`%LOCALAPPDATA%\Re-Cooplay` を「手動で登録したゲーム」とだけ示していた。実際にはキーの設定（`key-overrides.json`）も入り、zip版とも共有する。確認の文言と `apps/desktop/README.md` を直した。
+- 試験：NSISが手元にないため、インストーラーの作成と `installer-smoke.mjs` はCIで確認する。
+- 未確認：対話の画面、ランタイムが実際に不足したPC、開発環境のない別のWindows 11 x64での導入からアンインストールまで（#219の受入ゲート）。
