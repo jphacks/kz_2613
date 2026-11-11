@@ -596,12 +596,12 @@ async function main() {
       const from = p3.mark();
       const n = p3.iseq + 1;
       // n+1 (解放) が先、n (押下) が後に届いても押下→解放の順で処理する
-      p3.send({ type: 'input', iseq: n + 1, epoch: p3.epoch, button: 'act:use', state: 'up', t: 0 });
+      p3.send({ type: 'input', iseq: n + 1, epoch: p3.epoch, button: 'act:use', state: 'up', t: Date.now() });
       await sleep(100);
       assert(!p3.msgs.slice(from).some((m) => m.type === 'ack' && m.iseq === n + 1), '欠番を待たずに処理した');
       const mfrom = mon.mark();
-      p3.send({ type: 'input', iseq: n, epoch: p3.epoch, button: 'act:use', state: 'down', t: 0 });
-      p3.send({ type: 'input', iseq: n, epoch: p3.epoch, button: 'act:use', state: 'down', t: 0 });
+      p3.send({ type: 'input', iseq: n, epoch: p3.epoch, button: 'act:use', state: 'down', t: Date.now() });
+      p3.send({ type: 'input', iseq: n, epoch: p3.epoch, button: 'act:use', state: 'down', t: Date.now() });
       p3.iseq = n + 1;
       await p3.waitFor((m) => m.type === 'ack' && m.iseq === n + 1, { from, what: 'ack' });
       await sleep(200);
@@ -609,6 +609,21 @@ async function main() {
       assert(acks.length === 1, `ack ${acks.length} 回`);
       const seq = mon.msgs.slice(mfrom).filter((m) => m.type === 'inject' && m.entry.out === 'MOUSE_R').map((m) => m.entry.state);
       assert(seq.join(',') === 'down,up', `MOUSE_R の順序 ${seq.join(',')}`);
+    });
+
+    await check('入力: 同じepoch内でも、送信から大きく遅れて届いた押下は実行せず、解放と新しい押下は通す (#285 Q25)', async () => {
+      // ping (1秒ごと、送信時刻付き) で基準ができている。3秒前に押した押下がまとめて届いた想定
+      const from = p3.mark(), mfrom = mon.mark();
+      const late = p3.rawInput('act:use', 'down', { t: Date.now() - 3000 });
+      const ack = await p3.waitFor((m) => m.type === 'ack' && m.iseq === late, { from, what: 'late ack' });
+      assert(ack.stale === true, '遅れた押下を stale として返していない');
+      p3.rawInput('act:use', 'up');
+      await sleep(150);
+      assert(!mon.msgs.slice(mfrom).some((m) => m.type === 'inject' && m.entry.out === 'MOUSE_R'), '遅れた押下を注入した');
+      // 指を離した後の新しい押下は通常どおり届く
+      p3.rawInput('act:use', 'down'); p3.rawInput('act:use', 'up');
+      await injected(mon, 'MOUSE_R', 'down', mfrom);
+      await injected(mon, 'MOUSE_R', 'up', mfrom);
     });
 
     await check('入力: 押下は最低 60ms 保ってから解放する', async () => {
@@ -863,18 +878,18 @@ async function main() {
     await check('入力先: フォーカス喪失前と対象外の間に届いた欠番待ち入力を、復帰後へ持ち越さない', async () => {
       const old = p1.epoch;
       const n = p1.iseq + 1;
-      p1.send({ type: 'input', iseq: n + 1, epoch: old, button: 'act:jump', state: 'down' });
+      p1.send({ type: 'input', iseq: n + 1, epoch: old, button: 'act:jump', state: 'down', t: Date.now() });
       let from = p1.mark();
       host.child.stdin.write('target off\n');
       const off = await p1.waitFor(m => m.type === 'game' && m.game.inputTarget === true, { from });
       assert(off.game.epoch > old, '入力先から外れてもepochが変わらない');
-      p1.send({ type: 'input', iseq: n + 2, epoch: off.game.epoch, button: 'act:forward', state: 'down' });
+      p1.send({ type: 'input', iseq: n + 2, epoch: off.game.epoch, button: 'act:forward', state: 'down', t: Date.now() });
       from = p1.mark();
       host.child.stdin.write('target on\n');
       const on = await p1.waitFor(m => m.type === 'game' && m.game.inputActive, { from });
       assert(on.game.epoch > off.game.epoch, '入力先へ戻ってもepochが変わらない');
       const mfrom = mon.mark();
-      p1.send({ type: 'input', iseq: n, epoch: old, button: 'act:jump', state: 'up' });
+      p1.send({ type: 'input', iseq: n, epoch: old, button: 'act:jump', state: 'up', t: Date.now() });
       p1.iseq = n + 2;
       const ack = await p1.waitFor(m => m.type === 'ack' && m.iseq === n + 2);
       assert(ack.stale, '対象外の入力を復帰後に処理した');
