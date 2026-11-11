@@ -2045,6 +2045,7 @@
 - Wi-Fi用dry-runに `--rtc-fault-observe` を追加。試験タブのfast DataChannelを閉じ、同じWS・同じepochのまま新しいジャンプの押下と解放がWSで受理され、ホストの押下状態が空に戻ることを確認する。DataChannelとICEを別々に記録する。
 - Web型チェック・ビルド、Android補助CLI 17/17、通信経路・障害時系列・RTC単独観測の試験が合格。Chrome内のローカルPeerConnection間で、試作フックによるDataChannel閉鎖とICE接続の継続を確認。
 - 実Android・Wi-Fiでの実行、実Wi-Fi断と復元、全参加者の保持・キュー・視点、復帰設定別の受入は残る。
+
 ## 2026-11-11 — 同一Wi-Fi性能比較の試行計画（#276）
 
 - 比較軸を1項目に固定し、60秒×各3回の順序と既存runnerの引数を生成する。先行ACK診断は別系列にする。
@@ -2085,7 +2086,9 @@
 - `node scripts/device/` 配下の `android-dry-run-test.mjs` 23/23、`wifi-comparison-plan-test.mjs`、`wifi-route-test.mjs`、`wifi-host-analysis-test.mjs`、`wifi-trial-acks-test.mjs` が合格。CLI試験は照合済み配布版のWeb資産を使用。
 - 実Wi-Fiでの負荷測定と新しい比較系列の集計・匿名化は未実施。
 - 統合（Claude Code）：#368をレビューし指摘なし。トレースの起動・読み込み・集計の3か所がすべて `hostTrace` で切り替わることを確認した。手元で上記5本が合格。
+
 ## 2026-11-11 — Wi-Fiの観測負荷の集計（#276）
 
 - 試行計画と実行順・資産・経路を照合してACK、ホスト内区間、ICE RTTを個別に集計する。
 - `node scripts/device/summarize-wifi-overhead-test.mjs` と関連する計画・ACK・経路・ホスト分析の短時間試験が合格。実Wi-Fiの比較測定は未実施。
+- 統合（Claude Code）：#370をレビューし指摘なし。計画の交互順（baseline/candidate）と、#364・#368の観測設定の記録（`periodicIce`・`hostTrace`）の照合が一致する。集計結果にLANアドレス・パスを出さない。手元で `summarize-wifi-overhead-test.mjs` ほか7本が合格。
