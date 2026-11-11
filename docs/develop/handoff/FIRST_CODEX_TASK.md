@@ -1,6 +1,6 @@
 # Codex・Claude Code共通の初期構築依頼文
 
-これは旧Python/Reactひな形の初期構築時の依頼記録。#68でひな形を削除したため、以下のコマンドを現在の再構築手順として実行しない。現行のRust/Tauri構築は `SETUP_WINDOWS.md`、現在の状態は `BUILD_LOG.md` と `ISSUE_PLAN.md` を確認する。
+これは旧Python/Reactひな形の初期構築時の依頼記録。#68でひな形を削除した。現行のRust/Tauri構築は [SETUP_WINDOWS.md](SETUP_WINDOWS.md)、作業状況はGitHubのIssue・PRと [BUILD_LOG.md](BUILD_LOG.md) を確認する。
 
 ---
 

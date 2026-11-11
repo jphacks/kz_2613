@@ -23,7 +23,7 @@
 - リポジトリ：`https://github.com/jphacks/kz_2613`
 - `AGENTS.md`、`CLAUDE.md`、`docs/develop/handoff/DEVELOPMENT_WORKFLOW.md`、`docs/develop/requirements/requirements-v0.3.md`、`docs/protocol-specification.md`、`docs/develop/decisions/tech-stack.md`、`docs/develop/architecture/pc-screens.md`
 - 観測結果：`docs/develop/handoff/BUILD_LOG.md`、`docs/develop/architecture/validation-gates.md`
-- 参考UI素材：**`C:\Users\kumes\Downloads\Recooplay素材`**
+- 参考UI素材：**`<ローカルの参考素材フォルダー>`**
 - Figma（補助）：https://www.figma.com/design/pFerNAwRyO4KGPPio1QVhv/Untitled?node-id=0-1&t=59oLGFDeFornxA8x-0
 - **優先順位：この文書で与えられた最新ユーザー確定判断 → その他の明示的なユーザー決定 → 現行の安全要件・通信契約 → 実機観測 → デザイン画像の細部。** 観測と仕様採択を混同しない。
 - PR・Issue・コミット・設計・BUILD_LOGは日本語。既存の技術識別子は原文を守る。
@@ -71,7 +71,7 @@ Re:Cooplay：「**ひとりのゲームを、みんなの冒険に。**」既存
 - 現行の正常動作記録：`docs/develop/handoff/BUILD_LOG.md`、CI成功、過去のMinecraft実機ログ、現在の制限を要約。**「過去の作者報告」「今回自分が動かしたテスト」を区別する。**
 - 現行のビルドと既存テストを可能なだけ実行し、実コマンド・成功件数・失敗を記録。Windows実機や接続端末が利用できるなら、3端末で短いベースライン動画／スクリーンショット、入力解放と遅延・ジッターを取得する。使えない場合は未実施と記す。
 - 安定版のSHA、元へ戻す手順、現在の配布ZIP生成手順を `docs/develop/handoff/` に記録。必要ならローカルの退避アーカイブを作る。**リポジトリに巨大な録画・ZIP・秘密情報をコミットしない。許可なくリモートタグをpushしない。**
-- `C:\Users\kumes\Downloads\Recooplay素材` の存在・PNG一覧・サイズ・背景/前景の構造を調査。Figmaはアクセス可能なら補助。見られなくてもPNGで進む。失われた素材を勝手に推測で置き換えない。
+- `<ローカルの参考素材フォルダー>` の存在・PNG一覧・サイズ・背景/前景の構造を調査。Figmaはアクセス可能なら補助。見られなくてもPNGで進む。失われた素材を勝手に推測で置き換えない。
 - 現状に足りない機能を既存Issue（#46、#49、#51、#52、#35など）と照合し、**新たな2段階開始Issue**・**UI同時刷新Issue**を必要に応じて起票。重複は作らず既存Issueを流用・補足する。
 - 本計画書の運用と矛盾する文書記述は「旧判断／今回判断」の区別を付けて更新。ユーザー未決定事項を勝手に確定事項にしない。
 

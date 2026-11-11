@@ -9,7 +9,7 @@
 3b. `docs/protocol-specification.md`：スマホ・PC画面とホストの通信契約。
 4. `docs/README.md`：モジュール境界、権限、安全性。
 5. `docs/develop/architecture/validation-gates.md`：実機による採用可否の判定。
-6. `docs/develop/handoff/FIRST_CODEX_TASK.md`：両エージェントで利用できる初期構築用の依頼文。
+6. `docs/develop/handoff/SETUP_WINDOWS.md`：現行のWindows構築と検証手順。Issue・PRの運用は `docs/develop/handoff/DEVELOPMENT_WORKFLOW.md` を参照する。
 7. `docs/develop/handoff/DEVELOPMENT_WORKFLOW.md`：Issue・ブランチ・PRの共通運用。
 
 **動作準備が整ったと誤報しない。** 通信・役割・入力注入は試作品（リポジトリ外のNode.js参照実装）で実機確認したが、**Rust版はPC上のシミュレーションのみ実施済みで、Minecraft・Tauri・Rust実機は未検証**。ひな形のヘルスチェックはゲーム互換性の証拠ではない。
