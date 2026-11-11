@@ -85,6 +85,7 @@ sequenceDiagram
 | 4005 | 通信版不一致。再読み込みが必要 |
 | 4006 | 再接続token不一致。PCでリセットして再参加 |
 | 4008 | ホストの交代・譲渡。スマホは同じtokenで再接続し、新しい枠へ戻る |
+| 4009 | PCアプリ（ホスト）の終了。全解放の後に送る。スマホは再接続せず、終了と再読み込みを画面全体で案内する |
 
 読取りが止まった接続は、送信待ちが4096件に達するか、1回の送信が4秒を超えるとホストが切断します。本文は落とさず補わず、切断の通常処理で入力を全解放し、再接続で最新の状態を送ります。
 
@@ -97,7 +98,7 @@ sequenceDiagram
 | `hello` | WS | `protocolVersion`, `clientId`, `token`, `ua`, `nextIseq`。参加・再接続 |
 | `ping` | WS | `t`, `stats`。1秒ごとの生存確認・通信統計 |
 | `transfer_host` | WS | `to`, `epoch`。ロビーの現在のホストだけが、接続中の参加者へ譲る。2つの枠を入れ替える |
-| `command` | WS | `cmd`, `epoch`。P1のみ。PREPARE / READY / PAUSE / RESUME / END / OPEN_GAME |
+| `command` | WS | `cmd`, `epoch`。P1のみ。PREPARE / READY / PAUSE / RESUME / END / OPEN_GAME / OPEN_APP |
 | `input` | WS＋RTC | `iseq`, `epoch`, `button`, `state:down/up`, `t`。WS版は`seq`も使用 |
 | `look` | RTC、未接続時WS | `lseq`, `epoch`, `cx`, `cy`。30Hzの累積視点移動 |
 | `ka` | RTC | `t`。共同操作中50msごとの生存確認 |
@@ -106,7 +107,7 @@ sequenceDiagram
 | `release_inputs` | WS | 現在`epoch`、`iseq`（その端末が直近に送った入力番号）、`lseq`・`cx`・`cy`（直近に送った視点の番号と累積値）。`iseq`付きは**送信した端末の押下だけ**を解放し、他の参加者の押下とepochは変えない。この番号以下の押下が解放後に届いても適用しない。解放要求を追い越して先に処理された、この番号より後の押下は残す。`lseq`以下の視点は解放後に届いても適用せず、新しい視点は`cx`・`cy`を基準に差分を取る（#262）。解放要求を追い越して先に届いた新しい視点は、その累積値と`cx`・`cy`の差（新しいタッチの分）だけを残し、解放前の未処理分は捨てる。押下を残す出力でも、解放前の連打の保留は捨てる。`iseq`と`lseq`・`cx`・`cy`のどちらかがない要求（旧版のスマホ）は、解放前の入力を確実に拒否できないので、従来どおり全参加者の全解放・保留破棄・epoch更新 |
 | `role_ok` | WS | 現在`epoch`。担当が変わった本人による確認 |
 
-PREPARE / READY / RESUME / OPEN_GAMEは現在epochを必須とします。PREPAREは分担決定後にpreparingへ移すだけで、READYが開始条件を満たしたときだけcoopへ進みます。監視画面からcoopを強制できません。
+PREPARE / READY / RESUME / OPEN_GAME / OPEN_APPは現在epochを必須とします。OPEN_APPは協力プレイ中以外に、PCアプリ（`recooplay-desktop.exe`）のウィンドウを前面にするだけで入力は送りません。PCアプリから起動していないとき・前面化に失敗したときは `command_result` の `reasons` に理由を返します。ゲームの状態の `canOpenApp` が真のときだけスマホにボタンを出します。PCアプリから起動したホストは、選んだゲームのウィンドウが閉じたらロビーでPCアプリを1回だけ前面に戻します（#292）。PREPAREは分担決定後にpreparingへ移すだけで、READYが開始条件を満たしたときだけcoopへ進みます。監視画面からcoopを強制できません。
 
 ### 操作の認可
 
@@ -121,7 +122,7 @@ PREPARE / READY / RESUME / OPEN_GAMEは現在epochを必須とします。PREPAR
 | type | 主な項目 |
 |:--|:--|
 | `welcome` | `protocolVersion`, `token`, `slot`, `role`, `isHost`, `reconnected` |
-| `error / full` | 拒否理由。errorは`code`と必要に応じてホストの版 |
+| `error / full` | 拒否理由。errorは`code`と必要に応じてホストの版。fullの`retryMs`は、ロビーで保持中の切断枠が最も早く空くまでの時間（ms）。保持中の枠がなければ`null`（本当に満員） |
 | `game` | セッション状態`game` |
 | `command_result` | `cmd`, `accepted`, `reasons` |
 | `ack` | `iseq`, `t`, `via:ws/rtc`、旧epochなら`stale:true` |
@@ -141,9 +142,9 @@ PREPARE / READY / RESUME / OPEN_GAMEは現在epochを必須とします。PREPAR
 | `roleOf / roleAck / canSwap` | 枠と席順、本人確認待ち、交換可否 |
 | `keys / profile` | 実キー・読取り警告、操作定義の要約・分担案 |
 | `hostReady / prepareStatus / canLaunch` | 準備・起動の状態 |
-| `remoteRoute` | app / game / none |
+| `remoteRoute` | app / game / launcher / none。launcherはMinecraftを選んだロビー・準備中に公式ランチャー（`Minecraft.exe`・タイトル「Minecraft Launcher」）が前面のとき（#287）。ホストのリモコン入力をランチャーへ送り、前面から外れたら全解放してepochを進める |
 | `inputActive / inputTarget` | 入力可能か、onだが対象が前面でないか |
-| `autoResume / autoResumeMs / autoResumeUntil` | 自動復帰設定、待機時間、期限 |
+| `autoResume / autoResumeMs / autoResumeUntil` | 自動復帰設定（初期OFF）、待機時間、期限 |
 
 `keys.actions`は操作IDから実出力の`{out,label}`またはnullへの対応です。`profile.assignment`は現在接続者への案、`profile.assignments`は人数別の案です。`assigned`が現在の共同操作の認可に使う確定値です。
 
@@ -218,7 +219,7 @@ sequenceDiagram
 
 スマホは3秒応答がないと再接続します。ホストは4秒無受信で切断とし、coopからpausedへ移ると全員分を即時解放します。最低押下時間・連打キューより停止を優先します。
 
-設定の既定値は`autoResume:true`、待機時間15秒です。通信切断による停止で、期限内に参加者・担当確認・入力条件が揃い、WebRTCの接続処理が落ち着くと自動復帰を試みます。期限内の別参加者の切断は期限を延長しますが、接続の置き換えや期限後の再接続は期限を復活させません。手動PAUSE、PC画面への復帰、緊急停止は自動復帰しません。前面化に失敗した場合も期限を解除して明示操作を待ちます。
+設定の既定値は`autoResume:false`（初期OFF、2026-11-10 Q40）、待機時間15秒です。OFFでは通信が戻ってもホストの明示RESUMEまで再開しません。利用者が明示的にONにした場合に限り、通信切断による停止で、期限内に参加者・担当確認・入力条件が揃い、WebRTCの接続処理が落ち着くと自動復帰を試みます。期限内の別参加者の切断は期限を延長しますが、接続の置き換えや期限後の再接続は期限を復活させません。手動PAUSE、PC画面への復帰、緊急停止は自動復帰しません。前面化に失敗した場合も期限を解除して明示操作を待ちます。
 
 ---
 
@@ -243,7 +244,7 @@ sequenceDiagram
 | 画面 → ホスト | `auto_resume` | 自動復帰の有効・無効 |
 | 画面 → ホスト | `phase` | `lobby`への終了、`paused`への停止。coopの強制は禁止 |
 | 画面 → ホスト | `reset` | 全枠・セッションをリセット |
-| 画面 → ホスト | `rotation` | 時間制の役割交代の間隔。`seconds` は0・60・120・180。協力プレイ中は変更不可 |
+| 画面 → ホスト | `rotation` | 時間制の役割交代（#161、Q42/Q44/Q46）。`seconds` は0（しない、初期値）か60だけ。協力プレイ中は変更不可。ロビーへ戻るとOFFに戻る。ONでは協力プレイを止めずに、60秒ごとに全員の入力を解放して未処理入力・視点を捨て、epochを進めてから参加者の順に担当を1つずらす。交代の5秒前からゲームの状態に `rotationSoon:true` と次の分担 `rotationNext` を付け、交代ごとに `rotationCount` を増やす。一時停止中は数えず、再開で残りから数える |
 | 画面 → ホスト | `set_key` / `reset_keys` | 操作に割り当てるキーの変更（`action`, `output`。nullは送らない）と初期値への復帰。協力プレイ中は不可。変更時は全解放・epoch更新。ゲームごとに `%LOCALAPPDATA%\Re-Cooplay\key-overrides.json` へ保存 |
 | 画面 → ホスト | `change_players` | 一時停止中に今の接続で参加者と分担を決め直す。`epoch` 必須。全員の確認と明示の再開が必要 |
 | 画面 → ホスト | `observe` | 疑似ゲームで受信した入力の照合結果 |

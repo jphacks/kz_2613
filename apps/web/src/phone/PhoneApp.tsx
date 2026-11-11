@@ -1,6 +1,6 @@
 import {Controller} from './Controller';
 import { useSyncExternalStore } from 'react';
-import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked } from './view';
+import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked,rotationNotice,confirmation,answerConfirm,offline } from './view';
 import { SKINS } from '../shared/model/skin.ts';
 
 type PhoneDisplay = ReturnType<typeof display.get>;
@@ -14,6 +14,8 @@ export function PhoneApp() {
   const state = useSyncExternalStore(display.subscribe, display.get);
   const selectedSkin = useSyncExternalStore(skin.subscribe, skin.get);
   const status=useSyncExternalStore(connection.subscribe,connection.get);
+  // 満員・PCアプリの終了などで参加できないときは、押しても届かない操作を透けて見せない (#302)
+  const stopped=useSyncExternalStore(blocked.subscribe,blocked.get);
   return <>
 <div className="phone-bg" aria-hidden="true"><i className="phone-bg-stars"></i></div>
 <Header state={state} status={status}/>
@@ -22,7 +24,7 @@ export function PhoneApp() {
 
 <div id="roleNotice" className="role-notice" role="alert" hidden={!state.roleNotice}><p id="roleNoticeText">{state.roleNotice}</p><button id="roleOkBtn">新しい担当を確認しました</button></div>
 
-<main>
+<main style={stopped?{visibility:'hidden'}:undefined}>
   <div className="connecting" id="connecting" hidden={!!state.view}><span className="mascot" aria-hidden="true">✦</span>PCホストへ接続しています…</div>
   <HostRemoteScreen state={state}/>
   <WaitingScreen state={state}/>
@@ -31,9 +33,12 @@ export function PhoneApp() {
 </main>
 
 <DiagnosticsDialog state={state} status={status} selectedSkin={selectedSkin}/>
+<ConfirmDialog status={status}/>
 
 <div id="rotatePrompt" role="status"><b>スマホを縦にしてください</b><p>操作を停止し、押していたキーを離しました。<br />縦向きに戻して、新しい押下から再開します。</p></div>
+<OfflineMessage/>
 <FullMessage/>
+<RotationNotice/>
 </>;
 }
 
@@ -72,12 +77,14 @@ function HostRemoteScreen({state}:{state:PhoneDisplay}) {
       <button className="key" data-ctl="REMOTE_LEFT">左クリック</button><button className="key" data-ctl="REMOTE_RIGHT">右クリック</button><button className="key" data-ctl="REMOTE_E">{state.inventory}</button>
       <button className="key" data-ctl="REMOTE_WHEEL_UP">ホイール↑</button><button className="key" data-ctl="REMOTE_WHEEL_DOWN">ホイール↓</button>
     </div>
-    <div id="remoteRoute" className="note">{state.remote.route}</div>
+    <div id="remoteRoute" className={`note${state.remote.routeBlocked ? ' route-blocked' : ''}`} role="status">{state.remote.route}</div>
     <button className="cmd" id="startBtn" disabled={state.remote.startDisabled}>{state.remote.startLabel}</button>
     <button className="cmd sub" id="openGameBtn" data-cmd="OPEN_GAME" hidden={state.remote.openGameHidden}>{state.remote.openGameLabel}</button>
-    <button className="cmd sub" id="endBtn" style={{display: state.remote.endVisible ? 'block' : 'none'}}>ロビーに戻る（協力プレイ終了）</button>
+    <button className="cmd sub" id="openAppBtn" data-cmd="OPEN_APP" hidden={state.remote.openAppHidden}>PCアプリを前面にする</button>
+    <button className="cmd sub" id="endBtn" style={{display: state.remote.endVisible ? 'block' : 'none'}}>協力プレイを終了（分担に戻る）</button>
     <div id="hostTransfer" className="host-transfer" hidden={!state.remote.transferTo.length}>{state.remote.transferTo.length ? 'ホストを譲る：' : null}{state.remote.transferTo.map(p => <button className="key" key={p} onClick={() => transferHost(p)}>{p}</button>)}</div>
     <div className="note" id="remoteNote">{state.remote.note}</div>
+    <div className="note" id="remoteNotice" hidden={!state.remote.notice}>{state.remote.notice}</div>
   </section>;
 }
 
@@ -116,6 +123,29 @@ function PhoneDiagnostics({phase}:{phase:string|undefined}) {
   <p id="phoneNetAdvice" role="status">{data.advice}</p>
   <output id="inputMetrics" hidden aria-hidden="true">{data.inputMetrics}</output>
 </footer>;
+}
+
+// PC のアプリと3秒以上つながらないあいだ、押しても届かない操作を覆う (#302)。再接続すると消える
+function OfflineMessage(){
+  const visible=useSyncExternalStore(offline.subscribe,offline.get);
+  return <div id="offline" role="alert" hidden={!visible}><div className="phone-message"><b>PCのアプリとつながっていません</b><br />再接続しています…<br /><small>PCでRe:Cooplayが起動しているか、スマホが同じWi-Fiにつながっているか確認してください。</small></div></div>;
+}
+
+// ブラウザ標準の confirm() はJSを止めて切断扱いになるため、ページ内で確認する (#289)
+function ConfirmDialog({status}:{status:Status}){
+  const request=useSyncExternalStore(confirmation.subscribe,confirmation.get);
+  const online=status.kind==='ok';
+  return <dialog id="phoneConfirm" className="phone-confirm" aria-labelledby="phoneConfirmText" onCancel={e=>{e.preventDefault();answerConfirm(false);}}>
+    <p id="phoneConfirmText">{request?.message}</p>
+    <p id="phoneConfirmWait" role="status" hidden={online}>PCとの通信が戻るまでお待ちください。</p>
+    <div className="phone-confirm-buttons"><button id="phoneConfirmCancel" onClick={()=>answerConfirm(false)}>やめる</button><button id="phoneConfirmOk" className="cmd" disabled={!online} onClick={()=>answerConfirm(true)}>{request?.ok}</button></div>
+  </dialog>;
+}
+
+// 役割交代の予告・交代後の案内 (#161)。非モーダルで、タッチを受け取らない
+function RotationNotice(){
+  const text=useSyncExternalStore(rotationNotice.subscribe,rotationNotice.get);
+  return <div id="rotationNotice" className="rotation-notice" role="status" hidden={!text}>{text}</div>;
 }
 
 function FullMessage(){

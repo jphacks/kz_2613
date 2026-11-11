@@ -8,6 +8,7 @@ import { recordInputMetric, inputMetrics } from '../shared/input/metrics.ts';
 import { bindTouchpad } from '../shared/input/touchpad.ts';
 import { myActions } from '../shared/model/actions.ts';
 import { phoneAdvice } from '../shared/model/presentation.ts';
+import { fullText } from '../shared/model/phone.ts';
 import {createLifetime} from '../shared/input/lifetime.ts';
 import {byId} from '../shared/dom.ts';
 import {createBurstRecorder,formatBurstResult} from './burst-stats.ts';
@@ -32,6 +33,8 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   let burst: BurstRecorder | null = null; // 通信テスト中だけ。1回ごとに作り直す (#259)
 
   const isOpen = session.isOpen;
+  const OFFLINE_NOTICE_MS = 3000;
+  let lostAt: number | null = null; // PC のアプリとの接続が切れた時刻。再接続 (welcome) で消す
   function setStatus(text: string, cls: string) {phoneView.connection(text,cls);}
 
   function connect() {
@@ -62,6 +65,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
         roleInput.resetEpoch();
         startRtc();
         session.welcome(msg);
+        lostAt = null; phoneView.offline(false);
         document.documentElement.style.setProperty('--me', COLORS[msg.slot]);
         setStatus(...session.status());
         render();
@@ -93,7 +97,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
       } else if (msg.type === 'full') {
         releaseAll();closeRtc();
         session.stop();
-        phoneView.blocked();
+        phoneView.blocked(fullText(msg.retryMs));
       } else if (msg.type === 'error' && msg.code === 'protocol_version') {
         showVersionMismatch();
       } else if (msg.type === 'error' && msg.code === 'bad_token') {
@@ -122,6 +126,13 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
     phoneView.blocked('この端末の参加情報を確認できませんでした。少し待ってから再読み込みしてください。直らないときはホストに伝えてください。');
   }
 
+  // PC のアプリが終了した (#302)。次に起動したアプリへ勝手につながらないよう、再接続をやめて再読み込みを案内する
+  function showHostClosed() {
+    lostAt = null; phoneView.offline(false);
+    setStatus(...session.status());
+    phoneView.blocked('PCのアプリが終了しました。また遊ぶときは、PCでRe:Cooplayを起動してから、このページを再読み込みしてください。');
+  }
+
   // PC でリセットすると全員が切断される。自動で再接続せず、参加し直す人だけが再読み込みする (#213)
   function showReset() {
     setStatus(...session.status());
@@ -132,7 +143,9 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
     clearInterval(pingTimer);
     releaseAll();
     closeRtc();
+    lostAt ??= performance.now();
     const delay = session.disconnected(code);
+    if (code === 4009) { showHostClosed(); return; }
     if (code === 4000) { setStatus(...session.status()); return; }
     if (code === 4001) { showReset(); return; }
     if (code === 4005) { showVersionMismatch(); return; }
@@ -143,6 +156,8 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
 
   // サーバーから 3 秒何も届かなければ、OS が切断に気づくのを待たずに張り直す (Wi-Fi が一瞬止まった時の復帰を早める)
   lifetime.interval(() => {
+    // 切断が3秒続いたら、押しても届かない操作を画面全体で覆う (#302)。再接続は続ける
+    if (lostAt !== null) phoneView.offline(!session.stopped && performance.now() - lostAt >= OFFLINE_NOTICE_MS);
     if (!session.silent()) return;
     const old = session.detach();
     try { old?.close(); } catch {}
@@ -272,7 +287,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   document.querySelectorAll<HTMLElement>('[data-ctl]').forEach(bindControl);
   document.querySelectorAll<HTMLElement>('[data-cmd]').forEach((el) => lifetime.listen(el, 'click', () => command(el.dataset.cmd!)));
   lifetime.listen($('startBtn'), 'click', () => command(session.game?.phase === 'paused' ? 'RESUME' : session.game?.phase === 'preparing' ? 'READY' : 'PREPARE'));
-  lifetime.listen($('endBtn'), 'click', () => { if (confirm('協力プレイを終了してロビーに戻りますか？')) command('END'); });
+  lifetime.listen($('endBtn'), 'click', () => phoneView.confirm({message:'協力プレイを終了して、分担の画面に戻りますか？',ok:'終了して分担に戻る',valid:remote=>remote.endVisible,run:()=>command('END')}));
   function command(cmd: string) { if (isOpen()) session.send({ type: 'command', cmd, epoch: session.game?.epoch }); }
 
   lifetime.listenEvent(document, 'contextmenu', (e) => e.preventDefault());
