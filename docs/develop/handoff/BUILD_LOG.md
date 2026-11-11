@@ -1937,3 +1937,13 @@
 - 待機画面で自分の枠と、ロビー・準備・一時停止に応じた次の操作を表示。ボタンだけで構成される1〜3操作の担当では、縦に並べた高さ64px以上のボタンを画面下部に配置した。
 - `npm.cmd run build`（`apps/web`、型チェックとViteビルド）と `node scripts/sim/phone-view-test.mjs` が合格。
 - Chromeの402×874の模擬表示で、一時停止時のP2表示・再開案内と、Among Us相当の3ボタン配置を確認した。Android・iPhoneでの片手操作とWindows配布版での通し確認は未実施。前面の警告は #291 の既存条件を使用。
+
+## 2026-11-11 UI表記5件（#328〜#332）の独立レビューと統合（Claude Code）
+
+- 統合ブランチ `claude/integration-ui-20261111`（main `4f63eaa` 起点）に、#329（`f7f484d`）→#331（`c7816fb`）→#332（`5ad5a0e`）→#328（`72d46b7`）→#330（`a3a7924`）の順でマージした。
+- 競合は `apps/web/src/pc/model.ts` と `PcApp.tsx` の2回。#329の参加人数による進行制限（OK・設定内ナビの無効化と `canAdvance`）、#331の折りたたみ式の画面移動・`GAMES`・`gameSteps`・`overlayUrl`、#332の分担画面の見出しと案内を、どれも捨てずに合成した。参加画面の文言は#329、分担画面の文言は#332を採用した。
+- レビューで確認した点：参加画面の進行制限は `setUi` だけにかかり、サーバー状態による画面復元（`screenOnGameUpdate`）は塞がない。lobbyの「送信しません」表示は、緊急停止（`inject.mode==='off'`）を先に判定するため誤表示しない。スマホの案内に書いたボタン名（「再開する」「協力プレイを終了（分担に戻る）」「ゲームを開く・準備する」）は実際のボタン表示と一致する。
+- Claude Codeの追加修正（#301の範囲）：参加者の待機文で、(1) 自動復帰待ちの文から切断理由（例：「P2 が切断」）が消えていたのを戻し、(2) 分担決定後のロビーでも「ゲームと分担を決めるまで」と出ていたのを「ゲームを起動するまで」に変えた。`scripts/sim/phone-view-test.mjs` に回帰を追加し、修正前に失敗することを確認した。
+- 結果：`npm run build`（`apps/web`）、`app-view-test.mjs` 33/33、`phone-view-test.mjs`（8観点）、`phone-lifecycle-test.mjs` 31/31、`ui-input-test.mjs` 12/12、`pc-boundary-test.mjs`、`check-static-pages.mjs` が合格。Rustの変更はないため、Rust・通信契約・配布はCIで確認する。
+- 軽微な残件：#332で分担画面から人数の参考（`playerHint`、#166）を外したため、製品では未使用になった（試験からだけ参照）。
+- 未確認：Windows配布版・Tauriでの表示、Android・iPhoneでの片手操作と表示、OBSからの観客向け表示。各Issue（#295・#296・#299・#300・#301）はこれらの受入まで開いたままにする。

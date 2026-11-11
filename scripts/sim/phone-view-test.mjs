@@ -75,6 +75,11 @@ assert.match(view().wait.title,/再開する/);
 assert.doesNotMatch(view().wait.title,/Ready|一時停止中/);
 update('P3',{phase:'paused',reason:'P2 disconnected',autoResume:true});
 assert.match(view().wait.title,/制限時間内に全員が戻ると自動で再開/);
+assert.match(view().wait.title,/P2 が切断/,'自動復帰を待つ理由（誰が切断したか）を参加者にも示す');
+// 分担の決定後は「決めるまで」と案内しない (#301)
+update('P3',{lineupOk:true});
+assert.doesNotMatch(view().wait.title,/決めるまで/);
+assert.match(view().wait.title,/ゲームを起動/);
 render.connection('接続OK','ok');
 const before=h.calls.release;
 h.el('phoneSettingsBtn').fire('click');

@@ -60,9 +60,10 @@ export function waitModel({ me, game, roleTitle, joined, autoWait }: {me:Slot;ga
     role: roleTitle,
     title: !joined ? '次の開始から参加します。'
       : phase === 'paused' ? (autoWait
-        ? '制限時間内に全員が戻ると自動で再開します。再開できない場合はホストの操作をお待ちください。'
+        ? `${reasonText(game.reason)}。制限時間内に全員が戻ると自動で再開します。再開できない場合はホストの操作をお待ちください。`
         : 'ホストが「再開する」を押すと操作画面に戻ります。')
       : phase === 'preparing' ? 'ホストが「Ready」を押すと操作画面に変わります。'
+      : game.lineupOk ? 'ホストがゲームを起動するまでお待ちください。'
       : 'ホストがゲームと分担を決めるまでお待ちください。',
     players: playerChips(game, me),
   };
