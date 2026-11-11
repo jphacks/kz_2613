@@ -1960,3 +1960,12 @@
 - `npm.cmd run build`（型チェック・Vite）、`node --experimental-strip-types scripts/sim/app-view-test.mjs`（34/34）、`node --experimental-strip-types scripts/sim/pc-boundary-test.mjs`、`node scripts/sim/check-static-pages.mjs` が合格。Chrome（1280×720）の模擬通知で、複数枠の切断案内、人数不足時のボタン無効化、復帰後の案内消去を確認。
 - 既存の修正前dry-runホストでは、保持期限後に別端末が同じ枠に入ると旧決定で準備に進めた。修正後のRust単体試験に保持中の復帰、別端末への交代、明示的な再決定を追加した。
 - ローカルのRustビルドはVisual StudioのCMake自動検出失敗後に再試行し、ユーザー方針に従って停止した。Rustビルド・単体試験・通信契約試験はGitHub Actionsで確認する。Windows配布版と実機Wi-Fiでの再接続・別端末参加は未実施。
+
+## 2026-11-11 #334・#335の独立レビューと統合（Claude Code）
+
+- 統合ブランチ `claude/integration-305-307`（main `a231e19` 起点）に #334（`b26147d`、#305）→#335（`219a10f`、#307）の順でマージした。競合はなし。
+- #334のレビュー：保持期限で枠を解放すると `expired_members` が立ち、再決定までは `lineup_ok` が偽になる。`can_prepare`・`can_launch`・起動要求の拒否はすべて `lineup_ok` を参照するため、別端末が同じ枠に入っても旧決定で準備・起動へ進めない。保持中に同じ端末が戻る場合と、ホストの引き継ぎで決定を消す既存の処理は変わらない。`lineupDisconnected` はRust・TSの型・スマホとPCの受信検査・通信契約の文書がそろって追加されている。
+- #335のレビュー：「担当を入れ替える」の案内条件はPCの表示条件（一時停止中かつ `canSwap`）と一致する。Alt+Tabの案内は、ゲームが前面のとき（前面喪失で入力を止める既存の安全処理の範囲）だけ出る。
+- 結果：`npm run build`（`apps/web`）、`app-view-test.mjs` 34/34、`phone-view-test.mjs`（8観点）、`phone-lifecycle-test.mjs` 31/31、`ui-input-test.mjs` 12/12、`pc-boundary-test.mjs`、`check-static-pages.mjs` が合格。ローカルのRustビルドは、Git Bashのperlでは `datachannel-sys` のOpenSSL設定が失敗するため実施できず、Rust単体試験・通信契約はCIで確認する。
+- 軽微な残件：操作名を「ゲームを準備する」に揃えたが、`docs/develop/requirements/requirements-v0.3.md` と `docs/develop/architecture/pc-screens.md` には旧名「ゲームを開く・準備する」が残る。要件の文書はユーザー確認後に直す。
+- 未確認：Windows配布版・実機Wi-Fiでの同じ端末の復帰と別端末の参加（#305）、実ゲームの全画面からの復帰（#307）。両Issueは開いたままにする。
