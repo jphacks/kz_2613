@@ -114,3 +114,11 @@ body[data-host=false] #phoneDiagnostics footer > span, body[data-host=false] #bu
   #waitTitle { margin-top: 20px; }
   #v-remote { overflow-y: auto; }
 }
+/* 役割交代の予告・交代後の案内 (#161)。操作を妨げないよう、タッチを受け取らない */
+.rotation-notice { position: fixed; left: 16px; right: 16px; top: calc(110px + env(safe-area-inset-top)); width: fit-content; margin: 0 auto; z-index: 20; padding: 8px 16px; border: 3px solid var(--color-cyan); border-radius: 20px; background: var(--color-paper); color: var(--color-ink); font-size: 15px; font-weight: 700; text-align: center; pointer-events: none; }
+.rotation-notice[hidden] { display: none; }
+
+/* PC のアプリと3秒以上つながらないとき、操作を覆う (#302)。満員・版不一致などの #full より下に置く */
+#offline { position: fixed; inset: 0; z-index: calc(var(--z-dialog) - 1); display: flex; align-items: center; justify-content: center; padding: max(24px, env(safe-area-inset-top)) 24px; background: rgb(0 0 0 / .45); text-align: center; line-height: 1.8; touch-action: none; }
+#offline[hidden] { display: none; }
+#offline small { display: block; margin-top: 8px; font-size: 14px; line-height: 1.6; }

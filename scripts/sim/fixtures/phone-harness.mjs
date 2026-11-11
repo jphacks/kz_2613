@@ -144,7 +144,7 @@ export function controllerHarness({viewOnly=false}={}) {
     const run = new vm.Script(`(function(imports) {\n${source}\nreturn {${names.join(',')}};\n})`, { filename: absolute }).runInContext(context);
     const exports = run(imports); modules.set(absolute, exports); return exports;
   }
-  const {createReactPhoneView,display,connection,telemetry,blocked,confirmation,answerConfirm,transferHost}=load(path.join(ROOT,'apps/web/src/phone/view.ts'));
+  const {createReactPhoneView,display,connection,telemetry,blocked,rotationNotice,confirmation,answerConfirm,transferHost,offline}=load(path.join(ROOT,'apps/web/src/phone/view.ts'));
   let bound=[],lastController=null;
   const materialize=()=>{
     const data=display.get();
@@ -168,6 +168,7 @@ export function controllerHarness({viewOnly=false}={}) {
   if(!viewOnly)display.subscribe(materialize);
   connection.subscribe(()=>{const value=connection.get();el('status').textContent=value.text;el('status').className='pill '+value.kind;});
   telemetry.subscribe(()=>{const data=telemetry.get();const names={rtt:'rtt',rttAvg:'rttAvg',sent:'sent',unacked:'unacked',path:'path',advice:'phoneNetAdvice',inputMetrics:'inputMetrics'};for(const [key,value]of Object.entries(data))if(names[key])el(names[key]).textContent=String(value);});
+  el('offline').hidden=true;offline.subscribe(()=>{el('offline').hidden=!offline.get();});
   blocked.subscribe(()=>{const value=blocked.get();if(value){el('fullMessage').textContent=value.message;el('full').style.display='flex';}});
   const calls={release:0,diagnostics:0};let render;
   let controller;
@@ -205,5 +206,5 @@ export function controllerHarness({viewOnly=false}={}) {
     sockets[0].receive({ type: 'game', game: game(overrides) });
     await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
   }
-  return {render,display,confirmation,answerConfirm,transferHost,calls,dispose:()=>controller?.dispose(),activeTimers:()=>timers.size, document, window, portrait, el, sockets, peers, storage, advance, game, ready, inputs, messages, control };
+  return {render,display,rotationNotice,confirmation,answerConfirm,transferHost,calls,dispose:()=>controller?.dispose(),activeTimers:()=>timers.size, document, window, portrait, el, sockets, peers, storage, advance, game, ready, inputs, messages, control };
 }
