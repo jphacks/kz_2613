@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {PHONE_PROTOCOL_VERSION} from '../../apps/web/src/shared/transport/version.ts';
 const { decodeServerMessage } = await import('../../apps/web/src/shared/transport/protocol.ts');
 import { controllerHarness } from './fixtures/phone-harness.mjs';
 let passed = 0;
@@ -21,8 +22,15 @@ await test('参加・RTT・ACK・RTC信号: 副作用前に識別子と値の型
     { type: 'full', retryMs: -1 }, { type: 'full', retryMs: '5000' },
   ]) assert.equal(decode(value), null);
   for (const value of [{ type: 'ack', iseq: 1, via: 'ws', stale: true }, { type: 'pong', t: 12.5 },
-    { type: 'welcome', slot: 'P1', isHost: true, role: 'ホスト', token: 'test', protocolVersion: 4 },
+    { type: 'welcome', slot: 'P1', isHost: true, role: 'ホスト', token: 'test', protocolVersion: PHONE_PROTOCOL_VERSION },
     { type: 'full' }, { type: 'full', retryMs: null }, { type: 'full', retryMs: 1200 }, { type: 'error', code: 'bad_token' }]) assert.deepEqual(decode(value), value);
+});
+await test('welcome: Webが送る通信版と異なる版・文字列を拒否する', () => {
+  const welcome = {type: 'welcome', slot: 'P1', isHost: true, role: 'ホスト'};
+  for (const protocolVersion of [PHONE_PROTOCOL_VERSION - 1, PHONE_PROTOCOL_VERSION + 1, String(PHONE_PROTOCOL_VERSION)]) {
+    assert.equal(decode({...welcome, protocolVersion}), null);
+  }
+  assert.deepEqual(decode(welcome), welcome);
 });
 await test('game: 有効な状態を保持し、不正な配列・担当・巨大な不正配列を拒否する', () => {
   const base = controllerHarness().game();

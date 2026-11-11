@@ -1,6 +1,6 @@
 import type {PhoneGame, Slot} from '../contracts.ts';
 import type {ButtonInput, SequencedInput, StoragePort, Welcome} from './messages.ts';
-export const PHONE_PROTOCOL_VERSION = 4;
+import {PHONE_PROTOCOL_VERSION} from './version.ts';
 interface SessionOptions {storage:StoragePort;createClientId():string;now():number}
 type Connection = 'connecting'|'connected'|'disconnected'|'replaced'|'reset'|'version'|'token'|'closed'|'full';
 export function createPhoneSession({storage,createClientId,now}:SessionOptions) {

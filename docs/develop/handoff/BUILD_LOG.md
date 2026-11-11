@@ -2039,3 +2039,9 @@
 - 指摘【低】：アンインストール時の削除確認で、`%LOCALAPPDATA%\Re-Cooplay` を「手動で登録したゲーム」とだけ示していた。実際にはキーの設定（`key-overrides.json`）も入り、zip版とも共有する。確認の文言と `apps/desktop/README.md` を直した。
 - 試験：NSISが手元にないため、インストーラーの作成と `installer-smoke.mjs` はCIで確認する。
 - 未確認：対話の画面、ランタイムが実際に不足したPC、開発環境のない別のWindows 11 x64での導入からアンインストールまで（#219の受入ゲート）。
+
+## 2026-11-11 — WebとRustの通信版照合（#272）
+
+- Webのhello・welcomeで版定数を共有し、既存の通信シミュレーションをWebの版で実行する。版番号と現行の受信互換条件は維持した。
+- `npm run typecheck`、Node.js 22の `--experimental-strip-types` で `protocol-boundary-test.mjs` 8件、`phone-session-test.mjs` 7件、`phone-lifecycle-test.mjs` 31件が合格。
+- ビルド済みホストとの照合を含む `protocol-sim.mjs` 全体はNode.js 24のCIで確認する。実機Wi-Fiの受入と通信・設定スキーマの共通化は未実施。

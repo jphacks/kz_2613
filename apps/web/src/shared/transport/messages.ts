@@ -1,6 +1,7 @@
 import type {PhoneGame, Slot} from '../contracts.ts';
+import type {PHONE_PROTOCOL_VERSION} from './version.ts';
 
-export interface Welcome {type:'welcome';slot:Slot;isHost:boolean;role:string;token?:string;protocolVersion?:4;reconnected?:boolean}
+export interface Welcome {type:'welcome';slot:Slot;isHost:boolean;role:string;token?:string;protocolVersion?:typeof PHONE_PROTOCOL_VERSION;reconnected?:boolean}
 export type RtcSignal = {type:'rtc-answer';sdp:string} | {type:'rtc-cand';cand:string;mid?:string|null};
 export type ClientSignal = {type:'rtc-offer';sdp:string} | {type:'rtc-cand';cand:string;mid:string|null};
 export type ServerMessage = Welcome | RtcSignal

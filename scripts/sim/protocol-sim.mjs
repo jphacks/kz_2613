@@ -2,6 +2,7 @@
 // ホストを RECOOPLAY_DRY_RUN=1 (OS へ入力を送らない) で起動し、スマホ 3 台と PC 画面を模した WebSocket で
 // 役割・認可・進行・入力の先着 1 回処理・切断時の全解放・復帰設定を照合する。
 // 入力注入は行わないので、ゲームや実機の合格の代わりにはならない。
+// Web側の通信版定数を読み込むため、CIと同じNode.js 24を使う。
 //
 //   node scripts/sim/protocol-sim.mjs            # Rust 版 (apps/host-rs/target/release/recooplay-host.exe)
 //   node scripts/sim/protocol-sim.mjs --bin <path-to-exe>
@@ -12,6 +13,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {PHONE_PROTOCOL_VERSION as PROTOCOL_VERSION} from '../../apps/web/src/shared/transport/version.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const args = process.argv.slice(2);
@@ -21,7 +23,6 @@ const opt = (name, def) => {
 };
 const PORT = Number(opt('--port', 18000 + Math.floor(Math.random() * 1000)));
 const BASE = `http://127.0.0.1:${PORT}`;
-const PROTOCOL_VERSION = 4;
 // Minecraft の操作の呼び名 → 操作定義 (apps/game-profiles/minecraft-java.json) の操作 ID
 const MINECRAFT_ACTS = { FWD: 'forward', BACK: 'back', LEFT: 'left', RIGHT: 'right', JUMP: 'jump', SNEAK: 'sneak', SPRINT: 'sprint',
   ATTACK: 'attack', USE: 'use', INV: 'inventory', DROP: 'drop', SLOT_PREV: 'hotbar:up', SLOT_NEXT: 'hotbar:down' };
@@ -316,7 +317,10 @@ async function main() {
     });
 
     await check('版: protocolVersion がない・違う hello は理由を返して 4005 で閉じ、枠を割り当てない', async () => {
-      for (const extra of [ {protocolVersion:3}, { protocolVersion: undefined }, { protocolVersion: PROTOCOL_VERSION + 1 }, { protocolVersion: '1' }, { protocolVersion: 1 }, { protocolVersion: 2 }]) {
+      const rejectedVersions = [undefined, ...Array.from({length: PROTOCOL_VERSION - 1}, (_, i) => i + 1),
+        PROTOCOL_VERSION + 1, String(PROTOCOL_VERSION)];
+      for (const protocolVersion of rejectedVersions) {
+        const extra = {protocolVersion};
         const c = new Client('V');
         await c.open();
         c.send({ type: 'hello', clientId: 'sim-old-page', ...extra });
