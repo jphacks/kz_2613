@@ -1,5 +1,5 @@
 // PC画面とスマホ画面の最新の全画面を撮る (docs/screenshots.md 用)。
-// 起動: node scripts/sim/capture-screens.mjs --bin <ホスト実行ファイル> [--chrome <chrome.exe>]
+// 起動: node scripts/sim/capture-screens.mjs --bin <ホスト実行ファイル> [--chrome <chrome.exe>] [--pc-size 800x560] [--out <保存先>] [--min-text 11]
 // Rustホストを dry-run・疑似の入力先で起動し、headless Chrome で PC 1台・スマホ3台を開いて画面のボタンを押して進める。
 // OS入力・実ゲームの操作はしない。ゲーム一覧は偽のランチャー情報、QR・URLの IP は説明用の 192.0.2.10 に差し替える。
 // 実機・Minecraft での合格の根拠には使わない。
@@ -17,7 +17,9 @@ const CHROME=arg('--chrome',['C:/Program Files/Google/Chrome/Application/chrome.
 const OUT=path.join(ROOT,arg('--out','docs/screenshots'));
 const PORT=Number(process.env.PORT||18095),CDP_PORT=Number(process.env.CDP_PORT||9335);
 const DEMO_IP='192.0.2.10'; // RFC 5737 の説明用アドレス。実環境の IP を画像に残さない
-const PC={width:1920,height:1080,deviceScaleFactor:1,mobile:false};
+// --pc-size 800x560 で、Tauriの最小ウィンドウなど別の大きさのPC画面を撮る (#270)
+const [PC_W,PC_H]=arg('--pc-size','1920x1080').split('x').map(Number);
+const PC={width:PC_W,height:PC_H,deviceScaleFactor:1,mobile:false};
 const PHONE={width:402,height:874,deviceScaleFactor:2,mobile:true};
 const UA={
   iPhone:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
@@ -109,9 +111,33 @@ async function page(name,size,ua){
       const ips=(text.match(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g)||[]).filter(ip=>ip!==DEMO_IP&&ip!=='127.0.0.1');
       if(ips.length)throw Error(`${file}: 画面に IP が残っています`);
       shots.push(file);console.log(`撮影: ${file}`);
+      if(name==='PC')audit[file]=await auditPc(eval_,file);
     }};
 }
-const shots=[];
+const shots=[],audit={};
+// PC画面の監査 (#270)：見えている文字の実際の大きさ (縮小後のpx) と、画面外に出たボタン。
+// 文字の下限は --min-text (既定 11px)。数値だけでなく、画像を人が見て読めるかも確かめる
+const MIN_TEXT=Number(arg('--min-text','11'));
+async function auditPc(eval_,file){
+  const r=await eval_(`(()=>{
+    const scale=Number(getComputedStyle(document.body).getPropertyValue('--pc-scale'))||1,min=${MIN_TEXT},small=[],outside=[];
+    const visible=e=>{const s=getComputedStyle(e);return e.getClientRects().length&&s.visibility!=='hidden'&&s.opacity!=='0';};
+    const top=document.querySelector('dialog[open]');
+    for(const e of (top||document.body).querySelectorAll('*')){
+      if(!visible(e)||e.closest('svg,[aria-hidden=true]'))continue;
+      const own=[...e.childNodes].some(n=>n.nodeType===3&&n.textContent.trim());
+      if(own){const px=parseFloat(getComputedStyle(e).fontSize)*(e.closest('.desktop-shell')&&!e.closest('dialog')?scale:1);
+        if(px<min)small.push({text:e.textContent.trim().slice(0,24),px:Math.round(px*10)/10});}
+      // ダイアログの中は内部スクロールで届くので、ダイアログ自体が画面に収まっているかだけを見る
+      if(e.matches('button,a,select,input,summary')&&!top){const b=e.getBoundingClientRect();
+        if(b.right>innerWidth+1||b.bottom>innerHeight+1||b.left<-1||b.top<-1)outside.push(e.textContent.trim().slice(0,24));}
+    }
+    if(top){const b=top.getBoundingClientRect();if(b.right>innerWidth+1||b.bottom>innerHeight+1||b.left<-1||b.top<-1)outside.push('ダイアログ');}
+    return {scale:Math.round(scale*1000)/1000,small,outside};
+  })()`);
+  if(r.small.length||r.outside.length)console.log(`  監査 ${file}: ${MIN_TEXT}px未満 ${r.small.length}件${r.small.length?'（'+r.small.slice(0,6).map(x=>x.text+' '+x.px+'px').join('、')+'）':''}、画面外のボタン ${r.outside.length}件${r.outside.length?'（'+r.outside.join('、')+'）':''}`);
+  return r;
+}
 
 async function main(){
   fs.mkdirSync(OUT,{recursive:true});
@@ -205,7 +231,7 @@ async function main(){
   await pc.s('Input.dispatchMouseEvent',{type:'mouseReleased',x,y,button:'left',clickCount:1});
   await pc.waitFor(`!document.getElementById('nextBtn').classList.contains('resume-input')`,'PC操作による入力再開');
 
-  fs.writeFileSync(path.join(OUT,'shots.json'),JSON.stringify({captured:new Date().toISOString(),pc:`${PC.width}x${PC.height}`,phone:`${PHONE.width}x${PHONE.height}@${PHONE.deviceScaleFactor}x`,files:shots},null,2)+'\n');
+  fs.writeFileSync(path.join(OUT,'shots.json'),JSON.stringify({captured:new Date().toISOString(),pc:`${PC.width}x${PC.height}`,phone:`${PHONE.width}x${PHONE.height}@${PHONE.deviceScaleFactor}x`,files:shots,pcAudit:{minText:MIN_TEXT,...audit}},null,2)+'\n');
   console.log(`${shots.length}枚を ${path.relative(ROOT,OUT)} に保存`);
 }
 

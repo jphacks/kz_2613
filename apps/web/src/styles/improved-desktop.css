@@ -72,3 +72,38 @@
 .role-column[data-swap]:focus-visible, select:focus-visible,
 body[data-remote-nav] :is(button, a, summary, select, input, [data-swap]):focus { outline: 4px solid var(--color-purple); outline-offset: 4px; }
 .role-column[data-swap]:focus-visible h3, body[data-remote-nav] .role-column[data-swap]:focus h3 { box-shadow: 0 0 0 4px var(--color-purple); }
+/* 小さいウィンドウ (#270、Tauriの最小800×560など)。1920×1080の原案を等比縮小すると約0.42倍になり、
+   状態・案内・ボタンの文字が8〜10pxまで小さくなる。原案の配置は変えず、読む必要がある文字だけを縮小後に約11px以上になる大きさへ上げる。
+   ブランドの飾りの文言は対象外。1920×1080など通常の大きさでは何も変えない */
+@media (max-width: 1100px), (max-height: 620px) {
+  .explanation, [data-view=paused] .explanation { font-size: 32px; }
+  .secondary, [data-view=paused] .secondary { font-size: 28px; line-height: 1.4; }
+  .action-note, [data-view=roles] .action-note { font-size: 28px; line-height: 1.35; }
+  .main-cta, [data-view=roles] .main-cta { font-size: 34px; }
+  .sub-cta { font-size: 28px; }
+  .start-instruction span { font-size: 30px; }
+  .qr-step-label { font-size: 28px; }
+  .qr-note { font-size: 27px; line-height: 1.3; }
+  .connection-help { font-size: 27px; }
+  .utility-bar, .utility-bar button, .utility-bar #hotkey { font-size: 28px; }
+  .game-list-head p { font-size: 27px; }
+  .game-list-head button { font-size: 27px; }
+  .tile-name { font-size: 28px; }
+  .badge, .game-launch { font-size: 27px; }
+  /* 担当の文字はキャラクターの画面の中に収める。収まらないキーは「…」で省き、全体は「このPCのキー設定を確認」で見る */
+  .role-copy { top: 352px; width: 204px; }
+  .role-copy b { display: block; font-size: 30px; line-height: 1.2; }
+  .role-copy p { font-size: 27px; line-height: 1.2; margin-top: 4px; -webkit-line-clamp: 3; }
+  /* 説明と補足は文字を大きくすると行数が変わるので、固定の位置ではなく上から順に並べて重ならないようにする (参加画面は原案のまま) */
+  body:not([data-view=join]) .sidebar { display: flex; flex-direction: column; padding-top: 444px; }
+  body:not([data-view=join]) .explanation, body:not([data-view=join]) .secondary { position: static; flex: none; margin: 0 0 0 60px; }
+  body:not([data-view=join]) .secondary { margin-top: 18px; }
+  body[data-view=roles] .sidebar { padding-top: 470px; }
+  body[data-view=paused] .sidebar { padding-top: 392px; }
+  [data-view=game] .main-cta { top: 845px; }
+  .main-cta.resume-input { top: 750px; }
+  .ack-wait { font-size: 26px; }
+  .role-keys { font-size: 28px; }
+  .safety-warning { font-size: 28px; }
+  .state-banner p { font-size: 34px; }
+}
