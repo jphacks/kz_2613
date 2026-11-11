@@ -833,6 +833,16 @@ async function main() {
             const observed = total(from);
             return Math.abs(observed.dx - dx) <= 1 && Math.abs(observed.dy - dy) <= 1;
           }, { from: since, timeout: 3000, what });
+          // 一度目標に達しただけで合格にしない。遅れて古いパケットが適用されても見逃さないよう、
+          // 出力通知が400ms止まるまで待ち、止まった時点の累積量が目標から動いていないことを確かめる。
+          const looks = () => mon.msgs.filter(m => m.type === 'look').length;
+          for (let seen = looks(), quietSince = Date.now(), end = Date.now() + 3000; Date.now() - quietSince < 400;) {
+            assert(Date.now() < end, `${what}に達した後も視点の出力が止まらない`);
+            await sleep(50);
+            if (looks() !== seen) { seen = looks(); quietSince = Date.now(); }
+          }
+          const settled = total(from);
+          assert(Math.abs(settled.dx - dx) <= 1 && Math.abs(settled.dy - dy) <= 1, `${what}に達した後に動いた`);
         } catch (error) {
           const reports = mon.msgs.slice(from).filter(m => m.type === 'look').map(m => m.entry);
           throw new Error(`${error.message}。epoch=${p2.epoch}、実測=${JSON.stringify(total(from))}、出力通知=${JSON.stringify(reports)}`, { cause: error });
