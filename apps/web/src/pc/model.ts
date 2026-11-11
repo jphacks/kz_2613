@@ -1,5 +1,5 @@
 import type { PhoneGame, Slot } from '../shared/contracts';
-import { createStore } from '../shared/store';
+import { createStore } from '../shared/store.ts';
 import { desktopView, slotViews, shownSlots, playerCards, roleColumns, gameList, gameCard, gameAction, rolesAction, gameLabel, desktopWarning, networkNotice, profileNotice, playerHint, commSettingsView, gamesCountText, isRegistered, roleView, slotDiagnosis, joinUrl, joinGuideView, MIN_PLAYERS, MAX_PLAYERS } from '../shared/model/presentation.ts';
 
 import type {InjectionState,HostState,Navigation} from '../shared/model/domain.ts';
@@ -38,11 +38,17 @@ export function connectionModel() {
   };
 }
 
+export function joinStatus(state: HostState | null) {
+  const slots = slotViews(state?.slots);
+  const count = slots.filter(slot => slot.state === 'connected').length;
+  return {slots, count, canAdvance: count >= MIN_PLAYERS};
+}
+
 // 旧版と共通の表示判断を利用する。描画と通信・認可の責務を分離する。
 export function pcModel(s: PcSnapshot) {
   const {game, inject, ui, state, swapPick} = s;
   const view = desktopView(ui, game) as 'join' | 'game' | 'roles' | 'preparing' | 'ready' | 'coop' | 'paused';
-  const slots = slotViews(state?.slots), count = slots.filter(slot => slot.state === 'connected').length;
+  const {slots, count, canAdvance} = joinStatus(state);
   const roleSlots: Slot[] = shownSlots(game);
   const list = gameList(state?.games, state?.minecraft);
   const action = gameAction(ui, game, list), roleAction = rolesAction(game, list);
@@ -53,15 +59,15 @@ export function pcModel(s: PcSnapshot) {
   const warnings = game?.keys?.warnings ?? [];
   const warning = desktopWarning(game, inject, s.online || !state) || (warnings.length ? 'キー設定に注意が必要です。「操作設定」で実際に送るキーを確認してください。' : '');
   return {
-    view, roleSlots, name,
+    view, roleSlots, name, canAdvance,
     cards: playerCards(slots, view, game), columns: roleColumns(game, roleSlots, swapPick),
     roleHeading: !roleSlots.length ? '参加者を待っています' : game?.lineupOk ? `${roleSlots.length}人で決定！` : `${roleSlots.length}人で、操作を分担！`,
     title: {join: '', game: 'ゲーム選択を\nしよう！', roles: '分担しよう！', preparing: '準備中', ready: '準備完了！', coop: '協力プレイ中', paused: '一時停止中'}[view],
     stateTitle: {join: `${count}人参加中！`, preparing: 'ゲームを準備中！', ready: '全員接続・準備OK！', coop: 'みんなでプレイ中！', paused: '一時停止中', game: '', roles: ''}[view],
-    stateSubtitle: view === 'paused' && !game?.canResume ? inject?.mode === 'off' ? '安全を確かめてから「入力を再開する」を押してください' : '再開前に、接続とゲームの画面を確認してください' : {join: count >= MIN_PLAYERS ? `みんながそろったら、OKボタンを押そう！（${MIN_PLAYERS}〜${MAX_PLAYERS}人）` : `参加者を待っています……（${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べます）`, preparing: 'ホストがゲームを準備しています……', ready: 'ホストのスマホでReadyを押してください！', coop: '止めるときはホストのスマホでPAUSE', paused: 'ホストのスマホで再開できます', game: '', roles: ''}[view],
-    explanation: view === 'join' ? `${MIN_PLAYERS}〜${MAX_PLAYERS}人がそろったら、\nOKボタンを押そう！！` : view === 'game' ? '右側にあるゲーム一覧から\n遊びたいゲームを\n選択してください！' : view === 'roles' ? game?.lineupOk ? 'メンバーと分担を\n決定しました！' : '操作をそれぞれの\nスマホに分けよう！' : '',
+    stateSubtitle: view === 'paused' && !game?.canResume ? inject?.mode === 'off' ? '安全を確かめてから「入力を再開する」を押してください' : '再開前に、接続とゲームの画面を確認してください' : {join: '', preparing: 'ホストがゲームを準備しています……', ready: 'ホストのスマホでReadyを押してください！', coop: '止めるときはホストのスマホでPAUSE', paused: 'ホストのスマホで再開できます', game: '', roles: ''}[view],
+    explanation: view === 'join' ? (canAdvance ? 'OKを押して\nゲーム選択へ進みます。' : `${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べます。\nあと${MIN_PLAYERS - count}人の参加を待っています。`) : view === 'game' ? '右側にあるゲーム一覧から\n遊びたいゲームを\n選択してください！' : view === 'roles' ? game?.lineupOk ? 'メンバーと分担を\n決定しました！' : '操作をそれぞれの\nスマホに分けよう！' : '',
     secondary: view === 'game' ? 'Steam・Epic などのランチャーと\n手動登録のゲームは、\n分担を決めた後に起動できます。\n「未検証」は操作が届くか\n未確認です。' : view === 'roles' ? game?.lineupOk ? 'ゲームを起動・準備して\nスマホでReady！' : 'メンバーと分担を確認して\n決定しよう！' : '',
-    next: {hidden: !stopped && !['join','game','roles'].includes(view), stopped, label: stopped ? '入力を再開する' : {join: 'OK', game: action.label, roles: roleAction.label, preparing: '', ready: '', coop: '', paused: ''}[view], disabled: !stopped && ((view === 'roles' && !!roleAction.disabled) || (view === 'game' && action.kind === 'none'))},
+    next: {hidden: !stopped && !['join','game','roles'].includes(view), stopped, label: stopped ? '入力を再開する' : {join: 'OK', game: action.label, roles: roleAction.label, preparing: '', ready: '', coop: '', paused: ''}[view], disabled: !stopped && ((view === 'join' && !canAdvance) || (view === 'roles' && !!roleAction.disabled) || (view === 'game' && action.kind === 'none'))},
     sub: {hidden: !(swapEntry || (view === 'roles' && roleAction.alt)), label: swapEntry ? '担当を入れ替える' : roleAction.alt?.label || '', disabled: !swapEntry && !!roleAction.alt?.disabled},
     blockedStart: view !== 'preparing' || stopped, readyInstruction: view !== 'ready' || stopped,
     openGameHidden: !['preparing','ready','paused'].includes(view) || !game?.inputTarget,

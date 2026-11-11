@@ -225,6 +225,7 @@ body {
   top: 578px;
 }
 
+[data-view=join] .main-cta:disabled,
 .disabled-start:disabled {
   border-color: var(--color-cyan);
   color: var(--color-paper);
