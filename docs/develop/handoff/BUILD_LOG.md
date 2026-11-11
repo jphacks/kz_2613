@@ -2,11 +2,6 @@
 
 成功したという結果を捏造しない。実際の環境で実行した観測結果を追記する。
 
-## 2026-11-11 — 引き継ぎの入口と履歴の整理（#255）
-
-- 現行のWindows構築手順とGitHubの作業状況に案内を揃え、対象資料の個人PCのパスを一般表記にした。初期資料は既存リンクと証拠を保つため同じ場所に記録として残す。
-- `python scripts/check-public-docs.py`、`node scripts/sim/verify-ui-evidence.mjs`、`git diff --check` が合格。BUILD_LOGの分割は並行して追記中のPRが落ち着いた後に検討する。
-
 ## 2026-10-24 — 初期構築パッケージの作成
 - パッケージ作成時に確認した `jphacks/kz_2613` のmainには、`README.md` と `LICENSE` だけが存在した。
 - 根拠はユーザーとの会話、共有要件v0.2、要件書から参照するチーム議事録。
@@ -2097,3 +2092,9 @@
 - 試行計画と実行順・資産・経路を照合してACK、ホスト内区間、ICE RTTを個別に集計する。
 - `node scripts/device/summarize-wifi-overhead-test.mjs` と関連する計画・ACK・経路・ホスト分析の短時間試験が合格。実Wi-Fiの比較測定は未実施。
 - 統合（Claude Code）：#370をレビューし指摘なし。計画の交互順（baseline/candidate）と、#364・#368の観測設定の記録（`periodicIce`・`hostTrace`）の照合が一致する。集計結果にLANアドレス・パスを出さない。手元で `summarize-wifi-overhead-test.mjs` ほか7本が合格。
+
+## 2026-11-11 — 引き継ぎの入口と履歴の整理（#255）
+
+- 現行のWindows構築手順とGitHubの作業状況に案内を揃え、対象資料の個人PCのパスを一般表記にした。初期資料は既存リンクと証拠を保つため同じ場所に記録として残す。
+- `python scripts/check-public-docs.py`、`node scripts/sim/verify-ui-evidence.mjs`、`git diff --check` が合格。BUILD_LOGの分割は並行して追記中のPRが落ち着いた後に検討する。
+- 統合（Claude Code）：#372をレビューし指摘なし。この記録はBUILD_LOGの先頭に追加されていたが、記録は古い順に並べているため末尾へ移した。
