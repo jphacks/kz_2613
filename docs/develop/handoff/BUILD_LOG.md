@@ -2064,3 +2064,9 @@
 - `npm run typecheck`、Node.js 22の `--experimental-strip-types` で `protocol-boundary-test.mjs` 8件、`phone-session-test.mjs` 7件、`phone-lifecycle-test.mjs` 31件が合格。
 - ビルド済みホストとの照合を含む `protocol-sim.mjs` 全体はNode.js 24のCIで確認する。実機Wi-Fiの受入と通信・設定スキーマの共通化は未実施。
 - 統合（Claude Code）：#362をレビューし指摘なし。手元で `tsc --noEmit`、`protocol-boundary-test.mjs` 8/8、`phone-session-test.mjs` 7/7、`phone-lifecycle-test.mjs` 31/31、`product-web-test.mjs`、`protocol-sim.mjs` の構文検査が合格。ホストとの照合はCIで確認する。
+
+## 2026-11-11 — 個人解放の直後に切断した場合の回帰試験（#39）
+
+- 通信試験で、P3の個人解放時はP1の保持が続き、直後のP3切断でP1も解放されてepochが進むことを検証する。同じP3枠に戻っても自動復帰OFFでは停止を維持し、旧保持が再出力されないことを確認する。
+- `node --check scripts/sim/protocol-sim.mjs` と `git diff --check` は合格。ホストを起動する通信シミュレーション全体はGitHub Actionsで確認する。
+- 実Wi-Fi、Android・iPhoneのblur、実Windows入力の受入は未実施。
