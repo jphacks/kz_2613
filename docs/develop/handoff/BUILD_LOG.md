@@ -2098,3 +2098,11 @@
 - 現行のWindows構築手順とGitHubの作業状況に案内を揃え、対象資料の個人PCのパスを一般表記にした。初期資料は既存リンクと証拠を保つため同じ場所に記録として残す。
 - `python scripts/check-public-docs.py`、`node scripts/sim/verify-ui-evidence.mjs`、`git diff --check` が合格。BUILD_LOGの分割は並行して追記中のPRが落ち着いた後に検討する。
 - 統合（Claude Code）：#372をレビューし指摘なし。この記録はBUILD_LOGの先頭に追加されていたが、記録は古い順に並べているため末尾へ移した。
+
+## 2026-11-11 実機確認の消化：RTC単独切断・スキン・準備直後のスワイプ・定期ICE観測の負荷（Claude Code）
+
+- 対象：main `f21f5a0` のCI配布zip（manifestのcommitは `f21f5a0`、dirtyなし、SHA-256一致）。端末はAndroid 16（`25118PC98G`）・Chrome 156。製品の通信はWindowsモバイルホットスポットのWi-Fi、USBはadbとCDPの制御だけ。
+- #277：`android-dry-run.mjs --wifi-network --rtc-fault-observe` が3項目すべて合格。fast DataChannelを閉じた後もICEは `connected` のままで、同じWS・同じepochで新しい押下と解放が `via=ws` でACKされた。実Wi-Fiの断と復元は残る。
+- #159：dry-runで、ゲームごとのスキンの保存・復元を7項目確認した（ゲームA・Bで別々に保存、ゲームを戻す・再読み込みで復元、標準へ戻す、壊れた保存値は標準）。Issueを閉じた。
+- #345：配布版のPCアプリを通常モードで起動してAmong Usを準備に進め、準備に入ってから0〜3.1秒のあいだにホストのタッチパッドを5回スワイプした。1回目からWindowsのカーソルが動いた。Issueを閉じた。
+- #276：定期ICE観測あり・なしを60秒×各3回、交互の順で実測し、`summarize-wifi-overhead.mjs` で集計した。6試行とも全項目合格。端末内ACK往復の差は組ごとに向きが逆になり、ばらつきの方が大きかった。匿名化した集計を `docs/develop/acceptance/evidence/wifi-periodic-ice-276/` に保存した（生記録はローカル）。
