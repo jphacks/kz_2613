@@ -28,7 +28,7 @@ function setUi(next:Navigation){
   if(ui.screen==='join'&&next.screen!=='join'&&!joinStatus(state).canAdvance)return;
   if(next.game!==ui.game)send({type:'select_game',title:next.game});
   // 分担の画面から戻ったら決定を取り消す (戻った後の古い決定で起動・準備しない、#109)
-  if(ui.screen==='roles'&&next.screen!=='roles'&&game?.lineupOk&&game.phase==='lobby')send({type:'unconfirm_lineup'});
+  if(ui.screen==='roles'&&next.screen!=='roles'&&game?.phase==='lobby'&&(game.lineupOk||game.lineupDisconnected?.length))send({type:'unconfirm_lineup'});
   ui={...next,game:game?.title||next.game};
   render();
 }

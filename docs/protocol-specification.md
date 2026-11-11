@@ -137,7 +137,8 @@ PREPARE / READY / RESUME / OPEN_GAME / OPEN_APPは現在epochを必須としま�
 | `required / maxPlayers / connected` | 最低2人、最大4枠、接続中の枠 |
 | `canPrepare / canReady / canResume / readyReasons` | 要求可否と拒否理由 |
 | `title / titleName / launch` | 選択ゲーム、表示名、起動要求の状態 |
-| `lineup / lineupOk` | 決定したゲームとメンバー、現在との一致 |
+| `lineup / lineupOk` | 決定したゲームとメンバー、現在との一致。決定済みの枠が保持期限を過ぎた場合は再決定が必要 |
+| `lineupDisconnected` | ロビーで、決定後に切断中または保持期限を過ぎた枠番号。再決定後は空 |
 | `participants / assigned` | Readyで固定した参加者と操作割当 |
 | `roleOf / roleAck / canSwap` | 枠と席順、本人確認待ち、交換可否 |
 | `keys / profile` | 実キー・読取り警告、操作定義の要約・分担案 |

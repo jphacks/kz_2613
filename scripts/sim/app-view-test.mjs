@@ -372,6 +372,17 @@ test('人数の参考: 全員に操作があり偏りの小さい人数を、断
   assert.equal(playerHint(null),null);
 });
 
+test('分担画面: 決定済みの枠が切断したときだけ枠番号と再決定の案内を示す (#305)', () => {
+  const snapshot = pcState.get();
+  const ui = {screen:'roles',game:'minecraft-java'};
+  const dropped = game(['P1'], {lineupOk:false,lineupDisconnected:['P2','P3']});
+  const display = (overrides = {}) => pcModel({...snapshot, ui, game:{...dropped,...overrides}});
+  assert.match(display().notices,/P2・P3が切断.*決め直し/);
+  assert.doesNotMatch(display({lineupOk:true}).notices,/切断したため/);
+  assert.doesNotMatch(display({lineupDisconnected:undefined}).notices,/切断したため/);
+  assert.doesNotMatch(display({phase:'paused'}).notices,/切断したため/);
+});
+
 test('分担画面: 決定後は起動・準備を案内し、人数不足や入れ替え中はその状態を示す (#296)', () => {
   const snapshot = pcState.get();
   const model = (connected, extra) => pcModel({

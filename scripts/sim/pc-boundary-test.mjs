@@ -5,7 +5,8 @@ const state={type:'state',game,inject:{mode:'off',active:false,emergencyHotkeyEr
 const decode=value=>decodePcMessage(JSON.stringify(value));
 assert.deepEqual(decode(state),state,'Rustの空き枠とnullable状態を受理する');
 assert.deepEqual(decode({...state,slots:[{name:'P1',connected:true,clientStats:null}]}).game,game);
-for(const value of [null,[],{type:'state'},{...state,game:{...game,epoch:'0'}},{...state,inject:{mode:'on',active:'yes'}},
+assert.deepEqual(decode({...state,game:{...game,lineupDisconnected:['P2','P3']}}).game.lineupDisconnected,['P2','P3']);
+for(const value of [null,[],{...state,game:{...game,lineupDisconnected:['P8']}},{type:'state'},{...state,game:{...game,epoch:'0'}},{...state,inject:{mode:'on',active:'yes'}},
   {...state,slots:[{name:'P8',connected:true}]},{...state,games:[{id:'game',source:'manual',name:{}}]},
   {type:'remote',epoch:0,route:'app',kind:'move',dx:'1',dy:0},{type:'remote',epoch:0,route:'app',control:'ENTER',state:'future'},
   {type:'key_result',ok:'yes'},{type:'manual_result',message:[]}])assert.equal(decode(value),null);
