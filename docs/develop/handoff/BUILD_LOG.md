@@ -1969,3 +1969,8 @@
 - 結果：`npm run build`（`apps/web`）、`app-view-test.mjs` 34/34、`phone-view-test.mjs`（8観点）、`phone-lifecycle-test.mjs` 31/31、`ui-input-test.mjs` 12/12、`pc-boundary-test.mjs`、`check-static-pages.mjs` が合格。ローカルのRustビルドは、Git Bashのperlでは `datachannel-sys` のOpenSSL設定が失敗するため実施できず、Rust単体試験・通信契約はCIで確認する。
 - 軽微な残件：操作名を「ゲームを準備する」に揃えたが、`docs/develop/requirements/requirements-v0.3.md` と `docs/develop/architecture/pc-screens.md` には旧名「ゲームを開く・準備する」が残る。要件の文書はユーザー確認後に直す。
 - 未確認：Windows配布版・実機Wi-Fiでの同じ端末の復帰と別端末の参加（#305）、実ゲームの全画面からの復帰（#307）。両Issueは開いたままにする。
+## 2026-11-11 視点の通信試験を出力通知待ちにする（#240）
+
+- 欠番・重複・逆順を検証する通信試験の固定1秒待ちを、監視接続の累積出力が許容範囲に入るまでの待機（上限3秒）へ変更した。移動量の許容差と入力列は維持。失敗時はepoch、累積出力、出力通知を記録する。製品側は変更していない。
+- `node --check scripts/sim/protocol-sim.mjs` が合格。既存dry-runホスト（埋め込みコミットなし）で対象ケースのみ実行して合格。監視側で出力通知を1.2秒遅らせる模擬条件では旧版が失敗し、修正版は合格した。
+- 元のCI失敗の原因は未確定。最新のRustホストを使う通信試験全体とRust単体試験はGitHub Actionsで確認する。実機は今回未確認。
