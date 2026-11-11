@@ -1,6 +1,6 @@
 import type { PhoneGame, Slot } from '../shared/contracts';
 import { createStore } from '../shared/store.ts';
-import { desktopView, slotViews, shownSlots, playerCards, roleColumns, gameList, gameCard, gameAction, rolesAction, gameLabel, desktopWarning, networkNotice, profileNotice, playerHint, commSettingsView, gamesCountText, isRegistered, roleView, slotDiagnosis, joinUrl, joinGuideView, MIN_PLAYERS, MAX_PLAYERS } from '../shared/model/presentation.ts';
+import { desktopView, slotViews, shownSlots, playerCards, roleColumns, gameList, gameCard, gameAction, rolesAction, gameLabel, desktopWarning, networkNotice, profileNotice, playerHint, commSettingsView, gamesCountText, isRegistered, roleView, slotDiagnosis, joinUrl, joinGuideView, MIN_PLAYERS, MAX_PLAYERS, GAMES } from '../shared/model/presentation.ts';
 
 import type {InjectionState,HostState,Navigation} from '../shared/model/domain.ts';
 export interface PcSnapshot {
@@ -58,7 +58,14 @@ export function pcModel(s: PcSnapshot) {
   const swapHint = game?.canSwap ? swapPick ? `${swapPick}と入れ替える人の列を押してください` : '担当を入れ替えるときは、2人の列を順に押してください' : '';
   const warnings = game?.keys?.warnings ?? [];
   const warning = desktopWarning(game, inject, s.online || !state) || (warnings.length ? 'キー設定に注意が必要です。「操作設定」で実際に送るキーを確認してください。' : '');
+  const gameSteps = (game?.title ?? ui.game) === GAMES[0].id ? GAMES[0].steps : [
+    'PCアプリでゲームを選び、メンバーと分担を決める',
+    'ゲームを起動し、遊びたい画面まで進める',
+    'ゲームを前面にして、ホストのスマホで「Ready」を押す',
+  ];
   return {
+    gameSteps,
+    overlayUrl: s.infoPort ? `http://127.0.0.1:${s.infoPort}/overlay` : '',
     view, roleSlots, name, canAdvance,
     cards: playerCards(slots, view, game), columns: roleColumns(game, roleSlots, swapPick),
     roleHeading: !roleSlots.length ? '参加者を待っています' : game?.lineupOk ? `${roleSlots.length}人で決定！` : `${roleSlots.length}人で、操作を分担！`,
@@ -77,7 +84,7 @@ export function pcModel(s: PcSnapshot) {
     gameCards: list.map(g => gameCard(g, ui.game, game?.launch)),
     gamesCount: s.manualMessage || gamesCountText(list, !!state?.gamesScanning), scanning: !!state?.gamesScanning,
     registered: isRegistered(ui.game) && list.some(g => g.id === ui.game),
-    inputState: inject?.mode === 'off' ? 'ゲームへの入力はOFFです' : inject?.mode === 'test' ? '診断用の入力先です' : inject?.active ? `ゲームへの入力はONです（${name}が前面のときだけ）` : 'ゲームへの入力を停止しています',
+    inputState: inject?.mode === 'off' ? 'ゲームへの入力はOFFです' : inject?.mode === 'test' ? '診断用の入力先です' : inject?.active ? `ゲームへの入力はONです（${name}が前面のときだけ）` : game?.phase === 'lobby' ? '協力プレイを始めるまで、担当の操作はゲームに送信されません。' : 'ゲームへの入力を停止しています',
     warnings: warnings.join('。'), bindings: roleSlots.map(slot => ({slot, ...roleView(game, slot)})),
     diagnostics: (state?.slots ?? []).filter(slot => slot.connected).map(slotDiagnosis),
     keyButtons: game?.profile?.actions.filter(a => a.type === 'button') ?? [],
