@@ -2085,3 +2085,7 @@
 - `node scripts/device/` 配下の `android-dry-run-test.mjs` 23/23、`wifi-comparison-plan-test.mjs`、`wifi-route-test.mjs`、`wifi-host-analysis-test.mjs`、`wifi-trial-acks-test.mjs` が合格。CLI試験は照合済み配布版のWeb資産を使用。
 - 実Wi-Fiでの負荷測定と新しい比較系列の集計・匿名化は未実施。
 - 統合（Claude Code）：#368をレビューし指摘なし。トレースの起動・読み込み・集計の3か所がすべて `hostTrace` で切り替わることを確認した。手元で上記5本が合格。
+## 2026-11-11 — Wi-Fiの観測負荷の集計（#276）
+
+- 試行計画と実行順・資産・経路を照合してACK、ホスト内区間、ICE RTTを個別に集計する。
+- `node scripts/device/summarize-wifi-overhead-test.mjs` と関連する計画・ACK・経路・ホスト分析の短時間試験が合格。実Wi-Fiの比較測定は未実施。
