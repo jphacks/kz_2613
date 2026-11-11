@@ -391,6 +391,7 @@ async function main() {
       const c = await join('P5');
       const w = await c.waitFor((m) => m.type === 'full', { what: 'full' });
       assert(w, 'full が来ない');
+      assert(w.retryMs === null, `全員接続中なのに空く見込みを示した (#297): ${JSON.stringify(w)}`);
       assert((await c.waitClose()) === 4004, '終了コードが 4004 でない');
       const from = mon.mark();
       p4.close();
@@ -403,6 +404,7 @@ async function main() {
       x.send({ type: 'hello', clientId: 'sim-intruder', protocolVersion: PROTOCOL_VERSION, slot: 'P1', isHost: true });
       const w = await x.waitFor((m) => m.type === 'full' || m.type === 'welcome', { what: 'full' });
       assert(w.type === 'full', `満員なのに受け付けた: ${JSON.stringify(w)}`);
+      assert(typeof w.retryMs === 'number' && w.retryMs > 0 && w.retryMs <= 15000, `切断した P4 の枠が空く見込みを示さない (#297): ${JSON.stringify(w)}`);
     });
 
     await check('PC画面: ロビーでは P1 のリモコン操作だけを PC 画面へ remote で知らせる', async () => {
@@ -692,14 +694,14 @@ async function main() {
       const epoch = p1.epoch;
       // P3の端末がフォーカスを失った: P3の押下だけ解放し、P1の前進は続く。epochは進まない
       from = mon.mark();
-      p3.send({ type: 'release_inputs', epoch, iseq: p3.iseq });
+      p3.send({ type: 'release_inputs', epoch, iseq: p3.iseq, lseq: 0, cx: 0, cy: 0 });
       await injected(mon, 'MOUSE_L', 'up', from);
       await sleep(300);
       assert(!mon.msgs.slice(from).some(m => m.type === 'inject' && m.entry.out === 'KEY_W' && m.entry.state === 'up'), '他の参加者の押下まで解放した');
       assert(p1.epoch === epoch && p3.epoch === epoch, 'epochを進めた');
       // 解放要求より前に送られ、遅れて届いた押下 (番号が下限以下) は適用しない。後続の新しい押下は通る
       const late = p3.iseq + 1;
-      p3.send({ type: 'release_inputs', epoch, iseq: late });
+      p3.send({ type: 'release_inputs', epoch, iseq: late, lseq: 0, cx: 0, cy: 0 });
       await sleep(100);
       from = mon.mark();
       p3.rawInput('act:attack', 'down'); // iseq = late
@@ -709,6 +711,17 @@ async function main() {
       p3.input('ATTACK', 'down'); await injected(mon, 'MOUSE_L', 'down', from);
       p3.input('ATTACK', 'up'); await injected(mon, 'MOUSE_L', 'up', from);
       p1.input('FWD', 'up'); await injected(mon, 'KEY_W', 'up', from);
+    });
+
+    await check('#262 視点の境界(lseq)のないrelease_inputs(iseqだけの旧版)は、解放前の視点を拒否できないので全参加者を解放してepochを進める', async () => {
+      let from = mon.mark();
+      p1.input('FWD', 'down'); await injected(mon, 'KEY_W', 'down', from);
+      const epoch = p1.epoch, playerFrom = p1.mark();
+      from = mon.mark();
+      p3.send({ type: 'release_inputs', epoch, iseq: p3.iseq });
+      await injected(mon, 'KEY_W', 'up', from);
+      await p1.waitFor(m => m.type === 'game' && m.game.epoch > epoch, { from: playerFrom });
+      p1.input('FWD', 'up');
     });
 
     await check('キャンセル: 非表示・回転・診断の停止要求で全参加者の押下・保留連打・旧入力を即時破棄する', async () => {
@@ -981,6 +994,8 @@ async function main() {
     });
 
     await check('PCアプリ: 通信切断待ちにPC画面へ戻ったら自動復帰を解除し、全員戻っても明示RESUMEまで再開しない', async () => {
+      const initial = await mon.waitFor(m => m.type === 'game', { what: '初期のgame' });
+      assert(initial.game.autoResume === false, '自動復帰が初期OFFでない (Q40)');
       mon.send({ type: 'auto_resume', on: true });
       await mon.waitFor(m => m.type === 'game' && m.game.autoResume, { what: 'autoResume on' });
       let from = p1.mark();
@@ -1922,18 +1937,17 @@ async function main() {
       for (const x of [a, b]) x.close();
     });
 
-    await check('役割交代: 時間で一時停止して全解放し、担当をずらして全員の確認と明示の再開を求める (#161)', async () => {
+    await check('役割交代: 60秒固定・初期OFF。協力プレイを止めずに全解放・epoch更新して担当をずらし、新しいプレイではOFFに戻す (#161)', async () => {
       mon.send({ type: 'reset' });
       await sleep(200);
       mon.send({ type: 'select_game', title: 'minecraft-java' });
-      mon.send({ type: 'rotation', seconds: 45 });
-      await sleep(100);
       const id = (n) => ({ clientId: `sim-rotation-${n}` });
       const a = await join('R1', id(1)); await welcome(a);
       const b = await join('R2', id(2)); await welcome(b);
       await sleep(200);
       const latest = () => [...a.msgs].reverse().find((m) => m.type === 'game').game;
-      assert(latest().rotationSeconds === 0, '選べない間隔を受け付けた');
+      assert(latest().rotationSeconds === 0, '初期値がOFFでない');
+      for (const seconds of [45, 120]) { mon.send({ type: 'rotation', seconds }); await sleep(100); assert(latest().rotationSeconds === 0, `${seconds}秒を受け付けた`); }
       mon.send({ type: 'rotation', seconds: 60 });
       await a.waitFor((m) => m.type === 'game' && m.game.rotationSeconds === 60, { what: '間隔' });
       a.send({ type: 'rotation', seconds: 0 }); await sleep(100);
@@ -1942,22 +1956,26 @@ async function main() {
       a.send({ type: 'command', cmd: 'PREPARE' }); await phaseIs(a, 'preparing', 0);
       await a.waitFor((m) => m.type === 'game' && m.game.canReady, { what: 'canReady' });
       a.send({ type: 'command', cmd: 'READY' }); await phaseIs(a, 'coop', 0);
-      const before = latest().assigned;
-      mon.send({ type: 'rotation', seconds: 120 }); await sleep(100);
+      const before = latest();
+      mon.send({ type: 'rotation', seconds: 0 }); await sleep(100);
       assert(latest().rotationSeconds === 60, '協力プレイ中に設定を変えた');
+      // 押したままの入力は交代で解放し、旧epochの入力は効かない
+      const mfrom = mon.mark();
+      a.epoch = before.epoch; a.input('FWD', 'down');
+      await injected(mon, 'KEY_W', 'down', mfrom);
       const from = a.mark();
       host.child.stdin.write('rotate\n');
-      const paused = await a.waitFor((m) => m.type === 'game' && m.game.phase === 'paused' && m.game.roleAck?.length === 2, { from, what: '交代' });
-      assert(paused.game.reason === 'role rotation' && !paused.game.canResume, JSON.stringify({ reason: paused.game.reason }));
-      assert(JSON.stringify(paused.game.assigned) !== JSON.stringify(before), '担当が変わっていない');
-      for (const x of [a, b]) { x.send({ type: 'role_ok', epoch: latest().epoch }); await sleep(100); }
-      await a.waitFor((m) => m.type === 'game' && m.game.canResume, { what: '確認後' });
-      assert(latest().phase === 'paused', '確認だけで再開した');
-      a.send({ type: 'command', cmd: 'RESUME' });
-      await a.waitFor((m) => m.type === 'game' && m.game.phase === 'coop', { from, what: '再開' });
-      a.send({ type: 'command', cmd: 'END' }); await sleep(100);
-      mon.send({ type: 'rotation', seconds: 0 });
-      await sleep(100);
+      const rotated = await a.waitFor((m) => m.type === 'game' && m.game.rotationCount === 1, { from, what: '交代' });
+      assert(rotated.game.phase === 'coop', '交代で一時停止した');
+      assert(rotated.game.epoch > before.epoch, 'epochが進まない');
+      assert(!rotated.game.roleAck?.length, '確認を待っている');
+      assert(JSON.stringify(rotated.game.assigned) !== JSON.stringify(before.assigned), '担当が変わっていない');
+      assert(JSON.stringify(rotated.game.assigned.P2) === JSON.stringify(before.assigned.P1), 'P1の担当がP2へ移っていない (Q46)');
+      await injected(mon, 'KEY_W', 'up', mfrom);
+      const late = mon.mark(); a.epoch = before.epoch; a.input('FWD', 'up'); a.input('FWD', 'down'); await sleep(150);
+      assert(!mon.msgs.slice(late).some((m) => m.type === 'inject' && m.entry.state === 'down'), '旧epochの押下を注入した');
+      a.send({ type: 'command', cmd: 'END' });
+      await a.waitFor((m) => m.type === 'game' && m.game.phase === 'lobby' && m.game.rotationSeconds === 0, { from, what: 'ロビーでOFF' });
       for (const x of [a, b]) x.close();
     });
 

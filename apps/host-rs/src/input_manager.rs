@@ -74,6 +74,22 @@ impl OutputState {
         true
     }
 
+    /// 本人だけの解放で、出力の押下を残すときに使う (#262)。その枠の保留辺 (解放前の連打) を捨て、
+    /// 他の枠の辺は残す。最後に集約押下と一致させるので、新しい押下は1回だけ出る (既に押していれば出さない)。
+    /// 時間制約の待ちと世代は変えない (60ms/50msは従来どおり pump_step が守る)。
+    pub(crate) fn drop_slot_edges(&mut self, slot: &'static str) {
+        let mut state = self.physical;
+        let mut queue = VecDeque::new();
+        for (down, s) in self.queue.drain(..) {
+            if s == slot || down == state { continue; }
+            queue.push_back((down, s));
+            state = down;
+        }
+        let target = !self.holders.is_empty();
+        if state != target { queue.push_back((target, slot)); }
+        self.queue = queue;
+    }
+
     /// 停止は最低時間より優先し、所有者がなくなった出力の保留辺/予約世代を破棄する。
     /// trueのときだけ呼出し側がupを要求する。送出成否による再試行は従来どおり別責務。
     pub(crate) fn release(&mut self, slot: Option<&'static str>, now: Instant) -> bool {
@@ -188,5 +204,40 @@ mod tests {
         assert!(output.timer_pending);
         assert!(output.on_timer(current));
         assert_eq!(output.pump_step(now + Duration::from_millis(50)), PumpStep::Emit { down: true, slot: "P1" });
+    }
+
+    #[test]
+    fn dropping_own_edges_keeps_the_held_key_without_replaying_old_taps() {
+        // 押したまま (物理down) で、本人の旧連打が最低押下待ちに積まれている → 捨てても押しっぱなしのまま、downを出し直さない
+        let now = Instant::now();
+        let mut output = OutputState { holders: BTreeSet::from(["P1"]), physical: true, changed_at: Some(now), ..Default::default() };
+        output.queue.extend([(false, "P1"), (true, "P1"), (false, "P1"), (true, "P1")]);
+        output.drop_slot_edges("P1");
+        assert!(output.queue.is_empty() && output.physical);
+        assert_eq!(output.pump_step(now + Duration::from_secs(1)), PumpStep::Idle);
+    }
+
+    #[test]
+    fn dropping_own_edges_emits_the_new_press_once_after_the_minimum_gap() {
+        // 離した直後 (物理up) に旧連打と新しい押下が積まれている → 新しい押下だけを、最低解放50msを守って1回出す
+        let now = Instant::now();
+        let mut output = OutputState { holders: BTreeSet::from(["P1"]), physical: false, changed_at: Some(now), ..Default::default() };
+        output.queue.extend([(true, "P1"), (false, "P1"), (true, "P1")]);
+        output.drop_slot_edges("P1");
+        assert_eq!(output.queue, VecDeque::from([(true, "P1")]));
+        assert!(matches!(output.pump_step(now + Duration::from_millis(10)), PumpStep::Wait { .. }));
+        assert!(output.on_timer(output.timer_gen));
+        assert_eq!(output.pump_step(now + Duration::from_millis(50)), PumpStep::Emit { down: true, slot: "P1" });
+        assert_eq!(output.pump_step(now + Duration::from_secs(1)), PumpStep::Idle);
+    }
+
+    #[test]
+    fn dropping_own_edges_keeps_another_slots_edges() {
+        // 同じ出力に他の枠の辺が積まれていれば、それは残す。最後は集約押下 (本人の新しい押下) に合わせる
+        let now = Instant::now();
+        let mut output = OutputState { holders: BTreeSet::from(["P1"]), physical: true, changed_at: Some(now), ..Default::default() };
+        output.queue.extend([(false, "P1"), (true, "P3"), (false, "P3"), (true, "P1")]);
+        output.drop_slot_edges("P1");
+        assert_eq!(output.queue, VecDeque::from([(false, "P3"), (true, "P1")]));
     }
 }

@@ -10,6 +10,7 @@ export interface WaitModel { character: string; heading: string; role: string; t
 export interface RemoteModel {
   players: PlayerChip[]; route: string; startLabel: string; startDisabled: boolean;
   openGameLabel: string; openGameHidden: boolean; endVisible: boolean; transferTo: Slot[]; note: string;
+  routeBlocked: boolean; notice: string; openAppHidden: boolean;
 }
 export interface PlayerCardModel { slot: Slot; index: number; className: string; badge: string; name: string; role: string; device: string }
 export interface RoleColumnModel { slot: Slot; index: number; picked: boolean; swap: boolean; title: string; line: string; ack: boolean }
@@ -32,7 +33,7 @@ export interface PhoneGame extends Omit<ControllerGame, 'profile'> {
   reason?: string | null; autoResume?: boolean; inputTarget?: boolean; prepareStatus?: string;
   canReady?: boolean; canPrepare?: boolean; canResume?: boolean; lineupOk?: boolean;
   readyReasons?: string[]; remoteRoute?: string;
-  canSwap?: boolean; canChangePlayers?: boolean; canLaunch?:boolean; rotationSeconds?: number; launch?: LaunchState|null;
+  canSwap?: boolean; canChangePlayers?: boolean; canLaunch?:boolean; canOpenApp?: boolean; rotationSeconds?: number; rotationSoon?: boolean; rotationNext?: Partial<Record<Slot, string[]>> | null; rotationCount?: number; launch?: LaunchState|null;
   required?:number; autoResumeMs?:number;
 }
 export interface LaunchState {id?:string;state:string;title?:string;message?:string}
@@ -47,7 +48,12 @@ export type PhoneView = ((snapshot: PhoneSnapshot) => void) & {
   telemetry(patch:Partial<PhoneTelemetry>):void;
   blocked(message?:string):void;
   liftHint(visible:boolean):void;
+  /** PC のアプリと一定時間つながらないとき、画面全体を覆って操作を止める (#302) */
+  offline(visible:boolean):void;
+  confirm(request:ConfirmRequest):void;
 };
+// ページ内の確認。confirm() はJSを止めてハートビートが途切れるため使わない (#289)
+export interface ConfirmRequest {message:string;ok:string;valid(remote:RemoteModel):boolean;run():void}
 export type Direction = 'up' | 'left' | 'right' | 'down';
 export interface InputBindings {
   releaseAll(): void;

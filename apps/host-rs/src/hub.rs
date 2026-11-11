@@ -48,6 +48,7 @@ const CLOSE_BAD_TOKEN: u16 = 4006;
 /// 接続ごとの送信待ちの上限。健全な接続は溜まらず、読取りが止まった接続だけが達する (#197)
 pub const WS_QUEUE_LIMIT: usize = 4096;
 const CLOSE_HOST_HANDOVER: u16 = 4008;
+const CLOSE_HOST_SHUTDOWN: u16 = 4009; // PC アプリ (ホスト) の終了。スマホは再接続しない (#302)
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
 const RTC_TIMEOUT: Duration = Duration::from_secs(5);
 const FOCUS_CHECK: Duration = Duration::from_millis(100); // 前面のウィンドウを確認する間隔
@@ -81,6 +82,7 @@ pub enum Event {
     ManualPicked(Option<PathBuf>),
     /// 試験用: PC アプリのウィンドウが前面になった・外れた (DRY_RUN のときだけ。実際は前面のプロセス名で判定する)
     FakeAppWindow(bool),
+    FakeLauncher(bool),
     /// インストール済みのゲームを探し終えた (別スレッドから)
     GamesDetected(games::Detected),
     /// ランチャーへの起動要求が終わった (別スレッドから。Err は理由)
@@ -104,6 +106,17 @@ enum Timer {
 
 fn now_ms() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0)
+}
+
+/// PC アプリ (デスクトップアプリ) のウィンドウ。前面の判定 (check_target) と同じくプロセス名で照合する
+fn desktop_target() -> Target {
+    Target { processes: vec![DESKTOP_PROCESS.into()], title_contains: String::new(), dir: None, executable: None }
+}
+
+/// Minecraft の公式ランチャーのウィンドウ (#287)。Xbox アプリ版は Minecraft.exe、旧版は MinecraftLauncher.exe。
+/// 起動直後に同じタイトルで出る GamingServicesUI (更新の確認) はプロセス名で除く。Bedrock 版は Minecraft.Windows.exe で別
+fn launcher_target() -> Target {
+    Target { processes: vec!["minecraft.exe".into(), "minecraftlauncher.exe".into()], title_contains: "Minecraft Launcher".into(), dir: None, executable: None }
 }
 
 fn dry_run() -> bool {
@@ -321,7 +334,9 @@ pub struct Hub {
     launch: Option<Launch>,
     launch_gen: u64,
     target_fg: Option<Foreground>,
+    launcher_fg: bool, // Minecraft の公式ランチャーが前面か (#287)
     target_ok: bool,
+    settings_root: Option<std::path::PathBuf>, // 自動復帰の明示的な選択を config.json へ保存する場所 (None なら保存しない)
     fake_target: Option<bool>, // 試験用 (DRY_RUN のときだけ)。Some なら OS に問い合わせない
     fake_activate: bool,
     // ゲームのキー設定に合わせた、操作 → 送るキーの対応 (#101)。準備・Ready・再開のたびに読み直す
@@ -346,9 +361,13 @@ pub struct Hub {
     // 時間制の役割交代 (#161)。既定は OFF
     rotation_secs: u64,
     rotation_at: u64,
+    rotation_left: u64,   // 協力プレイを止めたときの交代までの残り (ms)。再開で続きから数え、交代を積み増さない
+    rotation_count: u64,  // 交代した回数 (スマホの「交代しました」の表示に使う)
+    rotation_soon: bool,  // 予告中
     // 担当が変わり、本人がスマホで「確認しました」を押していない枠。押すまで Ready・再開できない
     role_ack: Vec<usize>,
     app_focused: bool,           // PC アプリが前面か (手動復帰の判定に使う)
+    game_window_seen: bool,      // 選んだゲームのウィンドウを見たか。閉じたらロビーで PC アプリを前面に戻す (#292)
     // PC アプリ (デスクトップアプリ) から起動されたか。そのときは前面のプロセス名で PC アプリの前面を判定し、
     // 画面 (WebView2 は背面でも focused のまま) の知らせは使わない
     desktop: bool,
@@ -429,6 +448,7 @@ impl Hub {
             launch: None,
             launch_gen: 0,
             target_fg: None,
+            launcher_fg: false,
             target_ok: false,
             fake_activate: true,
             keybinds: Keybinds::none(),
@@ -443,12 +463,17 @@ impl Hub {
             key_overrides: crate::key_overrides::load(crate::key_overrides::default_path().as_deref()),
             rotation_secs: 0,
             rotation_at: 0,
+            rotation_left: 0,
+            rotation_count: 0,
+            rotation_soon: false,
             role_ack: Vec::new(),
+            settings_root: config.settings_root.clone(),
             fake_target: std::env::var("RECOOPLAY_FAKE_TARGET")
                 .ok()
                 .filter(|_| std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1"))
                 .map(|v| v == "1"),
             app_focused: false,
+            game_window_seen: false,
             desktop: std::env::var("RECOOPLAY_DESKTOP").as_deref() == Ok("1"),
         };
         let (mut list, errors) = profiles::load_dir(&config.profiles_dir);
@@ -556,6 +581,7 @@ impl Hub {
                 Ok(Event::Shutdown) => {
                     // 終了時は押しっぱなしを残さない
                     let confirmed = self.release_for_shutdown();
+                    self.close_players_for_shutdown();
                     crate::runtime_measure::finish();
                     crate::input_trace::finish();
                     std::process::exit(if confirmed { 0 } else { 1 });
@@ -576,7 +602,7 @@ impl Hub {
                     crate::runtime_measure::elapsed(total_metric, enqueued_at);
                 }
                 Err(RecvTimeoutError::Timeout) => {}
-                Err(RecvTimeoutError::Disconnected) => { self.release_for_shutdown(); break; }
+                Err(RecvTimeoutError::Disconnected) => { self.release_for_shutdown(); self.close_players_for_shutdown(); break; }
             }
         }
     }
@@ -722,9 +748,15 @@ impl Hub {
             "roleOf": self.role_slots().iter().filter_map(|&i| self.role_rank(i).map(|k| (SLOT_NAMES[i].to_string(), json!(SLOT_NAMES[k])))).collect::<Map<String, Value>>(),
             "roleAck": self.role_ack.iter().map(|&i| SLOT_NAMES[i]).collect::<Vec<_>>(),
             "rotationSeconds": self.rotation_secs,
+            // 交代の予告と、交代した回数 (#161)。予告中だけ次の分担を付ける
+            "rotationSoon": self.rotation_soon,
+            "rotationNext": if self.rotation_soon { self.slot_map(&self.rotation_next().1) } else { Value::Null },
+            "rotationCount": self.rotation_count,
             "canChangePlayers": session::can_change_players(self.game.phase, &self.connected_slots(), &self.participants),
             "canSwap": matches!(self.game.phase, Phase::Lobby | Phase::Preparing) || (self.game.phase == Phase::Paused && !self.participants.is_empty()),
             "canLaunch": self.can_launch(),
+            // ホストのスマホから PC アプリを前面にできるか (#292)
+            "canOpenApp": self.desktop && self.game.phase != Phase::Coop,
             "reason": self.game.reason,
             "autoResume": self.game.auto_resume,
             "autoResumeMs": self.game.auto_resume_ms,
@@ -751,7 +783,7 @@ impl Hub {
             "prepareStatus": self.game.prepare_status,
             "titleName": self.game_name(),
             "launch": self.launch.as_ref().map(|l| json!({ "id": l.id, "state": l.state, "message": l.message })),
-            "remoteRoute": if self.remote_app_active() { "app" } else if self.remote_game_active() { "game" } else { "none" },
+            "remoteRoute": if self.remote_app_active() { "app" } else if self.remote_game_active() { "game" } else if self.remote_launcher_active() { "launcher" } else { "none" },
             // 入力が PC に届く状態か (注入モード・入力先のウィンドウ)。スマホに「届いていない」ことを知らせる
             "inputActive": self.can_inject(),
             "inputTarget": self.inject == InjectMode::On && !self.target_ok,
@@ -872,6 +904,9 @@ impl Hub {
 
     fn set_phase(&mut self, phase: Phase, reason: &str) {
         let Some(change) = session::phase_change(self.game.phase, phase) else { return };
+        let now = now_ms();
+        // 協力プレイを止めたら交代までの残りを覚え、再開で続きから数える (止まっている間は進めない)
+        if self.game.phase == Phase::Coop && self.rotation_at != 0 { self.rotation_left = self.rotation_at.saturating_sub(now).max(1); }
         self.release_outputs(None);
         self.reset_look();
         if phase == Phase::Coop && self.input_fault { self.stop_input_failure(); return; }
@@ -879,8 +914,16 @@ impl Hub {
         if change.clear_lineup { self.assigned.clear(); self.participants.clear(); self.lineup = None; }
         self.game.reason = Some(reason.to_string());
         self.advance_epoch();
-        // 協力プレイに入るたびに数え直す。止まっている間は交代しない
-        self.rotation_at = if phase == Phase::Coop && self.rotation_secs != 0 { now_ms() + self.rotation_secs * 1000 } else { 0 };
+        // 新しいプレイ (ロビーへ戻る・準備から始める) では残りを捨てる。ロビーでは交代を OFF に戻す (Q44)
+        if phase == Phase::Lobby { self.rotation_secs = 0; }
+        if matches!(phase, Phase::Lobby | Phase::Preparing) { self.rotation_left = 0; }
+        self.rotation_at = if phase == Phase::Coop && self.rotation_secs != 0 {
+            now + if self.rotation_left != 0 { self.rotation_left } else { self.rotation_secs * 1000 }
+        } else { 0 };
+        if phase == Phase::Coop { self.rotation_left = 0; }
+        self.rotation_soon = false;
+        // 操作できない状態で協力プレイに入った (再開した) ときは、操作できるようになるまで数えない
+        self.sync_rotation_clock(now);
         self.log("phase", json!({ "phase": phase.name(), "reason": reason, "epoch": self.game.epoch }));
         self.update_low_latency();
         self.push_game();
@@ -914,6 +957,39 @@ impl Hub {
         ok
     }
 
+    /// PC アプリ (デスクトップアプリ) のウィンドウを前面にする (#292)。入力は送らず、前面にするだけ
+    fn open_app(&mut self) -> Result<(), String> {
+        if !self.desktop { return Err("PCアプリから起動したときだけ使えます".into()); }
+        let result = if self.fake_target.is_some() {
+            if self.fake_activate { Ok(()) } else { Err("シミュレーション：前面化を拒否しました".into()) }
+        } else if dry_run() {
+            Err("dry-run：実ウィンドウは操作しません".into())
+        } else {
+            self.game_service.activate(&desktop_target()).map_err(|reason|
+                if reason.contains("見つかりません") { "PCアプリのウィンドウが見つかりません".into() } else { reason })
+        };
+        self.log("open_app", json!({ "ok": result.is_ok() }));
+        if self.fake_target.is_some() { if result.is_ok() { self.on_app_focus(true); } } else { self.check_target(); }
+        result.map_err(|reason| format!("{reason}。PCでReCooplayを前面にしてください"))
+    }
+
+    /// 選んだゲームが閉じたら、ロビーでは PC アプリを前面に戻す (#292)。1回閉じるごとに1回だけ
+    fn watch_game_exit(&mut self) {
+        if self.fake_target.is_some() || dry_run() { return; }
+        self.return_to_app_after_game_exit();
+    }
+
+    fn return_to_app_after_game_exit(&mut self) {
+        if !self.desktop { return; }
+        if self.target_ok || self.game_service.exists(&self.target) { self.game_window_seen = true; return; }
+        if !self.game_window_seen || self.game.phase != Phase::Lobby { return; }
+        self.game_window_seen = false;
+        if self.app_focused { return; }
+        let ok = self.game_service.activate(&desktop_target()).is_ok();
+        self.log("app_return", json!({ "ok": ok, "reason": "game exit" }));
+        self.check_target();
+    }
+
     fn maybe_auto_resume(&mut self) {
         // 再接続とPCアプリへの手動復帰が重なっても、前面の観測で復帰解除を先に確定する。
         self.check_target();
@@ -937,6 +1013,7 @@ impl Hub {
             cmd == "PREPARE" && self.game.phase == Phase::Lobby && self.can_prepare(),
             cmd == "READY" && self.game.phase == Phase::Preparing && self.can_ready(),
             cmd == "RESUME" && self.game.phase == Phase::Paused && self.can_resume());
+        let mut rejected: Option<String> = None;
         let accepted = allowed && match (cmd, self.game.phase) {
             ("OPEN_GAME", Phase::Preparing | Phase::Paused) => {
                 self.game.prepare_status = if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
@@ -976,6 +1053,11 @@ impl Hub {
                 if self.game.phase == Phase::Paused { self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); }
                 else { self.set_phase(Phase::Paused, "host pause"); } true
             }
+            // PC アプリを前面にする (#292)。ロビー・準備中・一時停止中にスマホだけで PC アプリへ戻れるようにする
+            ("OPEN_APP", p) if p != Phase::Coop => match self.open_app() {
+                Ok(()) => true,
+                Err(reason) => { rejected = Some(reason); false }
+            },
             ("END", p) if p != Phase::Lobby => {
                 self.game.host_ready = false;
                 self.game.auto_resume_until = 0;
@@ -985,7 +1067,7 @@ impl Hub {
         };
         self.send(self.slots[slot].as_ref().and_then(|s| s.conn), &json!({
             "type": "command_result", "cmd": cmd, "accepted": accepted,
-            "reasons": if accepted { vec![] } else { self.ready_reasons(true) },
+            "reasons": if accepted { vec![] } else if let Some(reason) = rejected { vec![reason] } else { self.ready_reasons(true) },
         }));
     }
 
@@ -996,7 +1078,7 @@ impl Hub {
             // ゲームのキー設定に合わせて送る。Minecraft の固定の操作名 (FWD など) は受け付けない
             if !control.starts_with("act:") || !self.uses_generated_controls() { return None; }
             self.action_output(slot, control)
-        } else if slot == 0 && self.remote_game_active() {
+        } else if slot == 0 && (self.remote_game_active() || self.remote_launcher_active()) {
             let default = controls::remote_control(control)?;
             // メニューでの「持ち物」はインベントリのキー (Minecraft の設定に合わせる)
             if control == "REMOTE_E" { self.keybinds.output_for("INV").unwrap_or(Some(default)) } else { Some(default) }
@@ -1080,20 +1162,71 @@ impl Hub {
         self.ranked(&self.role_slots()).iter().position(|&i| i == slot)
     }
 
-    /// 2 人の担当を入れ替える (#47)。開始前 (ロビー・準備中) と一時停止中だけ。全解放して epoch を進め、
-    /// 2 人がスマホで新しい担当を確認するまで Ready・再開できない。ロビーでは分担の決定もやり直しになる
-    /// 時間制の役割交代 (#161)。協力プレイを止めて全員の入力を解放し、担当をずらして全員の確認を待つ。
-    /// 再開はホストの明示操作だけで、自動復帰しない。ホストの権限は移らない
+    /// 次の交代で使う席順と分担 (参加者の順に担当を 1 つずらす、Q46)
+    fn rotation_next(&self) -> ([usize; 4], Vec<Vec<String>>) {
+        let seats = session::rotated_seats(self.seats, &self.participants);
+        let next = Self::ranked_by(&seats, &self.participants);
+        let assigned = match &self.profile {
+            Some(p) => {
+                let mut out = vec![Vec::new(); MAX_SLOTS];
+                for (k, a) in profiles::assignment_for(p, next.len().max(1)).into_iter().enumerate() {
+                    if let Some(&i) = next.get(k) { out[i] = a; }
+                }
+                out
+            }
+            None => self.assigned.clone(),
+        };
+        (seats, assigned)
+    }
+
+    fn ranked_by(seats: &[usize; 4], slots: &[usize]) -> Vec<usize> {
+        let mut v = slots.to_vec();
+        v.sort_by_key(|&i| seats[i]);
+        v
+    }
+
+    /// 交代の時計を、実際に操作できる期間だけ進める (#161)。協力プレイ中でも、対象ゲームが前面にない・注入OFF・
+    /// 入力の障害などで操作できない間は残り時間を凍結し、予告も取り消す。操作できるようになったら残りから数える
+    fn sync_rotation_clock(&mut self, now: u64) {
+        if self.game.phase != Phase::Coop { return; }
+        let active = self.can_inject();
+        if !active && self.rotation_at != 0 {
+            self.rotation_left = self.rotation_at.saturating_sub(now).max(1);
+            self.rotation_at = 0;
+            self.rotation_soon = false;
+            self.push_game();
+        } else if active && self.rotation_at == 0 && self.rotation_left != 0 && self.rotation_secs != 0 {
+            self.rotation_at = now + self.rotation_left;
+            self.rotation_left = 0;
+            self.push_game();
+        }
+    }
+
+    /// 時間制の役割交代 (#161・Q42/Q46)。協力プレイを止めずに、全員の入力を解放して未処理の入力・視点を捨て、
+    /// epoch を進めてから担当をずらす。旧担当の遅れた入力・押したままの指は新しい epoch では効かず、
+    /// 指を離した後の新しいタッチだけを受け付ける。ホストの権限・席の番号 (P1〜P4)・キー割当は移らない。
+    /// 交代の少し前に次の担当を予告する。Pause・切断・緊急停止の間は協力プレイでないので進まない
     fn rotate_roles_if_due(&mut self, now: u64) {
-        if !session::rotation_due(self.game.phase, self.rotation_at, now) { return; }
-        self.set_phase(Phase::Paused, "role rotation");
-        if self.game.phase != Phase::Paused { return; }
-        self.seats = session::rotated_seats(self.seats, &self.participants);
-        if let Some(p) = self.profile.clone() { self.assigned = self.proposal_for(&p, &self.participants.clone()); }
-        self.game.auto_resume_until = 0;
-        self.role_ack = self.participants.clone();
+        self.sync_rotation_clock(now);
+        if self.game.phase != Phase::Coop || self.rotation_at == 0 { return; }
+        if !session::rotation_due(self.game.phase, self.rotation_at, now) {
+            if !self.rotation_soon && now + session::ROTATION_NOTICE_MS >= self.rotation_at {
+                self.rotation_soon = true;
+                self.push_game();
+            }
+            return;
+        }
+        self.release_outputs(None);
+        self.reset_look();
+        if self.input_fault { return; }
+        let (seats, assigned) = self.rotation_next();
+        self.seats = seats;
+        if self.profile.is_some() { self.assigned = assigned; }
         self.advance_epoch();
-        self.log("role_rotation", json!({ "epoch": self.game.epoch }));
+        self.rotation_count += 1;
+        self.rotation_soon = false;
+        self.rotation_at = now + self.rotation_secs * 1000;
+        self.log("role_rotation", json!({ "epoch": self.game.epoch, "count": self.rotation_count }));
         self.push_game();
         self.push_state();
     }
@@ -1129,6 +1262,8 @@ impl Hub {
         self.push_state();
     }
 
+    /// 2 人の担当を入れ替える (#47)。開始前 (ロビー・準備中) と一時停止中だけ。全解放して epoch を進め、
+    /// 2 人がスマホで新しい担当を確認するまで Ready・再開できない。ロビーでは分担の決定もやり直しになる
     fn swap_roles(&mut self, a: usize, b: usize) {
         if !session::can_swap(self.game.phase, &self.connected_slots(), &self.participants, a, b) { return; }
         self.seats.swap(a, b);
@@ -1264,29 +1399,32 @@ impl Hub {
     /// 視点の番号と累積値。解放要求より遅れて届く・先に届く入力の両方の逆順に備える:
     /// - floor 以下の押下は解放する。floor より後の押下 (解放要求を追い越した新しいタッチ) は残す
     /// - 視点は look の番号以下を今後受け付けず、累積値の基準を解放時点へ進める (解放前の移動を後から適用しない)
-    fn release_slot_inputs(&mut self, idx: usize, floor: i64, look: Option<(i64, f64, f64)>) {
+    fn release_slot_inputs(&mut self, idx: usize, floor: i64, look: (i64, f64, f64)) {
         let name = SLOT_NAMES[idx];
         let Some(slot) = self.slots[idx].as_mut() else { return };
         slot.release_floor = slot.release_floor.max(floor);
         let kept: Vec<String> = slot.press_iseq.iter().filter(|(_, &i)| i > floor).map(|(b, _)| b.clone()).collect();
         slot.pressed.retain(|b| kept.contains(b));
         slot.press_iseq.retain(|_, i| *i > floor);
-        // 視点: 解放時点までの番号と累積値を基準にする。解放より新しい視点が既に届いていれば、そちらを保つ
-        let newer_look = match look {
-            Some((lseq, cx, cy)) if lseq >= slot.look_seq => {
-                slot.look_seq = lseq; slot.look_cx = cx; slot.look_cy = cy; false
-            }
-            Some(_) => true,
-            None => false,
+        // 視点: 解放時点までの番号と累積値を基準にする。解放より新しい視点が既に届いていれば、
+        // その累積値と解放時点の差 (新しいタッチの分) だけを残し、解放前の未処理分は捨てる
+        let (lseq, cx, cy) = look;
+        let newer = if lseq >= slot.look_seq {
+            slot.look_seq = lseq; slot.look_cx = cx; slot.look_cy = cy; None
+        } else {
+            Some((slot.look_cx - cx, slot.look_cy - cy))
         };
         let now = Instant::now();
         let keep: BTreeSet<usize> = kept.iter().filter_map(|b| self.resolve_control(idx, b)).collect();
         for o in 0..OUTPUTS.len() {
-            if keep.contains(&o) { continue; }
+            // 押下を残す出力も、解放前の連打の保留辺は捨てる
+            if keep.contains(&o) { self.outputs[o].drop_slot_edges(name); self.pump(o); continue; }
             if self.outputs[o].release(Some(name), now) { self.apply_output(o, false, name); }
         }
-        if self.look.owner() == name && !newer_look { self.reset_look(); }
-        self.log("release_inputs", json!({ "slot": name, "iseq": floor, "kept": kept, "lseq": look.map(|l| l.0) }));
+        if self.look.owner() == name {
+            match newer { Some((nx, ny)) => self.look.keep_at_most(nx, ny), None => self.reset_look() }
+        }
+        self.log("release_inputs", json!({ "slot": name, "iseq": floor, "kept": kept, "lseq": lseq }));
         self.push_game();
     }
 
@@ -1310,7 +1448,7 @@ impl Hub {
         let down = state == "down";
         let o = &OUTPUTS[idx];
         if let Kind::Wheel { notches } = o.kind {
-            if !down || !self.can_inject() {
+            if !down || !(self.can_inject() || self.remote_launcher_active()) {
                 return;
             }
             let ok = self.input.wheel(notches);
@@ -1321,8 +1459,8 @@ impl Hub {
             self.broadcast_monitors(&json!({ "type": "inject", "entry": entry }));
             return;
         }
-        // 押下は注入可能な時だけ受け付ける。解放は常に通す (押しっぱなしを残さない)
-        if down && !self.can_inject() {
+        // 押下は注入可能な時 (ランチャーへのリモコン入力を含む) だけ受け付ける。解放は常に通す (押しっぱなしを残さない)
+        if down && !(self.can_inject() || (slot == 0 && self.remote_launcher_active())) {
             return;
         }
         self.set_output(idx, SLOT_NAMES[slot], down);
@@ -1335,6 +1473,25 @@ impl Hub {
         let page = self.conns.values().any(|c| matches!(c.role, Role::Monitor {page:Page::App,focused:true}));
         page && (self.fake_target.is_some() || self.game_service.foreground().is_some_and(|f|
             ["msedge.exe", "chrome.exe", "firefox.exe"].contains(&f.process.as_str()) && f.title.contains("Re:Cooplay")))
+    }
+
+    /// ランチャーへのリモコン入力 (#287) も、前面から外れた・戻ったときに押下と旧入力を持ち越さない
+    fn on_launcher_focus(&mut self, launcher: bool) {
+        if launcher == self.launcher_fg { return; }
+        self.launcher_fg = launcher;
+        if self.inject == InjectMode::On { self.release_outputs(None); self.reset_look(); self.advance_epoch(); }
+        self.log("launcher_focus", json!({ "ok": launcher }));
+        self.push_game();
+    }
+
+    /// Minecraft の公式ランチャーをホストのリモコンで操作できるか (#287)。「プレイ」を押すのに PC のマウスを使わない。
+    /// Minecraft を選んだロビー・準備中に、ランチャーが前面のときだけ。PC アプリが前面ならそちらを優先する
+    fn remote_launcher_active(&self) -> bool {
+        self.game.title == "minecraft-java" && matches!(self.game.phase, Phase::Lobby | Phase::Preparing) && self.launcher_fg
+            && !self.remote_app_active() && self.inject == InjectMode::On && self.input.available() && !self.input_fault
+            && self.release_pending.is_empty()
+            // ゲームの経路と同じく、緊急停止のホットキーが使えないときは実入力を送らない (疑似入力先を除く)
+            && (self.hotkey.is_ok() || self.fake_target.is_some())
     }
 
     fn remote_game_active(&self) -> bool {
@@ -1358,7 +1515,7 @@ impl Hub {
         if !matches!(kind.as_str(), "move" | "scroll") { return; }
         if self.remote_app_active() {
             self.broadcast_monitors(&json!({"type":"remote","route":"app","epoch":self.game.epoch,"kind":kind,"dx":x,"dy":y}));
-        } else if self.remote_game_active() {
+        } else if self.remote_game_active() || self.remote_launcher_active() {
             // スクロール量に合わせてホイールを 1〜3 段送る (40px で 1 段、#122)。下へのスクロールはホイールの負の向き
             let notches = if kind == "scroll" { ((y.abs() / 40.0).ceil() as i32).clamp(0, 3) * if y > 0.0 { -1 } else { 1 } } else { 0 };
             let ok = if kind == "move" { self.input.mouse_move(x.round() as i32,y.round() as i32) } else { self.input.wheel(notches) };
@@ -1413,20 +1570,22 @@ impl Hub {
 
     /// 前面のウィンドウが入力先かを確認する。外れたら (常時 ON で注入中なら) 全キーを離し、PC 画面とスマホに知らせる
     fn check_target(&mut self) {
-        let (fg, ok) = match self.fake_target {
-            Some(ok) => (None, ok),
+        let (fg, ok, launcher) = match self.fake_target {
+            Some(ok) => (None, ok, self.launcher_fg),  // 試験では FakeLauncher で変える
             None => {
                 let fg = self.game_service.foreground();
                 let ok = fg.as_ref().is_some_and(|f| self.target.matches(f));
+                let launcher = fg.as_ref().is_some_and(|f| launcher_target().matches(f));
                 // PC アプリ (デスクトップアプリ) が前面か。WebView2 の画面は背面になっても blur を受け取らないため、
                 // 手動復帰の判定は前面のプロセス名で行う
                 if self.desktop {
                     let app = fg.as_ref().is_some_and(|f| f.process.eq_ignore_ascii_case(DESKTOP_PROCESS));
                     self.on_app_focus(app);
                 }
-                (fg, ok)
+                (fg, ok, launcher)
             }
         };
+        self.on_launcher_focus(launcher);
         if ok != self.target_ok {
             self.target_ok = ok;
             if self.inject == InjectMode::On {
@@ -1435,6 +1594,7 @@ impl Hub {
                 // 外れた時も戻った時も、通信中・受信待ちの旧入力と視点を持ち越さない。
                 self.advance_epoch();
             }
+            self.sync_rotation_clock(now_ms());
             // ウィンドウのタイトル (ワールド名など) はログに残さない
             self.log("target_focus", json!({ "ok": ok, "process": fg.as_ref().map(|f| f.process.clone()) }));
             self.target_fg = fg;
@@ -1480,6 +1640,7 @@ impl Hub {
     /// 入力先を選んだゲームに合わせる。一覧のゲームはインストール先のフォルダ内のプロセスだけを対象にする
     fn apply_target(&mut self) {
         self.target = game_service::target_for(&self.games, &self.game.title, &self.base_target);
+        self.game_window_seen = false;
         self.check_target();
         self.push_state();
     }
@@ -1636,7 +1797,7 @@ impl Hub {
         let gen = self.launch_gen;
         let minecraft = entry.source == games::MINECRAFT_SOURCE;
         let message = if dry_run() { format!("dry-run：{}は起動しません", entry.name) }
-            else if minecraft { "Minecraftのランチャーを開きました。ランチャーで「プレイ」を押してください".into() }
+            else if minecraft { "Minecraftのランチャーを開きました。ホストのスマホのリモコンで「プレイ」を押してください".into() }
             else { format!("{}を起動しています", entry.name) };
         self.log("launch_game", json!({ "id": entry.id, "source": entry.source }));
         // ランチャーへの要求 (ShellExecuteW) は Steam の起動待ちで数秒かかる (実機で約5秒)。
@@ -1772,10 +1933,19 @@ impl Hub {
         let _ = self.log_file.flush(); confirmed
     }
 
+    /// 解放の後、スマホへ PC アプリの終了を知らせる (#302)。スマホは再接続をやめ、画面全体で終了を示す。
+    /// 送信は接続ごとのタスクが行うので、プロセスを終える前に少しだけ待つ
+    fn close_players_for_shutdown(&self) {
+        let players: Vec<u64> = self.conns.iter().filter(|(_, c)| matches!(c.role, Role::Player { .. })).map(|(&id, _)| id).collect();
+        for &id in &players { self.close(Some(id), CLOSE_HOST_SHUTDOWN, "host shutdown"); }
+        if !players.is_empty() { std::thread::sleep(Duration::from_millis(200)); }
+    }
+
     fn on_focus_change(&mut self) {
         if !self.can_inject() {
             self.release_outputs(None);
         }
+        self.sync_rotation_clock(now_ms());
         self.push_state();
     }
 
@@ -1879,6 +2049,14 @@ impl Hub {
         self.push_state();
     }
 
+    /// ロビーで保持中の切断枠のうち、最も早く空く枠までの時間。保持中の枠がなければ None (#297)
+    fn held_slot_retry_ms(&self, now: u64) -> Option<u64> {
+        if self.game.phase != Phase::Lobby { return None; }
+        self.slots.iter().flatten().filter(|s| !s.connected)
+            .map(|s| session::LOBBY_SLOT_HOLD_MS.saturating_sub(now.saturating_sub(s.disconnected_at)))
+            .min()
+    }
+
     /// ロビーで戻らない枠を解放し、P1 が空いたら接続中で最も若い枠をホストにする (#223)。
     /// P1 = ホストの前提を変えないよう枠ごと P1 へ移し、接続は 4008 で閉じる。スマホは通常の再接続で
     /// 同じトークンのまま P1 として戻り、welcome と WebRTC が作り直される。元のホストは参加者として戻る。
@@ -1964,6 +2142,7 @@ impl Hub {
                     }
                 }
                 self.release_lobby_slots(now);
+                self.watch_game_exit();
                 self.rotate_roles_if_due(now);
                 self.update_low_latency();
                 self.net_tick += 1;
@@ -2038,7 +2217,7 @@ impl Hub {
             }
             Event::EmergencyStop { source, .. } => self.emergency_stop(source),
             Event::ManualPicked(picked) => self.on_manual_picked(picked),
-            Event::FakeRotationDue => { if self.rotation_at != 0 { self.rotation_at = 1; self.rotate_roles_if_due(now_ms()); } }
+            Event::FakeRotationDue => { if self.rotation_at != 0 { self.rotation_at = now_ms(); self.rotate_roles_if_due(now_ms()); } }
             Event::BluetoothAudio(on) => {
                 if self.bluetooth_audio != on {
                     self.bluetooth_audio = on;
@@ -2054,6 +2233,9 @@ impl Hub {
             }
             Event::FakeActivate(ok) => {
                 if self.fake_target.is_some() { self.fake_activate = ok; }
+            }
+            Event::FakeLauncher(f) => {
+                if self.fake_target.is_some() { self.on_launcher_focus(f); }
             }
             Event::FakeAppWindow(f) => {
                 // 試験では、この知らせが来たら PC アプリから起動された扱いにする
@@ -2241,6 +2423,12 @@ impl Hub {
             "auto_resume" => {
                 self.game.auto_resume = msg.get("on").and_then(Value::as_bool).unwrap_or(false);
                 self.log("auto_resume", json!({ "on": self.game.auto_resume }));
+                // 利用者の明示的な選択として保存し、次回以降の起動で勝手にOFFへ戻さない (#225)
+                if let Some(root) = &self.settings_root {
+                    if let Err(e) = crate::config::save_auto_resume(root, self.game.auto_resume) {
+                        self.log("auto_resume_save_failed", json!({ "error": e.to_string() }));
+                    }
+                }
                 self.push_game();
             }
             "phase" => {
@@ -2325,7 +2513,9 @@ impl Hub {
                     i
                 }
                 None => {
-                    self.send(Some(id), &json!({ "type": "full" }));
+                    // 切断した人の枠をロビーで保持しているだけなら、満員ではなく空く見込みの時間を知らせる (#297)
+                    let retry_ms = self.held_slot_retry_ms(now_ms());
+                    self.send(Some(id), &json!({ "type": "full", "retryMs": retry_ms }));
                     let device = device_kind(&s(msg, "ua").unwrap_or_default());
                     self.log("reject_full", json!({ "device": device }));
                     return self.close(Some(id), 4004, "room full");
@@ -2442,17 +2632,16 @@ impl Hub {
             }
             "release_inputs" if via == Via::Ws => {
                 if msg.get("epoch").and_then(Value::as_u64) == Some(self.game.epoch) {
-                    match msg.get("iseq").and_then(Value::as_i64) {
+                    let look = match (msg.get("lseq").and_then(Value::as_i64), num(&msg, "cx"), num(&msg, "cy")) {
+                        (Some(l), Some(x), Some(y)) if x.is_finite() && y.is_finite() => Some((l, x, y)),
+                        _ => None,
+                    };
+                    match (msg.get("iseq").and_then(Value::as_i64), look) {
                         // 送信した本人の入力だけを解放する。他の参加者の押しっぱなしと進行状態(epoch)は変えない (#262)
-                        Some(floor) => {
-                            let look = match (msg.get("lseq").and_then(Value::as_i64), num(&msg, "cx"), num(&msg, "cy")) {
-                                (Some(l), Some(x), Some(y)) if x.is_finite() && y.is_finite() => Some((l, x, y)),
-                                _ => None,
-                            };
-                            self.release_slot_inputs(idx, floor, look)
-                        }
-                        // 旧版のスマホ (iseqなし) は従来どおり全参加者を解放してepochを進める
-                        None => { self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); }
+                        (Some(floor), Some(look)) => self.release_slot_inputs(idx, floor, look),
+                        // 押下と視点の両方の境界がない要求 (旧版のスマホ) は、解放前の入力を確実に拒否できないので、
+                        // 従来どおり全参加者を解放してepochを進める
+                        _ => { self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); }
                     }
                 }
             }
@@ -2632,6 +2821,8 @@ impl Hub {
 
 #[cfg(test)]
 mod tests {
+    include!("release_order_tests.rs");
+    include!("review_rotation_tests.rs");
     use super::*;
     use std::collections::VecDeque;
     use crate::input::Input;
@@ -2698,6 +2889,7 @@ mod tests {
             launch: None,
             launch_gen: 0,
             target_fg: None,
+            launcher_fg: false,
             target_ok: true,
             fake_activate: true,
             keybinds: Keybinds::none(),
@@ -2712,9 +2904,14 @@ mod tests {
             key_overrides: Default::default(),
             rotation_secs: 0,
             rotation_at: 0,
+            rotation_left: 0,
+            rotation_count: 0,
+            rotation_soon: false,
             role_ack: Vec::new(),
+            settings_root: None,
             fake_target: Some(true),
             app_focused: false,
+            game_window_seen: false,
             desktop: false,
         };
         let (monitor_tx, monitor_rx) = unbounded_channel();
@@ -2951,10 +3148,11 @@ mod tests {
         // 新しいタッチは解放時点の累積値から数える (捨てた移動を混ぜない)
         h.accept_look(1, &json!({"epoch":1,"lseq":3,"cx":105,"cy":2}));
         assert_eq!((h.look.px, h.look.py), (5.0, 2.0));
-        // 旧版のスマホ (lseq なし) は視点の基準を変えない
+        // 視点の境界 (lseq) のない旧版の要求は、解放前の視点を拒否できないので、全体の解放とepoch更新にする
         h.handle_player_message(1, json!({"type":"release_inputs","epoch":1,"iseq":0}), Via::Ws);
+        assert_eq!((h.look.px, h.game.epoch), (0.0, epoch + 1));
         h.accept_look(1, &json!({"epoch":1,"lseq":4,"cx":106,"cy":2}));
-        assert_eq!(h.look.px, 1.0);
+        assert_eq!(h.look.px, 0.0, "旧epochの視点は適用しない");
     }
 
     #[test]
@@ -2967,7 +3165,7 @@ mod tests {
         h.accept_input(0, input(1, "down"), Via::Ws);
         h.accept_input(0, input(2, "up"), Via::Ws);
         h.accept_input(0, input(3, "down"), Via::Rtc); // 新しい指
-        h.handle_player_message(0, json!({"type":"release_inputs","epoch":1,"iseq":2}), Via::Ws);
+        h.handle_player_message(0, json!({"type":"release_inputs","epoch":1,"iseq":2,"lseq":0,"cx":0,"cy":0}), Via::Ws);
         assert!(h.slots[0].as_ref().unwrap().pressed.contains("act:forward"), "解放より後の押下の論理保持を残す");
         assert!(h.outputs[w].holders.contains("P1"), "解放より後の押下の出力を残す");
         h.accept_input(0, input(3, "down"), Via::Ws); // 同じ番号のWS側は重複として捨てる
@@ -2975,7 +3173,7 @@ mod tests {
         // 解放の時点で押していた押下は離す
         h.accept_input(0, input(4, "up"), Via::Ws);
         h.accept_input(0, input(5, "down"), Via::Ws);
-        h.handle_player_message(0, json!({"type":"release_inputs","epoch":1,"iseq":5}), Via::Ws);
+        h.handle_player_message(0, json!({"type":"release_inputs","epoch":1,"iseq":5,"lseq":0,"cx":0,"cy":0}), Via::Ws);
         assert!(!h.slots[0].as_ref().unwrap().pressed.contains("act:forward"));
         assert!(!h.outputs[w].holders.contains("P1"));
         h.release_outputs(None);
@@ -3062,6 +3260,131 @@ mod tests {
         assert!(h.outputs.iter().all(|s| !s.physical && s.queue.is_empty())); assert_eq!(h.look.px, 0.0);
         h.on_launched(7, Err("切替前の結果".into())); h.watch_launch(7);
         assert!(h.launch.is_none()); assert_eq!(h.game.title, "pseudo-game");
+    }
+
+    #[test]
+    fn launcher_window_matches_only_the_official_minecraft_launcher() {
+        let fg = |process: &str, title: &str| Foreground { process: process.into(), path: String::new(), title: title.into() };
+        assert!(launcher_target().matches(&fg("minecraft.exe", "Minecraft Launcher")));
+        assert!(launcher_target().matches(&fg("minecraftlauncher.exe", "Minecraft Launcher")));
+        // 実機で起動直後に同じタイトルで出た更新確認・ゲーム本体・Bedrock 版は対象にしない
+        assert!(!launcher_target().matches(&fg("gamingservicesui.exe", "Minecraft Launcher")));
+        assert!(!launcher_target().matches(&fg("javaw.exe", "Minecraft 1.21")));
+        assert!(!launcher_target().matches(&fg("minecraft.windows.exe", "Minecraft")));
+    }
+
+    #[test]
+    fn host_remote_reaches_the_minecraft_launcher_only_before_coop_and_releases_when_it_leaves() {
+        let (mut h, _rx) = fixture();
+        h.game.title = "minecraft-java".into();
+        h.game.phase = Phase::Lobby;
+        h.fake_target = Some(false); // ゲーム本体は前面ではない
+        h.check_target();
+        assert!(!h.remote_launcher_active());
+        h.on_event(Event::FakeLauncher(true));
+        assert!(h.remote_launcher_active());
+        assert_eq!(h.game_snapshot()["remoteRoute"], "launcher");
+        h.handle_control(1, "ENTER", "down");
+        assert!(!h.outputs[index("ENTER")].physical, "ホスト以外は操作できない");
+        h.handle_control(0, "ENTER", "down");
+        assert!(h.outputs[index("ENTER")].physical, "ホストのリモコンでランチャーの「プレイ」を押せる");
+        let epoch = h.game.epoch;
+        h.on_event(Event::FakeLauncher(false));
+        assert!(!h.outputs[index("ENTER")].physical, "ランチャーが前面から外れたら離す");
+        assert!(h.game.epoch > epoch);
+        assert_eq!(h.game_snapshot()["remoteRoute"], "none");
+        h.on_event(Event::FakeLauncher(true));
+        h.game.phase = Phase::Coop;
+        assert!(!h.remote_launcher_active(), "協力プレイ中は使わない");
+        h.game.phase = Phase::Preparing;
+        assert!(h.remote_launcher_active());
+        h.game.title = "pseudo-game".into();
+        assert!(!h.remote_launcher_active(), "Minecraft 以外を選んでいるときは使わない");
+        h.release_outputs(None);
+    }
+
+    #[test]
+    fn launcher_route_needs_the_emergency_hotkey_like_the_game_route() {
+        let recorder = RecordingInput::default();
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.game.title = "minecraft-java".into();
+        h.game.phase = Phase::Lobby;
+        h.fake_target = None; // 実際の入力先 (疑似入力先ではない)
+        h.hotkey = Err("他のアプリが使用中".into());
+        h.on_launcher_focus(true); // ランチャーが前面に来た観測だけを模擬する
+        assert!(h.launcher_fg);
+        assert!(!h.remote_launcher_active(), "緊急停止が使えないのにランチャーへ送らない");
+        assert_eq!(h.game_snapshot()["remoteRoute"], "none");
+        let epoch = h.game.epoch;
+        h.handle_control(0, "ENTER", "down");
+        h.handle_control(0, "MOUSE_L", "down");
+        h.remote_message(0, &json!({"epoch":epoch,"rseq":1,"kind":"move","dx":5,"dy":5}));
+        h.remote_message(0, &json!({"epoch":epoch,"rseq":2,"kind":"scroll","dy":80}));
+        assert!(recorder.calls().is_empty(), "キー・クリック・移動・ホイールのどれも送らない: {:?}", recorder.calls());
+        h.hotkey = Ok(());
+        assert!(h.remote_launcher_active(), "登録できていればランチャーへ送れる");
+        assert_eq!(h.game_snapshot()["remoteRoute"], "launcher");
+        h.release_outputs(None);
+    }
+
+    #[test]
+    fn host_can_bring_the_desktop_app_to_front_outside_coop_only() {
+        let (mut h, _rx) = fixture();
+        // PC アプリから起動していなければ使えない
+        h.game.phase = Phase::Lobby;
+        assert!(h.open_app().unwrap_err().contains("PCアプリから起動したときだけ"));
+        h.desktop = true;
+        h.command(0, "OPEN_APP");
+        assert!(h.app_focused, "ロビーではPCアプリを前面にできる");
+        // 協力プレイ中は受け付けない (前面を奪って一時停止させない)
+        h.app_focused = false; h.game.phase = Phase::Coop;
+        h.command(0, "OPEN_APP"); assert!(!h.app_focused);
+        // ホスト以外は使えない
+        h.game.phase = Phase::Paused;
+        h.command(1, "OPEN_APP"); assert!(!h.app_focused);
+        h.fake_activate = false;
+        assert!(h.open_app().unwrap_err().contains("前面化を拒否"));
+        h.fake_activate = true;
+        h.command(0, "OPEN_APP"); assert!(h.app_focused);
+        assert_eq!(h.game_snapshot()["canOpenApp"], true);
+        h.game.phase = Phase::Coop; assert_eq!(h.game_snapshot()["canOpenApp"], false);
+    }
+
+    #[test]
+    fn closing_the_game_returns_the_desktop_app_to_front_once_in_lobby() {
+        struct Windows { open: std::sync::Mutex<bool>, activated: std::sync::Mutex<Vec<Vec<String>>> }
+        impl game_service::GameBackend for Windows {
+            fn roots(&self) -> games::Roots { panic!("探索しない") }
+            fn detect(&self, _: &games::Roots) -> games::Detected { panic!("探索しない") }
+            fn foreground(&self) -> Option<Foreground> { None }
+            fn exists(&self, _: &Target) -> bool { *self.open.lock().unwrap() }
+            fn activate(&self, t: &Target) -> Result<(), String> { self.activated.lock().unwrap().push(t.processes.clone()); Ok(()) }
+            fn launch(&self, _: &Entry) -> Result<(), String> { panic!("起動しない") }
+            fn pick_exe(&self) -> Option<PathBuf> { panic!("選択しない") }
+        }
+        let backend = std::sync::Arc::new(Windows { open: std::sync::Mutex::new(true), activated: Default::default() });
+        let (mut h, _rx) = fixture();
+        h.game_service = GameService::with_backend(backend.clone());
+        h.fake_target = None; h.desktop = true; h.game.phase = Phase::Paused;
+        h.return_to_app_after_game_exit();
+        assert!(h.game_window_seen);
+        // 一時停止中に閉じても前面を変えず、ロビーへ戻ってから PC アプリを前面にする
+        *backend.open.lock().unwrap() = false; h.target_ok = false;
+        h.return_to_app_after_game_exit();
+        assert!(backend.activated.lock().unwrap().is_empty());
+        h.game.phase = Phase::Lobby;
+        h.return_to_app_after_game_exit();
+        assert_eq!(*backend.activated.lock().unwrap(), vec![vec![DESKTOP_PROCESS.to_string()]]);
+        // 閉じたままなら繰り返さない
+        h.return_to_app_after_game_exit();
+        assert_eq!(backend.activated.lock().unwrap().len(), 1);
+        // ゲームを見ていないまま (未起動) なら前面を変えない
+        let (mut h, _rx) = fixture();
+        let idle = std::sync::Arc::new(Windows { open: std::sync::Mutex::new(false), activated: Default::default() });
+        h.game_service = GameService::with_backend(idle.clone());
+        h.fake_target = None; h.target_ok = false; h.desktop = true; h.game.phase = Phase::Lobby;
+        h.return_to_app_after_game_exit();
+        assert!(idle.activated.lock().unwrap().is_empty());
     }
 
     #[test]
@@ -3348,6 +3671,19 @@ mod tests {
     }
 
     #[test]
+    fn full_room_reports_when_the_earliest_held_slot_is_released() {
+        let mut h = lobby_with(&[(0, true), (1, false), (2, true), (3, true)], 1_000);
+        h.slots[3].as_mut().unwrap().connected = false;
+        h.slots[3].as_mut().unwrap().disconnected_at = 6_000;
+        assert_eq!(h.held_slot_retry_ms(9_000), Some(session::LOBBY_SLOT_HOLD_MS - 8_000)); // 早く切断した P2 が先に空く
+        assert_eq!(h.held_slot_retry_ms(1_000 + session::LOBBY_SLOT_HOLD_MS + 5), Some(0));
+        h.game.phase = Phase::Paused; // 協力プレイの開始後は枠を空けないので、待つ時間を示さない
+        assert_eq!(h.held_slot_retry_ms(9_000), None);
+        let h = lobby_with(&[(0, true), (1, true), (2, true), (3, true)], 0);
+        assert_eq!(h.held_slot_retry_ms(9_000), None); // 全員接続中なら本当に満員
+    }
+
+    #[test]
     fn lobby_slots_are_kept_outside_the_lobby_and_while_nobody_can_host() {
         let later = 1_000 + session::LOBBY_SLOT_HOLD_MS;
         for phase in [Phase::Preparing, Phase::Coop, Phase::Paused] {
@@ -3423,23 +3759,121 @@ mod tests {
     }
 
     #[test]
-    fn role_rotation_stops_input_moves_roles_and_waits_for_everyone() {
+    fn role_rotation_keeps_coop_releases_all_and_moves_roles_in_participant_order() {
+        let (mut h, _rx) = fixture();
+        h.participants = vec![0, 1, 2];
+        h.assigned = h.proposal_for(&h.profile.clone().unwrap(), &[0, 1, 2]);
+        let first = h.assigned.clone();
+        h.rotation_secs = 60;
+        h.rotation_at = 10_000;
+        h.set_output(index("KEY_W"), "P1", true);
+        h.look.px = 30.0;
+        let epoch = h.game.epoch;
+        h.rotate_roles_if_due(4_000);
+        assert!(!h.rotation_soon && h.game.epoch == epoch, "予告の前は何もしない");
+        h.rotate_roles_if_due(5_000);
+        assert!(h.rotation_soon, "5秒前に予告する");
+        assert_eq!(h.game_snapshot()["rotationNext"]["P2"], json!(first[0]), "予告で次の担当を示す (P1 の担当が P2 へ)");
+        assert_eq!(h.game_snapshot()["rotationNext"]["P1"], json!(first[2]));
+        assert!(h.outputs[index("KEY_W")].physical, "予告では入力を止めない");
+        h.rotate_roles_if_due(10_000);
+        assert!(h.game.phase == Phase::Coop, "交代で一時停止しない");
+        assert!(h.outputs.iter().all(|o| !o.physical && o.queue.is_empty()), "全員の入力を解放し保留を捨てる");
+        assert_eq!(h.look.px, 0.0);
+        assert!(h.game.epoch > epoch, "旧担当の遅れた入力を新しい epoch で効かせない");
+        assert!(h.role_ack.is_empty(), "確認・明示の再開を待たない");
+        // P1→P2→P3→P1 の順に担当が隣へ移る。3回で元に戻る
+        assert_eq!((h.assigned[0].clone(), h.assigned[1].clone(), h.assigned[2].clone()), (first[2].clone(), first[0].clone(), first[1].clone()));
+        assert_eq!((h.rotation_at, h.rotation_count, h.rotation_soon), (70_000, 1, false));
+        h.rotate_roles_if_due(70_000); h.rotate_roles_if_due(130_000);
+        assert_eq!(h.assigned[..3], first[..3], "N人でN回交代すると元に戻る");
+    }
+
+    #[test]
+    fn role_rotation_follows_slot_order_with_gaps_four_players_and_after_a_manual_swap() {
+        for (participants, seats) in [(vec![0, 1, 2, 3], [0, 1, 2, 3]), (vec![0, 1, 3], [0, 1, 2, 3]), (vec![0, 1, 2], [1, 0, 2, 3])] {
+            let (mut h, _rx) = fixture();
+            h.participants = participants.clone();
+            h.seats = seats;
+            let ranked = Hub::ranked_by(&h.seats, &participants);
+            h.assigned = vec![Vec::new(); MAX_SLOTS];
+            for (k, a) in profiles::assignment_for(&h.profile.clone().unwrap(), participants.len()).into_iter().enumerate() { h.assigned[ranked[k]] = a; }
+            let first = h.assigned.clone();
+            h.rotation_secs = 60;
+            h.rotation_at = 10_000;
+            h.rotate_roles_if_due(5_000);
+            let next = h.game_snapshot()["rotationNext"].clone();
+            h.rotate_roles_if_due(10_000);
+            // 枠の番号順に、1つ前の参加者の担当を受け継ぐ (P1→P2→…→最後→P1)
+            for (k, &slot) in participants.iter().enumerate() {
+                let prev = participants[(k + participants.len() - 1) % participants.len()];
+                assert_eq!(h.assigned[slot], first[prev], "{participants:?} {seats:?}: {} は {} の担当を受け継ぐ", SLOT_NAMES[slot], SLOT_NAMES[prev]);
+                assert_eq!(next[SLOT_NAMES[slot]], json!(first[prev]), "予告と実際の交代が一致する");
+            }
+            for _ in 1..participants.len() { let at = h.rotation_at; h.rotate_roles_if_due(at); }
+            assert_eq!(h.assigned, first, "{participants:?}: N人でN回交代すると元に戻る");
+        }
+    }
+
+    #[test]
+    fn role_rotation_counts_only_while_the_target_game_can_be_operated() {
+        let (mut h, _rx) = fixture();
+        h.participants = vec![0, 1];
+        h.assigned = h.proposal_for(&h.profile.clone().unwrap(), &[0, 1]);
+        h.rotation_secs = 60;
+        h.fake_target = Some(true); h.check_target();
+        assert!(h.can_inject() && h.game.phase == Phase::Coop);
+        let start = now_ms();
+        h.rotation_at = start + 20_000; // 残り20秒
+        // 対象ゲームが前面から外れる (Alt+Tab 等)。協力プレイのまま操作できなくなる
+        h.fake_target = Some(false); h.check_target();
+        assert!(!h.can_inject() && h.game.phase == Phase::Coop);
+        assert_eq!(h.rotation_at, 0, "操作できない間は数えない");
+        let left = h.rotation_left;
+        assert!(left > 19_000 && left <= 20_000, "残り時間を凍結する: {left}");
+        // 長い時間が経っても、予告も交代もしない
+        for t in [start + 20_000, start + 600_000, u64::MAX / 2] { h.rotate_roles_if_due(t); }
+        assert_eq!((h.rotation_count, h.rotation_soon, h.rotation_at), (0, false, 0));
+        assert_eq!(h.game_snapshot()["rotationSoon"], false);
+        // 前面に戻ったら、凍結した残りから数える
+        h.fake_target = Some(true); h.check_target();
+        let resumed = now_ms();
+        assert!(h.rotation_at >= resumed + left - 1_000 && h.rotation_at <= resumed + left, "残りから数える");
+        assert_eq!(h.rotation_left, 0);
+        h.rotate_roles_if_due(h.rotation_at - 1);
+        assert_eq!(h.rotation_count, 0, "残りを操作するまでは交代しない");
+        let at = h.rotation_at; h.rotate_roles_if_due(at);
+        assert_eq!(h.rotation_count, 1, "残りを操作したら1回だけ交代する");
+        // 前面にないまま一時停止・再開しても数えない
+        h.fake_target = Some(false); h.check_target();
+        h.set_phase(Phase::Paused, "host pause"); h.set_phase(Phase::Coop, "resume");
+        assert_eq!(h.rotation_at, 0, "操作できないまま再開しても数えない");
+        assert!(h.rotation_left > 0);
+    }
+
+    #[test]
+    fn role_rotation_does_not_count_while_stopped_and_resets_to_off_for_a_new_play() {
         let (mut h, _rx) = fixture();
         h.participants = vec![0, 1];
         h.rotation_secs = 60;
-        h.rotation_at = 1_000;
-        h.set_output(index("KEY_W"), "P1", true);
+        h.game.phase = Phase::Paused;
+        h.set_phase(Phase::Coop, "host resume");
+        let at = h.rotation_at;
+        assert!(at != 0);
+        h.rotation_at = now_ms() + 20_000; // 残り20秒で止める
+        h.set_phase(Phase::Paused, "host pause");
+        assert_eq!(h.rotation_at, 0, "止まっている間は数えない");
+        let left = h.rotation_left;
+        assert!((19_000..=20_000).contains(&left));
+        h.set_phase(Phase::Coop, "host resume");
+        assert!(h.rotation_at <= now_ms() + left && h.rotation_at + 2_000 >= now_ms() + left, "再開で残りから数え、交代を積み増さない");
+        h.set_phase(Phase::Lobby, "host end");
+        assert_eq!((h.rotation_secs, h.rotation_at, h.rotation_left), (0, 0, 0), "新しいプレイでは OFF から始める (Q44)");
+        // OFF では交代も予告もしない
+        h.game.phase = Phase::Coop; h.rotation_at = 0;
         let epoch = h.game.epoch;
-        h.rotate_roles_if_due(999);
-        assert!(h.game.phase == Phase::Coop); // 時刻の前は何もしない
-        h.rotate_roles_if_due(1_000);
-        assert!(h.game.phase == Phase::Paused);
-        assert_eq!(h.game.reason.as_deref(), Some("role rotation"));
-        assert!(h.outputs.iter().all(|o| !o.physical)); // 全員の入力を解放する
-        assert_eq!(h.seats, [1, 0, 2, 3]);
-        assert_eq!(h.role_ack, vec![0, 1]); // 全員の確認が要る
-        assert_eq!((h.rotation_at, h.game.auto_resume_until), (0, 0)); // 止まっている間は数えず、自動で再開しない
-        assert!(h.game.epoch > epoch);
+        h.rotate_roles_if_due(u64::MAX);
+        assert!(!h.rotation_soon && h.game.epoch == epoch);
     }
 
     #[test]
