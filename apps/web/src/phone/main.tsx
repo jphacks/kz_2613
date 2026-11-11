@@ -3,6 +3,7 @@ import '../styles/tokens.css';
 import '../styles/shared.css';
 import '../styles/mobile.css';
 import '../styles/improved-mobile.css';
+import '../styles/phone-layout.css';
 import '../styles/phone-skins.css';
 import '../styles/phone-background.css';
 import '../styles/view-transition.css';
