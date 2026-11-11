@@ -1,6 +1,6 @@
 import {createLifetime} from '../shared/input/lifetime.ts';
 import { flushSync } from 'react-dom';
-import type { PhoneSnapshot, PhoneView, PhoneViewBindings, WaitModel, RemoteModel,PhoneTelemetry,ConfirmRequest } from '../shared/contracts';
+import type { PhoneSnapshot, PhoneView, PhoneViewBindings, WaitModel, RemoteModel,PhoneTelemetry,ConfirmRequest,ControllerGame,Slot } from '../shared/contracts';
 import { createStore } from '../shared/store';
 import { byId } from '../shared/dom';
 import { generatedKey } from '../shared/model/actions.ts';
@@ -12,7 +12,7 @@ import {controllerLayout,buttonLayout,type ControlGroup} from '../shared/control
 import {createTelemetryPublisher} from './telemetry.ts';
 
 export interface PhoneDisplay {
-  controller: {key:string;groups:ControlGroup[];layout:string;bindings:PhoneViewBindings} | null;
+  controller: {key:string;groups:ControlGroup[];layout:string;bindings:PhoneViewBindings;game:ControllerGame;slot:Slot} | null;
   snapshot: PhoneSnapshot; wait: WaitModel; remote: RemoteModel; view: string | null;
   controllerHost: boolean; controllerTitle: string; role: string; roleCopy: string; roleNotice: string; warning: string; inventory: string | null;
 }
@@ -101,7 +101,7 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
     const name = gameLabel(game);
     const next: PhoneDisplay = {
       snapshot, view: display.get().view,
-      controller: view==='v-gen'&&game.profile ? changed ? (groups => ({key,groups,layout:buttonLayout(groups),bindings:input}))(controllerLayout({...game,profile:game.profile},me)) : display.get().controller : null,
+      controller: view==='v-gen'&&game.profile ? changed ? (controllerGame => (groups => ({key,groups,layout:buttonLayout(groups),bindings:input,game:controllerGame,slot:me}))(controllerLayout(controllerGame,me)))({...game,profile:game.profile}) : display.get().controller : null,
       controllerHost: view === 'v-gen' ? isHost : display.get().controllerHost,
       controllerTitle: view === 'v-gen' ? `${game.profile?.name}（${me}${isHost ? '・ホスト' : ''}）` : display.get().controllerTitle,
       wait: waitModel({ me, game, roleTitle: role.title, joined, autoWait }),
