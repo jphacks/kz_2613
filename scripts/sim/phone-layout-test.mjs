@@ -3,6 +3,8 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const L = await import('../../apps/web/src/shared/model/layout.ts');
+const {loadComponent,createElement,renderToStaticMarkup}=await import('./fixtures/react-render.mjs');
+const {LayoutController,LayoutEditor}=await loadComponent(new URL('../../apps/web/src/phone/LayoutController.tsx',import.meta.url));
 
 let passed = 0;
 async function test(name, fn) { await fn(); passed++; console.log(`合格: ${name}`); }
@@ -190,4 +192,52 @@ await test('保存: ゲームごとに1件、明示保存だけを書き、破�
   assert.equal(blocked.save(layout), false);
 });
 
-console.log(`${passed}/8 合格（スマホのレイアウトモデル、DOM・OS入力なし）`);
+await test('編集の操作: 画面上のドラッグを本体座標へ戻して動かし、大きさ・非表示・複製・ボタンの操作を変える。元は書き換えない (#50)', () => {
+  const base = L.standardLayout(game());
+  const before = JSON.stringify(base);
+  // どの向きでも、画面で右へ動かすと画面で右へ動く (本体座標を経由した往復)
+  for (const angle of [0, 90, 180, 270]) {
+    const jump = byId(base, 'jump');
+    const moved = byId(L.movePart(base, 'jump', 0.05, 0, angle), 'jump');
+    const [ax] = L.bodyToScreen(jump.x, jump.y, angle), [bx, by] = L.bodyToScreen(moved.x, moved.y, angle), [, ay] = L.bodyToScreen(jump.x, jump.y, angle);
+    close(bx - ax, 0.05); close(by - ay, 0);
+  }
+  const far = byId(L.movePart(base, 'jump', 5, 5, 0), 'jump');
+  assert.deepEqual([far.x, far.y], [1, 1], '本体の外へは出さない');
+  assert.equal(byId(L.resizePart(base, 'jump', 9), 'jump').size, L.LIMITS.maxSize);
+  assert.equal(byId(L.setPartHidden(base, 'jump', true), 'jump').hidden, true);
+  const twice = L.duplicatePart(L.duplicatePart(base, 'jump'), 'jump');
+  assert.deepEqual(ids(twice).slice(-2), ['jump~2', 'jump~3']);
+  assert.deepEqual(byId(twice, 'jump~3').controls, ['act:jump']);
+  assert(L.parseLayout(JSON.parse(JSON.stringify(twice)), 'test-game').parts.some(p => p.id === 'jump~3'), '複製は検証を通る');
+  const s = L.standardLayout(game());
+  assert.deepEqual(byId(L.assignButton(base, 'jump', 'act:attack', s), 'jump').controls, ['act:attack']);
+  assert.deepEqual(byId(L.assignButton(base, 'jump', 'act:nope', s), 'jump').controls, ['act:jump'], '定義にない操作は割り当てない');
+  assert.deepEqual(byId(L.assignButton(base, 'jump', 'look:look', s), 'jump').controls, ['act:jump'], '視点はボタンに割り当てない');
+  assert.equal(JSON.stringify(base), before, '編集の操作は元のレイアウトを書き換えない');
+});
+
+await test('描画: プレイは担当の部品だけを本体基準の位置で実入力へつなぎ、編集画面は実入力へつながない (#50)', () => {
+  const layout = L.standardLayout(game());
+  const g = game({ P1: ['forward', 'left', 'right', 'back', 'jump', 'look'] });
+  const viewport = { width: 400, height: 600, angle: 0 };
+  const bindings = { bindControl() {}, bindStick() {}, bindLook() { return () => {}; }, releaseAll() {} };
+  const play = renderToStaticMarkup(createElement(LayoutController, { layout, game: g, slot: 'P1', bindings, viewport }));
+  assert.match(play, /data-ctl="act:jump"/, '担当のボタンは実入力へつなぐ');
+  assert(!play.includes('act:attack'), '担当外の部品は描かない');
+  assert(!/inert/.test(play.split('>')[0]), 'プレイ画面は操作できる');
+  const jump = byId(layout, 'jump'), size = jump.size * 400;
+  assert(play.includes(`left:${jump.x * 400 - size / 2}px`) && play.includes(`top:${jump.y * 600 - size / 2}px`), '本体基準の位置に置く');
+  const turned = renderToStaticMarkup(createElement(LayoutController, { layout, game: g, slot: 'P1', bindings, viewport: { width: 600, height: 400, angle: 90 } }));
+  assert(turned.includes(`width:${size}px`), '縦横で同じ大きさ');
+  const preview = renderToStaticMarkup(createElement(LayoutController, { layout, game: g, slot: 'P1', viewport }));
+  assert(!preview.includes('data-ctl') && /inert/.test(preview.split('>')[0]), 'bindingsなしのプレビューは実入力へつながない');
+  const editor = renderToStaticMarkup(createElement(LayoutEditor, { initial: layout, game: g, slot: 'P1', viewport, onSave: () => true, onCancel() {}, onReset() {} }));
+  assert(!editor.includes('data-ctl'), '編集画面は実入力へつながない');
+  assert(editor.includes('data-part="jump"') && !editor.includes('data-part="attack"'), '編集できるのは担当の部品だけ');
+  for (const text of ['保存して適用', '変更を破棄', '初期配置に戻す', 'ゲームに送られません']) assert(editor.includes(text), text);
+  const empty = renderToStaticMarkup(createElement(LayoutController, { layout, game: game({}), slot: 'P1', bindings, viewport }));
+  assert.match(empty, /担当する操作がありません/);
+});
+
+console.log(`${passed}/10 合格（スマホのレイアウトモデルと編集画面、OS入力なし）`);

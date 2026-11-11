@@ -6,8 +6,18 @@ import {transformWithOxc} from '../../../apps/web/node_modules/vite/dist/node/in
 const requireWeb=createRequire(new URL('../../../apps/web/package.json',import.meta.url));
 export const {createElement}=await import(pathToFileURL(requireWeb.resolve('react')).href);
 export const {renderToStaticMarkup}=await import(pathToFileURL(requireWeb.resolve('react-dom/server')).href);
-export async function loadComponent(sourceUrl){
+async function componentUrl(sourceUrl){
   let {code}=await transformWithOxc(fs.readFileSync(sourceUrl,'utf8'),fileURLToPath(sourceUrl),{jsx:{runtime:'automatic'}});
-  code=code.replace(/from (["'])([^"']+)\1/g,(_,quote,spec)=>`from ${JSON.stringify(spec.startsWith('.')?new URL(/\.tsx?$/.test(spec)?spec:spec+'.ts',sourceUrl).href:pathToFileURL(requireWeb.resolve(spec)).href)}`);
-  return import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
+  // TSXから読み込むTSX (拡張子なしで.tsxがあるものを含む) は、同じ変換をしてから読み込む
+  const nested=new Map();
+  for(const [,,spec] of code.matchAll(/from (["'])([^"']+)\1/g)){
+    if(!spec.startsWith('.')||nested.has(spec))continue;
+    const url=new URL(/\.tsx?$/.test(spec)?spec:spec+'.tsx',sourceUrl);
+    if(url.pathname.endsWith('.tsx')&&fs.existsSync(url))nested.set(spec,await componentUrl(url));
+  }
+  code=code.replace(/from (["'])([^"']+)\1/g,(_,quote,spec)=>`from ${JSON.stringify(nested.get(spec)??(spec.startsWith('.')?new URL(/\.tsx?$/.test(spec)?spec:spec+'.ts',sourceUrl).href:pathToFileURL(requireWeb.resolve(spec)).href))}`);
+  return 'data:text/javascript;base64,'+Buffer.from(code).toString('base64');
+}
+export async function loadComponent(sourceUrl){
+  return import(await componentUrl(sourceUrl));
 }
