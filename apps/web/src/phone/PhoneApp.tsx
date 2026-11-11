@@ -59,7 +59,7 @@ function Header({state,status}:{state:PhoneDisplay;status:Status}) {
 
 function HostRemoteScreen({state}:{state:PhoneDisplay}) {
   return <section className={`view${state.view === 'v-remote' ? ' show' : ''}`} id="v-remote">
-    <div className="host-card"><h1>あなたがホストです！</h1><p>タッチパッドでPCを操作。準備の後にReady！</p></div>
+    <div className="host-card"><h1>あなたがホストです！</h1><p>タッチパッドでPCのカーソルを動かせます。</p></div>
     <div className="players" id="players1">{state.remote.players.map(p => <span key={p.name} className={p.on ? 'on' : ''}>{p.label}</span>)}</div>
     <div className="remote">
       <div className="dpad">
@@ -75,7 +75,7 @@ function HostRemoteScreen({state}:{state:PhoneDisplay}) {
     </div>
     <div id="remotePad" role="application" aria-label="ホストのタッチパッド">指でPCのカーソルを動かす</div>
     <div className="remoteButtons">
-      <button className="key" data-ctl="REMOTE_LEFT">左クリック</button><button className="key" data-ctl="REMOTE_RIGHT">右クリック</button><button className="key" data-ctl="REMOTE_E">{state.inventory}</button>
+      <button className="key" data-ctl="REMOTE_LEFT">左クリック</button><button className="key" data-ctl="REMOTE_RIGHT">右クリック</button><button className="key" data-ctl="REMOTE_E" hidden={state.inventory === null}>{state.inventory}</button>
       <button className="key" data-ctl="REMOTE_WHEEL_UP">ホイール↑</button><button className="key" data-ctl="REMOTE_WHEEL_DOWN">ホイール↓</button>
     </div>
     <div id="remoteRoute" className={`note${state.remote.routeBlocked ? ' route-blocked' : ''}`} role="status">{state.remote.route}</div>

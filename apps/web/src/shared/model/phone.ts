@@ -71,15 +71,27 @@ export function waitModel({ me, game, roleTitle, joined, autoWait }: {me:Slot;ga
 /** ホストのリモコン画面の内容。入力の要素 (タッチパッド・キー) は含まない */
 export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHost:boolean;game:PhoneGame;name:string;autoWait?:boolean}) {
   const phase = game.phase;
-  let note = game.canReady
-    ? (phase === 'paused' ? `一時停止中${game.reason ? '（' + reasonText(game.reason) + '）' : ''}。リモコンで操作でき、RESUME で協力プレイに戻ります。` : `${name}をプレイ中の画面まで進めた後、ホストだけがReadyを押します。`)
-    : phase === 'lobby' ? (game.lineupOk
-      ? `メンバーと分担を決定しました（${game.connected.length}人）。PCの画面でゲームを起動してから準備へ進めます。`
-      : `PCの画面でゲームを選び、メンバーと分担を決定してください（${game.connected.length}人接続、${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べます）。`)
-    : (game.readyReasons || []).join('。') || 'ホストの明示操作を待っています';
-  if (phase === 'preparing') note = [game.prepareStatus, ...(game.readyReasons || []), '準備ができたらホストが明示Ready'].filter(Boolean).join('。');
-  if (autoWait && isHost) note = `${reasonText(game.reason)}。戻ると自動で再開します（RESUME で手動再開も可）。`;
-  if (phase === 'paused' && game.inputTarget && game.prepareStatus) note += `。${game.prepareStatus}`;
+  const reasons = game.readyReasons ?? [];
+  let instructions: (string | null | undefined)[];
+  if (phase === 'preparing') {
+    instructions = [game.prepareStatus, ...reasons, game.canReady
+      ? 'プレイ画面まで進んだら「Ready」を押してください'
+      : '準備が整うと「Ready」を押せます'];
+  } else if (phase === 'paused') {
+    instructions = [reasonText(game.reason), game.inputTarget ? game.prepareStatus : '', ...(game.canResume ? [] : reasons)];
+    if (autoWait && isHost) instructions.push('制限時間内に全員が戻ると自動で再開します');
+    if (game.canResume) instructions.push('続けるには「再開する」を押してください');
+    instructions.push('遊び終えたら「協力プレイを終了（分担に戻る）」を押してください');
+  } else if (game.lineupOk) {
+    const started = game.remoteRoute === 'game' || (game.launch?.id === game.title && game.launch?.state === 'started');
+    instructions = [started ? '「ゲームを開く・準備する」を押してプレイ画面まで進んでください'
+      : '「ゲームを開く・準備する」を押して準備を始めてください'];
+  } else {
+    instructions = [`PCアプリの画面でゲームを選び、分担を決めてください（${MIN_PLAYERS}〜${MAX_PLAYERS}人）`,
+      'PCアプリが前面にあれば、このリモコンでも操作できます'];
+  }
+  const note = [...new Set(instructions.flatMap(text => text?.trim() ? [text.trim().replace(/[。！？]$/, '')] : []))]
+    .map(text => `${text}。`).join('');
   return {
     players: playerChips(game, me),
     route: routeText(game, name), routeBlocked: game.remoteRoute === 'none', notice: '',
