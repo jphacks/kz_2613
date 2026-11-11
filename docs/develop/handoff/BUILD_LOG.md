@@ -2002,3 +2002,4 @@
 - #341：一時停止画面の参加枠は `shownSlots`（プレイ参加者）で絞られ、案内のボタン名は実際の表示と一致する。
 - 結果：`npm run build`、`app-view-test.mjs` 36/36、`phone-view-test.mjs`、`phone-lifecycle-test.mjs` 31/31、`ui-input-test.mjs` 12/12、`pc-boundary-test.mjs`、`check-static-pages.mjs` が合格。`protocol-sim.mjs` は構文検査だけ手元で行い、実行はCIに任せる。
 - Android実機の回帰：main `09f50c1` のCI配布zip（manifestのcommitは `09f50c1`、dirtyなし、zipのSHA-256一致）から取り出した `recooplay-host.exe` で `scripts/device/android-dry-run.mjs --wifi-network --players 3` を実行し、Android 16（`25118PC98G`）・ホットスポットWi-Fi経由の14項目がすべて合格した（記録 `data/local/device-acceptance/run-bmngAr`）。保持中のPause・回転・バックグラウンド・通信切断での全解放と、同じ枠への再接続・再読み込み後の管理権を含む。dry-runなので実ゲームへの入力は含まない。
+- 追記：#342の最初のCIでは `host-rs` ジョブの `product-web-test.mjs` が失敗した。#340がログ表示をすべて `JSON.stringify` に変えたため、既存の `diagnostics-test.mjs` が期待する `extra=[a,b]` が `["a","b"]` になっていた（#340単体のCIでも同じ失敗）。値だけの配列は従来の `[a,b]`、オブジェクトを含む値はJSONで出すように直した。`product-web-test.mjs`、CIの `rust.yml` で実行するNode試験15件、`app-view-test.mjs` 36/36が手元で合格。
