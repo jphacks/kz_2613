@@ -45,11 +45,7 @@ body[data-slot=P4] .phone-character img { width: 136.769%; height: 107.447%; lef
 #waitRole { margin: 10px 0 0; font-size: 15px; color: var(--color-logo); }
 .host-transfer:not([hidden]) { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; }
 .host-transfer button { min-height: 44px; padding: 0 10px; font-size: 13px; }
-.wait-continue { margin-top: auto; min-height: 56px; padding: 7px 16px; font-size: clamp(15px,4.9vw,22px); border: 3px solid var(--color-phone-button); background: var(--color-disabled); color: var(--color-paper); box-shadow: 1px 3px 0 var(--color-button-shadow); text-shadow: 1px 2px var(--color-disabled-shadow); }
-/* 2行にして、カードの枠にかからない幅に収める */
-.wait-continue { min-height: 0; max-width: 86%; padding: 6px 18px; font-size: clamp(14px,4.3vw,19px); line-height: 1.35; }
-.wait-continue { display: flex; align-items: center; justify-content: center; text-align: center; color: var(--color-ink); background: var(--color-phone-surface); text-shadow: none; border-color: var(--color-phone-button); box-shadow: 1px 3px 0 var(--color-button-shadow); }
-#waitTitle { margin-top: 36px; color: var(--color-logo); font-size: 12px; line-height: 1.4; }
+#waitTitle { margin: auto 0 0; padding-top: 16px; color: var(--color-logo); font-size: clamp(14px,4.3vw,17px); line-height: 1.4; }
 .stick { border-width: 4px; background: var(--color-phone-surface); box-shadow: 0 4px 0 var(--color-shadow); }
 .stick .knob { border-color: var(--color-cyan); background: var(--color-phone-dots); }
 :is(#pad, .look-pad) { border-style: solid; background: var(--color-phone-surface); color: var(--color-cyan-ink); border-radius: 30px; }
@@ -57,6 +53,9 @@ body[data-slot=P4] .phone-character img { width: 136.769%; height: 107.447%; lef
 .sens { border: 2px solid var(--color-cyan); background: var(--color-phone-surface); color: var(--color-logo); }
 .gen-title { color: var(--color-black); background: var(--color-surface); border-radius: 24px; padding: 12px; border: 3px solid var(--color-cyan); }
 #genControls { min-height: 0; flex: 1; }
+#genControls.few-buttons .gen-group:first-child { margin-top: auto; }
+#genControls.few-buttons .gen-grid { grid-template-columns: 1fr; }
+#genControls.few-buttons .key { min-height: 64px; font-size: 20px; }
 .gen-label { color: var(--color-black); }
 #inputWarn { margin: 10px 12px 0; }
 #remoteRoute.route-blocked { color: var(--color-error); font-size: 13px; font-weight: 700; }
@@ -91,7 +90,6 @@ body[data-host=false] #phoneDiagnostics footer > span, body[data-host=false] #bu
   .phone-character { top: calc(26% - 29.4vw); }
   .wait-card .dotted { padding-bottom: 22px; }
   .role-label { margin-top: 18px; font-size: 18px; }
-  #waitTitle { margin-top: 24px; }
   #remotePad { min-height: 72px; }
   #remoteNote { max-height: 40px; }
 }
@@ -111,7 +109,6 @@ body[data-host=false] #phoneDiagnostics footer > span, body[data-host=false] #bu
   .phone-character { top: calc(25% - 29.4vw); }
   .wait-card h1 { font-size: 30px; }
   .wait-card .dotted { padding-bottom: 20px; }
-  #waitTitle { margin-top: 20px; }
   #v-remote { overflow-y: auto; }
 }
 /* 指を離すまでの案内 (#285 Q27)。操作を妨げないよう、タッチを受け取らず、下の一時停止ボタンに重ねない */

@@ -94,15 +94,17 @@ function WaitingScreen({state}:{state:PhoneDisplay}) {
     <div className="players" id="players2">{state.wait.players.map(p => <span key={p.name} className={p.on ? 'on' : ''}>{p.label}</span>)}</div>
     <div className="wait-scene">
       <div className="phone-character" aria-hidden="true"><img id="waitCharacter" src={state.wait.character} alt="" /></div>
-      <div className="card wait-card"><h1 className="dotted" id="waitHeading">{state.wait.heading}</h1><div className="role-label">あなたの担当</div><div id="waitRole">{state.wait.role}</div><div className="wait-continue" role="note">Readyで<br />操作画面に変わります</div><div id="waitTitle">{state.wait.title}</div></div>
+      <div className="card wait-card"><h1 className="dotted" id="waitHeading">{state.wait.heading}</h1><div className="role-label">あなたの担当（{state.snapshot.me}）</div><div id="waitRole">{state.wait.role}</div><p id="waitTitle" role="status">{state.wait.title}</p></div>
     </div>
   </section>;
 }
 
 function GameplayScreen({state}:{state:PhoneDisplay}) {
+  const parts = state.controller?.groups.flatMap(group => group.parts) ?? [];
+  const fewButtons = parts.length > 0 && parts.length <= 3 && parts.every(part => part.kind === 'button');
   return <section className={`view${state.view === 'v-gen' ? ' show' : ''}`} id="v-gen">
     <div className="gen-title" id="genTitle">{state.controllerTitle}</div>
-    <div id="genControls">{state.controller&&<Controller key={state.controller.key} groups={state.controller.groups} bindings={state.controller.bindings}/>}</div>
+    <div id="genControls" className={fewButtons ? "few-buttons" : undefined}>{state.controller&&<Controller key={state.controller.key} groups={state.controller.groups} bindings={state.controller.bindings}/>}</div>
     <button className="cmd pause" data-cmd="PAUSE" id="genPause" hidden={!state.controllerHost}>一時停止・ホスト操作へ</button>
   </section>;
 }

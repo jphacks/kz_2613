@@ -58,7 +58,12 @@ export function waitModel({ me, game, roleTitle, joined, autoWait }: {me:Slot;ga
     character: `/assets/characters/${CHARACTERS[me]}.png`,
     heading: phase === 'paused' ? '一時停止中' : '接続完了!!',
     role: roleTitle,
-    title: !joined ? '次の開始から参加します' : phase === 'paused' ? (autoWait ? `${reasonText(game.reason)}。戻ると自動で再開します` : '一時停止中') : 'ホストの開始を待っています',
+    title: !joined ? '次の開始から参加します。'
+      : phase === 'paused' ? (autoWait
+        ? '制限時間内に全員が戻ると自動で再開します。再開できない場合はホストの操作をお待ちください。'
+        : 'ホストが「再開する」を押すと操作画面に戻ります。')
+      : phase === 'preparing' ? 'ホストが「Ready」を押すと操作画面に変わります。'
+      : 'ホストがゲームと分担を決めるまでお待ちください。',
     players: playerChips(game, me),
   };
 }
