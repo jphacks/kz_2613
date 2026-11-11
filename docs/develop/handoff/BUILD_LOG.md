@@ -1779,6 +1779,8 @@
 - P1（旧版のスマホ）：`lseq`・`cx`・`cy` のない解放要求（iseqだけ）では、解放前の視点を拒否できない。`iseq` と視点の境界の両方がそろわない要求は、`iseq` なしと同じく全参加者の全解放・epoch更新にした。現行のスマホは常に `lookMark()`（未送信なら `lseq:0`）を載せるので、通常は本人だけの解放になる。protocolVersionは変えていない。
 - 試験：Codexの独立試験6件（`codex/review-resume-20261111` の 8c8ca5c）を `release_order_tests.rs` に移植し、コード修正を外した状態で3成功・3失敗（視点105≠5、down 2回、旧版の視点90≠0）、修正後に6件成功。単体試験を追加（`drop_slot_edges` の3条件：押したままならdownを出し直さない・離した直後は50ms後に1回・他の枠の辺は残す、`keep_at_most` の増やさない・逆にしない）。既存試験は旧版の期待を全体解放へ変更し、本人だけの解放には `lseq` を載せた。`protocol-sim` に旧版（iseqだけ）が全体解放になる確認を追加。
 - 結果：`RECOOPLAY_DRY_RUN=1 cargo test --release --locked` 150成功・2 ignored、probe 4成功。`protocol-sim` 62/62。
+- 実機確認（2026-11-11、dry-run・疑似入力先、#313 のhead `7f0f442`＝本修正を含むビルド）：P1＝Android Chrome（USBのCDPで操作）、P2＝iPhone Safari（利用者の実指）、アプリ通信はどちらもホットスポットのWi-Fi。協力プレイ中にAndroidがジャンプ（SPACE）を押したまま、iPhoneが視点を操作してからホーム画面へ移り、約2秒でSafariへ戻った。ホストに届いたのは `release_inputs`（P2、`lseq:15`、`kept:[]`）だけで、SPACEは押されたまま（upはAndroidの指を離した55秒後の1回だけ）、epochは4のまま、切断・一時停止なし。戻った後のiPhoneの視点操作は通常どおり注入された。
+- 未確認：iPhoneでの「指を離して操作を再開」（#313）、逆順到着そのもの（実ネットワークでは偶発で、再現は自動試験だけ）、実Minecraftでの入力。
 ## 2026-11-10 — #161 時間制の役割交代をQ42/Q44/Q46に合わせる
 
 - 既存実装（1〜3分を選べ、交代のたびに一時停止して全員の確認とホストの再開を待つ）を確定仕様へ変更。間隔は60秒固定（`ROTATION_CHOICES = [0, 60]`）・初期OFF。ロビーへ戻るとOFFに戻す（Q44）。
