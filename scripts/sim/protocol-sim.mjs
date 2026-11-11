@@ -677,14 +677,14 @@ async function main() {
       const epoch = p1.epoch;
       // P3の端末がフォーカスを失った: P3の押下だけ解放し、P1の前進は続く。epochは進まない
       from = mon.mark();
-      p3.send({ type: 'release_inputs', epoch, iseq: p3.iseq });
+      p3.send({ type: 'release_inputs', epoch, iseq: p3.iseq, lseq: 0, cx: 0, cy: 0 });
       await injected(mon, 'MOUSE_L', 'up', from);
       await sleep(300);
       assert(!mon.msgs.slice(from).some(m => m.type === 'inject' && m.entry.out === 'KEY_W' && m.entry.state === 'up'), '他の参加者の押下まで解放した');
       assert(p1.epoch === epoch && p3.epoch === epoch, 'epochを進めた');
       // 解放要求より前に送られ、遅れて届いた押下 (番号が下限以下) は適用しない。後続の新しい押下は通る
       const late = p3.iseq + 1;
-      p3.send({ type: 'release_inputs', epoch, iseq: late });
+      p3.send({ type: 'release_inputs', epoch, iseq: late, lseq: 0, cx: 0, cy: 0 });
       await sleep(100);
       from = mon.mark();
       p3.rawInput('act:attack', 'down'); // iseq = late
@@ -694,6 +694,17 @@ async function main() {
       p3.input('ATTACK', 'down'); await injected(mon, 'MOUSE_L', 'down', from);
       p3.input('ATTACK', 'up'); await injected(mon, 'MOUSE_L', 'up', from);
       p1.input('FWD', 'up'); await injected(mon, 'KEY_W', 'up', from);
+    });
+
+    await check('#262 視点の境界(lseq)のないrelease_inputs(iseqだけの旧版)は、解放前の視点を拒否できないので全参加者を解放してepochを進める', async () => {
+      let from = mon.mark();
+      p1.input('FWD', 'down'); await injected(mon, 'KEY_W', 'down', from);
+      const epoch = p1.epoch, playerFrom = p1.mark();
+      from = mon.mark();
+      p3.send({ type: 'release_inputs', epoch, iseq: p3.iseq });
+      await injected(mon, 'KEY_W', 'up', from);
+      await p1.waitFor(m => m.type === 'game' && m.game.epoch > epoch, { from: playerFrom });
+      p1.input('FWD', 'up');
     });
 
     await check('キャンセル: 非表示・回転・診断の停止要求で全参加者の押下・保留連打・旧入力を即時破棄する', async () => {
