@@ -265,12 +265,13 @@ impl Slot {
     }
 }
 
-/// 決定したメンバーと分担 (#109)。分担はゲームと参加者から決まるので、この 2 つを照合すれば古い決定を使わない
+/// 決定したゲームとメンバー。保持期限を過ぎた参加枠は、別の端末が使っても以前の決定に戻さない (#109・#305)。
 #[derive(Clone, PartialEq)]
 struct Lineup {
     title: String,
     // 席順に並べたメンバー (入れ替えると一致しなくなる)
     members: Vec<usize>,
+    expired_members: [bool; MAX_SLOTS],
 }
 
 struct Game {
@@ -695,7 +696,10 @@ impl Hub {
 
     /// 決定したメンバーと分担が、今の選択と接続者に一致しているか
     fn lineup_ok(&self) -> bool {
-        self.lineup.as_ref().is_some_and(|l| l.title == self.game.title && l.members == self.ranked(&self.connected_slots()))
+        self.lineup.as_ref().is_some_and(|l| {
+            l.title == self.game.title && !l.expired_members.contains(&true)
+                && l.members == self.ranked(&self.connected_slots())
+        })
     }
 
     /// PC 画面の「この分担で決定」。画面が見ていたゲーム・メンバーが今と一致するときだけ受け付ける
@@ -711,7 +715,7 @@ impl Hub {
             && connected.len() >= MIN_PLAYERS;
         self.log("lineup", json!({ "accepted": accepted, "title": self.game.title, "members": names }));
         if accepted {
-            self.lineup = Some(Lineup { title: self.game.title.clone(), members: self.ranked(&connected) });
+            self.lineup = Some(Lineup { title: self.game.title.clone(), members: self.ranked(&connected), expired_members: [false; MAX_SLOTS] });
         }
         self.push_game();
     }
@@ -735,6 +739,13 @@ impl Hub {
     fn game_snapshot(&self) -> Value {
         let connected_idx = self.connected_slots();
         let connected: Vec<&str> = connected_idx.iter().map(|&i| SLOT_NAMES[i]).collect();
+        let lineup_disconnected: Vec<&str> = self.lineup.as_ref()
+            .filter(|l| self.game.phase == Phase::Lobby && l.title == self.game.title)
+            .map(|l| SLOT_NAMES.iter().enumerate()
+                .filter(|(i, _)| l.members.contains(i) && (l.expired_members[*i] || !connected_idx.contains(i)))
+                .map(|(_, &name)| name)
+                .collect())
+            .unwrap_or_default();
         json!({
             "phase": self.game.phase.name(),
             "required": self.game.required,
@@ -744,6 +755,7 @@ impl Hub {
             // PC 画面で決定したメンバーと分担 (#109)。lineupOk は今の選択・接続と一致しているか
             "lineup": self.lineup.as_ref().map(|l| json!({ "title": l.title, "members": l.members.iter().map(|&i| SLOT_NAMES[i]).collect::<Vec<_>>() })),
             "lineupOk": self.lineup_ok(),
+            "lineupDisconnected": lineup_disconnected,
             // 枠 → 席順 (P1〜 で表す。入れ替えた人は入れ替えた先の席、#47。分担は席順で配る)
             "roleOf": self.role_slots().iter().filter_map(|&i| self.role_rank(i).map(|k| (SLOT_NAMES[i].to_string(), json!(SLOT_NAMES[k])))).collect::<Map<String, Value>>(),
             "roleAck": self.role_ack.iter().map(|&i| SLOT_NAMES[i]).collect::<Vec<_>>(),
@@ -2076,6 +2088,9 @@ impl Hub {
         for i in 0..MAX_SLOTS {
             let expired = self.slots[i].as_ref().is_some_and(|s| session::lobby_slot_expired(self.game.phase, s.connected, s.disconnected_at, now));
             if expired {
+                if let Some(lineup) = self.lineup.as_mut().filter(|l| l.members.contains(&i)) {
+                    lineup.expired_members[i] = true;
+                }
                 self.slots[i] = None;
                 self.log("slot_released", json!({ "slot": SLOT_NAMES[i] }));
                 changed = true;
@@ -3665,6 +3680,42 @@ mod tests {
             h.slots[i] = Some(s);
         }
         h
+    }
+
+    #[test]
+    fn lineup_recovers_only_while_the_original_slots_are_held() {
+        let mut h = lobby_with(&[(0, true), (1, true), (2, true)], 1_000);
+        h.seats.swap(1, 2);
+        let members = vec!["P1".into(), "P2".into(), "P3".into()];
+        h.confirm_lineup(Some(h.game.title.clone()), members.clone(), Some(h.game.epoch));
+        assert!(h.can_prepare());
+
+        let slot = h.slots[1].as_mut().unwrap();
+        slot.connected = false;
+        assert_eq!(h.game_snapshot()["lineupDisconnected"], json!(["P2"]));
+        assert!(!h.can_prepare());
+
+        h.release_lobby_slots(1_000 + session::LOBBY_SLOT_HOLD_MS - 1);
+        h.slots[1].as_mut().unwrap().connected = true;
+        assert!(h.can_prepare());
+        assert_eq!(h.game_snapshot()["lineupDisconnected"], json!([]));
+
+        h.slots[1].as_mut().unwrap().connected = false;
+        h.slots[2].as_mut().unwrap().connected = false;
+        assert_eq!(h.game_snapshot()["lineupDisconnected"], json!(["P2", "P3"]));
+        h.release_lobby_slots(1_000 + session::LOBBY_SLOT_HOLD_MS);
+        for i in [1, 2] {
+            let mut replacement = Slot::new(format!("replacement{i}"), format!("new-token{i}"));
+            replacement.connected = true;
+            h.slots[i] = Some(replacement);
+        }
+        assert!(!h.lineup_ok());
+        assert!(!h.can_prepare());
+        assert_eq!(h.game_snapshot()["lineupDisconnected"], json!(["P2", "P3"]));
+
+        h.confirm_lineup(Some(h.game.title.clone()), members, Some(h.game.epoch));
+        assert!(h.can_prepare());
+        assert_eq!(h.game_snapshot()["lineupDisconnected"], json!([]));
     }
 
     #[test]

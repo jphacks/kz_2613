@@ -58,6 +58,10 @@ export function pcModel(s: PcSnapshot) {
   const swapHint = game?.canSwap ? swapPick ? `${swapPick}と入れ替える人の列を押してください` : '担当を入れ替えるときは、2人の列を順に押してください' : '';
   const warnings = game?.keys?.warnings ?? [];
   const warning = desktopWarning(game, inject, s.online || !state) || (warnings.length ? 'キー設定に注意が必要です。「操作設定」で実際に送るキーを確認してください。' : '');
+  const disconnected = view === 'roles' && game?.phase === 'lobby' && !game.lineupOk ? game.lineupDisconnected ?? [] : [];
+  const lineupNotice = disconnected.length
+    ? `${disconnected.join('・')}が切断したため、分担を確認してください。メンバーが変わった場合は決め直してください。`
+    : '';
   const gameSteps = (game?.title ?? ui.game) === GAMES[0].id ? GAMES[0].steps : [
     'PCアプリでゲームを選び、メンバーと分担を決める',
     'ゲームを起動し、遊びたい画面まで進める',
@@ -79,7 +83,7 @@ export function pcModel(s: PcSnapshot) {
     blockedStart: view !== 'preparing' || stopped, readyInstruction: view !== 'ready' || stopped,
     openGameHidden: !['preparing','ready','paused'].includes(view) || !game?.inputTarget,
     actionNote: view === 'roles' ? swapPick ? swapHint : (roleAction.note || (game?.lineupOk ? '' : swapHint)) : view === 'preparing' ? `${name}をプレイ中の画面まで進めてください。` : '',
-    notices: [s.hostNotice, warning, networkNotice(state?.network, state?.slots), profileNotice(game?.profile)].filter(Boolean).join(' '),
+    notices: [lineupNotice, s.hostNotice, warning, networkNotice(state?.network, state?.slots), profileNotice(game?.profile)].filter(Boolean).join(' '),
     comm: commSettingsView(game, s.infoPort),
     gameCards: list.map(g => gameCard(g, ui.game, game?.launch)),
     gamesCount: s.manualMessage || gamesCountText(list, !!state?.gamesScanning), scanning: !!state?.gamesScanning,

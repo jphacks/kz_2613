@@ -10,7 +10,7 @@ export interface WaitModel { character: string; heading: string; role: string; t
 export interface RemoteModel {
   players: PlayerChip[]; route: string; startLabel: string; startDisabled: boolean;
   openGameLabel: string; openGameHidden: boolean; endVisible: boolean; transferTo: Slot[]; note: string;
-  routeBlocked: boolean; notice: string; openAppHidden: boolean;
+  routeBlocked: boolean; notice: string; openAppHidden: boolean; appReturnHint: string;
 }
 export interface PlayerCardModel { slot: Slot; index: number; className: string; badge: string; name: string; role: string; device: string }
 export interface RoleColumnModel { slot: Slot; index: number; picked: boolean; swap: boolean; title: string; line: string; ack: boolean }
@@ -31,7 +31,7 @@ export interface PhoneGame extends Omit<ControllerGame, 'profile'> {
   phase: 'lobby' | 'preparing' | 'coop' | 'paused'; epoch: number; title?: string; titleName?:string;
   connected: Slot[]; participants?: Slot[]; roleAck?: Slot[]; roleOf?: Partial<Record<Slot, Slot>>;
   reason?: string | null; autoResume?: boolean; inputTarget?: boolean; prepareStatus?: string;
-  canReady?: boolean; canPrepare?: boolean; canResume?: boolean; lineupOk?: boolean;
+  canReady?: boolean; canPrepare?: boolean; canResume?: boolean; lineupOk?: boolean; lineupDisconnected?: Slot[];
   readyReasons?: string[]; remoteRoute?: string;
   canSwap?: boolean; canChangePlayers?: boolean; canLaunch?:boolean; canOpenApp?: boolean; rotationSeconds?: number; rotationSoon?: boolean; rotationNext?: Partial<Record<Slot, string[]>> | null; rotationCount?: number; launch?: LaunchState|null;
   required?:number; autoResumeMs?:number;
