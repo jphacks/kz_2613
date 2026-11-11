@@ -293,6 +293,13 @@ fn main() {
         .manage(StartupError::default())
         .manage(HostPort::default())
         .manage(OverlayOn::default())
+        // メイン画面を閉じたらアプリを終了する。利用者が閉じられないオーバーレイ (#163) が残ると
+        // 最後のウィンドウが閉じず、ホストの安全停止 (RunEvent::Exit) へ進まないため
+        .on_window_event(|window, event| {
+            if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
+                window.app_handle().exit(0);
+            }
+        })
         .setup(|app| {
             let nav = app.handle().clone();
             WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
