@@ -29,7 +29,7 @@ export interface LayoutPart {
 export interface PhoneLayout { schema: typeof LAYOUT_SCHEMA; version: typeof LAYOUT_VERSION; game: string; parts: LayoutPart[] }
 
 export const LIMITS = { parts: 64, controls: 8, id: 64, minSize: 0.08, maxSize: 0.6 };
-const ID = /^[\w:.\-/]+$/;
+const ID = /^[\w:.\-/~]+$/; // ~ は複製した部品 (jump~2)
 const CONTROL = /^(act|look):[\w:.\-/]+$/;
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -259,4 +259,63 @@ export function createLayoutStore(storage: LayoutStorage) {
     } catch { return false; }
   }
   return { load, save, reset };
+}
+
+// ---- 編集の操作 (#50) -------------------------------------------------------
+// どれも新しいレイアウトを返し、元を書き換えない。保存は createLayoutStore().save を明示的に呼んだときだけ。
+
+/** 画面上の動き (画面の幅・高さに対する比) を、本体座標の動きへ戻す (bodyToScreen の逆) */
+export function screenToBodyDelta(dx: number, dy: number, angle: number): [number, number] {
+  switch (normalizeAngle(angle)) {
+    case 90: return [-dy, dx];
+    case 180: return [-dx, -dy];
+    case 270: return [dy, -dx];
+    default: return [dx, dy];
+  }
+}
+
+const update = (layout: PhoneLayout, id: string, change: (part: LayoutPart) => LayoutPart): PhoneLayout =>
+  ({ ...layout, parts: layout.parts.map(part => part.id === id ? change(part) : part) });
+
+/** 指で動かした量だけ部品を動かす。本体の外へは出さない */
+export function movePart(layout: PhoneLayout, id: string, dx: number, dy: number, angle: number): PhoneLayout {
+  const [bx, by] = screenToBodyDelta(dx, dy, angle);
+  return update(layout, id, part => ({ ...part, x: clamp(part.x + bx, 0, 1), y: clamp(part.y + by, 0, 1) }));
+}
+export function resizePart(layout: PhoneLayout, id: string, size: number): PhoneLayout {
+  return update(layout, id, part => ({ ...part, size: clamp(size, LIMITS.minSize, LIMITS.maxSize) }));
+}
+/** 画面からの削除・再表示。操作定義は消さない (Q05) */
+export function setPartHidden(layout: PhoneLayout, id: string, hidden: boolean): PhoneLayout {
+  return update(layout, id, part => ({ ...part, hidden }));
+}
+/** 同じ操作の部品を足す (重複割当は可、Q05)。上限を超えるときは変えない */
+export function duplicatePart(layout: PhoneLayout, id: string): PhoneLayout {
+  const source = layout.parts.find(part => part.id === id);
+  if (!source || layout.parts.length >= LIMITS.parts) return layout;
+  const base = `${id.slice(0, LIMITS.id - 4)}~`;
+  let n = 2;
+  while (layout.parts.some(part => part.id === `${base}${n}`)) n++;
+  const copy = { ...source, id: `${base}${n}`, controls: [...source.controls], hidden: false, x: clamp(source.x + 0.08, 0, 1), y: clamp(source.y - 0.08, 0, 1) };
+  return { ...layout, parts: [...layout.parts, copy] };
+}
+/** ボタンの操作を付け替える。今の定義にあるボタン用の操作だけを受け付ける */
+export function assignButton(layout: PhoneLayout, id: string, control: string, standard: PhoneLayout): PhoneLayout {
+  const known = standard.parts.some(part => part.kind !== 'look' && part.controls.includes(control));
+  if (!known) return layout;
+  return update(layout, id, part => part.kind === 'button' ? { ...part, controls: [control] } : part);
+}
+
+// ---- 表示用の名前 ------------------------------------------------------------
+
+export interface ControlFace { label: string; direction?: 'up' | 'left' | 'right' | 'down'; mark?: string }
+/** 操作 (act:...) ごとの表示名。スティックの方向も持つ。標準の描画 (controllerLayout) と同じ名前を使う */
+export function controlFaces(game: ControllerGame): Map<string, ControlFace> {
+  const all = game.profile.actions.map(a => a.id);
+  const faces = new Map<string, ControlFace>();
+  for (const group of controllerLayout({ ...game, assigned: { P1: all } }, 'P1')) for (const part of group.parts) {
+    if (part.kind === 'button') faces.set(part.control, { label: part.label });
+    else if (part.kind === 'stick') for (const d of part.directions) faces.set(d.control, { label: d.label, direction: d.name, mark: d.mark });
+  }
+  return faces;
 }

@@ -1,5 +1,7 @@
 import {Controller} from './Controller';
-import { useSyncExternalStore } from 'react';
+import {LayoutController,LayoutEditor} from './LayoutController';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { createLayoutStore } from '../shared/model/layout.ts';
 import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked,liftHint,rotationNotice,confirmation,answerConfirm,offline } from './view';
 import { SKINS } from '../shared/model/skin.ts';
 
@@ -100,10 +102,34 @@ function WaitingScreen({state}:{state:PhoneDisplay}) {
   </section>;
 }
 
+// 個人レイアウト (#271/#50) はゲームごとにこのブラウザーへ保存する。読めない環境では標準の配置で遊べる
+const layouts = createLayoutStore({
+  getItem: key => localStorage.getItem(key), setItem: (key, value) => localStorage.setItem(key, value), removeItem: key => localStorage.removeItem(key),
+});
+
 function GameplayScreen({state}:{state:PhoneDisplay}) {
+  const c = state.controller;
+  const [editing, setEditing] = useState(false);
+  const [saved, setSaved] = useState(0);
+  // 担当・定義が変わると key が変わり、保存済みのレイアウトを今の定義と合わせ直す
+  const loaded = useMemo(() => c ? layouts.load(c.game) : null, [c?.key, saved]);
+  // 協力プレイの画面を離れたら編集をやめる (未保存の変更は捨てる。下書きの復旧はP3)
+  useEffect(() => { if (!c) setEditing(false); }, [c]);
+  // 編集を始めるときは、本人の押下をすべて離す。編集中はゲームへ何も送らない (Q12)。他の参加者には影響しない
+  const startEdit = () => { c?.bindings.releaseAll(); setEditing(true); };
+  const finish = () => { setSaved(n => n + 1); setEditing(false); };
+  // 保存したレイアウトがあるゲームだけ新しい配置で描く。未編集のゲームは従来の配置のまま
+  const custom = loaded?.source === 'saved';
   return <section className={`view${state.view === 'v-gen' ? ' show' : ''}`} id="v-gen">
-    <div className="gen-title" id="genTitle">{state.controllerTitle}</div>
-    <div id="genControls" className={state.controller?.layout || undefined}>{state.controller&&<Controller key={state.controller.key} groups={state.controller.groups} bindings={state.controller.bindings}/>}</div>
+    <div className="gen-title" id="genTitle">{state.controllerTitle}
+      {c && !editing && <button className="gen-edit" id="genEditLayout" onClick={startEdit}>配置を編集</button>}</div>
+    <div id="genControls" className={!c || editing || custom ? undefined : c.layout || undefined}>{c && (editing && loaded
+      ? <LayoutEditor key={c.key} initial={loaded.layout} game={c.game} slot={c.slot}
+          onSave={layout => { const ok = layouts.save(layout); if (ok) finish(); return ok; }} onCancel={() => setEditing(false)}
+          onReset={() => { layouts.reset(c.game.profile.id); finish(); }} />
+      : custom && loaded
+        ? <LayoutController key={c.key} layout={loaded.layout} game={c.game} slot={c.slot} bindings={c.bindings} />
+        : <Controller key={c.key} groups={c.groups} bindings={c.bindings}/>)}</div>
     <button className="cmd pause" data-cmd="PAUSE" id="genPause" hidden={!state.controllerHost}>一時停止・ホスト操作へ</button>
   </section>;
 }

@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from 'react';
 import type {ControlGroup,ControlPart} from '../shared/controller-layout';
 import type { InputBindings } from '../shared/contracts';
 
-function Stick({ part, bindings }: { part: Extract<ControlPart, { kind: 'stick' }>; bindings?: InputBindings }) {
+export function Stick({ part, bindings }: { part: Extract<ControlPart, { kind: 'stick' }>; bindings?: InputBindings }) {
   const ref = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     if (!bindings) return;
@@ -14,7 +14,7 @@ function Stick({ part, bindings }: { part: Extract<ControlPart, { kind: 'stick' 
   )}<div className="knob" /></div>;
 }
 
-function Look({bindings}:{bindings?:InputBindings}) {
+export function Look({bindings}:{bindings?:InputBindings}) {
   const pad=useRef<HTMLDivElement>(null), sensitivity=useRef<HTMLInputElement>(null), value=useRef<HTMLSpanElement>(null);
   useLayoutEffect(()=>{
     if(!bindings||!pad.current||!sensitivity.current||!value.current)return;
