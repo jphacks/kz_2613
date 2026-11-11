@@ -372,6 +372,21 @@ test('人数の参考: 全員に操作があり偏りの小さい人数を、断
   assert.equal(playerHint(null),null);
 });
 
+test('一時停止画面: プレイ参加者の枠と再開・終了の案内を表示する (#303)', () => {
+  const snapshot = pcState.get();
+  const state = {slots:[slot('P1',true),slot('P2',false),slot('P3',true),slot('P4',true)]};
+  const paused = game(['P1','P3','P4'],{phase:'paused',participants:['P1','P2','P4'],canResume:true});
+  const model = pcModel({...snapshot,state,game:paused,online:true});
+  assert.deepEqual(model.cards.map(c=>[c.slot,c.index]),[['P1',0],['P2',1],['P4',3]]);
+  assert.equal(model.cards[1].badge,'切断中');
+  assert.equal(model.stateTitle,'');
+  assert.match(model.explanation,/「再開する」/);
+  assert.match(model.secondary,/「協力プレイを終了（分担に戻る）」/);
+  const stopped = pcModel({...snapshot,state,game:{...paused,canResume:false},inject:{mode:'off',active:false},online:true});
+  assert.match(stopped.explanation,/「入力を再開する」/);
+  assert.doesNotMatch(stopped.explanation,/「再開する」/);
+});
+
 test('分担画面: 決定済みの枠が切断したときだけ枠番号と再決定の案内を示す (#305)', () => {
   const snapshot = pcState.get();
   const ui = {screen:'roles',game:'minecraft-java'};

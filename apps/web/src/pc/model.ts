@@ -62,6 +62,12 @@ export function pcModel(s: PcSnapshot) {
   const lineupNotice = disconnected.length
     ? `${disconnected.join('・')}が切断したため、分担を確認してください。メンバーが変わった場合は決め直してください。`
     : '';
+  const cards = playerCards(slots, view, game);
+  const pauseResumeHint = stopped
+    ? '安全を確かめてから\n「入力を再開する」を押します。'
+    : game?.canResume
+      ? '続けるにはホストのスマホで\n「再開する」を押してください。'
+      : '再開前に参加者の接続と\nゲームの画面を確認してください。';
   const gameSteps = (game?.title ?? ui.game) === GAMES[0].id ? GAMES[0].steps : [
     'PCアプリでゲームを選び、メンバーと分担を決める',
     'ゲームを起動し、遊びたい画面まで進める',
@@ -71,13 +77,13 @@ export function pcModel(s: PcSnapshot) {
     gameSteps,
     overlayUrl: s.infoPort ? `http://127.0.0.1:${s.infoPort}/overlay` : '',
     view, roleSlots, name, canAdvance,
-    cards: playerCards(slots, view, game), columns: roleColumns(game, roleSlots, swapPick),
+    cards: view === 'paused' ? cards.filter(card => roleSlots.includes(card.slot)) : cards, columns: roleColumns(game, roleSlots, swapPick),
     roleHeading: roleSlots.length < MIN_PLAYERS ? '参加者を待っています' : game?.lineupOk ? `${roleSlots.length}人で決定！` : `${roleSlots.length}人で、操作を分担！`,
     title: {join: '', game: 'ゲーム選択を\nしよう！', roles: game?.lineupOk && game.phase === 'lobby' ? '分担決定！' : '分担しよう！', preparing: '準備中', ready: '準備完了！', coop: '協力プレイ中', paused: '一時停止中'}[view],
-    stateTitle: {join: `${count}人参加中！`, preparing: 'ゲームを準備中！', ready: '全員接続・準備OK！', coop: 'みんなでプレイ中！', paused: '一時停止中', game: '', roles: ''}[view],
-    stateSubtitle: view === 'paused' && !game?.canResume ? inject?.mode === 'off' ? '安全を確かめてから「入力を再開する」を押してください' : '再開前に、接続とゲームの画面を確認してください' : {join: '', preparing: 'ホストがゲームを準備しています……', ready: 'ホストのスマホでReadyを押してください！', coop: '止めるときはホストのスマホでPAUSE', paused: 'ホストのスマホで再開できます', game: '', roles: ''}[view],
-    explanation: view === 'join' ? (canAdvance ? 'OKを押して\nゲーム選択へ進みます。' : `${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べます。\nあと${MIN_PLAYERS - count}人の参加を待っています。`) : view === 'game' ? '右側にあるゲーム一覧から\n遊びたいゲームを\n選択してください！' : view === 'roles' ? game?.lineupOk && game.phase === 'lobby' ? 'ゲームを起動して\nプレイの準備をしよう！' : '操作をそれぞれの\nスマホに分けよう！' : '',
-    secondary: view === 'game' ? 'Steam・Epic などのランチャーと\n手動登録のゲームは、\n分担を決めた後に起動できます。\n「未検証」は操作が届くか\n未確認です。' : view === 'roles' ? game?.lineupOk && game.phase === 'lobby' ? '準備ができたら、\nホストのスマホでReady！' : 'メンバーと分担を確認して\n決定しよう！' : '',
+    stateTitle: {join: `${count}人参加中！`, preparing: 'ゲームを準備中！', ready: '全員接続・準備OK！', coop: 'みんなでプレイ中！', paused: '', game: '', roles: ''}[view],
+    stateSubtitle: {join: '', preparing: 'ホストがゲームを準備しています……', ready: 'ホストのスマホでReadyを押してください！', coop: '止めるときはホストのスマホでPAUSE', paused: '', game: '', roles: ''}[view],
+    explanation: view === 'paused' ? pauseResumeHint : view === 'join' ? (canAdvance ? 'OKを押して\nゲーム選択へ進みます。' : `${MIN_PLAYERS}〜${MAX_PLAYERS}人で遊べます。\nあと${MIN_PLAYERS - count}人の参加を待っています。`) : view === 'game' ? '右側にあるゲーム一覧から\n遊びたいゲームを\n選択してください！' : view === 'roles' ? game?.lineupOk && game.phase === 'lobby' ? 'ゲームを起動して\nプレイの準備をしよう！' : '操作をそれぞれの\nスマホに分けよう！' : '',
+    secondary: view === 'paused' ? '終了するにはホストのスマホで\n「協力プレイを終了（分担に戻る）」を\n押してください。' : view === 'game' ? 'Steam・Epic などのランチャーと\n手動登録のゲームは、\n分担を決めた後に起動できます。\n「未検証」は操作が届くか\n未確認です。' : view === 'roles' ? game?.lineupOk && game.phase === 'lobby' ? '準備ができたら、\nホストのスマホでReady！' : 'メンバーと分担を確認して\n決定しよう！' : '',
     next: {hidden: !stopped && !['join','game','roles'].includes(view), stopped, label: stopped ? '入力を再開する' : {join: 'OK', game: action.label, roles: roleAction.label, preparing: '', ready: '', coop: '', paused: ''}[view], disabled: !stopped && ((view === 'join' && !canAdvance) || (view === 'roles' && !!roleAction.disabled) || (view === 'game' && action.kind === 'none'))},
     sub: {hidden: !(swapEntry || (view === 'roles' && roleAction.alt)), label: swapEntry ? '担当を入れ替える' : roleAction.alt?.label || '', disabled: !swapEntry && !!roleAction.alt?.disabled},
     blockedStart: view !== 'preparing' || stopped, readyInstruction: view !== 'ready' || stopped,

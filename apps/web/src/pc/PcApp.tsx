@@ -60,8 +60,8 @@ function Sidebar({state,model,connection}:{state:PcState;model:PcModel;connectio
 function Workspace({model}:{model:PcModel}) {
   const primaryDetails = ['game', 'roles'].includes(model.view);
   return <main className="workspace">
-    <div className="state-banner" id="stateBanner" hidden={primaryDetails}><h2 id="stateTitle">{model.stateTitle}</h2><p id="stateSubtitle">{model.stateSubtitle}</p></div>
-    <section id="playerStage" className="player-stage" aria-label={model.view === 'join' ? '参加者' : '参加者と担当'} hidden={primaryDetails}><div id="players" className="players">{model.cards.map((card: PlayerCardModel) => <PlayerCard key={card.slot} card={card} />)}</div></section>
+    <div className="state-banner" id="stateBanner" hidden={primaryDetails || model.view === 'paused'}><h2 id="stateTitle">{model.stateTitle}</h2><p id="stateSubtitle">{model.stateSubtitle}</p></div>
+    <section id="playerStage" className="player-stage" aria-label={model.view === 'join' ? '参加者' : '参加者と担当'} hidden={primaryDetails}><div id="players" className="players" style={{'--player-count': Math.max(1, model.cards.length)} as CSSProperties}>{model.cards.map((card: PlayerCardModel) => <PlayerCard key={card.slot} card={card} />)}</div></section>
     <section id="gameStage" className="game-stage" aria-label="ゲーム選択" hidden={model.view !== 'game'}><div id="games" className="game-frame">
       <div className="game-list-head"><h2>ゲーム一覧</h2><p id="gamesCount" role="status">{model.gamesCount}</p><button id="renameGameBtn" hidden={!model.registered}>名前を変更</button><button id="removeGameBtn" hidden={!model.registered}>登録を解除</button><button id="addGameBtn">＋ 追加</button><button id="refreshGamesBtn" disabled={model.scanning}>探し直す</button></div>
       <div id="gameList" className="game-list">{model.gameCards.map(card => <GameTile key={card.id} card={card} />)}</div>
