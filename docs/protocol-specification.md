@@ -104,7 +104,7 @@ sequenceDiagram
 | `ka` | RTC | `t`。共同操作中50msごとの生存確認 |
 | `rtc-offer / rtc-cand` | WS | `sdp`、または`cand`, `mid` |
 | `remote` | WS | `epoch`, `rseq`, `kind:move/scroll/release`, `dx`, `dy`。P1の非coop時のみ |
-| `release_inputs` | WS | 現在`epoch`。認証済み端末から全解放・保留破棄を要求 |
+| `release_inputs` | WS | 現在`epoch`、`iseq`（その端末が直近に送った入力番号）、`lseq`・`cx`・`cy`（直近に送った視点の番号と累積値）。`iseq`付きは**送信した端末の押下だけ**を解放し、他の参加者の押下とepochは変えない。この番号以下の押下が解放後に届いても適用しない。解放要求を追い越して先に処理された、この番号より後の押下は残す。`lseq`以下の視点は解放後に届いても適用せず、新しい視点は`cx`・`cy`を基準に差分を取る（#262）。解放要求を追い越して先に届いた新しい視点は、その累積値と`cx`・`cy`の差（新しいタッチの分）だけを残し、解放前の未処理分は捨てる。本人の新しい押下や他の参加者の保持が同じ出力に残っていても、解放した本人の解放前の連打の保留は捨てる。`iseq`と`lseq`・`cx`・`cy`のどちらかがない要求（旧版のスマホ）は、解放前の入力を確実に拒否できないので、従来どおり全参加者の全解放・保留破棄・epoch更新 |
 | `role_ok` | WS | 現在`epoch`。担当が変わった本人による確認 |
 
 PREPARE / READY / RESUME / OPEN_GAME / OPEN_APPは現在epochを必須とします。OPEN_APPは協力プレイ中以外に、PCアプリ（`recooplay-desktop.exe`）のウィンドウを前面にするだけで入力は送りません。PCアプリから起動していないとき・前面化に失敗したときは `command_result` の `reasons` に理由を返します。ゲームの状態の `canOpenApp` が真のときだけスマホにボタンを出します。PCアプリから起動したホストは、選んだゲームのウィンドウが閉じたらロビーでPCアプリを1回だけ前面に戻します（#292）。PREPAREは分担決定後にpreparingへ移すだけで、READYが開始条件を満たしたときだけcoopへ進みます。監視画面からcoopを強制できません。
@@ -125,7 +125,7 @@ PREPARE / READY / RESUME / OPEN_GAME / OPEN_APPは現在epochを必須としま�
 | `error / full` | 拒否理由。errorは`code`と必要に応じてホストの版。fullの`retryMs`は、ロビーで保持中の切断枠が最も早く空くまでの時間（ms）。保持中の枠がなければ`null`（本当に満員） |
 | `game` | セッション状態`game` |
 | `command_result` | `cmd`, `accepted`, `reasons` |
-| `ack` | `iseq`, `t`, `via:ws/rtc`、旧epochなら`stale:true` |
+| `ack` | `iseq`, `t`, `via:ws/rtc`、旧epoch・解放済み・遅れた押下なら`stale:true` |
 | `pong / kpong` | 対応する`t` |
 | `rtc-answer / rtc-cand` | `sdp`, `sdpType`、または`cand`, `mid` |
 
@@ -189,6 +189,8 @@ sequenceDiagram
 ```
 
 枠ごとの`nextIseq`により番号が欠けたときは後続を保留します。旧epochも番号を消費しますが、押下・解放は実行せずstale ACKを返します。視点は累積値の差分を使い、同じepoch内の欠落を次の値で補います。epoch変更ではスマホとホストの視点累積値・順序基準をリセットします。
+
+同じepoch内でも、通信の詰まり・復旧でまとめて遅れて届いた押下（down）は実行しません（#285）。ホストは接続ごとに「受信時刻−スマホの送信時刻`t`（`performance.now`）」の最小値を、`ping`・`ka`・`input`の到着から直近15〜30秒で求め、押下を処理する時点でこの基準から500ms以上遅れていればstale ACKを返します。時計の差は基準で打ち消し、片道遅延としては扱いません。500msは実Wi-Fi計測（2026-11-09）の正常時ACK往復の最大384msを上回る値です。`t`を解釈できない・基準がない押下も実行しません。解放（up）は常に適用します。スマホは押下のstale ACKを受けたら、その操作の押下表示を解き、指を離すまで「指を離して操作を再開」を出します。通信断などで入力を止めたときに押したままの指も同様に扱い、離した後の新しいタッチから再開します。
 
 ---
 
@@ -299,7 +301,7 @@ P1のリモコンはPC画面と対象ゲームへ排他的に送ります。PC�
 
 ## 安全停止の境界
 
-入力OFF、対象喪失、セッション変更、終了時は合成入力と保留分を解放・破棄します。古いepochの`release_inputs`は新しいセッションに影響させません。ホストのPC経路とゲーム経路は排他的です。未検証の操作定義であっても開始条件が成立すればReadyできますが、割当不能・非対応の種類は拒否します。
+入力OFF、対象喪失、セッション変更、終了時は合成入力と保留分を解放・破棄します。端末ごとのblur・回転・非表示（`release_inputs`）は、その端末の押下だけを解放します（#262）。古いepochの`release_inputs`は新しいセッションに影響させません。ホストのPC経路とゲーム経路は排他的です。未検証の操作定義であっても開始条件が成立すればReadyできますが、割当不能・非対応の種類は拒否します。
 
 実装：[受付](../apps/host-rs/src/main.rs) ／ [通信・認可](../apps/host-rs/src/hub.rs) ／ [DataChannel](../apps/host-rs/src/rtc.rs) ／ [通信試験](../scripts/sim/protocol-sim.mjs)
 

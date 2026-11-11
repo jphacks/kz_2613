@@ -54,9 +54,20 @@ impl Look {
         self.py += dy;
     }
 
+    /// 直近に視点を送ってきた枠。他の枠の解放では視点を破棄しない判定に使う (#262)。
+    pub(crate) fn owner(&self) -> &'static str { self.slot }
+
     /// 停止/epoch変更は未処理量と端数のみ破棄する。診断集計と間隔履歴は従来どおり残す。
     pub(crate) fn reset(&mut self) {
         self.px = 0.0; self.py = 0.0; self.fx = 0.0; self.fy = 0.0;
+    }
+
+    /// 未処理量を、解放後の新しいタッチ分 (nx, ny) までに減らす (#262)。解放前の未処理分を捨てるためで、
+    /// 向きの違う量や増やす方向には変えない (既にOSへ出した移動を逆向きに戻さない)。端数は解放前の分として捨てる。
+    pub(crate) fn keep_at_most(&mut self, nx: f64, ny: f64) {
+        let clamp = |p: f64, n: f64| if p * n > 0.0 { p.signum() * p.abs().min(n.abs()) } else { 0.0 };
+        self.px = clamp(self.px, nx); self.py = clamp(self.py, ny);
+        self.fx = 0.0; self.fy = 0.0;
     }
 
     pub(crate) fn tick(&mut self, now: Instant, allowed: bool) -> Option<Movement> {
@@ -172,6 +183,19 @@ mod tests {
         idle.add("P2", 0.0, 0.0, now + Duration::from_secs(1));
         assert!(idle.gaps.is_empty()); // ちょうど1000msもドラッグ中のgapとして扱わない。
         assert_eq!(idle.tau, 30.0);
+    }
+
+    #[test]
+    fn keeping_only_the_new_touch_never_grows_or_reverses_pending_motion() {
+        // 解放後の新しいタッチの分だけ残す (#262)。未処理量を増やさず、向きの違う量は0にする
+        let now = Instant::now();
+        let mut look = Look::new(now, 8.0, 48.0);
+        for ((px, py), (nx, ny), want) in [((105.0, 0.0), (5.0, 0.0), (5.0, 0.0)), ((3.0, -2.0), (5.0, -7.0), (3.0, -2.0)),
+            ((-4.0, 6.0), (5.0, 0.0), (0.0, 0.0)), ((-9.0, 9.0), (-2.0, 1.0), (-2.0, 1.0))] {
+            look.px = px; look.py = py; look.fx = 0.4; look.fy = -0.4;
+            look.keep_at_most(nx, ny);
+            assert_eq!(((look.px, look.py), (look.fx, look.fy)), (want, (0.0, 0.0)), "{px},{py} -> {nx},{ny}");
+        }
     }
 
     #[test]

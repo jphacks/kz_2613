@@ -72,12 +72,15 @@ export function bindCooperativeInput({getGame,getRole,canLook=()=>getRole()==='P
   // 溜まった移動量を 30Hz で送る。ACK は返さない。滑らかさは PC 側で補間する。
   // 累積値はepochごとに0へ戻す。同じepoch内の欠落だけを次のパケットで取り戻す。
   const look = { seq: 0, cx: 0, cy: 0 };
+  // 最後に送った視点。本人の解放要求に載せ、ホストが解放前の視点を後から適用しないようにする (#262)
+  let lookSent = { lseq: 0, cx: 0, cy: 0 };
   lifetime.interval(() => {
     const game = getGame();
     if ((accX || accY) && game?.phase === 'coop' && canLook() && isOpen()) {
       look.cx += accX;
       look.cy += accY;
       const msg: LookInput = { type: 'look', lseq: ++look.seq, epoch: game.epoch, cx: Math.round(look.cx * 100) / 100, cy: Math.round(look.cy * 100) / 100 };
+      lookSent = { lseq: msg.lseq, cx: msg.cx, cy: msg.cy };
       sendLook(msg, moveAt);
       moveAt = null;
     }
@@ -86,6 +89,8 @@ export function bindCooperativeInput({getGame,getRole,canLook=()=>getRole()==='P
 
 
   function release() { stickRelease(); padId = null; accX = accY = 0; moveAt = null; pad?.classList.remove('active'); if(dot)dot.style.display = 'none'; }
-  function resetEpoch() { release(); look.seq = look.cx = look.cy = 0; }
-  return {release, resetEpoch, setGeneratedStick, bindLook, dispose(){release();genStick?.dispose();genStick=null;lifetime.dispose();}};
+  function resetEpoch() { release(); look.seq = look.cx = look.cy = 0; lookSent = { lseq: 0, cx: 0, cy: 0 }; }
+  // 今入力に使っている指 (スティック・視点パッド)。強制的に止めたとき、指を離すまで再開しないことを案内する (#285 Q27)
+  function activePointers() { return [genStick?.active(), padId].filter((id): id is number => id != null); }
+  return {release, resetEpoch, lookMark: () => lookSent, setGeneratedStick, bindLook, activePointers, dispose(){release();genStick?.dispose();genStick=null;lifetime.dispose();}};
 }

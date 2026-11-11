@@ -63,5 +63,5 @@ export function attachStick(stick: HTMLElement, { codes, isOpen, ctlDown, ctlUp,
     if (t !== 'pointerup') onCancel();
     release();
   });
-  return { release, dispose() { release(); lifetime.dispose(); } };
+  return { release, active: () => stickId, dispose() { release(); lifetime.dispose(); } };
 }

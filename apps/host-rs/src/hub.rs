@@ -210,7 +210,10 @@ struct Slot {
     rtc_gen: u64,
     rtc_state: &'static str,
     next_iseq: i64, // 次に処理する入力番号 (WebSocket / WebRTC のどちらで届いても番号順に 1 回だけ処理する)
+    release_floor: i64, // 本人の release_inputs 以前に送った入力の最大番号。これ以下の押下は解放後に届いても適用しない (#262)
     ibuf: BTreeMap<i64, (InputMessage, Via)>,
+    clock: crate::freshness::ClockBase, // 遅れて届いた押下の判定の基準 (#285)。接続ごとに作り直す
+    stale_downs: u64,
     via_ws: u64,
     via_rtc: u64,
     look_seq: i64,
@@ -218,6 +221,7 @@ struct Slot {
     look_cx: f64, // 視点の累積移動量 (パケットが欠けても次のパケットで取り戻せる)
     look_cy: f64,
     look_lost: u64,
+    press_iseq: BTreeMap<String, i64>, // 押している操作 → その押下の入力番号。古い解放要求で新しい押下を消さない (#262)
 }
 
 impl Slot {
@@ -245,7 +249,10 @@ impl Slot {
             rtc_gen: 0,
             rtc_state: "none",
             next_iseq: 1,
+            release_floor: 0,
             ibuf: BTreeMap::new(),
+            clock: Default::default(),
+            stale_downs: 0,
             via_ws: 0,
             via_rtc: 0,
             look_seq: 0,
@@ -253,6 +260,7 @@ impl Slot {
             look_cx: 0.0,
             look_cy: 0.0,
             look_lost: 0,
+            press_iseq: BTreeMap::new(),
         }
     }
 }
@@ -800,6 +808,7 @@ impl Hub {
                         "pressed": s.pressed,
                         "events": s.events,
                         "lost": s.lost,
+                        "staleDowns": s.stale_downs,
                         "outOfOrder": s.out_of_order,
                         "clientStats": s.client_stats,
                         "rtcState": s.rtc_state,
@@ -1382,6 +1391,51 @@ impl Hub {
             self.record("queue_drop", json!({ "out": OUTPUTS[idx].id, "slot": slot }));
         }
         self.pump(idx);
+    }
+
+    /// スマホ1台のblur・回転・非表示などで、その端末の押下だけを解放する (#262)。
+    /// 解放要求より前に送られた入力が後から届いても押下を適用しないよう、番号の下限を記録する。
+    /// 本人の入力だけを解放する (#262)。floor は端末が解放の時点で送り終えていた入力番号、look はその時点の
+    /// 視点の番号と累積値。解放要求より遅れて届く・先に届く入力の両方の逆順に備える:
+    /// - floor 以下の押下は解放する。floor より後の押下 (解放要求を追い越した新しいタッチ) は残す
+    /// - 視点は look の番号以下を今後受け付けず、累積値の基準を解放時点へ進める (解放前の移動を後から適用しない)
+    fn release_slot_inputs(&mut self, idx: usize, floor: i64, look: (i64, f64, f64)) {
+        let name = SLOT_NAMES[idx];
+        let Some(slot) = self.slots[idx].as_mut() else { return };
+        slot.release_floor = slot.release_floor.max(floor);
+        let kept: Vec<String> = slot.press_iseq.iter().filter(|(_, &i)| i > floor).map(|(b, _)| b.clone()).collect();
+        slot.pressed.retain(|b| kept.contains(b));
+        slot.press_iseq.retain(|_, i| *i > floor);
+        // 視点: 解放時点までの番号と累積値を基準にする。解放より新しい視点が既に届いていれば、
+        // その累積値と解放時点の差 (新しいタッチの分) だけを残し、解放前の未処理分は捨てる
+        let (lseq, cx, cy) = look;
+        let newer = if lseq >= slot.look_seq {
+            slot.look_seq = lseq; slot.look_cx = cx; slot.look_cy = cy; None
+        } else {
+            Some((slot.look_cx - cx, slot.look_cy - cy))
+        };
+        let now = Instant::now();
+        let keep: BTreeSet<usize> = kept.iter().filter_map(|b| self.resolve_control(idx, b)).collect();
+        for o in 0..OUTPUTS.len() {
+            let keep_own_press = keep.contains(&o);
+            let output = &mut self.outputs[o];
+            let has_own_edges = output.queue.iter().any(|&(_, slot)| slot == name);
+            if !keep_own_press && !has_own_edges && !output.holders.contains(name) {
+                continue; // 本人が触っていない出力に残る、他の枠の短いタップを消さない。
+            }
+            if !keep_own_press && output.release(Some(name), now) {
+                self.apply_output(o, false, name);
+            } else if keep_own_press || has_own_edges {
+                // 他の枠が同じ出力を保持しているときも、本人の解放前の連打は再生しない。
+                output.drop_slot_edges(name);
+                self.pump(o);
+            }
+        }
+        if self.look.owner() == name {
+            match newer { Some((nx, ny)) => self.look.keep_at_most(nx, ny), None => self.reset_look() }
+        }
+        self.log("release_inputs", json!({ "slot": name, "iseq": floor, "kept": kept, "lseq": lseq }));
+        self.push_game();
     }
 
     /// 切断・停止時のup要求は、出力ごとの状態を無効化した直後に順次送る。
@@ -2499,10 +2553,13 @@ impl Hub {
         slot.last_seen = now;
         slot.last_seq = 0;
         slot.next_iseq = num(msg, "nextIseq").map(|n| n as i64).filter(|&n| n >= 1).unwrap_or(1);
+        slot.release_floor = 0;
+        slot.press_iseq.clear();
         slot.look_seq = 0;
         slot.look_cx = 0.0;
         slot.look_cy = 0.0;
         slot.ibuf.clear();
+        slot.clock = Default::default(); // 再読み込みでスマホの時計 (performance.now) の起点が変わる
         slot.rtc = None;
         slot.rtc_state = "none";
         let token = slot.token.clone();
@@ -2555,11 +2612,13 @@ impl Hub {
                 if let Some(stats) = msg.get("stats") {
                     slot.client_stats = stats.clone();
                 }
+                slot.clock.observe(crate::freshness::mono_ms(), num(&msg, "t"));
                 let conn = slot.conn;
                 self.send(conn, &json!({ "type": "pong", "t": msg.get("t") }));
             }
             "ka" => {
                 // WebRTC の生存確認 (スマホの無線を起こしておく役目も兼ねる)
+                slot.clock.observe(crate::freshness::mono_ms(), num(&msg, "t"));
                 if let Some(peer) = &slot.rtc {
                     peer.send(&json!({ "type": "kpong", "t": msg.get("t") }).to_string());
                 }
@@ -2583,7 +2642,17 @@ impl Hub {
             }
             "release_inputs" if via == Via::Ws => {
                 if msg.get("epoch").and_then(Value::as_u64) == Some(self.game.epoch) {
-                    self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game();
+                    let look = match (msg.get("lseq").and_then(Value::as_i64), num(&msg, "cx"), num(&msg, "cy")) {
+                        (Some(l), Some(x), Some(y)) if x.is_finite() && y.is_finite() => Some((l, x, y)),
+                        _ => None,
+                    };
+                    match (msg.get("iseq").and_then(Value::as_i64), look) {
+                        // 送信した本人の入力だけを解放する。他の参加者の押しっぱなしと進行状態(epoch)は変えない (#262)
+                        (Some(floor), Some(look)) => self.release_slot_inputs(idx, floor, look),
+                        // 押下と視点の両方の境界がない要求 (旧版のスマホ) は、解放前の入力を確実に拒否できないので、
+                        // 従来どおり全参加者を解放してepochを進める
+                        _ => { self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); }
+                    }
                 }
             }
             "remote" if via == Via::Ws => self.remote_message(idx, &msg),
@@ -2636,6 +2705,8 @@ impl Hub {
         let Some(msg) = InputMessage::decode(msg) else { return };
         let iseq = msg.iseq;
         let slot = self.slots[idx].as_mut().unwrap();
+        // 届いた時刻で基準を更新する。重複 (WS/RTCの後着) も届いた事実として使える
+        slot.clock.observe(crate::freshness::mono_ms(), num(&msg.raw, "t"));
         if iseq < slot.next_iseq || slot.ibuf.contains_key(&iseq) {
             return;
         }
@@ -2675,6 +2746,26 @@ impl Hub {
             );
             return;
         }
+        // 本人の解放要求より前に送られた押下が、順序待ちの後に届いたもの。解放後に押しっぱなしを復活させない (#262)
+        if state == "down" && msg.iseq <= self.slots[idx].as_ref().unwrap().release_floor {
+            let conn = self.slots[idx].as_ref().unwrap().conn;
+            self.send(conn, &json!({ "type": "ack", "iseq": msg.raw.get("iseq"), "t": msg.raw.get("t"), "via": via.name(), "stale": true }));
+            self.record("stale_input", json!({ "slot": SLOT_NAMES[idx], "button": button, "state": state, "reason": "released" }));
+            return;
+        }
+        // 同じepoch内でも、通信の詰まり・復旧でまとめて遅れて届いた押下は実行しない (#285 Q25)。
+        // 順序待ちの後に処理する時点で判定する。解放 (up) は常に適用する
+        if state == "down" && !burst {
+            let slot = self.slots[idx].as_mut().unwrap();
+            let delay = slot.clock.delay(crate::freshness::mono_ms(), num(&msg.raw, "t"));
+            if !delay.is_some_and(|d| d < crate::freshness::STALE_DOWN_MS) {
+                slot.stale_downs += 1;
+                let conn = slot.conn;
+                self.send(conn, &json!({ "type": "ack", "iseq": msg.raw.get("iseq"), "t": msg.raw.get("t"), "via": via.name(), "stale": true }));
+                self.record("stale_input", json!({ "slot": SLOT_NAMES[idx], "button": button, "state": state, "reason": "late", "delayMs": delay.map(|d| d.round()) }));
+                return;
+            }
+        }
         let slot = self.slots[idx].as_mut().unwrap();
         slot.events += 1;
         match via {
@@ -2683,8 +2774,10 @@ impl Hub {
         }
         if state == "down" {
             slot.pressed.insert(button.clone());
+            slot.press_iseq.insert(button.clone(), msg.iseq);
         } else {
             slot.pressed.remove(&button);
+            slot.press_iseq.remove(&button);
         }
         let conn = slot.conn;
         self.send(conn, &json!({ "type": "ack", "iseq": msg.raw.get("iseq"), "t": msg.raw.get("t"), "via": via.name() }));
@@ -2738,6 +2831,7 @@ impl Hub {
 
 #[cfg(test)]
 mod tests {
+    include!("release_order_tests.rs");
     include!("review_rotation_tests.rs");
     use super::*;
     use std::collections::VecDeque;
@@ -3051,6 +3145,51 @@ mod tests {
     }
 
     #[test]
+    fn own_release_rejects_a_late_look_sent_before_it_and_keeps_the_new_touch_baseline() {
+        // P1 (レビュー指摘): 解放前に送った視点が、WS の解放要求より後に RTC で届いても適用しない
+        let (mut h, _rx) = fixture();
+        h.accept_look(1, &json!({"epoch":1,"lseq":1,"cx":10,"cy":0}));
+        assert_eq!(h.look.px, 10.0);
+        let epoch = h.game.epoch;
+        h.handle_player_message(1, json!({"type":"release_inputs","epoch":1,"iseq":0,"lseq":2,"cx":100,"cy":0}), Via::Ws);
+        assert_eq!((h.look.px, h.game.epoch), (0.0, epoch), "本人の視点の未処理分を捨て、epochは変えない");
+        h.accept_look(1, &json!({"epoch":1,"lseq":2,"cx":100,"cy":0}));
+        assert_eq!(h.look.px, 0.0, "解放前に送った視点を後から適用しない");
+        // 新しいタッチは解放時点の累積値から数える (捨てた移動を混ぜない)
+        h.accept_look(1, &json!({"epoch":1,"lseq":3,"cx":105,"cy":2}));
+        assert_eq!((h.look.px, h.look.py), (5.0, 2.0));
+        // 視点の境界 (lseq) のない旧版の要求は、解放前の視点を拒否できないので、全体の解放とepoch更新にする
+        h.handle_player_message(1, json!({"type":"release_inputs","epoch":1,"iseq":0}), Via::Ws);
+        assert_eq!((h.look.px, h.game.epoch), (0.0, epoch + 1));
+        h.accept_look(1, &json!({"epoch":1,"lseq":4,"cx":106,"cy":2}));
+        assert_eq!(h.look.px, 0.0, "旧epochの視点は適用しない");
+    }
+
+    #[test]
+    fn late_own_release_keeps_a_press_that_overtook_it_and_releases_older_ones() {
+        // P2 (レビュー指摘): 新しいタッチの押下 (RTC) が、それより前に送った解放要求 (WS) を追い越しても消さない
+        let (mut h, _rx) = fixture();
+        h.keybinds = Keybinds::build(h.profile.as_ref().unwrap(), None);
+        let w = index("KEY_W");
+        let input = |iseq: i64, state: &str| json!({"iseq":iseq,"epoch":1,"button":"act:forward","state":state,"t":1.0});
+        h.accept_input(0, input(1, "down"), Via::Ws);
+        h.accept_input(0, input(2, "up"), Via::Ws);
+        h.accept_input(0, input(3, "down"), Via::Rtc); // 新しい指
+        h.handle_player_message(0, json!({"type":"release_inputs","epoch":1,"iseq":2,"lseq":0,"cx":0,"cy":0}), Via::Ws);
+        assert!(h.slots[0].as_ref().unwrap().pressed.contains("act:forward"), "解放より後の押下の論理保持を残す");
+        assert!(h.outputs[w].holders.contains("P1"), "解放より後の押下の出力を残す");
+        h.accept_input(0, input(3, "down"), Via::Ws); // 同じ番号のWS側は重複として捨てる
+        assert!(h.outputs[w].holders.contains("P1"));
+        // 解放の時点で押していた押下は離す
+        h.accept_input(0, input(4, "up"), Via::Ws);
+        h.accept_input(0, input(5, "down"), Via::Ws);
+        h.handle_player_message(0, json!({"type":"release_inputs","epoch":1,"iseq":5,"lseq":0,"cx":0,"cy":0}), Via::Ws);
+        assert!(!h.slots[0].as_ref().unwrap().pressed.contains("act:forward"));
+        assert!(!h.outputs[w].holders.contains("P1"));
+        h.release_outputs(None);
+    }
+
+    #[test]
     fn decoded_input_keeps_ack_wire_values_and_does_not_consume_invalid_sequence() {
         let (mut h, _rx) = fixture();
         h.keybinds = Keybinds::build(h.profile.as_ref().unwrap(), None);
@@ -3060,13 +3199,45 @@ mod tests {
         h.accept_input(0, json!({"iseq":"NaN","epoch":1,"button":"act:forward","state":"down"}), Via::Rtc);
         assert_eq!(h.slots[0].as_ref().unwrap().next_iseq, 1);
         assert!(h.slots[0].as_ref().unwrap().ibuf.is_empty());
-        h.accept_input(0, json!({"iseq":"1.9","epoch":1,"button":"act:forward","state":"down","t":"wire-time"}), Via::Ws);
+        // 送信時刻を解釈できない押下は鮮度を判定できないので適用しない (#285)。ACKは原値のまま返す
+        h.accept_input(0, json!({"iseq":"1","epoch":1,"button":"act:forward","state":"down","t":"wire-time"}), Via::Ws);
         let Out::Text(text) = rx.try_recv().unwrap() else { panic!("ACKが必要") };
         let ack: Value = serde_json::from_str(&text).unwrap();
-        assert_eq!(ack["iseq"], "1.9"); assert_eq!(ack["t"], "wire-time");
+        assert_eq!(ack["t"], "wire-time"); assert_eq!(ack["stale"], true);
+        assert!(!h.outputs[index("KEY_W")].physical);
+        h.accept_input(0, json!({"iseq":"2.9","epoch":1,"button":"act:forward","state":"down","t":"12.5"}), Via::Ws);
+        let Out::Text(text) = rx.try_recv().unwrap() else { panic!("ACKが必要") };
+        let ack: Value = serde_json::from_str(&text).unwrap();
+        assert_eq!(ack["iseq"], "2.9"); assert_eq!(ack["t"], "12.5"); assert!(ack.get("stale").is_none());
         assert!(h.outputs[index("KEY_W")].physical);
-        h.accept_input(0, json!({"iseq":1,"epoch":1,"button":"act:forward","state":"up"}), Via::Rtc);
+        h.accept_input(0, json!({"iseq":2,"epoch":1,"button":"act:forward","state":"up"}), Via::Rtc);
         assert!(h.outputs[index("KEY_W")].physical); // 後着重複は解放しない。
+        h.release_outputs(None);
+    }
+
+    #[test]
+    fn late_down_in_the_same_epoch_is_dropped_but_release_and_others_hold_continue() {
+        use crate::freshness::mono_ms;
+        let (mut h, _rx) = fixture();
+        h.keybinds = Keybinds::build(h.profile.as_ref().unwrap(), None);
+        let epoch = h.game.epoch;
+        // P2 (視点の担当) の保持は P1 の遅延とは無関係に続く
+        h.set_output(index("MOUSE_L"), "P2", true);
+        // ping で基準を作る (スマホの時計は PC と同期していない想定で大きくずらす)
+        let skew = 5_000_000.0;
+        h.slots[0].as_mut().unwrap().clock.observe(mono_ms(), Some(mono_ms() + skew));
+        // 2秒前に押した押下が、詰まりの後にまとめて届いた: 実行しない
+        h.accept_input(0, json!({"iseq":1,"epoch":epoch,"button":"act:forward","state":"down","t":mono_ms() + skew - 2000.0}), Via::Ws);
+        assert!(!h.outputs[index("KEY_W")].physical, "遅れた押下を実行しない");
+        assert!(!h.slots[0].as_ref().unwrap().pressed.contains("act:forward"));
+        assert_eq!(h.slots[0].as_ref().unwrap().stale_downs, 1);
+        // その解放は常に適用し (何も押していないので変化なし)、番号は進める
+        h.accept_input(0, json!({"iseq":2,"epoch":epoch,"button":"act:forward","state":"up","t":mono_ms() + skew - 1900.0}), Via::Ws);
+        assert_eq!(h.slots[0].as_ref().unwrap().next_iseq, 3);
+        // 指を離した後の新しい押下は正常に入力できる
+        h.accept_input(0, json!({"iseq":3,"epoch":epoch,"button":"act:forward","state":"down","t":mono_ms() + skew}), Via::Ws);
+        assert!(h.outputs[index("KEY_W")].physical, "新しい押下は入力できる");
+        assert!(h.outputs[index("MOUSE_L")].physical, "他の参加者の保持を解放しない");
         h.release_outputs(None);
     }
 

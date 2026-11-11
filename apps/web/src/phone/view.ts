@@ -27,6 +27,8 @@ export const skin = createStore('standard');
 export const connection=createStore({text:'接続中',kind:'warn'});
 export const telemetry=createStore<PhoneTelemetry>({rtt:'-',rttAvg:'-',sent:0,unacked:0,path:'-',advice:'',inputMetrics:'',burstBusy:false});
 export const blocked=createStore<{message?:string}|null>(null);
+// 「指を離して操作を再開」(#285 Q27)。非モーダルで、指を離せば消える
+export const liftHint=createStore(false);
 // 役割交代の予告・交代後の案内 (#161)
 export const rotationNotice=createStore('');
 export const offline=createStore(false);
@@ -133,6 +135,7 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
     const diagnostics=byId<HTMLDialogElement>('phoneDiagnostics');if(diagnostics.open)diagnostics.close();
     flushSync(()=>blocked.set({message}));
   };
+  render.liftHint=visible=>{if(liftHint.get()!==visible)flushSync(()=>liftHint.set(visible));};
   render.offline=visible=>{if(offline.get()!==visible)flushSync(()=>offline.set(visible));};
   render.confirm=askConfirm;
   render.dispose=()=>{closeConfirm();input.releaseAll();telemetryUpdates.dispose();lifetime.dispose();transition.dispose();bindings=undefined;};
