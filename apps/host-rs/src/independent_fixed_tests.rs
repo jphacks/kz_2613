@@ -105,7 +105,8 @@ fn independent_fixed_other_holder_does_not_preserve_released_tap() {
     h.outputs[key].changed_at=Some(Instant::now()+Duration::from_secs(60));
     for (n,state) in [(2,"up"),(3,"down"),(4,"up")] { independent_fixed_key(&mut h,n,state,epoch); }
     h.slots[2]=Some(Slot::new("third".into(),"third-token".into()));
-    for (action,out) in &mut h.keybinds.actions { if action=="attack" {*out=Some("KEY_W");} }
+    let overrides=crate::key_overrides::GameOverrides::from([("attack".into(),Some("KEY_W".into()))]);
+    h.keybinds=Keybinds::build_with(h.profile.as_ref().unwrap(),None,Some(&overrides));
     h.accept_input(2,json!({"epoch":epoch,"iseq":1,"button":"act:attack","state":"down","t":1_000_000.0}),Via::Rtc);
     injections(&mut rx);
     h.handle_player_message(0,json!({"type":"release_inputs","epoch":epoch,"iseq":4,"lseq":0,"cx":0,"cy":0}),Via::Ws);
