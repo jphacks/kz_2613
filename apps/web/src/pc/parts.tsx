@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useState, useSyncExternalStore } from 'react';
 import { settingsActions, type PcSnapshot, type pcModel } from './model';
 type Model = ReturnType<typeof pcModel>;
 type Card = Model['gameCards'][number];
@@ -29,4 +29,27 @@ export function NetworkDiagnostics({model, bluetooth}: {model: Model; bluetooth:
     {d.lastWarning && <p>最後の途切れ警告：{new Date(d.lastWarning.at).toLocaleTimeString('ja-JP')}、{d.lastWarning.stalls}回/10秒（最大空白 {d.lastWarning.maxStallMs}ms）</p>}
     {d.hints.length > 0 && <ul>{d.hints.map((hint: string) => <li key={hint}>{hint}</li>)}</ul>}
   </section>)}{bluetooth && <p className="net-bt">PCの音の出力先がBluetoothです。有線のイヤホンかPCのスピーカーにすると、通信が安定しやすくなります。</p>}</>;
+}
+
+// PCアプリ (Tauri) が知らせる状態 (#163)。ブラウザで開いたときは undefined で、切替を出さない
+type DesktopState = {overlay: boolean; overlayError?: string | null};
+declare global { interface Window { recooplayDesktop?: DesktopState } }
+const desktopStore = {
+  subscribe(fn: () => void) { addEventListener('recooplay-desktop', fn); return () => removeEventListener('recooplay-desktop', fn); },
+  get: () => window.recooplayDesktop,
+};
+/**
+ * ゲーム画面の上に担当と操作を重ねる表示 (#163、Q43)。初期OFFで、PCアプリの画面でだけ切り替えられる。
+ * 画面にはTauriのAPIを開放しないので、PCアプリが横取りする専用URLへの移動で要求する (移動そのものは取り消される)
+ */
+export function DesktopOverlaySetting({locked}: {locked: boolean}) {
+  const desktop = useSyncExternalStore(desktopStore.subscribe, desktopStore.get);
+  const [waiting, setWaiting] = useState(false);
+  if (!desktop) return null;
+  const toggle = (on: boolean) => { setWaiting(true); location.assign(`/__desktop/overlay?on=${on ? 1 : 0}`); setTimeout(() => setWaiting(false), 1500); };
+  return <div className="comm-setting" id="desktopOverlay">
+    <label><input type="checkbox" id="desktopOverlaySetting" checked={desktop.overlay} disabled={locked || waiting} onChange={event => toggle(event.currentTarget.checked)} /> ゲーム画面の右上に、担当と操作中のキーを重ねて表示する</label>
+    <p>初期はOFFです。クリックは下のゲームに届き、フォーカスも移りません。ウィンドウ表示・ボーダーレスのゲームで使えます（全画面のゲームでは重ならないことがあります）。{locked ? '協力プレイ中は切り替えられません。一時停止すると切り替えられます。' : ''}</p>
+    {desktop.overlayError && <p role="alert">表示できませんでした：{desktop.overlayError}</p>}
+  </div>;
 }
