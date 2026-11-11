@@ -2,6 +2,8 @@
 // 本体座標の縦横変換・表示だけの一時補正・ゲーム別の保存。DOM・通信・OS入力なし。
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {createRequire} from 'node:module';
+import {pathToFileURL} from 'node:url';
 const L = await import('../../apps/web/src/shared/model/layout.ts');
 const {loadComponent,createElement,renderToStaticMarkup}=await import('./fixtures/react-render.mjs');
 const {LayoutController,LayoutEditor}=await loadComponent(new URL('../../apps/web/src/phone/LayoutController.tsx',import.meta.url));
@@ -240,4 +242,53 @@ await test('描画: プレイは担当の部品だけを本体基準の位置で
   assert.match(empty, /担当する操作がありません/);
 });
 
-console.log(`${passed}/10 合格（スマホのレイアウトモデルと編集画面、OS入力なし）`);
+await test('複製: ボタンだけを複製し、スティック・視点パッドは複製しない (入力エンジンは1つずつしか持てない)', () => {
+  const base = L.standardLayout(game());
+  assert.equal(L.duplicatePart(base, 'move:stick'), base);
+  assert.equal(L.duplicatePart(base, 'view:look'), base);
+  assert.equal(L.duplicatePart(base, 'jump').parts.length, base.parts.length + 1);
+});
+
+// ここからは react-dom/client を最小限のDOMで動かし、つなぎ直しと解放の回数を数える
+const {installDom} = await import('./fixtures/react-dom-lite.mjs');
+const document = installDom();
+const {createRoot} = await import(requireWebUrl('react-dom/client'));
+const {act} = await import(requireWebUrl('react'));
+function requireWebUrl(spec) {
+  return new URL(`file:///${createRequire(new URL('../../apps/web/package.json', import.meta.url)).resolve(spec).replace(/\\/g, '/')}`).href;
+}
+function mount() {
+  const container = document.createElement('div'); document.body.appendChild(container);
+  return createRoot(container);
+}
+
+await test('プレイ: 同じ配置のまま描き直しても、スティック・視点パッドをつなぎ直さない (押している方向が離れない)', async () => {
+  const g = game({ P1: ['forward', 'left', 'right', 'back', 'jump', 'look'] });
+  const layout = L.standardLayout(g);
+  const log = [];
+  const bindings = { bindControl() { return () => {}; }, bindStick(el) { log.push(el ? 'stick' : 'stick-off'); }, bindLook() { log.push('look'); return () => log.push('look-off'); }, releaseAll() { log.push('release'); } };
+  const props = { layout, game: g, slot: 'P1', bindings, viewport: { width: 400, height: 600, angle: 0 } };
+  const root = mount();
+  await act(() => root.render(createElement(LayoutController, props)));
+  assert.deepEqual(log.sort(), ['look', 'stick']);
+  log.length = 0;
+  // ホストから状態が届くたびに、親は同じ値で描き直す
+  for (let i = 0; i < 3; i++) await act(() => root.render(createElement(LayoutController, { ...props })));
+  assert.deepEqual(log, [], '描き直しで解放・つなぎ直しをしない');
+  await act(() => root.unmount());
+  assert(log.includes('stick-off') && log.includes('look-off') && log.includes('release'), '外すときは解放する');
+});
+
+await test('プレイ: 保存値にスティック・視点パッドが複数あっても、実入力へつなぐのは1つずつ', async () => {
+  const g = game({ P1: ['forward', 'left', 'right', 'back', 'look'] });
+  const layout = L.standardLayout(g);
+  layout.parts.push({ ...byId(layout, 'move:stick'), id: 'move:stick~2' }, { ...byId(layout, 'view:look'), id: 'view:look~2' });
+  let sticks = 0, looks = 0;
+  const bindings = { bindControl() { return () => {}; }, bindStick(el) { if (el) sticks++; }, bindLook() { looks++; return () => {}; }, releaseAll() {} };
+  const root = mount();
+  await act(() => root.render(createElement(LayoutController, { layout, game: g, slot: 'P1', bindings, viewport: { width: 400, height: 600, angle: 0 } })));
+  assert.deepEqual([sticks, looks], [1, 1]);
+  await act(() => root.unmount());
+});
+
+console.log(`${passed}/13 合格（スマホのレイアウトモデルと編集画面、OS入力なし）`);

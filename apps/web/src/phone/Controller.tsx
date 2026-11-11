@@ -4,11 +4,13 @@ import type { InputBindings } from '../shared/contracts';
 
 export function Stick({ part, bindings }: { part: Extract<ControlPart, { kind: 'stick' }>; bindings?: InputBindings }) {
   const ref = useRef<HTMLDivElement>(null);
+  // 方向と操作の組が変わったときだけつなぎ直す。再描画のたびにつなぎ直すと、押している方向が離れてしまう
+  const codes = JSON.stringify(part.directions.map(d => [d.name, d.control]));
   useLayoutEffect(() => {
     if (!bindings) return;
-    bindings.bindStick(ref.current, Object.fromEntries(part.directions.map(d => [d.name, d.control])));
+    bindings.bindStick(ref.current, Object.fromEntries(JSON.parse(codes)));
     return () => bindings.bindStick(null, {});
-  }, [part, bindings]);
+  }, [codes, bindings]);
   return <div className="stick gen-stick" ref={ref}>{part.directions.map(d =>
     <span key={d.name} className={`dir ${d.name}`} data-d={d.name}>{d.mark}<small>{d.label}</small></span>
   )}<div className="knob" /></div>;

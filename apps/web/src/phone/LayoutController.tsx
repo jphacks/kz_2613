@@ -63,6 +63,8 @@ export function LayoutController({ layout, game, slot, bindings, viewport }:
   const faces = useMemo(() => controlFaces(game), [game]);
   const parts = useMemo(() => visibleParts(layout, allowedControls(game, slot)), [layout, game, slot]);
   const placed = useMemo(() => new Map((view ? placeParts(parts, view) : []).map(p => [p.id, p])), [parts, view]);
+  // 入力エンジンはスティック・視点パッドを1つずつしか持たない。2つ目以降は実入力へつながない
+  const live = useMemo(() => new Set(['stick', 'look'].flatMap(kind => parts.find(p => p.kind === kind)?.id ?? [])), [parts]);
   // 部品の組み合わせが変わったときだけつなぎ直す。外すときは本人の押下をすべて離す
   const controls = parts.map(p => `${p.id}=${p.controls.join(',')}`).join('|');
   useLayoutEffect(() => {
@@ -72,8 +74,8 @@ export function LayoutController({ layout, game, slot, bindings, viewport }:
   }, [controls, bindings]);
   return <div ref={ref} className="layout-area" inert={!bindings}>
     {parts.length ? parts.map(part => <div key={part.id} className={`layout-part layout-${part.kind}`} style={style(placed.get(part.id))}>
-      <PartFace part={part} faces={faces} bindings={bindings} />
-    </div>) : <p className="gen-empty">この人数では担当する操作がありません</p>}
+      <PartFace part={part} faces={faces} bindings={part.kind === 'button' || live.has(part.id) ? bindings : undefined} />
+    </div>): <p className="gen-empty">この人数では担当する操作がありません</p>}
   </div>;
 }
 
@@ -134,7 +136,7 @@ export function LayoutEditor({ initial, game, slot, viewport, onSave, onCancel, 
           onChange={e => setDraft(layout => assignButton(layout, current.id, e.target.value, standard))}>
           {buttonChoices.map(c => <option key={c} value={c}>{faces.get(c)?.label ?? c}</option>)}
         </select></label>}
-        <button onClick={() => setDraft(layout => duplicatePart(layout, current.id))}>複製</button>
+        {current.kind === 'button' && <button onClick={() => setDraft(layout => duplicatePart(layout, current.id))}>複製</button>}
         <button onClick={() => { setDraft(layout => setPartHidden(layout, current.id, true)); setSelected(null); }}>画面から外す</button>
       </> : <span>部品をタップして選ぶと、大きさや操作を変えられます。ドラッグで移動します。</span>}
       {hidden.length > 0 && <select aria-label="外した部品を戻す" value="" onChange={e => e.target.value && setDraft(layout => setPartHidden(layout, e.target.value, false))}>

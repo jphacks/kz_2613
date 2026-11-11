@@ -289,10 +289,13 @@ export function resizePart(layout: PhoneLayout, id: string, size: number): Phone
 export function setPartHidden(layout: PhoneLayout, id: string, hidden: boolean): PhoneLayout {
   return update(layout, id, part => ({ ...part, hidden }));
 }
-/** 同じ操作の部品を足す (重複割当は可、Q05)。上限を超えるときは変えない */
+/**
+ * 同じ操作のボタンを足す (重複割当は可、Q05)。上限を超えるときは変えない。
+ * スティック・視点パッドは入力エンジンが1つずつしか持てないので複製しない (2つ目は反応しない部品になるため)
+ */
 export function duplicatePart(layout: PhoneLayout, id: string): PhoneLayout {
   const source = layout.parts.find(part => part.id === id);
-  if (!source || layout.parts.length >= LIMITS.parts) return layout;
+  if (!source || source.kind !== 'button' || layout.parts.length >= LIMITS.parts) return layout;
   const base = `${id.slice(0, LIMITS.id - 4)}~`;
   let n = 2;
   while (layout.parts.some(part => part.id === `${base}${n}`)) n++;
