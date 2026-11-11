@@ -14,9 +14,19 @@
 .state-banner p { margin: 1px 0 0; font-size: 32px; font-weight: 700; }
 [data-view=preparing] .state-banner,[data-view=ready] .state-banner { left: 126px; top: 61px; width: 1102px; }
 [data-view=preparing] .state-banner h2,[data-view=ready] .state-banner h2 { font-size: 112px; }
-[data-view=coop] .state-banner h2,[data-view=paused] .state-banner h2 { font-size: 105px; }
+[data-view=coop] .state-banner h2 { font-size: 105px; }
+[data-view=paused] .page-title { top: 260px; }
+[data-view=paused] .explanation { top: 420px; font-size: 26px; }
+[data-view=paused] .secondary { top: 500px; font-size: 22px; }
+[data-view=paused] #changePlayersBtn { top: 940px; }
 .player-stage { left: 36px; top: 359px; width: 1290px; height: 721px; }
 .players { gap: 28px; }
+[data-view=paused] .player-stage { top: 190px; }
+[data-view=paused] .players {
+  grid-template-columns: repeat(var(--player-count), minmax(0, 1fr));
+  max-width: calc(var(--player-count) * 322px);
+  margin-inline: auto;
+}
 .player-info { font-size: 39px; }
 .player-info .player-device { font-size: 34px; margin-top: 0; }
 .player-badge { width: 194px; }

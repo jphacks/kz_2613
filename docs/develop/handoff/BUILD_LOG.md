@@ -1892,6 +1892,12 @@
 - `npm.cmd run build`、`node scripts/sim/phone-view-test.mjs`、`node scripts/sim/phone-lifecycle-test.mjs`（31/31）、`node --experimental-strip-types scripts/sim/ui-input-test.mjs`（12/12）が合格。Chromeの402×874の模擬表示で、準備と一時停止の案内およびタイトルごとのキー表示を確認。
 - Android・iPhoneの実機操作は未実施。準備直後にタッチパッドが反応しなかった観測は、既存の入力試験で原因を特定できていない。
 
+## 2026-11-11 一時停止画面の参加枠と再開・終了案内（#303）
+
+- 一時停止画面は実際にプレイしていた枠だけを表示する。切断中の参加者は残し、未参加枠や途中で接続しただけの枠は表示しない。左側に一時停止の見出しと再開・終了の案内を置き、入力OFF時はPCで安全を確認して入力を再開する手順を示す。
+- Web型チェック・ビルド、app-view 35/35、静的ページが合格。Chrome（1280×720）の模擬通知でP1・P2・P4、切断中P2、入力OFF、再開と終了の案内、ボタンが重ならないことを確認した。
+- Windows配布版と実機での通し確認は未実施。
+
 ## 2026-11-11 — #298 ゲーム一覧の誤検出・重複・件数を直す
 
 - 「beta／Battle.net」は、Battle.netアプリ自身の更新用の製品（`agent_beta`、場所 `Agent\beta`）だった。除外を完全一致から前方一致（`agent`・`bna`・`battle.net`）にした。このPCの実際の product.db で、修正前は試験が失敗し、修正後に合格した。
