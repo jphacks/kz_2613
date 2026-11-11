@@ -37,7 +37,18 @@
 .role-column[data-swap] { cursor: pointer; }
 .role-column.picked h3 { background: var(--color-cyan); color: var(--color-paper); }
 .ack-wait { display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 12px; background: var(--color-warning); color: var(--color-paper); font-size: 16px; font-weight: 700; }
-.role-band h2 { font-size: 58px; }
+.role-band { background: var(--color-panel-translucent); border-color: var(--color-cyan); }
+.role-band h2 { width: 100%; color: var(--color-cyan-ink); font-size: 58px; }
+[data-view=roles] .workspace:has(#warning:not([hidden])) .role-band { align-items: flex-start; padding-top: 24px; }
+[data-view=roles] #warning {
+  top: 158px;
+  right: auto;
+  bottom: auto;
+  left: 87px;
+  width: 1210px;
+  max-height: 120px;
+  overflow: auto;
+}
 .utility-bar { width: auto; right: 20px; bottom: 12px; min-height: 42px; font-size: 21px; }
 .utility-bar #hotkey { padding: 8px 14px; border-radius: 24px; background: var(--color-utility-surface); }
 .utility-bar button { min-height: 42px; font-size: 21px; border: 0; background: var(--color-utility-surface); }
