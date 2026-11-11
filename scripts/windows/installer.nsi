@@ -305,14 +305,19 @@ FunctionEnd
 ; ---- 起動中の確認 ----------------------------------------------------------
 
 ; 実行中の一覧に recooplay-desktop.exe / recooplay-host.exe があるか。find は見つかると終了コード0を返す
-; (tasklist の案内文は地域の言語で変わるので、出力の形には頼らない)
+; (tasklist の案内文は地域の言語で変わるので、出力の形には頼らない)。名前の一部で探すと、
+; インストーラー自身 (ReCooplay-...-setup.exe) に一致するため、exe名で絞ってから正確な名前を探す
 !macro CheckNotRunning UN
 Function ${UN}CheckNotRunning
   running_retry:
-  nsExec::ExecToStack '"$SYSDIR\cmd.exe" /d /c tasklist /NH /FO CSV | find /I "recooplay-"'
+  nsExec::ExecToStack '"$SYSDIR\cmd.exe" /d /c tasklist /NH /FO CSV /FI "IMAGENAME eq recooplay-desktop.exe" | find /I "recooplay-desktop.exe"'
   Pop $0
   Pop $1
+  nsExec::ExecToStack '"$SYSDIR\cmd.exe" /d /c tasklist /NH /FO CSV /FI "IMAGENAME eq recooplay-host.exe" | find /I "recooplay-host.exe"'
+  Pop $2
+  Pop $1
   ${If} $0 == 0
+  ${OrIf} $2 == 0
     MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "${APP_NAME}（recooplay-desktop.exe / recooplay-host.exe）が起動しています。$\r$\nアプリを閉じてから「再試行」を押してください。" /SD IDCANCEL IDRETRY running_retry
     SetErrorLevel 3
     Quit
