@@ -10,14 +10,15 @@ import {beginPerformance, finishPerformance, summarize} from './android-performa
 import {readWifiNetwork,freeLanPort,hostSocketProof,rtcObserverSource,rtcStatsExpression,validateSelectedPairs,validateHttpWs,privateError} from './wifi-route.mjs';
 import {analyzeHostInput} from './wifi-host-analysis.mjs';
 import {earlyAckSource,ackPhases} from './wifi-ack-observer.mjs';
+import {createFaultTimeline} from './fault-timeline.mjs';
 
 const SCRIPT_ROOT=fileURLToPath(new URL('../../',import.meta.url));
 const options = new Map();
 for (let i = 2; i < process.argv.length; i++) {
   const key = process.argv[i];
-  assert(['--bin', '--adb', '--sha256', '--host-only', '--root', '--benchmark-ms', '--condition', '--trial', '--players', '--ws-only', '--wifi-network', '--ack-observer'].includes(key), '不明な引数');
+  assert(['--bin', '--adb', '--sha256', '--host-only', '--root', '--benchmark-ms', '--condition', '--trial', '--players', '--ws-only', '--wifi-network', '--ack-observer', '--ws-fault-observe'].includes(key), '不明な引数');
   assert(!options.has(key), '重複した引数');
-  const value = ['--host-only', '--ws-only', '--ack-observer'].includes(key) ? true : process.argv[++i];
+  const value = ['--host-only', '--ws-only', '--ack-observer', '--ws-fault-observe'].includes(key) ? true : process.argv[++i];
   assert(value && (value === true || !value.startsWith('--')), '引数の値が必要です');
   options.set(key, value);
 }
@@ -34,6 +35,9 @@ assert.equal(hash, EXPECTED.toLowerCase(), 'exeが指定ハッシュと異なり
 const hostOnly = options.has('--host-only');
 const wifi=options.has('--wifi-network');
 assert(!(wifi&&hostOnly),'Wi-Fi試験では実Androidが必要です');
+const observeWsFault=options.has('--ws-fault-observe');
+assert(!observeWsFault||wifi&&!options.has('--ws-only')&&benchmarkMs===0,
+  '--ws-fault-observe は実Wi-FiとRTCありの非ベンチマーク試行で使用してください');
 assert(!options.has('--ack-observer')||wifi&&benchmarkMs>0,'先行ACK診断はWi-Fi性能試行だけで使用する');
 fs.mkdirSync(path.join(ROOT, 'data/local/device-acceptance'), {recursive:true});
 const OUT = fs.mkdtempSync(path.join(ROOT, 'data/local/device-acceptance/run-'));
@@ -55,20 +59,26 @@ const until=async(fn,label,ms=10000)=>{const end=Date.now()+ms;while(Date.now()<
 const report={players:playerCount,wsOnly:options.has('--ws-only'),condition:options.get('--condition'),trial:options.get('--trial'),benchmarkMs,date:new Date().toISOString(),sourceCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:ROOT,encoding:'utf8'}).trim(),sourceDirty:execFileSync('git',['status','--porcelain'],{cwd:ROOT,encoding:'utf8'}).trim().length>0,binarySha256:hash,
   uiAssets:Object.fromEntries(fs.readdirSync(path.join(ROOT,'apps/web/dist/assets')).filter(f=>f.endsWith('.js')).map(f=>[f,crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT,'apps/web/dist/assets',f))).digest('hex')])),
   safety:{dryRun:true,noConfig:true,fakeTarget:true,osInput:false},ui:'React + TypeScript standard',connection:hostOnly ? 'PCループバック' : 'ADB reverse TCP / WebSocket',tests:[],limitations:['実指・iPhone・3実端末・Wi-Fi断・実Windows入力・Minecraft・別PCは未検証。HTTP/WS: ADB reverse TCP; RTC: selected candidate pair not collected']};
+if(observeWsFault)report.wsFault={kind:'ws-close',clock:'PC performance.now() at observation',pollMs:100,events:[],
+  limitations:['Wi-Fi自体は切断しない','RTCはWS切断に伴い閉じる場合がある','CDP往復と観測待ちを含む']};
 let host, mon, browser, tabId, forwarded=false,reversed=false, ping;
 const clients=[];
 const pageErrors=[];
 let savedRotation;
 if(wifi)report.ackObserver=options.has('--ack-observer');
-if(wifi)report.runner={commit:execFileSync('git',['rev-parse','HEAD'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim(),dirty:execFileSync('git',['status','--porcelain'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim().length>0,modules:Object.fromEntries(['android-dry-run.mjs','android-performance.mjs','wifi-route.mjs','wifi-host-analysis.mjs','wifi-ack-observer.mjs'].map(name=>[name,crypto.createHash('sha256').update(fs.readFileSync(new URL(name,import.meta.url))).digest('hex')]))};
-let wifiNetwork;
+if(wifi)report.runner={commit:execFileSync('git',['rev-parse','HEAD'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim(),dirty:execFileSync('git',['status','--porcelain'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim().length>0,modules:Object.fromEntries(['android-dry-run.mjs','android-performance.mjs','wifi-route.mjs','wifi-host-analysis.mjs','wifi-ack-observer.mjs','fault-timeline.mjs'].map(name=>[name,crypto.createHash('sha256').update(fs.readFileSync(new URL(name,import.meta.url))).digest('hex')]))};
+let wifiNetwork, faultTimeline;
 const networkEvents=[],privateNetworkSamples=[];
 const privateNetworkFailures=[];
 const safeError=message=>wifi?privateError(message,[serial,wifiNetwork?.pc,wifiNetwork?.android]):message;
 const check=async(id,fn)=>{try{const observed=await fn();report.tests.push({id,result:'合格',observed});console.log(`${id}: 合格`);}catch(e){report.tests.push({id,result:'不合格',reason:safeError(e.message)});throw e;}};
 function client(){
   const ws=new WebSocket(`ws://127.0.0.1:${port}/ws`),messages=[];
-  ws.addEventListener('message',e=>messages.push(JSON.parse(e.data)));
+  ws.addEventListener('message',e=>{
+    const message=JSON.parse(e.data);
+    messages.push(message);
+    if(ws===mon?.ws) faultTimeline?.monitor(message);
+  });
   const c={ws,messages,send:m=>ws.send(JSON.stringify(m)),game:()=>messages.findLast(m=>m.type==='game')?.game,
     state:()=>messages.findLast(m=>m.type==='state'),close:()=>ws.close()};clients.push(c);return c;
 }
@@ -84,7 +94,7 @@ async function cdp(url){
     ws.close();
     throw error;
   }
-  ws.onmessage=e=>{const m=JSON.parse(e.data);if(!m.id){if(wifi&&['Network.responseReceived','Network.webSocketCreated'].includes(m.method))networkEvents.push(m);if(m.method==='Runtime.exceptionThrown')pageErrors.push(m.params.exceptionDetails.exception?.description||m.params.exceptionDetails.text);if(m.method==='Runtime.consoleAPICalled'&&m.params.type==='error')pageErrors.push(m.params.args.map(a=>a.value??a.description).join(' '));return;}const p=pending.get(m.id);if(!p)return;pending.delete(m.id);clearTimeout(p.timer);m.error?p.reject(Error(m.error.message)):p.resolve(m.result);};
+  ws.onmessage=e=>{const m=JSON.parse(e.data);if(!m.id){faultTimeline?.cdp(m);if(wifi&&['Network.responseReceived','Network.webSocketCreated'].includes(m.method))networkEvents.push(m);if(m.method==='Runtime.exceptionThrown')pageErrors.push(m.params.exceptionDetails.exception?.description||m.params.exceptionDetails.text);if(m.method==='Runtime.consoleAPICalled'&&m.params.type==='error')pageErrors.push(m.params.args.map(a=>a.value??a.description).join(' '));return;}const p=pending.get(m.id);if(!p)return;pending.delete(m.id);clearTimeout(p.timer);m.error?p.reject(Error(m.error.message)):p.resolve(m.result);};
   return {close:()=>ws.close(),call:(method,params={})=>new Promise((resolve,reject)=>{const id=++n;const timer=setTimeout(()=>{pending.delete(id);reject(Error(`CDP timeout: ${method}`));},10000);pending.set(id,{resolve,reject,timer});ws.send(JSON.stringify({id,method,params}));})};
 }
 let page;
@@ -113,6 +123,11 @@ async function collectWifiProof(label) {
     sample.hostLookLost=mon.state()?.slots?.[0]?.lookLost;
     sample.pathHistory=history.rows.map(h=>({at:h.at,selectedPairs:validateSelectedPairs(h.stats,wifiNetwork)}));
     report.networkProof.samples.push(sample);
+    if(faultTimeline && label.startsWith('ws-close-')){
+      for(const pair of pairs) faultTimeline.rtc({
+        connectionState:pair.connectionState,iceConnectionState:pair.iceState,hasSelectedLanPair:true,
+      });
+    }
     privateNetworkSamples.push({label,stats,history});
   } catch(error) {
     privateNetworkFailures.push({label,stats,history,reason:safeError(error.message)});
@@ -180,6 +195,9 @@ try{
   console.log('試験ホストのポート: ' + port);
   base = 'http://127.0.0.1:' + port;
   testUrl = (wifi?`http://${wifiNetwork.pc}:${port}`:base) + '/?acceptance=' + crypto.randomUUID();
+  if(observeWsFault){
+    faultTimeline=createFaultTimeline({wsUrl:`ws://${wifiNetwork.pc}:${port}/ws`});
+  }
   await http(base+'/');
   mon=await open(client());mon.send({type:'monitor',page:'host'});
   await until(()=>mon.state(),'monitor');
@@ -354,14 +372,35 @@ try{
       await until(async()=>await evaluate(`document.body.dataset.view==='v-gen'&&!document.getElementById('viewFx').classList.contains('run')`),'切断前操作画面');
       await touchStart('[data-ctl="act:jump"]');
       await until(()=>mon.state().inject.down.length>0,'切断前保持');
+      if(faultTimeline){
+        await collectWifiProof('ws-close-before');
+        faultTimeline.mark('ws-close-requested');
+      }
       const disconnectAt=performance.now();
       await evaluate(`window.__acceptanceSocket.close();true`);
       await until(()=>mon.state().game.phase==='paused'&&mon.state().inject.down.length===0,'切断時の全解放');
       const releaseAfterMs=performance.now()-disconnectAt;
+      faultTimeline?.mark('release-observed');
       await until(async()=>mon.state().slots[0].connected&&mon.state().slots[0].reconnects>reconnects&&await evaluate(`document.getElementById('slot').textContent==='P1'&&document.getElementById('status').textContent==='再接続OK'`),'同じP1へ再接続');
       await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-      await sleep(250);assert.deepEqual(mon.state().inject.down,[]);assert.equal(mon.state().game.phase,'paused');
-      return {slot:'P1',phase:'paused',down:[],reconnects:mon.state().slots[0].reconnects,releaseAfterMs,reconnectAfterMs:performance.now()-disconnectAt,timing:'PC process observation including CDP and 100ms polling',method:'試験タブの実WebSocketを閉じる（Wi-Fi断ではない）'};
+      faultTimeline?.mark('same-slot-reconnected');
+      await sleep(250);
+      const reconnectAfterMs=performance.now()-disconnectAt;
+      assert.deepEqual(mon.state().inject.down,[]);assert.equal(mon.state().game.phase,'paused');
+      if(faultTimeline){
+        await until(async()=> (await evaluate(rtcStatsExpression)).length>0,'WS復帰後の選択ICE候補対',15000);
+        await collectWifiProof('ws-close-after');
+        const events=faultTimeline.events();
+        const started=events.findIndex(e=>e.kind==='ws-close-requested');
+        const closed=events.findIndex((e,i)=>i>started&&e.kind==='ws-closed');
+        const priorSocket=events[closed]?.socket;
+        const freshSocket=events.find((e,i)=>i>closed&&e.kind==='welcome'&&e.slot==='P1'&&e.reconnected)?.socket;
+        assert(started>=0&&closed>started&&freshSocket>priorSocket
+          &&events.some(e=>e.kind==='ws-handshake'&&e.socket===freshSocket&&e.status===101),
+          '対象WSの閉鎖と新しいWSでの同枠復帰を確認できません');
+        faultTimeline.mark('lan-ice-revalidated');
+      }
+      return {slot:'P1',phase:'paused',down:[],reconnects:mon.state().slots[0].reconnects,releaseAfterMs,reconnectAfterMs,timing:'PC process observation including CDP and 100ms polling',method:'試験タブの実WebSocketを閉じる（Wi-Fi断ではない）'};
     });
     await check('Android再読み込み・元の管理権',async()=>{const reconnects=mon.state().slots[0].reconnects;const loader=(await page.call('Page.getFrameTree')).frameTree.frame.loaderId;await page.call('Page.reload',{ignoreCache:true});await until(async()=>{const next=(await page.call('Page.getFrameTree')).frameTree.frame.loaderId;return next!==loader&&mon.state().slots[0].connected&&mon.state().slots[0].reconnects>reconnects&&await evaluate(`document.getElementById('slot').textContent==='P1'&&document.getElementById('status').textContent==='再接続OK'&&!document.getElementById('startBtn').disabled`);},'新しい文書でP1再接続');assert.equal(mon.state().game.phase,'paused');return {slot:'P1',phase:'paused',reconnects:mon.state().slots[0].reconnects};});
     await check('Android担当変更後の視点パッド・送信周期',async()=>{
@@ -461,6 +500,7 @@ try{
     try{report.hostAnalysis=analyzeHostInput(report);}
     catch(error){report.error=error.message;process.exitCode=1;console.error(error.message);}
   }
+  if(faultTimeline) report.wsFault.events=faultTimeline.events();
   fs.writeFileSync(path.join(OUT,'summary.json'),JSON.stringify(report,null,2)+'\n');
   console.log('記録: ' + path.relative(ROOT,OUT) + '/summary.json');
 }
