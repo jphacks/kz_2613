@@ -22,9 +22,17 @@ export function createFaultTimeline({wsUrl, now = () => performance.now()}) {
       if (method === 'Network.webSocketHandshakeResponseReceived') {
         add('ws-handshake',{socket,status:params.response?.status ?? null});
       }
-      if (method !== 'Network.webSocketFrameReceived') return;
+      const sent = method === 'Network.webSocketFrameSent';
+      if (!sent && method !== 'Network.webSocketFrameReceived') return;
       let frame;
       try { frame = JSON.parse(params.response.payloadData); } catch { return; }
+      if (sent) {
+        if (frame?.type === 'input' && Number.isSafeInteger(frame.iseq) && Number.isSafeInteger(frame.epoch)
+          && ['down','up'].includes(frame.state)) {
+          add('input-sent',{socket,iseq:frame.iseq,epoch:frame.epoch,state:frame.state});
+        }
+        return;
+      }
       if (frame?.type === 'welcome' && ['P1','P2','P3','P4'].includes(frame.slot)) {
         add('welcome',{socket,slot:frame.slot,isHost:frame.isHost === true,reconnected:frame.reconnected === true});
       }
@@ -42,9 +50,9 @@ export function createFaultTimeline({wsUrl, now = () => performance.now()}) {
         add('host-state',snapshot);
       }
     },
-    rtc({connectionState,iceConnectionState,hasSelectedLanPair}) {
+    rtc({connectionState,iceConnectionState,channelState,hasSelectedLanPair}) {
       add('rtc-snapshot',{
-        connectionState,iceConnectionState,hasSelectedLanPair:hasSelectedLanPair===true,
+        connectionState,iceConnectionState,channelState,hasSelectedLanPair:hasSelectedLanPair===true,
       });
     },
     events: () => events.map(event => ({...event})),

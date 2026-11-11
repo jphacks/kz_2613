@@ -2039,3 +2039,9 @@
 - 指摘【低】：アンインストール時の削除確認で、`%LOCALAPPDATA%\Re-Cooplay` を「手動で登録したゲーム」とだけ示していた。実際にはキーの設定（`key-overrides.json`）も入り、zip版とも共有する。確認の文言と `apps/desktop/README.md` を直した。
 - 試験：NSISが手元にないため、インストーラーの作成と `installer-smoke.mjs` はCIで確認する。
 - 未確認：対話の画面、ランタイムが実際に不足したPC、開発環境のない別のWindows 11 x64での導入からアンインストールまで（#219の受入ゲート）。
+
+## 2026-11-11 RTC単独切断とWSフォールバックの観測（#277）
+
+- Wi-Fi用dry-runに `--rtc-fault-observe` を追加。試験タブのfast DataChannelを閉じ、同じWS・同じepochのまま新しいジャンプの押下と解放がWSで受理され、ホストの押下状態が空に戻ることを確認する。DataChannelとICEを別々に記録する。
+- Web型チェック・ビルド、Android補助CLI 17/17、通信経路・障害時系列・RTC単独観測の試験が合格。Chrome内のローカルPeerConnection間で、試作フックによるDataChannel閉鎖とICE接続の継続を確認。
+- 実Android・Wi-Fiでの実行、実Wi-Fi断と復元、全参加者の保持・キュー・視点、復帰設定別の受入は残る。
