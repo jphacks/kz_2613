@@ -104,6 +104,7 @@ function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;co
       <li>PC：Windows 11 x64。WebView2ランタイムとMicrosoft Visual C++ v14 Redistributable（x64）が必要です。</li>
       <li>スマホ：2〜4台。PCと同じWi-Fi、またはPCのモバイルホットスポットに接続します。アプリは不要です。</li>
       <li>入力：協力プレイ中、入力が有効で、選択したゲームが前面のときだけ送ります。緊急停止はCtrl+Alt+F12です。</li>
+      <li>マウス：左ボタンを押したまま右クリックが届かない場合は、Orchisなどのマウスジェスチャーやボタンの割り当てを行う常駐アプリを終了するか、該当機能を無効にしてください。</li>
       <li>ゲーム：一覧に出ても動作を保証しません。「未検証」のゲームは、操作が届くか確かめながら遊んでください。</li>
       <li>未確認：開発環境のないPCでの起動は検証中です。インターネット経由の参加には対応していません。</li>
     </ul>
