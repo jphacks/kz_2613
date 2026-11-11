@@ -11,14 +11,15 @@ import {readWifiNetwork,freeLanPort,hostSocketProof,rtcObserverSource,rtcStatsEx
 import {analyzeHostInput} from './wifi-host-analysis.mjs';
 import {earlyAckSource,ackPhases} from './wifi-ack-observer.mjs';
 import {createFaultTimeline} from './fault-timeline.mjs';
+import {fastChannelObserverSource, rtcFallbackInput} from './rtc-fault-observer.mjs';
 
 const SCRIPT_ROOT=fileURLToPath(new URL('../../',import.meta.url));
 const options = new Map();
 for (let i = 2; i < process.argv.length; i++) {
   const key = process.argv[i];
-  assert(['--bin', '--adb', '--sha256', '--host-only', '--root', '--benchmark-ms', '--condition', '--trial', '--players', '--ws-only', '--wifi-network', '--ack-observer', '--ws-fault-observe'].includes(key), '不明な引数');
+  assert(['--bin', '--adb', '--sha256', '--host-only', '--root', '--benchmark-ms', '--condition', '--trial', '--players', '--ws-only', '--wifi-network', '--ack-observer', '--ws-fault-observe', '--rtc-fault-observe'].includes(key), '不明な引数');
   assert(!options.has(key), '重複した引数');
-  const value = ['--host-only', '--ws-only', '--ack-observer', '--ws-fault-observe'].includes(key) ? true : process.argv[++i];
+  const value = ['--host-only', '--ws-only', '--ack-observer', '--ws-fault-observe', '--rtc-fault-observe'].includes(key) ? true : process.argv[++i];
   assert(value && (value === true || !value.startsWith('--')), '引数の値が必要です');
   options.set(key, value);
 }
@@ -36,6 +37,9 @@ const hostOnly = options.has('--host-only');
 const wifi=options.has('--wifi-network');
 assert(!(wifi&&hostOnly),'Wi-Fi試験では実Androidが必要です');
 const observeWsFault=options.has('--ws-fault-observe');
+const observeRtcFault=options.has('--rtc-fault-observe');
+assert(!observeRtcFault||wifi&&!options.has('--ws-only')&&!observeWsFault&&benchmarkMs===0,
+  '--rtc-fault-observe は実Wi-Fi、RTCあり、WS切断と併用しない非ベンチマーク試行で使用してください');
 assert(!observeWsFault||wifi&&!options.has('--ws-only')&&benchmarkMs===0,
   '--ws-fault-observe は実Wi-FiとRTCありの非ベンチマーク試行で使用してください');
 assert(!options.has('--ack-observer')||wifi&&benchmarkMs>0,'先行ACK診断はWi-Fi性能試行だけで使用する');
@@ -61,12 +65,13 @@ const report={players:playerCount,wsOnly:options.has('--ws-only'),condition:opti
   safety:{dryRun:true,noConfig:true,fakeTarget:true,osInput:false},ui:'React + TypeScript standard',connection:hostOnly ? 'PCループバック' : 'ADB reverse TCP / WebSocket',tests:[],limitations:['実指・iPhone・3実端末・Wi-Fi断・実Windows入力・Minecraft・別PCは未検証。HTTP/WS: ADB reverse TCP; RTC: selected candidate pair not collected']};
 if(observeWsFault)report.wsFault={kind:'ws-close',clock:'PC performance.now() at observation',pollMs:100,events:[],
   limitations:['Wi-Fi自体は切断しない','RTCはWS切断に伴い閉じる場合がある','CDP往復と観測待ちを含む']};
+if(observeRtcFault)report.rtcFault={kind:'rtc-datachannel-close',clock:'PC performance.now() at observation',pollMs:100,events:[]};
 let host, mon, browser, tabId, forwarded=false,reversed=false, ping;
 const clients=[];
 const pageErrors=[];
 let savedRotation;
 if(wifi)report.ackObserver=options.has('--ack-observer');
-if(wifi)report.runner={commit:execFileSync('git',['rev-parse','HEAD'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim(),dirty:execFileSync('git',['status','--porcelain'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim().length>0,modules:Object.fromEntries(['android-dry-run.mjs','android-performance.mjs','wifi-route.mjs','wifi-host-analysis.mjs','wifi-ack-observer.mjs','fault-timeline.mjs'].map(name=>[name,crypto.createHash('sha256').update(fs.readFileSync(new URL(name,import.meta.url))).digest('hex')]))};
+if(wifi)report.runner={commit:execFileSync('git',['rev-parse','HEAD'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim(),dirty:execFileSync('git',['status','--porcelain'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim().length>0,modules:Object.fromEntries(['android-dry-run.mjs','android-performance.mjs','wifi-route.mjs','wifi-host-analysis.mjs','wifi-ack-observer.mjs','fault-timeline.mjs','rtc-fault-observer.mjs'].map(name=>[name,crypto.createHash('sha256').update(fs.readFileSync(new URL(name,import.meta.url))).digest('hex')]))};
 let wifiNetwork, faultTimeline;
 const networkEvents=[],privateNetworkSamples=[];
 const privateNetworkFailures=[];
@@ -195,7 +200,7 @@ try{
   console.log('試験ホストのポート: ' + port);
   base = 'http://127.0.0.1:' + port;
   testUrl = (wifi?`http://${wifiNetwork.pc}:${port}`:base) + '/?acceptance=' + crypto.randomUUID();
-  if(observeWsFault){
+  if(observeWsFault||observeRtcFault){
     faultTimeline=createFaultTimeline({wsUrl:`ws://${wifiNetwork.pc}:${port}/ws`});
   }
   await http(base+'/');
@@ -205,7 +210,7 @@ try{
   mon.send({type:'auto_resume',on:false});
   report.safety.initialDown=mon.state().inject.down;assert.deepEqual(report.safety.initialDown,[]);
   report.tests.push({id:'dry-runホストのHTTPと監視接続',result:'合格'});
-  if (!hostOnly) {
+  androidTrial: if (!hostOnly) {
     if(!wifi){adb('reverse','--no-rebind','tcp:' + port,'tcp:' + port);reversed = true;}
     adb('shell','am','start','-a','android.intent.action.VIEW','-d',testUrl,'-p','com.android.chrome','--es','com.android.browser.application_id','recooplay-acceptance');
     await sleep(1800);
@@ -229,6 +234,7 @@ try{
     if(wifi){
       await page.call('Network.enable');await page.call('Network.setCacheDisabled',{cacheDisabled:true});
       await page.call('Page.addScriptToEvaluateOnNewDocument',{source:rtcObserverSource});
+      if(observeRtcFault)await page.call('Page.addScriptToEvaluateOnNewDocument',{source:fastChannelObserverSource});
       if(options.has('--ack-observer'))await page.call('Page.addScriptToEvaluateOnNewDocument',{source:earlyAckSource});
     }
     if(options.has('--ws-only')){
@@ -260,6 +266,48 @@ try{
     await until(()=>mon.state().game.lineupOk,'分担確定');
     await click('#startBtn');await until(()=>mon.state().game.phase==='preparing','preparing');
     await click('#startBtn');await until(()=>mon.state().game.phase==='coop','coop');
+    if(observeRtcFault){
+      await check('RTC単独: 同じWSで新規入力を受理',async()=>{
+        const {epoch}=mon.state().game;
+        const reconnects=mon.state().slots[0].reconnects;
+        const socket=faultTimeline.events().findLast(e=>e.kind==='welcome'&&e.slot==='P1')?.socket;
+        assert(Number.isSafeInteger(socket),'試験タブのP1 WebSocketを観測できません');
+        await collectWifiProof('rtc-close-before');
+        await until(async()=>await evaluate("document.body.dataset.view==='v-gen'&&!document.getElementById('viewFx').classList.contains('run')"),'操作画面');
+        const status=()=>evaluate(`(()=>{const f=window.__faultFast;if(!f)return null;
+          return {connectionState:f.connection.connectionState,iceConnectionState:f.connection.iceConnectionState,channelState:f.channel.readyState};
+        })()`);
+        const before=await status();
+        assert.equal(before?.channelState,'open','fast DataChannelが開いていません');
+        faultTimeline.rtc({...before,hasSelectedLanPair:true});
+        faultTimeline.mark('rtc-close-requested');
+        await evaluate("window.__faultFast.channel.close()");
+        await until(async()=> (await status())?.channelState==='closed','fast DataChannelの閉鎖');
+        const after=await status();
+        const stats=await evaluate(rtcStatsExpression);
+        const selectedPairs=stats.length?validateSelectedPairs(stats,wifiNetwork):[];
+        faultTimeline.rtc({...after,hasSelectedLanPair:selectedPairs.length>0});
+        faultTimeline.mark('rtc-closed');
+        await touchStart('[data-ctl="act:jump"]');
+        try{
+          await until(()=>mon.state().inject.down.includes('SPACE'),'WSからの新しいジャンプ押下');
+        }finally{
+          await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+        }
+        await until(()=>mon.state().inject.down.length===0,'WSからのジャンプ解放');
+        let accepted;
+        await until(()=> {
+          accepted=rtcFallbackInput(faultTimeline.events(),{socket,epoch});
+          return accepted!==null;
+        },'同じWSで押下と解放のACK');
+        assert.equal(mon.state().game.phase,'coop');
+        assert.equal(mon.state().game.epoch,epoch);
+        assert.equal(mon.state().slots[0].reconnects,reconnects);
+        assert.deepEqual(pageErrors,[]);
+        return {slot:'P1',epoch,transportBefore:before,transportAfter:after,selectedPairs,accepted};
+      });
+      break androidTrial;
+    }
     if(benchmarkMs) await check('Android反復入力の独立性能試行',async()=>{
       const mark=mon.messages.length;
       const workload=await beginPerformance({evaluate,page,durationMs:benchmarkMs});
@@ -500,7 +548,7 @@ try{
     try{report.hostAnalysis=analyzeHostInput(report);}
     catch(error){report.error=error.message;process.exitCode=1;console.error(error.message);}
   }
-  if(faultTimeline) report.wsFault.events=faultTimeline.events();
+  if(faultTimeline) (observeRtcFault ? report.rtcFault : report.wsFault).events=faultTimeline.events();
   fs.writeFileSync(path.join(OUT,'summary.json'),JSON.stringify(report,null,2)+'\n');
   console.log('記録: ' + path.relative(ROOT,OUT) + '/summary.json');
 }

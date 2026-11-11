@@ -122,6 +122,16 @@ node scripts/device/android-dry-run.mjs --adb $adbPath --bin $hostPath --sha256 
 
 `summary.json` の `wsFault.events` に、試験タブのWS閉鎖、新しいWSでの同枠復帰、ホストのphase・epoch・押下数、前後の選択ICEペアを検証した観測点が残る。観測時刻はPC側の単調時計で、CDP往復と100msポーリングを含む。Wi-Fiの無線リンクは切断しない。WS切断に伴うRTCの終了はRTC単独断の結果に含めない。実Wi-Fi断とRTC単独の試験は別系列として扱う。
 
+#### RTC単独切断の記録（#277）
+
+`--wifi-network` と `--rtc-fault-observe` を併用する。端末・dry-runホスト・USB制御の前提はWS単独系列と同じ。`--ws-fault-observe`、`--ws-only`、`--benchmark-ms` とは併用しない。
+
+```powershell
+node scripts/device/android-dry-run.mjs --adb $adbPath --bin $hostPath --sha256 $hostHash --wifi-network data/local/wifi-network.private.json --rtc-fault-observe
+```
+
+試験タブのfast DataChannelを閉じる。Wi-FiとWSは切断せず、同じWS・epochで新しいジャンプの押下と解放が `via=ws` で受理され、ホストの押下状態が空に戻ることを確認する。`summary.json` の `rtcFault.events` に選択ICEペアの有無とDataChannelの状態を分けて記録する。DataChannel閉鎖後にICEペアが残る場合がある。試験はWSの継続確認で終了し、RTC再接続や実Wi-Fi断の受入には使わない。
+
 ### AT-D04：実Windows入力・対象・緊急停止（#39）
 
 - 前提：操作者がPCの前に常駐、Minecraft等を閉じ、疑似ゲーム画面を対象にする。未保存の作業を退避し、`Ctrl+Alt+F12`と物理キーボードを手元に置く。登録不能時は試験を開始しない。
