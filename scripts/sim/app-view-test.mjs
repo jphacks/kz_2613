@@ -372,6 +372,24 @@ test('人数の参考: 全員に操作があり偏りの小さい人数を、断
   assert.equal(playerHint(null),null);
 });
 
+test('分担画面: 決定後は起動・準備を案内し、人数不足や入れ替え中はその状態を示す (#296)', () => {
+  const snapshot = pcState.get();
+  const model = (connected, extra) => pcModel({
+    ...snapshot, ui:{screen:'roles',game:'steam:945360'},
+    game:game(connected,{title:'steam:945360',...extra}),
+  });
+  const one = model(['P1'],{});
+  assert.equal(one.roleHeading,'参加者を待っています');
+  assert.match(one.actionNote,/2人以上/);
+  const three = model(['P1','P2','P3'],{canSwap:true});
+  assert.equal(three.title,'分担しよう！');
+  assert.match(three.actionNote,/2人の列/);
+  const confirmed = model(['P1','P2','P3'],{lineupOk:true,canSwap:true});
+  assert.match(confirmed.title,/分担決定/);
+  assert.match(confirmed.explanation,/準備/);
+  assert.doesNotMatch(confirmed.actionNote,/列を順に|参考|定義/);
+});
+
 test('観客向け表示: 参加者の担当と押している入力を出し、接続がなければ空にする (#163)', () => {
   assert.deepEqual(overlayModel(null),{status:'',players:[]});
   const profile={actions:[{id:'jump',label:'ジャンプ',group:'move',type:'button'}],groups:[{id:'move',label:'移動'}],assignment:{P1:['jump']}};
