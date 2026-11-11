@@ -1,5 +1,6 @@
 import {createVirtualCursor} from '../shared/input/virtual-cursor.ts';
 import {createLifetime} from '../shared/input/lifetime.ts';
+import {REMOTE_FOCUSABLE,usableControls,moveRemoteFocus,stepRemoteSelect,isRemoteSelect} from '../shared/input/remote-focus.ts';
 import {byId} from '../shared/dom.ts';
 import {GAMES,SCREENS,gameList,navigate,desktopView,rolesAction,gameAction,isRegistered,shownSlots,screenOnGameUpdate,pcEffects,joinGuideView} from '../shared/model/presentation.ts';
 import {decodePcMessage,decodeHotspotResult} from '../shared/transport/pc-messages.ts';
@@ -99,11 +100,23 @@ function rolesRun(action:UiAction|undefined){
   else if(action.kind==='swap')setUi({...ui,swap:true});
   else if(action.kind==='back'){swapPick=null;setUi({...ui,swap:false});}
 }
+// リモコンで選んだ位置を、PCのマウス操作の後でも枠で見えるようにする (#294)。実際のマウスを押したら消す
+function markRemoteFocus(){document.body.dataset.remoteNav='1';}
+lifetime.listenDocument('pointerdown',e=>{if(e.isTrusted)delete document.body.dataset.remoteNav;});
+// 分担の画面で選べるもの：主ボタン・補助ボタン・入れ替える列・キー設定の確認 (#294)
+const roleControls=()=>usableControls(document.querySelectorAll<HTMLElement>('#nextBtn,#subBtn,#changePlayersBtn,#roleStage [data-swap],#keyBindingsBtn'));
+function rolesRemote(c:string){
+  const controls=roleControls(),active=document.activeElement instanceof HTMLElement?document.activeElement:null;
+  if(moveRemoteFocus(controls,active,c)){markRemoteFocus();return;}
+  // 選んだものがあればそれを押す。何も選んでいないときは従来どおり主ボタンと同じ動作
+  if(c==='ENTER'){if(active&&controls.includes(active))active.click();else rolesRun(rolesAction(game,games()));return;}
+  if(c==='ESC'){if(game?.phase==='paused')rolesRun({kind:'back',label:''});else setUi(navigate(ui,c,games()));}
+}
 // ホストのリモコンとPCのキーボードで同じ動作にする
 function remoteControl(c:string){
   const view=desktopView(ui,game);
   if(c==='ENTER'&&view==='game')gameMain();
-  else if(c==='ENTER'&&view==='roles')rolesRun(rolesAction(game,games()));
+  else if(view==='roles')rolesRemote(c);
   else setUi(navigate(ui,c,games()));
 }
 lifetime.listen($('changePlayersBtn'), 'click',()=>send({type:'change_players',epoch:game?.epoch}));
@@ -142,11 +155,12 @@ lifetime.listenDocument('click',e=>{
 function dialogRemote(control:string){
   const d=document.querySelector<HTMLDialogElement>('dialog[open]');if(!d)return false;
   if(control==='ESC'){d.close();return true;}
-  const controls=[...d.querySelectorAll<HTMLElement>('button,a,summary')].filter(e=>e.getClientRects().length&&!('disabled' in e && e.disabled));
+  const controls=usableControls(d.querySelectorAll<HTMLElement>(REMOTE_FOCUSABLE));
   const active=document.activeElement instanceof HTMLElement?document.activeElement:null;
-  const i=active?controls.indexOf(active):-1;
-  if(control==='ENTER'){active?.click();return true;}
-  if(['LEFT','RIGHT','UP','DOWN'].includes(control)&&controls.length){const step=['LEFT','UP'].includes(control)?-1:1;controls[(i+step+controls.length)%controls.length].focus();return true;}
+  // プルダウンは一覧を開けないので、◀▶で選択肢を切り替え、▲▼で次の項目へ移る (#294)
+  if(stepRemoteSelect(active,control))return true;
+  if(control==='ENTER'){if(!isRemoteSelect(active))active?.click();return true;}
+  if(moveRemoteFocus(controls,active,control)){markRemoteFocus();return true;}
   return false;
 }
 lifetime.listenDocument('keydown',e=>{
