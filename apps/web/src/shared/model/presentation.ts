@@ -384,7 +384,9 @@ export function playerCards(slots: ReturnType<typeof slotViews>, view: string, g
     slot: s.slot, index: i,
     className: `player ${s.state}${view === 'preparing' && s.host && s.state === 'connected' ? ' pending' : ''}`,
     badge: s.state === 'empty' ? '参加待ち' : s.state === 'lost' ? '切断中' : view === 'ready' ? '接続完了！' : view === 'preparing' ? (s.host ? '準備中！' : '接続完了！') : '接続完了！',
-    name: `プレイヤー${i + 1}`, role: roleView(game, s.slot).title, device: `機種：${s.device || '未接続'}`,
+    name: `プレイヤー${i + 1}`,
+    role: view === 'join' ? (s.host && s.state !== 'empty' ? 'ホスト' : '') : roleView(game, s.slot).title,
+    device: view === 'join' && !s.device ? '' : `機種：${s.device || '未接続'}`,
   }));
 }
 

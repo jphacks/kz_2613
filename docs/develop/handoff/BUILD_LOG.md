@@ -1895,6 +1895,12 @@
 - 試験 `role_rotation_counts_only_while_the_target_game_can_be_operated` を追加：前面喪失で凍結→長時間（最大 `u64::MAX/2`）経過しても予告・交代なし→復帰で残りから数え、残りを操作したら1回だけ交代→前面にないまま一時停止・再開しても数えない。修正を外すと失敗することを確認。
 - main（155e01c）を取り込んだ。競合した `PhoneApp.tsx`・`phone.ts`・`phone-harness.mjs` は、Codexが #324（cf7cd3c）で同じ組み合わせを解消した内容を使った。
 
+## 2026-11-11 PC参加画面の進行条件とカード表示（#295）
+
+- 接続中の2人がそろうまでOKと参加画面からの移動を無効にし、必要な人数を1か所に表示した。参加カードはホストと端末を示し、担当はゲーム選択後の画面で確認する。
+- `npm.cmd run build`（`apps/web`、型チェックとViteビルド）、`node --experimental-strip-types scripts/sim/app-view-test.mjs`（31/31）、`node --experimental-strip-types scripts/sim/pc-boundary-test.mjs` が合格。
+- Chrome（1280×720）でホスト通知を模擬し、0・1人ではOK・Enter・ホストのリモコン・設定内ナビから進めず、2人でOKからゲーム選択へ進むことを確認した。ホスト・端末の表示とカード内の収まりも確認した。Windows配布版と実機Wi-Fiでの参加は未実施。画面全体の縦横比対応は #270。
+
 ## 2026-11-10 — #287 Minecraftのランチャーをホストのリモコンで操作する（#311 に積み重ね）
 
 - この PC で公式ランチャーを一時的に開き、ウィンドウを確認した（入力は送らず閉じた）：`C:\Program Files\WindowsApps\Microsoft.4297127D64EC6_2.6.2.0_x64__8wekyb3d8bbwe\Minecraft.exe`、タイトル「Minecraft Launcher」。起動直後に同じタイトルの `GamingServicesUI.exe` が一時的に前面になった。

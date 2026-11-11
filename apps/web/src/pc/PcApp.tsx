@@ -61,7 +61,7 @@ function Workspace({model}:{model:PcModel}) {
   const primaryDetails = ['game', 'roles'].includes(model.view);
   return <main className="workspace">
     <div className="state-banner" id="stateBanner" hidden={primaryDetails}><h2 id="stateTitle">{model.stateTitle}</h2><p id="stateSubtitle">{model.stateSubtitle}</p></div>
-    <section id="playerStage" className="player-stage" aria-label="参加者と担当" hidden={primaryDetails}><div id="players" className="players">{model.cards.map((card: PlayerCardModel) => <PlayerCard key={card.slot} card={card} />)}</div></section>
+    <section id="playerStage" className="player-stage" aria-label={model.view === 'join' ? '参加者' : '参加者と担当'} hidden={primaryDetails}><div id="players" className="players">{model.cards.map((card: PlayerCardModel) => <PlayerCard key={card.slot} card={card} />)}</div></section>
     <section id="gameStage" className="game-stage" aria-label="ゲーム選択" hidden={model.view !== 'game'}><div id="games" className="game-frame">
       <div className="game-list-head"><h2>ゲーム一覧</h2><p id="gamesCount" role="status">{model.gamesCount}</p><button id="renameGameBtn" hidden={!model.registered}>名前を変更</button><button id="removeGameBtn" hidden={!model.registered}>登録を解除</button><button id="addGameBtn">＋ 追加</button><button id="refreshGamesBtn" disabled={model.scanning}>探し直す</button></div>
       <div id="gameList" className="game-list">{model.gameCards.map(card => <GameTile key={card.id} card={card} />)}</div>
@@ -79,7 +79,7 @@ function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;co
   const game = state.game;
   return <dialog id="settings" aria-labelledby="settingsTitle">
   <h2 id="settingsTitle">操作設定</h2><p id="inputState" role="status">{model.inputState}</p>
-  <nav id="steps" aria-label="画面の移動" hidden={!['join','game','roles'].includes(model.view)}>{SCREENS.map(screen => <button key={screen} data-go={screen} aria-label={SCREEN_TITLES[screen as keyof typeof SCREEN_TITLES]} aria-current={screen === state.ui.screen ? 'page' : 'false'}>{{join: '参加',game: '選択',roles: '分担'}[screen as 'join'|'game'|'roles']}</button>)}</nav>
+  <nav id="steps" aria-label="画面の移動" hidden={!['join','game','roles'].includes(model.view)}>{SCREENS.map(screen => <button key={screen} data-go={screen} disabled={model.view === 'join' && screen !== 'join' && !model.canAdvance} aria-label={SCREEN_TITLES[screen as keyof typeof SCREEN_TITLES]} aria-current={screen === state.ui.screen ? 'page' : 'false'}>{{join: '参加',game: '選択',roles: '分担'}[screen as 'join'|'game'|'roles']}</button>)}</nav>
   <details id="keyDetails"><summary>担当と実際に送るキー</summary><p id="keyWarnings" role="status">{model.warnings}</p><div id="keyBindings">{model.bindings.map(b => <Fragment key={b.slot}><h3>{b.slot}：{b.title}</h3><ul>{b.lines.map((line: string, i: number) => <li key={i}>{line}</li>)}</ul></Fragment>)}</div><div id="keyEditor"><KeyEditor model={model} state={state} /></div></details>
   <p id="inputSafety">{model.name}が前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。</p>
 
