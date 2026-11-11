@@ -22,7 +22,8 @@ main { padding: 14px max(14px,env(safe-area-inset-right)) max(14px,env(safe-area
 .cmd:disabled { border-color: var(--color-phone-button); background: var(--color-character); color: var(--color-logo); }
 #remotePad { min-height: 90px; border-style: solid; background: var(--color-pad-surface); border-radius: 30px; color: var(--color-cyan-ink); }
 #remotePad::before { content: ''; width: 42px; height: 26px; border: 3px solid var(--color-phone-dots); border-radius: 10px; }
-#remoteRoute { font-size: 11px; color: var(--color-logo); }
+#remoteRoute, #appReturnHint { font-size: 11px; color: var(--color-logo); }
+#appReturnHint { margin: 0; }
 #remoteNote { font-size: 11px; max-height: 55px; color: var(--color-logo); }
 body[data-view=v-wait] main { padding: 0; }
 #v-wait { position: relative; }

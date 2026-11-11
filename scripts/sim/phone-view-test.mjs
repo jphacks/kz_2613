@@ -14,7 +14,7 @@ const base={phase:'lobby',connected:['P1','P2','P3'],canPrepare:true,canReady:fa
 function update(slot,game){render({me:slot,isHost:slot==='P1',game:{...base,...game}});}
 update('P1',{});
 assert.equal((view().view==='v-remote'),true);
-assert.equal(view().remote.startLabel,'ゲームを開く・準備する');
+assert.equal(view().remote.startLabel,'ゲームを準備する');
 assert.equal(view().remote.startDisabled,false);
 assert.match(view().remote.note,/このリモコンでも操作/);
 assert.equal(view().inventory,null);
@@ -146,8 +146,17 @@ update('P1',{phase:'lobby',remoteRoute:'none',canOpenApp:true});
 assert.equal(view().remote.openAppHidden,false);
 update('P1',{phase:'lobby',remoteRoute:'app',canOpenApp:true});
 assert.equal(view().remote.openAppHidden,true,'PCアプリが前面なら出さない');
-update('P1',{phase:'paused',remoteRoute:'game',canOpenApp:true});
+update('P1',{phase:'paused',remoteRoute:'game',canOpenApp:true,canSwap:true});
 assert.equal(view().remote.openAppHidden,false);
+assert.match(view().remote.appReturnHint,/ボタンで戻れない.*Alt\+Tab.*担当を入れ替える/);
+update('P1',{phase:'preparing',remoteRoute:'none',canOpenApp:false});
+assert.equal(view().remote.openAppHidden,true);
+assert.match(view().remote.appReturnHint,/PCアプリへは.*Alt\+Tab/);
+update('P1',{phase:'paused',remoteRoute:'app',canOpenApp:true,canSwap:true});
+assert.match(view().remote.appReturnHint,/担当を入れ替える/);
+assert.doesNotMatch(view().remote.appReturnHint,/Alt\+Tab/);
+update('P2',{phase:'paused',remoteRoute:'game',canOpenApp:true,canSwap:true});
+assert.equal(view().remote.appReturnHint,'');
 update('P1',{phase:'lobby',remoteRoute:'none',canOpenApp:false});
 assert.equal(view().remote.openAppHidden,true,'PCアプリから起動していなければ出さない');
 update('P2',{phase:'lobby',remoteRoute:'none',canOpenApp:true});

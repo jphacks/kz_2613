@@ -1917,6 +1917,12 @@
 - `npm.cmd run build`（`apps/web`、型チェックとViteビルド）、`node --experimental-strip-types scripts/sim/app-view-test.mjs`（31/31）、`node --experimental-strip-types scripts/sim/pc-boundary-test.mjs` が合格。
 - Chrome（1280×720）でホスト通知を模擬し、0・1人ではOK・Enter・ホストのリモコン・設定内ナビから進めず、2人でOKからゲーム選択へ進むことを確認した。ホスト・端末の表示とカード内の収まりも確認した。Windows配布版と実機Wi-Fiでの参加は未実施。画面全体の縦横比対応は #270。
 
+## 2026-11-11 全画面のゲームからPCアプリへ戻る案内（#307）
+
+- ホストのスマホに、準備・一時停止中の復帰方法を表示する。既存の前面化ボタンが使えない場合はAlt+Tabを案内し、一時停止中に担当を変更できるときはPCの操作名を示す。PCとスマホの準備ボタン名を揃えた。
+- `npm.cmd run build`、`node scripts/sim/phone-view-test.mjs`、`node --experimental-strip-types scripts/sim/app-view-test.mjs`（33/33）が合格。Chrome（360×640）の模擬通知で、前面化ボタンの有無による案内と配置を確認。
+- Windows配布版での全画面切替、Minecraftとスマホ実機での復帰は未実施。
+
 ## 2026-11-10 — #287 Minecraftのランチャーをホストのリモコンで操作する（#311 に積み重ね）
 
 - この PC で公式ランチャーを一時的に開き、ウィンドウを確認した（入力は送らず閉じた）：`C:\Program Files\WindowsApps\Microsoft.4297127D64EC6_2.6.2.0_x64__8wekyb3d8bbwe\Minecraft.exe`、タイトル「Minecraft Launcher」。起動直後に同じタイトルの `GamingServicesUI.exe` が一時的に前面になった。

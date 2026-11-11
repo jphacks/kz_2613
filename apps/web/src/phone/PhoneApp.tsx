@@ -81,7 +81,8 @@ function HostRemoteScreen({state}:{state:PhoneDisplay}) {
     <div id="remoteRoute" className={`note${state.remote.routeBlocked ? ' route-blocked' : ''}`} role="status">{state.remote.route}</div>
     <button className="cmd" id="startBtn" disabled={state.remote.startDisabled}>{state.remote.startLabel}</button>
     <button className="cmd sub" id="openGameBtn" data-cmd="OPEN_GAME" hidden={state.remote.openGameHidden}>{state.remote.openGameLabel}</button>
-    <button className="cmd sub" id="openAppBtn" data-cmd="OPEN_APP" hidden={state.remote.openAppHidden}>PCアプリを前面にする</button>
+    <button className="cmd sub" id="openAppBtn" data-cmd="OPEN_APP" hidden={state.remote.openAppHidden} aria-describedby={state.remote.appReturnHint ? 'appReturnHint' : undefined}>PCアプリを前面にする</button>
+    <p className="note" id="appReturnHint" hidden={!state.remote.appReturnHint}>{state.remote.appReturnHint}</p>
     <button className="cmd sub" id="endBtn" style={{display: state.remote.endVisible ? 'block' : 'none'}}>協力プレイを終了（分担に戻る）</button>
     <div id="hostTransfer" className="host-transfer" hidden={!state.remote.transferTo.length}>{state.remote.transferTo.length ? 'ホストを譲る：' : null}{state.remote.transferTo.map(p => <button className="key" key={p} onClick={() => transferHost(p)}>{p}</button>)}</div>
     <div className="note" id="remoteNote">{state.remote.note}</div>
