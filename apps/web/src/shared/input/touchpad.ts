@@ -17,7 +17,8 @@ export function bindTouchpad(element: HTMLElement, { enabled, send, tap, rightTa
   const release = () => { reset(); send({kind:'release',rseq:++rseq}); };
   lifetime.listen(element, 'pointerdown', e => {
     e.preventDefault();
-    if (!enabled() || pointers.size >= 2 || pointers.has(e.pointerId)) return;
+    // 操作先がまだない (準備に入った直後など) ときに置いた指も追う。送るのは操作先ができてからの動きだけ (#345)
+    if (pointers.size >= 2 || pointers.has(e.pointerId)) return;
     const newGesture = pointers.size === 0;
     pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
     element.setPointerCapture(e.pointerId); element.classList.add('down');
@@ -28,10 +29,12 @@ export function bindTouchpad(element: HTMLElement, { enabled, send, tap, rightTa
   });
   lifetime.listen(element, 'pointermove', e => {
     const p = pointers.get(e.pointerId);
-    if (!p || !enabled()) return;
+    if (!p) return;
     const mx = e.clientX - p.x, my = e.clientY - p.y;
     p.x = e.clientX; p.y = e.clientY;
+    // 距離は操作先がない間も数える。大きく動かした指を操作先ができた直後に離しても、タップ (クリック) にしない
     distance += Math.abs(mx) + Math.abs(my);
+    if (!enabled()) return; // 操作先がない間の動きは貯めない
     if (mode === 'move') {
       dx = Math.max(-120, Math.min(120, dx + mx)); dy = Math.max(-120, Math.min(120, dy + my));
     } else if (mode === 'scroll') {
@@ -52,11 +55,14 @@ export function bindTouchpad(element: HTMLElement, { enabled, send, tap, rightTa
     element.classList.remove('down');
   });
   for (const name of ['pointercancel', 'lostpointercapture'] as const) lifetime.listen(element, name, e => {
-    if (pointers.has(e.pointerId)) release();
+    // 操作先がない間は何も送っていないので、ホストへ解放を知らせず (epochを進めず) 指の追跡だけを捨てる
+    if (pointers.has(e.pointerId)) { if (enabled()) release(); else reset(); }
   });
   // 入力毎のDOM描画を増やさず、未送信量だけを最大30Hzで送る。
   lifetime.interval(() => {
-    if (!enabled()) { reset(); return; }
+    // 操作先がない間は未送信の量を捨てるが、触れている指は追い続ける。
+    // 一瞬だけ操作先が切り替わっても、そのスワイプを最後まで無視しない (#345)
+    if (!enabled()) { dx = dy = sy = 0; return; }
     if (mode === 'move' && (dx || dy)) { send({kind:'move',dx,dy,rseq:++rseq}); dx = dy = 0; }
     const n = Math.round(sy); // 端数は次へ持ち越す
     if (mode === 'scroll' && n) { send({kind:'scroll',dy:n,rseq:++rseq}); sy -= n; }

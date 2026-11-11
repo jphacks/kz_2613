@@ -304,6 +304,8 @@ pub struct Hub {
     inject: InjectMode,
     outputs: Vec<OutputState>,
     release_pending: BTreeSet<usize>, // 成功upを確認するまでReset/epoch変更でも消さない。
+    /// 最後にスマホへ送った操作先 (#345)
+    pushed_route: std::cell::Cell<&'static str>,
     input_fault: bool, // 自動回復後もPCの明示再開まで押下・移動・ホイールを禁止。
     fault_stop_gen: u64,
     fault_stop_pending: bool,
@@ -428,7 +430,7 @@ impl Hub {
             },
             inject: InjectMode::parse(&config.inject_mode).unwrap_or(InjectMode::Off),
             game_service: GameService::new(),
-            release_pending: BTreeSet::new(), input_fault: false,
+            release_pending: BTreeSet::new(), pushed_route: std::cell::Cell::new("none"), input_fault: false,
             fault_stop_gen: 0, fault_stop_pending: false, release_retry_gen: 0, release_retry_attempts: 0, release_retry_active: false,
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
             look: Look::new(now, config.look_smooth_min_ms, config.look_smooth_max_ms),
@@ -802,7 +804,7 @@ impl Hub {
             "prepareStatus": self.game.prepare_status,
             "titleName": self.game_name(),
             "launch": self.launch.as_ref().map(|l| json!({ "id": l.id, "state": l.state, "message": l.message })),
-            "remoteRoute": if self.remote_app_active() { "app" } else if self.remote_game_active() { "game" } else if self.remote_launcher_active() { "launcher" } else { "none" },
+            "remoteRoute": self.remote_route(),
             // 入力が PC に届く状態か (注入モード・入力先のウィンドウ)。スマホに「届いていない」ことを知らせる
             "inputActive": self.can_inject(),
             "inputTarget": self.inject == InjectMode::On && !self.target_ok,
@@ -917,8 +919,21 @@ impl Hub {
         self.schedule(Instant::now() + Duration::from_millis(100), Timer::StateFlush);
     }
 
+    /// ホストのリモコンの操作先。スマホはこれが none の間はタッチパッドの移動を送らない
+    fn remote_route(&self) -> &'static str {
+        if self.remote_app_active() { "app" } else if self.remote_game_active() { "game" } else if self.remote_launcher_active() { "launcher" } else { "none" }
+    }
+
+    /// 操作先は前面・入力の状態から都度決まるので、変わったのにスマホへ届いていなければ知らせる (#345)。
+    /// 届かないと、スマホは操作先がないと思い込み、次の通知までスワイプを送らない
+    fn push_game_if_route_changed(&self) {
+        if self.remote_route() != self.pushed_route.get() { self.push_game(); }
+    }
+
     fn push_game(&self) {
-        let msg = json!({ "type": "game", "game": self.game_snapshot() });
+        let game = self.game_snapshot();
+        self.pushed_route.set(self.remote_route());
+        let msg = json!({ "type": "game", "game": game });
         self.broadcast_players(&msg);
         self.broadcast_monitors(&msg);
     }
@@ -1950,6 +1965,7 @@ impl Hub {
             self.release_retry_active = false; self.release_retry_gen += 1;
         } else { self.schedule(Instant::now() + Duration::from_millis(50), Timer::ReleaseRetry(gen)); }
         self.push_state();
+        self.push_game_if_route_changed();
     }
 
     fn release_for_shutdown(&mut self) -> bool {
@@ -2153,6 +2169,7 @@ impl Hub {
             }
             Timer::FocusCheck => {
                 self.check_target();
+                self.push_game_if_route_changed();
                 self.schedule(at + FOCUS_CHECK, Timer::FocusCheck);
             }
             Timer::Heartbeat => {
@@ -2905,7 +2922,7 @@ mod tests {
             },
             inject: InjectMode::On,
             game_service: GameService::new(),
-            release_pending: BTreeSet::new(), input_fault: false,
+            release_pending: BTreeSet::new(), pushed_route: std::cell::Cell::new("none"), input_fault: false,
             fault_stop_gen: 0, fault_stop_pending: false, release_retry_gen: 0, release_retry_attempts: 0, release_retry_active: false,
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
             look: Look::new(now, 30.0, 120.0),
@@ -3340,6 +3357,25 @@ mod tests {
         assert!(h.remote_launcher_active());
         h.game.title = "pseudo-game".into();
         assert!(!h.remote_launcher_active(), "Minecraft 以外を選んでいるときは使わない");
+        h.release_outputs(None);
+    }
+
+    #[test]
+    fn route_changes_without_another_game_push_still_reach_the_phones() {
+        // 操作先だけが変わり、ほかの通知が出ない場合でも、定期の前面確認でスマホへ知らせる (#345)
+        let (mut h, _rx) = fixture();
+        h.game.title = "minecraft-java".into();
+        h.game.phase = Phase::Lobby;
+        h.fake_target = Some(false);
+        h.push_game();
+        assert_eq!(h.pushed_route.get(), "none");
+        h.launcher_fg = true; // 前面の観測だけが変わり、push_game は呼ばれていない
+        assert_eq!(h.remote_route(), "launcher");
+        h.push_game_if_route_changed();
+        assert_eq!(h.pushed_route.get(), "launcher", "変わった操作先を送る");
+        h.launcher_fg = false;
+        h.push_game_if_route_changed();
+        assert_eq!(h.pushed_route.get(), "none");
         h.release_outputs(None);
     }
 
