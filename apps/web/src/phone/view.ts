@@ -8,11 +8,11 @@ import { inputWarnText, waitModel, remoteModel, rotationText } from '../shared/m
 import { profileNotice, roleView, gameLabel, outputKeyLabel } from '../shared/model/presentation.ts';
 import { createViewTransition } from './transition.ts';
 import { createSkinStore, applySkin } from '../shared/model/skin.ts';
-import {controllerLayout,type ControlGroup} from '../shared/controller-layout';
+import {controllerLayout,buttonLayout,type ControlGroup} from '../shared/controller-layout';
 import {createTelemetryPublisher} from './telemetry.ts';
 
 export interface PhoneDisplay {
-  controller: {key:string;groups:ControlGroup[];bindings:PhoneViewBindings} | null;
+  controller: {key:string;groups:ControlGroup[];layout:string;bindings:PhoneViewBindings} | null;
   snapshot: PhoneSnapshot; wait: WaitModel; remote: RemoteModel; view: string | null;
   controllerHost: boolean; controllerTitle: string; role: string; roleCopy: string; roleNotice: string; warning: string; inventory: string | null;
 }
@@ -101,7 +101,7 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
     const name = gameLabel(game);
     const next: PhoneDisplay = {
       snapshot, view: display.get().view,
-      controller: view==='v-gen'&&game.profile ? changed ? {key,groups:controllerLayout({...game,profile:game.profile},me),bindings:input} : display.get().controller : null,
+      controller: view==='v-gen'&&game.profile ? changed ? (groups => ({key,groups,layout:buttonLayout(groups),bindings:input}))(controllerLayout({...game,profile:game.profile},me)) : display.get().controller : null,
       controllerHost: view === 'v-gen' ? isHost : display.get().controllerHost,
       controllerTitle: view === 'v-gen' ? `${game.profile?.name}（${me}${isHost ? '・ホスト' : ''}）` : display.get().controllerTitle,
       wait: waitModel({ me, game, roleTitle: role.title, joined, autoWait }),

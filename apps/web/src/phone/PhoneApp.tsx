@@ -101,11 +101,9 @@ function WaitingScreen({state}:{state:PhoneDisplay}) {
 }
 
 function GameplayScreen({state}:{state:PhoneDisplay}) {
-  const parts = state.controller?.groups.flatMap(group => group.parts) ?? [];
-  const fewButtons = parts.length > 0 && parts.length <= 3 && parts.every(part => part.kind === 'button');
   return <section className={`view${state.view === 'v-gen' ? ' show' : ''}`} id="v-gen">
     <div className="gen-title" id="genTitle">{state.controllerTitle}</div>
-    <div id="genControls" className={fewButtons ? "few-buttons" : undefined}>{state.controller&&<Controller key={state.controller.key} groups={state.controller.groups} bindings={state.controller.bindings}/>}</div>
+    <div id="genControls" className={state.controller?.layout || undefined}>{state.controller&&<Controller key={state.controller.key} groups={state.controller.groups} bindings={state.controller.bindings}/>}</div>
     <button className="cmd pause" data-cmd="PAUSE" id="genPause" hidden={!state.controllerHost}>一時停止・ホスト操作へ</button>
   </section>;
 }

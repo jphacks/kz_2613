@@ -167,4 +167,13 @@ update('P1',{phase:'preparing',title:'minecraft-java',remoteRoute:'game',keys:{c
 assert.equal(view().inventory,'送らない','未割り当てをEキーと偽らない');
 update('P1',{phase:'preparing',title:'minecraft-java',remoteRoute:'game',keys:{controls:{}}});
 assert.equal(view().inventory,'Eキー','Minecraftの未変更の割当はEを送る');
+// ボタンだけの担当は、親指の届く下側に大きく置く。Among Usの4人のP4は5ボタンだった（Android実機で確認、#301）
+const btn=(id)=>({id,label:id,group:'keys',type:'button'});
+const keysOnly=(n)=>({id:'steam:945360',name:'Among Us',status:'template',controllerSupported:true,groups:[{id:'keys',label:'キー'},{id:'move',label:'移動'}],
+  actions:[{id:'stick',label:'移動',group:'move',type:'button'},...Array.from({length:n},(_,i)=>btn('k'+i))]});
+const layoutFor=(n,extra=[])=>{const profile=keysOnly(n);update('P2',{phase:'coop',participants:['P1','P2'],connected:['P1','P2'],profile,assigned:{P1:['stick'],P2:[...profile.actions.slice(1).map(a=>a.id),...extra]}});return view().controller?.layout;};
+assert.equal(layoutFor(3),'few-buttons single-column');
+assert.equal(layoutFor(5),'few-buttons','5ボタンでも下側に大きく置く');
+assert.equal(layoutFor(6),'few-buttons');
+assert.equal(layoutFor(7),'','多いときは従来の配置');
 console.log('合格: ホスト準備・Ready可否・参加者待機・担当画面・Pause・診断前解放・未検証案内・ゲーム名の案内（8観点、OS入力なし）');

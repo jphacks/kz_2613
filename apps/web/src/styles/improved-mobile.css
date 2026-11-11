@@ -55,7 +55,7 @@ body[data-slot=P4] .phone-character img { width: 136.769%; height: 107.447%; lef
 .gen-title { color: var(--color-black); background: var(--color-surface); border-radius: 24px; padding: 12px; border: 3px solid var(--color-cyan); }
 #genControls { min-height: 0; flex: 1; }
 #genControls.few-buttons .gen-group:first-child { margin-top: auto; }
-#genControls.few-buttons .gen-grid { grid-template-columns: 1fr; }
+#genControls.few-buttons.single-column .gen-grid { grid-template-columns: 1fr; }
 #genControls.few-buttons .key { min-height: 64px; font-size: 20px; }
 .gen-label { color: var(--color-black); }
 #inputWarn { margin: 10px 12px 0; }

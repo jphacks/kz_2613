@@ -6,6 +6,13 @@ export type ControlPart =
   | { kind: 'stick'; id: string; directions: { name: Direction; control: string; label: string; mark: string }[] }
   | { kind: 'look'; id: string };
 export interface ControlGroup { id: string; label: string; parts: ControlPart[] }
+
+/** ボタンだけの担当（6個まで）は、親指の届く下側に大きく置く。3個までは1列にする (#301) */
+export function buttonLayout(groups: ControlGroup[]): string {
+  const parts = groups.flatMap(group => group.parts);
+  if (!parts.length || parts.length > 6 || parts.some(part => part.kind !== 'button')) return '';
+  return parts.length <= 3 ? 'few-buttons single-column' : 'few-buttons';
+}
 const DIRECTIONS: [Direction, RegExp, string][] = [
   ['up', /(^|[/_ -])(forward|up|moveup|accelerate)$/i, '▲'],
   ['left', /(^|[/_ -])(left|moveleft|steer_left)$/i, '◀'],
