@@ -108,12 +108,22 @@ jobs:
         run: ./scripts/windows/package.ps1
       - name: 配布zipの同梱物・展開後の起動を確認（OS入力なし）
         run: node scripts/sim/package-smoke.mjs
+      - name: Windowsインストーラーを作成（NSIS、zipと同じ同梱物）
+        shell: powershell
+        run: |
+          $nsis = Join-Path ${env:ProgramFiles(x86)} "NSIS\makensis.exe"
+          if (-not (Get-Command makensis.exe -ErrorAction SilentlyContinue) -and -not (Test-Path $nsis)) { choco install nsis -y --no-progress }
+          ./scripts/windows/build-installer.ps1
+      - name: インストーラーの事前チェック・サイレント導入・更新・アンインストール（取得・PC設定変更なし）
+        run: node scripts/sim/installer-smoke.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: ReCooplay-windows-x64
           path: |
             dist/*.zip
             dist/*.zip.sha256
+            dist/*-setup.exe
+            dist/*-setup.exe.sha256
           if-no-files-found: error
 
   desktop:

@@ -66,6 +66,8 @@ NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR 
 Minecraft の公式製品ではありません。Mojang・Microsoft の承認・提携はありません。
 
 ■ 起動
+  インストーラー版 (ReCooplay-<版>-windows-x64-setup.exe) で導入した場合は、スタートメニューの ReCooplay から起動する。
+  zip版の場合:
   1. このフォルダを書き込みできる場所 (デスクトップ・ドキュメントなど) に展開する
   2. recooplay-desktop.exe をダブルクリックする
   3. 画面の QR コードをスマホで読み取って参加する (PC とスマホを同じ Wi-Fi、または PC のモバイルホットスポットにつなぐ)
@@ -92,7 +94,8 @@ Minecraft の公式製品ではありません。Mojang・Microsoft の承認・
   Microsoft公式の案内で x64 版を確認する (ビルドに使ったMSVCと同じか新しい版が必要):
     https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist
   オフラインのPCでは、接続できるPCで公式の導入用ファイルを準備してから持ち込む。
-  このアプリはランタイムを自動ダウンロード・自動インストールしない。
+  このアプリ (zip版) はランタイムを自動ダウンロード・自動インストールしない。
+  インストーラー版は不足を調べ、同意したときだけ Microsoft 公式の配布元から取得して導入する。
 
 ■ 検証状況
   Minecraft・スマホ実機との組み合わせ、開発環境のない PC での起動は検証中。詳しくは
