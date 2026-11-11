@@ -2078,3 +2078,10 @@
 - `node --check scripts/sim/protocol-sim.mjs` と `git diff --check` は合格。ホストを起動する通信シミュレーション全体はGitHub Actionsで確認する。
 - 実Wi-Fi、Android・iPhoneのblur、実Windows入力の受入は未実施。
 - 統合（Claude Code）：#366をレビューし指摘なし。試験だけの変更で、使う `release_inputs`（`hub.rs`）と `injected`・`noPress` は既存。`protocol-sim.mjs` の構文検査が合格し、ホストとの実行はCIで確認する。
+
+## 2026-11-11 — ホスト入力トレースの負荷を比較する試行（#276）
+
+- `hostTrace` 比較軸を追加し、Wi-Fi性能試行でホスト入力トレースだけを切り替えられるようにした。トレースを省いた試行ではホスト内の区間を集計しない。
+- `node scripts/device/` 配下の `android-dry-run-test.mjs` 23/23、`wifi-comparison-plan-test.mjs`、`wifi-route-test.mjs`、`wifi-host-analysis-test.mjs`、`wifi-trial-acks-test.mjs` が合格。CLI試験は照合済み配布版のWeb資産を使用。
+- 実Wi-Fiでの負荷測定と新しい比較系列の集計・匿名化は未実施。
+- 統合（Claude Code）：#368をレビューし指摘なし。トレースの起動・読み込み・集計の3か所がすべて `hostTrace` で切り替わることを確認した。手元で上記5本が合格。
