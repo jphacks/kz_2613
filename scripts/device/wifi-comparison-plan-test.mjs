@@ -15,6 +15,9 @@ for (const {label, trial, args} of transport.order) {
 }
 assert.equal(plan('assets', {assets: 'b'.repeat(40)}).order[1].assets, 'b'.repeat(40));
 assert(plan('ackObserver', {ackObserver: true}).order[1].args.includes('--ack-observer'));
+assert(!transport.order.some(({args}) => args.includes('--no-periodic-ice')));
+assert.equal(plan('periodicIce', {periodicIce: false}).order.filter(({args}) => args.includes('--no-periodic-ice')).length, 3);
+assert.throws(() => plan('transport', {transport: 'ws-only', periodicIce: false}), /RTCあり/);
 assert.throws(() => plan('transport', {transport: 'ws-only', assets: 'b'.repeat(40)}), /1項目/);
 assert.throws(() => plan('transport', {}), /1項目/);
 assert.throws(() => plan('assets', {assets: 'short'}), /SHA/);

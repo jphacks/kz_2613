@@ -17,9 +17,9 @@ const SCRIPT_ROOT=fileURLToPath(new URL('../../',import.meta.url));
 const options = new Map();
 for (let i = 2; i < process.argv.length; i++) {
   const key = process.argv[i];
-  assert(['--bin', '--adb', '--sha256', '--host-only', '--root', '--benchmark-ms', '--condition', '--trial', '--players', '--ws-only', '--wifi-network', '--ack-observer', '--ws-fault-observe', '--rtc-fault-observe'].includes(key), '不明な引数');
+  assert(['--bin', '--adb', '--sha256', '--host-only', '--root', '--benchmark-ms', '--condition', '--trial', '--players', '--ws-only', '--wifi-network', '--ack-observer', '--no-periodic-ice', '--ws-fault-observe', '--rtc-fault-observe'].includes(key), '不明な引数');
   assert(!options.has(key), '重複した引数');
-  const value = ['--host-only', '--ws-only', '--ack-observer', '--ws-fault-observe', '--rtc-fault-observe'].includes(key) ? true : process.argv[++i];
+  const value = ['--host-only', '--ws-only', '--ack-observer', '--no-periodic-ice', '--ws-fault-observe', '--rtc-fault-observe'].includes(key) ? true : process.argv[++i];
   assert(value && (value === true || !value.startsWith('--')), '引数の値が必要です');
   options.set(key, value);
 }
@@ -43,6 +43,9 @@ assert(!observeRtcFault||wifi&&!options.has('--ws-only')&&!observeWsFault&&bench
 assert(!observeWsFault||wifi&&!options.has('--ws-only')&&benchmarkMs===0,
   '--ws-fault-observe は実Wi-FiとRTCありの非ベンチマーク試行で使用してください');
 assert(!options.has('--ack-observer')||wifi&&benchmarkMs>0,'先行ACK診断はWi-Fi性能試行だけで使用する');
+const periodicIce = !options.has('--no-periodic-ice');
+assert(periodicIce || wifi && benchmarkMs > 0 && !options.has('--ws-only'),
+  '--no-periodic-ice はRTCありのWi-Fi性能試行だけで使用する');
 fs.mkdirSync(path.join(ROOT, 'data/local/device-acceptance'), {recursive:true});
 const OUT = fs.mkdtempSync(path.join(ROOT, 'data/local/device-acceptance/run-'));
 const adb = (...args) => {
@@ -70,7 +73,10 @@ let host, mon, browser, tabId, forwarded=false,reversed=false, ping;
 const clients=[];
 const pageErrors=[];
 let savedRotation;
-if(wifi)report.ackObserver=options.has('--ack-observer');
+if(wifi){
+  report.ackObserver=options.has('--ack-observer');
+  report.periodicIce=periodicIce&&!report.wsOnly;
+}
 if(wifi)report.runner={commit:execFileSync('git',['rev-parse','HEAD'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim(),dirty:execFileSync('git',['status','--porcelain'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim().length>0,modules:Object.fromEntries(['android-dry-run.mjs','android-performance.mjs','wifi-route.mjs','wifi-host-analysis.mjs','wifi-ack-observer.mjs','fault-timeline.mjs','rtc-fault-observer.mjs'].map(name=>[name,crypto.createHash('sha256').update(fs.readFileSync(new URL(name,import.meta.url))).digest('hex')]))};
 let wifiNetwork, faultTimeline;
 const networkEvents=[],privateNetworkSamples=[];
@@ -233,7 +239,7 @@ try{
     await page.call('Runtime.enable');await page.call('Page.enable');
     if(wifi){
       await page.call('Network.enable');await page.call('Network.setCacheDisabled',{cacheDisabled:true});
-      await page.call('Page.addScriptToEvaluateOnNewDocument',{source:rtcObserverSource});
+      await page.call('Page.addScriptToEvaluateOnNewDocument',{source:rtcObserverSource({periodic:report.periodicIce})});
       if(observeRtcFault)await page.call('Page.addScriptToEvaluateOnNewDocument',{source:fastChannelObserverSource});
       if(options.has('--ack-observer'))await page.call('Page.addScriptToEvaluateOnNewDocument',{source:earlyAckSource});
     }
