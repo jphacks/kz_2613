@@ -2064,3 +2064,10 @@
 - `npm run typecheck`、Node.js 22の `--experimental-strip-types` で `protocol-boundary-test.mjs` 8件、`phone-session-test.mjs` 7件、`phone-lifecycle-test.mjs` 31件が合格。
 - ビルド済みホストとの照合を含む `protocol-sim.mjs` 全体はNode.js 24のCIで確認する。実機Wi-Fiの受入と通信・設定スキーマの共通化は未実施。
 - 統合（Claude Code）：#362をレビューし指摘なし。手元で `tsc --noEmit`、`protocol-boundary-test.mjs` 8/8、`phone-session-test.mjs` 7/7、`phone-lifecycle-test.mjs` 31/31、`product-web-test.mjs`、`protocol-sim.mjs` の構文検査が合格。ホストとの照合はCIで確認する。
+
+## 2026-11-11 — 定期ICE観測の負荷を比較する試行（#276）
+
+- `periodicIce` 比較軸を追加し、RTCありのWi-Fi性能試行で5秒間隔のICE観測を切り替える。明示的な経路照合とホスト入力トレースは両条件で維持する。
+- `node scripts/device/` 配下の `android-dry-run-test.mjs` 20/20、`wifi-route-test.mjs`、`wifi-comparison-plan-test.mjs`、`fault-timeline-test.mjs`、`rtc-fault-observer-test.mjs`、`wifi-trial-acks-test.mjs` が合格。CLI試験の資産は照合済みCI配布zipから取得。
+- 実Wi-Fi・Androidでの負荷比較、ホスト入力トレースの負荷比較、新データセットの集計・匿名化は未実施。
+- 統合（Claude Code）：#364をレビューし指摘なし。`rtcObserverSource` を関数にした変更は呼び出し元2か所とも対応済み。観測なしでは `__wifiPathHistory` が空のまま進む。手元で上記6本が合格。

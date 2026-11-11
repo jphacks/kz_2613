@@ -1,6 +1,7 @@
 // 経路が証明できないデータをWi-Fi合格にしない。端末/ネットワーク設定は変更しない。
 import assert from 'node:assert/strict';
-import {privateIpv4,validateSelectedPairs,validateHttpWs,validateUsbIsolation,privateError} from './wifi-route.mjs';
+import {runInNewContext} from 'node:vm';
+import {privateIpv4,validateSelectedPairs,validateHttpWs,validateUsbIsolation,privateError,rtcObserverSource} from './wifi-route.mjs';
 const network={pc:'192.168.1.2',android:'192.168.1.3'},port=8080;
 assert(privateIpv4(network.pc));
 for(const ip of ['127.0.0.1','0.0.0.0','8.8.8.8','::1','192.168.1.999'])assert(!privateIpv4(ip));
@@ -28,4 +29,14 @@ assert.equal(validateHttpWs(events,network,port).adbReverseUsed,false);
 const cached=structuredClone(events);cached[0].params.response.fromDiskCache=true;assert.throws(()=>validateHttpWs(cached,network,port));
 const reverse=structuredClone(events);reverse[1].params.url=`ws://127.0.0.1:${port}/ws`;assert.throws(()=>validateHttpWs(reverse,network,port));
 assert.throws(()=>validateHttpWs(events.slice(1),network,port));
-console.log('合格: LAN/選択ICEの照合、別経路/候補未選択/キャッシュ/USB URLの拒否、公開証拠のアドレス除去');
+for (const periodic of [true, false]) {
+  const window = {RTCPeerConnection: class {}};
+  const intervals = [];
+  runInNewContext(rtcObserverSource({periodic}), {
+    window, setInterval: (sample, interval) => intervals.push(interval),
+  });
+  const peer = new window.RTCPeerConnection();
+  assert.equal(window.__wifiPeers[0], peer, '試行の境界で選択候補対を取得するための追跡を維持する');
+  assert.deepEqual(intervals, periodic ? [5000] : []);
+}
+console.log('合格: LAN/選択ICEの照合、誤経路の拒否、公開証拠のアドレス除去、定期ICE観測の切替');

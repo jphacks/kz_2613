@@ -46,7 +46,23 @@ export function hostSocketProof(pid,port,network) {
   return {ownedHostWildcardSocket:true,ownedHostEstablishedLanSocket:true,androidNonLoopbackPeer:true};
 }
 export const rtcStatsExpression=`(async()=>{const out=[];for(const pc of window.__wifiPeers??[]){if(pc.connectionState!=='connected')continue;const all=[...((await pc.getStats()).values())];for(const t of all.filter(s=>s.type==='transport'&&s.selectedCandidatePairId)){const pair=all.find(s=>s.id===t.selectedCandidatePairId);if(pair)out.push({connectionState:pc.connectionState,transport:t,pair,local:all.find(s=>s.id===pair.localCandidateId),remote:all.find(s=>s.id===pair.remoteCandidateId)});}}return out})()`;
-export const rtcObserverSource=`(()=>{const Original=window.RTCPeerConnection;window.__wifiPeers=[];window.__wifiPathHistory=[];if(Original)window.RTCPeerConnection=new Proxy(Original,{construct(target,args){const pc=new target(...args);window.__wifiPeers.push(pc);return pc;}});setInterval(async()=>{try{const stats=await ${rtcStatsExpression};if(stats.length)window.__wifiPathHistory.push({at:performance.now(),stats});}catch{window.__wifiStatsError=true}},5000);return true})()`;
+export function rtcObserverSource({periodic = true} = {}) {
+  return `(()=>{
+    const Original=window.RTCPeerConnection;
+    window.__wifiPeers=[];
+    window.__wifiPathHistory=[];
+    if(Original)window.RTCPeerConnection=new Proxy(Original,{construct(target,args){
+      const pc=new target(...args);window.__wifiPeers.push(pc);return pc;
+    }});
+    if(${periodic})setInterval(async()=>{
+      try{
+        const stats=await ${rtcStatsExpression};
+        if(stats.length)window.__wifiPathHistory.push({at:performance.now(),stats});
+      }catch{window.__wifiStatsError=true}
+    },5000);
+    return true;
+  })()`;
+}
 export function validateSelectedPairs(stats,network) {
   assert(stats.length>0,'getStatsのtransport.selectedCandidatePairIdを取得できない');
   return stats.map((s,index)=>{
