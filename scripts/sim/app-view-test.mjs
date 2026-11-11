@@ -5,6 +5,8 @@
 import assert from 'node:assert/strict';
 const { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } = await import('../../apps/web/src/shared/model/presentation.ts');
 
+const {pcModel, pcState} = await import('../../apps/web/src/pc/model.ts');
+
 const results = [];
 function test(name, fn) {
   try {
@@ -319,6 +321,20 @@ test('通信の設定: 自動復帰の状態・期限・ポートを示し、協
   assert.match(coop.text,/20秒/);assert.match(coop.text,/変更できません/);assert.doesNotMatch(coop.text,/ポート/);
   assert.equal(commSettingsView({phase:'paused',autoResume:true},8080).locked,false);
   assert.equal(commSettingsView(null,null).locked,true);
+});
+
+test('操作設定: 選択ゲームの手順・待機状態・実ポートを表示する (#299)', () => {
+  const snapshot = pcState.get();
+  const active = {...snapshot, inject:{mode:'on',active:false},infoPort:18080};
+  const amongUs = pcModel({...active, game:game(['P1'], {title:'steam:945360'})});
+  assert.doesNotMatch(amongUs.gameSteps.join(' '), /Minecraft|ホットバー|公式ランチャー/);
+  assert.match(amongUs.gameSteps.join(' '), /Ready/);
+  assert.match(amongUs.inputState, /協力プレイを始めるまで/);
+  assert.equal(amongUs.overlayUrl, 'http://127.0.0.1:18080/overlay');
+  const minecraft = pcModel({...snapshot, game:game(['P1'], {title:'minecraft-java'}), inject:{mode:'off',active:false}});
+  assert.match(minecraft.gameSteps.join(' '), /ホットバー|公式ランチャー/);
+  assert.equal(minecraft.inputState, 'ゲームへの入力はOFFです');
+  assert.equal(minecraft.overlayUrl, '');
 });
 
 test('人数の参考: 全員に操作があり偏りの小さい人数を、断定せずに示す (#166)', () => {
