@@ -824,19 +824,29 @@ async function main() {
       await sleep(300); // 前epochの100ms集計通知を除く。
       const total = from => mon.msgs.slice(from).filter(m => m.type === 'look')
         .reduce((a, m) => ({ dx: a.dx + m.entry.dx, dy: a.dy + m.entry.dy }), { dx: 0, dy: 0 });
-      let from = mon.mark();
+      const from = mon.mark();
+      const waitForTotal = async (since, dx, dy) => {
+        const what = `視点の累積出力 dx=${dx}, dy=${dy}`;
+        try {
+          await mon.waitFor(m => {
+            if (m.type !== 'look') return false;
+            const observed = total(from);
+            return Math.abs(observed.dx - dx) <= 1 && Math.abs(observed.dy - dy) <= 1;
+          }, { from: since, timeout: 3000, what });
+        } catch (error) {
+          const reports = mon.msgs.slice(from).filter(m => m.type === 'look').map(m => m.entry);
+          throw new Error(`${error.message}。epoch=${p2.epoch}、実測=${JSON.stringify(total(from))}、出力通知=${JSON.stringify(reports)}`, { cause: error });
+        }
+      };
       p2.send({ type: 'look', lseq: 1, epoch: p2.epoch, cx: 12, cy: -6 });
       p2.send({ type: 'look', lseq: 3, epoch: p2.epoch, cx: 30, cy: -15 }); // 2を欠落させる。
       p2.send({ type: 'look', lseq: 2, epoch: p2.epoch, cx: 900, cy: 900 });
       p2.send({ type: 'look', lseq: 3, epoch: p2.epoch, cx: 800, cy: 800 });
-      await sleep(1000);
-      const first = total(from);
-      assert(Math.abs(first.dx - 30) <= 1 && Math.abs(first.dy + 15) <= 1, `累積値を回復できない: ${JSON.stringify(first)}`);
+      await waitForTotal(from, 30, -15);
+      const next = mon.mark();
       p2.send({ type: 'look', lseq: 4, epoch: p2.epoch, cx: 35, cy: -12 });
-      await sleep(1000);
       // 符号が変わると前区間の端数も使うため、同じ基準点からの累積量を照合する。
-      const combined = total(from);
-      assert(Math.abs(combined.dx - 35) <= 1 && Math.abs(combined.dy + 12) <= 1, `古いパケットが基準を変更した: ${JSON.stringify(combined)}`);
+      await waitForTotal(next, 35, -12);
     });
 
     await check('入力先: 常時 ON でも前面が入力先でなくなったら全解放し、押下を注入しない。PC 画面とスマホに知らせる', async () => {
