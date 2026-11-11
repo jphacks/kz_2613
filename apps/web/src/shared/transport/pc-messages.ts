@@ -17,7 +17,8 @@ const strings=(v:unknown)=>Array.isArray(v)&&v.every(string);
 const stats=(v:unknown)=>object(v)&&['avg','p95','max','unacked'].every(k=>optional(v,k,finite))&&optional(v,'path',string)&&optional(v,'rtc',v=>v===null||object(v)&&['avg','p95','max'].every(k=>optional(v,k,finite)));
 const slot=(v:unknown)=>object(v)&&typeof v.name==='string'&&['P1','P2','P3','P4'].includes(v.name)&&optional(v,'connected',boolean)
   &&['assigned'].every(k=>optional(v,k,boolean))&&optional(v,'ua',string)&&optional(v,'pressed',strings)
-  &&optional(v,'clientStats',v=>v===null||stats(v))&&optional(v,'net',v=>object(v)&&optional(v,'stalls',finite))
+  &&optional(v,'clientStats',v=>v===null||stats(v))&&optional(v,'net',v=>object(v)&&optional(v,'stalls',finite)&&optional(v,'maxStallMs',finite)
+    &&optional(v,'lastWarning',w=>w===null||object(w)&&finite(w.at)&&finite(w.stalls)&&finite(w.maxStallMs)))
   &&['role','ip'].every(k=>optional(v,k,string))&&['lastSeen','events','lost','outOfOrder','lookLost'].every(k=>optional(v,k,finite))
   &&optional(v,'via',v=>object(v)&&['rtc','ws'].every(k=>optional(v,k,finite)))&&optional(v,'reconnects',finite)&&optional(v,'rtcState',string);
 const inject=(v:unknown)=>object(v)&&string(v.mode)&&boolean(v.active)

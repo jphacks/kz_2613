@@ -7,5 +7,5 @@ export function device(ua:string|undefined){
 export function logText(entry:LogEntry){
   const time=new Date(entry.t).toLocaleTimeString('ja-JP',{hour12:false})+'.'+String(entry.t%1000).padStart(3,'0');
   const {t:_,kind,...rest}=entry;
-  return `${time}  ${kind.padEnd(11)} ${Object.entries(rest).map(([k,v])=>`${k}=${Array.isArray(v)?'['+v.join(',')+']':String(v)}`).join(' ')}`;
+  return `${time}  ${kind.padEnd(11)} ${Object.entries(rest).map(([k,v])=>`${k}=${v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v)}`).join(' ')}`;
 }

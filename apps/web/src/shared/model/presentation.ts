@@ -43,6 +43,8 @@ export function desktopView(ui: Navigation, game: PhoneGame | null | undefined) 
   return SCREENS.includes(ui.screen) ? ui.screen : 'join';
 }
 
+const NET_STALL_WARNING_COUNT = 3; // Rustホストが最後の警告を記録する条件と揃える
+
 // 生のプロセス名や診断値ではなく、利用者に必要な復旧操作だけを示す。
 /**
  * 通信の注意 (#131)。Bluetooth で PC の音を出しているとき、直近 10 秒に受信の途切れ (止まってからまとめて届く) が
@@ -51,7 +53,7 @@ export function desktopView(ui: Navigation, game: PhoneGame | null | undefined) 
 export function networkNotice(network: HostState["network"] | null | undefined, slots: SlotState[] | undefined) {
   const notes = [];
   if (network?.bluetoothAudio) notes.push('BluetoothでPCの音を出していると、スマホとの通信が途切れやすくなります。有線のイヤホンかPCのスピーカーを使ってください。');
-  const unstable = (slots || []).filter((s) => s.connected && (s.net?.stalls || 0) >= 3).map((s) => s.name);
+  const unstable = (slots || []).filter((s) => s.connected && (s.net?.stalls || 0) >= NET_STALL_WARNING_COUNT).map((s) => s.name);
   if (unstable.length) notes.push(`${unstable.join('・')}の通信が途切れがちです。「操作設定」の「通信の診断」で対処を確認してください。`);
   return notes.join(' ');
 }
@@ -77,11 +79,11 @@ export function slotDiagnosis(slot: SlotState) {
   let level = 'ok';
   const hints: string[] = [];
   const note = (l: string, key: keyof typeof HINTS) => { hints.push(HINTS[key]); if (l === 'bad' || level === 'ok') level = l; };
-  if (stalls >= 3) note('bad', 'stalls');
+  if (stalls >= NET_STALL_WARNING_COUNT) note('bad', 'stalls');
   if ((rtt ?? 0) > 100 || (p95 ?? 0) > 300) note('warn', 'slow');
   if (!fast) note('warn', 'path');
   if (reconnects >= 3) note('warn', 'reconnect');
-  return { name: slot?.name, level, path: fast ? 'WebRTC' : 'WebSocket', rtt, p95, stalls, reconnects, hints };
+  return { name: slot?.name, level, path: fast ? 'WebRTC' : 'WebSocket', rtt, p95, stalls, reconnects, hints, lastWarning: slot.net?.lastWarning ?? null };
 }
 
 /** スマホ自身の接続・診断の画面に出す案内 (#70)。stats = スマホの往復時間の統計 (avg・p95・unacked・path) */
