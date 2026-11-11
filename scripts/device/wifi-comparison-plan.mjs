@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 
 export function createComparisonPlan({axis, baseline, candidate}) {
-  const axes = ['assets', 'transport', 'ackObserver', 'periodicIce'];
+  const axes = ['assets', 'transport', 'ackObserver', 'periodicIce', 'hostTrace'];
   assert(axes.includes(axis), '比較軸が不明です');
   for (const condition of [baseline, candidate]) {
     assert(/^[a-f0-9]{40}$/.test(condition?.assets ?? ''), '資産の完全なコミットSHAが必要です');
@@ -11,9 +11,10 @@ export function createComparisonPlan({axis, baseline, candidate}) {
     assert.equal(typeof condition.ackObserver, 'boolean', '先行ACK観測の有無が必要です');
     assert(condition.periodicIce === undefined || typeof condition.periodicIce === 'boolean', '定期ICE観測の指定が不正です');
     assert(condition.periodicIce !== false || condition.transport === 'rtc-ws', '定期ICE観測の無効化はRTCありの試行だけで使用する');
+    assert(condition.hostTrace === undefined || typeof condition.hostTrace === 'boolean', 'ホスト入力トレースの指定が不正です');
   }
-  baseline = {...baseline, periodicIce: baseline.periodicIce ?? true};
-  candidate = {...candidate, periodicIce: candidate.periodicIce ?? true};
+  baseline = {...baseline, periodicIce: baseline.periodicIce ?? true, hostTrace: baseline.hostTrace ?? true};
+  candidate = {...candidate, periodicIce: candidate.periodicIce ?? true, hostTrace: candidate.hostTrace ?? true};
   for (const key of axes) {
     assert.equal(baseline[key] !== candidate[key], key === axis, '比較軸の1項目だけを変更してください');
   }
@@ -29,6 +30,7 @@ export function createComparisonPlan({axis, baseline, candidate}) {
       if (condition.transport === 'ws-only') args.push('--ws-only');
       if (condition.ackObserver) args.push('--ack-observer');
       if (!condition.periodicIce) args.push('--no-periodic-ice');
+      if (!condition.hostTrace) args.push('--no-host-trace');
       order.push({label, trial, assets: condition.assets, args});
     }
   }
