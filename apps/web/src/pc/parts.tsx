@@ -26,6 +26,7 @@ export function NetworkDiagnostics({model, bluetooth}: {model: Model; bluetooth:
   if (!model.diagnostics.length) return <p>つながっているスマホはありません。</p>;
   return <>{model.diagnostics.map(d => <section key={d.name} className="net-row" data-level={d.level}>
     <h3>{d.name}：{{ok: '良好', warn: '注意', bad: '不安定'}[d.level as 'ok'|'warn'|'bad']}</h3><p>経路 {d.path}・往復 {d.rtt ?? '-'}ms（95% {d.p95 ?? '-'}ms）・途切れ {d.stalls}回/10秒・再接続 {d.reconnects}回</p>
+    {d.lastWarning && <p>最後の途切れ警告：{new Date(d.lastWarning.at).toLocaleTimeString('ja-JP')}、{d.lastWarning.stalls}回/10秒（最大空白 {d.lastWarning.maxStallMs}ms）</p>}
     {d.hints.length > 0 && <ul>{d.hints.map((hint: string) => <li key={hint}>{hint}</li>)}</ul>}
   </section>)}{bluetooth && <p className="net-bt">PCの音の出力先がBluetoothです。有線のイヤホンかPCのスピーカーにすると、通信が安定しやすくなります。</p>}</>;
 }

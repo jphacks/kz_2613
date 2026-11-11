@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 const { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } = await import('../../apps/web/src/shared/model/presentation.ts');
 
+const {logText} = await import('../../apps/web/src/diagnostics/model.ts');
 const {pcModel, pcState} = await import('../../apps/web/src/pc/model.ts');
 
 const results = [];
@@ -372,15 +373,35 @@ test('人数の参考: 全員に操作があり偏りの小さい人数を、断
   assert.equal(playerHint(null),null);
 });
 
+test('通信診断: 回復した区間と直前の警告根拠を別に表示する (#304)', () => {
+  const lastWarning = {at:1000, stalls:3, maxStallMs:400};
+  const player = {name:'P1',connected:true,rtcState:'open',net:{stalls:0,lastWarning}};
+  const good = slotDiagnosis(player);
+  assert.equal(good.level,'ok');
+  assert.equal(good.stalls,0);
+  assert.deepEqual(good.lastWarning,lastWarning);
+  assert.equal(slotDiagnosis({...player,net:{stalls:0}}).lastWarning,null);
+  const model = pcModel({...pcState.get(), state:{slots:[{...player,net:{stalls:3}}]},
+    game:game(['P1'],{profile:{status:'unverified',controllerSupported:true,name:'試験ゲーム',actions:[]}}), online:true});
+  assert.equal(model.notices.length,2);
+  assert.match(model.notices[0],/P1の通信/);
+  assert.match(model.notices[1],/試験ゲーム.*未検証/);
+
+  const text = logText({t:1000,kind:'net',slots:[{slot:'P1',stalls:3,maxStallMs:400},{slot:'P2',rttAvg:null}]});
+  assert.match(text,/"slot":"P1","stalls":3,"maxStallMs":400/);
+  assert.match(text,/"slot":"P2","rttAvg":null/);
+  assert.doesNotMatch(text,/\[object Object\]/);
+});
+
 test('分担画面: 決定済みの枠が切断したときだけ枠番号と再決定の案内を示す (#305)', () => {
   const snapshot = pcState.get();
   const ui = {screen:'roles',game:'minecraft-java'};
   const dropped = game(['P1'], {lineupOk:false,lineupDisconnected:['P2','P3']});
   const display = (overrides = {}) => pcModel({...snapshot, ui, game:{...dropped,...overrides}});
-  assert.match(display().notices,/P2・P3が切断.*決め直し/);
-  assert.doesNotMatch(display({lineupOk:true}).notices,/切断したため/);
-  assert.doesNotMatch(display({lineupDisconnected:undefined}).notices,/切断したため/);
-  assert.doesNotMatch(display({phase:'paused'}).notices,/切断したため/);
+  assert.match(display().notices.join(' '),/P2・P3が切断.*決め直し/);
+  assert.doesNotMatch(display({lineupOk:true}).notices.join(' '),/切断したため/);
+  assert.doesNotMatch(display({lineupDisconnected:undefined}).notices.join(' '),/切断したため/);
+  assert.doesNotMatch(display({phase:'paused'}).notices.join(' '),/切断したため/);
 });
 
 test('分担画面: 決定後は起動・準備を案内し、人数不足や入れ替え中はその状態を示す (#296)', () => {

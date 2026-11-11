@@ -71,7 +71,7 @@ function Workspace({model}:{model:PcModel}) {
       <div id="roles" className="role-columns" style={{'--role-count': model.roleSlots.length} as CSSProperties}>{model.columns.map((c: RoleColumnModel) => <RoleColumn key={c.slot} c={c} />)}</div>
       <button id="keyBindingsBtn" className="role-keys">このPCのキー設定を確認</button>
     </section>
-    <p id="warning" className="safety-warning" role="alert" hidden={!model.notices}>{model.notices}</p>
+    <div id="warning" className="safety-warning" role="alert" hidden={!model.notices.length}>{model.notices.map(notice => <p key={notice}>{notice}</p>)}</div>
   </main>;
 }
 
