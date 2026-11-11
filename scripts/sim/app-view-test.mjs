@@ -70,6 +70,10 @@ test('参加画面: 接続中の2人でOKが有効になり、ゲーム選択前
   assert.match(ready.explanation, /OKを押して\s+ゲーム選択/);
   assert.equal(ready.stateSubtitle, '');
   assert.equal(ready.cards[1].role, '');
+  // 左の案内は1行11文字まで。超えると折り返してOKボタンに重なる（配布版のPCアプリで確認）
+  for (const m of [model(), waiting, ready]) {
+    for (const line of m.explanation.split('\n')) assert.ok([...line].length <= 11, `参加画面の案内が長い: ${line}`);
+  }
 });
 
 test('枠: 状態が届く前は全員空き', () => {
