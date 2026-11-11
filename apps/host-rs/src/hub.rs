@@ -2798,6 +2798,7 @@ impl Hub {
 
 #[cfg(test)]
 mod tests {
+    include!("independent_fixed_tests.rs");
     include!("release_order_tests.rs");
     include!("review_rotation_tests.rs");
     use super::*;
