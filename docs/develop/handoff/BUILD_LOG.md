@@ -2,6 +2,11 @@
 
 成功したという結果を捏造しない。実際の環境で実行した観測結果を追記する。
 
+## 2026-11-11 — 引き継ぎの入口と履歴の整理（#255）
+
+- 現行のWindows構築手順とGitHubの作業状況に案内を揃え、対象資料の個人PCのパスを一般表記にした。初期資料は既存リンクと証拠を保つため同じ場所に記録として残す。
+- `python scripts/check-public-docs.py`、`node scripts/sim/verify-ui-evidence.mjs`、`git diff --check` が合格。BUILD_LOGの分割は並行して追記中のPRが落ち着いた後に検討する。
+
 ## 2026-10-24 — 初期構築パッケージの作成
 - パッケージ作成時に確認した `jphacks/kz_2613` のmainには、`README.md` と `LICENSE` だけが存在した。
 - 根拠はユーザーとの会話、共有要件v0.2、要件書から参照するチーム議事録。
@@ -712,7 +717,7 @@
 
 ## 2026-10-25 — Documentsの作業場所への集約と未反映資料の整理
 
-- ユーザーの依頼により、通常の作業場所を `C:\Users\kumes\Documents\kz_2613` に統一し、開発手順へ記載した。mainをリモート最新へ早送りし、先のREADMEサムネイル変更も取り込んだ。
+- ユーザーの依頼により、通常の作業場所を `<リポジトリ>` に統一し、開発手順へ記載した。mainをリモート最新へ早送りし、先のREADMEサムネイル変更も取り込んだ。
 - 未コミットの実機記録と未追跡の実装計画は、mainに同じ内容があることを照合して重複を解消した。未追跡のPC画面監査は、当時の計画である旨と現行資料への参照を追加して保存した。
 - 旧画面ギャラリーとZIPは、作業環境固有の参照を含む旧資料のため公開せず、Git対象外の `data/local/cleanup-2026-10-25/` へ移動した。
 - `.venv`配下の旧作業ツリー7件を整理した。未反映ファイル618件（335件・283件）はコピー後のバイト一致を確認し、差分・元コミット・ブランチ・ファイル一覧とともに同じローカル保管先に退避した。古い版の製品コードを現行mainへ上書きせず、既存ブランチとコミット履歴は保持した。旧プレビューサーバーと専用起動シェルは終了した。
@@ -959,12 +964,12 @@
 - `protocol-sim.mjs` に5件追加（全55件）。連打、古い開始・全解放要求、視点の欠番・重複・逆順、ホスト切断時の権限・全解放・nextIseq再接続を補強した。製品の処理・定数・通信契約は変更していない。
 - `DEVELOPMENT_WORKFLOW.md` の既存手順へ、Codex・Claude Code共通のIssue着手コメント規則を最小限追記した。監査・後続境界・未確認事項は [判断記録](../decisions/2026-11-05-host-regression-baseline.md) に残した。
 - 検証済み：`node --check scripts/sim/protocol-sim.mjs`、`python scripts/verify_overlay.py`（39項目）、`python scripts/check-public-docs.py --all`、`node scripts/sim/app-view-test.mjs`（25/25）、`phone-view-test.mjs`（8観点）、`ui-input-test.mjs`（12/12）、`controller-diagnostics-test.mjs`、`profile-extract-test.mjs`、`profile-catalog-test.mjs`（502定義）、`check-static-pages.mjs`、`verify-ui-evidence.mjs`（104画面）、`git diff --check` が成功。最後の各 `.mjs` はすべて `node scripts/sim/` から実行した。
-- RustはSETUP_WINDOWS記載の既存ツールとキャッシュ `C:\Users\kumes\AppData\Local\ReCooplay\cargo-target` を用い、`RECOOPLAY_DRY_RUN=1` で再構築中。Rust単体・更新済みexeの通信/終了試験・CIの結果は完了後に追記する。この段階では合格扱いにしない。
+- RustはSETUP_WINDOWS記載の既存ツールとキャッシュ `%LOCALAPPDATA%\ReCooplay\cargo-target` を用い、`RECOOPLAY_DRY_RUN=1` で再構築中。Rust単体・更新済みexeの通信/終了試験・CIの結果は完了後に追記する。この段階では合格扱いにしない。
 - 実装担当と別エージェントが差分をレビューし、現時点の修正必須指摘なし。PR作成後の最終headも確認する。SendInput失敗注入、実Peerによる旧rtc_gen拒否、スマホ実機・Windows実入力・Minecraft・Alt+Tab・実ホットキーは未確認。既存実演・過去観測を今回の受入へ読み替えない。
 - Rust検証完了：`RECOOPLAY_DRY_RUN=1`、既存PATH/`LIBCLANG_PATH`/`CARGO_TARGET_DIR`をSETUP_WINDOWSどおり設定して `cargo test --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` が成功（ホスト55件、手動表出力1件は既存の除外、プローブ4件）。ネイティブ依存の再構築を含み14分37秒。続く `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` も成功（30.91秒）。既知のOpenSSL `ossl_static.pdb` 不足のLNK4099警告のみ残る。
-- 更新済み `C:\Users\kumes\AppData\Local\ReCooplay\cargo-target\release\recooplay-host.exe` を `--bin` で指定した `node scripts/sim/protocol-sim.mjs` が55/55成功。`node scripts/sim/shutdown-sim.mjs --bin <同exe>` はquit/EOFの両方でup記録後の正常終了が成功。`node scripts/sim/static-assets-sim.mjs --bin <同exe>` は34ファイル成功。いずれもdry-runでOS入力は送らない。
+- 更新済み `%LOCALAPPDATA%\ReCooplay\cargo-target\release\recooplay-host.exe` を `--bin` で指定した `node scripts/sim/protocol-sim.mjs` が55/55成功。`node scripts/sim/shutdown-sim.mjs --bin <同exe>` はquit/EOFの両方でup記録後の正常終了が成功。`node scripts/sim/static-assets-sim.mjs --bin <同exe>` は34ファイル成功。いずれもdry-runでOS入力は送らない。
 - 機械照合でも `hub.rs` の製品処理はorigin/mainと一致し、追加はcfg(test)の12件のみ。公開資料検査は78資料・528参照、全13図で成功。#170の呼出し/失敗時状態更新と#174の測定点/配送保証/負荷条件も、先行実装を行わず監査判断へ整理した。
-- `node scripts/sim/input-probe-sim.mjs --bin C:\Users\kumes\AppData\Local\ReCooplay\cargo-target\release\recooplay-input-probe.exe` は12/12成功（必ず `--mock`、OS入力なし）。これはプローブの既存障害試験であり、HubのSendInput失敗注入を検証したものではない。
+- `node scripts/sim/input-probe-sim.mjs --bin %LOCALAPPDATA%\ReCooplay\cargo-target\release\recooplay-input-probe.exe` は12/12成功（必ず `--mock`、OS入力なし）。これはプローブの既存障害試験であり、HubのSendInput失敗注入を検証したものではない。
 - 初回CI head `90cefdf`：構造（run 41974036599）とPCアプリのビルドは成功。ホストのビルド・単体も成功したが、通信は54/55。追加ホスト切断試験が、直前のRESUMEをP1だけ受信した時点でP3のphase/epoch同期前に入力していた。CIログの `inject MOUSE_R down` 待機失敗を確認し、各クライアントが同じcoop/epoch/自動復帰OFFを受信してから開始するよう試験準備を修正した。製品コード・合格条件は変えていない。別担当レビューでも原因と修正の妥当性を確認した。初回CIは全成功として扱わない。
 - 受信同期修正後、同じ再ビルド済みexeの `node scripts/sim/protocol-sim.mjs --bin <上記exe>` が再度55/55成功。最終差分の `node --check`・公開資料検査・`git diff --check` も成功。修正後headのCI結果はPRへ記載する。
 
