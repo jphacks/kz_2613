@@ -69,6 +69,8 @@ jobs:
         run: node scripts/sim/phone-view-test.mjs
       - name: スマホのカラースキンの保存と復元
         run: node scripts/sim/phone-skin-test.mjs
+      - name: スマホのレイアウトモデル（標準生成・検証・合成・担当表示・縦横変換・保存）
+        run: node scripts/sim/phone-layout-test.mjs
       - name: 診断開始時のサーバー停止と非注入の通信テスト
         run: node scripts/sim/controller-diagnostics-test.mjs
       - name: スマホ入力ライフサイクルの回帰
