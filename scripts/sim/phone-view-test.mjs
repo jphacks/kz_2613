@@ -114,6 +114,7 @@ update('P1',{phase:'preparing',inputTarget:false,remoteRoute:'none',readyReasons
 assert.equal(view().remote.route,'リモコンは今は届きません（入力を再開するとReadyできます）');
 update('P1',{phase:'coop',participants:['P1','P2','P3'],assigned,inputTarget:true,titleName:'別のゲーム',profile:other});
 assert.match(view().warning,/前面に戻すまで/,'協力プレイ中のホストには操作画面の上部に出す');
+assert.doesNotMatch(view().warning,/確かめながら/,'協力プレイ中は未検証の注意で操作画面の上部を占めない (#308)');
 update('P2',{phase:'preparing',inputTarget:true,titleName:'別のゲーム',profile:other});
 assert.match(view().warning,/ホストが戻すまでお待ちください/);assert.doesNotMatch(view().warning,/確かめながら/);assert.equal(h.document.body.dataset.host,'false');
 update('P2',{phase:'preparing',inputTarget:null,profile:other});

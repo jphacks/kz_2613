@@ -109,7 +109,7 @@ export function commSettingsView(game: PhoneGame | null, port: number | null) {
   const lines = [`自動で再開できる時間：切断から${seconds}秒以内`, 'ホストの一時停止・緊急停止の後は自動で再開しません', '初期値はOFFです。切り替えた設定は保存され、次回の起動でも保持されます'];
   if (port) lines.push(`ポート：${port}（変更は config.json で行い、アプリを起動し直してください）`);
   if (game?.phase === 'coop') lines.unshift('協力プレイ中は変更できません。一時停止すると変更できます');
-  return { checked: !!game?.autoResume, locked, text: lines.join('。') };
+  return { checked: !!game?.autoResume, locked, lines, text: lines.join('。') };
 }
 
 /**

@@ -88,7 +88,7 @@ function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;co
 
   <details id="commDetails"><summary>通信の設定</summary>
     <label className="comm-setting"><input type="checkbox" id="autoResumeSetting" checked={model.comm.checked} disabled={model.comm.locked} onChange={event => settingsActions.setAutoResume(event.currentTarget.checked)} /> 切断から戻ったら自動で再開する</label>
-    <p id="commInfo" role="status">{model.comm.text}</p>
+    <div id="commInfo" role="status">{model.comm.lines.map(line => <p key={line}>{line}。</p>)}</div>
   </details>
   <details id="ruleDetails"><summary>遊び方</summary>
     <label className="comm-setting">時間で担当を交代する <select id="rotationSetting" value={String(game?.rotationSeconds ?? 0)} disabled={model.locked} onChange={event => settingsActions.setRotation(Number(event.currentTarget.value))}><option value="0">しない</option><option value="60">60秒ごと</option></select></label>
@@ -107,9 +107,9 @@ function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;co
       <li>マウス：左ボタンを押したまま右クリックが届かない場合は、Orchisなどのマウスジェスチャーやボタンの割り当てを行う常駐アプリを終了するか、該当機能を無効にしてください。</li>
       <li>ゲーム：一覧に出ても動作を保証しません。「未検証」のゲームは、操作が届くか確かめながら遊んでください。</li>
       <li>未確認：開発環境のないPCでの起動は検証中です。インターネット経由の参加には対応していません。</li>
+      <li>Minecraft：NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.<br />Re:CooplayはMinecraftの公式製品ではなく、Mojang・Microsoftの承認・提携はありません。</li>
     </ul>
   </details>
-  <details><summary>Minecraftについて</summary><p className="legal">NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.<br />Re:CooplayはMinecraftの公式製品ではなく、Mojang・Microsoftの承認・提携はありません。</p></details>
   <p id="buildInfo" className="legal">{connection.build}</p>
   <button id="closeSettings">閉じる</button>
 </dialog>;

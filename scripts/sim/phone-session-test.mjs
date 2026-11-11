@@ -75,6 +75,9 @@ if (process.argv.includes('--repro-stale-open')) {
     for (const [code, text] of [[4000, '別タブで接続中'], [4001, 'リセットされました'], [4005, '版が不一致'], [4006, '参加できません']]) {
       const f = fixture(); assert.equal(f.session.disconnected(code), null); assert(f.session.stopped); assert.deepEqual(f.session.status(), [text, 'ng']);
     }
+    // 満員で止めた後の切断で「切断 — 再接続待ち」に戻さず、再接続もしない (#308)
+    const full = fixture(); full.session.connecting(); full.session.stop('full');
+    assert.equal(full.session.disconnected(1000), null); assert.deepEqual(full.session.status(), ['満員で参加できません', 'ng']);
   });
   await test('無応答/所有接続: 3秒境界・受信時刻更新・detachと旧Socket拒否を独立検証', () => {
     const f = fixture(), old = { readyState: 1 }, current = { readyState: 1 };

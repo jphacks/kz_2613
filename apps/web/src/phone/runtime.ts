@@ -100,7 +100,8 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
         renderStats();
       } else if (msg.type === 'full') {
         releaseAll();closeRtc();
-        session.stop();
+        session.stop('full');
+        setStatus(...session.status());
         phoneView.blocked(fullText(msg.retryMs));
       } else if (msg.type === 'error' && msg.code === 'protocol_version') {
         showVersionMismatch();
