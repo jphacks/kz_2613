@@ -1417,9 +1417,15 @@ impl Hub {
         let now = Instant::now();
         let keep: BTreeSet<usize> = kept.iter().filter_map(|b| self.resolve_control(idx, b)).collect();
         for o in 0..OUTPUTS.len() {
-            // 押下を残す出力も、解放前の連打の保留辺は捨てる
-            if keep.contains(&o) { self.outputs[o].drop_slot_edges(name); self.pump(o); continue; }
-            if self.outputs[o].release(Some(name), now) { self.apply_output(o, false, name); }
+            let keep_own_press = keep.contains(&o);
+            let output = &mut self.outputs[o];
+            if !keep_own_press && output.release(Some(name), now) {
+                self.apply_output(o, false, name);
+            } else if keep_own_press || output.queue.iter().any(|&(_, slot)| slot == name) {
+                // 他の枠が同じ出力を保持しているときも、本人の解放前の連打は再生しない。
+                output.drop_slot_edges(name);
+                self.pump(o);
+            }
         }
         if self.look.owner() == name {
             match newer { Some((nx, ny)) => self.look.keep_at_most(nx, ny), None => self.reset_look() }

@@ -96,3 +96,38 @@ fn review_resume_legacy_mark_cannot_restore_old_look() {
     h.accept_look(1,&json!({"epoch":epoch,"lseq":2,"cx":100,"cy":0}));
     assert_eq!(h.look.px,0.0,"視点境界のない旧クライアントも安全側に停止する");
 }
+
+#[test]
+fn own_release_discards_old_tap_even_when_another_slot_holds_the_same_key() {
+    let (mut h, mut rx) = fixture();
+    let overrides = crate::key_overrides::GameOverrides::from([
+        ("forward".into(), Some("KEY_W".into())),
+        ("attack".into(), Some("KEY_W".into())),
+    ]);
+    h.keybinds = Keybinds::build_with(h.profile.as_ref().unwrap(), None, Some(&overrides));
+    h.slots[2] = Some(Slot::new("third".into(), "third-token".into()));
+    let epoch = h.game.epoch;
+    let key = index("KEY_W");
+    review_resume_key(&mut h, 1, "down", epoch);
+    h.outputs[key].changed_at = Some(Instant::now() + Duration::from_secs(60));
+    for (seq, state) in [(2, "up"), (3, "down"), (4, "up")] {
+        review_resume_key(&mut h, seq, state, epoch);
+    }
+    h.accept_input(2, json!({
+        "epoch": epoch, "iseq": 1, "button": "act:attack", "state": "down", "t": 1_000_000.0,
+    }), Via::Rtc);
+    assert_eq!(h.outputs[key].holders, BTreeSet::from(["P3"]));
+    assert!(h.outputs[key].queue.contains(&(true, "P1")));
+    injections(&mut rx);
+    h.handle_player_message(0, json!({
+        "type": "release_inputs", "epoch": epoch, "iseq": 4, "lseq": 0, "cx": 0, "cy": 0,
+    }), Via::Ws);
+    for _ in 0..8 { finish_wait(&mut h, key); }
+    let events = injections(&mut rx);
+    assert!(events.iter().all(|e| e["out"] != "KEY_W"),
+        "P1の旧連打を捨て、P3が保持する同じキーを途切れさせない: {events:?}");
+    assert!(h.outputs[key].physical);
+    assert_eq!(h.outputs[key].holders, BTreeSet::from(["P3"]));
+    assert_eq!(h.game.epoch, epoch);
+    h.release_outputs(None);
+}
