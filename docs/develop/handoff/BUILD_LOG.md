@@ -2057,8 +2057,10 @@
 - どちらも試験・計測用のツールだけの変更で、製品の動作は変えない。指摘なし。
 - #360の `wifi-comparison-plan-test.mjs` がCIで実行されていなかったので、`rust.yml` の「Android試験の経路判定…」の手順に追加した。
 - 手元で `android-dry-run-test.mjs` 17/17、`wifi-route-test.mjs`、`fault-timeline-test.mjs`、`rtc-fault-observer-test.mjs`、`wifi-trial-acks-test.mjs`、`wifi-comparison-plan-test.mjs` が合格（`android-dry-run-test.mjs` は `apps/web/dist` のビルド後）。
+
 ## 2026-11-11 — WebとRustの通信版照合（#272）
 
 - Webのhello・welcomeで版定数を共有し、既存の通信シミュレーションをWebの版で実行する。版番号と現行の受信互換条件は維持した。
 - `npm run typecheck`、Node.js 22の `--experimental-strip-types` で `protocol-boundary-test.mjs` 8件、`phone-session-test.mjs` 7件、`phone-lifecycle-test.mjs` 31件が合格。
 - ビルド済みホストとの照合を含む `protocol-sim.mjs` 全体はNode.js 24のCIで確認する。実機Wi-Fiの受入と通信・設定スキーマの共通化は未実施。
+- 統合（Claude Code）：#362をレビューし指摘なし。手元で `tsc --noEmit`、`protocol-boundary-test.mjs` 8/8、`phone-session-test.mjs` 7/7、`phone-lifecycle-test.mjs` 31/31、`product-web-test.mjs`、`protocol-sim.mjs` の構文検査が合格。ホストとの照合はCIで確認する。
