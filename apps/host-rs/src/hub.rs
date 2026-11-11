@@ -1419,9 +1419,13 @@ impl Hub {
         for o in 0..OUTPUTS.len() {
             let keep_own_press = keep.contains(&o);
             let output = &mut self.outputs[o];
+            let has_own_edges = output.queue.iter().any(|&(_, slot)| slot == name);
+            if !keep_own_press && !has_own_edges && !output.holders.contains(name) {
+                continue; // 本人が触っていない出力に残る、他の枠の短いタップを消さない。
+            }
             if !keep_own_press && output.release(Some(name), now) {
                 self.apply_output(o, false, name);
-            } else if keep_own_press || output.queue.iter().any(|&(_, slot)| slot == name) {
+            } else if keep_own_press || has_own_edges {
                 // 他の枠が同じ出力を保持しているときも、本人の解放前の連打は再生しない。
                 output.drop_slot_edges(name);
                 self.pump(o);

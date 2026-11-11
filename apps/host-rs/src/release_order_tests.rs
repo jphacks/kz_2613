@@ -131,3 +131,29 @@ fn own_release_discards_old_tap_even_when_another_slot_holds_the_same_key() {
     assert_eq!(h.game.epoch, epoch);
     h.release_outputs(None);
 }
+
+#[test]
+fn own_release_preserves_another_slots_pending_tap_on_a_separate_output() {
+    let (mut h, mut rx) = fixture();
+    let epoch = h.game.epoch;
+    let mouse = index("MOUSE_L");
+    h.set_output(mouse, "P3", true);
+    h.outputs[mouse].changed_at = Some(Instant::now() + Duration::from_secs(60));
+    h.set_output(mouse, "P3", false);
+    assert!(h.outputs[mouse].holders.is_empty());
+    assert!(h.outputs[mouse].timer_pending);
+    injections(&mut rx);
+
+    h.handle_player_message(0, json!({
+        "type": "release_inputs", "epoch": epoch, "iseq": 0, "lseq": 0, "cx": 0, "cy": 0,
+    }), Via::Ws);
+    assert!(h.outputs[mouse].physical, "別の枠の最低押下時間を短縮しない");
+    assert_eq!(h.outputs[mouse].queue, VecDeque::from([(false, "P3")]));
+    assert!(injections(&mut rx).is_empty());
+    finish_wait(&mut h, mouse);
+    let events = injections(&mut rx);
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0]["slot"], "P3");
+    assert_eq!(events[0]["state"], "up");
+    assert!(!h.outputs[mouse].physical);
+}
