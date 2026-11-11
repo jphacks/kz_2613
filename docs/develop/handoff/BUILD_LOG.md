@@ -1792,6 +1792,7 @@
 - Xboxアプリの「Minecraft: Java Edition」（`Microsoft.MinecraftJavaEdition`）は、固定の「Minecraft Java Edition（公式ランチャー）」と同じゲームなので一覧から外した（`Microsoft.4297127D64EC6` のランチャーは以前から除外）。Minecraftのバージョンは一覧に出さず、従来どおり公式ランチャーで選ぶ。統合版の「Minecraft for Windows」（`Microsoft.MinecraftUWP`）は別のゲームなので残す。
 - 一覧の見出しを、並んだ項目の数と合わせた（例「全 7 件（Minecraft、Steam・Epic など 5 件、手動登録 1 件）」）。左の説明は語の途中で折り返さないよう改行位置を決めた。
 - このPCで修正後のホストを起動し、一覧が固定のMinecraft＋6件（Steam 4件、Xboxの統合版、手動登録1件）になることを確認した。`cargo test --release --locked launchers::`（RECOOPLAY_DRY_RUN=1）、`app-view-test` 30/30、`product-web-test`、`check-static-pages`、`npx tsc`・`npm run build` が成功。PCアプリの実画面での目視は未実施。
+- 2026-11-11 レビュー指摘（P2）への対応：自動検出0件の早期returnで総数が出なかった。0件でも「全 N 件（Minecraft、手動登録 M 件。Steam・Epic などのランチャーでは見つかりませんでした）」と並んだ項目の数を出す。固定だけ・固定＋手動・固定＋自動・全部の4条件を `app-view-test` に追加し、修正前は「固定だけ」で失敗（29/30）、修正後30/30。Codexの `review-game-count.mjs` も合格。mainを取り込み（競合なし）、`launchers` 9件・`npx tsc`・`npm run build` 成功。
 ## 2026-11-11 — #314 前面にない間は役割交代の時計を止める（レビュー指摘P2）
 
 - 協力プレイのまま対象ゲームが前面から外れると（`check_target()` は入力を解放してepochを進めるが、phaseはCoopのまま）、`rotate_roles_if_due()` がphaseと期限だけを見ていたため、操作できない間も60秒の時計が進んで担当が交代していた。
