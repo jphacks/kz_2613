@@ -3,7 +3,7 @@ export interface ClientStats {rtc?:ClientStats|null;avg?:number;p95?:number;max?
 export interface SlotState {
   role?:string;ip?:string;lastSeen?:number;events?:number;lost?:number;outOfOrder?:number;lookLost?:number;via?:{rtc?:number;ws?:number};
   name:Slot;connected?:boolean;assigned?:boolean;ua?:string;pressed?:string[];
-  clientStats?:ClientStats|null;net?:{stalls?:number};reconnects?:number;rtcState?:string;
+  clientStats?:ClientStats|null;net?:{stalls?:number;maxStallMs?:number;lastWarning?:{at:number;stalls:number;maxStallMs:number}|null};reconnects?:number;rtcState?:string;
 }
 export interface InjectionState {
   available?:boolean;error?:string|null;target?:{ok?:boolean;expect?:string;process?:string|null}|null;

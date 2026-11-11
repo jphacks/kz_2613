@@ -33,6 +33,7 @@ use crate::rtc::{Peer, RtcSignal};
 
 // 参加枠は P1〜P4 (#57)。2〜4人で遊び、人数は Ready の時点で接続している人数で決める (#105)
 const MAX_SLOTS: usize = 4;
+const NET_STALL_WARNING_COUNT: u32 = 3; // PCの通信警告と同じ閾値 (#131・#304)
 // 枠の既定の表示 (Minecraft を 3〜4人で遊ぶときの担当)。実際の担当は分担 (game.assigned) で決まる
 // 枠の呼び名。操作の分担は操作定義から決める (#141。Minecraft の固定の分担はやめた)
 const SLOT_ROLES: [&str; MAX_SLOTS] = ["ホスト", "参加者", "参加者", "参加者"];
@@ -206,6 +207,7 @@ struct Slot {
     // 受信の途切れの観測 (#131)。net_recent は直近 10 秒の (途切れの回数, 最大の空白 ms)
     arrivals: crate::netwatch::Arrivals,
     net_recent: (u32, u64),
+    net_last_warning: Option<(u64, u32, u64)>, // 集計時刻・回数・最大空白
     rtc: Option<Peer>,
     rtc_gen: u64,
     rtc_state: &'static str,
@@ -245,6 +247,7 @@ impl Slot {
             client_stats: Value::Null,
             arrivals: crate::netwatch::Arrivals::default(),
             net_recent: (0, 0),
+            net_last_warning: None,
             rtc: None,
             rtc_gen: 0,
             rtc_state: "none",
@@ -520,11 +523,15 @@ impl Hub {
 
     /// 10 秒ごとに、スマホごとの受信の途切れと往復時間をログに残す (#131)。IP・端末の識別子は残さない
     fn report_net(&mut self) {
+        let sampled_at = now_ms();
         let mut rows = Vec::new();
         for i in 0..MAX_SLOTS {
             let Some(s) = self.slots[i].as_mut().filter(|s| s.connected) else { continue };
             let (stalls, max_stall) = s.arrivals.take();
             s.net_recent = (stalls, max_stall);
+            if stalls >= NET_STALL_WARNING_COUNT {
+                s.net_last_warning = Some((sampled_at, stalls, max_stall));
+            }
             let st = &s.client_stats;
             rows.push(json!({ "slot": SLOT_NAMES[i], "stalls": stalls, "maxStallMs": max_stall,
                 "rttAvg": st.get("avg"), "rttMax": st.get("max"), "path": st.get("path") }));
@@ -827,7 +834,12 @@ impl Hub {
                         "via": { "ws": s.via_ws, "rtc": s.via_rtc },
                         "lookLost": s.look_lost,
                         // 直近 10 秒の受信の途切れ (#131)
-                        "net": { "stalls": s.net_recent.0, "maxStallMs": s.net_recent.1 },
+                        "net": {
+                            "stalls": s.net_recent.0, "maxStallMs": s.net_recent.1,
+                            "lastWarning": s.net_last_warning.map(|(at, stalls, max_stall_ms)| {
+                                json!({ "at": at, "stalls": stalls, "maxStallMs": max_stall_ms })
+                            }),
+                        },
                     }),
                 })
                 .collect(),
@@ -2565,6 +2577,9 @@ impl Hub {
         slot.ip = Some(ip.clone());
         slot.ua = Some(ua.clone());
         slot.connected_at = Some(now);
+        slot.arrivals = Default::default();
+        slot.net_recent = (0, 0);
+        slot.net_last_warning = None;
         slot.last_seen = now;
         slot.last_seq = 0;
         slot.next_iseq = num(msg, "nextIseq").map(|n| n as i64).filter(|&n| n >= 1).unwrap_or(1);
@@ -3680,6 +3695,25 @@ mod tests {
             h.slots[i] = Some(s);
         }
         h
+    }
+
+    #[test]
+    fn network_diagnosis_retains_the_last_warning_after_a_quiet_window() {
+        let mut h = lobby_with(&[(0, true)], 0);
+        let arrivals = &mut h.slots[0].as_mut().unwrap().arrivals;
+        arrivals.stalls = 3;
+        arrivals.max_stall = 400;
+        h.report_net();
+        let first = h.slots[0].as_ref().unwrap().net_last_warning.unwrap();
+        assert_eq!((first.1, first.2), (3, 400));
+
+        h.report_net();
+        let slot = h.slots[0].as_ref().unwrap();
+        assert_eq!(slot.net_recent, (0, 0));
+        assert_eq!(slot.net_last_warning, Some(first));
+
+        h.slots[0] = Some(Slot::new("new-client".into(), "new-token".into()));
+        assert!(h.slots[0].as_ref().unwrap().net_last_warning.is_none());
     }
 
     #[test]

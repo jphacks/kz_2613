@@ -279,7 +279,7 @@ Minecraftは検出済みの公式ランチャーを開き、利用者がラン�
 | `inject.target` | 対象照合の`ok / expect`、前面の`process / title` |
 | `games / gamesScanning` | 検出一覧と再検出状態 |
 | `network.bluetoothAudio / lowLatency` | Bluetooth音声とWi-Fi低遅延モードの状態 |
-| 各枠の`net` | 直近10秒の受信途切れ`stalls`と最大空白`maxStallMs` |
+| 各枠の`net` | 直近10秒の受信途切れ`stalls`と最大空白`maxStallMs`。現在の接続で最後に閾値（3回）に達した区間は`lastWarning`（`at`はUnix時刻のミリ秒、`stalls`、`maxStallMs`）に記録。該当なしはnull、接続し直すと消去 |
 | `minecraft` | ランチャーの`detected`、画像の有無`image`、起動先があるか`launchable` |
 
 stateは変化時と1秒ごとに通知します。`games`の項目は`id / name / source / verified / launchable / image`を持ち、sourceは`steam / epic / registered`と、ほかのランチャーの`steam-shortcut / gog / ubisoft / ea / battlenet / xbox`です（#265）。`registered`はPCで手動登録したゲーム、`steam-shortcut`はSteamに追加した「Steam以外のゲーム」を表します。検出項目のverifiedはfalseで、インストール先や画像のファイルパスは送りません。Minecraftは独立した情報として扱い、gamesには含めません。PC画面は`minecraft.launchable`から公式ランチャーの起動可否を表示します。一覧はPC画面にだけ送り、スマホへは送りません。

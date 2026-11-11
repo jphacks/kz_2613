@@ -784,6 +784,8 @@ body[data-two-qr] .qr-arrow { display: none; }
 
 .safety-warning {
   position: absolute;
+  max-height: 176px;
+  overflow: auto;
   right: 24px;
   bottom: 70px;
   width: 430px;
@@ -796,6 +798,9 @@ body[data-two-qr] .qr-arrow { display: none; }
   font-size: 22px;
   line-height: 1.5;
 }
+
+.safety-warning p { margin: 0; }
+.safety-warning p + p { margin-top: 8px; border-top: 1px solid currentColor; padding-top: 8px; }
 
 dialog {
   max-width: min(650px,92vw);
