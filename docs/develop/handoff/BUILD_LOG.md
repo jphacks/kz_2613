@@ -2051,3 +2051,9 @@
 - `node scripts/device/wifi-comparison-plan-test.mjs` で順序・回数・比較軸・引数を確認した。
 - `node scripts/device/wifi-route-test.mjs` と `node scripts/device/wifi-trial-acks-test.mjs` が合格した。
 - 実Wi-Fi・Android測定、トレースと定期ICE観測の個別負荷、集計・匿名化は未実施。
+
+## 2026-11-11 RTC単独切断の観測（#359）と同一Wi-Fi比較の試行計画（#360）の統合（Claude Code）
+
+- どちらも試験・計測用のツールだけの変更で、製品の動作は変えない。指摘なし。
+- #360の `wifi-comparison-plan-test.mjs` がCIで実行されていなかったので、`rust.yml` の「Android試験の経路判定…」の手順に追加した。
+- 手元で `android-dry-run-test.mjs` 17/17、`wifi-route-test.mjs`、`fault-timeline-test.mjs`、`rtc-fault-observer-test.mjs`、`wifi-trial-acks-test.mjs`、`wifi-comparison-plan-test.mjs` が合格（`android-dry-run-test.mjs` は `apps/web/dist` のビルド後）。
