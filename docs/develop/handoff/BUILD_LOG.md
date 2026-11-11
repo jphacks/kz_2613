@@ -2071,3 +2071,8 @@
 - `node scripts/device/` 配下の `android-dry-run-test.mjs` 20/20、`wifi-route-test.mjs`、`wifi-comparison-plan-test.mjs`、`fault-timeline-test.mjs`、`rtc-fault-observer-test.mjs`、`wifi-trial-acks-test.mjs` が合格。CLI試験の資産は照合済みCI配布zipから取得。
 - 実Wi-Fi・Androidでの負荷比較、ホスト入力トレースの負荷比較、新データセットの集計・匿名化は未実施。
 - 統合（Claude Code）：#364をレビューし指摘なし。`rtcObserverSource` を関数にした変更は呼び出し元2か所とも対応済み。観測なしでは `__wifiPathHistory` が空のまま進む。手元で上記6本が合格。
+## 2026-11-11 — 個人解放の直後に切断した場合の回帰試験（#39）
+
+- 通信試験で、P3の個人解放時はP1の保持が続き、直後のP3切断でP1も解放されてepochが進むことを検証する。同じP3枠に戻っても自動復帰OFFでは停止を維持し、旧保持が再出力されないことを確認する。
+- `node --check scripts/sim/protocol-sim.mjs` と `git diff --check` は合格。ホストを起動する通信シミュレーション全体はGitHub Actionsで確認する。
+- 実Wi-Fi、Android・iPhoneのblur、実Windows入力の受入は未実施。

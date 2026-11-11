@@ -1565,16 +1565,37 @@ async function main() {
       await phaseIs(p1, 'coop', from);
     });
 
-    await check('復帰: 自動復帰 OFF なら全員戻っても paused のまま', async () => {
+    await check('復帰: 本人の解放直後に切断したら全員を解放し、自動復帰OFFでは再接続後も停止する (#39)', async () => {
+      let from = mon.mark();
       mon.send({ type: 'auto_resume', on: false });
-      await mon.waitFor((m) => m.type === 'game' && m.game.autoResume === false, { what: 'autoResume off' });
-      let from = p1.mark();
+      const current = await mon.waitFor(m => m.type === 'game' && m.game.phase === 'coop' && !m.game.autoResume, { from });
+      const epoch = current.game.epoch;
+      for (const player of [p1, p3]) {
+        await player.waitFor(m => m.type === 'game' && m.game.epoch === epoch && m.game.phase === 'coop' && !m.game.autoResume);
+      }
+      from = mon.mark();
+      p1.input('FWD', 'down');
+      p3.input('USE', 'down');
+      await injected(mon, 'KEY_W', 'down', from);
+      await injected(mon, 'MOUSE_R', 'down', from);
+      from = mon.mark();
+      p3.send({ type: 'release_inputs', epoch, iseq: p3.iseq, lseq: 0, cx: 0, cy: 0 });
+      await injected(mon, 'MOUSE_R', 'up', from);
+      assert(!mon.msgs.slice(from).some(m => m.type === 'inject' && m.entry.out === 'KEY_W' && m.entry.state === 'up'),
+        '本人の解放で他の参加者の保持まで解除した');
+      const beforeDisconnect = p1.mark();
+      from = mon.mark();
       p3.close();
-      await phaseIs(p1, 'paused', from);
+      const paused = await phaseIs(p1, 'paused', beforeDisconnect);
+      assert(paused.game.epoch > epoch, '切断後に旧epochを失効させなかった');
+      await injected(mon, 'KEY_W', 'up', from);
+      const outputFrom = mon.mark();
       from = p1.mark(); // 設定変更の通知 (coop のまま) を自動復帰と取り違えない
       p3 = await join('P3');
-      await welcome(p3);
-      await sleep(500);
+      const rejoined = await welcome(p3);
+      assert(rejoined.reconnected && rejoined.slot === 'P3', '同じ枠に復帰しなかった');
+      await p1.waitFor(m => m.type === 'game' && m.game.phase === 'paused' && m.game.connected.includes('P3'), { from });
+      await noPress(mon, outputFrom, 500);
       assert(!p1.msgs.slice(from).some((m) => m.type === 'game' && m.game.phase === 'coop'), 'OFF なのに自動復帰した');
     });
 
