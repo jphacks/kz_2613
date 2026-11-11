@@ -264,7 +264,8 @@ export function gamesCountText(list: GameEntry[], scanning: boolean) {
   if (scanning) return 'インストール済みのゲームを探しています…';
   const found = list.filter((g) => SOURCE_LABELS[g.source] && !['registered', 'manual', 'minecraft'].includes(g.source)).length;
   const registered = list.filter((g) => g.source === 'registered').length;
-  if (!found) return registered ? `手動登録 ${registered} 件（Steam・Epic などのランチャーでは見つかりませんでした）` : 'Steam・Epic などのランチャーでゲームは見つかりませんでした';
+  // ランチャーで1件も見つからなくても、総数は並んだ項目の数を出す (固定の Minecraft と手動登録)
+  if (!found) return `全 ${list.length} 件（Minecraft${registered ? `、手動登録 ${registered} 件` : ''}。Steam・Epic などのランチャーでは見つかりませんでした）`;
   return `全 ${list.length} 件（Minecraft、Steam・Epic など ${found} 件${registered ? `、手動登録 ${registered} 件` : ''}）`;
 }
 const LAUNCH_TITLES: Record<string,string> = { launching: '起動中…', started: '起動しました', failed: '起動できませんでした', timeout: '起動を確認できませんでした' };

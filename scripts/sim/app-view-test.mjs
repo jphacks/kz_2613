@@ -91,7 +91,12 @@ test('手動登録: 一覧に「手動登録」「未検証」と出し、件数
   assert.deepEqual(card.badges, ['手動登録', '未検証']);
   assert.deepEqual([isRegistered('manual:ab'), isRegistered('steam:1'), isRegistered(null)], [true, false, false]);
   assert.equal(gamesCountText(list, false), '全 3 件（Minecraft、Steam・Epic など 1 件、手動登録 1 件）', '並んだ項目の数と合わせる (#298)');
-  assert.equal(gamesCountText(list.slice(0, 1), false), 'Steam・Epic などのランチャーでゲームは見つかりませんでした');
+  // 自動検出が0件でも、総数は並んだ項目の数と合わせる (固定だけ・固定＋手動・固定＋自動・全部)
+  const steam = list[1], manual = list[2];
+  assert.equal(gamesCountText([list[0]], false), '全 1 件（Minecraft。Steam・Epic などのランチャーでは見つかりませんでした）', '固定だけ');
+  assert.equal(gamesCountText([list[0], manual], false), '全 2 件（Minecraft、手動登録 1 件。Steam・Epic などのランチャーでは見つかりませんでした）', '固定＋手動');
+  assert.equal(gamesCountText([list[0], steam], false), '全 2 件（Minecraft、Steam・Epic など 1 件）', '固定＋自動');
+  for (const l of [[list[0]], [list[0], manual], [list[0], steam], list]) assert.match(gamesCountText(l, false), new RegExp(`^全 ${l.length} 件`), '全部の条件でタイルの数');
   assert.match(gamesCountText(list, true), /探しています/);
 });
 
