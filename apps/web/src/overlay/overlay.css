@@ -14,4 +14,11 @@
   .keys span { padding: 2px 8px; border-radius: 8px; background: var(--slot); color: #000000; font-size: 15px; font-weight: 700; }
   #status { position: fixed; left: 50%; top: 24px; transform: translateX(-50%); padding: 6px 18px; border-radius: 14px; background: #000000B3; color: #FFFFFF; font-size: 24px; font-weight: 800; }
   #status:empty { display: none; }
-
+  /* PCアプリの透明・クリック透過ウィンドウ (#163)。ゲームの照準・HUDを塞がないよう、右上の300×440pxに縦に並べる */
+  body[data-layout=desktop] #overlay { left: 0; right: 0; top: 0; bottom: auto; flex-direction: column; gap: 8px; }
+  body[data-layout=desktop] .card { flex: none; padding: 6px 10px; border-radius: 10px; border-left-width: 8px; }
+  body[data-layout=desktop] .name { font-size: 17px; }
+  body[data-layout=desktop] .role { font-size: 14px; }
+  body[data-layout=desktop] .keys { min-height: 22px; margin-top: 4px; gap: 4px; }
+  body[data-layout=desktop] .keys span { font-size: 13px; padding: 1px 6px; }
+  body[data-layout=desktop] #status { top: auto; bottom: 0; left: 0; right: 0; transform: none; text-align: center; font-size: 18px; padding: 4px 10px; }

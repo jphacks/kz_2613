@@ -27,6 +27,21 @@ const STABLE_RUN: Duration = Duration::from_secs(60);
 /// 起動したホストのプロセス
 struct Host(Mutex<Option<Child>>);
 
+/// ホストの待受ポート。観客向けオーバーレイ (#163) の URL に使う。起動前は None
+#[derive(Default)]
+struct HostPort(Mutex<Option<u16>>);
+
+/// 観客向けオーバーレイ (#163) を表示しているか。起動のたびに OFF から始める (Q43)
+#[derive(Default)]
+struct OverlayOn(Mutex<bool>);
+
+/// PC の画面 (/app) からの切替要求。画面には Tauri の API を開放しないので、この URL への移動を横取りして受け取る
+const OVERLAY_PATH: &str = "/__desktop/overlay";
+const OVERLAY_LABEL: &str = "overlay";
+/// オーバーレイの大きさ (論理px)。担当カード4枚と状態表示が縦に収まる、画面の右上の小さな領域
+const OVERLAY_SIZE: (f64, f64) = (300.0, 440.0);
+const OVERLAY_MARGIN: f64 = 16.0;
+
 /// 起動失敗が画面の読込より先に届いても、案内を失わない。
 #[derive(Default)]
 struct StartupError(Mutex<Option<String>>);
@@ -198,17 +213,106 @@ fn show_error(app: &tauri::AppHandle, text: &str) {
     }
 }
 
+/// 切替要求の URL なら、求められた ON/OFF を返す。それ以外の移動は通常どおり通す
+fn overlay_request(url: &tauri::Url) -> Option<bool> {
+    let loopback = matches!(url.host_str(), Some("127.0.0.1") | Some("localhost"));
+    if !loopback || url.path() != OVERLAY_PATH { return None; }
+    url.query_pairs().find(|(k, _)| k == "on").map(|(_, v)| v == "1")
+}
+
+/// オーバーレイの位置 (論理px)。PC アプリのウィンドウがあるモニターの右上
+fn overlay_position(monitor_pos: (f64, f64), monitor_size: (f64, f64)) -> (f64, f64) {
+    (monitor_pos.0 + monitor_size.0 - OVERLAY_SIZE.0 - OVERLAY_MARGIN, monitor_pos.1 + OVERLAY_MARGIN)
+}
+
+/// PC の画面へ現在の状態を伝える。画面は window.recooplayDesktop があるときだけ切替を出す
+fn tell_overlay_state(app: &tauri::AppHandle, error: Option<&str>) {
+    let on = *app.state::<OverlayOn>().0.lock().unwrap();
+    let state = serde_json::json!({ "overlay": on, "overlayError": error });
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.eval(&format!("window.recooplayDesktop={state};window.dispatchEvent(new Event('recooplay-desktop'))"));
+    }
+}
+
+/// 透明・最前面・クリック透過・非アクティブのウィンドウで /overlay を表示する (#163、Q45)。
+/// フォーカスを取らず、マウス・キーボードを受けないので、ゲームの前面判定と入力の経路は変わらない
+fn open_overlay(app: &tauri::AppHandle, port: u16) -> Result<(), String> {
+    if app.get_webview_window(OVERLAY_LABEL).is_some() { return Ok(()); }
+    let monitor = app.get_webview_window("main").and_then(|w| w.current_monitor().ok().flatten())
+        .or_else(|| app.primary_monitor().ok().flatten())
+        .ok_or("モニターの情報を取得できません")?;
+    let scale = monitor.scale_factor();
+    let pos = monitor.position().to_logical::<f64>(scale);
+    let size = monitor.size().to_logical::<f64>(scale);
+    let (x, y) = overlay_position((pos.x, pos.y), (size.width, size.height));
+    let url: tauri::Url = format!("http://127.0.0.1:{port}/overlay?layout=desktop").parse().map_err(|_| "URL を作れません")?;
+    let window = WebviewWindowBuilder::new(app, OVERLAY_LABEL, WebviewUrl::External(url))
+        .title("Re:Cooplay 観客向け表示")
+        .inner_size(OVERLAY_SIZE.0, OVERLAY_SIZE.1)
+        .position(x, y)
+        .decorations(false)
+        .transparent(true)
+        .shadow(false)
+        .resizable(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .focused(false)
+        .focusable(false)
+        .visible(false)
+        .build()
+        .map_err(|e| format!("表示用のウィンドウを作れません: {e}"))?;
+    if let Err(e) = window.set_ignore_cursor_events(true) {
+        // クリックを透過できないなら、ゲームの操作を妨げないよう出さない
+        let _ = window.destroy();
+        return Err(format!("クリックを透過できないため表示しません: {e}"));
+    }
+    window.show().map_err(|e| format!("表示できません: {e}"))
+}
+
+fn close_overlay(app: &tauri::AppHandle) {
+    if let Some(w) = app.get_webview_window(OVERLAY_LABEL) { let _ = w.destroy(); }
+}
+
+/// 切替要求を処理する。Windows ではイベント処理の中でウィンドウを作るとデッドロックするため、別のスレッドで行う
+fn handle_overlay_request(app: tauri::AppHandle, on: bool) {
+    std::thread::spawn(move || {
+        let port = *app.state::<HostPort>().0.lock().unwrap();
+        let result = match (on, port) {
+            (false, _) => { close_overlay(&app); Ok(()) }
+            (true, Some(port)) => open_overlay(&app, port),
+            (true, None) => Err("PCホストの起動を待っています".to_string()),
+        };
+        *app.state::<OverlayOn>().0.lock().unwrap() = on && result.is_ok();
+        tell_overlay_state(&app, result.err().as_deref());
+    });
+}
+
 fn main() {
     let app = tauri::Builder::default()
         .manage(Host(Mutex::new(None)))
         .manage(StartupError::default())
+        .manage(HostPort::default())
+        .manage(OverlayOn::default())
+        // メイン画面を閉じたらアプリを終了する。利用者が閉じられないオーバーレイ (#163) が残ると
+        // 最後のウィンドウが閉じず、ホストの安全停止 (RunEvent::Exit) へ進まないため
+        .on_window_event(|window, event| {
+            if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
+                window.app_handle().exit(0);
+            }
+        })
         .setup(|app| {
+            let nav = app.handle().clone();
             WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
                 .title("Re:Cooplay")
                 .inner_size(1280.0, 820.0)
                 .min_inner_size(800.0, 560.0)
+                .on_navigation(move |url| match overlay_request(url) {
+                    Some(on) => { handle_overlay_request(nav.clone(), on); false }
+                    None => true,
+                })
                 .on_page_load(|window, payload| {
                     if payload.event() == tauri::webview::PageLoadEvent::Finished {
+                        if window.url().is_ok_and(|u| u.path() == "/app") { tell_overlay_state(window.app_handle(), None); }
                         let error = window.state::<StartupError>().0.lock().unwrap().clone();
                         if let Some(text) = error {
                             let _ = window.eval(&format!("window.showError({})", serde_json::Value::from(text)));
@@ -226,6 +330,7 @@ fn main() {
                     return show_error(&handle, &format!("PCホスト（{HOST_EXE}）が見つかりません。apps/host-rs で cargo build --release を実行してください。"));
                 };
                 let port = host_port(&root);
+                *handle.state::<HostPort>().0.lock().unwrap() = Some(port);
                 let host = handle.state::<Host>();
                 match spawn_host(&root, &exe, port) {
                     Ok(child) => *host.0.lock().unwrap() = Some(child),
@@ -275,6 +380,22 @@ mod tests {
         assert_eq!(next_restart_count(MAX_RESTARTS - 1, short), Some(MAX_RESTARTS));
         assert_eq!(next_restart_count(MAX_RESTARTS, short), None);
         assert_eq!(next_restart_count(MAX_RESTARTS, STABLE_RUN), Some(1));
+    }
+
+    #[test]
+    fn overlay_requests_are_only_the_loopback_switch_url() {
+        let url = |s: &str| s.parse::<tauri::Url>().unwrap();
+        assert_eq!(overlay_request(&url("http://127.0.0.1:8080/__desktop/overlay?on=1")), Some(true));
+        assert_eq!(overlay_request(&url("http://127.0.0.1:8080/__desktop/overlay?on=0")), Some(false));
+        assert_eq!(overlay_request(&url("http://127.0.0.1:8080/app")), None);
+        assert_eq!(overlay_request(&url("http://192.0.2.10:8080/__desktop/overlay?on=1")), None);
+        assert_eq!(overlay_request(&url("http://127.0.0.1:8080/__desktop/overlay")), None);
+    }
+
+    #[test]
+    fn overlay_sits_in_the_top_right_of_the_monitor() {
+        let (x, y) = overlay_position((1920.0, 0.0), (1280.0, 720.0));
+        assert_eq!((x, y), (1920.0 + 1280.0 - OVERLAY_SIZE.0 - OVERLAY_MARGIN, OVERLAY_MARGIN));
     }
 
     #[test]

@@ -16,7 +16,10 @@ export function Overlay(){
     <div className="keys">{p.pressed.map((key,i)=><span key={i}>{key}</span>)}</div>
   </article>)}</div></>;
 }
-if(new URLSearchParams(location.search).get('position')==='top')document.body.dataset.position='top';
+const query=new URLSearchParams(location.search);
+if(query.get('position')==='top')document.body.dataset.position='top';
+// PCアプリの透明ウィンドウ (#163) では、画面の右上に縦に並べる小さな表示にする
+if(query.get('layout')==='desktop')document.body.dataset.layout='desktop';
 const root=createRoot(byId('root'));root.render(<Overlay/>);
 const dispose=()=>root.unmount();
 window.addEventListener('pagehide',dispose,{once:true});
