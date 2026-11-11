@@ -3,7 +3,7 @@ import type { PlayerCardModel, RoleColumnModel } from '../shared/contracts';
 import { PlayerCard, RoleColumn } from './PlayerCards';
 import { pcState, pcModel, connectionState, connectionModel, settingsActions } from './model';
 import { GameTile, KeyEditor, NetworkDiagnostics, Lines } from './parts';
-import { SCREENS, SCREEN_TITLES, GAMES } from '../shared/model/presentation.ts';
+import { SCREENS, SCREEN_TITLES } from '../shared/model/presentation.ts';
 
 type PcState = ReturnType<typeof pcState.get>;
 type PcModel = ReturnType<typeof pcModel>;
@@ -77,9 +77,12 @@ function Workspace({model}:{model:PcModel}) {
 
 function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;connection:ConnectionModel}) {
   const game = state.game;
+  const primaryNavigation = ['join','game','roles'].includes(model.view);
   return <dialog id="settings" aria-labelledby="settingsTitle">
-  <h2 id="settingsTitle">操作設定</h2><p id="inputState" role="status">{model.inputState}</p>
+  <h2 id="settingsTitle" tabIndex={-1}>操作設定</h2><p id="inputState" role="status">{model.inputState}</p>
+  <details id="settingsNavigation" hidden={!primaryNavigation}><summary>参加・選択・分担へ移動</summary>
   <nav id="steps" aria-label="画面の移動" hidden={!['join','game','roles'].includes(model.view)}>{SCREENS.map(screen => <button key={screen} data-go={screen} disabled={model.view === 'join' && screen !== 'join' && !model.canAdvance} aria-label={SCREEN_TITLES[screen as keyof typeof SCREEN_TITLES]} aria-current={screen === state.ui.screen ? 'page' : 'false'}>{{join: '参加',game: '選択',roles: '分担'}[screen as 'join'|'game'|'roles']}</button>)}</nav>
+  </details>
   <details id="keyDetails"><summary>担当と実際に送るキー</summary><p id="keyWarnings" role="status">{model.warnings}</p><div id="keyBindings">{model.bindings.map(b => <Fragment key={b.slot}><h3>{b.slot}：{b.title}</h3><ul>{b.lines.map((line: string, i: number) => <li key={i}>{line}</li>)}</ul></Fragment>)}</div><div id="keyEditor"><KeyEditor model={model} state={state} /></div></details>
   <p id="inputSafety">{model.name}が前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。</p>
 
@@ -91,10 +94,10 @@ function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;co
     <label className="comm-setting">時間で担当を交代する <select id="rotationSetting" value={String(game?.rotationSeconds ?? 0)} disabled={model.locked} onChange={event => settingsActions.setRotation(Number(event.currentTarget.value))}><option value="0">しない</option><option value="60">60秒ごと</option></select></label>
     <p>時間になると一時停止して、全員が新しい担当を確認した後、ホストが再開します。協力プレイ中は変更できません。</p>
   </details>
-  <details id="overlayDetails"><summary>観客向け表示（配信・録画）</summary><p>OBSなどのブラウザソースに <code>http://127.0.0.1:ポート/overlay</code> を追加すると、担当と操作を透過で重ねられます。上に出すときは末尾に <code>?position=top</code> を付けます。ゲームの画面には描画しません。</p></details>
+  <details id="overlayDetails"><summary>観客向け表示（配信・録画）</summary>{model.overlayUrl ? <p>OBSなどのブラウザソースに <code id="overlayUrl">{model.overlayUrl}</code> を追加すると、担当と操作を透過で重ねられます。上に出すときは末尾に <code>?position=top</code> を付けます。</p> : <p>PCホストにつながるとURLが表示されます。</p>}</details>
   <details id="netDetails"><summary>通信の診断</summary><div id="netDiag" role="status"><NetworkDiagnostics model={model} bluetooth={!!state.state?.network?.bluetoothAudio} /></div></details>
   <details id="inputDetails"><summary>入力の一時停止（診断・緊急用）</summary><div className="seg" id="modeSeg"><button data-mode="off" aria-pressed={state.inject?.mode === 'off'}>入力を止める</button><button data-mode="on" aria-pressed={state.inject?.mode === 'on'}>入力を再開する</button></div></details>
-  <details><summary>手順・詳しい確認</summary><ol id="gameSteps">{GAMES[0].steps.map(step => <li key={step}>{step}</li>)}</ol><p id="gameStatus">{game?.prepareStatus || ''}</p><p><a href="/host">診断画面を開く</a></p></details>
+  <details><summary>手順・詳しい確認</summary><ol id="gameSteps">{model.gameSteps.map(step => <li key={step}>{step}</li>)}</ol><p id="gameStatus">{game?.prepareStatus || ''}</p><p><a href="/host">診断画面を開く</a></p></details>
   <button id="settingsConnectionBtn">参加用QR・接続方法</button>
   <details id="requirements"><summary>動作環境・制限事項</summary>
     <ul className="legal">
