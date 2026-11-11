@@ -342,6 +342,7 @@ test('本番の安全案内: 切断・緊急停止・入力OFF・前面喪失と
 test('通信の設定: 自動復帰の状態・期限・ポートを示し、協力プレイ中は変更させない (#220)', () => {
   const lobby=commSettingsView({phase:'lobby',autoResume:true,autoResumeMs:15000},8080);
   assert.equal(lobby.checked,true);assert.equal(lobby.locked,false);
+  assert.equal(lobby.lines.length,4,'説明とポートを別の段落に分ける (#308)');assert(lobby.lines.some(line=>line.startsWith('ポート')),'ポートは独立した段落');
   assert.match(lobby.text,/15秒/);assert.match(lobby.text,/8080/);assert.match(lobby.text,/初期値はOFF/);
   const coop=commSettingsView({phase:'coop',autoResume:false,autoResumeMs:20000},null);
   assert.equal(coop.checked,false);assert.equal(coop.locked,true);

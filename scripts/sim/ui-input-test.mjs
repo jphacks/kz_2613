@@ -204,6 +204,20 @@ try {
     cursor.handle({control:'REMOTE_LEFT',state:'down'});assert.equal(clicked,1);
     opened=false;cursor.handle({kind:'move',dx:1,dy:1});assert.equal(marker.parentElement,body);
   });
+  await test('PC仮想カーソル: 使っていないときは隠し、動かす・押すとまた出す (#308)',()=>{
+    const timers=[],realTimeout=globalThis.setTimeout,realClear=globalThis.clearTimeout;
+    globalThis.setTimeout=(fn,ms)=>{timers.push({fn,ms,live:true});return timers.length;};globalThis.clearTimeout=id=>{if(timers[id-1])timers[id-1].live=false;};
+    try{
+      const marker={style:{},setAttribute(){},remove(){}};
+      globalThis.document={createElement:()=>marker,body:{append(){}},querySelector:()=>null,elementFromPoint:()=>null};
+      const cursor=createVirtualCursor();
+      cursor.handle({kind:'move',dx:5,dy:5});assert.equal(marker.style.display,'block');
+      cursor.handle({kind:'move',dx:5,dy:5});assert.equal(timers.filter(t=>t.live).length,1,'動かすたびに隠す時刻を延ばす');
+      const t=timers.find(t=>t.live);assert(t.ms>=3000);t.fn();assert.equal(marker.style.display,'none');
+      cursor.handle({control:'REMOTE_LEFT',state:'down'});assert.equal(marker.style.display,'block','押した位置を見せる');
+      cursor.dispose();assert.equal(timers.filter(t=>t.live).length,0,'破棄で隠す予約も消す');
+    }finally{globalThis.setTimeout=realTimeout;globalThis.clearTimeout=realClear;}
+  });
   await test('PC仮想カーソル: スマホの左クリックで役割交換の列を押せる',()=>{
     let clicks=0;
     const seat=new HTMLElement({click(){clicks++;}});

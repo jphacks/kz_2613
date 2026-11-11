@@ -1,4 +1,5 @@
 import type {RemoteInput} from '../transport/pc-messages.ts';
+export const CURSOR_IDLE_MS = 4000;
 // OSカーソルを動かさず、サーバーがPC画面へ認可した操作だけをDOMへ適用する。
 export function createVirtualCursor() {
   const marker = document.createElement('div');
@@ -6,7 +7,9 @@ export function createVirtualCursor() {
   marker.id = 'virtualCursor';
   marker.style.cssText = 'position:fixed;left:0;top:0;width:18px;height:18px;border:3px solid var(--color-cyan-ink);border-radius:50%;background:var(--color-paper);pointer-events:none;z-index:var(--z-cursor);display:none;box-shadow:0 0 0 3px var(--color-paper)';
   document.body.append(marker);
-  let x = innerWidth / 2, y = innerHeight / 2;
+  let x = innerWidth / 2, y = innerHeight / 2, idle: ReturnType<typeof setTimeout> | undefined;
+  // 使っていないときはPC画面に丸を残さない (#308)。動かす・押すと同じ位置にまた出す
+  const show = () => { marker.style.display = 'block'; clearTimeout(idle); idle = setTimeout(() => { marker.style.display = 'none'; }, CURSOR_IDLE_MS); };
   // showModalのトップレイヤーより後ろへカーソルが隠れないよう、開いているダイアログへ移す。
   const syncLayer = () => {
     const layer = document.querySelector?.('dialog[open]') || document.body;
@@ -29,16 +32,16 @@ export function createVirtualCursor() {
       syncLayer();
       if (m.kind === 'move') {
         x = Math.max(10,Math.min(innerWidth - 10,x + m.dx)); y = Math.max(10,Math.min(innerHeight - 10,y + m.dy));
-        marker.style.display = 'block'; marker.style.transform = `translate(${x - 9}px,${y - 9}px)`; return true;
+        show(); marker.style.transform = `translate(${x - 9}px,${y - 9}px)`; return true;
       }
       if (m.kind === 'scroll') { scroll(m.dy); return true; }
       if (m.kind==='release' || m.state !== 'down') return true;
-      if (m.control === 'REMOTE_LEFT') { click(); return true; }
+      if (m.control === 'REMOTE_LEFT') { show(); click(); return true; }
       if (m.control === 'REMOTE_RIGHT' || m.control === 'REMOTE_E') return true;
       if (m.control === 'REMOTE_WHEEL_UP') { scroll(-120); return true; }
       if (m.control === 'REMOTE_WHEEL_DOWN') { scroll(120); return true; }
       return false;
     },
-    dispose(){marker.remove();},
+    dispose(){clearTimeout(idle);marker.remove();},
   };
 }

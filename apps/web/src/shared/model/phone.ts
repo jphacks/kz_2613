@@ -26,7 +26,8 @@ export function inputWarnText({ isHost, game, name, notice }: {isHost:boolean;ga
   const target = !game.inputTarget || !sendsToGame(game) ? '' : isHost
     ? `PCの画面が${name}になっていません。${name}を前面に戻すまで操作は届きません。`
     : `PCの画面が${name}になっていません。ホストが戻すまでお待ちください。`;
-  return [target, isHost ? notice : ''].filter(Boolean).join(' ');
+  // 「未検証」の注意は準備の段階で伝える。協力プレイ中は操作画面の上部を占めないよう出さない (#308)
+  return [target, isHost && game.phase !== 'coop' ? notice : ''].filter(Boolean).join(' ');
 }
 
 /** リモコンの操作先。前面にあるのに「前面にしてください」と出さず、届かない理由を段階に合わせて示す (#291) */

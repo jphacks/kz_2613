@@ -15,7 +15,8 @@ main { padding: 14px max(14px,env(safe-area-inset-right)) max(14px,env(safe-area
 .players { display: none; }
 .key { border: 2px solid var(--color-cyan); color: var(--color-black); background: var(--color-phone-surface); border-radius: 20px; box-shadow: 0 3px 0 var(--color-shadow); }
 .key small { color: var(--color-logo); }
-.remote .col { flex-basis: 32%; grid-template-columns: repeat(2,minmax(44px,1fr)); }
+.remote .col { flex-basis: 32%; grid-template-columns: 1fr; }
+.remote .col .key { white-space: nowrap; } /* 「Enterキー」の「キー」を2行目に折り返さない (#308) */
 .cmd { border: 3px solid var(--color-phone-button); background: var(--color-button-surface); color: var(--color-button-ink); box-shadow: 1px 3px 0 var(--color-shadow); font-size: 17px; }
 .cmd.pause { border-color: var(--color-cyan); color: var(--color-cyan-ink); background: var(--color-paper); }
 .cmd.sub { min-height: 44px; color: var(--color-logo); background: var(--color-surface); font-size: 12px; }
