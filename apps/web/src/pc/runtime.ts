@@ -6,7 +6,7 @@ import {decodePcMessage,decodeHotspotResult} from '../shared/transport/pc-messag
 import {decodePcInfo} from '../shared/transport/pc-info.ts';
 import type {Slot,PhoneGame} from '../shared/contracts.ts';
 import type {Navigation,HostState,InjectionState,UiAction,EffectState} from '../shared/model/domain.ts';
-import type {PcSnapshot,PcInfo} from './model';
+import {joinStatus, type PcSnapshot, type PcInfo} from './model';
 declare global {interface Window {showHostNotice?:(text:string)=>void}}
 const isSlot=(slot:string|undefined):slot is Slot=>!!slot&&['P1','P2','P3','P4'].includes(slot);
 export function startDesktopController({renderView,renderInfo}:{renderView(snapshot:PcSnapshot):void;renderInfo(info:PcInfo|null|undefined,message:string,busy:boolean):void}) {
@@ -25,6 +25,7 @@ let infoPort:number|null=null;
 const games=()=>gameList(state?.games,state?.minecraft);
 const send=(m:object)=>{if(ws?.readyState===1)ws.send(JSON.stringify(m));};
 function setUi(next:Navigation){
+  if(ui.screen==='join'&&next.screen!=='join'&&!joinStatus(state).canAdvance)return;
   if(next.game!==ui.game)send({type:'select_game',title:next.game});
   // 分担の画面から戻ったら決定を取り消す (戻った後の古い決定で起動・準備しない、#109)
   if(ui.screen==='roles'&&next.screen!=='roles'&&game?.lineupOk&&game.phase==='lobby')send({type:'unconfirm_lineup'});

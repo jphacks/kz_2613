@@ -7,7 +7,7 @@ export function PlayerCard({ card }: { card: PlayerCardModel }) {
   return (
     <article className={card.className} data-slot={card.slot}>
       <div className="player-badge">{card.badge}</div>
-      <div className="player-info"><p>{card.name}</p><p>{card.role}</p><p className="player-device">{card.device}</p></div>
+      <div className="player-info"><p>{card.name}</p>{card.role && <p>{card.role}</p>}{card.device && <p className="player-device">{card.device}</p>}</div>
       <svg className="player-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z" /></svg>
       <div className="character">
         <div className={`character-art art-${card.index}`} aria-hidden="true"><img src={`/assets/characters/${CHARACTERS[card.index]}.png`} alt="" /></div>

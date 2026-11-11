@@ -5,6 +5,8 @@
 import assert from 'node:assert/strict';
 const { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } = await import('../../apps/web/src/shared/model/presentation.ts');
 
+const {pcModel, pcState} = await import('../../apps/web/src/pc/model.ts');
+
 const results = [];
 function test(name, fn) {
   try {
@@ -45,6 +47,28 @@ test('枠: 空き・接続中・切断中をサーバーの slots どおりに�
   assert.equal(v[0].host, true);
   assert.equal(v[0].device, 'iPhone');
   assert.equal(v[1].device, '', '切断中の端末の種類は出さない');
+});
+
+test('参加画面: 接続中の2人でOKが有効になり、ゲーム選択前はホストと接続情報だけを示す (#295)', () => {
+  const snapshot = pcState.get();
+  const model = (...slots) => pcModel({...snapshot, state: {slots}});
+  assert.equal(model().next.disabled, true);
+  assert.match(model().explanation, /あと2人/);
+  const host = slot('P1', true, 'Android');
+  const waiting = model(host, slot('P2', false));
+  assert.equal(waiting.next.disabled, true);
+  assert.match(waiting.explanation, /あと1人/);
+  assert.equal(waiting.cards[0].role, 'ホスト');
+  assert.equal(waiting.cards[0].device, '機種：Android');
+  assert.equal(waiting.cards[1].badge, '切断中');
+  assert.equal(waiting.cards[1].device, '');
+  assert.equal(waiting.cards[2].badge, '参加待ち');
+  assert.equal(waiting.cards[2].role, '');
+  const ready = model(host, slot('P2', true, 'iPhone'));
+  assert.equal(ready.next.disabled, false);
+  assert.match(ready.explanation, /OKを押して\s+ゲーム選択/);
+  assert.equal(ready.stateSubtitle, '');
+  assert.equal(ready.cards[1].role, '');
 });
 
 test('枠: 状態が届く前は全員空き', () => {
