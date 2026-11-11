@@ -17,9 +17,9 @@ const SCRIPT_ROOT=fileURLToPath(new URL('../../',import.meta.url));
 const options = new Map();
 for (let i = 2; i < process.argv.length; i++) {
   const key = process.argv[i];
-  assert(['--bin', '--adb', '--sha256', '--host-only', '--root', '--benchmark-ms', '--condition', '--trial', '--players', '--ws-only', '--wifi-network', '--ack-observer', '--no-periodic-ice', '--ws-fault-observe', '--rtc-fault-observe'].includes(key), '不明な引数');
+  assert(['--bin', '--adb', '--sha256', '--host-only', '--root', '--benchmark-ms', '--condition', '--trial', '--players', '--ws-only', '--wifi-network', '--ack-observer', '--no-periodic-ice', '--no-host-trace', '--ws-fault-observe', '--rtc-fault-observe'].includes(key), '不明な引数');
   assert(!options.has(key), '重複した引数');
-  const value = ['--host-only', '--ws-only', '--ack-observer', '--no-periodic-ice', '--ws-fault-observe', '--rtc-fault-observe'].includes(key) ? true : process.argv[++i];
+  const value = ['--host-only', '--ws-only', '--ack-observer', '--no-periodic-ice', '--no-host-trace', '--ws-fault-observe', '--rtc-fault-observe'].includes(key) ? true : process.argv[++i];
   assert(value && (value === true || !value.startsWith('--')), '引数の値が必要です');
   options.set(key, value);
 }
@@ -46,6 +46,9 @@ assert(!options.has('--ack-observer')||wifi&&benchmarkMs>0,'先行ACK診断はWi
 const periodicIce = !options.has('--no-periodic-ice');
 assert(periodicIce || wifi && benchmarkMs > 0 && !options.has('--ws-only'),
   '--no-periodic-ice はRTCありのWi-Fi性能試行だけで使用する');
+const noHostTrace = options.has('--no-host-trace');
+assert(!noHostTrace || wifi && benchmarkMs > 0, '--no-host-trace はWi-Fi性能試行だけで使用する');
+const hostTrace = wifi && !noHostTrace;
 fs.mkdirSync(path.join(ROOT, 'data/local/device-acceptance'), {recursive:true});
 const OUT = fs.mkdtempSync(path.join(ROOT, 'data/local/device-acceptance/run-'));
 const adb = (...args) => {
@@ -76,6 +79,7 @@ let savedRotation;
 if(wifi){
   report.ackObserver=options.has('--ack-observer');
   report.periodicIce=periodicIce&&!report.wsOnly;
+  report.hostTrace=hostTrace;
 }
 if(wifi)report.runner={commit:execFileSync('git',['rev-parse','HEAD'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim(),dirty:execFileSync('git',['status','--porcelain'],{cwd:SCRIPT_ROOT,encoding:'utf8'}).trim().length>0,modules:Object.fromEntries(['android-dry-run.mjs','android-performance.mjs','wifi-route.mjs','wifi-host-analysis.mjs','wifi-ack-observer.mjs','fault-timeline.mjs','rtc-fault-observer.mjs'].map(name=>[name,crypto.createHash('sha256').update(fs.readFileSync(new URL(name,import.meta.url))).digest('hex')]))};
 let wifiNetwork, faultTimeline;
@@ -177,7 +181,7 @@ try{
   Object.assign(env, {
     PORT:wifi?String(port):'0', RECOOPLAY_ROOT:ROOT, RECOOPLAY_DRY_RUN:'1', RECOOPLAY_NO_CONFIG:'1',
     ...(wifi?{}:{RECOOPLAY_RUNTIME_MEASURE:'1'}), RECOOPLAY_FAKE_TARGET:'1', RECOOPLAY_FAKE_GAMES:fake,
-    ...(wifi?{RECOOPLAY_INPUT_TRACE:'1'}:{}),
+    ...(hostTrace?{RECOOPLAY_INPUT_TRACE:'1'}:{}),
     RECOOPLAY_MINECRAFT_OPTIONS:path.join(ROOT,'scripts/sim/fixtures/minecraft-options.txt'),
     RECOOPLAY_LOG_DIR:path.join(OUT,'host-logs'), RECOOPLAY_STDIN_CONTROL:'1',
   });
@@ -549,8 +553,8 @@ try{
   const runtime=path.join(OUT,'host-logs/runtime-measure.json');
   if(fs.existsSync(runtime))report.hostRuntime=JSON.parse(fs.readFileSync(runtime,'utf8'));
   const trace=path.join(OUT,'host-logs/input-trace.json');
-  if(wifi&&fs.existsSync(trace))report.hostInputTrace=JSON.parse(fs.readFileSync(trace,'utf8'));
-  if(wifi&&benchmarkMs&&!report.error){
+  if(hostTrace&&fs.existsSync(trace))report.hostInputTrace=JSON.parse(fs.readFileSync(trace,'utf8'));
+  if(hostTrace&&benchmarkMs&&!report.error){
     try{report.hostAnalysis=analyzeHostInput(report);}
     catch(error){report.error=error.message;process.exitCode=1;console.error(error.message);}
   }

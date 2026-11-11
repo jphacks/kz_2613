@@ -43,6 +43,8 @@ try {
   failure(['--bin', fixture, '--sha256', '0'.repeat(64)], /ハッシュと異なります/);
   failure(['--bin',fixture,'--sha256',hash,'--wifi-network','unused','--host-only'],/実Android/);
   failure(['--bin',fixture,'--sha256',hash,'--ack-observer'],/先行ACK/);
+  failure(['--bin',fixture,'--sha256',hash,'--no-host-trace'],/Wi-Fi性能試行だけ/);
+  failure(['--bin',fixture,'--sha256',hash,'--wifi-network','unused','--no-host-trace'],/Wi-Fi性能試行だけ/);
   failure(['--bin',fixture,'--sha256',hash,'--no-periodic-ice'],/RTCありのWi-Fi性能試行/);
   failure(['--bin',fixture,'--sha256',hash,'--wifi-network','unused','--no-periodic-ice'],/RTCありのWi-Fi性能試行/);
   failure(['--bin',fixture,'--sha256',hash,'--wifi-network','unused','--benchmark-ms','60000','--ws-only','--no-periodic-ice'],/RTCありのWi-Fi性能試行/);
@@ -55,7 +57,11 @@ try {
   assert.equal(noAdb.hostExit, undefined);
   const noHost = failure(['--bin', fixture, '--sha256', hash, '--host-only'], /dry-runホスト起動失敗/, true);
   assert.notEqual(noHost.hostExit?.code, 0);
-  console.log('20/20 合格（Android補助CLIの入力拒否・Wi-Fiの端末必須・計測条件・ADBなし・ホスト起動失敗）');
+  const noTrace = failure(['--bin',fixture,'--sha256',hash,'--adb',path.join(dir,'missing-adb.exe'),
+    '--wifi-network','unused','--benchmark-ms','60000','--no-host-trace'], /ADBコマンド失敗: devices/, true);
+  assert.equal(noTrace.hostTrace, false);
+  assert.equal(noTrace.hostInputTrace, undefined);
+  console.log('23/23 合格（Android補助CLIの入力拒否・Wi-Fiの端末必須・計測条件・ADBなし・ホスト起動失敗）');
 } finally {
   fs.unlinkSync(fixture);
   fs.rmdirSync(dir);

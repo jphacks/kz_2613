@@ -2071,3 +2071,9 @@
 - `node scripts/device/` 配下の `android-dry-run-test.mjs` 20/20、`wifi-route-test.mjs`、`wifi-comparison-plan-test.mjs`、`fault-timeline-test.mjs`、`rtc-fault-observer-test.mjs`、`wifi-trial-acks-test.mjs` が合格。CLI試験の資産は照合済みCI配布zipから取得。
 - 実Wi-Fi・Androidでの負荷比較、ホスト入力トレースの負荷比較、新データセットの集計・匿名化は未実施。
 - 統合（Claude Code）：#364をレビューし指摘なし。`rtcObserverSource` を関数にした変更は呼び出し元2か所とも対応済み。観測なしでは `__wifiPathHistory` が空のまま進む。手元で上記6本が合格。
+
+## 2026-11-11 — ホスト入力トレースの負荷を比較する試行（#276）
+
+- `hostTrace` 比較軸を追加し、Wi-Fi性能試行でホスト入力トレースだけを切り替えられるようにした。トレースを省いた試行ではホスト内の区間を集計しない。
+- `node scripts/device/` 配下の `android-dry-run-test.mjs` 23/23、`wifi-comparison-plan-test.mjs`、`wifi-route-test.mjs`、`wifi-host-analysis-test.mjs`、`wifi-trial-acks-test.mjs` が合格。CLI試験は照合済み配布版のWeb資産を使用。
+- 実Wi-Fiでの負荷測定と新しい比較系列の集計・匿名化は未実施。
