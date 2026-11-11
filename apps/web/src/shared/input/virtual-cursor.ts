@@ -13,7 +13,12 @@ export function createVirtualCursor() {
     if (marker.parentElement !== layer) layer.append(marker);
   };
   const hit = () => document.elementFromPoint(x, y);
-  const click = () => { const el = hit()?.closest('button,a,summary,[data-game],[data-swap]'); if (el instanceof HTMLElement && !('disabled' in el && el.disabled)) el.click(); syncLayer(); };
+  // プルダウンはスクリプトから一覧を開けないので、選ぶだけにする。値はリモコンの◀▶で切り替える (#294)
+  const click = () => {
+    const el = hit()?.closest('button,a,summary,select,input,label,[data-game],[data-swap]');
+    if (el instanceof HTMLElement && !('disabled' in el && el.disabled)) { if (el.tagName === 'SELECT') el.focus(); else el.click(); }
+    syncLayer();
+  };
   const scroll = (dy: number) => {
     let el = hit();
     while (el && el !== document.documentElement && !(el.scrollHeight > el.clientHeight && ['auto','scroll'].includes(getComputedStyle(el).overflowY))) el = el.parentElement;

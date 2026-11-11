@@ -16,7 +16,7 @@ export function GameTile({card}: {card: Card}) {
 }
 export function KeyEditor({model, state}: {model: Model; state: PcSnapshot}) {
   if (!model.keyButtons.length) return null;
-  return <><h3>キー割当を変える</h3><p>{model.locked ? '協力プレイ中は変更できません。一時停止すると変更できます。' : '変更はこのPCに保存され、次回も使います。'}{state.keyMessage}</p>
+  return <><h3>キー割当を変える</h3><p>{model.locked ? '協力プレイ中は変更できません。一時停止すると変更できます。' : '変更はこのPCに保存され、次回も使います。ホストのスマホでは▲▼で項目を選び、◀▶でキーを切り替えます。'}{state.keyMessage}</p>
     <table className="key-editor"><tbody>{model.keyButtons.map(action => <tr key={action.id}><th>{action.label}{model.edited.has(action.id) ? '（変更済み）' : ''}</th><td>
       <select data-key-action={action.id} disabled={model.locked} value={state.game?.keys?.actions?.[action.id]?.out ?? ''} onChange={event => settingsActions.setKey(action.id, event.currentTarget.value || null)}>
         <option value="">送らない</option>{model.outputs.map(([id, output]) => <option value={id} key={id}>{output.label}</option>)}

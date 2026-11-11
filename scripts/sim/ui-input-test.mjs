@@ -5,6 +5,7 @@ const {bindCooperativeInput: createCooperativeInput} = await import('../../apps/
 const {stickDirections} = await import('../../apps/web/src/shared/input/stick.ts');
 const {createFastChannel} = await import('../../apps/web/src/shared/transport/fast-channel.ts');
 const {createVirtualCursor}=await import('../../apps/web/src/shared/input/virtual-cursor.ts');
+const {usableControls,moveRemoteFocus,stepRemoteSelect,REMOTE_FOCUSABLE}=await import('../../apps/web/src/shared/input/remote-focus.ts');
 globalThis.HTMLElement=class {constructor(properties){Object.assign(this,properties)}};
 import {myActions,generatedKey} from '../../apps/web/src/shared/model/actions.ts';
 import {controllerLayout} from '../../apps/web/src/shared/controller-layout.ts';
@@ -212,6 +213,37 @@ try {
     const cursor=createVirtualCursor();
     cursor.handle({control:'REMOTE_LEFT',state:'down'});
     assert.equal(clicks,1,'articleで描いた交換列にも仮想カーソルからクリックを届ける');
+  });
+  await test('PC仮想カーソル: プルダウンはクリックせずフォーカスだけ移す (#294)',()=>{
+    let focused=0,clicked=0;
+    const select=new HTMLElement({tagName:'SELECT',disabled:false,focus(){focused++;},click(){clicked++;}});
+    globalThis.document={createElement:()=>({style:{},setAttribute(){}}),body:{append(){}},querySelector:()=>null,
+      elementFromPoint:()=>({closest:selector=>selector.split(',').includes('select')?select:null})};
+    createVirtualCursor().handle({control:'REMOTE_LEFT',state:'down'});
+    assert.equal(focused,1);assert.equal(clicked,0);
+  });
+  await test('リモコンの矢印: 見えて押せるものだけを順に選び、端で回る (#294)',()=>{
+    let last=null;
+    const el=(name,props={})=>({name,disabled:false,getClientRects:()=>[1],focus(){last=name;},...props});
+    const controls=usableControls([el('決定'),el('隠れた',{getClientRects:()=>[]}),el('押せない',{disabled:true}),el('P1の列'),el('キー設定')]);
+    assert.deepEqual(controls.map(c=>c.name),['決定','P1の列','キー設定']);
+    assert.equal(moveRemoteFocus(controls,null,'DOWN'),true);assert.equal(last,'決定','未選択の▼は先頭から');
+    moveRemoteFocus(controls,null,'UP');assert.equal(last,'キー設定','未選択の▲は末尾から');
+    moveRemoteFocus(controls,controls[0],'RIGHT');assert.equal(last,'P1の列');
+    moveRemoteFocus(controls,controls[2],'DOWN');assert.equal(last,'決定','末尾の次は先頭');
+    assert.equal(moveRemoteFocus(controls,controls[0],'ENTER'),false,'Enterは移動しない');
+    assert.equal(moveRemoteFocus([],null,'DOWN'),false);
+    assert(REMOTE_FOCUSABLE.split(',').includes('select'),'キー割当のプルダウンも選べる');
+  });
+  await test('リモコンの◀▶: プルダウンの選択肢を1つずつ切り替え、端で止まり、changeを送る (#294)',()=>{
+    const events=[];
+    const select={tagName:'SELECT',disabled:false,selectedIndex:0,options:[{},{disabled:true},{},{}],dispatchEvent(e){events.push([e.type,e.bubbles,this.selectedIndex]);return true;}};
+    assert.equal(stepRemoteSelect(select,'LEFT'),true);assert.equal(events.length,0,'先頭の◀は変えない');
+    stepRemoteSelect(select,'RIGHT');assert.deepEqual(events.pop(),['change',true,2],'選べない選択肢は飛ばす');
+    stepRemoteSelect(select,'RIGHT');stepRemoteSelect(select,'RIGHT');assert.equal(select.selectedIndex,3);assert.equal(events.length,1,'末尾の▶は変えない');
+    assert.equal(stepRemoteSelect(select,'UP'),false,'▲▼は次の項目への移動に使う');
+    assert.equal(stepRemoteSelect({tagName:'BUTTON'},'RIGHT'),false);
+    const locked={...select,disabled:true,selectedIndex:0};assert.equal(stepRemoteSelect(locked,'RIGHT'),true);assert.equal(locked.selectedIndex,0,'協力プレイ中の固定は変えない');
   });
   console.log(`${passed}/${passed} 合格（UI入力、OS入力なし）`);
 } finally { globalThis.setInterval=originalInterval; }
