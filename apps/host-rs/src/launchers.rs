@@ -20,6 +20,8 @@ pub const XBOX_SOURCE: &str = "xbox";
 
 /// 公式の Minecraft ランチャーのパッケージ (Xbox の一覧には出さない。固定の Minecraft の項目で扱う)
 const MINECRAFT_PACKAGE: &str = "Microsoft.4297127D64EC6";
+/// Xbox アプリから入れた Minecraft: Java Edition。固定の「Minecraft Java Edition」(公式ランチャーで起動) と同じゲームなので重ねて出さない (#298)
+const MINECRAFT_JAVA_PACKAGE: &str = "Microsoft.MinecraftJavaEdition";
 
 // ---------- レジストリ (試験では JSON で差し替える) ----------
 
@@ -323,7 +325,7 @@ fn xml_tag(xml: &str, tag: &str) -> Option<String> {
 
 // ---------- Battle.net ----------
 
-/// Battle.net のアプリ自身・更新用の項目 (ゲームではない)
+/// Battle.net のアプリ自身・更新用の項目 (ゲームではない)。agent_beta (Agenteta) など派生の項目もあるため前方一致で除く (#298)
 const BATTLENET_NOT_GAMES: [&str; 3] = ["agent", "bna", "battle.net"];
 
 /// Battle.net のゲーム: product.db (Protocol Buffers) の製品ごとの ID・製品コード・インストール先。
@@ -335,7 +337,8 @@ pub fn battlenet(db: &Path) -> Vec<Entry> {
         let uid = pb_fields(product, 1).first().map(|s| String::from_utf8_lossy(s).to_string()).unwrap_or_default();
         let code = pb_fields(product, 2).first().map(|s| String::from_utf8_lossy(s).to_string()).unwrap_or_default();
         let path = pb_fields(product, 3).first().and_then(|s| pb_fields(s, 1).first().map(|p| String::from_utf8_lossy(p).to_string())).unwrap_or_default();
-        if BATTLENET_NOT_GAMES.iter().any(|n| n.eq_ignore_ascii_case(&uid) || n.eq_ignore_ascii_case(&code)) || !id_ok(&code) || path.is_empty() {
+        let not_game = |s: &str| BATTLENET_NOT_GAMES.iter().any(|n| s.to_ascii_lowercase().starts_with(n));
+        if not_game(&uid) || not_game(&code) || !id_ok(&code) || path.is_empty() {
             continue;
         }
         let dir = PathBuf::from(path.replace('/', "\\"));
@@ -409,7 +412,7 @@ pub fn xbox(root: &Path) -> Vec<Entry> {
 fn xbox_entry(content: &Path, manifest: &str, config: &str, folder: &str) -> Option<Entry> {
     let identity = &manifest[manifest.find("<Identity")?..];
     let package = xml_attr(identity, "Name")?;
-    if package == MINECRAFT_PACKAGE || !id_ok(&package) {
+    if package == MINECRAFT_PACKAGE || package == MINECRAFT_JAVA_PACKAGE || !id_ok(&package) {
         return None;
     }
     let publisher = xml_attr(identity, "Publisher")?;
@@ -712,7 +715,7 @@ mod tests {
         std::fs::create_dir_all(dir.join("Overwatch")).unwrap();
         std::fs::create_dir_all(dir.join("battlenet")).unwrap();
         let ow = dir.join("Overwatch").to_string_lossy().replace('\\', "/");
-        std::fs::write(dir.join(r"battlenet\product.db"), product_db(&[("agent", "agent", "C:/ProgramData/Battle.net/Agent"), ("prometheus", "Pro", &ow), ("bad", "a&b", &ow), ("gone", "Gone", "C:/nope")])).unwrap();
+        std::fs::write(dir.join(r"battlenet\product.db"), product_db(&[("agent", "agent", "C:/ProgramData/Battle.net/Agent"), ("agent_beta", "agent_beta", "C:/ProgramData/Battle.net/Agent/beta"), ("battle.net", "bna", "C:/Program Files (x86)/Battle.net"), ("prometheus", "Pro", &ow), ("bad", "a&b", &ow), ("gone", "Gone", "C:/nope")])).unwrap();
         let list = battlenet(&dir.join(r"battlenet\product.db"));
         let _ = std::fs::remove_dir_all(&dir);
         assert_eq!(list.len(), 1);
@@ -725,7 +728,8 @@ mod tests {
     fn battlenet_real_db_on_this_pc_has_no_games() {
         // 実機の product.db (Battle.net アプリ自身だけ) があれば、ゲームとして出さないことを確かめる
         let Some(p) = std::env::var_os("PROGRAMDATA").map(|p| PathBuf::from(p).join(r"Battle.net\Agent\product.db")).filter(|p| p.is_file()) else { return };
-        assert!(battlenet(&p).iter().all(|e| !e.id.eq_ignore_ascii_case("battlenet:agent")));
+        // agent_beta (Agenteta) が「beta」というゲームとして出ていた (#298)
+        assert!(battlenet(&p).iter().all(|e| !e.id.to_ascii_lowercase().starts_with("battlenet:agent") && !e.id.eq_ignore_ascii_case("battlenet:bna")), "{:?}", battlenet(&p).iter().map(|e| &e.id).collect::<Vec<_>>());
     }
 
     #[test]
@@ -733,16 +737,21 @@ mod tests {
         let dir = tmp("xbox");
         let game = dir.join(r"xbox\Forza Horizon 5\Content");
         let mc = dir.join(r"xbox\Minecraft Launcher\Content");
+        let java = dir.join(r"xbox\Minecraft- Java Edition\Content");
         std::fs::create_dir_all(&game).unwrap();
         std::fs::create_dir_all(&mc).unwrap();
+        std::fs::create_dir_all(&java).unwrap();
         let publisher = "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US";
         std::fs::write(game.join("appxmanifest.xml"), format!(r#"<Package><Identity Name="Microsoft.SunriseBaseGame" Publisher="{publisher}" Version="1.0.0.0" /><Properties><DisplayName>ms-resource:Title</DisplayName></Properties><Applications><Application Id="Game" Executable="gamelaunchhelper.exe"></Application></Applications></Package>"#)).unwrap();
         std::fs::write(game.join("MicrosoftGame.config"), r#"<Game><ShellVisuals DefaultDisplayName="Forza Horizon 5" /></Game>"#).unwrap();
         std::fs::write(mc.join("appxmanifest.xml"), format!(r#"<Package><Identity Name="Microsoft.4297127D64EC6" Publisher="{publisher}" /><Applications><Application Id="Minecraft"></Application></Applications></Package>"#)).unwrap();
         std::fs::write(mc.join("MicrosoftGame.config"), "<Game />").unwrap();
+        // Xbox アプリから入れた Java Edition は、固定の Minecraft Java Edition と同じゲームなので出さない (#298)
+        std::fs::write(java.join("appxmanifest.xml"), format!(r#"<Package><Identity Name="Microsoft.MinecraftJavaEdition" Publisher="{publisher}" /><Applications><Application Id="Game"></Application></Applications></Package>"#)).unwrap();
+        std::fs::write(java.join("MicrosoftGame.config"), r#"<Game><ShellVisuals DefaultDisplayName="Minecraft: Java Edition" /></Game>"#).unwrap();
         let list = xbox(&dir.join("xbox"));
         let _ = std::fs::remove_dir_all(&dir);
-        assert_eq!(list.len(), 1, "Minecraft のランチャーは出さない");
+        assert_eq!(list.len(), 1, "Minecraft のランチャーと Xbox の Java Edition は出さない");
         assert_eq!(list[0].id, "xbox:Microsoft.SunriseBaseGame");
         assert_eq!(list[0].name, "Forza Horizon 5");
         assert_eq!(list[0].launch_uri, r"shell:AppsFolder\Microsoft.SunriseBaseGame_8wekyb3d8bbwe!Game");
