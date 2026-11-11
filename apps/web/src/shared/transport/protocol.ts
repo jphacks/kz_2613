@@ -1,5 +1,6 @@
 import type {ServerMessage} from './messages.ts';
 import type {PhoneGame} from '../contracts.ts';
+import {PHONE_PROTOCOL_VERSION} from './version.ts';
 // 受信JSONの構造境界。接続世代・入力失効・表示・RTT更新は呼出し側の責任。
 // 既知のフレームだけを検証済み型で返す。未知typeは適用できない別の型へ隔離する。
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -58,7 +59,7 @@ export function decodeServerMessage(text: unknown): ServerMessage | null {
       if (!slot(message.slot) || typeof message.isHost !== 'boolean' || typeof message.role !== 'string'
           || !optional(message, 'token', v => typeof v === 'string')
           || !optional(message, 'reconnected', v => typeof v === 'boolean')
-          || !optional(message, 'protocolVersion', v => v === 4)) return null;
+          || !optional(message, 'protocolVersion', v => v === PHONE_PROTOCOL_VERSION)) return null;
       break;
     case 'game': if (!isPhoneGame(message.game)) return null; break;
     case 'command_result':

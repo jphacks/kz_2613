@@ -1,0 +1,1 @@
+export const PHONE_PROTOCOL_VERSION = 4;

@@ -36,6 +36,8 @@
 
 **通信契約**: `protocolVersion = 4`。版がない・一致しないhelloは枠を割り当てず拒否します。DataChannelは`fast`、`ordered:false`、`maxRetransmits:0`です。待ち受けは既定`0.0.0.0:8080`、`PORT`で変更できます。STUN/TURNは使いません。
 
+通信版を変更するときは、Rustの `hub.rs` とWebの `shared/transport/version.ts` を同じ変更で更新します。CIの `protocol-sim.mjs` はWebの版でビルド済みホストへ参加し、実際に返る `welcome` の版まで照合します。
+
 | パス | 用途 | アクセス |
 |:--|:--|:--|
 | `GET /` | スマホの操作画面 | LAN |
