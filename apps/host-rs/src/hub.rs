@@ -3059,7 +3059,7 @@ mod tests {
         finish_wait(&mut h, i); // upの後、次のdownはgap待ち
         assert!(!h.outputs[i].physical);
         assert!(h.outputs[i].timer_pending);
-        assert_eq!(h.outputs[i].queue.front().unwrap().0, true);
+        assert!(h.outputs[i].queue.front().unwrap().0);
         let after_gap = Instant::now();
         let gap_due = h.timers.iter().find_map(|Reverse((at, _, timer))|
             (*timer == Timer::Pump(i, h.outputs[i].timer_gen)).then_some(*at)).unwrap();
@@ -3700,7 +3700,7 @@ mod tests {
 
     #[test]
     fn repeated_release_failure_has_three_timer_passes_and_retains_uncertainty_after_reset() {
-        let recorder = RecordingInput::with_results(std::iter::once(true).chain(std::iter::repeat(false).take(50)));
+        let recorder = RecordingInput::with_results(std::iter::once(true).chain(std::iter::repeat_n(false, 50)));
         let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
         h.set_output(index("MOUSE_L"), "P1", true); h.release_outputs(None);
         h.on_timer(Timer::InputFaultStop(h.fault_stop_gen), Instant::now());
@@ -3721,7 +3721,7 @@ mod tests {
     }
 
     fn lobby_with(slots: &[(usize, bool)], disconnected_at: u64) -> Hub {
-        let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(std::iter::repeat(true).take(50))));
+        let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(std::iter::repeat_n(true, 50))));
         h.game.phase = Phase::Lobby; // 共通のフィクスチャは協力プレイ中で始まる
         h.slots = Default::default();
         for &(i, connected) in slots {
@@ -4009,7 +4009,7 @@ mod tests {
 
     #[test]
     fn reset_clears_the_previous_session_lineup_and_reason() {
-        let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(std::iter::repeat(true).take(50))));
+        let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(std::iter::repeat_n(true, 50))));
         h.participants = vec![0, 1, 2];
         h.assigned = vec![vec!["a".into()], vec!["b".into()], vec!["c".into()]];
         h.game.phase = Phase::Coop;
@@ -4039,7 +4039,7 @@ mod tests {
 
     #[test]
     fn failure_during_mode_change_cannot_reenable_or_skip_the_fault_stop() {
-        let recorder = RecordingInput::with_results(std::iter::once(true).chain(std::iter::repeat(false).take(20)));
+        let recorder = RecordingInput::with_results(std::iter::once(true).chain(std::iter::repeat_n(false, 20)));
         let (mut h, _rx) = fixture_with_input(Box::new(recorder));
         h.set_output(index("KEY_W"), "P1", true);
         h.set_inject_mode(InjectMode::Off);

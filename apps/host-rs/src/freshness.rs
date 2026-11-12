@@ -42,6 +42,7 @@ impl ClockBase {
     }
 
     /// 押下を適用してよいか。判定できないときは、遅れて実行するより安全側 (破棄) に倒す
+    #[cfg(test)]
     pub fn fresh_down(&self, now: f64, t: Option<f64>) -> bool {
         self.delay(now, t).is_some_and(|d| d < STALE_DOWN_MS)
     }

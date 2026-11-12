@@ -455,7 +455,7 @@ mod review_tests {
         v["actions"].as_array_mut().unwrap().retain(|a| a["group"]=="movement");
         let a=assignment_for(&parse(&v).unwrap(),3);
         assert!(a.iter().all(|a| !a.is_empty()));
-        let flat:Vec<_>=a.iter().flat_map(|a|a).collect();
+        let flat:Vec<_>=a.iter().flatten().collect();
         assert_eq!(flat.len(),flat.iter().collect::<std::collections::HashSet<_>>().len());
     }
     #[test]

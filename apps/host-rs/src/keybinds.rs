@@ -46,6 +46,7 @@ impl Keybinds {
     }
 
     /// 定義の初期キーに、ユーザーの設定ファイルのキーを重ねる。override_path は設定ファイルの場所の上書き (config.json 等)
+    #[cfg(test)]
     pub fn build(p: &Profile, override_path: Option<&Path>) -> Keybinds {
         Self::build_with(p, override_path, None)
     }
