@@ -55,7 +55,7 @@
 
 ## 作業手順
 
-- mainへの統合には、対象PRの最新コミットでGitHub Actionsの必須チェック `structure`、`host-rs`、`web`、`desktop`、`protocol`、`package` がすべて成功していることが必要。資料のみの変更にも適用する。[CIの検証範囲](docs/develop/handoff/CI_VERIFICATION.md) を参照する。
+- mainへの統合には、対象PRの最新コミットでGitHub Actionsの必須チェック `structure`、`host-rs`、`web`、`desktop`、`protocol`、`package`、`npm-audit`、`cargo-audit (host-rs)`、`cargo-audit (desktop)` がすべて成功していることが必要。資料のみの変更にも適用する。[CIの検証範囲](docs/develop/handoff/CI_VERIFICATION.md) を参照する。
 
 1. リポジトリと既存の変更を確認する。他の人の作業を破棄しない。
 2. 複雑な変更では短い計画と未検証の前提を示す。
