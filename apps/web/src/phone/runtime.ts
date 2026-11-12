@@ -5,7 +5,7 @@ import { createPhoneSession } from '../shared/transport/session.ts';
 import { decodeServerMessage } from '../shared/transport/protocol.ts';
 import { recordInputMetric, inputMetrics } from '../shared/input/metrics.ts';
 
-import { bindTouchpad } from '../shared/input/touchpad.ts';
+import { bindTouchpad, bindTouchpadSensitivity } from '../shared/input/touchpad.ts';
 import { myActions } from '../shared/model/actions.ts';
 import { phoneAdvice } from '../shared/model/presentation.ts';
 import { fullText } from '../shared/model/phone.ts';
@@ -248,6 +248,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   const tapOwner = Symbol('remote tap');
 
   const touchpad = bindTouchpad($('remotePad'), {
+    sensitivity: bindTouchpadSensitivity(lifetime, $<HTMLInputElement>('remotePadSensitivity'), $('remotePadSensitivityValue')),
     enabled: () => session.me === 'P1' && session.game?.phase !== 'coop' && session.game?.remoteRoute !== 'none' && controlsVisible(),
     send: (message) => { if (isOpen()) session.send({...message, type:'remote', epoch:session.game?.epoch}); },
     tap: at => { ctlDown('REMOTE_LEFT', at, tapOwner); ctlUp('REMOTE_LEFT', tapOwner); },
