@@ -234,6 +234,22 @@ fn tell_overlay_state(app: &tauri::AppHandle, error: Option<&str>) {
     }
 }
 
+/// WebView2 の起動オプション。既定は wry の既定値と同じ。
+/// 試験用 (#379): dry-run のときだけ、RECOOPLAY_WEBVIEW2_DEBUG_PORT のポートで WebView2 のデバッグ接続を開く。
+/// CI のランナーの WebView2 では、環境変数 WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS が反映されなかったため。
+/// 同じ保存先のウィンドウは起動オプションをそろえる必要があるので、メイン画面とオーバーレイの両方に使う
+fn browser_args(dry_run: Option<&str>, debug_port: Option<&str>) -> String {
+    const DEFAULT: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection";
+    match (dry_run, debug_port.and_then(|p| p.parse::<u16>().ok()).filter(|p| *p > 0)) {
+        (Some("1"), Some(port)) => format!("{DEFAULT} --remote-debugging-port={port}"),
+        _ => DEFAULT.into(),
+    }
+}
+
+fn window_browser_args() -> String {
+    browser_args(std::env::var("RECOOPLAY_DRY_RUN").ok().as_deref(), std::env::var("RECOOPLAY_WEBVIEW2_DEBUG_PORT").ok().as_deref())
+}
+
 /// 透明・最前面・クリック透過・非アクティブのウィンドウで /overlay を表示する (#163、Q45)。
 /// フォーカスを取らず、マウス・キーボードを受けないので、ゲームの前面判定と入力の経路は変わらない
 fn open_overlay(app: &tauri::AppHandle, port: u16) -> Result<(), String> {
@@ -259,6 +275,7 @@ fn open_overlay(app: &tauri::AppHandle, port: u16) -> Result<(), String> {
         .focused(false)
         .focusable(false)
         .visible(false)
+        .additional_browser_args(&window_browser_args())
         .build()
         .map_err(|e| format!("表示用のウィンドウを作れません: {e}"))?;
     if let Err(e) = window.set_ignore_cursor_events(true) {
@@ -306,6 +323,7 @@ fn main() {
                 .title("Re:Cooplay")
                 .inner_size(1280.0, 820.0)
                 .min_inner_size(800.0, 560.0)
+                .additional_browser_args(&window_browser_args())
                 .on_navigation(move |url| match overlay_request(url) {
                     Some(on) => { handle_overlay_request(nav.clone(), on); false }
                     None => true,
@@ -363,6 +381,19 @@ fn main() {
 mod tests {
     use super::*;
     use std::os::windows::process::ExitStatusExt;
+
+    #[test]
+    fn webview2_debug_port_only_in_dry_run() {
+        let default = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection";
+        assert_eq!(browser_args(None, None), default);
+        assert_eq!(browser_args(Some("1"), None), default);
+        // 製品の通常起動 (dry-run でない) では、ポートを指定してもデバッグ接続を開かない
+        assert_eq!(browser_args(None, Some("9222")), default);
+        assert_eq!(browser_args(Some("0"), Some("9222")), default);
+        assert_eq!(browser_args(Some("1"), Some("abc")), default);
+        assert_eq!(browser_args(Some("1"), Some("0")), default);
+        assert_eq!(browser_args(Some("1"), Some("9222")), format!("{default} --remote-debugging-port=9222"));
+    }
 
     #[test]
     fn missing_dll_is_distinguished_from_other_startup_failures() {
