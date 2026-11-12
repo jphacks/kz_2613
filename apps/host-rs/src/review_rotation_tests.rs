@@ -55,9 +55,9 @@ fn review_rotation_pause_disconnect_emergency_do_not_consume_remainder() {
 fn review_launcher_emergency_gate_original_repro() {
  let (mut h,_rx)=fixture(); h.game.title="minecraft-java".into();h.game.phase=Phase::Lobby;
  h.fake_target=None;h.target_ok=false;h.hotkey=Err("独立試験: 未登録".into());h.on_launcher_focus(true);
- assert!(!h.remote_launcher_active());h.handle_control(0,"ENTER","down");
+ assert!(!h.remote_desktop_active());h.handle_control(0,"ENTER","down");
  assert!(!h.outputs[index("ENTER")].physical,"緊急停止を使えない間はランチャーへ押下を送らない");
- h.hotkey=Ok(());assert!(h.remote_launcher_active());h.handle_control(0,"ENTER","down");
+ h.hotkey=Ok(());assert!(h.remote_desktop_active());h.handle_control(0,"ENTER","down");
  assert!(h.outputs[index("ENTER")].physical);h.release_outputs(None);
 }
 #[test]
@@ -67,7 +67,7 @@ fn review_launcher_app_transition_rejects_old_input_and_participant() {
  h.accept_input(0,json!({"epoch":old,"iseq":1,"button":"ENTER","state":"down","t":1_000_000.0}),Via::Rtc);
  assert!(h.outputs[index("ENTER")].physical);
  h.on_app_focus(true);assert!(h.game.epoch>old);assert!(!h.outputs[index("ENTER")].physical);
- h.on_app_focus(false);let epoch=h.game.epoch;assert!(h.remote_launcher_active());
+ h.on_app_focus(false);let epoch=h.game.epoch;assert!(h.remote_desktop_active());
  h.accept_input(0,json!({"epoch":old,"iseq":2,"button":"ENTER","state":"down","t":1_000_000.0}),Via::Rtc);
  h.accept_input(1,json!({"epoch":epoch,"iseq":1,"button":"ENTER","state":"down","t":1_000_000.0}),Via::Rtc);
  assert!(h.outputs.iter().all(|o|!o.physical),"旧経路の入力と参加者のランチャー操作を拒否");
