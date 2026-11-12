@@ -85,7 +85,21 @@ try {
     return (await targets()).find(target=>target.url===hostOrigin+'/app'&&target.webSocketDebuggerUrl);
   },'WebView2の参加画面が見つかりません',30).catch(async error=>{
     const seen=(await targets()).map(target=>`${target.type} ${target.url.replace(hostOrigin,'<host>')}`);
-    throw Error(`${error.message} 開いている画面: ${JSON.stringify(seen)}`);
+    // CDPから画面が返らないときの切り分け: デバッグ用ポートへの接続、WebView2のランタイムとプロセス、ウィンドウ
+    const cdp=await fetch(debugOrigin+'/json/version',{signal:AbortSignal.timeout(2000)})
+      .then(response=>`HTTP ${response.status}`).catch(failure=>`${failure.name}: ${failure.cause?.code ?? failure.message}`);
+    let system='';
+    try {
+      system=powershell('-Command',[
+        "$k='HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'",
+        "$v=(Get-ItemProperty -Path $k -ErrorAction SilentlyContinue).pv",
+        `$w=@(Get-CimInstance Win32_Process -Filter "Name='msedgewebview2.exe'")`,
+        `$mine=@($w | Where-Object { $_.CommandLine -match '${debugPort}' })`,
+        `$app=Get-Process -Id ${app.pid} -ErrorAction SilentlyContinue`,
+        "\"WebView2ランタイム=$v WebView2プロセス=$($w.Count) うちこのポート=$($mine.Count) アプリのウィンドウ='$($app.MainWindowTitle)' セッション=$($app.SessionId) 対話=$([Environment]::UserInteractive)\"",
+      ].join('; '));
+    } catch (failure) {system=`取得失敗: ${failure.message}`;}
+    throw Error(`${error.message} 開いている画面: ${JSON.stringify(seen)} CDP: ${cdp} ${system}`);
   });
   console.log(`WebView2の参加画面を確認 (${Math.round(performance.now()-started)}ms)`);
   socket=new WebSocket(main.webSocketDebuggerUrl);
