@@ -22,14 +22,14 @@ jobs:
       LIBCLANG_PATH: C:\Program Files\LLVM\bin
     steps:
       - uses: actions/checkout@v4
+        timeout-minutes: 5
       - name: Strawberry Perl を優先する
+        timeout-minutes: 5
         shell: pwsh
         run: echo "C:\Strawberry\perl\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       # 試験スクリプト (scripts/sim/*.mjs) は依存なしの Node で動く。製品には含まれない
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
       - uses: actions/cache@v4
+        timeout-minutes: 8
         with:
           path: |
             ~/.cargo/registry
@@ -37,28 +37,48 @@ jobs:
             apps/host-rs/target
           key: host-rs-${{ runner.os }}-${{ hashFiles('apps/host-rs/Cargo.lock') }}
           restore-keys: host-rs-${{ runner.os }}-
+      - run: cargo build --release --locked
+        timeout-minutes: 25
+        working-directory: apps/host-rs
+      - run: cargo test --release --locked
+        timeout-minutes: 25
+        working-directory: apps/host-rs
+      - uses: actions/upload-artifact@v4
+        timeout-minutes: 5
+        with:
+          name: windows-host-build
+          path: |
+            apps/host-rs/target/release/recooplay-host.exe
+            apps/host-rs/target/release/recooplay-input-probe.exe
+          if-no-files-found: error
+
+  web:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        timeout-minutes: 5
+      - uses: actions/setup-node@v4
+        timeout-minutes: 5
+        with:
+          node-version: '24'
       - name: React版の画面をビルド
+        timeout-minutes: 5
         working-directory: apps/web
         run: |
           npm ci
           npm run build
-      - run: cargo build --release --locked
-        working-directory: apps/host-rs
-      - run: cargo test --release --locked
-        working-directory: apps/host-rs
-      - name: 通信契約のシミュレーション（Rust 版）
-        run: node scripts/sim/protocol-sim.mjs
-      - name: 終了通知と親プロセス消失時の全解放
-        run: node scripts/sim/shutdown-sim.mjs
-      - name: 実WebSocketの非注入計測スモーク
-        run: node scripts/sim/runtime-measure.mjs --bin apps/host-rs/target/release/recooplay-host.exe --players 2 --cases normal --duration-ms 1000
       - name: コントローラー共通描画モデル
+        timeout-minutes: 5
         run: node --experimental-strip-types scripts/sim/controller-layout-test.mjs
       - name: 共通React部品のプレビューと入力境界
+        timeout-minutes: 5
         run: node --experimental-strip-types scripts/sim/controller-preview-test.mjs
       - name: 製品TypeScriptの入力・通信・表示・破棄と依存グラフ
+        timeout-minutes: 5
         run: node scripts/sim/product-web-test.mjs
       - name: Android試験の経路判定とUSBへの誤退避の拒否
+        timeout-minutes: 5
         run: |
           node scripts/device/android-dry-run-test.mjs
           node scripts/device/wifi-route-test.mjs
@@ -71,58 +91,25 @@ jobs:
           node scripts/device/wifi-ack-observer-test.mjs
           node scripts/device/look-gap-analysis-test.mjs
       - name: スマホのレイアウトモデル（標準生成・検証・合成・担当表示・縦横変換・保存）
+        timeout-minutes: 5
         run: node scripts/sim/phone-layout-test.mjs
       - name: 改良後UIの撮影証拠の寸法と画面網羅
+        timeout-minutes: 5
         run: node scripts/sim/verify-ui-evidence.mjs
       - name: 操作定義の静的抽出
+        timeout-minutes: 5
         run: node scripts/sim/profile-extract-test.mjs
       - name: カタログと操作定義の照合
+        timeout-minutes: 5
         run: node scripts/sim/profile-catalog-test.mjs
       - name: 静的画面の構文
+        timeout-minutes: 5
         run: node scripts/sim/check-static-pages.mjs
-      - name: 画像と外部化したCSS・JSの配信
-        run: node scripts/sim/static-assets-sim.mjs
-      - name: 観客表示と診断画面の起動・受信境界・破棄
-        id: auxiliary-pages
-        env:
-          RECOOPLAY_SMOKE_DIAGNOSTICS: ${{ runner.temp }}/recooplay-smoke-diagnostics
-        run: node scripts/sim/auxiliary-pages-smoke.mjs --pages overlay,diagnostics,pseudo-game
       - uses: actions/upload-artifact@v4
-        if: failure() && steps.auxiliary-pages.outcome == 'failure'
+        timeout-minutes: 5
         with:
-          name: auxiliary-pages-diagnostics
-          path: ${{ runner.temp }}/recooplay-smoke-diagnostics
-      - name: 入力プローブの安全経路（--mock、OS 入力なし）
-        run: node scripts/sim/input-probe-sim.mjs
-      - uses: actions/cache@v4
-        with:
-          path: apps/desktop/target
-          key: package-desktop-${{ runner.os }}-${{ hashFiles('apps/desktop/Cargo.lock') }}
-      - name: 同じソースから配布用PCアプリをビルド
-        run: cargo build --release --locked --manifest-path apps/desktop/Cargo.toml
-      - name: PCアプリの起動失敗時の案内
-        run: cargo test --release --locked --manifest-path apps/desktop/Cargo.toml
-      - name: Windows配布zipを作成
-        shell: powershell
-        run: ./scripts/windows/package.ps1
-      - name: 配布zipの同梱物・展開後の起動を確認（OS入力なし）
-        run: node scripts/sim/package-smoke.mjs
-      - name: Windowsインストーラーを作成（NSIS、zipと同じ同梱物）
-        shell: powershell
-        run: |
-          $nsis = Join-Path ${env:ProgramFiles(x86)} "NSIS\makensis.exe"
-          if (-not (Get-Command makensis.exe -ErrorAction SilentlyContinue) -and -not (Test-Path $nsis)) { choco install nsis -y --no-progress }
-          ./scripts/windows/build-installer.ps1
-      - name: インストーラーの事前チェック・サイレント導入・更新・アンインストール（取得・PC設定変更なし）
-        run: node scripts/sim/installer-smoke.mjs
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ReCooplay-windows-x64
-          path: |
-            dist/*.zip
-            dist/*.zip.sha256
-            dist/*-setup.exe
-            dist/*-setup.exe.sha256
+          name: windows-web-build
+          path: apps/web/dist/
           if-no-files-found: error
 
   desktop:
@@ -130,7 +117,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        timeout-minutes: 5
       - uses: actions/cache@v4
+        timeout-minutes: 8
         with:
           path: |
             ~/.cargo/registry
@@ -139,4 +128,131 @@ jobs:
           key: desktop-${{ runner.os }}-${{ hashFiles('apps/desktop/Cargo.lock') }}
           restore-keys: desktop-${{ runner.os }}-
       - run: cargo build --release --locked
+        timeout-minutes: 25
         working-directory: apps/desktop
+      - name: PCアプリの起動失敗時の案内
+        timeout-minutes: 25
+        run: cargo test --release --locked --manifest-path apps/desktop/Cargo.toml
+      - uses: actions/upload-artifact@v4
+        timeout-minutes: 5
+        with:
+          name: windows-desktop-build
+          path: apps/desktop/target/release/recooplay-desktop.exe
+          if-no-files-found: error
+
+  protocol:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    needs: [host-rs, web]
+    steps:
+      - uses: actions/checkout@v4
+        timeout-minutes: 5
+      - uses: actions/setup-node@v4
+        timeout-minutes: 5
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        timeout-minutes: 5
+        with:
+          name: windows-host-build
+          path: apps/host-rs/target/release
+      - uses: actions/download-artifact@v4
+        timeout-minutes: 5
+        with:
+          name: windows-web-build
+          path: apps/web/dist
+      - name: 通信契約のシミュレーション（Rust 版）
+        id: protocol-sim
+        timeout-minutes: 8
+        shell: pwsh
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $false
+          $log = Join-Path $env:RUNNER_TEMP protocol-sim.txt
+          node scripts/sim/protocol-sim.mjs *> $log
+          $status = $LASTEXITCODE
+          Get-Content -LiteralPath $log
+          exit $status
+      - uses: actions/upload-artifact@v4
+        timeout-minutes: 5
+        if: failure() && steps.protocol-sim.outcome == 'failure'
+        with:
+          name: protocol-sim-diagnostics
+          path: ${{ runner.temp }}/protocol-sim.txt
+      - name: 終了通知と親プロセス消失時の全解放
+        timeout-minutes: 5
+        run: node scripts/sim/shutdown-sim.mjs
+      - name: 実WebSocketの非注入計測スモーク
+        timeout-minutes: 5
+        run: node scripts/sim/runtime-measure.mjs --bin apps/host-rs/target/release/recooplay-host.exe --players 2 --cases normal --duration-ms 1000
+      - name: 画像と外部化したCSS・JSの配信
+        timeout-minutes: 5
+        run: node scripts/sim/static-assets-sim.mjs
+      - name: 観客表示と診断画面の起動・受信境界・破棄
+        timeout-minutes: 5
+        id: auxiliary-pages
+        env:
+          RECOOPLAY_SMOKE_DIAGNOSTICS: ${{ runner.temp }}/recooplay-smoke-diagnostics
+        run: node scripts/sim/auxiliary-pages-smoke.mjs --pages overlay,diagnostics,pseudo-game
+      - uses: actions/upload-artifact@v4
+        timeout-minutes: 5
+        if: failure() && steps.auxiliary-pages.outcome == 'failure'
+        with:
+          name: auxiliary-pages-diagnostics
+          path: ${{ runner.temp }}/recooplay-smoke-diagnostics
+      - name: 入力プローブの安全経路（--mock、OS 入力なし）
+        timeout-minutes: 5
+        run: node scripts/sim/input-probe-sim.mjs
+
+  package:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    needs: [protocol, desktop]
+    steps:
+      - uses: actions/checkout@v4
+        timeout-minutes: 5
+      - uses: actions/setup-node@v4
+        timeout-minutes: 5
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        timeout-minutes: 5
+        with:
+          name: windows-host-build
+          path: apps/host-rs/target/release
+      - uses: actions/download-artifact@v4
+        timeout-minutes: 5
+        with:
+          name: windows-web-build
+          path: apps/web/dist
+      - uses: actions/download-artifact@v4
+        timeout-minutes: 5
+        with:
+          name: windows-desktop-build
+          path: apps/desktop/target/release
+      - name: Windows配布zipを作成
+        timeout-minutes: 5
+        shell: powershell
+        run: ./scripts/windows/package.ps1
+      - name: 配布zipの同梱物・展開後の起動を確認（OS入力なし）
+        timeout-minutes: 5
+        run: node scripts/sim/package-smoke.mjs
+      - name: Windowsインストーラーを作成（NSIS、zipと同じ同梱物）
+        timeout-minutes: 5
+        shell: powershell
+        run: |
+          $nsis = Join-Path ${env:ProgramFiles(x86)} "NSIS\makensis.exe"
+          if (-not (Get-Command makensis.exe -ErrorAction SilentlyContinue) -and -not (Test-Path $nsis)) { choco install nsis -y --no-progress }
+          ./scripts/windows/build-installer.ps1
+      - name: インストーラーの事前チェック・サイレント導入・更新・アンインストール（取得・PC設定変更なし）
+        timeout-minutes: 5
+        run: node scripts/sim/installer-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        timeout-minutes: 5
+        with:
+          name: ReCooplay-windows-x64
+          path: |
+            dist/*.zip
+            dist/*.zip.sha256
+            dist/*-setup.exe
+            dist/*-setup.exe.sha256
+          if-no-files-found: error
