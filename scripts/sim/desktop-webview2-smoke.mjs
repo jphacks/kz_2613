@@ -74,16 +74,28 @@ const evaluate = async expression => (await call('Runtime.evaluate',{expression,
 const powershell = (...args) => execFileSync('pwsh',['-NoProfile','-NonInteractive',...args],
   {encoding:'utf8',windowsHide:true,timeout:10000}).trim();
 try {
+  // ホストの起動（ゲーム一覧の読み込みを含む）と画面の表示を分けて待つ。手元でも応答まで10〜20秒かかり、CIではさらに遅い
+  await until(async()=>{
+    assert(!exited,'Tauriが起動中に終了した');
+    try {return (await fetch(hostOrigin+'/api/info',{signal:AbortSignal.timeout(1000)})).ok;} catch {return false;}
+  },'ホストが応答しません',90);
+  console.log(`ホストの応答を確認 (${Math.round(performance.now()-started)}ms)`);
   const main=await until(async()=>{
     assert(!exited,'Tauriが起動中に終了した');
     return (await targets()).find(target=>target.url===hostOrigin+'/app'&&target.webSocketDebuggerUrl);
-  },'WebView2の参加画面が見つかりません',30);
+  },'WebView2の参加画面が見つかりません',30).catch(async error=>{
+    const seen=(await targets()).map(target=>`${target.type} ${target.url.replace(hostOrigin,'<host>')}`);
+    throw Error(`${error.message} 開いている画面: ${JSON.stringify(seen)}`);
+  });
+  console.log(`WebView2の参加画面を確認 (${Math.round(performance.now()-started)}ms)`);
   socket=new WebSocket(main.webSocketDebuggerUrl);
   await until(()=>socket.readyState===WebSocket.OPEN,'WebView2のCDPへ接続できません');
   await until(()=>evaluate("document.body.dataset.view==='join' && !!document.querySelector('#nextBtn')"),
     '参加画面のReact描画が完了しません');
+  // 待ち受けのソケットは、Windowsの一覧（Get-NetTCPConnection・netstat）に出ないことがあるため、
+  // PCアプリが起動した子プロセスとしてホストを特定する
   const hostId=Number(powershell('-Command',
-    `(Get-NetTCPConnection -State Listen -LocalAddress 127.0.0.1 -LocalPort ${hostPort} -ErrorAction Stop).OwningProcess`));
+    `@(Get-CimInstance Win32_Process -Filter "ParentProcessId=${app.pid} and Name='recooplay-host.exe'").ProcessId`));
   assert(Number.isSafeInteger(hostId)&&hostId>0,'ホストのプロセスを特定できません');
   assert.equal(powershell('-Command',`(Get-Process -Id ${hostId} -ErrorAction Stop).ProcessName`),'recooplay-host');
   await evaluate("document.querySelector('#settingsBtn').click()");
