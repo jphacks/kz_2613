@@ -527,7 +527,7 @@ impl Hub {
     fn report_net(&mut self) {
         let sampled_at = now_ms();
         let mut rows = Vec::new();
-        for i in 0..MAX_SLOTS {
+        for (i, slot_name) in SLOT_NAMES.iter().enumerate().take(MAX_SLOTS) {
             let Some(s) = self.slots[i].as_mut().filter(|s| s.connected) else { continue };
             let (stalls, max_stall) = s.arrivals.take();
             s.net_recent = (stalls, max_stall);
@@ -535,7 +535,7 @@ impl Hub {
                 s.net_last_warning = Some((sampled_at, stalls, max_stall));
             }
             let st = &s.client_stats;
-            rows.push(json!({ "slot": SLOT_NAMES[i], "stalls": stalls, "maxStallMs": max_stall,
+            rows.push(json!({ "slot": slot_name, "stalls": stalls, "maxStallMs": max_stall,
                 "rttAvg": st.get("avg"), "rttMax": st.get("max"), "path": st.get("path") }));
         }
         if !rows.is_empty() {
@@ -2113,14 +2113,14 @@ impl Hub {
     fn release_lobby_slots(&mut self, now: u64) {
         if self.game.phase != Phase::Lobby { return; }
         let mut changed = false;
-        for i in 0..MAX_SLOTS {
+        for (i, slot_name) in SLOT_NAMES.iter().enumerate().take(MAX_SLOTS) {
             let expired = self.slots[i].as_ref().is_some_and(|s| session::lobby_slot_expired(self.game.phase, s.connected, s.disconnected_at, now));
             if expired {
                 if let Some(lineup) = self.lineup.as_mut().filter(|l| l.members.contains(&i)) {
                     lineup.expired_members[i] = true;
                 }
                 self.slots[i] = None;
-                self.log("slot_released", json!({ "slot": SLOT_NAMES[i] }));
+                self.log("slot_released", json!({ "slot": slot_name }));
                 changed = true;
             }
         }
@@ -2200,7 +2200,7 @@ impl Hub {
                 self.rotate_roles_if_due(now);
                 self.update_low_latency();
                 self.net_tick += 1;
-                if self.net_tick % 10 == 0 {
+                if self.net_tick.is_multiple_of(10) {
                     self.report_net();
                 }
                 self.push_state();
@@ -2331,13 +2331,11 @@ impl Hub {
         let Some(conn) = self.conns.remove(&id) else { return };
         match conn.role {
             Role::Monitor { page: Page::Game, .. } => self.on_focus_change(),
-            Role::Player { slot } => {
-                if self.slots[slot].as_ref().is_some_and(|s| s.conn == Some(id)) {
-                    let s = self.slots[slot].as_mut().unwrap();
-                    s.rtc = None;
-                    s.rtc_state = "none";
-                    self.mark_disconnected(slot, &format!("close {}", code));
-                }
+            Role::Player { slot } if self.slots[slot].as_ref().is_some_and(|s| s.conn == Some(id)) => {
+                let s = self.slots[slot].as_mut().unwrap();
+                s.rtc = None;
+                s.rtc_state = "none";
+                self.mark_disconnected(slot, &format!("close {}", code));
             }
             _ => {}
         }
@@ -3059,7 +3057,7 @@ mod tests {
         finish_wait(&mut h, i); // upの後、次のdownはgap待ち
         assert!(!h.outputs[i].physical);
         assert!(h.outputs[i].timer_pending);
-        assert_eq!(h.outputs[i].queue.front().unwrap().0, true);
+        assert!(h.outputs[i].queue.front().unwrap().0);
         let after_gap = Instant::now();
         let gap_due = h.timers.iter().find_map(|Reverse((at, _, timer))|
             (*timer == Timer::Pump(i, h.outputs[i].timer_gen)).then_some(*at)).unwrap();
@@ -3700,7 +3698,7 @@ mod tests {
 
     #[test]
     fn repeated_release_failure_has_three_timer_passes_and_retains_uncertainty_after_reset() {
-        let recorder = RecordingInput::with_results(std::iter::once(true).chain(std::iter::repeat(false).take(50)));
+        let recorder = RecordingInput::with_results(std::iter::once(true).chain(std::iter::repeat_n(false, 50)));
         let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
         h.set_output(index("MOUSE_L"), "P1", true); h.release_outputs(None);
         h.on_timer(Timer::InputFaultStop(h.fault_stop_gen), Instant::now());
@@ -3721,7 +3719,7 @@ mod tests {
     }
 
     fn lobby_with(slots: &[(usize, bool)], disconnected_at: u64) -> Hub {
-        let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(std::iter::repeat(true).take(50))));
+        let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(std::iter::repeat_n(true, 50))));
         h.game.phase = Phase::Lobby; // 共通のフィクスチャは協力プレイ中で始まる
         h.slots = Default::default();
         for &(i, connected) in slots {
@@ -4009,7 +4007,7 @@ mod tests {
 
     #[test]
     fn reset_clears_the_previous_session_lineup_and_reason() {
-        let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(std::iter::repeat(true).take(50))));
+        let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(std::iter::repeat_n(true, 50))));
         h.participants = vec![0, 1, 2];
         h.assigned = vec![vec!["a".into()], vec!["b".into()], vec!["c".into()]];
         h.game.phase = Phase::Coop;
@@ -4039,7 +4037,7 @@ mod tests {
 
     #[test]
     fn failure_during_mode_change_cannot_reenable_or_skip_the_fault_stop() {
-        let recorder = RecordingInput::with_results(std::iter::once(true).chain(std::iter::repeat(false).take(20)));
+        let recorder = RecordingInput::with_results(std::iter::once(true).chain(std::iter::repeat_n(false, 20)));
         let (mut h, _rx) = fixture_with_input(Box::new(recorder));
         h.set_output(index("KEY_W"), "P1", true);
         h.set_inject_mode(InjectMode::Off);

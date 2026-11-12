@@ -46,6 +46,7 @@ impl Keybinds {
     }
 
     /// 定義の初期キーに、ユーザーの設定ファイルのキーを重ねる。override_path は設定ファイルの場所の上書き (config.json 等)
+    #[cfg(test)]
     pub fn build(p: &Profile, override_path: Option<&Path>) -> Keybinds {
         Self::build_with(p, override_path, None)
     }
@@ -216,7 +217,7 @@ fn terraria(text: &str) -> Option<HashMap<String, Key>> {
         kb.iter()
             .map(|(name, v)| {
                 let first = v.as_array().and_then(|a| a.iter().filter_map(|x| x.as_str()).next());
-                (name.clone(), first.map_or(Key::Unbound, |k| name_key(k)))
+                (name.clone(), first.map_or(Key::Unbound, name_key))
             })
             .collect(),
     )

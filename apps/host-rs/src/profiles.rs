@@ -273,6 +273,7 @@ pub fn find<'a>(list: &'a [Profile], game_id: &str) -> Option<&'a Profile> {
 /// 1. 担当の付くグループ (role が P1〜P3) を、定義の順 (= 優先度: 移動・視点・攻撃・持ち物…) に 1 つの単位とする
 /// 2. 単位が人数より少なければ、分けられるグループ (split) を重い順に部分へ分け、それでも足りなければ重い単位を半分に分ける
 /// 3. 優先度の高い単位から 1 人ずつ配り、残りは負担 (重みの合計) が最も軽い人へ配る
+///
 /// メニュー (host) は P1 (ホスト) のリモコンのまま、会話等 (none) は分担しない
 pub fn assignment_for(p: &Profile, n: usize) -> Vec<Vec<String>> {
     let n = n.clamp(1, 4);
@@ -455,7 +456,7 @@ mod review_tests {
         v["actions"].as_array_mut().unwrap().retain(|a| a["group"]=="movement");
         let a=assignment_for(&parse(&v).unwrap(),3);
         assert!(a.iter().all(|a| !a.is_empty()));
-        let flat:Vec<_>=a.iter().flat_map(|a|a).collect();
+        let flat:Vec<_>=a.iter().flatten().collect();
         assert_eq!(flat.len(),flat.iter().collect::<std::collections::HashSet<_>>().len());
     }
     #[test]

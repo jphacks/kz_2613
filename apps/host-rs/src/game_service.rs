@@ -166,11 +166,11 @@ mod tests {
         assert!(title_known(&[], "minecraft-java")); assert!(!title_known(&[], "steam:unknown"));
         assert_eq!(game_name(&[], "pseudo-game"), "疑似ゲーム画面");
         for source in ["steam", "epic"] {
-            let e = entry(source); let target = target_for(&[e.clone()], &e.id, &base);
+            let e = entry(source); let target = target_for(std::slice::from_ref(&e), &e.id, &base);
             assert!(target.matches(&Foreground { process: "game.exe".into(), path: e.launch_uri.clone(), title: String::new() }));
             assert!(!target.matches(&Foreground { process: "javaw.exe".into(), path: "C:/other/game.exe".into(), title: "Minecraft".into() }));
         }
-        let e = entry(games::MANUAL_SOURCE); let target = target_for(&[e.clone()], &e.id, &base);
+        let e = entry(games::MANUAL_SOURCE); let target = target_for(std::slice::from_ref(&e), &e.id, &base);
         assert!(target.matches(&Foreground { process: "game.exe".into(), path: e.launch_uri.clone(), title: String::new() }));
         assert!(!target.matches(&Foreground { process: "other.exe".into(), path: "C:/mock/game/other.exe".into(), title: String::new() }));
         let unknown = target_for(&[], "steam:unknown", &base);
