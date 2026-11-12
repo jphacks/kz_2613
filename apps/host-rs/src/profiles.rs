@@ -12,8 +12,15 @@ const TYPES: [&str; 5] = ["button", "axis2d", "mouseDelta", "wheel", "text"];
 const ROLES: [&str; 5] = ["P1", "P2", "P3", "host", "none"];
 const SUITABILITY: [&str; 4] = ["good", "limited", "unsuitable", "unknown"];
 const STATUS: [&str; 5] = ["unverified", "template", "extracted", "reviewed", "device"];
-const READERS: [&str; 7] =
-    ["minecraft-options", "terraria-input-profiles", "es3-keybindings", "unity-inputsystem-json", "ue-input-ini", "source-cfg", "none"];
+const READERS: [&str; 7] = [
+    "minecraft-options",
+    "terraria-input-profiles",
+    "es3-keybindings",
+    "unity-inputsystem-json",
+    "ue-input-ini",
+    "source-cfg",
+    "none",
+];
 
 #[derive(Clone, Debug)]
 pub struct Action {
@@ -75,7 +82,14 @@ fn s(v: &Value, k: &str) -> Option<String> {
 }
 
 fn strings(v: Option<&Value>) -> Vec<String> {
-    v.and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect()).unwrap_or_default()
+    v.and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// 1 件の定義を読み、形式を検証する。誤りは理由を返す
@@ -83,7 +97,9 @@ pub fn parse(v: &Value) -> Result<Profile, String> {
     if v.get("schema").and_then(Value::as_u64) != Some(SCHEMA) {
         return Err(format!("schema が {SCHEMA} ではありません"));
     }
-    let id = s(v, "id").filter(|i| !i.is_empty()).ok_or("id がありません")?;
+    let id = s(v, "id")
+        .filter(|i| !i.is_empty())
+        .ok_or("id がありません")?;
     let name = s(v, "name").ok_or("name がありません")?;
     let m = v.get("match").ok_or("match がありません")?;
     let suitability = s(v, "suitability").unwrap_or_else(|| "unknown".into());
@@ -105,7 +121,11 @@ pub fn parse(v: &Value) -> Result<Profile, String> {
         None => None,
     };
     let mut groups = Vec::new();
-    for g in v.get("groups").and_then(Value::as_array).ok_or("groups がありません")? {
+    for g in v
+        .get("groups")
+        .and_then(Value::as_array)
+        .ok_or("groups がありません")?
+    {
         let gid = s(g, "id").ok_or("group.id がありません")?;
         let role = s(g, "role").unwrap_or_else(|| "none".into());
         if !ROLES.contains(&role.as_str()) {
@@ -127,28 +147,46 @@ pub fn parse(v: &Value) -> Result<Profile, String> {
         if groups.iter().any(|x: &Group| x.id == gid) {
             return Err(format!("group {gid} が重複しています"));
         }
-        groups.push(Group { label: s(g, "label").unwrap_or_else(|| gid.clone()), id: gid, role, split });
+        groups.push(Group {
+            label: s(g, "label").unwrap_or_else(|| gid.clone()),
+            id: gid,
+            role,
+            split,
+        });
     }
     let mut actions: Vec<Action> = Vec::new();
-    for a in v.get("actions").and_then(Value::as_array).ok_or("actions がありません")? {
+    for a in v
+        .get("actions")
+        .and_then(Value::as_array)
+        .ok_or("actions がありません")?
+    {
         let aid = s(a, "id").ok_or("action.id がありません")?;
         if actions.iter().any(|x| x.id == aid) {
             return Err(format!("action {aid} が重複しています"));
         }
         let group = s(a, "group").ok_or_else(|| format!("action {aid} に group がありません"))?;
         if !groups.iter().any(|g| g.id == group) {
-            return Err(format!("action {aid} の group {group} が定義されていません"));
+            return Err(format!(
+                "action {aid} の group {group} が定義されていません"
+            ));
         }
         let kind = s(a, "type").unwrap_or_else(|| "button".into());
         if !TYPES.contains(&kind.as_str()) {
             return Err(format!("action {aid} の type が不正です: {kind}"));
         }
         let default = match s(a, "default") {
-            Some(d) => Some(controls::output(&d).map(|o| o.id).ok_or_else(|| format!("action {aid} の default のキー {d} は送れません"))?),
+            Some(d) => Some(
+                controls::output(&d)
+                    .map(|o| o.id)
+                    .ok_or_else(|| format!("action {aid} の default のキー {d} は送れません"))?,
+            ),
             None => None,
         };
         if let Some(control) = s(a, "control") {
-            if actions.iter().any(|a| a.control.as_deref() == Some(&control)) {
+            if actions
+                .iter()
+                .any(|a| a.control.as_deref() == Some(&control))
+            {
                 return Err(format!("control {control} が重複しています"));
             }
             let role = &groups.iter().find(|g| g.id == group).unwrap().role;
@@ -157,18 +195,38 @@ pub fn parse(v: &Value) -> Result<Profile, String> {
             }
         }
         // 視点・2軸は常に操作し続けるため重い。ホイールは補助
-        let weight = a.get("weight").and_then(Value::as_f64).filter(|w| *w >= 0.0).unwrap_or(match kind.as_str() {
-            "mouseDelta" | "axis2d" => 3.0,
-            "wheel" => 0.5,
-            _ => 1.0,
+        let weight = a
+            .get("weight")
+            .and_then(Value::as_f64)
+            .filter(|w| *w >= 0.0)
+            .unwrap_or(match kind.as_str() {
+                "mouseDelta" | "axis2d" => 3.0,
+                "wheel" => 0.5,
+                _ => 1.0,
+            });
+        actions.push(Action {
+            label: s(a, "label").unwrap_or_else(|| aid.clone()),
+            id: aid,
+            group,
+            kind,
+            default,
+            bind: s(a, "bind"),
+            control: s(a, "control"),
+            weight,
         });
-        actions.push(Action { label: s(a, "label").unwrap_or_else(|| aid.clone()), id: aid, group, kind, default, bind: s(a, "bind"), control: s(a, "control"), weight });
     }
     for g in &groups {
         let mut used = std::collections::HashSet::new();
         for p in &g.split {
-            if let Some(x) = p.actions.iter().find(|x| !actions.iter().any(|a| &a.id == *x && a.group == g.id)) {
-                return Err(format!("group {} の split {} の action {x} が定義されていません", g.id, p.id));
+            if let Some(x) = p
+                .actions
+                .iter()
+                .find(|x| !actions.iter().any(|a| &a.id == *x && a.group == g.id))
+            {
+                return Err(format!(
+                    "group {} の split {} の action {x} が定義されていません",
+                    g.id, p.id
+                ));
             }
             if p.id.is_empty() || p.actions.iter().any(|a| !used.insert(a)) {
                 return Err(format!("group {} のsplitが空または重複しています", g.id));
@@ -176,13 +234,25 @@ pub fn parse(v: &Value) -> Result<Profile, String> {
         }
     }
     let ver = v.get("verification");
-    let status = ver.and_then(|x| s(x, "status")).unwrap_or_else(|| "unverified".into());
+    let status = ver
+        .and_then(|x| s(x, "status"))
+        .unwrap_or_else(|| "unverified".into());
     if !STATUS.contains(&status.as_str()) {
         return Err(format!("verification.status が不正です: {status}"));
     }
     Ok(Profile {
-        ids: { let mut ids = strings(m.get("ids")); if !ids.contains(&id) { ids.push(id.clone()); } ids },
-        steam_app_ids: m.get("steamAppIds").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).collect()).unwrap_or_default(),
+        ids: {
+            let mut ids = strings(m.get("ids"));
+            if !ids.contains(&id) {
+                ids.push(id.clone());
+            }
+            ids
+        },
+        steam_app_ids: m
+            .get("steamAppIds")
+            .and_then(Value::as_array)
+            .map(|a| a.iter().filter_map(Value::as_u64).collect())
+            .unwrap_or_default(),
         processes: strings(m.get("processes")),
         title_contains: s(m, "titleContains"),
         id,
@@ -199,7 +269,8 @@ pub fn parse(v: &Value) -> Result<Profile, String> {
 
 /// 同梱の Minecraft の定義 (フォルダが見つからない場合の既定)
 pub fn builtin_minecraft() -> Profile {
-    let v: Value = serde_json::from_str(include_str!("../../game-profiles/minecraft-java.json")).expect("minecraft-java.json");
+    let v: Value = serde_json::from_str(include_str!("../../game-profiles/minecraft-java.json"))
+        .expect("minecraft-java.json");
     parse(&v).expect("minecraft-java.json の形式")
 }
 
@@ -245,17 +316,31 @@ pub fn generic(game_id: &str, name: &str) -> Profile {
 pub fn load_dir(dir: &Path) -> (Vec<Profile>, Vec<String>) {
     let mut list = Vec::new();
     let mut errors = Vec::new();
-    let Ok(rd) = std::fs::read_dir(dir) else { return (list, errors) };
-    let mut paths: Vec<_> = rd.flatten().map(|e| e.path()).filter(|p| p.extension().is_some_and(|x| x == "json")).collect();
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return (list, errors);
+    };
+    let mut paths: Vec<_> = rd
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|x| x == "json"))
+        .collect();
     paths.sort();
     for p in paths {
-        let name = p.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+        let name = p
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default();
         let parsed = std::fs::read_to_string(&p)
             .map_err(|e| e.to_string())
-            .and_then(|t| serde_json::from_str::<Value>(t.trim_start_matches('\u{feff}')).map_err(|e| e.to_string()))
+            .and_then(|t| {
+                serde_json::from_str::<Value>(t.trim_start_matches('\u{feff}'))
+                    .map_err(|e| e.to_string())
+            })
             .and_then(|v| parse(&v));
         match parsed {
-            Ok(pr) if list.iter().any(|x: &Profile| x.id == pr.id) => errors.push(format!("{name}: id {} が重複しています", pr.id)),
+            Ok(pr) if list.iter().any(|x: &Profile| x.id == pr.id) => {
+                errors.push(format!("{name}: id {} が重複しています", pr.id))
+            }
             Ok(pr) => list.push(pr),
             Err(e) => errors.push(format!("{name}: {e}")),
         }
@@ -265,8 +350,12 @@ pub fn load_dir(dir: &Path) -> (Vec<Profile>, Vec<String>) {
 
 /// ゲームの ID ("minecraft-java" / "steam:<AppID>" など) に合う定義
 pub fn find<'a>(list: &'a [Profile], game_id: &str) -> Option<&'a Profile> {
-    let appid = game_id.strip_prefix("steam:").and_then(|a| a.parse::<u64>().ok());
-    list.iter().find(|p| p.ids.iter().any(|i| i == game_id) || appid.is_some_and(|a| p.steam_app_ids.contains(&a)))
+    let appid = game_id
+        .strip_prefix("steam:")
+        .and_then(|a| a.parse::<u64>().ok());
+    list.iter().find(|p| {
+        p.ids.iter().any(|i| i == game_id) || appid.is_some_and(|a| p.steam_app_ids.contains(&a))
+    })
 }
 
 /// 参加人数 n (1〜4) に合わせた分担の案 (#105)。
@@ -277,17 +366,31 @@ pub fn find<'a>(list: &'a [Profile], game_id: &str) -> Option<&'a Profile> {
 /// メニュー (host) は P1 (ホスト) のリモコンのまま、会話等 (none) は分担しない
 pub fn assignment_for(p: &Profile, n: usize) -> Vec<Vec<String>> {
     let n = n.clamp(1, 4);
-    let weight = |ids: &[String]| -> f64 { ids.iter().filter_map(|i| p.actions.iter().find(|a| &a.id == i)).map(|a| a.weight).sum() };
+    let weight = |ids: &[String]| -> f64 {
+        ids.iter()
+            .filter_map(|i| p.actions.iter().find(|a| &a.id == i))
+            .map(|a| a.weight)
+            .sum()
+    };
     // (単位の操作, 分けられる部分)
     let mut units: Vec<(Vec<String>, Vec<Vec<String>>)> = p
         .groups
         .iter()
         .filter(|g| g.role.starts_with('P'))
         .map(|g| {
-            let ids: Vec<String> = p.actions.iter().filter(|a| a.group == g.id).map(|a| a.id.clone()).collect();
+            let ids: Vec<String> = p
+                .actions
+                .iter()
+                .filter(|a| a.group == g.id)
+                .map(|a| a.id.clone())
+                .collect();
             let mut parts: Vec<Vec<String>> = g.split.iter().map(|s| s.actions.clone()).collect();
             if !parts.is_empty() {
-                let rest: Vec<String> = ids.iter().filter(|i| !parts.iter().any(|pp| pp.contains(i))).cloned().collect();
+                let rest: Vec<String> = ids
+                    .iter()
+                    .filter(|i| !parts.iter().any(|pp| pp.contains(i)))
+                    .cloned()
+                    .collect();
                 if !rest.is_empty() {
                     parts.push(rest);
                 }
@@ -298,7 +401,12 @@ pub fn assignment_for(p: &Profile, n: usize) -> Vec<Vec<String>> {
         .collect();
     while units.len() < n {
         // 分けられる単位のうち最も重いもの
-        let pick = units.iter().enumerate().filter(|(_, (_, parts))| parts.len() >= 2).max_by(|a, b| weight(&a.1 .0).total_cmp(&weight(&b.1 .0))).map(|(i, _)| i);
+        let pick = units
+            .iter()
+            .enumerate()
+            .filter(|(_, (_, parts))| parts.len() >= 2)
+            .max_by(|a, b| weight(&a.1 .0).total_cmp(&weight(&b.1 .0)))
+            .map(|(i, _)| i);
         if let Some(i) = pick {
             let (_, parts) = units.remove(i);
             for (k, part) in parts.into_iter().enumerate() {
@@ -307,7 +415,15 @@ pub fn assignment_for(p: &Profile, n: usize) -> Vec<Vec<String>> {
             continue;
         }
         // 分けられる単位がなければ、操作が 2 つ以上ある最も重い単位を半分にする
-        let Some(i) = units.iter().enumerate().filter(|(_, (ids, _))| ids.len() >= 2).max_by(|a, b| weight(&a.1 .0).total_cmp(&weight(&b.1 .0))).map(|(i, _)| i) else { break };
+        let Some(i) = units
+            .iter()
+            .enumerate()
+            .filter(|(_, (ids, _))| ids.len() >= 2)
+            .max_by(|a, b| weight(&a.1 .0).total_cmp(&weight(&b.1 .0)))
+            .map(|(i, _)| i)
+        else {
+            break;
+        };
         let (ids, _) = units.remove(i);
         let half = ids.len().div_ceil(2);
         units.insert(i, (ids[half..].to_vec(), Vec::new()));
@@ -315,7 +431,13 @@ pub fn assignment_for(p: &Profile, n: usize) -> Vec<Vec<String>> {
     }
     let mut slots: Vec<Vec<String>> = vec![Vec::new(); n];
     for (k, (ids, _)) in units.into_iter().enumerate() {
-        let target = if k < n { k } else { (0..n).min_by(|a, b| weight(&slots[*a]).total_cmp(&weight(&slots[*b]))).unwrap_or(0) };
+        let target = if k < n {
+            k
+        } else {
+            (0..n)
+                .min_by(|a, b| weight(&slots[*a]).total_cmp(&weight(&slots[*b])))
+                .unwrap_or(0)
+        };
         slots[target].extend(ids);
     }
     slots
@@ -324,10 +446,16 @@ pub fn assignment_for(p: &Profile, n: usize) -> Vec<Vec<String>> {
 /// 画面に配る要約。players は今の参加人数 (分担の案をこの人数で作る)。人数ごとの案 (1〜4 人) も付ける
 pub fn snapshot(p: &Profile, players: usize) -> Value {
     let named = |n: usize| -> serde_json::Map<String, Value> {
-        assignment_for(p, n).into_iter().enumerate().map(|(i, a)| (format!("P{}", i + 1), json!(a))).collect()
+        assignment_for(p, n)
+            .into_iter()
+            .enumerate()
+            .map(|(i, a)| (format!("P{}", i + 1), json!(a)))
+            .collect()
     };
     let assign = named(players);
-    let by_players: serde_json::Map<String, Value> = (1..=4).map(|n| (n.to_string(), Value::Object(named(n)))).collect();
+    let by_players: serde_json::Map<String, Value> = (1..=4)
+        .map(|n| (n.to_string(), Value::Object(named(n))))
+        .collect();
     json!({
         "id": p.id, "name": p.name, "suitability": p.suitability, "status": p.status,
         "controllerSupported": controller_supported(p),
@@ -348,8 +476,19 @@ pub fn snapshot(p: &Profile, players: usize) -> Value {
 /// 確認の状態 (未検証など) では制限しない (#123、画面に「未検証」と表示し続ける)。
 /// 分担できる操作がない (マウス操作だけの pointer 型など) か、送れない種類の操作があるときは false
 pub fn controller_supported(p: &Profile) -> bool {
-    let playable: Vec<_>=p.actions.iter().filter(|a| p.groups.iter().any(|g| g.id==a.group && g.role.starts_with('P'))).collect();
-    !playable.is_empty() && playable.iter().all(|a| matches!(a.kind.as_str(), "button" | "wheel" | "mouseDelta"))
+    let playable: Vec<_> = p
+        .actions
+        .iter()
+        .filter(|a| {
+            p.groups
+                .iter()
+                .any(|g| g.id == a.group && g.role.starts_with('P'))
+        })
+        .collect();
+    !playable.is_empty()
+        && playable
+            .iter()
+            .all(|a| matches!(a.kind.as_str(), "button" | "wheel" | "mouseDelta"))
 }
 
 #[cfg(test)]
@@ -365,22 +504,54 @@ mod tests {
 
     #[test]
     fn bundled_profiles_are_valid() {
-        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("game-profiles");
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("game-profiles");
         let (list, errors) = load_dir(&dir);
         assert!(errors.is_empty(), "{errors:?}");
         assert!(list.len() >= 500, "{}", list.len());
-        assert!(list.iter().any(|p| p.id == "minecraft-java" && p.status == "device"));
+        assert!(list
+            .iter()
+            .any(|p| p.id == "minecraft-java" && p.status == "device"));
     }
 
     #[test]
     fn invalid_definitions_are_rejected_with_reason() {
         let g = r#"{"id":"m","role":"P1"}"#;
-        assert!(parse(&minimal(r#"{"id":"a","group":"x","type":"button"}"#, g)).unwrap_err().contains("group x"));
-        assert!(parse(&minimal(r#"{"id":"a","group":"m","type":"button","default":"KEY_NOPE"}"#, g)).unwrap_err().contains("送れません"));
-        assert!(parse(&minimal(r#"{"id":"a","group":"m","type":"jump"}"#, g)).unwrap_err().contains("type"));
-        assert!(parse(&minimal(r#"{"id":"a","group":"m"}"#, r#"{"id":"m","role":"P9"}"#)).unwrap_err().contains("role"));
-        assert!(parse(&minimal(r#"{"id":"a","group":"m"},{"id":"a","group":"m"}"#, g)).unwrap_err().contains("重複"));
-        assert!(parse(&minimal(r#"{"id":"a","group":"m"}"#, r#"{"id":"m","role":"P1","split":[{"id":"s","actions":["zz"]}]}"#)).unwrap_err().contains("zz"));
+        assert!(
+            parse(&minimal(r#"{"id":"a","group":"x","type":"button"}"#, g))
+                .unwrap_err()
+                .contains("group x")
+        );
+        assert!(parse(&minimal(
+            r#"{"id":"a","group":"m","type":"button","default":"KEY_NOPE"}"#,
+            g
+        ))
+        .unwrap_err()
+        .contains("送れません"));
+        assert!(
+            parse(&minimal(r#"{"id":"a","group":"m","type":"jump"}"#, g))
+                .unwrap_err()
+                .contains("type")
+        );
+        assert!(parse(&minimal(
+            r#"{"id":"a","group":"m"}"#,
+            r#"{"id":"m","role":"P9"}"#
+        ))
+        .unwrap_err()
+        .contains("role"));
+        assert!(parse(&minimal(
+            r#"{"id":"a","group":"m"},{"id":"a","group":"m"}"#,
+            g
+        ))
+        .unwrap_err()
+        .contains("重複"));
+        assert!(parse(&minimal(
+            r#"{"id":"a","group":"m"}"#,
+            r#"{"id":"m","role":"P1","split":[{"id":"s","actions":["zz"]}]}"#
+        ))
+        .unwrap_err()
+        .contains("zz"));
         let mut v = minimal(r#"{"id":"a","group":"m"}"#, g);
         v["schema"] = json!(2);
         assert!(parse(&v).is_err());
@@ -388,10 +559,17 @@ mod tests {
 
     #[test]
     fn find_by_id_and_steam_appid() {
-        let p = parse(&minimal(r#"{"id":"a","group":"m","default":"KEY_W"}"#, r#"{"id":"m","role":"P1"}"#)).unwrap();
+        let p = parse(&minimal(
+            r#"{"id":"a","group":"m","default":"KEY_W"}"#,
+            r#"{"id":"m","role":"P1"}"#,
+        ))
+        .unwrap();
         let list = vec![p, builtin_minecraft()];
         assert_eq!(find(&list, "steam:42").map(|p| p.id.as_str()), Some("t"));
-        assert_eq!(find(&list, "minecraft-java").map(|p| p.id.as_str()), Some("minecraft-java"));
+        assert_eq!(
+            find(&list, "minecraft-java").map(|p| p.id.as_str()),
+            Some("minecraft-java")
+        );
         assert!(find(&list, "steam:43").is_none());
     }
 
@@ -401,8 +579,14 @@ mod tests {
         let a = |n| assignment_for(&p, n);
         assert_eq!(a(1).len(), 1);
         assert_eq!(a(1)[0].len(), 13);
-        assert_eq!(a(2)[1], ["look", "attack", "use", "inventory", "drop", "hotbar"]);
-        assert_eq!(a(3)[0], ["forward", "back", "left", "right", "jump", "sneak", "sprint"]);
+        assert_eq!(
+            a(2)[1],
+            ["look", "attack", "use", "inventory", "drop", "hotbar"]
+        );
+        assert_eq!(
+            a(3)[0],
+            ["forward", "back", "left", "right", "jump", "sneak", "sprint"]
+        );
         assert_eq!(a(3)[1], ["look"]);
         assert_eq!(a(3)[2], ["attack", "use", "inventory", "drop", "hotbar"]);
         assert_eq!(a(4)[3], ["inventory", "drop", "hotbar"]);
@@ -425,45 +609,65 @@ mod tests {
         let a = assignment_for(&q, 2);
         assert_eq!(a, vec![vec!["x", "y"], vec!["z", "w"]]);
         // メニュー (host) と会話 (none) は分担しない
-        let h = parse(&minimal(r#"{"id":"x","group":"m"},{"id":"esc","group":"h"},{"id":"t","group":"c"}"#, r#"{"id":"m","role":"P1"},{"id":"h","role":"host"},{"id":"c","role":"none"}"#)).unwrap();
+        let h = parse(&minimal(
+            r#"{"id":"x","group":"m"},{"id":"esc","group":"h"},{"id":"t","group":"c"}"#,
+            r#"{"id":"m","role":"P1"},{"id":"h","role":"host"},{"id":"c","role":"none"}"#,
+        ))
+        .unwrap();
         assert_eq!(assignment_for(&h, 3).concat(), vec!["x"]);
     }
 }
 #[cfg(test)]
 mod review_tests {
     use super::*;
-    fn fixture() -> Value { serde_json::from_str(include_str!("../../game-profiles/minecraft-java.json")).unwrap() }
+    fn fixture() -> Value {
+        serde_json::from_str(include_str!("../../game-profiles/minecraft-java.json")).unwrap()
+    }
     #[test]
     fn rejects_duplicate_actions_controls_and_foreign_split() {
-        let mut v=fixture(); v["actions"][1]["id"]=v["actions"][0]["id"].clone();
+        let mut v = fixture();
+        v["actions"][1]["id"] = v["actions"][0]["id"].clone();
         assert!(parse(&v).is_err());
-        let mut v=fixture(); v["actions"][1]["control"]=json!("FWD");
+        let mut v = fixture();
+        v["actions"][1]["control"] = json!("FWD");
         assert!(parse(&v).is_err());
-        let mut v=fixture(); v["groups"][0]["split"]=json!([{"id":"bad","actions":["attack"]}]);
+        let mut v = fixture();
+        v["groups"][0]["split"] = json!([{"id":"bad","actions":["attack"]}]);
         assert!(parse(&v).is_err());
     }
     #[test]
     fn assignment_keeps_roles_and_splits_movement_without_duplicates() {
-        let p=builtin_minecraft(); let a=assignment_for(&p,3);
+        let p = builtin_minecraft();
+        let a = assignment_for(&p, 3);
         // 3人の分担は、これまでの固定の分担と同じ (P1 移動・P2 視点・P3 攻撃・使う・持ち物、#141)
-        assert_eq!(a, vec![
-            vec!["forward","back","left","right","jump","sneak","sprint"],
-            vec!["look"],
-            vec!["attack","use","inventory","drop","hotbar"],
-        ]);
-        let mut v=fixture();
-        v["groups"]=json!([{"id":"movement","role":"P1","split":[{"id":"left","actions":["left"]},{"id":"right","actions":["right"]}]}]);
-        v["actions"].as_array_mut().unwrap().retain(|a| a["group"]=="movement");
-        let a=assignment_for(&parse(&v).unwrap(),3);
+        assert_eq!(
+            a,
+            vec![
+                vec!["forward", "back", "left", "right", "jump", "sneak", "sprint"],
+                vec!["look"],
+                vec!["attack", "use", "inventory", "drop", "hotbar"],
+            ]
+        );
+        let mut v = fixture();
+        v["groups"] = json!([{"id":"movement","role":"P1","split":[{"id":"left","actions":["left"]},{"id":"right","actions":["right"]}]}]);
+        v["actions"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|a| a["group"] == "movement");
+        let a = assignment_for(&parse(&v).unwrap(), 3);
         assert!(a.iter().all(|a| !a.is_empty()));
-        let flat:Vec<_>=a.iter().flatten().collect();
-        assert_eq!(flat.len(),flat.iter().collect::<std::collections::HashSet<_>>().len());
+        let flat: Vec<_> = a.iter().flatten().collect();
+        assert_eq!(
+            flat.len(),
+            flat.iter().collect::<std::collections::HashSet<_>>().len()
+        );
     }
     #[test]
     fn all_repository_profiles_validate() {
-        let dir=Path::new(env!("CARGO_MANIFEST_DIR")).join("../game-profiles");
-        let (list,errors)=load_dir(&dir);
-        assert!(errors.is_empty(),"{errors:?}"); assert!(!list.is_empty());
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../game-profiles");
+        let (list, errors) = load_dir(&dir);
+        assert!(errors.is_empty(), "{errors:?}");
+        assert!(!list.is_empty());
     }
     #[test]
     fn generic_profile_is_valid_and_supported() {
@@ -471,9 +675,16 @@ mod review_tests {
         assert_eq!(p.id, "generic");
         assert_eq!(p.status, "template");
         assert!(controller_supported(&p));
-        assert_eq!(find(std::slice::from_ref(&p), "steam:1").map(|x| x.name.as_str()), Some("試験"));
+        assert_eq!(
+            find(std::slice::from_ref(&p), "steam:1").map(|x| x.name.as_str()),
+            Some("試験")
+        );
         let a = assignment_for(&p, 3);
-        assert!(a[0].contains(&"forward".to_string()) && a[1].contains(&"look".to_string()) && a[2].contains(&"attack".to_string()));
+        assert!(
+            a[0].contains(&"forward".to_string())
+                && a[1].contains(&"look".to_string())
+                && a[2].contains(&"attack".to_string())
+        );
     }
 
     #[test]
@@ -486,13 +697,16 @@ mod review_tests {
 
     #[test]
     fn assignment_metadata_does_not_enable_an_unsupported_controller() {
-        let mut p=builtin_minecraft(); assert!(controller_supported(&p));
-        // 確認の状態では制限しない (#123)
-        p.status="template".into(); assert!(controller_supported(&p)); p.status="device".into();
-        // Minecraft も他のゲームと同じ判定 (#141): 送れない種類の操作があれば分担できない
-        p.actions.iter_mut().for_each(|a| a.control=None);
+        let mut p = builtin_minecraft();
         assert!(controller_supported(&p));
-        p.actions[0].kind="axis2d".into();
+        // 確認の状態では制限しない (#123)
+        p.status = "template".into();
+        assert!(controller_supported(&p));
+        p.status = "device".into();
+        // Minecraft も他のゲームと同じ判定 (#141): 送れない種類の操作があれば分担できない
+        p.actions.iter_mut().for_each(|a| a.control = None);
+        assert!(controller_supported(&p));
+        p.actions[0].kind = "axis2d".into();
         assert!(!controller_supported(&p));
     }
 }
@@ -513,24 +727,45 @@ mod representative_tests {
     ];
 
     fn load(id: &str) -> Profile {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../game-profiles").join(format!("{id}.json"));
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../game-profiles")
+            .join(format!("{id}.json"));
         parse(&serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()).unwrap()
     }
 
     fn load_of(p: &Profile, ids: &[String]) -> f64 {
-        ids.iter().filter_map(|i| p.actions.iter().find(|a| &a.id == i)).map(|a| a.weight).sum()
+        ids.iter()
+            .filter_map(|i| p.actions.iter().find(|a| &a.id == i))
+            .map(|a| a.weight)
+            .sum()
     }
 
     /// 分けられない単位: 分け方 (split) のあるグループは各部分と残り、ないグループは全体
     fn parts(p: &Profile) -> Vec<Vec<String>> {
-        p.groups.iter().filter(|g| g.role.starts_with('P')).flat_map(|g| {
-            let ids: Vec<String> = p.actions.iter().filter(|a| a.group == g.id).map(|a| a.id.clone()).collect();
-            if g.split.is_empty() { return vec![ids]; }
-            let mut v: Vec<Vec<String>> = g.split.iter().map(|s| s.actions.clone()).collect();
-            let rest: Vec<String> = ids.into_iter().filter(|i| !v.iter().any(|s| s.contains(i))).collect();
-            if !rest.is_empty() { v.push(rest); }
-            v
-        }).collect()
+        p.groups
+            .iter()
+            .filter(|g| g.role.starts_with('P'))
+            .flat_map(|g| {
+                let ids: Vec<String> = p
+                    .actions
+                    .iter()
+                    .filter(|a| a.group == g.id)
+                    .map(|a| a.id.clone())
+                    .collect();
+                if g.split.is_empty() {
+                    return vec![ids];
+                }
+                let mut v: Vec<Vec<String>> = g.split.iter().map(|s| s.actions.clone()).collect();
+                let rest: Vec<String> = ids
+                    .into_iter()
+                    .filter(|i| !v.iter().any(|s| s.contains(i)))
+                    .collect();
+                if !rest.is_empty() {
+                    v.push(rest);
+                }
+                v
+            })
+            .collect()
     }
 
     /// Among Us はタスク・緊急ボタンにマウスが、閉じるのにEscが要る (#293)。
@@ -538,7 +773,10 @@ mod representative_tests {
     #[test]
     fn among_us_gives_mouse_and_escape_to_a_participant_for_every_player_count() {
         let p = load("steam-945360");
-        assert!(p.groups.iter().all(|g| g.role.starts_with('P')), "協力プレイ中に押せないグループを作らない");
+        assert!(
+            p.groups.iter().all(|g| g.role.starts_with('P')),
+            "協力プレイ中に押せないグループを作らない"
+        );
         for n in 2..=4 {
             let a = assignment_for(&p, n);
             let all: Vec<&String> = a.iter().flatten().collect();
@@ -546,7 +784,11 @@ mod representative_tests {
                 assert_eq!(all.iter().filter(|x| **x == id).count(), 1, "{n}人: {id}");
             }
             // カーソルとクリックは同じ人が持つ (ドラッグするタスクがある)
-            assert!(a.iter().any(|s| s.contains(&"cursor".to_string()) && s.contains(&"click".to_string())), "{n}人: {a:?}");
+            assert!(
+                a.iter()
+                    .any(|s| s.contains(&"cursor".to_string()) && s.contains(&"click".to_string())),
+                "{n}人: {a:?}"
+            );
             assert!(a.iter().all(|s| !s.is_empty()), "{n}人: {a:?}");
         }
     }
@@ -567,15 +809,27 @@ mod representative_tests {
                 let mut want = playable.clone();
                 want.sort();
                 assert_eq!(flat, want, "{name}: 操作の重複・漏れ");
-                if playable.len() >= n { assert!(a.iter().all(|x| !x.is_empty()), "{name}: 担当のない人"); }
+                if playable.len() >= n {
+                    assert!(a.iter().all(|x| !x.is_empty()), "{name}: 担当のない人");
+                }
                 // 優先度: 最初の単位 (移動など) は P1 (ホスト) から配る
-                assert!(a[0].iter().any(|x| first.contains(x)), "{name}: P1 に最初の単位がない");
+                assert!(
+                    a[0].iter().any(|x| first.contains(x)),
+                    "{name}: P1 に最初の単位がない"
+                );
                 // 偏り: 最も重い人が分けられない単位 1 つだけを持つなら、それ以上は軽くできない。
                 // そうでなければ、平均の 1.5 倍を超えない
                 let loads: Vec<f64> = a.iter().map(|x| load_of(&p, x)).collect();
                 let avg = loads.iter().sum::<f64>() / n as f64;
-                let (heavy, max) = loads.iter().enumerate().max_by(|x, y| x.1.total_cmp(y.1)).map(|(i, l)| (i, *l)).unwrap();
-                let single = parts(&p).iter().any(|part| a[heavy].iter().all(|x| part.contains(x)));
+                let (heavy, max) = loads
+                    .iter()
+                    .enumerate()
+                    .max_by(|x, y| x.1.total_cmp(y.1))
+                    .map(|(i, l)| (i, *l))
+                    .unwrap();
+                let single = parts(&p)
+                    .iter()
+                    .any(|part| a[heavy].iter().all(|x| part.contains(x)));
                 assert!(single || max <= avg * 1.5, "{name}: 負担の偏り {loads:?}");
             }
         }
@@ -593,8 +847,18 @@ mod representative_tests {
                     .iter()
                     .enumerate()
                     .map(|(i, a)| {
-                        let labels: Vec<&str> = a.iter().filter_map(|x| p.actions.iter().find(|y| &y.id == x)).map(|y| y.label.as_str()).collect();
-                        format!("P{}：{}（{}／{}）", i + 1, labels.join("・"), a.len(), load_of(&p, a))
+                        let labels: Vec<&str> = a
+                            .iter()
+                            .filter_map(|x| p.actions.iter().find(|y| &y.id == x))
+                            .map(|y| y.label.as_str())
+                            .collect();
+                        format!(
+                            "P{}：{}（{}／{}）",
+                            i + 1,
+                            labels.join("・"),
+                            a.len(),
+                            load_of(&p, a)
+                        )
                     })
                     .collect();
                 println!("| {n} | {} |", cells.join("<br>"));

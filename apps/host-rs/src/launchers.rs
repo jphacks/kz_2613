@@ -35,8 +35,9 @@ pub enum Registry {
 
 impl Registry {
     pub fn fake(file: &Path) -> Registry {
-        let parsed: Option<RegistryKeys> =
-            std::fs::read_to_string(file).ok().and_then(|t| serde_json::from_str(&t).ok());
+        let parsed: Option<RegistryKeys> = std::fs::read_to_string(file)
+            .ok()
+            .and_then(|t| serde_json::from_str(&t).ok());
         Registry::Fake(parsed.unwrap_or_default())
     }
 
@@ -44,7 +45,10 @@ impl Registry {
     fn subkeys(&self, key: &str) -> Vec<String> {
         match self {
             Registry::System => imp::subkeys(key),
-            Registry::Fake(m) => m.get(key).map(|s| s.keys().cloned().collect()).unwrap_or_default(),
+            Registry::Fake(m) => m
+                .get(key)
+                .map(|s| s.keys().cloned().collect())
+                .unwrap_or_default(),
         }
     }
 
@@ -75,14 +79,22 @@ impl Places {
         Places {
             registry: Registry::System,
             steam,
-            battlenet: std::env::var_os("PROGRAMDATA").map(|p| PathBuf::from(p).join(r"Battle.net\Agent\product.db")),
-            xbox: (b'C'..=b'Z').map(|d| PathBuf::from(format!(r"{}:\XboxGames", d as char))).collect(),
+            battlenet: std::env::var_os("PROGRAMDATA")
+                .map(|p| PathBuf::from(p).join(r"Battle.net\Agent\product.db")),
+            xbox: (b'C'..=b'Z')
+                .map(|d| PathBuf::from(format!(r"{}:\XboxGames", d as char)))
+                .collect(),
         }
     }
 
     /// 試験用: <dir>\registry.json・<dir>\battlenet\product.db・<dir>\xbox
     pub fn fake(dir: &Path, steam: Option<PathBuf>) -> Places {
-        Places { registry: Registry::fake(&dir.join("registry.json")), steam, battlenet: Some(dir.join(r"battlenet\product.db")), xbox: vec![dir.join("xbox")] }
+        Places {
+            registry: Registry::fake(&dir.join("registry.json")),
+            steam,
+            battlenet: Some(dir.join(r"battlenet\product.db")),
+            xbox: vec![dir.join("xbox")],
+        }
     }
 }
 
@@ -106,7 +118,10 @@ pub fn detect(p: &Places) -> Vec<Entry> {
 
 /// URL に埋め込む値は英数字と . _ - だけ (ほかの文字で URL や引数を組み替えられないように)
 fn id_ok(s: &str) -> bool {
-    !s.is_empty() && s.len() <= 128 && s.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
+    !s.is_empty()
+        && s.len() <= 128
+        && s.chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
 }
 
 /// 実在する絶対パスの .exe
@@ -114,7 +129,15 @@ fn exe_ok(p: &Path) -> bool {
     p.is_absolute() && p.extension().is_some_and(|e| e.eq_ignore_ascii_case("exe")) && p.is_file()
 }
 
-fn entry(id: String, name: &str, source: &'static str, install_dir: PathBuf, launch_uri: String, image: Option<PathBuf>, icon: Option<PathBuf>) -> Option<Entry> {
+fn entry(
+    id: String,
+    name: &str,
+    source: &'static str,
+    install_dir: PathBuf,
+    launch_uri: String,
+    image: Option<PathBuf>,
+    icon: Option<PathBuf>,
+) -> Option<Entry> {
     let name = name.trim();
     (!name.is_empty() && install_dir.is_absolute() && install_dir.is_dir()).then(|| Entry {
         id,
@@ -132,11 +155,19 @@ fn entry(id: String, name: &str, source: &'static str, install_dir: PathBuf, lau
 /// Steam の「ゲームを追加 → Steam以外のゲーム」で追加したゲーム。起動は Steam 経由 (steam://rungameid/<64 ビットの ID>)
 pub fn steam_shortcuts(steam: &Path) -> Vec<Entry> {
     let mut list = Vec::new();
-    let Ok(users) = std::fs::read_dir(steam.join("userdata")) else { return list };
+    let Ok(users) = std::fs::read_dir(steam.join("userdata")) else {
+        return list;
+    };
     for user in users.flatten() {
-        let Ok(data) = std::fs::read(user.path().join(r"config\shortcuts.vdf")) else { continue };
-        let Some(root) = binary_vdf(&data) else { continue };
-        let Some(BinVdf::Map(items)) = root.get("shortcuts") else { continue };
+        let Ok(data) = std::fs::read(user.path().join(r"config\shortcuts.vdf")) else {
+            continue;
+        };
+        let Some(root) = binary_vdf(&data) else {
+            continue;
+        };
+        let Some(BinVdf::Map(items)) = root.get("shortcuts") else {
+            continue;
+        };
         for (_, item) in items {
             if let Some(e) = shortcut_entry(item) {
                 if !list.iter().any(|x: &Entry| x.id == e.id) {
@@ -161,9 +192,21 @@ fn shortcut_entry(item: &BinVdf) -> Option<Entry> {
         _ => crc32(format!("{exe_raw}{name}").as_bytes()) | 0x8000_0000,
     };
     let game_id = ((appid as u64) << 32) | 0x0200_0000;
-    let start = item.get("StartDir").and_then(BinVdf::as_str).map(|s| PathBuf::from(s.trim().trim_matches('"'))).filter(|d| d.is_absolute() && d.is_dir());
+    let start = item
+        .get("StartDir")
+        .and_then(BinVdf::as_str)
+        .map(|s| PathBuf::from(s.trim().trim_matches('"')))
+        .filter(|d| d.is_absolute() && d.is_dir());
     let dir = start.or_else(|| exe.parent().map(Path::to_path_buf))?;
-    entry(format!("steam-shortcut:{appid}"), name, STEAM_SHORTCUT_SOURCE, dir, format!("steam://rungameid/{game_id}"), None, Some(exe))
+    entry(
+        format!("steam-shortcut:{appid}"),
+        name,
+        STEAM_SHORTCUT_SOURCE,
+        dir,
+        format!("steam://rungameid/{game_id}"),
+        None,
+        Some(exe),
+    )
 }
 
 #[derive(Debug, PartialEq)]
@@ -177,7 +220,10 @@ impl BinVdf {
     /// キーは大文字小文字を区別しない (appid / AppName / Exe の表記は揺れる)
     fn get(&self, key: &str) -> Option<&BinVdf> {
         match self {
-            BinVdf::Map(items) => items.iter().find(|(k, _)| k.eq_ignore_ascii_case(key)).map(|(_, v)| v),
+            BinVdf::Map(items) => items
+                .iter()
+                .find(|(k, _)| k.eq_ignore_ascii_case(key))
+                .map(|(_, v)| v),
             _ => None,
         }
     }
@@ -239,7 +285,11 @@ fn crc32(data: &[u8]) -> u32 {
     for &b in data {
         c ^= b as u32;
         for _ in 0..8 {
-            c = if c & 1 != 0 { 0xedb8_8320 ^ (c >> 1) } else { c >> 1 };
+            c = if c & 1 != 0 {
+                0xedb8_8320 ^ (c >> 1)
+            } else {
+                c >> 1
+            };
         }
     }
     !c
@@ -247,7 +297,10 @@ fn crc32(data: &[u8]) -> u32 {
 
 // ---------- GOG ----------
 
-const GOG_KEYS: [&str; 2] = [r"HKLM\SOFTWARE\WOW6432Node\GOG.com\Games", r"HKLM\SOFTWARE\GOG.com\Games"];
+const GOG_KEYS: [&str; 2] = [
+    r"HKLM\SOFTWARE\WOW6432Node\GOG.com\Games",
+    r"HKLM\SOFTWARE\GOG.com\Games",
+];
 
 /// GOG のゲーム (DRM がないため、実行ファイルを直接起動する)。追加コンテンツ (dependsOn がある) は出さない
 pub fn gog(reg: &Registry) -> Vec<Entry> {
@@ -258,14 +311,32 @@ pub fn gog(reg: &Registry) -> Vec<Entry> {
             if v("dependsOn").is_some() {
                 continue;
             }
-            let Some(id) = v("gameID").or_else(|| Some(sub.clone())).filter(|i| i.chars().all(|c| c.is_ascii_digit()) && i.len() <= 20) else { continue };
-            let (Some(name), Some(exe)) = (v("gameName"), v("exe").map(PathBuf::from)) else { continue };
+            let Some(id) = v("gameID")
+                .or_else(|| Some(sub.clone()))
+                .filter(|i| i.chars().all(|c| c.is_ascii_digit()) && i.len() <= 20)
+            else {
+                continue;
+            };
+            let (Some(name), Some(exe)) = (v("gameName"), v("exe").map(PathBuf::from)) else {
+                continue;
+            };
             if !exe_ok(&exe) || list.iter().any(|e| e.id == format!("gog:{id}")) {
                 continue;
             }
-            let dir = v("path").map(PathBuf::from).filter(|d| d.is_absolute() && d.is_dir()).or_else(|| exe.parent().map(Path::to_path_buf));
+            let dir = v("path")
+                .map(PathBuf::from)
+                .filter(|d| d.is_absolute() && d.is_dir())
+                .or_else(|| exe.parent().map(Path::to_path_buf));
             let Some(dir) = dir else { continue };
-            list.extend(entry(format!("gog:{id}"), &name, GOG_SOURCE, dir, exe.to_string_lossy().to_string(), None, Some(exe)));
+            list.extend(entry(
+                format!("gog:{id}"),
+                &name,
+                GOG_SOURCE,
+                dir,
+                exe.to_string_lossy().to_string(),
+                None,
+                Some(exe),
+            ));
         }
     }
     list
@@ -273,22 +344,55 @@ pub fn gog(reg: &Registry) -> Vec<Entry> {
 
 // ---------- Ubisoft Connect ----------
 
-const UBISOFT_KEYS: [&str; 2] = [r"HKLM\SOFTWARE\WOW6432Node\Ubisoft\Launcher\Installs", r"HKLM\SOFTWARE\Ubisoft\Launcher\Installs"];
-const UNINSTALL_KEYS: [&str; 2] = [r"HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall", r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"];
+const UBISOFT_KEYS: [&str; 2] = [
+    r"HKLM\SOFTWARE\WOW6432Node\Ubisoft\Launcher\Installs",
+    r"HKLM\SOFTWARE\Ubisoft\Launcher\Installs",
+];
+const UNINSTALL_KEYS: [&str; 2] = [
+    r"HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+    r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+];
 
 /// Ubisoft Connect のゲーム。名前はアンインストール情報 ("Uplay Install <ID>") から取り、なければフォルダ名
 pub fn ubisoft(reg: &Registry) -> Vec<Entry> {
     let mut list: Vec<Entry> = Vec::new();
     for key in UBISOFT_KEYS {
         for id in reg.subkeys(key) {
-            if !id.chars().all(|c| c.is_ascii_digit()) || id.len() > 12 || list.iter().any(|e| e.id == format!("ubisoft:{id}")) {
+            if !id.chars().all(|c| c.is_ascii_digit())
+                || id.len() > 12
+                || list.iter().any(|e| e.id == format!("ubisoft:{id}"))
+            {
                 continue;
             }
-            let Some(dir) = reg.value(key, &id, "InstallDir").map(|d| PathBuf::from(d.replace('/', "\\"))) else { continue };
-            let name = UNINSTALL_KEYS.iter().find_map(|u| reg.value(u, &format!("Uplay Install {id}"), "DisplayName"))
-                .or_else(|| dir.components().filter_map(|c| match c { std::path::Component::Normal(n) => Some(n.to_string_lossy().to_string()), _ => None }).next_back());
+            let Some(dir) = reg
+                .value(key, &id, "InstallDir")
+                .map(|d| PathBuf::from(d.replace('/', "\\")))
+            else {
+                continue;
+            };
+            let name = UNINSTALL_KEYS
+                .iter()
+                .find_map(|u| reg.value(u, &format!("Uplay Install {id}"), "DisplayName"))
+                .or_else(|| {
+                    dir.components()
+                        .filter_map(|c| match c {
+                            std::path::Component::Normal(n) => {
+                                Some(n.to_string_lossy().to_string())
+                            }
+                            _ => None,
+                        })
+                        .next_back()
+                });
             let Some(name) = name else { continue };
-            list.extend(entry(format!("ubisoft:{id}"), &name, UBISOFT_SOURCE, dir, format!("uplay://launch/{id}/0"), None, None));
+            list.extend(entry(
+                format!("ubisoft:{id}"),
+                &name,
+                UBISOFT_SOURCE,
+                dir,
+                format!("uplay://launch/{id}/0"),
+                None,
+                None,
+            ));
         }
     }
     list
@@ -302,17 +406,38 @@ pub fn ea(reg: &Registry) -> Vec<Entry> {
     let mut list: Vec<Entry> = Vec::new();
     for key in UNINSTALL_KEYS {
         for sub in reg.subkeys(key) {
-            let Some(dir) = reg.value(key, &sub, "InstallLocation").map(|d| PathBuf::from(d.trim_matches('"'))) else { continue };
+            let Some(dir) = reg
+                .value(key, &sub, "InstallLocation")
+                .map(|d| PathBuf::from(d.trim_matches('"')))
+            else {
+                continue;
+            };
             if !dir.is_absolute() {
                 continue;
             }
-            let Some(xml) = std::fs::read_to_string(dir.join(r"__Installer\installerdata.xml")).ok() else { continue };
-            let Some(content) = xml_tag(&xml, "contentID").filter(|c| id_ok(c)) else { continue };
-            let Some(name) = reg.value(key, &sub, "DisplayName") else { continue };
+            let Some(xml) =
+                std::fs::read_to_string(dir.join(r"__Installer\installerdata.xml")).ok()
+            else {
+                continue;
+            };
+            let Some(content) = xml_tag(&xml, "contentID").filter(|c| id_ok(c)) else {
+                continue;
+            };
+            let Some(name) = reg.value(key, &sub, "DisplayName") else {
+                continue;
+            };
             if list.iter().any(|e| e.id == format!("ea:{content}")) {
                 continue;
             }
-            list.extend(entry(format!("ea:{content}"), &name, EA_SOURCE, dir, format!("origin2://game/launch?offerIds={content}&autoDownload=1"), None, None));
+            list.extend(entry(
+                format!("ea:{content}"),
+                &name,
+                EA_SOURCE,
+                dir,
+                format!("origin2://game/launch?offerIds={content}&autoDownload=1"),
+                None,
+                None,
+            ));
         }
     }
     list
@@ -333,22 +458,51 @@ const BATTLENET_NOT_GAMES: [&str; 3] = ["agent", "bna", "battle.net"];
 /// Battle.net のゲーム: product.db (Protocol Buffers) の製品ごとの ID・製品コード・インストール先。
 /// 起動は製品コードを Battle.net に渡す (battlenet://<製品コード>)。名前はインストール先のフォルダ名
 pub fn battlenet(db: &Path) -> Vec<Entry> {
-    let Ok(data) = std::fs::read(db) else { return vec![] };
+    let Ok(data) = std::fs::read(db) else {
+        return vec![];
+    };
     let mut list: Vec<Entry> = Vec::new();
     for product in pb_fields(&data, 1) {
-        let uid = pb_fields(product, 1).first().map(|s| String::from_utf8_lossy(s).to_string()).unwrap_or_default();
-        let code = pb_fields(product, 2).first().map(|s| String::from_utf8_lossy(s).to_string()).unwrap_or_default();
-        let path = pb_fields(product, 3).first().and_then(|s| pb_fields(s, 1).first().map(|p| String::from_utf8_lossy(p).to_string())).unwrap_or_default();
-        let not_game = |s: &str| BATTLENET_NOT_GAMES.iter().any(|n| s.to_ascii_lowercase().starts_with(n));
+        let uid = pb_fields(product, 1)
+            .first()
+            .map(|s| String::from_utf8_lossy(s).to_string())
+            .unwrap_or_default();
+        let code = pb_fields(product, 2)
+            .first()
+            .map(|s| String::from_utf8_lossy(s).to_string())
+            .unwrap_or_default();
+        let path = pb_fields(product, 3)
+            .first()
+            .and_then(|s| {
+                pb_fields(s, 1)
+                    .first()
+                    .map(|p| String::from_utf8_lossy(p).to_string())
+            })
+            .unwrap_or_default();
+        let not_game = |s: &str| {
+            BATTLENET_NOT_GAMES
+                .iter()
+                .any(|n| s.to_ascii_lowercase().starts_with(n))
+        };
         if not_game(&uid) || not_game(&code) || !id_ok(&code) || path.is_empty() {
             continue;
         }
         let dir = PathBuf::from(path.replace('/', "\\"));
-        let Some(name) = dir.file_name().map(|n| n.to_string_lossy().to_string()) else { continue };
+        let Some(name) = dir.file_name().map(|n| n.to_string_lossy().to_string()) else {
+            continue;
+        };
         if list.iter().any(|e| e.id == format!("battlenet:{code}")) {
             continue;
         }
-        list.extend(entry(format!("battlenet:{code}"), &name, BATTLENET_SOURCE, dir, format!("battlenet://{code}"), None, None));
+        list.extend(entry(
+            format!("battlenet:{code}"),
+            &name,
+            BATTLENET_SOURCE,
+            dir,
+            format!("battlenet://{code}"),
+            None,
+            None,
+        ));
     }
     list
 }
@@ -370,7 +524,9 @@ fn pb_fields(data: &[u8], want: u64) -> Vec<&[u8]> {
     let mut out = Vec::new();
     let mut pos = 0;
     while pos < data.len() {
-        let Some(key) = varint(data, &mut pos) else { break };
+        let Some(key) = varint(data, &mut pos) else {
+            break;
+        };
         let (field, wire) = (key >> 3, key & 7);
         match wire {
             0 => {
@@ -380,8 +536,12 @@ fn pb_fields(data: &[u8], want: u64) -> Vec<&[u8]> {
             }
             1 => pos += 8,
             2 => {
-                let Some(len) = varint(data, &mut pos) else { break };
-                let Some(chunk) = data.get(pos..pos.saturating_add(len as usize)) else { break };
+                let Some(len) = varint(data, &mut pos) else {
+                    break;
+                };
+                let Some(chunk) = data.get(pos..pos.saturating_add(len as usize)) else {
+                    break;
+                };
                 if field == want {
                     out.push(chunk);
                 }
@@ -399,12 +559,24 @@ fn pb_fields(data: &[u8], want: u64) -> Vec<&[u8]> {
 /// Xbox アプリで入れたゲーム: <ドライブ>\XboxGames\<ゲーム>\Content に MicrosoftGame.config と appxmanifest.xml がある。
 /// 起動はパッケージのアプリ ID (shell:AppsFolder\<パッケージファミリー名>!<アプリ ID>)。公式の Minecraft ランチャーは出さない
 pub fn xbox(root: &Path) -> Vec<Entry> {
-    let Ok(games) = std::fs::read_dir(root) else { return vec![] };
+    let Ok(games) = std::fs::read_dir(root) else {
+        return vec![];
+    };
     let mut list = Vec::new();
     for g in games.flatten() {
         let content = g.path().join("Content");
-        let (Ok(manifest), Ok(config)) = (std::fs::read_to_string(content.join("appxmanifest.xml")), std::fs::read_to_string(content.join("MicrosoftGame.config"))) else { continue };
-        if let Some(e) = xbox_entry(&content, &manifest, &config, &g.file_name().to_string_lossy()) {
+        let (Ok(manifest), Ok(config)) = (
+            std::fs::read_to_string(content.join("appxmanifest.xml")),
+            std::fs::read_to_string(content.join("MicrosoftGame.config")),
+        ) else {
+            continue;
+        };
+        if let Some(e) = xbox_entry(
+            &content,
+            &manifest,
+            &config,
+            &g.file_name().to_string_lossy(),
+        ) {
             list.push(e);
         }
     }
@@ -421,12 +593,22 @@ fn xbox_entry(content: &Path, manifest: &str, config: &str, folder: &str) -> Opt
     let app = xml_attr(&manifest[manifest.find("<Application ")?..], "Id").filter(|a| id_ok(a))?;
     let family = format!("{package}_{}", publisher_id(&publisher));
     // 表示名: MicrosoftGame.config の DefaultDisplayName → appxmanifest の DisplayName (リソース参照でなければ) → フォルダ名
-    let name = config.find("<ShellVisuals").and_then(|i| xml_attr(&config[i..], "DefaultDisplayName"))
+    let name = config
+        .find("<ShellVisuals")
+        .and_then(|i| xml_attr(&config[i..], "DefaultDisplayName"))
         .or_else(|| xml_tag(manifest, "DisplayName"))
         .filter(|n| !n.starts_with("ms-resource:"))
         .unwrap_or_else(|| folder.to_string());
     let image = crate::games::appx_logo(content);
-    entry(format!("xbox:{package}"), &name, XBOX_SOURCE, content.to_path_buf(), format!(r"shell:AppsFolder\{family}!{app}"), image, None)
+    entry(
+        format!("xbox:{package}"),
+        &name,
+        XBOX_SOURCE,
+        content.to_path_buf(),
+        format!(r"shell:AppsFolder\{family}!{app}"),
+        image,
+        None,
+    )
 }
 
 /// 要素の属性値 (最初に出てくるもの)
@@ -434,15 +616,27 @@ fn xml_attr(xml: &str, name: &str) -> Option<String> {
     let head = &xml[..xml.find('>').unwrap_or(xml.len())];
     let start = head.find(&format!(" {name}=\""))? + name.len() + 3;
     let end = head[start..].find('"')? + start;
-    Some(head[start..end].replace("&amp;", "&").replace("&quot;", "\"").trim().to_string())
+    Some(
+        head[start..end]
+            .replace("&amp;", "&")
+            .replace("&quot;", "\"")
+            .trim()
+            .to_string(),
+    )
 }
 
 /// パッケージファミリー名の発行者 ID: 発行者名 (UTF-16LE) の SHA-256 の先頭 8 バイトに 0 のビットを 1 つ足し、
 /// 5 ビットずつ Crockford 系の 32 文字 (0-9 a-z から i l o u を除く) で 13 文字にする
 pub fn publisher_id(publisher: &str) -> String {
-    let utf16: Vec<u8> = publisher.encode_utf16().flat_map(|u| u.to_le_bytes()).collect();
+    let utf16: Vec<u8> = publisher
+        .encode_utf16()
+        .flat_map(|u| u.to_le_bytes())
+        .collect();
     let hash = sha256(&utf16);
-    let mut bits = u128::from_be_bytes([hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7], 0, 0, 0, 0, 0, 0, 0, 0]);
+    let mut bits = u128::from_be_bytes([
+        hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7], 0, 0, 0, 0, 0, 0,
+        0, 0,
+    ]);
     const ALPHABET: &[u8; 32] = b"0123456789abcdefghjkmnpqrstvwxyz";
     let mut out = String::new();
     for _ in 0..13 {
@@ -454,14 +648,21 @@ pub fn publisher_id(publisher: &str) -> String {
 
 fn sha256(data: &[u8]) -> [u8; 32] {
     const K: [u32; 64] = [
-        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
-        0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-        0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
-        0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-        0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
-        0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4,
+        0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe,
+        0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f,
+        0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+        0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc,
+        0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b,
+        0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116,
+        0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7,
+        0xc67178f2,
     ];
-    let mut h: [u32; 8] = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+    let mut h: [u32; 8] = [
+        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab,
+        0x5be0cd19,
+    ];
     let mut msg = data.to_vec();
     let bit_len = (data.len() as u64) * 8;
     msg.push(0x80);
@@ -472,22 +673,43 @@ fn sha256(data: &[u8]) -> [u8; 32] {
     for block in msg.chunks(64) {
         let mut w = [0u32; 64];
         for i in 0..16 {
-            w[i] = u32::from_be_bytes([block[i * 4], block[i * 4 + 1], block[i * 4 + 2], block[i * 4 + 3]]);
+            w[i] = u32::from_be_bytes([
+                block[i * 4],
+                block[i * 4 + 1],
+                block[i * 4 + 2],
+                block[i * 4 + 3],
+            ]);
         }
         for i in 16..64 {
             let s0 = w[i - 15].rotate_right(7) ^ w[i - 15].rotate_right(18) ^ (w[i - 15] >> 3);
             let s1 = w[i - 2].rotate_right(17) ^ w[i - 2].rotate_right(19) ^ (w[i - 2] >> 10);
-            w[i] = w[i - 16].wrapping_add(s0).wrapping_add(w[i - 7]).wrapping_add(s1);
+            w[i] = w[i - 16]
+                .wrapping_add(s0)
+                .wrapping_add(w[i - 7])
+                .wrapping_add(s1);
         }
         let mut v = h;
         for i in 0..64 {
             let s1 = v[4].rotate_right(6) ^ v[4].rotate_right(11) ^ v[4].rotate_right(25);
             let ch = (v[4] & v[5]) ^ (!v[4] & v[6]);
-            let t1 = v[7].wrapping_add(s1).wrapping_add(ch).wrapping_add(K[i]).wrapping_add(w[i]);
+            let t1 = v[7]
+                .wrapping_add(s1)
+                .wrapping_add(ch)
+                .wrapping_add(K[i])
+                .wrapping_add(w[i]);
             let s0 = v[0].rotate_right(2) ^ v[0].rotate_right(13) ^ v[0].rotate_right(22);
             let maj = (v[0] & v[1]) ^ (v[0] & v[2]) ^ (v[1] & v[2]);
             let t2 = s0.wrapping_add(maj);
-            v = [t1.wrapping_add(t2), v[0], v[1], v[2], v[3].wrapping_add(t1), v[4], v[5], v[6]];
+            v = [
+                t1.wrapping_add(t2),
+                v[0],
+                v[1],
+                v[2],
+                v[3].wrapping_add(t1),
+                v[4],
+                v[5],
+                v[6],
+            ];
         }
         for i in 0..8 {
             h[i] = h[i].wrapping_add(v[i]);
@@ -503,8 +725,18 @@ fn sha256(data: &[u8]) -> [u8; 32] {
 /// 一覧の項目の出所ごとの件数 (ログ用。名前・場所は残さない)
 pub fn counts(list: &[Entry]) -> Value {
     let mut m = serde_json::Map::new();
-    for s in [STEAM_SHORTCUT_SOURCE, GOG_SOURCE, UBISOFT_SOURCE, EA_SOURCE, BATTLENET_SOURCE, XBOX_SOURCE] {
-        m.insert(s.into(), list.iter().filter(|e| e.source == s).count().into());
+    for s in [
+        STEAM_SHORTCUT_SOURCE,
+        GOG_SOURCE,
+        UBISOFT_SOURCE,
+        EA_SOURCE,
+        BATTLENET_SOURCE,
+        XBOX_SOURCE,
+    ] {
+        m.insert(
+            s.into(),
+            list.iter().filter(|e| e.source == s).count().into(),
+        );
     }
     Value::Object(m)
 }
@@ -514,7 +746,10 @@ pub fn counts(list: &[Entry]) -> Value {
 #[cfg(windows)]
 mod imp {
     use windows::core::{HSTRING, PWSTR};
-    use windows::Win32::System::Registry::{RegCloseKey, RegEnumKeyExW, RegGetValueW, RegOpenKeyExW, HKEY, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, RRF_RT_REG_SZ};
+    use windows::Win32::System::Registry::{
+        RegCloseKey, RegEnumKeyExW, RegGetValueW, RegOpenKeyExW, HKEY, HKEY_CURRENT_USER,
+        HKEY_LOCAL_MACHINE, KEY_READ, RRF_RT_REG_SZ,
+    };
 
     /// "HKLM\SOFTWARE\..." → (ルート, 残り)
     fn split(key: &str) -> Option<(HKEY, &str)> {
@@ -527,7 +762,9 @@ mod imp {
     }
 
     pub fn subkeys(key: &str) -> Vec<String> {
-        let Some((root, rest)) = split(key) else { return vec![] };
+        let Some((root, rest)) = split(key) else {
+            return vec![];
+        };
         let mut out = Vec::new();
         unsafe {
             let mut h = HKEY::default();
@@ -537,7 +774,18 @@ mod imp {
             for i in 0..4096u32 {
                 let mut buf = [0u16; 256];
                 let mut len = buf.len() as u32;
-                if RegEnumKeyExW(h, i, Some(PWSTR(buf.as_mut_ptr())), &mut len, None, None, None, None).is_err() {
+                if RegEnumKeyExW(
+                    h,
+                    i,
+                    Some(PWSTR(buf.as_mut_ptr())),
+                    &mut len,
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+                .is_err()
+                {
                     break;
                 }
                 out.push(String::from_utf16_lossy(&buf[..len as usize]));
@@ -551,7 +799,17 @@ mod imp {
         let (root, rest) = split(key)?;
         let mut buf = [0u16; 1024];
         let mut len = (buf.len() * 2) as u32;
-        let r = unsafe { RegGetValueW(root, &HSTRING::from(rest), &HSTRING::from(name), RRF_RT_REG_SZ, None, Some(buf.as_mut_ptr().cast()), Some(&mut len)) };
+        let r = unsafe {
+            RegGetValueW(
+                root,
+                &HSTRING::from(rest),
+                &HSTRING::from(name),
+                RRF_RT_REG_SZ,
+                None,
+                Some(buf.as_mut_ptr().cast()),
+                Some(&mut len),
+            )
+        };
         if r.is_err() {
             return None;
         }
@@ -575,7 +833,8 @@ mod tests {
     use super::*;
 
     fn tmp(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("recooplay-launchers-{name}-{}", std::process::id()));
+        let d =
+            std::env::temp_dir().join(format!("recooplay-launchers-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
@@ -584,7 +843,12 @@ mod tests {
     #[test]
     fn publisher_id_matches_windows() {
         // Microsoft のパッケージのファミリー名の末尾 (例: Microsoft.4297127D64EC6_8wekyb3d8bbwe)
-        assert_eq!(publisher_id("CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"), "8wekyb3d8bbwe");
+        assert_eq!(
+            publisher_id(
+                "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+            ),
+            "8wekyb3d8bbwe"
+        );
     }
 
     #[test]
@@ -629,13 +893,23 @@ mod tests {
         std::fs::create_dir_all(&cfg).unwrap();
         let exe_q = format!("\"{}\"", exe.display());
         let start_q = format!("\"{}\"", dir.join(r"Games\Foo").display());
-        std::fs::write(cfg.join("shortcuts.vdf"), shortcuts_vdf(&[(Some(-1_234_567_890), "Foo Game", &exe_q, &start_q), (Some(5), "Gone", r"C:\nope\gone.exe", "")])).unwrap();
+        std::fs::write(
+            cfg.join("shortcuts.vdf"),
+            shortcuts_vdf(&[
+                (Some(-1_234_567_890), "Foo Game", &exe_q, &start_q),
+                (Some(5), "Gone", r"C:\nope\gone.exe", ""),
+            ]),
+        )
+        .unwrap();
         let found = steam_shortcuts(&dir.join("steam"));
         let _ = std::fs::remove_dir_all(&dir);
         assert_eq!(found.len(), 1, "実行ファイルがないものは出さない");
         let appid = (-1_234_567_890i32) as u32;
         assert_eq!(found[0].id, format!("steam-shortcut:{appid}"));
-        assert_eq!(found[0].launch_uri, format!("steam://rungameid/{}", ((appid as u64) << 32) | 0x0200_0000));
+        assert_eq!(
+            found[0].launch_uri,
+            format!("steam://rungameid/{}", ((appid as u64) << 32) | 0x0200_0000)
+        );
         assert_eq!(found[0].source, STEAM_SHORTCUT_SOURCE);
         assert!(found[0].install_dir.ends_with("Foo"));
     }
@@ -649,7 +923,12 @@ mod tests {
     #[test]
     fn registry_launchers_from_fake_registry() {
         let dir = tmp("registry");
-        for d in [r"GOG\Witcher", r"Ubi\AC", r"EA\Sims\__Installer", r"EA\Other"] {
+        for d in [
+            r"GOG\Witcher",
+            r"Ubi\AC",
+            r"EA\Sims\__Installer",
+            r"EA\Other",
+        ] {
             std::fs::create_dir_all(dir.join(d)).unwrap();
         }
         let witcher_exe = dir.join(r"GOG\Witcher\witcher.exe");
@@ -677,11 +956,21 @@ mod tests {
         let list = detect(&places);
         let _ = std::fs::remove_dir_all(&dir);
         let ids: Vec<&str> = list.iter().map(|e| e.id.as_str()).collect();
-        assert_eq!(ids, vec!["gog:1207664663", "ubisoft:4923", "ea:Origin.OFR.50.0002694"]);
-        assert_eq!(list[0].launch_uri, witcher_exe.to_string_lossy(), "GOG は実行ファイルを起動する");
+        assert_eq!(
+            ids,
+            vec!["gog:1207664663", "ubisoft:4923", "ea:Origin.OFR.50.0002694"]
+        );
+        assert_eq!(
+            list[0].launch_uri,
+            witcher_exe.to_string_lossy(),
+            "GOG は実行ファイルを起動する"
+        );
         assert_eq!(list[1].name, "Assassin's Creed");
         assert_eq!(list[1].launch_uri, "uplay://launch/4923/0");
-        assert_eq!(list[2].launch_uri, "origin2://game/launch?offerIds=Origin.OFR.50.0002694&autoDownload=1");
+        assert_eq!(
+            list[2].launch_uri,
+            "origin2://game/launch?offerIds=Origin.OFR.50.0002694&autoDownload=1"
+        );
         assert_eq!(counts(&list)["gog"], 1);
     }
 
@@ -693,7 +982,10 @@ mod tests {
             loop {
                 let b = (n & 0x7f) as u8;
                 n >>= 7;
-                if n == 0 { v.push(b); break; }
+                if n == 0 {
+                    v.push(b);
+                    break;
+                }
                 v.push(b | 0x80);
             }
             v.extend(data);
@@ -717,7 +1009,22 @@ mod tests {
         std::fs::create_dir_all(dir.join("Overwatch")).unwrap();
         std::fs::create_dir_all(dir.join("battlenet")).unwrap();
         let ow = dir.join("Overwatch").to_string_lossy().replace('\\', "/");
-        std::fs::write(dir.join(r"battlenet\product.db"), product_db(&[("agent", "agent", "C:/ProgramData/Battle.net/Agent"), ("agent_beta", "agent_beta", "C:/ProgramData/Battle.net/Agent/beta"), ("battle.net", "bna", "C:/Program Files (x86)/Battle.net"), ("prometheus", "Pro", &ow), ("bad", "a&b", &ow), ("gone", "Gone", "C:/nope")])).unwrap();
+        std::fs::write(
+            dir.join(r"battlenet\product.db"),
+            product_db(&[
+                ("agent", "agent", "C:/ProgramData/Battle.net/Agent"),
+                (
+                    "agent_beta",
+                    "agent_beta",
+                    "C:/ProgramData/Battle.net/Agent/beta",
+                ),
+                ("battle.net", "bna", "C:/Program Files (x86)/Battle.net"),
+                ("prometheus", "Pro", &ow),
+                ("bad", "a&b", &ow),
+                ("gone", "Gone", "C:/nope"),
+            ]),
+        )
+        .unwrap();
         let list = battlenet(&dir.join(r"battlenet\product.db"));
         let _ = std::fs::remove_dir_all(&dir);
         assert_eq!(list.len(), 1);
@@ -729,9 +1036,21 @@ mod tests {
     #[test]
     fn battlenet_real_db_on_this_pc_has_no_games() {
         // 実機の product.db (Battle.net アプリ自身だけ) があれば、ゲームとして出さないことを確かめる
-        let Some(p) = std::env::var_os("PROGRAMDATA").map(|p| PathBuf::from(p).join(r"Battle.net\Agent\product.db")).filter(|p| p.is_file()) else { return };
+        let Some(p) = std::env::var_os("PROGRAMDATA")
+            .map(|p| PathBuf::from(p).join(r"Battle.net\Agent\product.db"))
+            .filter(|p| p.is_file())
+        else {
+            return;
+        };
         // agent_beta (Agenteta) が「beta」というゲームとして出ていた (#298)
-        assert!(battlenet(&p).iter().all(|e| !e.id.to_ascii_lowercase().starts_with("battlenet:agent") && !e.id.eq_ignore_ascii_case("battlenet:bna")), "{:?}", battlenet(&p).iter().map(|e| &e.id).collect::<Vec<_>>());
+        assert!(
+            battlenet(&p).iter().all(
+                |e| !e.id.to_ascii_lowercase().starts_with("battlenet:agent")
+                    && !e.id.eq_ignore_ascii_case("battlenet:bna")
+            ),
+            "{:?}",
+            battlenet(&p).iter().map(|e| &e.id).collect::<Vec<_>>()
+        );
     }
 
     #[test]
@@ -743,29 +1062,59 @@ mod tests {
         std::fs::create_dir_all(&game).unwrap();
         std::fs::create_dir_all(&mc).unwrap();
         std::fs::create_dir_all(&java).unwrap();
-        let publisher = "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US";
+        let publisher =
+            "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US";
         std::fs::write(game.join("appxmanifest.xml"), format!(r#"<Package><Identity Name="Microsoft.SunriseBaseGame" Publisher="{publisher}" Version="1.0.0.0" /><Properties><DisplayName>ms-resource:Title</DisplayName></Properties><Applications><Application Id="Game" Executable="gamelaunchhelper.exe"></Application></Applications></Package>"#)).unwrap();
-        std::fs::write(game.join("MicrosoftGame.config"), r#"<Game><ShellVisuals DefaultDisplayName="Forza Horizon 5" /></Game>"#).unwrap();
+        std::fs::write(
+            game.join("MicrosoftGame.config"),
+            r#"<Game><ShellVisuals DefaultDisplayName="Forza Horizon 5" /></Game>"#,
+        )
+        .unwrap();
         std::fs::write(mc.join("appxmanifest.xml"), format!(r#"<Package><Identity Name="Microsoft.4297127D64EC6" Publisher="{publisher}" /><Applications><Application Id="Minecraft"></Application></Applications></Package>"#)).unwrap();
         std::fs::write(mc.join("MicrosoftGame.config"), "<Game />").unwrap();
         // Xbox アプリから入れた Java Edition は、固定の Minecraft Java Edition と同じゲームなので出さない (#298)
         std::fs::write(java.join("appxmanifest.xml"), format!(r#"<Package><Identity Name="Microsoft.MinecraftJavaEdition" Publisher="{publisher}" /><Applications><Application Id="Game"></Application></Applications></Package>"#)).unwrap();
-        std::fs::write(java.join("MicrosoftGame.config"), r#"<Game><ShellVisuals DefaultDisplayName="Minecraft: Java Edition" /></Game>"#).unwrap();
+        std::fs::write(
+            java.join("MicrosoftGame.config"),
+            r#"<Game><ShellVisuals DefaultDisplayName="Minecraft: Java Edition" /></Game>"#,
+        )
+        .unwrap();
         let list = xbox(&dir.join("xbox"));
         let _ = std::fs::remove_dir_all(&dir);
-        assert_eq!(list.len(), 1, "Minecraft のランチャーと Xbox の Java Edition は出さない");
+        assert_eq!(
+            list.len(),
+            1,
+            "Minecraft のランチャーと Xbox の Java Edition は出さない"
+        );
         assert_eq!(list[0].id, "xbox:Microsoft.SunriseBaseGame");
         assert_eq!(list[0].name, "Forza Horizon 5");
-        assert_eq!(list[0].launch_uri, r"shell:AppsFolder\Microsoft.SunriseBaseGame_8wekyb3d8bbwe!Game");
+        assert_eq!(
+            list[0].launch_uri,
+            r"shell:AppsFolder\Microsoft.SunriseBaseGame_8wekyb3d8bbwe!Game"
+        );
     }
 
     #[test]
     fn xbox_real_minecraft_launcher_family_name() {
         // 実機の Xbox 版 Minecraft ランチャーがあれば、計算したファミリー名が公式の値と一致することを確かめる
-        let Some(content) = (b'C'..=b'Z').map(|d| PathBuf::from(format!(r"{}:\XboxGames\Minecraft Launcher\Content", d as char))).find(|p| p.join("appxmanifest.xml").is_file()) else { return };
+        let Some(content) = (b'C'..=b'Z')
+            .map(|d| {
+                PathBuf::from(format!(
+                    r"{}:\XboxGames\Minecraft Launcher\Content",
+                    d as char
+                ))
+            })
+            .find(|p| p.join("appxmanifest.xml").is_file())
+        else {
+            return;
+        };
         let m = std::fs::read_to_string(content.join("appxmanifest.xml")).unwrap();
         let identity = &m[m.find("<Identity").unwrap()..];
-        let family = format!("{}_{}", xml_attr(identity, "Name").unwrap(), publisher_id(&xml_attr(identity, "Publisher").unwrap()));
+        let family = format!(
+            "{}_{}",
+            xml_attr(identity, "Name").unwrap(),
+            publisher_id(&xml_attr(identity, "Publisher").unwrap())
+        );
         assert_eq!(family, "Microsoft.4297127D64EC6_8wekyb3d8bbwe");
     }
 }
