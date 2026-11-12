@@ -40,7 +40,7 @@ export function PhoneApp() {
 <div id="rotatePrompt" role="status"><b>スマホを縦にしてください</b><p>操作を停止し、押していたキーを離しました。<br />縦向きに戻して、新しい押下から再開します。</p></div>
 <OfflineMessage/>
 <FullMessage/>
-<LiftHint/>
+{state.view !== 'v-remote' && <LiftHint/>}
 <RotationNotice/>
 </>;
 }
@@ -61,7 +61,7 @@ function Header({state,status}:{state:PhoneDisplay;status:Status}) {
 
 function HostRemoteScreen({state}:{state:PhoneDisplay}) {
   return <section className={`view${state.view === 'v-remote' ? ' show' : ''}`} id="v-remote">
-    <div className="host-card"><h1>あなたがホストです！</h1><p>タッチパッドでPCのカーソルを動かせます。</p></div>
+    <div className="host-card"><h1>あなたがホストです！</h1>{state.view === 'v-remote' && <HostPadHint/>}</div>
     <div className="players" id="players1">{state.remote.players.map(p => <span key={p.name} className={p.on ? 'on' : ''}>{p.label}</span>)}</div>
     <div className="remote">
       <div className="dpad">
@@ -154,6 +154,14 @@ function PhoneDiagnostics({phase}:{phase:string|undefined}) {
 }
 
 // 通信の復旧・遅れた押下の破棄の後、押したままの指では操作を再開しない。離せば自動で消える (#285 Q27)
+function HostPadHint() {
+  const visible = useSyncExternalStore(liftHint.subscribe, liftHint.get);
+  return <div className="host-pad-hint">
+    <span className="host-pad-help" hidden={visible}>タッチパッドでPCのカーソルを動かせます。</span>
+    <span id="liftHint" role="status" hidden={!visible}>指を離して操作を再開</span>
+  </div>;
+}
+
 function LiftHint(){
   const visible=useSyncExternalStore(liftHint.subscribe,liftHint.get);
   return <div id="liftHint" className="lift-hint" role="status" hidden={!visible}>指を離して操作を再開</div>;

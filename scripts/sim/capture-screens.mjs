@@ -142,6 +142,24 @@ async function auditLayout(eval_,file,desktop){
         if(b.right>innerWidth+1||b.left<-1||(desktop&&(b.bottom>innerHeight+1||b.top<-1)))outside.push(e.textContent.trim().slice(0,24));}
     }
     if(top){const b=top.getBoundingClientRect();if(b.right>innerWidth+1||b.bottom>innerHeight+1||b.left<-1||b.top<-1)outside.push('ダイアログ');}
+    const remote=document.querySelector('#v-remote.show');
+    if(!desktop&&!top&&remote){
+      const start=remote.scrollTop;
+      remote.scrollTop=remote.scrollHeight;
+      const panel=remote.getBoundingClientRect();
+      const note=remote.querySelector('#remoteNote');
+      if(note&&visible(note)){
+        const bounds=note.getBoundingClientRect();
+        if(note.scrollHeight>note.clientHeight+1||bounds.bottom>Math.min(panel.bottom,innerHeight)+1)outside.push('リモコンの説明の末尾');
+      }
+      const end=remote.querySelector('#endBtn');
+      if(end&&visible(end)){
+        end.scrollIntoView({block:'nearest'});
+        const bounds=end.getBoundingClientRect();
+        if(bounds.top<panel.top-1||bounds.bottom>Math.min(panel.bottom,innerHeight)+1)outside.push('協力プレイの終了');
+      }
+      remote.scrollTop=start;
+    }
     return {scale:Math.round(scale*1000)/1000,small,outside};
   })()`);
   if(r.small.length||r.outside.length)console.log(`  監査 ${file}: ${MIN_TEXT}px未満 ${r.small.length}件${r.small.length?'（'+r.small.slice(0,6).map(x=>x.text+' '+x.px+'px').join('、')+'）':''}、画面外のボタン ${r.outside.length}件${r.outside.length?'（'+r.outside.join('、')+'）':''}`);
