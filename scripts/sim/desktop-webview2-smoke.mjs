@@ -24,6 +24,13 @@ let debugPort = await freePort();
 while(debugPort === hostPort) debugPort = await freePort();
 const hostOrigin = 'http://127.0.0.1:' + hostPort;
 const debugOrigin = 'http://127.0.0.1:' + debugPort;
+const browserArguments = '--remote-debugging-port=' + debugPort + ' --no-proxy-server --disable-background-networking';
+// CIのランナー（WebView2 156）では、環境変数の起動オプションが反映されなかった（保存先の環境変数は反映された）。
+// 使い捨てのランナーでだけ、WebView2がexe名ごとに読むレジストリにも同じ起動オプションを書き、試験の最後に消す。
+// 開発PCのレジストリは変えない。
+const policyKey = 'HKCU\\Software\\Policies\\Microsoft\\Edge\\WebView2\\AdditionalBrowserArguments';
+const usePolicy = process.env.GITHUB_ACTIONS === 'true';
+if (usePolicy) execFileSync('reg.exe', ['add', policyKey, '/v', 'recooplay-desktop.exe', '/t', 'REG_SZ', '/d', browserArguments, '/f'], {windowsHide:true, stdio:'ignore'});
 const app = spawn(path.join(root,'recooplay-desktop.exe'), [], {
   cwd: root, windowsHide: true, stdio: 'ignore',
   env: {...process.env, PORT:String(hostPort), RECOOPLAY_ROOT:root,
@@ -31,7 +38,7 @@ const app = spawn(path.join(root,'recooplay-desktop.exe'), [], {
     RECOOPLAY_DRY_RUN:'1', RECOOPLAY_RUNTIME_MEASURE:'1', RECOOPLAY_NO_CONFIG:'1',
     RECOOPLAY_FAKE_TARGET:'1', RECOOPLAY_LOG_DIR:temp,
     WEBVIEW2_USER_DATA_FOLDER:path.join(temp,'webview2'),
-    WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS:'--remote-debugging-port=' + debugPort + ' --no-proxy-server --disable-background-networking'},
+    WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS:browserArguments},
 });
 let exited, spawnError, socket;
 app.once('exit', (code,signal) => {exited={code,signal};});
@@ -140,4 +147,5 @@ try {
 } finally {
   socket?.close();
   if(!exited&&app.pid)app.kill();
+  if(usePolicy)try{execFileSync('reg.exe',['delete',policyKey,'/v','recooplay-desktop.exe','/f'],{windowsHide:true,stdio:'ignore'});}catch{}
 }
