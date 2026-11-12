@@ -338,15 +338,17 @@ try{
       const mark=mon.messages.length;
       const point=await touchStart('[data-ctl="act:jump"]');
       await page.call('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...point,id:1},{x:point.x+18,y:point.y,id:2}]});
-      await sleep(100);
+      const states=()=>mon.messages.slice(mark).filter(m=>m.type==='log'&&m.entry.button==='act:jump').map(m=>m.entry.state);
+      // Wi-Fiでは受信が数百ms遅れることがある（#275）。固定の待ち時間ではなく、ホストに届いたことを待ってから確かめる
+      await until(()=>states().includes('down'),'2接点の押下',3000);
       // CDPの非空touchEndは「終了する接点」を指定する（残す接点ではない）。
       await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[{...point,id:1}]});
-      await sleep(100);
-      const held=mon.messages.slice(mark).filter(m=>m.type==='log'&&m.entry.button==='act:jump').map(m=>m.entry.state);
-      assert.deepEqual(held,['down'],'最初の接点の解放でupしてはならない');
+      await sleep(300);
+      assert.deepEqual(states(),['down'],'最初の接点の解放でupしてはならない');
       await page.call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-      await sleep(180);
-      const input=mon.messages.slice(mark).filter(m=>m.type==='log'&&m.entry.button==='act:jump').map(m=>m.entry.state);
+      await until(()=>states().includes('up'),'最後の接点の解放',3000);
+      await sleep(200);
+      const input=states();
       assert.deepEqual(input,['down','up']);return {input,method:'Android Chrome CDPの2接点タッチ（実指ではない）'};
     });
     await check('Androidスティック右・解放',async()=>{const mark=mon.messages.length;await touch('.gen-stick',true);const ev=mon.messages.slice(mark).filter(m=>m.type==='log'&&m.entry.button==='act:right').map(m=>m.entry.state);assert.deepEqual(ev,['down','up']);await until(()=>mon.state().inject.down.length===0,'スティック解放');return {input:ev,down:[]};});
