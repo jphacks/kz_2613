@@ -1,6 +1,7 @@
 // DOMの入力境界・キャンセル・RTC形式を、OS入力なしで検証する。
 import assert from 'node:assert/strict';
-const {bindTouchpad} = await import('../../apps/web/src/shared/input/touchpad.ts');
+const {bindTouchpad, bindTouchpadSensitivity} = await import('../../apps/web/src/shared/input/touchpad.ts');
+const {createLifetime} = await import('../../apps/web/src/shared/input/lifetime.ts');
 const {bindCooperativeInput: createCooperativeInput} = await import('../../apps/web/src/shared/input/cooperative.ts');
 const {stickDirections} = await import('../../apps/web/src/shared/input/stick.ts');
 const {createFastChannel} = await import('../../apps/web/src/shared/transport/fast-channel.ts');
@@ -82,6 +83,36 @@ try {
     look = false; pad.fire('pointermove', { clientX: 160 }); tick();
     assert.equal(sent.length, 1, '担当でないのに look を送った');
   });
+  await test('タッチパッド: カーソル感度を保存・復元し、倍率を適用してから送信上限を守る (#377)', () => {
+    const previous = globalThis.localStorage;
+    const saved = new Map([['recooplay.sens', '2.5']]);
+    globalThis.localStorage = { getItem: key => saved.get(key) ?? null, setItem: (key, value) => saved.set(key, value) };
+    const lifetime = createLifetime();
+    try {
+      const pad = new Element(), slider = new Element(), value = new Element(), messages = [];
+      const sensitivity = bindTouchpadSensitivity(lifetime, slider, value);
+      bindTouchpad(pad, { enabled: () => true, send: message => messages.push(message), tap() {}, sensitivity });
+      const tick = intervals.at(-1).fn;
+      assert.equal(slider.value, '1');
+      for (const [scale, dx, dy] of [['1', 30, -30], ['0.5', 15, -15], ['6', 120, -120]]) {
+        slider.value = scale;
+        slider.fire('input');
+        pad.fire('pointerdown');
+        pad.fire('pointermove', { clientX: 130, clientY: 70 });
+        tick();
+        pad.fire('pointerup');
+        assert.deepEqual([messages.at(-1).dx, messages.at(-1).dy], [dx, dy]);
+      }
+      const restored = new Element();
+      assert.equal(bindTouchpadSensitivity(lifetime, restored, value)(), 6);
+      assert.equal(restored.value, '6');
+      assert.equal(value.textContent, '6.0倍');
+      assert.equal(saved.get('recooplay.sens'), '2.5');
+    } finally {
+      lifetime.dispose();
+      globalThis.localStorage = previous;
+    }
+  });
   await test('タッチパッド: キャンセル・無効化で未送信移動を捨て、解放を1回通知する',()=>{
     const pad = new Element(), messages=[]; let enabled=true,taps=0;
     bindTouchpad(pad,{enabled:()=>enabled,send:m=>messages.push(m),tap:()=>taps++});
@@ -114,7 +145,7 @@ try {
   });
   await test('タッチパッド: 2本指でナチュラルな向きにスクロールし、カーソルは動かさない。2本指のタップは右クリック (#122)',()=>{
     const pad = new Element(), messages=[]; let taps=0,rights=0;
-    bindTouchpad(pad,{enabled:()=>true,send:m=>messages.push(m),tap:()=>taps++,rightTap:()=>rights++});
+    bindTouchpad(pad,{enabled:()=>true,send:m=>messages.push(m),tap:()=>taps++,rightTap:()=>rights++,sensitivity:()=>6});
     const tick=intervals.at(-1).fn;
     const at=(name,id,y,t=0)=>pad.fire(name,{pointerId:id,clientX:100,clientY:y,timeStamp:t});
     // 1本目でカーソルを少し動かした後、2本目が触れたら未送信の移動は捨ててスクロールにする

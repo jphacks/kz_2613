@@ -1,10 +1,32 @@
 import {createLifetime} from './lifetime.ts';
 export type RemoteGesture = {kind:'release';rseq:number} | {kind:'move';dx:number;dy:number;rseq:number} | {kind:'scroll';dy:number;rseq:number};
-export interface TouchpadOptions {enabled():boolean; send(message:RemoteGesture):void; tap(at:number):void; rightTap?(at:number):void}
+export interface TouchpadOptions {enabled():boolean; send(message:RemoteGesture):void; tap(at:number):void; rightTap?(at:number):void; sensitivity?():number}
+
+const SENSITIVITY_KEY = 'recooplay.remotePadSensitivity';
+
+export function bindTouchpadSensitivity(lifetime: ReturnType<typeof createLifetime>, input: HTMLInputElement, value: HTMLElement) {
+  const parse = (raw: string | null) => {
+    const number = Number(raw);
+    return number >= 0.5 && number <= 6 ? number : 1;
+  };
+  let sensitivity = 1;
+  try { sensitivity = parse(localStorage.getItem(SENSITIVITY_KEY)); } catch {}
+  const render = () => {
+    input.value = String(sensitivity);
+    value.textContent = `${sensitivity.toFixed(1)}倍`;
+  };
+  render();
+  lifetime.listen(input, 'input', () => {
+    sensitivity = parse(input.value);
+    render();
+    try { localStorage.setItem(SENSITIVITY_KEY, String(sensitivity)); } catch {}
+  });
+  return () => sensitivity;
+}
 // ホスト用。協力視点の30Hz累積値とは独立した、上限付きのメニュー操作。
 // 1本指: カーソル移動・タップで左クリック。2本指: スクロール・タップで右クリック (ノートPCのタッチパッドと同じ、#122)。
 // スクロールの向きは Windows・スマホの既定と同じ「ナチュラル」(指を上へ動かすと下へスクロール)。
-export function bindTouchpad(element: HTMLElement, { enabled, send, tap, rightTap = () => {} }: TouchpadOptions) {
+export function bindTouchpad(element: HTMLElement, { enabled, send, tap, rightTap = () => {}, sensitivity = () => 1 }: TouchpadOptions) {
   // 指ごとの最後の位置。2本目までだけ追う
   const lifetime = createLifetime();
   const pointers = new Map<number,{x:number;y:number}>();
@@ -36,7 +58,8 @@ export function bindTouchpad(element: HTMLElement, { enabled, send, tap, rightTa
     distance += Math.abs(mx) + Math.abs(my);
     if (!enabled()) return; // 操作先がない間の動きは貯めない
     if (mode === 'move') {
-      dx = Math.max(-120, Math.min(120, dx + mx)); dy = Math.max(-120, Math.min(120, dy + my));
+      const scale = sensitivity();
+      dx = Math.max(-120, Math.min(120, dx + mx * scale)); dy = Math.max(-120, Math.min(120, dy + my * scale));
     } else if (mode === 'scroll') {
       // 2本の指の平均の動き。ナチュラルなので向きを逆にする
       sy = Math.max(-120, Math.min(120, sy - my / 2));
