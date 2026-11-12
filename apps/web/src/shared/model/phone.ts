@@ -4,7 +4,8 @@ import type {PhoneGame, Slot} from '../contracts.ts';
 
 const CHARACTERS = { P1: 'blue', P2: 'green', P3: 'purple', P4: 'red' };
 
-export function reasonText(r: string | null | undefined) {
+export function reasonText(r: string | null | undefined, me: Slot) {
+  if (r === `${me} disconnected`) return 'あなたの接続が切れました';
   return r === 'host pause' ? 'ホストが停止' : r === 'app focus' ? 'PCアプリの画面に戻った' : r === 'emergency stop' ? 'PCの緊急停止' : r === 'role rotation' ? '時間で担当を交代' : r?.endsWith('disconnected') ? r.split(' ')[0] + ' が切断' : r;
 }
 
@@ -37,7 +38,7 @@ function routeText(game: PhoneGame, name: string) {
   // Minecraft の公式ランチャー (#287)。PC のマウスを使わずに「プレイ」を押せる
   if (game.remoteRoute === 'launcher') return 'Minecraftのランチャーを操作中（「プレイ」を押してください）';
   if (game.remoteRoute !== 'none') return '';
-  if (!sendsToGame(game)) return `PCアプリが前面にないため、リモコンは届きません（ロビーでは${game.title === 'minecraft-java' ? 'PCアプリとMinecraftのランチャー' : 'PCアプリ'}だけを操作します）`;
+  if (!sendsToGame(game)) return 'PCアプリを前面にすると、リモコンを使えます';
   if (game.inputTarget) return `${name}が前面にないため、リモコンは届きません`;
   return `リモコンは今は届きません${game.readyReasons?.length ? `（${game.readyReasons[0]}）` : ''}`;
 }
@@ -61,7 +62,7 @@ export function waitModel({ me, game, roleTitle, joined, autoWait }: {me:Slot;ga
     role: roleTitle,
     title: !joined ? '次の開始から参加します。'
       : phase === 'paused' ? (autoWait
-        ? `${reasonText(game.reason)}。制限時間内に全員が戻ると自動で再開します。再開できない場合はホストの操作をお待ちください。`
+        ? `${reasonText(game.reason, me)}。制限時間内に全員が戻ると自動で再開します。再開できない場合はホストの操作をお待ちください。`
         : 'ホストが「再開する」を押すと操作画面に戻ります。')
       : phase === 'preparing' ? 'ホストが「Ready」を押すと操作画面に変わります。'
       : game.lineupOk ? 'ホストがゲームを起動するまでお待ちください。'
@@ -91,7 +92,7 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
       ? 'プレイ画面まで進んだら「Ready」を押してください'
       : '準備が整うと「Ready」を押せます'];
   } else if (phase === 'paused') {
-    instructions = [reasonText(game.reason), game.inputTarget ? game.prepareStatus : '', ...(game.canResume ? [] : reasons)];
+    instructions = [reasonText(game.reason, me), game.inputTarget ? game.prepareStatus : '', ...(game.canResume ? [] : reasons)];
     if (autoWait && isHost) instructions.push('制限時間内に全員が戻ると自動で再開します');
     if (game.canResume) instructions.push('続けるには「再開する」を押してください');
     instructions.push('遊び終えたら「協力プレイを終了（分担に戻る）」を押してください');
