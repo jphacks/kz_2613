@@ -91,12 +91,19 @@ try {
     let system='';
     try {
       system=powershell('-Command',[
+        '[Console]::OutputEncoding=[Text.Encoding]::UTF8',
         "$k='HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'",
         "$v=(Get-ItemProperty -Path $k -ErrorAction SilentlyContinue).pv",
         `$w=@(Get-CimInstance Win32_Process -Filter "Name='msedgewebview2.exe'")`,
         `$mine=@($w | Where-Object { $_.CommandLine -match '${debugPort}' })`,
         `$app=Get-Process -Id ${app.pid} -ErrorAction SilentlyContinue`,
         "\"WebView2ランタイム=$v WebView2プロセス=$($w.Count) うちこのポート=$($mine.Count) アプリのウィンドウ='$($app.MainWindowTitle)' セッション=$($app.SessionId) 対話=$([Environment]::UserInteractive)\"",
+        // 起動オプションが効いているかを見るため、ブラウザー本体（--type なし）の親と起動引数を出す
+        `$w | Where-Object { $_.CommandLine -notmatch '--type=' } | ForEach-Object { " 本体 pid=$($_.ProcessId) 親=$($_.ParentProcessId) 引数=" + ($_.CommandLine -replace '^.*?msedgewebview2\\.exe\\"?\\s*','').Substring(0,[Math]::Min(400,($_.CommandLine -replace '^.*?msedgewebview2\\.exe\\"?\\s*','').Length)) }`,
+        `" アプリpid=${app.pid}"`,
+        "$p=Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge\\WebView2','HKCU:\\SOFTWARE\\Policies\\Microsoft\\Edge\\WebView2' -ErrorAction SilentlyContinue",
+        "\" ポリシー=$(if ($p) { ($p | Out-String).Trim() -replace '\\s+',' ' } else { 'なし' })\"",
+        "\" 環境変数=$([Environment]::GetEnvironmentVariable('WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS','Machine'))\"",
       ].join('; '));
     } catch (failure) {system=`取得失敗: ${failure.message}`;}
     throw Error(`${error.message} 開いている画面: ${JSON.stringify(seen)} CDP: ${cdp} ${system}`);
