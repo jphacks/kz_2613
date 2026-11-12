@@ -107,6 +107,13 @@ jobs:
         run: ./scripts/windows/package.ps1
       - name: 配布zipの同梱物・展開後の起動を確認（OS入力なし）
         run: node scripts/sim/package-smoke.mjs
+      - name: 配布PCアプリのWebView2で参加画面・設定・終了を確認（OS入力なし）
+        timeout-minutes: 5
+        shell: pwsh
+        run: |
+          $package = @(Get-ChildItem -LiteralPath dist -Directory -Filter 'ReCooplay-*-windows-x64')
+          if ($package.Count -ne 1) { throw '配布フォルダーを一意に特定できません' }
+          node scripts/sim/desktop-webview2-smoke.mjs $package[0].FullName
       - name: Windowsインストーラーを作成（NSIS、zipと同じ同梱物）
         shell: powershell
         run: |
