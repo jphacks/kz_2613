@@ -8,6 +8,8 @@
 
 ## 開発の流れ
 
+統合前の必須チェック、CIの検証範囲と実機受入の違い、失敗時の確認方法は [CIの検証範囲](CI_VERIFICATION.md) を参照する。
+
 CodexとClaude Codeは同じ `docs/develop/requirements/requirements-v0.3.md` と
 `docs/develop/decisions/` を参照する。後の明示的なユーザー判断を優先し、提案を確定扱いしない。
 

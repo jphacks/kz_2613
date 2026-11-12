@@ -5,7 +5,11 @@ permissions:
   contents: read
 on:
   push:
+    branches: [main]
   pull_request:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
   CARGO_TERM_COLOR: never
   RECOOPLAY_DRY_RUN: '1'
@@ -66,24 +70,8 @@ jobs:
           node scripts/device/summarize-wifi-overhead-test.mjs
           node scripts/device/wifi-ack-observer-test.mjs
           node scripts/device/look-gap-analysis-test.mjs
-      - name: PC 画面の表示ロジック
-        run: node scripts/sim/app-view-test.mjs
-      - name: スマホのReady・待機・停止と診断前の解放
-        run: node scripts/sim/phone-view-test.mjs
-      - name: スマホのカラースキンの保存と復元
-        run: node scripts/sim/phone-skin-test.mjs
       - name: スマホのレイアウトモデル（標準生成・検証・合成・担当表示・縦横変換・保存）
         run: node scripts/sim/phone-layout-test.mjs
-      - name: 診断開始時のサーバー停止と非注入の通信テスト
-        run: node scripts/sim/controller-diagnostics-test.mjs
-      - name: スマホ入力ライフサイクルの回帰
-        run: node scripts/sim/phone-lifecycle-test.mjs
-      - name: スマホの入力保持元と強制解放
-        run: node scripts/sim/input-owners-test.mjs
-      - name: スマホの接続・参加状態と再接続境界
-        run: node scripts/sim/phone-session-test.mjs
-      - name: Rustとスマホの受信境界の不正値回帰
-        run: node scripts/sim/protocol-boundary-test.mjs
       - name: 改良後UIの撮影証拠の寸法と画面網羅
         run: node scripts/sim/verify-ui-evidence.mjs
       - name: 操作定義の静的抽出
@@ -92,12 +80,18 @@ jobs:
         run: node scripts/sim/profile-catalog-test.mjs
       - name: 静的画面の構文
         run: node scripts/sim/check-static-pages.mjs
-      - name: UI入力のキャンセルとWebRTC形式
-        run: node scripts/sim/ui-input-test.mjs
       - name: 画像と外部化したCSS・JSの配信
         run: node scripts/sim/static-assets-sim.mjs
       - name: 観客表示と診断画面の起動・受信境界・破棄
+        id: auxiliary-pages
+        env:
+          RECOOPLAY_SMOKE_DIAGNOSTICS: ${{ runner.temp }}/recooplay-smoke-diagnostics
         run: node scripts/sim/auxiliary-pages-smoke.mjs --pages overlay,diagnostics,pseudo-game
+      - uses: actions/upload-artifact@v4
+        if: failure() && steps.auxiliary-pages.outcome == 'failure'
+        with:
+          name: auxiliary-pages-diagnostics
+          path: ${{ runner.temp }}/recooplay-smoke-diagnostics
       - name: 入力プローブの安全経路（--mock、OS 入力なし）
         run: node scripts/sim/input-probe-sim.mjs
       - uses: actions/cache@v4

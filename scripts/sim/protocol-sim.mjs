@@ -144,6 +144,7 @@ class Client {
   }
   // 条件を満たすメッセージを待つ (from 以降に届いたもの)
   waitFor(pred, { timeout = 2000, from = 0, what = '' } = {}) {
+    const started = performance.now();
     return new Promise((resolve, reject) => {
       const check = () => {
         const hit = this.msgs.slice(from).find(pred);
@@ -154,7 +155,11 @@ class Client {
       };
       const timer = setTimeout(() => {
         done();
-        reject(new Error(`${this.name}: 待機タイムアウト ${what}`));
+        const game = this.msgs.findLast(m => m.type === 'game')?.game;
+        const state = game ? {phase:game.phase, epoch:game.epoch, title:game.title,
+          connected:game.connected, lineupOk:game.lineupOk, roleAck:game.roleAck} : null;
+        reject(new Error(`${this.name}: 待機タイムアウト ${what} (${Math.round(performance.now() - started)}ms) `
+          + `last=${this.msgs.at(-1)?.type ?? 'none'} game=${JSON.stringify(state)}`));
       }, timeout);
       const done = () => {
         clearTimeout(timer);
@@ -233,8 +238,7 @@ async function join(key, extra = {}) {
 }
 
 // PC 画面の「この分担で決定」(#109)。P1 に届いた最新のゲーム・接続者で決定する
-async function confirmLineup(c, p1) {
-  const g = [...p1.msgs].reverse().find((m) => m.type === 'game')?.game;
+async function confirmLineup(c, p1, g = p1.msgs.findLast(m => m.type === 'game')?.game) {
   const from = p1.mark();
   c.send({ type: 'confirm_lineup', title: g.title, members: g.connected, epoch: g.epoch });
   await p1.waitFor((m) => m.type === 'game' && m.game.lineupOk, { from, what: 'lineupOk' });
@@ -1948,16 +1952,20 @@ async function main() {
     });
 
     await check('人数の変更: 一時停止中にPC画面から今の接続で分担し直し、全員の確認と明示の再開を求める (#162)', async () => {
+      const resetFrom = mon.mark();
       mon.send({ type: 'reset' });
-      await sleep(200);
+      await mon.waitFor(m => m.type === 'game' && m.game.phase === 'lobby' && m.game.connected.length === 0,
+        { from: resetFrom, what: '人数変更の試験前リセット' });
       mon.send({ type: 'select_game', title: 'minecraft-java' });
-      await sleep(100);
       const id = (n) => ({ clientId: `sim-players-${n}` });
       const a = await join('C1', id(1)); await welcome(a);
       const b = await join('C2', id(2)); await welcome(b);
       const c = await join('C3', id(3)); await welcome(c);
-      await sleep(200);
-      await confirmLineup(mon, a);
+      // C3へのwelcomeとC1へのgameは別々の接続で届く。分担に使うC1の状態を直接待つ。
+      const {game: lineup} = await a.waitFor(m => m.type === 'game' && m.game.phase === 'lobby'
+        && m.game.title === 'minecraft-java' && m.game.connected.join(',') === 'P1,P2,P3',
+        { what: 'Minecraftの3枠の分担状態' });
+      await confirmLineup(mon, a, lineup);
       a.send({ type: 'command', cmd: 'PREPARE' }); await phaseIs(a, 'preparing', 0);
       await a.waitFor((m) => m.type === 'game' && m.game.canReady, { what: 'canReady' });
       a.send({ type: 'command', cmd: 'READY' }); await phaseIs(a, 'coop', 0);
@@ -1976,7 +1984,12 @@ async function main() {
       const changed = await a.waitFor((m) => m.type === 'game' && m.game.participants?.length === 2, { what: '2人の分担' });
       assert(changed.game.phase === 'paused' && changed.game.epoch > held.epoch, JSON.stringify({ phase: changed.game.phase }));
       assert(changed.game.roleAck.length === 2 && !changed.game.canResume, '全員の確認の前に再開できる');
-      for (const x of [a, b]) { const g = latest(); x.send({ type: 'role_ok', epoch: g.epoch }); await sleep(100); }
+      const epoch = changed.game.epoch;
+      a.send({ type: 'role_ok', epoch });
+      await a.waitFor(m => m.type === 'game' && m.game.epoch === epoch && m.game.roleAck.length === 1,
+        { what: '1人目の分担確認' });
+      assert(!latest().canResume, '1人の確認だけで再開できる');
+      b.send({ type: 'role_ok', epoch });
       await a.waitFor((m) => m.type === 'game' && m.game.canResume, { what: '確認後の再開可' });
       assert(latest().phase === 'paused', '確認だけで再開した');
       for (const x of [a, b]) x.close();
