@@ -76,6 +76,7 @@ function HostRemoteScreen({state}:{state:PhoneDisplay}) {
       </div>
     </div>
     <div id="remotePad" role="application" aria-label="ホストのタッチパッド">指でPCのカーソルを動かす</div>
+    <label className="sens">カーソル感度 <input id="remotePadSensitivity" type="range" min="0.5" max="6" step="0.1" defaultValue="1" aria-label="カーソル感度" /> <span id="remotePadSensitivityValue">1.0倍</span></label>
     <div className="remoteButtons">
       <button className="key" data-ctl="REMOTE_LEFT">左クリック</button><button className="key" data-ctl="REMOTE_RIGHT">右クリック</button><button className="key" data-ctl="REMOTE_E" hidden={state.inventory === null}>{state.inventory}</button>
       <button className="key" data-ctl="REMOTE_WHEEL_UP">ホイール↑</button><button className="key" data-ctl="REMOTE_WHEEL_DOWN">ホイール↓</button>
