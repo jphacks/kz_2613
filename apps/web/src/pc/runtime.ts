@@ -200,7 +200,7 @@ async function loadInfo(){
     infoPort=info.port;renderInfo(info,hotspotMessage,false);document.body.toggleAttribute('data-two-qr',joinGuideView(info).two);render();
   }catch{if(!disposed&&request===infoRequest)renderInfo(null,'',false);}
 }
-const cursor=createVirtualCursor();
+const cursor=createVirtualCursor({canLeave:()=>game?.remoteLeave===true,leave:at=>send({type:'remote_leave',...at})});
 function connect(){
   if(disposed)return;
   const socket=new WebSocket(`ws://${location.host}/ws`);ws=socket;

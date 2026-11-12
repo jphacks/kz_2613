@@ -35,8 +35,8 @@ export function inputWarnText({ isHost, game, name, notice }: {isHost:boolean;ga
 function routeText(game: PhoneGame, name: string) {
   if (game.remoteRoute === 'app') return 'PCアプリを操作中';
   if (game.remoteRoute === 'game') return `${name}のメニューを操作中`;
-  // Minecraft の公式ランチャー (#287)。PC のマウスを使わずに「プレイ」を押せる
-  if (game.remoteRoute === 'launcher') return 'Minecraftのランチャーを操作中（「プレイ」を押してください）';
+  // PC アプリ以外の前面のウィンドウ (ランチャー・ダイアログ等、#287・#405)。PC のマウスを使わずに先へ進める
+  if (game.remoteRoute === 'desktop') return 'PCの画面を操作中（実際のマウスとして動きます）';
   if (game.remoteRoute !== 'none') return '';
   if (!sendsToGame(game)) return 'PCアプリを前面にすると、リモコンを使えます';
   if (game.inputTarget) return `${name}が前面にないため、リモコンは届きません`;

@@ -11,6 +11,8 @@ pub trait InputAdapter: Send {
     fn mouse_button(&mut self, left: bool, down: bool) -> bool;
     fn mouse_move(&mut self, dx: i32, dy: i32) -> bool;
     fn wheel(&mut self, notches: i32) -> bool;
+    /// 前面のウィンドウの表示領域の中の位置 (左上 0・右下 1 の割合) へ OS のカーソルを置く (#405)
+    fn cursor_to_foreground(&mut self, fx: f64, fy: f64) -> bool;
 }
 
 pub struct Input {
@@ -78,6 +80,13 @@ impl Input {
         }
         imp::wheel(notches)
     }
+
+    pub fn cursor_to_foreground(&self, fx: f64, fy: f64) -> bool {
+        if self.dry_run {
+            return true;
+        }
+        imp::cursor_to_foreground(fx, fy)
+    }
 }
 
 impl InputAdapter for Input {
@@ -99,6 +108,9 @@ impl InputAdapter for Input {
     fn wheel(&mut self, notches: i32) -> bool {
         Input::wheel(self, notches)
     }
+    fn cursor_to_foreground(&mut self, fx: f64, fy: f64) -> bool {
+        Input::cursor_to_foreground(self, fx, fy)
+    }
 }
 
 /// 試験専用。実OS入力を呼ばず、要求の順序・引数・成否を観測する。
@@ -114,6 +126,7 @@ pub(crate) mod testing {
         Button { left: bool, down: bool },
         Move { dx: i32, dy: i32 },
         Wheel(i32),
+        CursorTo { fx: f64, fy: f64 },
     }
 
     #[derive(Clone, Debug, PartialEq)]
@@ -183,6 +196,9 @@ pub(crate) mod testing {
         fn wheel(&mut self, notches: i32) -> bool {
             self.record(Operation::Wheel(notches))
         }
+        fn cursor_to_foreground(&mut self, fx: f64, fy: f64) -> bool {
+            self.record(Operation::CursorTo { fx, fy })
+        }
     }
 }
 
@@ -249,6 +265,37 @@ mod imp {
     pub fn wheel(notches: i32) -> bool {
         mouse(0, 0, notches * 120, MOUSEEVENTF_WHEEL)
     }
+
+    /// 前面のウィンドウの表示領域の割合の位置へカーソルを置く。座標は同じプロセスの DPI の扱いで読み書きするので、表示倍率に左右されない
+    pub fn cursor_to_foreground(fx: f64, fy: f64) -> bool {
+        use windows::Win32::Foundation::{POINT, RECT};
+        use windows::Win32::Graphics::Gdi::ClientToScreen;
+        use windows::Win32::UI::WindowsAndMessaging::{
+            GetClientRect, GetForegroundWindow, SetCursorPos,
+        };
+        unsafe {
+            let hwnd = GetForegroundWindow();
+            if hwnd.is_invalid() {
+                return false;
+            }
+            let mut rect = RECT::default();
+            if GetClientRect(hwnd, &mut rect).is_err() {
+                return false;
+            }
+            let (w, h) = (
+                (rect.right - rect.left).max(1),
+                (rect.bottom - rect.top).max(1),
+            );
+            let mut point = POINT {
+                x: ((fx.clamp(0.0, 1.0) * f64::from(w)).round() as i32).min(w - 1),
+                y: ((fy.clamp(0.0, 1.0) * f64::from(h)).round() as i32).min(h - 1),
+            };
+            if !ClientToScreen(hwnd, &mut point).as_bool() {
+                return false;
+            }
+            SetCursorPos(point.x, point.y).is_ok()
+        }
+    }
 }
 
 #[cfg(not(windows))]
@@ -263,6 +310,9 @@ mod imp {
         false
     }
     pub fn wheel(_: i32) -> bool {
+        false
+    }
+    pub fn cursor_to_foreground(_: f64, _: f64) -> bool {
         false
     }
 }

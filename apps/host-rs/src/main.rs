@@ -225,7 +225,7 @@ async fn main() {
                         Ok("app blur") => {
                             let _ = tx.send(Event::FakeAppWindow(false));
                         }
-                        // 試験用 (同上): Minecraft のランチャーが前面になった・外れた (#287)
+                        // 試験用 (同上): PC アプリ以外のウィンドウ (ランチャー等) が前面になった・外れた (#287、#405)
                         Ok("launcher focus") => {
                             let _ = tx.send(Event::FakeLauncher(true));
                         }

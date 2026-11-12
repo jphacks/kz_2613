@@ -269,6 +269,28 @@ try {
       cursor.dispose();assert.equal(timers.filter(t=>t.live).length,0,'破棄で隠す予約も消す');
     }finally{globalThis.setTimeout=realTimeout;globalThis.clearTimeout=realClear;}
   });
+  await test('PC仮想カーソル: 枠の端を越えたら、ホストが許すときだけOSのカーソルへ引き継ぐ (#405)',()=>{
+    globalThis.innerWidth=800;globalThis.innerHeight=560;
+    const marker={style:{},setAttribute(){},remove(){}};const listeners={};
+    globalThis.document={createElement:()=>marker,body:{append(){}},querySelector:()=>null,elementFromPoint:()=>null,
+      addEventListener(type,fn){listeners[type]=fn;},removeEventListener(type,fn){if(listeners[type]===fn)delete listeners[type];}};
+    let allowed=false;const left=[];
+    const cursor=createVirtualCursor({canLeave:()=>allowed,leave:at=>left.push(at)});
+    cursor.handle({kind:'move',dx:1000,dy:0});
+    assert.equal(left.length,0,'許されていなければ枠の中で止める');
+    assert.match(marker.style.transform,/translate\(781px/);
+    allowed=true;
+    cursor.handle({kind:'move',dx:5,dy:0});assert.equal(left.length,0,'枠の中の移動では引き継がない');
+    cursor.handle({kind:'move',dx:60,dy:-20});
+    assert.deepEqual(left,[{x:800,y:260,w:800,h:560}],'越えた辺の上の位置を知らせる');
+    assert.equal(marker.style.display,'none','引き継いだら丸を消す');
+    cursor.handle({kind:'move',dx:60,dy:0});assert.equal(left.length,1,'操作先が変わるまでに届いた移動で二重に知らせない');
+    // 実際のマウスで PC アプリへ戻ったら、その位置から始める
+    listeners.mousemove({clientX:100,clientY:200});
+    cursor.handle({kind:'move',dx:-150,dy:0});
+    assert.deepEqual(left.at(-1),{x:0,y:200,w:800,h:560},'左の辺からも引き継ぐ');
+    cursor.dispose();assert.equal(listeners.mousemove,undefined,'破棄でマウスの監視も外す');
+  });
   await test('PC仮想カーソル: スマホの左クリックで役割交換の列を押せる',()=>{
     let clicks=0;
     const seat=new HTMLElement({click(){clicks++;}});
