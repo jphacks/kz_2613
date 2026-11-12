@@ -14,6 +14,7 @@ public static class ReCooplayWindowProbe {
     [DllImport("user32.dll", SetLastError = true)] public static extern bool PostMessage(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);
 
     [DllImport("user32.dll")] public static extern uint GetDpiForWindow(IntPtr window);
+    [DllImport("user32.dll")] public static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context);
     [DllImport("user32.dll", SetLastError = true)] public static extern bool SetWindowPos(IntPtr window, IntPtr after, int x, int y, int cx, int cy, uint flags);
 
     private static IntPtr FindMain(uint processId) {
@@ -38,6 +39,9 @@ public static class ReCooplayWindowProbe {
     public static bool ResizeToMinimum(uint processId) {
         var window = FindMain(processId);
         if (window == IntPtr.Zero) return false;
+        // PowerShell は高DPI非対応のため、そのままだと指定した大きさを表示倍率でさらに拡大される。
+        // このスレッドだけモニターごとのDPI対応 (PER_MONITOR_AWARE_V2 = -4) にしてから、実寸で指定する
+        SetThreadDpiAwarenessContext(new IntPtr(-4));
         uint dpi = GetDpiForWindow(window);
         if (dpi == 0) return false;
         int width = (int)Math.Ceiling(800 * dpi / 96.0);
