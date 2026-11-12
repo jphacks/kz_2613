@@ -2122,6 +2122,12 @@
 - PRとmainの実行条件を分け、古いPR実行を取り消す。製品Webの一括試験が実行する9本の個別呼び出しを整理し、必須チェックと検証範囲を記録した。
 - `node scripts/sim/product-web-test.mjs`、`python scripts/check-public-docs.py`、`git diff --check` が合格。Windows上の全ジョブはGitHub Actionsで確認する。
 
+## 2026-11-12 — 静的検査と依存監査の基準計測（#379）
+
+- Windowsでhost-rsとdesktopのrustfmt・Clippyを実行し、両方の結果とツールチェーンを保存する。UbuntuでCargoの2つのロックファイルとWebのロックファイルを監査する。
+- 初回の指摘と所要時間を測るため、ワークフローの変更PRと手動起動で実行する。通常のPRチェックへの追加は計測結果を確認してから行う。
+- YAMLとPowerShellの構文、模擬失敗での両ログ保存と非ゼロ終了を確認。GitHub Actionsでの実ツールの実行は未確認。
+
 ## 2026-11-12 — 人数変更の通信試験で状態を待つ（#379）
 
 - CIの `C1: 待機タイムアウト lineupOk` を受け、C1がMinecraftのロビーで3枠を受信してから、その状態で分担を確定する。役割確認は1人目の受理を待ち、全員が確認するまで再開できないことを検査する。

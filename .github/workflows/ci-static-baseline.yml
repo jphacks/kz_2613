@@ -1,0 +1,95 @@
+name: 静的検査と依存監査の基準計測
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['.github/workflows/ci-static-baseline.yml']
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+permissions:
+  contents: read
+jobs:
+  rust:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        crate: [host-rs, desktop]
+    env:
+      CRATE: ${{ matrix.crate }}
+      LIBCLANG_PATH: C:\Program Files\LLVM\bin
+      CARGO_TERM_COLOR: never
+    steps:
+      - uses: actions/checkout@v4
+        timeout-minutes: 2
+      - name: Rustの静的検査用コンポーネントを用意する
+        timeout-minutes: 5
+        run: rustup component add rustfmt clippy
+      - name: Strawberry Perl を優先する
+        timeout-minutes: 1
+        shell: pwsh
+        run: echo "C:\Strawberry\perl\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - uses: actions/cache@v4
+        timeout-minutes: 5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/${{ matrix.crate }}/target
+          key: static-${{ runner.os }}-${{ matrix.crate }}-${{ hashFiles(format('apps/{0}/Cargo.lock', matrix.crate)) }}
+      - name: 既存の整形とClippyの指摘を計測する
+        timeout-minutes: 35
+        shell: pwsh
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $false
+          $manifest = "apps/$env:CRATE/Cargo.toml"
+          $out = Join-Path $env:RUNNER_TEMP static-baseline
+          New-Item -ItemType Directory -Path $out -Force | Out-Null
+          rustc -Vv | Set-Content (Join-Path $out toolchain.txt)
+          cargo fmt --manifest-path $manifest -- --check *> (Join-Path $out rustfmt.txt)
+          $fmt = $LASTEXITCODE
+          cargo clippy --manifest-path $manifest --locked --release --all-targets -- -D warnings *> (Join-Path $out clippy.txt)
+          $clippy = $LASTEXITCODE
+          "rustfmt=$fmt; clippy=$clippy" | Tee-Object -FilePath (Join-Path $out result.txt)
+          if ($fmt -or $clippy) { exit 1 }
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        timeout-minutes: 3
+        with:
+          name: static-baseline-${{ matrix.crate }}
+          path: ${{ runner.temp }}/static-baseline
+  npm-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        timeout-minutes: 2
+      - uses: actions/setup-node@v4
+        timeout-minutes: 3
+        with:
+          node-version: '24'
+      - name: Webのロックファイルを監査する
+        timeout-minutes: 3
+        working-directory: apps/web
+        run: npm audit --package-lock-only
+  cargo-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        crate: [host-rs, desktop]
+    steps:
+      - uses: actions/checkout@v4
+        timeout-minutes: 2
+      - name: RustSecの監査ツールを用意する
+        timeout-minutes: 20
+        run: cargo install --locked --version 0.22.1 cargo-audit
+      - name: 使用したツールの版を表示する
+        timeout-minutes: 1
+        run: cargo audit --version
+      - name: Rustのロックファイルを監査する
+        timeout-minutes: 5
+        working-directory: apps/${{ matrix.crate }}
+        run: cargo audit
