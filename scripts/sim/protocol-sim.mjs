@@ -377,6 +377,11 @@ async function main() {
     await check('通信契約: ホスト実出力のPC状態とスマホの参加・ゲーム状態を製品デコーダーが受理する (#272)', async () => {
       const pcState = decodePcMessage(JSON.stringify(initialState));
       assert(pcState?.type === 'state' && pcState.game.phase === 'lobby', 'PCデコーダーが初回状態を拒否した');
+      const joinedState = await mon.waitFor(message => message.type === 'state' && message.game.connected.length === 3,
+        { what: '3台参加後のPC状態' });
+      const decodedPc = decodePcMessage(JSON.stringify(joinedState));
+      assert(decodedPc?.type === 'state' && decodedPc.game.connected.join(',') === 'P1,P2,P3',
+        'PCデコーダーが3台参加後の状態を拒否した');
       for (const client of [p1, p2, p3]) {
         const joinMessage = client.msgs.find(message => message.type === 'welcome');
         const decodedJoin = decodeServerMessage(JSON.stringify(joinMessage));
