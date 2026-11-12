@@ -19,7 +19,6 @@ jobs:
         shard: [1, 2, 3, 4]
     env:
       RECOOPLAY_DRY_RUN: '1'
-      REPEAT_DIAGNOSTICS: ${{ runner.temp }}/repeat-diagnostics
       REPEAT_SHARD: ${{ matrix.shard }}
     steps:
       - uses: actions/checkout@v4
@@ -64,6 +63,8 @@ jobs:
       - name: 各試験を5回実行する
         shell: pwsh
         run: |
+          # runner の値はジョブの env では使えないため、手順の中で決める
+          $env:REPEAT_DIAGNOSTICS = Join-Path $env:RUNNER_TEMP 'repeat-diagnostics'
           New-Item -ItemType Directory -Path $env:REPEAT_DIAGNOSTICS -Force | Out-Null
           $failures = 0
           $first = ([int]$env:REPEAT_SHARD - 1) * 5 + 1
