@@ -160,17 +160,6 @@ fn desktop_target() -> Target {
     }
 }
 
-/// Minecraft の公式ランチャーのウィンドウ (#287)。Xbox アプリ版は Minecraft.exe、旧版は MinecraftLauncher.exe。
-/// 起動直後に同じタイトルで出る GamingServicesUI (更新の確認) はプロセス名で除く。Bedrock 版は Minecraft.Windows.exe で別
-fn launcher_target() -> Target {
-    Target {
-        processes: vec!["minecraft.exe".into(), "minecraftlauncher.exe".into()],
-        title_contains: "Minecraft Launcher".into(),
-        dir: None,
-        executable: None,
-    }
-}
-
 fn dry_run() -> bool {
     std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1")
 }
@@ -395,7 +384,10 @@ pub struct Hub {
     launch: Option<Launch>,
     launch_gen: u64,
     target_fg: Option<Foreground>,
-    launcher_fg: bool, // Minecraft の公式ランチャーが前面か (#287)
+    // PC アプリ以外のウィンドウ (ランチャー・ダイアログ等) が前面か (#287、#405)
+    launcher_fg: bool,
+    // ホストのリモコンのカーソルが PC アプリの枠を越えて、OS のカーソルで動いているか (#405)
+    remote_outside: bool,
     target_ok: bool,
     settings_root: Option<std::path::PathBuf>, // 自動復帰の明示的な選択を config.json へ保存する場所 (None なら保存しない)
     fake_target: Option<bool>, // 試験用 (DRY_RUN のときだけ)。Some なら OS に問い合わせない
@@ -533,6 +525,7 @@ impl Hub {
             launch_gen: 0,
             target_fg: None,
             launcher_fg: false,
+            remote_outside: false,
             target_ok: false,
             fake_activate: true,
             keybinds: Keybinds::none(),
@@ -972,6 +965,8 @@ impl Hub {
             "titleName": self.game_name(),
             "launch": self.launch.as_ref().map(|l| json!({ "id": l.id, "state": l.state, "message": l.message })),
             "remoteRoute": self.remote_route(),
+            // PC アプリの画面のカーソルを、枠の端から OS のカーソルへ引き継げるか (#405)
+            "remoteLeave": self.desktop && self.remote_app_active() && self.remote_desktop_input_ok(),
             // 入力が PC に届く状態か (注入モード・入力先のウィンドウ)。スマホに「届いていない」ことを知らせる
             "inputActive": self.can_inject(),
             "inputTarget": self.inject == InjectMode::On && !self.target_ok,
@@ -1117,8 +1112,8 @@ impl Hub {
             "app"
         } else if self.remote_game_active() {
             "game"
-        } else if self.remote_launcher_active() {
-            "launcher"
+        } else if self.remote_desktop_active() {
+            "desktop"
         } else {
             "none"
         }
@@ -1159,6 +1154,10 @@ impl Hub {
             return;
         }
         self.game.phase = phase;
+        // 枠の外へ出たリモコンのカーソルは、協力プレイに入ったら終える。戻ったら PC アプリの中から始める
+        if phase == Phase::Coop {
+            self.remote_outside = false;
+        }
         if change.clear_lineup {
             self.assigned.clear();
             self.participants.clear();
@@ -1449,7 +1448,7 @@ impl Hub {
                 return None;
             }
             self.action_output(slot, control)
-        } else if slot == 0 && (self.remote_game_active() || self.remote_launcher_active()) {
+        } else if slot == 0 && (self.remote_game_active() || self.remote_desktop_active()) {
             let default = controls::remote_control(control)?;
             // メニューでの「持ち物」はインベントリのキー (Minecraft の設定に合わせる)
             if control == "REMOTE_E" {
@@ -1978,7 +1977,7 @@ impl Hub {
         let down = state == "down";
         let o = &OUTPUTS[idx];
         if let Kind::Wheel { notches } = o.kind {
-            if !down || !(self.can_inject() || self.remote_launcher_active()) {
+            if !down || !(self.can_inject() || self.remote_desktop_active()) {
                 return;
             }
             let ok = self.input.wheel(notches);
@@ -1990,7 +1989,7 @@ impl Hub {
             return;
         }
         // 押下は注入可能な時 (ランチャーへのリモコン入力を含む) だけ受け付ける。解放は常に通す (押しっぱなしを残さない)
-        if down && !(self.can_inject() || (slot == 0 && self.remote_launcher_active())) {
+        if down && !(self.can_inject() || (slot == 0 && self.remote_desktop_active())) {
             return;
         }
         self.set_output(idx, SLOT_NAMES[slot], down);
@@ -2001,6 +2000,10 @@ impl Hub {
             return false;
         }
         if self.game.phase == Phase::Coop {
+            return false;
+        }
+        // 枠を越えたカーソルは OS のカーソルで動かす (#405)。実入力を送れなくなったら PC アプリの中へ戻す
+        if self.remote_outside && self.remote_desktop_input_ok() {
             return false;
         }
         if self.desktop {
@@ -2022,7 +2025,7 @@ impl Hub {
             }))
     }
 
-    /// ランチャーへのリモコン入力 (#287) も、前面から外れた・戻ったときに押下と旧入力を持ち越さない
+    /// PC アプリ以外のウィンドウへのリモコン入力 (#287、#405) も、前面から外れた・戻ったときに押下と旧入力を持ち越さない
     fn on_launcher_focus(&mut self, launcher: bool) {
         if launcher == self.launcher_fg {
             return;
@@ -2037,14 +2040,65 @@ impl Hub {
         self.push_game();
     }
 
-    /// Minecraft の公式ランチャーをホストのリモコンで操作できるか (#287)。「プレイ」を押すのに PC のマウスを使わない。
-    /// Minecraft を選んだロビー・準備中に、ランチャーが前面のときだけ。PC アプリが前面ならそちらを優先する
-    fn remote_launcher_active(&self) -> bool {
-        self.game.title == "minecraft-java" && matches!(self.game.phase, Phase::Lobby | Phase::Preparing) && self.launcher_fg
-            && !self.remote_app_active() && self.inject == InjectMode::On && self.input.available() && !self.input_fault
+    /// 前面のウィンドウが Re:Cooplay の PC アプリ (デスクトップアプリ、またはブラウザーで開いた /app) か
+    fn is_app_window(&self, f: &Foreground) -> bool {
+        if self.desktop {
+            f.process.eq_ignore_ascii_case(DESKTOP_PROCESS)
+        } else {
+            ["msedge.exe", "chrome.exe", "firefox.exe"].contains(&f.process.as_str())
+                && f.title.contains("Re:Cooplay")
+        }
+    }
+
+    /// ホストのリモコンで PC の画面全体へ実入力を送ってよい状態か (#405)。前面のウィンドウは問わない。
+    /// 協力プレイ以外で、注入が常時 ON・入力の異常なし・解放の再送なし・緊急停止のホットキーが使える (疑似入力先を除く) とき
+    fn remote_desktop_input_ok(&self) -> bool {
+        self.game.phase != Phase::Coop
+            && self.inject == InjectMode::On
+            && self.input.available()
+            && !self.input_fault
             && self.release_pending.is_empty()
-            // ゲームの経路と同じく、緊急停止のホットキーが使えないときは実入力を送らない (疑似入力先を除く)
             && (self.hotkey.is_ok() || self.fake_target.is_some())
+    }
+
+    /// PC アプリでも対象ゲームでもないウィンドウ (ランチャー・ダイアログ等) を、ホストのリモコンで操作できるか (#287、#405)。
+    /// 以前は Minecraft の公式ランチャーだけだった。PC のマウスに触らずに先へ進めるよう、協力プレイ以外では前面のウィンドウを問わない。
+    /// PC アプリの枠を越えてカーソルを出したとき (remote_outside) も、この経路で OS のカーソルを動かす
+    fn remote_desktop_active(&self) -> bool {
+        (self.launcher_fg || self.remote_outside)
+            && self.remote_desktop_input_ok()
+            && !self.remote_app_active()
+    }
+
+    /// PC アプリの画面のカーソルが枠の端を越えた (#405)。その位置へ OS のカーソルを置き、以降のリモコンは OS のカーソルを動かす。
+    /// (x, y) は PC アプリの画面の座標 (CSS px)、(w, h) は画面の大きさ (CSS px)。PC アプリ (デスクトップアプリ) が前面のときだけ
+    fn remote_leave_app(&mut self, x: f64, y: f64, w: f64, h: f64) {
+        if !self.desktop
+            || !self.app_focused
+            || self.remote_outside
+            || !self.remote_app_active()
+            || !self.remote_desktop_input_ok()
+        {
+            return;
+        }
+        if !(x.is_finite() && y.is_finite() && w.is_finite() && h.is_finite()) || w < 1.0 || h < 1.0
+        {
+            return;
+        }
+        let ok = self
+            .input
+            .cursor_to_foreground(x.clamp(0.0, w) / w, y.clamp(0.0, h) / h);
+        self.record(
+            "remote_leave",
+            json!({ "x": x, "y": y, "w": w, "h": h, "ok": ok }),
+        );
+        if !ok {
+            return;
+        }
+        self.release_outputs(None);
+        self.remote_outside = true;
+        self.advance_epoch();
+        self.push_game();
     }
 
     fn remote_game_active(&self) -> bool {
@@ -2080,7 +2134,7 @@ impl Hub {
         }
         if self.remote_app_active() {
             self.broadcast_monitors(&json!({"type":"remote","route":"app","epoch":self.game.epoch,"kind":kind,"dx":x,"dy":y}));
-        } else if self.remote_game_active() || self.remote_launcher_active() {
+        } else if self.remote_game_active() || self.remote_desktop_active() {
             // スクロール量に合わせてホイールを 1〜3 段送る (40px で 1 段、#122)。下へのスクロールはホイールの負の向き
             let notches = if kind == "scroll" {
                 ((y.abs() / 40.0).ceil() as i32).clamp(0, 3) * if y > 0.0 { -1 } else { 1 }
@@ -2151,7 +2205,8 @@ impl Hub {
             None => {
                 let fg = self.game_service.foreground();
                 let ok = fg.as_ref().is_some_and(|f| self.target.matches(f));
-                let launcher = fg.as_ref().is_some_and(|f| launcher_target().matches(f));
+                // PC アプリ以外のウィンドウが前面か (#405)。ランチャー・ダイアログ等もホストのリモコンで操作する
+                let launcher = fg.as_ref().is_some_and(|f| !self.is_app_window(f));
                 // PC アプリ (デスクトップアプリ) が前面か。WebView2 の画面は背面になっても blur を受け取らないため、
                 // 手動復帰の判定は前面のプロセス名で行う
                 if self.desktop {
@@ -2742,6 +2797,8 @@ impl Hub {
         self.reset_look();
         self.advance_epoch();
         self.app_focused = f;
+        // 前面が変わったら、枠の外へ出したカーソルの状態を終える。ほかのウィンドウが前面なら launcher_fg の経路で続く (#405)
+        self.remote_outside = false;
         self.push_game();
         self.record("app_focus", json!({ "focused": f }));
         if f {
@@ -3218,6 +3275,10 @@ impl Hub {
                     self.record("game_focus", json!({ "focused": f }));
                     self.on_focus_change();
                 }
+            }
+            "remote_leave" if page == Page::App => {
+                let n = |k: &str| msg.get(k).and_then(Value::as_f64).unwrap_or(f64::NAN);
+                self.remote_leave_app(n("x"), n("y"), n("w"), n("h"));
             }
             "focus" if page == Page::App => {
                 let f = msg.get("focused").and_then(Value::as_bool).unwrap_or(false);
@@ -3904,6 +3965,7 @@ mod tests {
             launch_gen: 0,
             target_fg: None,
             launcher_fg: false,
+            remote_outside: false,
             target_ok: true,
             fake_activate: true,
             keybinds: Keybinds::none(),
@@ -4449,31 +4511,41 @@ mod tests {
     }
 
     #[test]
-    fn launcher_window_matches_only_the_official_minecraft_launcher() {
+    fn any_window_other_than_the_pc_app_counts_as_a_remote_target() {
+        let (mut h, _rx) = fixture();
         let fg = |process: &str, title: &str| Foreground {
             process: process.into(),
             path: String::new(),
             title: title.into(),
         };
-        assert!(launcher_target().matches(&fg("minecraft.exe", "Minecraft Launcher")));
-        assert!(launcher_target().matches(&fg("minecraftlauncher.exe", "Minecraft Launcher")));
-        // 実機で起動直後に同じタイトルで出た更新確認・ゲーム本体・Bedrock 版は対象にしない
-        assert!(!launcher_target().matches(&fg("gamingservicesui.exe", "Minecraft Launcher")));
-        assert!(!launcher_target().matches(&fg("javaw.exe", "Minecraft 1.21")));
-        assert!(!launcher_target().matches(&fg("minecraft.windows.exe", "Minecraft")));
+        h.desktop = true;
+        assert!(h.is_app_window(&fg(DESKTOP_PROCESS, "Re:Cooplay")));
+        // Minecraft の公式ランチャーに限らず、ほかのランチャー・ダイアログも PC アプリ以外として扱う (#405)
+        assert!(!h.is_app_window(&fg("minecraft.exe", "Minecraft Launcher")));
+        assert!(!h.is_app_window(&fg("steam.exe", "Steam")));
+        assert!(
+            !h.is_app_window(&fg("msedge.exe", "Re:Cooplay")),
+            "PC アプリから起動したときはブラウザーを PC アプリとみなさない"
+        );
+        h.desktop = false;
+        assert!(h.is_app_window(&fg("msedge.exe", "Re:Cooplay - Microsoft Edge")));
+        assert!(!h.is_app_window(&fg("msedge.exe", "ニュース - Microsoft Edge")));
     }
 
     #[test]
-    fn host_remote_reaches_the_minecraft_launcher_only_before_coop_and_releases_when_it_leaves() {
+    fn host_remote_reaches_any_front_window_only_before_coop_and_releases_when_it_leaves() {
         let (mut h, _rx) = fixture();
-        h.game.title = "minecraft-java".into();
+        h.game.title = "pseudo-game".into();
         h.game.phase = Phase::Lobby;
         h.fake_target = Some(false); // ゲーム本体は前面ではない
         h.check_target();
-        assert!(!h.remote_launcher_active());
-        h.on_event(Event::FakeLauncher(true));
-        assert!(h.remote_launcher_active());
-        assert_eq!(h.game_snapshot()["remoteRoute"], "launcher");
+        assert!(!h.remote_desktop_active());
+        h.on_event(Event::FakeLauncher(true)); // PC アプリ以外のウィンドウ (ランチャー等) が前面に来た
+        assert!(
+            h.remote_desktop_active(),
+            "Minecraft 以外を選んでいても、前面のランチャーを操作できる (#405)"
+        );
+        assert_eq!(h.game_snapshot()["remoteRoute"], "desktop");
         h.handle_control(1, "ENTER", "down");
         assert!(
             !h.outputs[index("ENTER")].physical,
@@ -4482,26 +4554,104 @@ mod tests {
         h.handle_control(0, "ENTER", "down");
         assert!(
             h.outputs[index("ENTER")].physical,
-            "ホストのリモコンでランチャーの「プレイ」を押せる"
+            "ホストのリモコンでランチャーのボタンを押せる"
         );
         let epoch = h.game.epoch;
         h.on_event(Event::FakeLauncher(false));
-        assert!(
-            !h.outputs[index("ENTER")].physical,
-            "ランチャーが前面から外れたら離す"
-        );
+        assert!(!h.outputs[index("ENTER")].physical, "前面から外れたら離す");
         assert!(h.game.epoch > epoch);
         assert_eq!(h.game_snapshot()["remoteRoute"], "none");
         h.on_event(Event::FakeLauncher(true));
         h.game.phase = Phase::Coop;
-        assert!(!h.remote_launcher_active(), "協力プレイ中は使わない");
-        h.game.phase = Phase::Preparing;
-        assert!(h.remote_launcher_active());
-        h.game.title = "pseudo-game".into();
+        assert!(!h.remote_desktop_active(), "協力プレイ中は使わない");
+        h.game.phase = Phase::Paused;
         assert!(
-            !h.remote_launcher_active(),
-            "Minecraft 以外を選んでいるときは使わない"
+            h.remote_desktop_active(),
+            "一時停止中も、前面のウィンドウを操作して直せる"
         );
+        h.game.phase = Phase::Preparing;
+        assert!(h.remote_desktop_active());
+        h.inject = InjectMode::Test;
+        assert!(
+            !h.remote_desktop_active(),
+            "注入が常時 ON でなければ送らない"
+        );
+        h.release_outputs(None);
+    }
+
+    #[test]
+    fn host_remote_leaves_the_pc_app_frame_and_moves_the_os_cursor() {
+        let recorder = RecordingInput::default();
+        let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.game.phase = Phase::Lobby;
+        h.fake_target = Some(false);
+        h.on_event(Event::FakeAppWindow(true)); // PC アプリ (デスクトップアプリ) が前面
+        assert_eq!(h.remote_route(), "app");
+        assert_eq!(h.game_snapshot()["remoteLeave"], true);
+        let monitor = |h: &mut Hub, msg: Value| {
+            let kind = msg["type"].as_str().unwrap().to_string();
+            h.on_monitor_message(99, Page::App, false, &kind, &msg);
+        };
+        // ブラウザーの /app から (PC アプリの外の座標は分からない) や、壊れた値では引き継がない
+        monitor(
+            &mut h,
+            json!({"type":"remote_leave","x":0,"y":10,"w":0,"h":560}),
+        );
+        assert_eq!(h.remote_route(), "app");
+        let epoch = h.game.epoch;
+        monitor(
+            &mut h,
+            json!({"type":"remote_leave","x":800,"y":140,"w":800,"h":560}),
+        );
+        assert_eq!(
+            h.remote_route(),
+            "desktop",
+            "枠を越えたら OS のカーソルで動かす"
+        );
+        assert!(
+            h.game.epoch > epoch,
+            "PC アプリの画面への古い入力を持ち越さない"
+        );
+        assert_eq!(
+            recorder.calls().last().unwrap().operation,
+            Operation::CursorTo { fx: 1.0, fy: 0.25 }
+        );
+        let epoch = h.game.epoch;
+        h.remote_message(
+            0,
+            &json!({"epoch":epoch,"rseq":1,"kind":"move","dx":30,"dy":-4}),
+        );
+        assert_eq!(
+            recorder.calls().last().unwrap().operation,
+            Operation::Move { dx: 30, dy: -4 }
+        );
+        h.handle_control(0, "REMOTE_LEFT", "down");
+        assert!(
+            h.outputs[index("MOUSE_L")].physical,
+            "枠の外では実際のクリックを送る"
+        );
+        h.handle_control(0, "REMOTE_LEFT", "up");
+        // 緊急停止で注入が OFF になったら、PC アプリの中のカーソルへ戻す
+        h.inject = InjectMode::Off;
+        assert_eq!(h.remote_route(), "app");
+        h.inject = InjectMode::On;
+        assert_eq!(h.remote_route(), "desktop");
+        // ほかのウィンドウをクリックして前面が移ったら、そのウィンドウへの操作として続く
+        h.on_event(Event::FakeAppWindow(false));
+        h.on_event(Event::FakeLauncher(true));
+        assert!(!h.remote_outside);
+        assert_eq!(h.remote_route(), "desktop");
+        // PC アプリが前面へ戻ったら、PC アプリの中のカーソルから始める
+        h.on_event(Event::FakeLauncher(false));
+        h.on_event(Event::FakeAppWindow(true));
+        assert_eq!(h.remote_route(), "app");
+        // 協力プレイ中は枠を越えない
+        h.game.phase = Phase::Coop;
+        monitor(
+            &mut h,
+            json!({"type":"remote_leave","x":800,"y":140,"w":800,"h":560}),
+        );
+        assert!(!h.remote_outside);
         h.release_outputs(None);
     }
 
@@ -4515,9 +4665,9 @@ mod tests {
         h.push_game();
         assert_eq!(h.pushed_route.get(), "none");
         h.launcher_fg = true; // 前面の観測だけが変わり、push_game は呼ばれていない
-        assert_eq!(h.remote_route(), "launcher");
+        assert_eq!(h.remote_route(), "desktop");
         h.push_game_if_route_changed();
-        assert_eq!(h.pushed_route.get(), "launcher", "変わった操作先を送る");
+        assert_eq!(h.pushed_route.get(), "desktop", "変わった操作先を送る");
         h.launcher_fg = false;
         h.push_game_if_route_changed();
         assert_eq!(h.pushed_route.get(), "none");
@@ -4535,7 +4685,7 @@ mod tests {
         h.on_launcher_focus(true); // ランチャーが前面に来た観測だけを模擬する
         assert!(h.launcher_fg);
         assert!(
-            !h.remote_launcher_active(),
+            !h.remote_desktop_active(),
             "緊急停止が使えないのにランチャーへ送らない"
         );
         assert_eq!(h.game_snapshot()["remoteRoute"], "none");
@@ -4554,10 +4704,10 @@ mod tests {
         );
         h.hotkey = Ok(());
         assert!(
-            h.remote_launcher_active(),
-            "登録できていればランチャーへ送れる"
+            h.remote_desktop_active(),
+            "登録できていれば前面のウィンドウへ送れる"
         );
-        assert_eq!(h.game_snapshot()["remoteRoute"], "launcher");
+        assert_eq!(h.game_snapshot()["remoteRoute"], "desktop");
         h.release_outputs(None);
     }
 

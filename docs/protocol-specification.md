@@ -155,7 +155,8 @@ PREPARE / READY / RESUME / OPEN_GAME / OPEN_APPは現在epochを必須としま�
 | `roleOf / roleAck / canSwap` | 枠と席順、本人確認待ち、交換可否 |
 | `keys / profile` | 実キー・読取り警告、操作定義の要約・分担案 |
 | `hostReady / prepareStatus / canLaunch` | 準備・起動の状態 |
-| `remoteRoute` | app / game / launcher / none。launcherはMinecraftを選んだロビー・準備中に公式ランチャー（`Minecraft.exe`・タイトル「Minecraft Launcher」）が前面のとき（#287）。ホストのリモコン入力をランチャーへ送り、前面から外れたら全解放してepochを進める |
+| `remoteRoute` | app / game / desktop / none。desktopは協力プレイ以外で、PCアプリ以外のウィンドウ（ランチャー・ダイアログ等）が前面のとき、またはPCアプリの画面のカーソルが枠を越えたとき（#287、#405）。ホストのリモコンを実際のマウス・キーとしてOSへ送る。注入が常時ON・入力の異常なし・解放の再送なし・緊急停止キーが使えるときだけ。前面が変わったら全解放してepochを進める |
+| `remoteLeave` | PCアプリ（デスクトップアプリ）の画面のカーソルを、枠の端からOSのカーソルへ引き継げるか（#405） |
 | `inputActive / inputTarget` | 入力可能か、onだが対象が前面でないか |
 | `autoResume / autoResumeMs / autoResumeUntil` | 自動復帰設定（初期OFF）、待機時間、期限 |
 
@@ -262,6 +263,7 @@ sequenceDiagram
 | 画面 → ホスト | `rotation` | 時間制の役割交代（#161、Q42/Q44/Q46）。`seconds` は0（しない、初期値）か60だけ。協力プレイ中は変更不可。ロビーへ戻るとOFFに戻る。ONでは協力プレイを止めずに、60秒ごとに全員の入力を解放して未処理入力・視点を捨て、epochを進めてから参加者の順に担当を1つずらす。交代の5秒前からゲームの状態に `rotationSoon:true` と次の分担 `rotationNext` を付け、交代ごとに `rotationCount` を増やす。一時停止中は数えず、再開で残りから数える |
 | 画面 → ホスト | `set_key` / `reset_keys` | 操作に割り当てるキーの変更（`action`, `output`。nullは送らない）と初期値への復帰。協力プレイ中は不可。変更時は全解放・epoch更新。ゲームごとに `%LOCALAPPDATA%\Re-Cooplay\key-overrides.json` へ保存 |
 | 画面 → ホスト | `change_players` | 一時停止中に今の接続で参加者と分担を決め直す。`epoch` 必須。全員の確認と明示の再開が必要 |
+| 画面 → ホスト | `remote_leave` | `x`, `y`, `w`, `h`（PCアプリの画面のCSS px）。リモコンのカーソルが枠を越えた位置。`remoteLeave` のときだけ、前面のウィンドウの表示領域の同じ割合の位置へOSのカーソルを置き、以降は `remoteRoute:desktop` で実際のマウスとして動かす（#405） |
 | 画面 → ホスト | `observe` | 疑似ゲームで受信した入力の照合結果 |
 | ホスト → 画面 | `state` | 枠、game、入力先、ゲーム一覧、通信診断 |
 | ホスト → 画面 | `manual_result` | `ok`, `message`。手動登録の結果 |

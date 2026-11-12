@@ -148,9 +148,9 @@ update('P2',{phase:'paused',participants:['P1','P2','P3'],assigned:rotated,rotat
 assert.equal(h.rotationNotice.get(),'','一時停止中は出さない');
 update('P4',{phase:'coop',participants:['P1','P2','P3'],connected:['P1','P2','P3','P4'],assigned:rotated,rotationCount:1,rotationSoon:true,rotationNext:assigned});
 assert.equal(h.rotationNotice.get(),'','参加していない人には出さない');
-// Minecraftのランチャーもリモコンで操作できる (#287)
-update('P1',{phase:'lobby',remoteRoute:'launcher'});
-assert.match(view().remote.route,/ランチャーを操作中/);assert.equal(view().remote.routeBlocked,false);
+// PCアプリ以外の前面のウィンドウ (ランチャー等) もリモコンで操作できる (#287・#405)
+update('P1',{phase:'lobby',remoteRoute:'desktop'});
+assert.match(view().remote.route,/PCの画面を操作中/);assert.equal(view().remote.routeBlocked,false);
 // ゲームが前面に残っても、ホストのスマホだけでPCアプリへ戻れる (#292)
 update('P1',{phase:'lobby',remoteRoute:'none',canOpenApp:true});
 assert.equal(view().remote.openAppHidden,false);
