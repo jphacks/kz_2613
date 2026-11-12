@@ -217,7 +217,7 @@ fn terraria(text: &str) -> Option<HashMap<String, Key>> {
         kb.iter()
             .map(|(name, v)| {
                 let first = v.as_array().and_then(|a| a.iter().filter_map(|x| x.as_str()).next());
-                (name.clone(), first.map_or(Key::Unbound, |k| name_key(k)))
+                (name.clone(), first.map_or(Key::Unbound, name_key))
             })
             .collect(),
     )

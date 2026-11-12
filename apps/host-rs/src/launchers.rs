@@ -25,15 +25,17 @@ const MINECRAFT_JAVA_PACKAGE: &str = "Microsoft.MinecraftJavaEdition";
 
 // ---------- レジストリ (試験では JSON で差し替える) ----------
 
+type RegistryKeys = HashMap<String, HashMap<String, HashMap<String, String>>>;
+
 /// レジストリの読み方。実機は Windows のレジストリ、試験は `{ "<キーの場所>": { "<サブキー>": { "<値の名前>": "<値>" } } }` の JSON
 pub enum Registry {
     System,
-    Fake(HashMap<String, HashMap<String, HashMap<String, String>>>),
+    Fake(RegistryKeys),
 }
 
 impl Registry {
     pub fn fake(file: &Path) -> Registry {
-        let parsed: Option<HashMap<String, HashMap<String, HashMap<String, String>>>> =
+        let parsed: Option<RegistryKeys> =
             std::fs::read_to_string(file).ok().and_then(|t| serde_json::from_str(&t).ok());
         Registry::Fake(parsed.unwrap_or_default())
     }
@@ -284,7 +286,7 @@ pub fn ubisoft(reg: &Registry) -> Vec<Entry> {
             }
             let Some(dir) = reg.value(key, &id, "InstallDir").map(|d| PathBuf::from(d.replace('/', "\\"))) else { continue };
             let name = UNINSTALL_KEYS.iter().find_map(|u| reg.value(u, &format!("Uplay Install {id}"), "DisplayName"))
-                .or_else(|| dir.components().filter_map(|c| match c { std::path::Component::Normal(n) => Some(n.to_string_lossy().to_string()), _ => None }).last());
+                .or_else(|| dir.components().filter_map(|c| match c { std::path::Component::Normal(n) => Some(n.to_string_lossy().to_string()), _ => None }).next_back());
             let Some(name) = name else { continue };
             list.extend(entry(format!("ubisoft:{id}"), &name, UBISOFT_SOURCE, dir, format!("uplay://launch/{id}/0"), None, None));
         }

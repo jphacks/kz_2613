@@ -174,7 +174,7 @@ fn next_restart_count(count: u32, ran_for: Duration) -> Option<u32> {
 
 fn show_host_notice(app: &tauri::AppHandle, text: &str) {
     if let Some(w) = app.get_webview_window("main") {
-        let _ = w.eval(&format!("window.showHostNotice?.({})", serde_json::Value::from(text)));
+        let _ = w.eval(format!("window.showHostNotice?.({})", serde_json::Value::from(text)));
     }
 }
 
@@ -209,7 +209,7 @@ fn watch_host(handle: tauri::AppHandle, root: PathBuf, exe: PathBuf, port: u16) 
 fn show_error(app: &tauri::AppHandle, text: &str) {
     *app.state::<StartupError>().0.lock().unwrap() = Some(text.to_string());
     if let Some(w) = app.get_webview_window("main") {
-        let _ = w.eval(&format!("window.showError({})", serde_json::Value::from(text)));
+        let _ = w.eval(format!("window.showError({})", serde_json::Value::from(text)));
     }
 }
 
@@ -230,7 +230,7 @@ fn tell_overlay_state(app: &tauri::AppHandle, error: Option<&str>) {
     let on = *app.state::<OverlayOn>().0.lock().unwrap();
     let state = serde_json::json!({ "overlay": on, "overlayError": error });
     if let Some(w) = app.get_webview_window("main") {
-        let _ = w.eval(&format!("window.recooplayDesktop={state};window.dispatchEvent(new Event('recooplay-desktop'))"));
+        let _ = w.eval(format!("window.recooplayDesktop={state};window.dispatchEvent(new Event('recooplay-desktop'))"));
     }
 }
 
@@ -333,7 +333,7 @@ fn main() {
                         if window.url().is_ok_and(|u| u.path() == "/app") { tell_overlay_state(window.app_handle(), None); }
                         let error = window.state::<StartupError>().0.lock().unwrap().clone();
                         if let Some(text) = error {
-                            let _ = window.eval(&format!("window.showError({})", serde_json::Value::from(text)));
+                            let _ = window.eval(format!("window.showError({})", serde_json::Value::from(text)));
                         }
                     }
                 })

@@ -527,7 +527,7 @@ impl Hub {
     fn report_net(&mut self) {
         let sampled_at = now_ms();
         let mut rows = Vec::new();
-        for i in 0..MAX_SLOTS {
+        for (i, slot_name) in SLOT_NAMES.iter().enumerate().take(MAX_SLOTS) {
             let Some(s) = self.slots[i].as_mut().filter(|s| s.connected) else { continue };
             let (stalls, max_stall) = s.arrivals.take();
             s.net_recent = (stalls, max_stall);
@@ -535,7 +535,7 @@ impl Hub {
                 s.net_last_warning = Some((sampled_at, stalls, max_stall));
             }
             let st = &s.client_stats;
-            rows.push(json!({ "slot": SLOT_NAMES[i], "stalls": stalls, "maxStallMs": max_stall,
+            rows.push(json!({ "slot": slot_name, "stalls": stalls, "maxStallMs": max_stall,
                 "rttAvg": st.get("avg"), "rttMax": st.get("max"), "path": st.get("path") }));
         }
         if !rows.is_empty() {
@@ -2113,14 +2113,14 @@ impl Hub {
     fn release_lobby_slots(&mut self, now: u64) {
         if self.game.phase != Phase::Lobby { return; }
         let mut changed = false;
-        for i in 0..MAX_SLOTS {
+        for (i, slot_name) in SLOT_NAMES.iter().enumerate().take(MAX_SLOTS) {
             let expired = self.slots[i].as_ref().is_some_and(|s| session::lobby_slot_expired(self.game.phase, s.connected, s.disconnected_at, now));
             if expired {
                 if let Some(lineup) = self.lineup.as_mut().filter(|l| l.members.contains(&i)) {
                     lineup.expired_members[i] = true;
                 }
                 self.slots[i] = None;
-                self.log("slot_released", json!({ "slot": SLOT_NAMES[i] }));
+                self.log("slot_released", json!({ "slot": slot_name }));
                 changed = true;
             }
         }
@@ -2200,7 +2200,7 @@ impl Hub {
                 self.rotate_roles_if_due(now);
                 self.update_low_latency();
                 self.net_tick += 1;
-                if self.net_tick % 10 == 0 {
+                if self.net_tick.is_multiple_of(10) {
                     self.report_net();
                 }
                 self.push_state();
@@ -2331,13 +2331,11 @@ impl Hub {
         let Some(conn) = self.conns.remove(&id) else { return };
         match conn.role {
             Role::Monitor { page: Page::Game, .. } => self.on_focus_change(),
-            Role::Player { slot } => {
-                if self.slots[slot].as_ref().is_some_and(|s| s.conn == Some(id)) {
-                    let s = self.slots[slot].as_mut().unwrap();
-                    s.rtc = None;
-                    s.rtc_state = "none";
-                    self.mark_disconnected(slot, &format!("close {}", code));
-                }
+            Role::Player { slot } if self.slots[slot].as_ref().is_some_and(|s| s.conn == Some(id)) => {
+                let s = self.slots[slot].as_mut().unwrap();
+                s.rtc = None;
+                s.rtc_state = "none";
+                self.mark_disconnected(slot, &format!("close {}", code));
             }
             _ => {}
         }

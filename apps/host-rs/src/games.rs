@@ -177,7 +177,7 @@ pub(crate) fn appx_logo(dir: &Path) -> Option<PathBuf> {
                     continue;
                 }
                 let width = png_width(&f.path()).unwrap_or(0);
-                if best.as_ref().map_or(true, |(w, p)| width > *w || (width == *w && f.path() < *p)) {
+                if best.as_ref().is_none_or(|(w, p)| width > *w || (width == *w && f.path() < *p)) {
                     best = Some((width, f.path()));
                 }
             }
@@ -730,14 +730,16 @@ mod imp {
             let mut bm = BITMAP::default();
             GetObjectW(object, std::mem::size_of::<BITMAP>() as i32, Some((&mut bm as *mut BITMAP).cast()));
             let (w, h) = (bm.bmWidth, bm.bmHeight);
-            let mut info = BITMAPINFO::default();
-            info.bmiHeader = BITMAPINFOHEADER {
-                biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
-                biWidth: w,
-                biHeight: -h, // 上から下へ
-                biPlanes: 1,
-                biBitCount: 32,
-                biCompression: BI_RGB.0,
+            let mut info = BITMAPINFO {
+                bmiHeader: BITMAPINFOHEADER {
+                    biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                    biWidth: w,
+                    biHeight: -h, // 上から下へ
+                    biPlanes: 1,
+                    biBitCount: 32,
+                    biCompression: BI_RGB.0,
+                    ..Default::default()
+                },
                 ..Default::default()
             };
             let mut px = vec![0u8; (w.max(0) * h.max(0) * 4) as usize];
