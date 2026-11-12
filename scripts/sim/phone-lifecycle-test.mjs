@@ -356,5 +356,27 @@ if (process.argv.includes('--repro-shared-pointer')) {
     h.transferHost('P3'); socket.receive({ type: 'game', game: h.game({ phase: 'lobby', connected: ['P1', 'P2'] }) });
     assert.equal(h.el('phoneConfirm').open, false); h.answerConfirm(true); assert.equal(transfers().length, 1);
   });
+  await test('ホストの譲渡: 一時断では確認を保ち、再接続後のOKで新しいepochを送る (#289)', async () => {
+    const h = controllerHarness();
+    const lobby = { phase: 'lobby', connected: ['P1', 'P2'] };
+    await h.ready(lobby);
+    h.transferHost('P2');
+    assert(h.el('phoneConfirm').open);
+    h.sockets[0].close(1006);
+    h.advance(3600);
+    h.answerConfirm(true);
+    assert(h.el('phoneConfirm').open);
+    const transfers = () => h.messages().filter(message => message.type === 'transfer_host');
+    assert.equal(transfers().length, 0);
+
+    const current = h.sockets.at(-1);
+    current.open();
+    current.receive({ type: 'welcome', slot: 'P1', role: 'ホスト', isHost: true, token: 'test-token', reconnected: true });
+    current.receive({ type: 'game', game: h.game({ ...lobby, epoch: 19 }) });
+    assert.equal(transfers().length, 0, '接続が戻っても自動送信しない');
+    h.answerConfirm(true);
+    assert(!h.el('phoneConfirm').open);
+    assert.deepEqual(transfers().map(({ to, epoch }) => ({ to, epoch })), [{ to: 'P2', epoch: 19 }]);
+  });
   console.log(`${passed}/${passed} 合格（スマホ入力ライフサイクル、複数保持元の回帰を含む、OS入力なし）`);
 }
