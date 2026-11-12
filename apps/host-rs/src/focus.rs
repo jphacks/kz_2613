@@ -25,7 +25,12 @@ pub struct Target {
 impl Default for Target {
     fn default() -> Self {
         // Minecraft Java Edition は javaw.exe (ランチャーの設定によっては java.exe) で動き、タイトルに "Minecraft" を含む
-        Target { processes: vec!["javaw.exe".into(), "java.exe".into()], title_contains: "Minecraft".into(), dir: None, executable: None }
+        Target {
+            processes: vec!["javaw.exe".into(), "java.exe".into()],
+            title_contains: "Minecraft".into(),
+            dir: None,
+            executable: None,
+        }
     }
 }
 
@@ -42,14 +47,26 @@ fn norm(path: &str) -> String {
 impl Target {
     /// インストール先のフォルダ内のプロセスを入力先にする
     pub fn install_dir(dir: &Path) -> Target {
-        let mut d = norm(&dir.to_string_lossy()).trim_end_matches('\\').to_string();
+        let mut d = norm(&dir.to_string_lossy())
+            .trim_end_matches('\\')
+            .to_string();
         d.push('\\');
-        Target { processes: vec![], title_contains: String::new(), dir: Some(d), executable: None }
+        Target {
+            processes: vec![],
+            title_contains: String::new(),
+            dir: Some(d),
+            executable: None,
+        }
     }
 
     pub fn executable(exe: &Path) -> Target {
         let path = std::fs::canonicalize(exe).unwrap_or_else(|_| exe.to_path_buf());
-        Target { processes: vec![], title_contains: String::new(), dir: None, executable: Some(norm(&path.to_string_lossy())) }
+        Target {
+            processes: vec![],
+            title_contains: String::new(),
+            dir: None,
+            executable: Some(norm(&path.to_string_lossy())),
+        }
     }
 
     pub fn matches(&self, fg: &Foreground) -> bool {
@@ -59,8 +76,14 @@ impl Target {
         if let Some(dir) = &self.dir {
             return norm(&fg.path).starts_with(dir.as_str());
         }
-        let process_ok = self.processes.iter().any(|p| p.eq_ignore_ascii_case(&fg.process));
-        let title_ok = fg.title.to_lowercase().contains(&self.title_contains.to_lowercase());
+        let process_ok = self
+            .processes
+            .iter()
+            .any(|p| p.eq_ignore_ascii_case(&fg.process));
+        let title_ok = fg
+            .title
+            .to_lowercase()
+            .contains(&self.title_contains.to_lowercase());
         process_ok && title_ok
     }
 
@@ -70,7 +93,11 @@ impl Target {
         }
         match &self.dir {
             Some(dir) => format!("{dir} 内のプログラム"),
-            None => format!("{}（タイトルに「{}」）", self.processes.join(" / "), self.title_contains),
+            None => format!(
+                "{}（タイトルに「{}」）",
+                self.processes.join(" / "),
+                self.title_contains
+            ),
         }
     }
 }
@@ -91,14 +118,16 @@ pub fn exists(target: &Target) -> bool {
 
 #[cfg(windows)]
 mod imp {
-    use windows::core::{PWSTR, BOOL};
+    use windows::core::{BOOL, PWSTR};
     use windows::Win32::Foundation::{CloseHandle, HWND, LPARAM};
     use windows::Win32::System::Threading::{
-        AttachThreadInput, GetCurrentThreadId, OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
+        AttachThreadInput, GetCurrentThreadId, OpenProcess, QueryFullProcessImageNameW,
+        PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
-        BringWindowToTop, EnumWindows, GetForegroundWindow, GetWindow, GetWindowLongW, GetWindowTextW, GetWindowThreadProcessId, IsIconic,
-        IsWindowVisible, SetForegroundWindow, ShowWindow, GWL_EXSTYLE, GW_OWNER, SW_RESTORE, WS_EX_TOOLWINDOW,
+        BringWindowToTop, EnumWindows, GetForegroundWindow, GetWindow, GetWindowLongW,
+        GetWindowTextW, GetWindowThreadProcessId, IsIconic, IsWindowVisible, SetForegroundWindow,
+        ShowWindow, GWL_EXSTYLE, GW_OWNER, SW_RESTORE, WS_EX_TOOLWINDOW,
     };
 
     use super::Foreground;
@@ -125,7 +154,13 @@ mod imp {
             let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;
             let mut path = [0u16; 1024];
             let mut len = path.len() as u32;
-            let ok = QueryFullProcessImageNameW(handle, PROCESS_NAME_WIN32, PWSTR(path.as_mut_ptr()), &mut len).is_ok();
+            let ok = QueryFullProcessImageNameW(
+                handle,
+                PROCESS_NAME_WIN32,
+                PWSTR(path.as_mut_ptr()),
+                &mut len,
+            )
+            .is_ok();
             let _ = CloseHandle(handle);
             if !ok {
                 return None;
@@ -133,7 +168,11 @@ mod imp {
             let path = String::from_utf16_lossy(&path[..len as usize]);
             let path = path.to_lowercase();
             let process = path.rsplit(['\\', '/']).next().unwrap_or("").to_string();
-            Some(Foreground { process, path, title: String::from_utf16_lossy(&title[..n]) })
+            Some(Foreground {
+                process,
+                path,
+                title: String::from_utf16_lossy(&title[..n]),
+            })
         }
     }
 
@@ -144,10 +183,16 @@ mod imp {
         !owned && !tool
     }
 
-    struct Search<'a> { target: &'a super::Target, found: Option<HWND>, fallback: Option<HWND> }
+    struct Search<'a> {
+        target: &'a super::Target,
+        found: Option<HWND>,
+        fallback: Option<HWND>,
+    }
     unsafe extern "system" fn visit(hwnd: HWND, param: LPARAM) -> BOOL {
         let search = unsafe { &mut *(param.0 as *mut Search<'_>) };
-        if !(unsafe { IsWindowVisible(hwnd) }.as_bool() && describe(hwnd).is_some_and(|f| search.target.matches(&f))) {
+        if !(unsafe { IsWindowVisible(hwnd) }.as_bool()
+            && describe(hwnd).is_some_and(|f| search.target.matches(&f)))
+        {
             return BOOL(1);
         }
         if is_main(hwnd) {
@@ -160,8 +205,14 @@ mod imp {
 
     /// 対象のウィンドウを探す。本体のウィンドウを優先し、なければ補助のウィンドウを返す
     pub fn find(target: &super::Target) -> Option<HWND> {
-        let mut search = Search { target, found: None, fallback: None };
-        unsafe { let _ = EnumWindows(Some(visit), LPARAM(&mut search as *mut _ as isize)); }
+        let mut search = Search {
+            target,
+            found: None,
+            fallback: None,
+        };
+        unsafe {
+            let _ = EnumWindows(Some(visit), LPARAM(&mut search as *mut _ as isize));
+        }
         search.found.or(search.fallback)
     }
 
@@ -170,29 +221,45 @@ mod imp {
     fn bring_to_front(hwnd: HWND) {
         unsafe {
             // 最大化・全画面のウィンドウを元の大きさに戻さないよう、元に戻すのは最小化しているときだけ
-            if IsIconic(hwnd).as_bool() { let _ = ShowWindow(hwnd, SW_RESTORE); }
+            if IsIconic(hwnd).as_bool() {
+                let _ = ShowWindow(hwnd, SW_RESTORE);
+            }
             let fg = GetForegroundWindow();
-            let fg_thread = if fg.is_invalid() { 0 } else { GetWindowThreadProcessId(fg, None) };
+            let fg_thread = if fg.is_invalid() {
+                0
+            } else {
+                GetWindowThreadProcessId(fg, None)
+            };
             let me = GetCurrentThreadId();
-            let attached = fg_thread != 0 && fg_thread != me && AttachThreadInput(me, fg_thread, true).as_bool();
+            let attached = fg_thread != 0
+                && fg_thread != me
+                && AttachThreadInput(me, fg_thread, true).as_bool();
             let _ = BringWindowToTop(hwnd);
             let _ = SetForegroundWindow(hwnd);
-            if attached { let _ = AttachThreadInput(me, fg_thread, false); }
+            if attached {
+                let _ = AttachThreadInput(me, fg_thread, false);
+            }
         }
     }
 
     pub fn activate(target: &super::Target) -> Result<(), String> {
         let hwnd = find(target).ok_or("起動済みのゲームのウィンドウが見つかりません")?;
         // 列挙後にも対象を照合する。成功は前面化を実際に確認した場合だけ返す。
-        if !describe(hwnd).is_some_and(|f| target.matches(&f)) { return Err("入力先が変わりました".into()); }
+        if !describe(hwnd).is_some_and(|f| target.matches(&f)) {
+            return Err("入力先が変わりました".into());
+        }
         // 切り替えは少し遅れて反映されることがあるので、短い間だけ確かめ直し、途中で 1 回だけやり直す (最大約 0.4 秒)
         for attempt in 0..2 {
             bring_to_front(hwnd);
             for _ in 0..FOCUS_CHECKS {
-                if foreground().is_some_and(|f| target.matches(&f)) { return Ok(()); }
+                if foreground().is_some_and(|f| target.matches(&f)) {
+                    return Ok(());
+                }
                 std::thread::sleep(FOCUS_CHECK_INTERVAL);
             }
-            if attempt == 0 && !describe(hwnd).is_some_and(|f| target.matches(&f)) { return Err("入力先が変わりました".into()); }
+            if attempt == 0 && !describe(hwnd).is_some_and(|f| target.matches(&f)) {
+                return Err("入力先が変わりました".into());
+            }
         }
         Err("Windowsが前面化を許可しませんでした".into())
     }
@@ -200,7 +267,9 @@ mod imp {
 
 #[cfg(not(windows))]
 mod imp {
-    pub fn activate(_: &super::Target) -> Result<(), String> { Err("Windows以外では前面化できません".into()) }
+    pub fn activate(_: &super::Target) -> Result<(), String> {
+        Err("Windows以外では前面化できません".into())
+    }
     pub fn find(_: &super::Target) -> Option<()> {
         None
     }
@@ -214,13 +283,21 @@ mod tests {
     use super::*;
 
     fn fg(process: &str, title: &str) -> Foreground {
-        Foreground { process: process.into(), path: format!(r"c:\program files\java\bin\{process}").to_lowercase(), title: title.into() }
+        Foreground {
+            process: process.into(),
+            path: format!(r"c:\program files\java\bin\{process}").to_lowercase(),
+            title: title.into(),
+        }
     }
 
     #[test]
     fn manual_target_matches_only_the_selected_executable() {
         let t = Target::executable(Path::new(r"C:\Windows\System32\notepad.exe"));
-        let at = |path: &str| Foreground { process: "notepad.exe".into(), path: path.into(), title: String::new() };
+        let at = |path: &str| Foreground {
+            process: "notepad.exe".into(),
+            path: path.into(),
+            title: String::new(),
+        };
         // 同じフォルダーでも、別のexeは許可しない。別の場所の同名exeも許可しない。
         assert!(!t.matches(&at(r"C:\Windows\System32\cmd.exe")));
         assert!(!t.matches(&at(r"C:\Other\notepad.exe")));
@@ -233,16 +310,24 @@ mod tests {
 
     #[test]
     fn install_dir_target_matches_only_inside_the_folder() {
-        let t = Target::install_dir(Path::new(r"D:\SteamLibrary\steamapps\common\Stardew Valley"));
+        let t = Target::install_dir(Path::new(
+            r"D:\SteamLibrary\steamapps\common\Stardew Valley",
+        ));
         let at = |path: &str| Foreground {
             process: path.rsplit('\\').next().unwrap().to_lowercase(),
             path: path.to_lowercase(),
             title: String::new(),
         };
-        assert!(t.matches(&at(r"D:\SteamLibrary\steamapps\common\Stardew Valley\Stardew Valley.exe")));
-        assert!(t.matches(&at(r"d:\steamlibrary\steamapps\common\stardew valley\bin\game.exe")));
+        assert!(t.matches(&at(
+            r"D:\SteamLibrary\steamapps\common\Stardew Valley\Stardew Valley.exe"
+        )));
+        assert!(t.matches(&at(
+            r"d:\steamlibrary\steamapps\common\stardew valley\bin\game.exe"
+        )));
         // 名前が前方一致するだけの別フォルダ・ランチャー本体は対象外
-        assert!(!t.matches(&at(r"D:\SteamLibrary\steamapps\common\Stardew Valley 2\game.exe")));
+        assert!(!t.matches(&at(
+            r"D:\SteamLibrary\steamapps\common\Stardew Valley 2\game.exe"
+        )));
         assert!(!t.matches(&at(r"C:\Program Files (x86)\Steam\steam.exe")));
     }
 

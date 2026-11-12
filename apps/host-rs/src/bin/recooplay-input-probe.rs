@@ -54,10 +54,22 @@ struct Step {
     acts: Vec<Act>,
 }
 
-const W: Held = Held::Key { scan: 0x11, ext: false };
-const SPACE: Held = Held::Key { scan: 0x39, ext: false };
-const SHIFT: Held = Held::Key { scan: 0x2A, ext: false };
-const CTRL: Held = Held::Key { scan: 0x1D, ext: false };
+const W: Held = Held::Key {
+    scan: 0x11,
+    ext: false,
+};
+const SPACE: Held = Held::Key {
+    scan: 0x39,
+    ext: false,
+};
+const SHIFT: Held = Held::Key {
+    scan: 0x2A,
+    ext: false,
+};
+const CTRL: Held = Held::Key {
+    scan: 0x1D,
+    ext: false,
+};
 const LEFT: Held = Held::Mouse { left: true };
 const RIGHT: Held = Held::Mouse { left: false };
 
@@ -74,19 +86,75 @@ fn steps() -> Vec<Step> {
     }
     vec![
         // #6 キー入力
-        Step { group: "keys", name: "W を 100ms 押す (少し前へ)", acts: tap(W, 100) },
-        Step { group: "keys", name: "W を 1 秒押し続ける (前へ歩く)", acts: tap(W, 1000) },
-        Step { group: "keys", name: "Space (ジャンプ)", acts: tap(SPACE, 100) },
-        Step { group: "keys", name: "Shift を 1 秒 (スニーク)", acts: tap(SHIFT, 1000) },
-        Step { group: "keys", name: "Ctrl を押したまま W 1 秒 (ダッシュ)", acts: vec![Act::Down(CTRL), Act::Down(W), Act::Sleep(1000), Act::Up(W), Act::Up(CTRL), Act::Sleep(300)] },
+        Step {
+            group: "keys",
+            name: "W を 100ms 押す (少し前へ)",
+            acts: tap(W, 100),
+        },
+        Step {
+            group: "keys",
+            name: "W を 1 秒押し続ける (前へ歩く)",
+            acts: tap(W, 1000),
+        },
+        Step {
+            group: "keys",
+            name: "Space (ジャンプ)",
+            acts: tap(SPACE, 100),
+        },
+        Step {
+            group: "keys",
+            name: "Shift を 1 秒 (スニーク)",
+            acts: tap(SHIFT, 1000),
+        },
+        Step {
+            group: "keys",
+            name: "Ctrl を押したまま W 1 秒 (ダッシュ)",
+            acts: vec![
+                Act::Down(CTRL),
+                Act::Down(W),
+                Act::Sleep(1000),
+                Act::Up(W),
+                Act::Up(CTRL),
+                Act::Sleep(300),
+            ],
+        },
         // #7 クリック・長押し・ホイール
-        Step { group: "mouse", name: "左クリック", acts: tap(LEFT, 80) },
-        Step { group: "mouse", name: "左を 1.5 秒長押し (採掘)", acts: tap(LEFT, 1500) },
-        Step { group: "mouse", name: "右クリック (使う・置く)", acts: tap(RIGHT, 80) },
-        Step { group: "mouse", name: "ホイール 1 段ずつ前後 (持ち物)", acts: vec![Act::Wheel(-1), Act::Sleep(400), Act::Wheel(1), Act::Sleep(300)] },
+        Step {
+            group: "mouse",
+            name: "左クリック",
+            acts: tap(LEFT, 80),
+        },
+        Step {
+            group: "mouse",
+            name: "左を 1.5 秒長押し (採掘)",
+            acts: tap(LEFT, 1500),
+        },
+        Step {
+            group: "mouse",
+            name: "右クリック (使う・置く)",
+            acts: tap(RIGHT, 80),
+        },
+        Step {
+            group: "mouse",
+            name: "ホイール 1 段ずつ前後 (持ち物)",
+            acts: vec![
+                Act::Wheel(-1),
+                Act::Sleep(400),
+                Act::Wheel(1),
+                Act::Sleep(300),
+            ],
+        },
         // #8 相対マウス (視点)
-        Step { group: "look", name: "右へ 200 (視点が右へ回る)", acts: look_right },
-        Step { group: "look", name: "左へ 200 (元の向きへ戻る)", acts: look_left },
+        Step {
+            group: "look",
+            name: "右へ 200 (視点が右へ回る)",
+            acts: look_right,
+        },
+        Step {
+            group: "look",
+            name: "左へ 200 (元の向きへ戻る)",
+            acts: look_left,
+        },
     ]
 }
 
@@ -112,17 +180,24 @@ fn out(line: &str) {
 }
 
 fn send_held(h: Held, down: bool) -> bool {
-    if !down && mock_failure("panic") { panic!("mock: 押下中の異常終了"); }
+    if !down && mock_failure("panic") {
+        panic!("mock: 押下中の異常終了");
+    }
     let input = INPUT.get().expect("input");
-    let ok = !mock_failure(if down { "down" } else { "up" }) && match h {
-        Held::Key { scan, ext } => input.key(scan, ext, down),
-        Held::Mouse { left } => input.mouse_button(left, down),
-    };
+    let ok = !mock_failure(if down { "down" } else { "up" })
+        && match h {
+            Held::Key { scan, ext } => input.key(scan, ext, down),
+            Held::Mouse { left } => input.mouse_button(left, down),
+        };
     let what = match h {
         Held::Key { scan, .. } => format!("key 0x{scan:02X}"),
         Held::Mouse { left } => format!("mouse {}", if left { "left" } else { "right" }),
     };
-    out(&format!("{} {what} {} ok={ok}", if down { "SEND" } else { "RELEASE" }, if down { "down" } else { "up" }));
+    out(&format!(
+        "{} {what} {} ok={ok}",
+        if down { "SEND" } else { "RELEASE" },
+        if down { "down" } else { "up" }
+    ));
     ok
 }
 
@@ -139,7 +214,10 @@ fn release_all(why: &str) -> bool {
             held.remove(i);
         }
     }
-    out(&format!("RELEASE all ({why}) count={count} pending={}", held.len()));
+    out(&format!(
+        "RELEASE all ({why}) count={count} pending={}",
+        held.len()
+    ));
     held.is_empty()
 }
 
@@ -170,12 +248,19 @@ enum Halt {
 
 /// 前面が入力先になるまで待つ。外れていたら全解放する
 fn ensure_target(target: &Target) -> Result<(), Halt> {
-    if stop_requested() { return Err(Halt::Stop); }
+    if stop_requested() {
+        return Err(Halt::Stop);
+    }
     if target_ok(target) {
         return Ok(());
     }
-    if !release_all("target lost") { return Err(Halt::InputFailed); }
-    out(&format!("WAIT target: {} を前面にしてください", target.describe()));
+    if !release_all("target lost") {
+        return Err(Halt::InputFailed);
+    }
+    out(&format!(
+        "WAIT target: {} を前面にしてください",
+        target.describe()
+    ));
     let until = Instant::now() + TARGET_WAIT;
     while Instant::now() < until {
         if stop_requested() {
@@ -212,8 +297,12 @@ fn run_step(step: &Step, target: &Target, scale: f64) -> Result<(), Halt> {
         let mut p = loop {
             ensure_target(target)?;
             let p = PRESSED.lock().unwrap_or_else(|e| e.into_inner());
-            if stop_requested() { return Err(Halt::Stop); }
-            if target_ok(target) { break p; }
+            if stop_requested() {
+                return Err(Halt::Stop);
+            }
+            if target_ok(target) {
+                break p;
+            }
             drop(p);
         };
         if let Act::Sleep(ms) = *act {
@@ -225,26 +314,34 @@ fn run_step(step: &Step, target: &Target, scale: f64) -> Result<(), Halt> {
         match *act {
             Act::Down(h) => {
                 p.push(h);
-                if !send_held(h, true) { return Err(Halt::InputFailed); }
+                if !send_held(h, true) {
+                    return Err(Halt::InputFailed);
+                }
             }
             Act::Up(h) => {
                 // 入力先から外れて全解放した後なら、もう離れている
                 if let Some(i) = p.iter().position(|x| *x == h) {
-                    if !send_held(h, false) { return Err(Halt::InputFailed); }
+                    if !send_held(h, false) {
+                        return Err(Halt::InputFailed);
+                    }
                     p.remove(i);
                 }
             }
             Act::Wheel(n) => {
                 let ok = !mock_failure("wheel") && input.wheel(n);
                 out(&format!("SEND wheel {n} ok={ok}"));
-                if !ok { return Err(Halt::InputFailed); }
+                if !ok {
+                    return Err(Halt::InputFailed);
+                }
             }
             Act::Move(dx, dy) => {
                 let ok = !mock_failure("move") && input.mouse_move(dx, dy);
                 if !ok || MOCK.load(Ordering::SeqCst) {
                     out(&format!("SEND move {dx},{dy} ok={ok}"));
                 }
-                if !ok { return Err(Halt::InputFailed); }
+                if !ok {
+                    return Err(Halt::InputFailed);
+                }
             }
             Act::Sleep(_) => unreachable!(),
         }
@@ -258,13 +355,21 @@ fn main() {
     while pos < args.len() {
         match args[pos].as_str() {
             "--mock" => pos += 1,
-            "--steps" if args.get(pos + 1).is_some_and(|g| !g.is_empty() && g.split(',').all(|s| ["keys", "mouse", "look"].contains(&s))) => pos += 2,
+            "--steps"
+                if args.get(pos + 1).is_some_and(|g| {
+                    !g.is_empty() && g.split(',').all(|s| ["keys", "mouse", "look"].contains(&s))
+                }) =>
+            {
+                pos += 2
+            }
             "--help" => {
                 out("使い方: recooplay-input-probe.exe [--mock] [--steps keys,mouse,look]");
                 return;
             }
             _ => {
-                out("STOP 不明な引数です。--mock または --steps keys,mouse,look を指定してください");
+                out(
+                    "STOP 不明な引数です。--mock または --steps keys,mouse,look を指定してください",
+                );
                 std::process::exit(1);
             }
         }
@@ -285,17 +390,29 @@ fn main() {
         std::process::exit(1);
     }
     let target = Target::default();
-    let plan: Vec<Step> = steps().into_iter().filter(|s| groups.iter().any(|g| g == s.group)).collect();
+    let plan: Vec<Step> = steps()
+        .into_iter()
+        .filter(|s| groups.iter().any(|g| g == s.group))
+        .collect();
     // 時間は mock では半分 (自動試験を短くしつつ、試験側が押下中に割り込める長さを残す)
     let scale = if mock { 0.5 } else { 1.0 };
 
-    out(&format!("Re:Cooplay 入力プローブ{}", if mock { " (mock: OS に入力を送りません)" } else { "" }));
+    out(&format!(
+        "Re:Cooplay 入力プローブ{}",
+        if mock {
+            " (mock: OS に入力を送りません)"
+        } else {
+            ""
+        }
+    ));
     out(&format!("入力先: {}", target.describe()));
     out("緊急停止: Ctrl+Alt+F12 / Ctrl+C。どの終わり方でも、押しているキー・ボタンを離してから終わります");
     for s in &plan {
         out(&format!("  [{}] {}", s.group, s.name));
     }
-    out(&format!("始めるには {ARM_WORD} と入力して Enter。5 秒後から、Minecraft が前面のときだけ送ります"));
+    out(&format!(
+        "始めるには {ARM_WORD} と入力して Enter。5 秒後から、Minecraft が前面のときだけ送ります"
+    ));
 
     // 標準入力: ARM で開始 (それ以外の行では何も送らない)。mock では target on/off・stop も受け付ける
     let (arm_tx, arm_rx) = std::sync::mpsc::channel::<()>();
@@ -316,8 +433,12 @@ fn main() {
             }
             match line {
                 "stop" => STOP.store(true, Ordering::SeqCst),
-                "target on" if MOCK.load(Ordering::SeqCst) => MOCK_TARGET.store(true, Ordering::SeqCst),
-                "target off" if MOCK.load(Ordering::SeqCst) => MOCK_TARGET.store(false, Ordering::SeqCst),
+                "target on" if MOCK.load(Ordering::SeqCst) => {
+                    MOCK_TARGET.store(true, Ordering::SeqCst)
+                }
+                "target off" if MOCK.load(Ordering::SeqCst) => {
+                    MOCK_TARGET.store(false, Ordering::SeqCst)
+                }
                 _ => {}
             }
         }
@@ -357,7 +478,9 @@ fn main() {
             finish(halt);
         }
     }
-    if !release_all("done") { finish(Halt::InputFailed); }
+    if !release_all("done") {
+        finish(Halt::InputFailed);
+    }
     out("DONE");
 }
 
@@ -370,10 +493,15 @@ fn finish(halt: Halt) -> ! {
     };
     let mut released = false;
     for _ in 0..3 {
-        if release_all("stop") { released = true; break; }
+        if release_all("stop") {
+            released = true;
+            break;
+        }
         std::thread::sleep(TICK);
     }
-    if !released { out("STOP 全解放を確認できません。実機の押下状態を確認してください"); }
+    if !released {
+        out("STOP 全解放を確認できません。実機の押下状態を確認してください");
+    }
     out(message);
     std::process::exit(if released { code } else { 4 });
 }
@@ -382,7 +510,9 @@ fn finish(halt: Halt) -> ! {
 mod imp {
     use windows::core::BOOL;
     use windows::Win32::System::Console::SetConsoleCtrlHandler;
-    use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_CONTROL, VK_F12, VK_MENU};
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        GetAsyncKeyState, VK_CONTROL, VK_F12, VK_MENU,
+    };
 
     pub fn emergency_keys_down() -> bool {
         let down = |vk: u16| unsafe { (GetAsyncKeyState(vk as i32) as u16 & 0x8000) != 0 };
@@ -406,5 +536,7 @@ mod imp {
     pub fn emergency_keys_down() -> bool {
         false
     }
-    pub fn install_ctrl_handler() -> bool { true }
+    pub fn install_ctrl_handler() -> bool {
+        true
+    }
 }

@@ -25,8 +25,19 @@ pub struct Output {
     pub code: Option<&'static str>,
 }
 
-const fn key(id: &'static str, label: &'static str, scan: u16, ext: bool, code: &'static str) -> Output {
-    Output { id, label, kind: Kind::Key { scan, ext }, code: Some(code) }
+const fn key(
+    id: &'static str,
+    label: &'static str,
+    scan: u16,
+    ext: bool,
+    code: &'static str,
+) -> Output {
+    Output {
+        id,
+        label,
+        kind: Kind::Key { scan, ext },
+        code: Some(code),
+    }
 }
 
 pub static OUTPUTS: &[Output] = &[
@@ -112,10 +123,30 @@ pub static OUTPUTS: &[Output] = &[
     key("END", "End", 0x4f, true, "End"),
     key("PAGE_UP", "PageUp", 0x49, true, "PageUp"),
     key("PAGE_DOWN", "PageDown", 0x51, true, "PageDown"),
-    Output { id: "MOUSE_L", label: "左クリック", kind: Kind::Mouse { left: true }, code: None },
-    Output { id: "MOUSE_R", label: "右クリック", kind: Kind::Mouse { left: false }, code: None },
-    Output { id: "WHEEL_UP", label: "ホイール↑", kind: Kind::Wheel { notches: 1 }, code: None },
-    Output { id: "WHEEL_DOWN", label: "ホイール↓", kind: Kind::Wheel { notches: -1 }, code: None },
+    Output {
+        id: "MOUSE_L",
+        label: "左クリック",
+        kind: Kind::Mouse { left: true },
+        code: None,
+    },
+    Output {
+        id: "MOUSE_R",
+        label: "右クリック",
+        kind: Kind::Mouse { left: false },
+        code: None,
+    },
+    Output {
+        id: "WHEEL_UP",
+        label: "ホイール↑",
+        kind: Kind::Wheel { notches: 1 },
+        code: None,
+    },
+    Output {
+        id: "WHEEL_DOWN",
+        label: "ホイール↓",
+        kind: Kind::Wheel { notches: -1 },
+        code: None,
+    },
 ];
 
 pub fn output(id: &str) -> Option<&'static Output> {
@@ -124,7 +155,9 @@ pub fn output(id: &str) -> Option<&'static Output> {
 
 /// スキャンコード (拡張キーかどうかを含む) から出力を引く
 pub fn output_by_scan(scan: u16, ext: bool) -> Option<&'static Output> {
-    OUTPUTS.iter().find(|o| matches!(o.kind, Kind::Key { scan: s, ext: e } if s == scan && e == ext))
+    OUTPUTS
+        .iter()
+        .find(|o| matches!(o.kind, Kind::Key { scan: s, ext: e } if s == scan && e == ext))
 }
 
 /// ホストのリモコン (ロビー / 一時停止中に P1 だけが使える)

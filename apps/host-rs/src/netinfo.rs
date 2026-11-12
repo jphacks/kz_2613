@@ -19,7 +19,11 @@ pub fn addresses() -> Vec<Address> {
         .filter_map(|i| match i.ip() {
             std::net::IpAddr::V4(v4) => {
                 let address = v4.to_string();
-                Some(Address { hotspot: address.starts_with("192.168.137."), name: i.name, address })
+                Some(Address {
+                    hotspot: address.starts_with("192.168.137."),
+                    name: i.name,
+                    address,
+                })
             }
             _ => None,
         })
@@ -30,7 +34,11 @@ pub fn addresses() -> Vec<Address> {
 
 fn qr_svg(data: &str) -> String {
     match QrCode::new(data.as_bytes()) {
-        Ok(code) => code.render::<svg::Color>().quiet_zone(true).module_dimensions(4, 4).build(),
+        Ok(code) => code
+            .render::<svg::Color>()
+            .quiet_zone(true)
+            .module_dimensions(4, 4)
+            .build(),
         Err(_) => String::new(),
     }
 }
@@ -59,7 +67,11 @@ pub fn hotspot() -> Option<Hotspot> {
     if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
         let fake = std::env::var("RECOOPLAY_FAKE_HOTSPOT").ok()?;
         let mut parts = fake.splitn(3, '|');
-        return Some(Hotspot { ssid: parts.next()?.into(), passphrase: parts.next()?.into(), on: parts.next() == Some("on") });
+        return Some(Hotspot {
+            ssid: parts.next()?.into(),
+            passphrase: parts.next()?.into(),
+            on: parts.next() == Some("on"),
+        });
     }
     imp::hotspot()
 }
@@ -75,7 +87,9 @@ pub fn start_hotspot() -> Result<(), String> {
 #[cfg(windows)]
 mod imp {
     use windows::Networking::Connectivity::NetworkInformation;
-    use windows::Networking::NetworkOperators::{NetworkOperatorTetheringManager, TetheringOperationStatus, TetheringOperationalState};
+    use windows::Networking::NetworkOperators::{
+        NetworkOperatorTetheringManager, TetheringOperationStatus, TetheringOperationalState,
+    };
     use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
 
     fn manager() -> Option<NetworkOperatorTetheringManager> {
@@ -98,12 +112,22 @@ mod imp {
     }
 
     pub fn start_hotspot() -> Result<(), String> {
-        let m = manager().ok_or("インターネットに接続していないため、ホットスポットをONにできません")?;
-        let result = m.StartTetheringAsync().and_then(|op| op.join()).map_err(|e| e.message())?;
+        let m = manager()
+            .ok_or("インターネットに接続していないため、ホットスポットをONにできません")?;
+        let result = m
+            .StartTetheringAsync()
+            .and_then(|op| op.join())
+            .map_err(|e| e.message())?;
         match result.Status() {
             Ok(TetheringOperationStatus::Success) => Ok(()),
-            _ => Err(result.AdditionalErrorMessage().map(|m| m.to_string()).ok().filter(|m| !m.is_empty())
-                .unwrap_or_else(|| "ホットスポットをONにできませんでした。Windowsの設定から確認してください".into())),
+            _ => Err(result
+                .AdditionalErrorMessage()
+                .map(|m| m.to_string())
+                .ok()
+                .filter(|m| !m.is_empty())
+                .unwrap_or_else(|| {
+                    "ホットスポットをONにできませんでした。Windowsの設定から確認してください".into()
+                })),
         }
     }
 }
@@ -137,7 +161,11 @@ pub fn info(port: u16, wifi: Option<(&str, &str)>, loopback: bool) -> Value {
         None => wifi,
     }
     .map(|(ssid, password)| {
-        let payload = format!("WIFI:T:WPA;S:{};P:{};;", escape_wifi(ssid), escape_wifi(password));
+        let payload = format!(
+            "WIFI:T:WPA;S:{};P:{};;",
+            escape_wifi(ssid),
+            escape_wifi(password)
+        );
         json!({ "ssid": ssid, "qr": qr_svg(&payload) })
     });
     let hotspot = spot.map(|h| json!({ "on": h.on }));

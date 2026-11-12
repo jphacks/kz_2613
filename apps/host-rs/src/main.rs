@@ -7,13 +7,13 @@ mod config;
 mod controls;
 mod focus;
 mod freshness;
-mod games;
 mod game_service;
+mod games;
 mod hotkey;
 mod hub;
 mod input;
-mod input_trace;
 mod input_manager;
+mod input_trace;
 mod key_overrides;
 mod keybinds;
 mod launchers;
@@ -73,19 +73,27 @@ fn find_root() -> PathBuf {
     if let Ok(exe) = std::env::current_exe() {
         candidates.extend(exe.ancestors().skip(1).take(4).map(Path::to_path_buf));
     }
-    candidates.into_iter().find(|p| p.join(WEB_DIR).join("phone/index.html").is_file()).unwrap_or(cwd)
+    candidates
+        .into_iter()
+        .find(|p| p.join(WEB_DIR).join("phone/index.html").is_file())
+        .unwrap_or(cwd)
 }
 
 fn is_loopback(addr: &SocketAddr) -> bool {
     match addr.ip() {
         std::net::IpAddr::V4(v4) => v4.is_loopback(),
-        std::net::IpAddr::V6(v6) => v6.is_loopback() || v6.to_ipv4_mapped().is_some_and(|v| v.is_loopback()),
+        std::net::IpAddr::V6(v6) => {
+            v6.is_loopback() || v6.to_ipv4_mapped().is_some_and(|v| v.is_loopback())
+        }
     }
 }
 
 fn client_ip(addr: &SocketAddr) -> String {
     match addr.ip() {
-        std::net::IpAddr::V6(v6) => v6.to_ipv4_mapped().map(|v| v.to_string()).unwrap_or_else(|| v6.to_string()),
+        std::net::IpAddr::V6(v6) => v6
+            .to_ipv4_mapped()
+            .map(|v| v.to_string())
+            .unwrap_or_else(|| v6.to_string()),
         ip => ip.to_string(),
     }
 }
@@ -98,7 +106,9 @@ async fn main() {
     let input = input::Input::new();
 
     let (tx, rx) = std::sync::mpsc::channel::<Event>();
-    let log_dir = std::env::var("RECOOPLAY_LOG_DIR").map(PathBuf::from).unwrap_or_else(|_| root.join("logs"));
+    let log_dir = std::env::var("RECOOPLAY_LOG_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| root.join("logs"));
     runtime_measure::init(&log_dir);
     input_trace::init(&log_dir);
     let mut hub = match Hub::new(tx.clone(), &config, input, &log_dir) {
@@ -109,7 +119,11 @@ async fn main() {
         }
     };
 
-    let bind_ip = if runtime_measure::enabled() { "127.0.0.1" } else { "0.0.0.0" };
+    let bind_ip = if runtime_measure::enabled() {
+        "127.0.0.1"
+    } else {
+        "0.0.0.0"
+    };
     let listener = match tokio::net::TcpListener::bind((bind_ip, port)).await {
         Ok(l) => l,
         Err(e) => {
@@ -118,7 +132,10 @@ async fn main() {
         }
     };
     let port = if runtime_measure::enabled() {
-        listener.local_addr().expect("bind済みの計測用アドレス").port()
+        listener
+            .local_addr()
+            .expect("bind済みの計測用アドレス")
+            .port()
     } else {
         port
     };
@@ -129,8 +146,15 @@ async fn main() {
     println!("  PC 疑似ゲーム画面 : http://localhost:{port}/game");
     let addrs = netinfo::addresses();
     for a in &addrs {
-        let hs = if a.hotspot { ", ホットスポット" } else { "" };
-        println!("  スマホ用 URL      : http://{}:{}/  ({}{})", a.address, port, a.name, hs);
+        let hs = if a.hotspot {
+            ", ホットスポット"
+        } else {
+            ""
+        };
+        println!(
+            "  スマホ用 URL      : http://{}:{}/  ({}{})",
+            a.address, port, a.name, hs
+        );
     }
     if !addrs.iter().any(|a| a.hotspot) {
         println!("  ※ 192.168.137.x が見つかりません。モバイルホットスポットが OFF の可能性があります（ON にした後はダッシュボードを再読込）");
@@ -139,7 +163,10 @@ async fn main() {
     // 緊急停止のホットキー (スマホ・ダッシュボードの通信に頼らない)
     let hotkey = hotkey::start(tx.clone());
     match &hotkey {
-        Ok(()) => println!("  緊急停止          : {} (全キーを離して注入を OFF)", hotkey::LABEL),
+        Ok(()) => println!(
+            "  緊急停止          : {} (全キーを離して注入を OFF)",
+            hotkey::LABEL
+        ),
         Err(e) => println!("  ※ 緊急停止 {} を登録できません: {e}", hotkey::LABEL),
     }
     println!();
@@ -147,7 +174,10 @@ async fn main() {
 
     let images = hub.images();
     // セッションの中枢は専用スレッド (視点の 4ms 刻みなどを非同期ランタイムに左右されずに回す)
-    std::thread::Builder::new().name("hub".into()).spawn(move || hub.run(rx, port)).expect("hub thread");
+    std::thread::Builder::new()
+        .name("hub".into())
+        .spawn(move || hub.run(rx, port))
+        .expect("hub thread");
 
     let app = App {
         hub: Arc::new(Mutex::new(tx.clone())),
@@ -170,7 +200,10 @@ async fn main() {
                     match line.as_deref().map(str::trim) {
                         Ok("quit") | Err(_) => break,
                         Ok("stop") => {
-                            let _ = tx.send(Event::EmergencyStop { source: "app", enqueued_at: runtime_measure::start() });
+                            let _ = tx.send(Event::EmergencyStop {
+                                source: "app",
+                                enqueued_at: runtime_measure::start(),
+                            });
                         }
                         // 試験用 (RECOOPLAY_DRY_RUN=1 と RECOOPLAY_FAKE_TARGET のときだけ有効): 前面のウィンドウの判定を差し替える
                         Ok("target on") => {
@@ -200,13 +233,17 @@ async fn main() {
                             let _ = tx.send(Event::FakeLauncher(false));
                         }
                         // 試験用: 既定の音の出力先が Bluetooth になった・外れた (#131。実機では定期的に調べる)
-                        Ok("rotate") if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") => {
+                        Ok("rotate")
+                            if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") =>
+                        {
                             let _ = tx.send(Event::FakeRotationDue);
                         }
                         Ok("bt on") if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") => {
                             let _ = tx.send(Event::BluetoothAudio(true));
                         }
-                        Ok("bt off") if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") => {
+                        Ok("bt off")
+                            if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") =>
+                        {
                             let _ = tx.send(Event::BluetoothAudio(false));
                         }
                         _ => {}
@@ -245,7 +282,12 @@ async fn main() {
         .route("/ws", get(ws_upgrade))
         .fallback(get(static_file))
         .with_state(app);
-    if let Err(e) = axum::serve(listener, router.into_make_service_with_connect_info::<SocketAddr>()).await {
+    if let Err(e) = axum::serve(
+        listener,
+        router.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
+    {
         eprintln!("サーバーエラー: {e}");
     }
 }
@@ -258,9 +300,16 @@ fn build_info(root: &Path) -> serde_json::Value {
 
 fn parse_build_info(manifest: &str) -> serde_json::Value {
     // PowerShell が書いた manifest は先頭に BOM がある
-    let value = serde_json::from_str::<serde_json::Value>(manifest.trim_start_matches('\u{feff}')).unwrap_or_default();
-    let version = value.get("version").and_then(|v| v.as_str()).unwrap_or(env!("CARGO_PKG_VERSION"));
-    let commit = value.get("commit").and_then(|v| v.as_str()).map(|c| c.chars().take(7).collect::<String>());
+    let value = serde_json::from_str::<serde_json::Value>(manifest.trim_start_matches('\u{feff}'))
+        .unwrap_or_default();
+    let version = value
+        .get("version")
+        .and_then(|v| v.as_str())
+        .unwrap_or(env!("CARGO_PKG_VERSION"));
+    let commit = value
+        .get("commit")
+        .and_then(|v| v.as_str())
+        .map(|c| c.chars().take(7).collect::<String>());
     serde_json::json!({ "version": version, "commit": commit })
 }
 
@@ -269,50 +318,102 @@ async fn api_info(State(app): State<App>, ConnectInfo(addr): ConnectInfo<SocketA
     let loopback = is_loopback(&addr);
     let build = app.build.clone();
     let mut body = tokio::task::spawn_blocking(move || {
-        let wifi = app.wifi.as_ref().as_ref().map(|(s, p)| (s.as_str(), p.as_str()));
+        let wifi = app
+            .wifi
+            .as_ref()
+            .as_ref()
+            .map(|(s, p)| (s.as_str(), p.as_str()));
         netinfo::info(app.port, wifi, loopback)
     })
     .await
     .unwrap_or_default();
     // 版は PC の画面にだけ返す (#216)
-    if loopback { body["build"] = (*build).clone(); }
-    ([(header::CONTENT_TYPE, "application/json"), (header::CACHE_CONTROL, "no-store")], body.to_string()).into_response()
+    if loopback {
+        body["build"] = (*build).clone();
+    }
+    (
+        [
+            (header::CONTENT_TYPE, "application/json"),
+            (header::CACHE_CONTROL, "no-store"),
+        ],
+        body.to_string(),
+    )
+        .into_response()
 }
 
 /// 一覧のタイルの画像 (#121)。PC 本体からだけ、検出した項目の ID で引く (場所は受け取らない)。
 /// 画像はユーザーの PC にランチャーが保存しているもので、リポジトリ・ログには残さない
-async fn game_image(State(app): State<App>, ConnectInfo(addr): ConnectInfo<SocketAddr>, Query(q): Query<std::collections::HashMap<String, String>>) -> Response {
+async fn game_image(
+    State(app): State<App>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    Query(q): Query<std::collections::HashMap<String, String>>,
+) -> Response {
     if !is_loopback(&addr) {
-        return (StatusCode::FORBIDDEN, "this image is only available on the PC").into_response();
+        return (
+            StatusCode::FORBIDDEN,
+            "this image is only available on the PC",
+        )
+            .into_response();
     }
-    let path = q.get("id").and_then(|id| app.images.lock().ok().and_then(|m| m.get(id).cloned()));
-    let Some(path) = path else { return StatusCode::NOT_FOUND.into_response() };
+    let path = q
+        .get("id")
+        .and_then(|id| app.images.lock().ok().and_then(|m| m.get(id).cloned()));
+    let Some(path) = path else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
     let mime = match path.extension().and_then(|e| e.to_str()) {
         Some("png") => "image/png",
         _ => "image/jpeg",
     };
     match tokio::fs::read(&path).await {
         // 再検出で画像が変わっても古い画像を出さないよう、保存させない (画面は一覧が変わったときだけ読み直す)
-        Ok(data) => ([(header::CONTENT_TYPE, mime), (header::CACHE_CONTROL, "no-store")], data).into_response(),
+        Ok(data) => (
+            [
+                (header::CONTENT_TYPE, mime),
+                (header::CACHE_CONTROL, "no-store"),
+            ],
+            data,
+        )
+            .into_response(),
         Err(_) => StatusCode::NOT_FOUND.into_response(),
     }
 }
 
 /// PC 画面の「ホットスポットを ON にする」(#133)。PC 本体の画面からだけ受け付ける
 /// (ほかの Web ページからの要求を防ぐため、WebSocket と同じ Origin の確認をする)
-async fn api_hotspot(State(app): State<App>, ConnectInfo(addr): ConnectInfo<SocketAddr>, headers: HeaderMap) -> Response {
-    if !is_loopback(&addr) || !allowed_ws_headers(&headers, app.port, true) || headers.get(header::ORIGIN).is_none() {
+async fn api_hotspot(
+    State(app): State<App>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
+) -> Response {
+    if !is_loopback(&addr)
+        || !allowed_ws_headers(&headers, app.port, true)
+        || headers.get(header::ORIGIN).is_none()
+    {
         return (StatusCode::FORBIDDEN, "only from the PC app").into_response();
     }
-    let result = tokio::task::spawn_blocking(netinfo::start_hotspot).await.unwrap_or_else(|_| Err("失敗しました".into()));
+    let result = tokio::task::spawn_blocking(netinfo::start_hotspot)
+        .await
+        .unwrap_or_else(|_| Err("失敗しました".into()));
     let body = match result {
         Ok(()) => serde_json::json!({ "ok": true }),
         Err(e) => serde_json::json!({ "ok": false, "error": e }),
     };
-    ([(header::CONTENT_TYPE, "application/json"), (header::CACHE_CONTROL, "no-store")], body.to_string()).into_response()
+    (
+        [
+            (header::CONTENT_TYPE, "application/json"),
+            (header::CACHE_CONTROL, "no-store"),
+        ],
+        body.to_string(),
+    )
+        .into_response()
 }
 
-async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<SocketAddr>, uri: Uri) -> Response {
+async fn static_file(
+    State(app): State<App>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    uri: Uri,
+) -> Response {
     let path = match uri.path() {
         "/" => "/phone/index.html",
         "/app" => "/pc/index.html",
@@ -341,7 +442,11 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
         return StatusCode::NOT_FOUND.into_response();
     }
     if !is_loopback(&addr) && is_pc_only_page(&real, &root) {
-        return (StatusCode::FORBIDDEN, "this page is only available on the PC").into_response();
+        return (
+            StatusCode::FORBIDDEN,
+            "this page is only available on the PC",
+        )
+            .into_response();
     }
     let mime = match real.extension().and_then(|e| e.to_str()) {
         Some("html") => "text/html; charset=utf-8",
@@ -357,7 +462,14 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
         _ => "application/octet-stream",
     };
     match tokio::fs::read(&real).await {
-        Ok(data) => ([(header::CONTENT_TYPE, mime), (header::CACHE_CONTROL, "no-store")], data).into_response(),
+        Ok(data) => (
+            [
+                (header::CONTENT_TYPE, mime),
+                (header::CACHE_CONTROL, "no-store"),
+            ],
+            data,
+        )
+            .into_response(),
         Err(_) => (StatusCode::NOT_FOUND, "not found").into_response(),
     }
 }
@@ -365,14 +477,27 @@ async fn static_file(State(app): State<App>, ConnectInfo(addr): ConnectInfo<Sock
 // DNS再束縛と別Originからの管理操作を防ぐ。OriginなしはPC内の非ブラウザ検証クライアントに限る。
 /// 解決済みの実体がPC専用画面フォルダの配下ならLANへ返さない。
 fn is_pc_only_page(path: &Path, root: &Path) -> bool {
-    let Some(name) = path.strip_prefix(root).ok().and_then(|p| p.components().next()) else { return false };
+    let Some(name) = path
+        .strip_prefix(root)
+        .ok()
+        .and_then(|p| p.components().next())
+    else {
+        return false;
+    };
     let name = name.as_os_str().to_string_lossy().to_ascii_lowercase();
-    matches!(name.as_str(), "pc" | "overlay" | "diagnostics" | "pseudo-game")
+    matches!(
+        name.as_str(),
+        "pc" | "overlay" | "diagnostics" | "pseudo-game"
+    )
 }
 
 fn allowed_ws_headers(headers: &HeaderMap, port: u16, loopback: bool) -> bool {
-    let Some(host) = headers.get(header::HOST).and_then(|v| v.to_str().ok()) else { return false };
-    let Ok(authority) = host.parse::<axum::http::uri::Authority>() else { return false };
+    let Some(host) = headers.get(header::HOST).and_then(|v| v.to_str().ok()) else {
+        return false;
+    };
+    let Ok(authority) = host.parse::<axum::http::uri::Authority>() else {
+        return false;
+    };
     let hostname = authority.host();
     if authority.port_u16().unwrap_or(80) != port
         || !(matches!(hostname, "localhost" | "127.0.0.1" | "[::1]")
@@ -382,11 +507,19 @@ fn allowed_ws_headers(headers: &HeaderMap, port: u16, loopback: bool) -> bool {
     }
     match headers.get(header::ORIGIN) {
         None => loopback,
-        Some(value) => value.to_str().ok().is_some_and(|origin| origin == format!("http://{host}")),
+        Some(value) => value
+            .to_str()
+            .ok()
+            .is_some_and(|origin| origin == format!("http://{host}")),
     }
 }
 
-async fn ws_upgrade(ws: WebSocketUpgrade, ConnectInfo(addr): ConnectInfo<SocketAddr>, State(app): State<App>, headers: HeaderMap) -> Response {
+async fn ws_upgrade(
+    ws: WebSocketUpgrade,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(app): State<App>,
+    headers: HeaderMap,
+) -> Response {
     if !allowed_ws_headers(&headers, app.port, is_loopback(&addr)) {
         return StatusCode::FORBIDDEN.into_response();
     }
@@ -401,7 +534,13 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
     let id = app.next_id.fetch_add(1, Ordering::Relaxed);
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<Out>();
     let queued = Arc::new(hub::SendQueue::default());
-    app.send(Event::WsOpen { id, tx, queued: queued.clone(), ip: client_ip(&addr), loopback: is_loopback(&addr) });
+    app.send(Event::WsOpen {
+        id,
+        tx,
+        queued: queued.clone(),
+        ip: client_ip(&addr),
+        loopback: is_loopback(&addr),
+    });
     let mut code: u16 = 1006;
     loop {
         tokio::select! {
@@ -441,7 +580,9 @@ async fn send_ws_text(
     queue: &tokio::sync::mpsc::UnboundedReceiver<Out>,
     message: Message,
 ) -> Result<(), axum::Error> {
-    let Some(start) = runtime_measure::start() else { return socket.send(message).await };
+    let Some(start) = runtime_measure::start() else {
+        return socket.send(message).await;
+    };
     runtime_measure::sample("ws_queue_messages", queue.len() as u64);
     let send = socket.send(message);
     tokio::pin!(send);
@@ -470,7 +611,10 @@ mod tests {
     #[test]
     fn build_info_reads_the_manifest_with_bom_and_falls_back_to_the_build_version() {
         let info = parse_build_info("\u{feff}{\"version\":\"9.8.7\",\"commit\":\"abcdef0123456\"}");
-        assert_eq!((info["version"].as_str(), info["commit"].as_str()), (Some("9.8.7"), Some("abcdef0")));
+        assert_eq!(
+            (info["version"].as_str(), info["commit"].as_str()),
+            (Some("9.8.7"), Some("abcdef0"))
+        );
         let dev = parse_build_info("");
         assert_eq!(dev["version"].as_str(), Some(env!("CARGO_PKG_VERSION")));
         assert!(dev["commit"].is_null());
@@ -481,7 +625,10 @@ mod tests {
         let root = Path::new("dist");
         for dir in ["pc", "PC", "overlay", "diagnostics", "pseudo-game"] {
             assert!(is_pc_only_page(&root.join(dir).join("index.html"), root));
-            assert!(is_pc_only_page(&root.join(dir).join("nested/file.txt"), root));
+            assert!(is_pc_only_page(
+                &root.join(dir).join("nested/file.txt"),
+                root
+            ));
         }
         assert!(!is_pc_only_page(&root.join("phone/index.html"), root));
         assert!(!is_pc_only_page(&root.join("assets/icon.png"), root));
@@ -495,12 +642,20 @@ mod tests {
         assert!(!allowed_ws_headers(&headers, 8080, false));
         headers.insert(header::ORIGIN, "http://127.0.0.1:8080".parse().unwrap());
         assert!(allowed_ws_headers(&headers, 8080, false));
-        for origin in ["null", "http://localhost:8080", "http://127.0.0.1:8081", "https://127.0.0.1:8080"] {
+        for origin in [
+            "null",
+            "http://localhost:8080",
+            "http://127.0.0.1:8081",
+            "https://127.0.0.1:8080",
+        ] {
             headers.insert(header::ORIGIN, origin.parse().unwrap());
             assert!(!allowed_ws_headers(&headers, 8080, true));
         }
         headers.insert(header::HOST, "example.invalid:8080".parse().unwrap());
-        headers.insert(header::ORIGIN, "http://example.invalid:8080".parse().unwrap());
+        headers.insert(
+            header::ORIGIN,
+            "http://example.invalid:8080".parse().unwrap(),
+        );
         assert!(!allowed_ws_headers(&headers, 8080, true));
     }
 }
