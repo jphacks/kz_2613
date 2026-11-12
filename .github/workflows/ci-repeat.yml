@@ -1,0 +1,84 @@
+name: 通信と補助画面の反復試験
+on:
+  workflow_dispatch:
+    inputs:
+      build_run:
+        description: 同じコミットのWindows配布物を作成したCI run ID
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+jobs:
+  repeat:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    env:
+      RECOOPLAY_DRY_RUN: '1'
+      REPEAT_DIAGNOSTICS: ${{ runner.temp }}/repeat-diagnostics
+      REPEAT_SHARD: ${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: 配布runのコミットと成功を確認する
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN: ${{ inputs.build_run }}
+        run: |
+          if ($env:BUILD_RUN -notmatch '^[0-9]+$') { throw 'CI run IDには数字を指定してください' }
+          $run = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:BUILD_RUN" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $run.head_sha -ne $env:GITHUB_SHA -or $run.conclusion -ne 'success' -or $run.path -ne '.github/workflows/rust.yml') {
+            throw '同じコミットで成功したRust CIのrunを指定してください'
+          }
+      - uses: actions/download-artifact@v4
+        with:
+          name: ReCooplay-windows-x64
+          run-id: ${{ inputs.build_run }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/repeat-package
+      - name: 同じコミットの配布物を照合して展開する
+        shell: pwsh
+        run: |
+          $folder = Join-Path $env:RUNNER_TEMP repeat-package
+          $zips = @(Get-ChildItem -LiteralPath $folder -Filter '*.zip' -File)
+          if ($zips.Count -ne 1) { throw '配布ZIPを一意に特定できません' }
+          $zip = $zips[0]
+          $sidecar = (Get-Content -LiteralPath ($zip.FullName + '.sha256') -Raw).Trim() -split '\s+'
+          if ($sidecar[0] -ne (Get-FileHash -LiteralPath $zip.FullName -Algorithm SHA256).Hash) { throw '配布ZIPのSHA-256が一致しません' }
+          $expanded = Join-Path $env:RUNNER_TEMP repeat-expanded
+          Expand-Archive -LiteralPath $zip.FullName -DestinationPath $expanded
+          $manifests = @(Get-ChildItem -LiteralPath $expanded -Recurse -Filter package-manifest.json -File)
+          if ($manifests.Count -ne 1) { throw '配布マニフェストを一意に特定できません' }
+          $manifest = Get-Content -LiteralPath $manifests[0].FullName -Raw | ConvertFrom-Json
+          if ($manifest.commit -ne $env:GITHUB_SHA -or $manifest.dirty -ne $false) { throw '配布版と試験コードのコミットが一致しません' }
+          $root = $manifests[0].DirectoryName
+          Copy-Item -LiteralPath (Join-Path $root 'apps/web/dist') -Destination apps/web -Recurse
+          "REPEAT_HOST=$(Join-Path $root 'recooplay-host.exe')" >> $env:GITHUB_ENV
+      - name: 各試験を5回実行する
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path $env:REPEAT_DIAGNOSTICS -Force | Out-Null
+          $failures = 0
+          $first = ([int]$env:REPEAT_SHARD - 1) * 5 + 1
+          for ($attempt = $first; $attempt -lt $first + 5; $attempt++) {
+            $env:RECOOPLAY_SMOKE_DIAGNOSTICS = Join-Path $env:REPEAT_DIAGNOSTICS "browser-$attempt"
+            $log = Join-Path $env:REPEAT_DIAGNOSTICS "protocol-$attempt.txt"
+            node scripts/sim/protocol-sim.mjs --bin $env:REPEAT_HOST *> $log
+            if ($LASTEXITCODE) { $failures++; Write-Host "通信試験 $attempt 回目が失敗" }
+            $log = Join-Path $env:REPEAT_DIAGNOSTICS "browser-$attempt.txt"
+            node scripts/sim/auxiliary-pages-smoke.mjs --bin $env:REPEAT_HOST --pages overlay,diagnostics,pseudo-game *> $log
+            if ($LASTEXITCODE) { $failures++; Write-Host "補助画面 $attempt 回目が失敗" }
+          }
+          if ($failures) { throw "失敗: $failures / 10" }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: repeat-diagnostics-${{ matrix.shard }}
+          path: ${{ runner.temp }}/repeat-diagnostics
