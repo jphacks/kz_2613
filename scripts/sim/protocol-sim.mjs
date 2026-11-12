@@ -14,6 +14,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {PHONE_PROTOCOL_VERSION as PROTOCOL_VERSION} from '../../apps/web/src/shared/transport/version.ts';
+import {decodeServerMessage} from '../../apps/web/src/shared/transport/protocol.ts';
+import {decodePcMessage} from '../../apps/web/src/shared/transport/pc-messages.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const args = process.argv.slice(2);
@@ -282,7 +284,7 @@ async function main() {
     const mon = new Client('monitor');
     await mon.open();
     mon.send({ type: 'monitor', page: 'host' });
-    await mon.waitFor((m) => m.type === 'state', { what: 'state' });
+    const initialState = await mon.waitFor((m) => m.type === 'state', { what: 'state' });
 
     let p1, p2, p3;
 
@@ -370,6 +372,22 @@ async function main() {
       assert(w3.slot === 'P3' && w3.isHost === false, `P3: ${JSON.stringify(w3)}`);
       assert(!w1.reconnected, '初回なのに reconnected');
       assert(w1.protocolVersion === PROTOCOL_VERSION, `welcome の protocolVersion=${w1.protocolVersion}`);
+    });
+
+    await check('通信契約: ホスト実出力のPC状態とスマホの参加・ゲーム状態を製品デコーダーが受理する (#272)', async () => {
+      const pcState = decodePcMessage(JSON.stringify(initialState));
+      assert(pcState?.type === 'state' && pcState.game.phase === 'lobby', 'PCデコーダーが初回状態を拒否した');
+      for (const client of [p1, p2, p3]) {
+        const joinMessage = client.msgs.find(message => message.type === 'welcome');
+        const decodedJoin = decodeServerMessage(JSON.stringify(joinMessage));
+        assert(decodedJoin?.type === 'welcome' && decodedJoin.protocolVersion === PROTOCOL_VERSION,
+          'スマホデコーダーがwelcomeを拒否した');
+        const game = await client.waitFor(message => message.type === 'game' && message.game.connected.length === 3,
+          { what: '3台参加後のゲーム状態' });
+        const decodedGame = decodeServerMessage(JSON.stringify(game));
+        assert(decodedGame?.type === 'game' && decodedGame.game.connected.length === 3,
+          'スマホデコーダーが3台参加後のゲーム状態を拒否した');
+      }
     });
 
     await check('トークン: welcome で枠ごとに 128bit 以上の推測困難な値を発行する', async () => {
