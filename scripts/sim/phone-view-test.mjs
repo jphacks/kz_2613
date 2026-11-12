@@ -41,6 +41,13 @@ assert.match(view().remote.note,/「再開する」.*「協力プレイを終了
 update('P1',{phase:'paused',canResume:false,readyReasons:['参加者の再接続を待っています']});
 assert.match(view().remote.note,/再接続.*協力プレイを終了/);
 assert.doesNotMatch(view().remote.note,/「再開する」|RESUME/);
+update('P1',{phase:'paused',reason:'P1 disconnected',canResume:false});
+assert.match(view().remote.note,/^あなたの接続が切れました。/);
+assert.equal(view().remote.startDisabled,true);
+assert.equal(view().remote.endVisible,true);
+update('P1',{phase:'paused',reason:'P2 disconnected',canResume:true});
+assert.match(view().remote.note,/^P2 が切断。/);
+assert.equal(view().remote.startDisabled,false);
 update('P1',{phase:'preparing',canReady:true,connected:['P1','P2']});
 assert.equal(view().remote.startLabel,'Ready・2人で操作を始める');
 update('P1',{phase:'preparing',canReady:true,connected:['P1','P2','P3','P4']});
@@ -76,6 +83,8 @@ assert.doesNotMatch(view().wait.title,/Ready|一時停止中/);
 update('P3',{phase:'paused',reason:'P2 disconnected',autoResume:true});
 assert.match(view().wait.title,/制限時間内に全員が戻ると自動で再開/);
 assert.match(view().wait.title,/P2 が切断/,'自動復帰を待つ理由（誰が切断したか）を参加者にも示す');
+update('P2',{phase:'paused',reason:'P2 disconnected',autoResume:true});
+assert.match(view().wait.title,/^あなたの接続が切れました。/);
 // 分担の決定後は「決めるまで」と案内しない (#301)
 update('P3',{lineupOk:true});
 assert.doesNotMatch(view().wait.title,/決めるまで/);
@@ -101,7 +110,7 @@ assert.match(view().remote.notice,/未検証.*確かめながら/);
 const other={...profile,id:'other',status:'template',name:'別のゲーム'};
 update('P1',{inputTarget:true,remoteRoute:'none',titleName:'別のゲーム',profile:other});
 assert.doesNotMatch([view().warning,view().remote.route].join(' '),/別のゲームを前面|別のゲームになっていません/);
-assert.match(view().remote.route,/PCアプリが前面にない/);
+assert.equal(view().remote.route,'PCアプリを前面にすると、リモコンを使えます');
 update('P2',{inputTarget:true,titleName:'別のゲーム',profile:other});
 assert.equal(view().warning,'','ロビーの参加者に前面の警告を出さない');
 // P2以降には、行えない操作を求める案内やホスト向けの情報を出さない (#238)

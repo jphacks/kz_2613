@@ -11,7 +11,9 @@ main { padding: 14px max(14px,env(safe-area-inset-right)) max(14px,env(safe-area
 .view { gap: 10px; }
 .host-card { border-radius: 30px; background: var(--color-phone-surface); border-width: 4px; padding: 14px 12px; box-shadow: 0 4px 3px var(--color-shadow); }
 .host-card h1 { color: var(--color-cyan); font-weight: 800; font-size: clamp(22px,6.2vw,30px); text-shadow: 1px 2px var(--color-paper),2px 3px var(--color-lemon); }
-.host-card p { border-color: var(--color-phone-dots); font-weight: 500; color: var(--color-logo); }
+.host-pad-hint { min-height: 1.5em; line-height: 1.5; font-size: 12px; color: var(--color-logo); }
+.host-pad-hint [role=status] { color: var(--color-ink); font-weight: 700; }
+#v-remote { overflow-y: auto; padding-bottom: 4px; }
 .players { display: none; }
 .key { border: 2px solid var(--color-cyan); color: var(--color-black); background: var(--color-phone-surface); border-radius: 20px; box-shadow: 0 3px 0 var(--color-shadow); }
 .key small { color: var(--color-logo); }
@@ -22,10 +24,10 @@ main { padding: 14px max(14px,env(safe-area-inset-right)) max(14px,env(safe-area
 .cmd.sub { min-height: 44px; color: var(--color-logo); background: var(--color-surface); font-size: 12px; }
 .cmd:disabled { border-color: var(--color-phone-button); background: var(--color-character); color: var(--color-logo); }
 #remotePad { min-height: 90px; border-style: solid; background: var(--color-pad-surface); border-radius: 30px; color: var(--color-cyan-ink); }
-#remotePad::before { content: ''; width: 42px; height: 26px; border: 3px solid var(--color-phone-dots); border-radius: 10px; }
+#remotePad::before { content: none; }
 #remoteRoute, #appReturnHint { font-size: 11px; color: var(--color-logo); }
 #appReturnHint { margin: 0; }
-#remoteNote { font-size: 11px; max-height: 55px; color: var(--color-logo); }
+#remoteNote { font-size: 11px; max-height: none; min-height: auto; flex-shrink: 0; overflow: visible; color: var(--color-logo); }
 body[data-view=v-wait] main { padding: 0; }
 #v-wait { position: relative; }
 .wait-scene { position: relative; display: block; width: 100%; height: 100%; }
@@ -87,31 +89,27 @@ body[data-host=false] #phoneDiagnostics footer > span, body[data-host=false] #bu
   main { padding-top: 10px; padding-bottom: 10px; }
   .view { gap: 7px; }
   .host-card { padding: 8px; }
-  .host-card p { display: none; }
   .wait-card { top: 26%; height: 62%; max-height: 402px; min-height: 300px; padding-top: 30px; }
   .phone-character { top: calc(26% - 29.4vw); }
   .wait-card .dotted { padding-bottom: 22px; }
   .role-label { margin-top: 18px; font-size: 18px; }
   #remotePad { min-height: 72px; }
-  #remoteNote { max-height: 40px; }
 }
 @media (max-height:600px) and (orientation:portrait) {
   header,header .brand { display: flex; }
   header { height: calc(48px + env(safe-area-inset-top)); min-height: calc(48px + env(safe-area-inset-top)); }
   header .brand .brand-image { height: 42px; }
-  main { padding: 8px; }
+  main { padding: 8px max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left)); }
   .view { gap: 5px; }
   .host-card h1 { font-size: 20px; }
   .remote .key,.remoteButtons .key { min-height: 44px; }
   #remotePad { min-height: 64px; padding: 5px; }
   #remotePad::before { display: none; }
   #remoteRoute { line-height: 1.2; }
-  #remoteNote { max-height: 30px; min-height: 20px; }
   .wait-card { top: 25%; height: 66%; padding-top: 25px; }
   .phone-character { top: calc(25% - 29.4vw); }
   .wait-card h1 { font-size: 30px; }
   .wait-card .dotted { padding-bottom: 20px; }
-  #v-remote { overflow-y: auto; }
 }
 /* 指を離すまでの案内 (#285 Q27)。操作を妨げないよう、タッチを受け取らず、下の一時停止ボタンに重ねない */
 .lift-hint { position: fixed; left: 50%; top: calc(64px + env(safe-area-inset-top)); transform: translateX(-50%); z-index: 20; padding: 8px 16px; border-radius: 20px; background: var(--color-ink); color: var(--color-paper); font-size: 15px; font-weight: 700; pointer-events: none; white-space: nowrap; }
