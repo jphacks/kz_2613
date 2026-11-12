@@ -44,13 +44,21 @@ fn minecraft_launch(exe: &Path) -> String {
         .parent()
         .and_then(|d| std::fs::read_to_string(d.join("appxmanifest.xml")).ok())
         .is_some_and(|m| m.contains(&format!("Name=\"{MINECRAFT_PACKAGE}\"")));
-    if packaged { MINECRAFT_AUMID.into() } else { exe.to_string_lossy().to_string() }
+    if packaged {
+        MINECRAFT_AUMID.into()
+    } else {
+        exe.to_string_lossy().to_string()
+    }
 }
 
 /// 公式の Minecraft ランチャーを開く (#55)。dry-run では呼ばない
 pub fn open_minecraft_launcher(launch: &str) -> Result<(), String> {
-    if launch.starts_with("shell:") { imp::open_uri(launch) } else { imp::open_exe(Path::new(launch)) }
-        .map_err(|_| "Minecraftのランチャーを開けませんでした".into())
+    if launch.starts_with("shell:") {
+        imp::open_uri(launch)
+    } else {
+        imp::open_exe(Path::new(launch))
+    }
+    .map_err(|_| "Minecraftのランチャーを開けませんでした".into())
 }
 
 /// 検出の結果
@@ -113,7 +121,14 @@ impl Roots {
 
 /// Minecraft のランチャーの候補: Xbox・Microsoft Store 版 (各ドライブの XboxGames) と旧版 (Program Files)
 fn minecraft_candidates() -> Vec<PathBuf> {
-    let mut v: Vec<PathBuf> = (b'C'..=b'Z').map(|d| PathBuf::from(format!(r"{}:\XboxGames\Minecraft Launcher\Content\Minecraft.exe", d as char))).collect();
+    let mut v: Vec<PathBuf> = (b'C'..=b'Z')
+        .map(|d| {
+            PathBuf::from(format!(
+                r"{}:\XboxGames\Minecraft Launcher\Content\Minecraft.exe",
+                d as char
+            ))
+        })
+        .collect();
     for var in ["ProgramFiles(x86)", "ProgramFiles"] {
         if let Some(p) = std::env::var_os(var) {
             v.push(PathBuf::from(p).join(r"Minecraft Launcher\MinecraftLauncher.exe"));
@@ -136,22 +151,39 @@ pub fn detect(roots: &Roots) -> Detected {
     if let Some(file) = &roots.manual {
         list.extend(load_manual(file).into_iter().filter_map(manual_entry));
     }
-    list.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()).then(a.id.cmp(&b.id)));
+    list.sort_by(|a, b| {
+        a.name
+            .to_lowercase()
+            .cmp(&b.name.to_lowercase())
+            .then(a.id.cmp(&b.id))
+    });
     list.dedup_by(|a, b| a.id == b.id);
     for e in list.iter_mut().filter(|e| e.image.is_none()) {
         if let Some(exe) = e.icon_source.clone() {
             e.image = app_image(&exe, &roots.icons, &e.id);
         }
     }
-    let minecraft = roots.minecraft.iter().find(|p| p.is_file()).map(|exe| Minecraft { image: app_image(exe, &roots.icons, "minecraft-java"), launch: minecraft_launch(exe) });
-    Detected { games: list, minecraft }
+    let minecraft = roots
+        .minecraft
+        .iter()
+        .find(|p| p.is_file())
+        .map(|exe| Minecraft {
+            image: app_image(exe, &roots.icons, "minecraft-java"),
+            launch: minecraft_launch(exe),
+        });
+    Detected {
+        games: list,
+        minecraft,
+    }
 }
 
 /// アプリの画像: Xbox・Microsoft Store 版のアプリ (実行ファイルの隣に appxmanifest.xml がある) はマニフェストのロゴ、
 /// それ以外は実行ファイルのアイコン。Xbox 版の Minecraft ランチャーの Minecraft.exe はアイコンを持たず、
 /// シェルからは汎用のアプリのアイコンしか取れないため、ロゴを先に見る (#128)
 fn app_image(exe: &Path, icons: &Path, id: &str) -> Option<PathBuf> {
-    exe.parent().and_then(appx_logo).or_else(|| icon_file(exe, icons, id))
+    exe.parent()
+        .and_then(appx_logo)
+        .or_else(|| icon_file(exe, icons, id))
 }
 
 /// appxmanifest.xml のロゴ (Square150x150Logo・Square44x44Logo・Logo) のうち、いちばん大きい版の PNG。
@@ -165,19 +197,30 @@ pub(crate) fn appx_logo(dir: &Path) -> Option<PathBuf> {
             rest = &rest[i + attr.len() + 3..];
             let Some(end) = rest.find('"') else { break };
             let rel = Path::new(&rest[..end]);
-            if !rel.components().all(|c| matches!(c, std::path::Component::Normal(_))) {
+            if !rel
+                .components()
+                .all(|c| matches!(c, std::path::Component::Normal(_)))
+            {
                 continue;
             }
             let folder = dir.join(rel.parent().unwrap_or(Path::new("")));
-            let Some(stem) = rel.file_stem().and_then(|s| s.to_str()) else { continue };
-            let Ok(files) = std::fs::read_dir(&folder) else { continue };
+            let Some(stem) = rel.file_stem().and_then(|s| s.to_str()) else {
+                continue;
+            };
+            let Ok(files) = std::fs::read_dir(&folder) else {
+                continue;
+            };
             for f in files.flatten() {
                 let name = f.file_name().to_string_lossy().to_string();
-                if !(name.starts_with(stem) && name.ends_with(".png")) || name.contains("contrast") {
+                if !(name.starts_with(stem) && name.ends_with(".png")) || name.contains("contrast")
+                {
                     continue;
                 }
                 let width = png_width(&f.path()).unwrap_or(0);
-                if best.as_ref().is_none_or(|(w, p)| width > *w || (width == *w && f.path() < *p)) {
+                if best
+                    .as_ref()
+                    .is_none_or(|(w, p)| width > *w || (width == *w && f.path() < *p))
+                {
                     best = Some((width, f.path()));
                 }
             }
@@ -191,14 +234,18 @@ fn png_width(path: &Path) -> Option<u32> {
     use std::io::Read;
     let mut head = [0u8; 24];
     std::fs::File::open(path).ok()?.read_exact(&mut head).ok()?;
-    (&head[..8] == b"\x89PNG\r\n\x1a\n" && &head[12..16] == b"IHDR").then(|| u32::from_be_bytes([head[16], head[17], head[18], head[19]]))
+    (&head[..8] == b"\x89PNG\r\n\x1a\n" && &head[12..16] == b"IHDR")
+        .then(|| u32::from_be_bytes([head[16], head[17], head[18], head[19]]))
 }
 
 /// 実行ファイルのアイコン (Windows がエクスプローラー・スタートメニューで出すもの、最大 256px) を PNG にして置く
 fn icon_file(exe: &Path, dir: &Path, id: &str) -> Option<PathBuf> {
     let data = imp::icon_png(exe)?;
     std::fs::create_dir_all(dir).ok()?;
-    let name: String = id.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '_' }).collect();
+    let name: String = id
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+        .collect();
     let path = dir.join(format!("{name}.png"));
     std::fs::write(&path, data).ok()?;
     Some(path)
@@ -211,7 +258,11 @@ pub fn png(width: u32, height: u32, rgba: &[u8]) -> Vec<u8> {
         for &b in data {
             c ^= b as u32;
             for _ in 0..8 {
-                c = if c & 1 != 0 { 0xedb8_8320 ^ (c >> 1) } else { c >> 1 };
+                c = if c & 1 != 0 {
+                    0xedb8_8320 ^ (c >> 1)
+                } else {
+                    c >> 1
+                };
             }
         }
         !c
@@ -231,7 +282,11 @@ pub fn png(width: u32, height: u32, rgba: &[u8]) -> Vec<u8> {
         raw.extend_from_slice(&rgba[y * row..(y + 1) * row]);
     }
     let mut z = vec![0x78, 0x01];
-    let blocks: Vec<&[u8]> = if raw.is_empty() { vec![&[][..]] } else { raw.chunks(65535).collect() };
+    let blocks: Vec<&[u8]> = if raw.is_empty() {
+        vec![&[][..]]
+    } else {
+        raw.chunks(65535).collect()
+    };
     for (i, b) in blocks.iter().enumerate() {
         z.push((i + 1 == blocks.len()) as u8);
         z.extend((b.len() as u16).to_le_bytes());
@@ -290,12 +345,22 @@ pub struct ManualGame {
 
 /// 保存先: %LOCALAPPDATA%\Re-Cooplay\manual-games.json
 fn manual_file() -> Option<PathBuf> {
-    std::env::var_os("LOCALAPPDATA").map(|p| PathBuf::from(p).join("Re-Cooplay").join("manual-games.json"))
+    std::env::var_os("LOCALAPPDATA").map(|p| {
+        PathBuf::from(p)
+            .join("Re-Cooplay")
+            .join("manual-games.json")
+    })
 }
 
 pub fn load_manual(file: &Path) -> Vec<ManualGame> {
-    let Ok(text) = std::fs::read_to_string(file) else { return vec![] };
-    let Ok(Value::Array(items)) = serde_json::from_str::<Value>(text.trim_start_matches('\u{feff}')) else { return vec![] };
+    let Ok(text) = std::fs::read_to_string(file) else {
+        return vec![];
+    };
+    let Ok(Value::Array(items)) =
+        serde_json::from_str::<Value>(text.trim_start_matches('\u{feff}'))
+    else {
+        return vec![];
+    };
     items
         .iter()
         .filter_map(|v| {
@@ -308,16 +373,27 @@ pub fn load_manual(file: &Path) -> Vec<ManualGame> {
 }
 
 pub fn save_manual(file: &Path, list: &[ManualGame]) -> Result<(), String> {
-    let items: Vec<Value> = list.iter().map(|g| json!({ "id": g.id, "name": g.name, "exe": g.exe })).collect();
+    let items: Vec<Value> = list
+        .iter()
+        .map(|g| json!({ "id": g.id, "name": g.name, "exe": g.exe }))
+        .collect();
     if let Some(dir) = file.parent() {
         std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     }
-    std::fs::write(file, serde_json::to_string_pretty(&items).unwrap_or_default()).map_err(|e| e.to_string())
+    std::fs::write(
+        file,
+        serde_json::to_string_pretty(&items).unwrap_or_default(),
+    )
+    .map_err(|e| e.to_string())
 }
 
 /// 登録できる実行ファイルか: 絶対パスで、存在する .exe。ほかの種類 (.bat・.cmd・.lnk など) は受け付けない
 pub fn manual_exe_ok(exe: &Path) -> Result<(), &'static str> {
-    if !exe.is_absolute() || !exe.extension().is_some_and(|e| e.eq_ignore_ascii_case("exe")) {
+    if !exe.is_absolute()
+        || !exe
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("exe"))
+    {
         return Err("登録できるのはゲームの実行ファイル（.exe）だけです");
     }
     if !exe.is_file() {
@@ -359,7 +435,10 @@ const STEAM_FULLY_INSTALLED: u64 = 4;
 
 fn detect_steam(steam: &Path) -> Vec<Entry> {
     let mut libraries = vec![steam.to_path_buf()];
-    if let Some(vdf) = std::fs::read_to_string(steam.join(r"steamapps\libraryfolders.vdf")).ok().and_then(|t| parse_vdf(&t)) {
+    if let Some(vdf) = std::fs::read_to_string(steam.join(r"steamapps\libraryfolders.vdf"))
+        .ok()
+        .and_then(|t| parse_vdf(&t))
+    {
         for path in library_paths(&vdf) {
             if !libraries.iter().any(|l| same_path(l, &path)) {
                 libraries.push(path);
@@ -368,13 +447,20 @@ fn detect_steam(steam: &Path) -> Vec<Entry> {
     }
     let mut list = Vec::new();
     for lib in libraries {
-        let Ok(dir) = std::fs::read_dir(lib.join("steamapps")) else { continue };
+        let Ok(dir) = std::fs::read_dir(lib.join("steamapps")) else {
+            continue;
+        };
         for f in dir.flatten() {
             let name = f.file_name().to_string_lossy().to_string();
             if !(name.starts_with("appmanifest_") && name.ends_with(".acf")) {
                 continue;
             }
-            let Some(acf) = std::fs::read_to_string(f.path()).ok().and_then(|t| parse_vdf(&t)) else { continue };
+            let Some(acf) = std::fs::read_to_string(f.path())
+                .ok()
+                .and_then(|t| parse_vdf(&t))
+            else {
+                continue;
+            };
             if let Some(mut e) = steam_entry(&acf, &lib) {
                 if e.install_dir.is_dir() {
                     e.image = steam_image(steam, e.id.trim_start_matches("steam:"));
@@ -392,11 +478,24 @@ fn detect_steam(steam: &Path) -> Vec<Entry> {
 /// appid は数字だけ (steam_entry で確認済み)
 fn steam_image(steam: &Path, appid: &str) -> Option<PathBuf> {
     let dir = steam.join("appcache").join("librarycache").join(appid);
-    let sub: Vec<PathBuf> = std::fs::read_dir(&dir).ok()?.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
+    let sub: Vec<PathBuf> = std::fs::read_dir(&dir)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.is_dir())
+        .collect();
     let dirs: Vec<PathBuf> = std::iter::once(dir).chain(sub).collect();
-    ["library_600x900", "library_capsule", "header", "library_header"].iter().find_map(|stem| {
+    [
+        "library_600x900",
+        "library_capsule",
+        "header",
+        "library_header",
+    ]
+    .iter()
+    .find_map(|stem| {
         // 決まった名前がなければ、Steam の表示言語に合わせた名前 (`<名前>_<言語>.jpg`、例: header_japanese.jpg) を使う (#128)
-        dirs.iter().find_map(|d| Some(d.join(format!("{stem}.jpg"))).filter(|p| p.is_file()))
+        dirs.iter()
+            .find_map(|d| Some(d.join(format!("{stem}.jpg"))).filter(|p| p.is_file()))
             .or_else(|| dirs.iter().find_map(|d| localized(d, stem)))
     })
 }
@@ -404,16 +503,29 @@ fn steam_image(steam: &Path, appid: &str) -> Option<PathBuf> {
 /// `<stem>_<言語>.jpg` (言語は英小文字だけ) の画像
 fn localized(dir: &Path, stem: &str) -> Option<PathBuf> {
     let prefix = format!("{stem}_");
-    let mut found: Vec<PathBuf> = std::fs::read_dir(dir).ok()?.flatten().map(|e| e.path()).filter(|p| {
-        p.is_file() && p.file_name().and_then(|n| n.to_str()).and_then(|n| n.strip_prefix(&prefix)).and_then(|n| n.strip_suffix(".jpg"))
-            .is_some_and(|lang| !lang.is_empty() && lang.chars().all(|c| c.is_ascii_lowercase()))
-    }).collect();
+    let mut found: Vec<PathBuf> = std::fs::read_dir(dir)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| {
+            p.is_file()
+                && p.file_name()
+                    .and_then(|n| n.to_str())
+                    .and_then(|n| n.strip_prefix(&prefix))
+                    .and_then(|n| n.strip_suffix(".jpg"))
+                    .is_some_and(|lang| {
+                        !lang.is_empty() && lang.chars().all(|c| c.is_ascii_lowercase())
+                    })
+        })
+        .collect();
     found.sort();
     found.into_iter().next()
 }
 
 fn library_paths(vdf: &Vdf) -> Vec<PathBuf> {
-    let Some(root) = vdf.get("libraryfolders") else { return vec![] };
+    let Some(root) = vdf.get("libraryfolders") else {
+        return vec![];
+    };
     let Vdf::Obj(items) = root else { return vec![] };
     items
         .iter()
@@ -433,7 +545,11 @@ fn steam_entry(acf: &Vdf, library: &Path) -> Option<Entry> {
     let appid = app.get("appid")?.as_str()?;
     let name = app.get("name")?.as_str()?.trim();
     let installdir = app.get("installdir")?.as_str()?;
-    let flags: u64 = app.get("StateFlags").and_then(Vdf::as_str).and_then(|f| f.parse().ok()).unwrap_or(0);
+    let flags: u64 = app
+        .get("StateFlags")
+        .and_then(Vdf::as_str)
+        .and_then(|f| f.parse().ok())
+        .unwrap_or(0);
     if appid.is_empty() || !appid.chars().all(|c| c.is_ascii_digit()) || appid.len() > 10 {
         return None;
     }
@@ -443,7 +559,10 @@ fn steam_entry(acf: &Vdf, library: &Path) -> Option<Entry> {
     if STEAM_NOT_GAME_PREFIXES.iter().any(|p| name.starts_with(p)) {
         return None;
     }
-    let install_dir = library.join("steamapps").join("common").join(safe_dir(installdir)?);
+    let install_dir = library
+        .join("steamapps")
+        .join("common")
+        .join(safe_dir(installdir)?);
     Some(Entry {
         id: format!("steam:{appid}"),
         name: name.to_string(),
@@ -458,10 +577,16 @@ fn steam_entry(acf: &Vdf, library: &Path) -> Option<Entry> {
 // ---------- Epic ----------
 
 fn detect_epic(dir: &Path) -> Vec<Entry> {
-    let Ok(files) = std::fs::read_dir(dir) else { return vec![] };
+    let Ok(files) = std::fs::read_dir(dir) else {
+        return vec![];
+    };
     files
         .flatten()
-        .filter(|f| f.path().extension().is_some_and(|e| e.eq_ignore_ascii_case("item")))
+        .filter(|f| {
+            f.path()
+                .extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("item"))
+        })
         .filter_map(|f| std::fs::read_to_string(f.path()).ok())
         .filter_map(|t| serde_json::from_str::<Value>(&t).ok())
         .filter_map(|v| epic_entry(&v))
@@ -470,7 +595,12 @@ fn detect_epic(dir: &Path) -> Vec<Entry> {
 }
 
 fn epic_entry(v: &Value) -> Option<Entry> {
-    let text = |k: &str| v.get(k).and_then(Value::as_str).map(str::trim).filter(|s| !s.is_empty());
+    let text = |k: &str| {
+        v.get(k)
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+    };
     let app = text("AppName").filter(|a| epic_id_ok(a))?;
     let name = text("DisplayName")?;
     let dir = text("InstallLocation")?;
@@ -513,7 +643,10 @@ fn epic_entry(v: &Value) -> Option<Entry> {
 /// インストール先の中の実行ファイル (`..` などで外へ出る値は使わない)
 fn launch_exe(dir: &Path, rel: Option<&str>) -> Option<PathBuf> {
     let rel = Path::new(rel?);
-    if !rel.components().all(|c| matches!(c, std::path::Component::Normal(_))) {
+    if !rel
+        .components()
+        .all(|c| matches!(c, std::path::Component::Normal(_)))
+    {
         return None;
     }
     Some(dir.join(rel)).filter(|p| p.is_file())
@@ -521,17 +654,26 @@ fn launch_exe(dir: &Path, rel: Option<&str>) -> Option<PathBuf> {
 
 /// URL に埋め込む値は英数字と . _ - だけを許す (それ以外の文字で URL や引数を組み替えられないように)
 fn epic_id_ok(s: &str) -> bool {
-    !s.is_empty() && s.len() <= 128 && s.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
+    !s.is_empty()
+        && s.len() <= 128
+        && s.chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
 }
 
 /// フォルダ名 1 つだけを許す (区切り文字や .. でライブラリの外を指させない)
 fn safe_dir(name: &str) -> Option<&str> {
     let name = name.trim();
-    (!name.is_empty() && name != "." && name != ".." && !name.contains(['\\', '/', ':'])).then_some(name)
+    (!name.is_empty() && name != "." && name != ".." && !name.contains(['\\', '/', ':']))
+        .then_some(name)
 }
 
 fn same_path(a: &Path, b: &Path) -> bool {
-    let norm = |p: &Path| p.to_string_lossy().replace('/', "\\").trim_end_matches('\\').to_lowercase();
+    let norm = |p: &Path| {
+        p.to_string_lossy()
+            .replace('/', "\\")
+            .trim_end_matches('\\')
+            .to_lowercase()
+    };
     norm(a) == norm(b)
 }
 
@@ -547,7 +689,10 @@ impl Vdf {
     /// キーは大文字小文字を区別しない (Steam のファイルは表記が揺れる)
     fn get(&self, key: &str) -> Option<&Vdf> {
         match self {
-            Vdf::Obj(items) => items.iter().find(|(k, _)| k.eq_ignore_ascii_case(key)).map(|(_, v)| v),
+            Vdf::Obj(items) => items
+                .iter()
+                .find(|(k, _)| k.eq_ignore_ascii_case(key))
+                .map(|(_, v)| v),
             Vdf::Str(_) => None,
         }
     }
@@ -658,14 +803,26 @@ mod imp {
     use std::path::PathBuf;
 
     use windows::core::{w, HSTRING, PCWSTR};
-    use windows::Win32::System::Registry::{RegGetValueW, HKEY, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, RRF_RT_REG_SZ};
+    use windows::Win32::System::Registry::{
+        RegGetValueW, HKEY, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, RRF_RT_REG_SZ,
+    };
     use windows::Win32::UI::Shell::ShellExecuteW;
     use windows::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
 
     fn reg_string(root: HKEY, key: PCWSTR, value: PCWSTR) -> Option<String> {
         let mut buf = [0u16; 1024];
         let mut len = (buf.len() * 2) as u32;
-        let r = unsafe { RegGetValueW(root, key, value, RRF_RT_REG_SZ, None, Some(buf.as_mut_ptr().cast()), Some(&mut len)) };
+        let r = unsafe {
+            RegGetValueW(
+                root,
+                key,
+                value,
+                RRF_RT_REG_SZ,
+                None,
+                Some(buf.as_mut_ptr().cast()),
+                Some(&mut len),
+            )
+        };
         if r.is_err() {
             return None;
         }
@@ -674,38 +831,90 @@ mod imp {
     }
 
     pub fn steam_path() -> Option<PathBuf> {
-        reg_string(HKEY_CURRENT_USER, w!(r"Software\Valve\Steam"), w!("SteamPath"))
-            .or_else(|| reg_string(HKEY_LOCAL_MACHINE, w!(r"SOFTWARE\WOW6432Node\Valve\Steam"), w!("InstallPath")))
-            .map(|p| PathBuf::from(p.replace('/', "\\")))
-            .filter(|p| p.is_dir())
+        reg_string(
+            HKEY_CURRENT_USER,
+            w!(r"Software\Valve\Steam"),
+            w!("SteamPath"),
+        )
+        .or_else(|| {
+            reg_string(
+                HKEY_LOCAL_MACHINE,
+                w!(r"SOFTWARE\WOW6432Node\Valve\Steam"),
+                w!("InstallPath"),
+            )
+        })
+        .map(|p| PathBuf::from(p.replace('/', "\\")))
+        .filter(|p| p.is_dir())
     }
 
     pub fn open_uri(uri: &str) -> Result<(), String> {
-        let r = unsafe { ShellExecuteW(None, w!("open"), &HSTRING::from(uri), PCWSTR::null(), PCWSTR::null(), SW_SHOWNORMAL) };
+        let r = unsafe {
+            ShellExecuteW(
+                None,
+                w!("open"),
+                &HSTRING::from(uri),
+                PCWSTR::null(),
+                PCWSTR::null(),
+                SW_SHOWNORMAL,
+            )
+        };
         // 32 以下は失敗 (ランチャーが入っていない・プロトコルが登録されていないなど)
-        if r.0 as isize > 32 { Ok(()) } else { Err("ランチャーを起動できませんでした".into()) }
+        if r.0 as isize > 32 {
+            Ok(())
+        } else {
+            Err("ランチャーを起動できませんでした".into())
+        }
     }
 
     /// 実行ファイルを引数なしで、そのフォルダを作業フォルダーにして起動する (#49)
     pub fn open_exe(exe: &std::path::Path) -> Result<(), String> {
-        let dir = exe.parent().map(|d| HSTRING::from(d.as_os_str())).unwrap_or_default();
-        let r = unsafe { ShellExecuteW(None, w!("open"), &HSTRING::from(exe.as_os_str()), PCWSTR::null(), &dir, SW_SHOWNORMAL) };
-        if r.0 as isize > 32 { Ok(()) } else { Err("起動できませんでした".into()) }
+        let dir = exe
+            .parent()
+            .map(|d| HSTRING::from(d.as_os_str()))
+            .unwrap_or_default();
+        let r = unsafe {
+            ShellExecuteW(
+                None,
+                w!("open"),
+                &HSTRING::from(exe.as_os_str()),
+                PCWSTR::null(),
+                &dir,
+                SW_SHOWNORMAL,
+            )
+        };
+        if r.0 as isize > 32 {
+            Ok(())
+        } else {
+            Err("起動できませんでした".into())
+        }
     }
 
     /// Windows のファイル選択の画面で .exe を 1 つ選ばせる (#49)。PC の前の人が選ぶ。キャンセルなら None
     pub fn pick_exe() -> Option<std::path::PathBuf> {
-        use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED};
+        use windows::Win32::System::Com::{
+            CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED,
+        };
         use windows::Win32::UI::Shell::Common::COMDLG_FILTERSPEC;
-        use windows::Win32::UI::Shell::{FileOpenDialog, IFileOpenDialog, FOS_FILEMUSTEXIST, FOS_FORCEFILESYSTEM, SIGDN_FILESYSPATH};
+        use windows::Win32::UI::Shell::{
+            FileOpenDialog, IFileOpenDialog, FOS_FILEMUSTEXIST, FOS_FORCEFILESYSTEM,
+            SIGDN_FILESYSPATH,
+        };
         use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
         unsafe {
             let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
-            let dialog: IFileOpenDialog = CoCreateInstance(&FileOpenDialog, None, CLSCTX_INPROC_SERVER).ok()?;
-            let filter = [COMDLG_FILTERSPEC { pszName: w!("ゲームの実行ファイル (*.exe)"), pszSpec: w!("*.exe") }];
+            let dialog: IFileOpenDialog =
+                CoCreateInstance(&FileOpenDialog, None, CLSCTX_INPROC_SERVER).ok()?;
+            let filter = [COMDLG_FILTERSPEC {
+                pszName: w!("ゲームの実行ファイル (*.exe)"),
+                pszSpec: w!("*.exe"),
+            }];
             dialog.SetFileTypes(&filter).ok()?;
-            dialog.SetTitle(w!("Re:Cooplay に登録するゲームの実行ファイルを選ぶ")).ok()?;
-            dialog.SetOptions(FOS_FILEMUSTEXIST | FOS_FORCEFILESYSTEM).ok()?;
+            dialog
+                .SetTitle(w!("Re:Cooplay に登録するゲームの実行ファイルを選ぶ"))
+                .ok()?;
+            dialog
+                .SetOptions(FOS_FILEMUSTEXIST | FOS_FORCEFILESYSTEM)
+                .ok()?;
             dialog.Show(Some(GetForegroundWindow())).ok()?;
             let item = dialog.GetResult().ok()?;
             let path = item.GetDisplayName(SIGDN_FILESYSPATH).ok()?;
@@ -718,17 +927,33 @@ mod imp {
     /// 実行ファイルのアイコン (最大 256px) を Windows のシェルで取り出し、PNG にする (#128)
     pub fn icon_png(path: &std::path::Path) -> Option<Vec<u8>> {
         use windows::Win32::Foundation::SIZE;
-        use windows::Win32::Graphics::Gdi::{CreateCompatibleDC, DeleteDC, DeleteObject, GetDIBits, GetObjectW, BITMAP, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, HGDIOBJ};
+        use windows::Win32::Graphics::Gdi::{
+            CreateCompatibleDC, DeleteDC, DeleteObject, GetDIBits, GetObjectW, BITMAP, BITMAPINFO,
+            BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, HGDIOBJ,
+        };
         use windows::Win32::System::Com::{CoInitializeEx, COINIT_APARTMENTTHREADED};
-        use windows::Win32::UI::Shell::{IShellItemImageFactory, SHCreateItemFromParsingName, SIIGBF_BIGGERSIZEOK, SIIGBF_ICONONLY};
+        use windows::Win32::UI::Shell::{
+            IShellItemImageFactory, SHCreateItemFromParsingName, SIIGBF_BIGGERSIZEOK,
+            SIIGBF_ICONONLY,
+        };
         unsafe {
             // 検出のスレッドで使う。既に初期化済みでも続ける
             let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
-            let factory: IShellItemImageFactory = SHCreateItemFromParsingName(&HSTRING::from(path.as_os_str()), None).ok()?;
-            let bitmap = factory.GetImage(SIZE { cx: 256, cy: 256 }, SIIGBF_ICONONLY | SIIGBF_BIGGERSIZEOK).ok()?;
+            let factory: IShellItemImageFactory =
+                SHCreateItemFromParsingName(&HSTRING::from(path.as_os_str()), None).ok()?;
+            let bitmap = factory
+                .GetImage(
+                    SIZE { cx: 256, cy: 256 },
+                    SIIGBF_ICONONLY | SIIGBF_BIGGERSIZEOK,
+                )
+                .ok()?;
             let object = HGDIOBJ(bitmap.0);
             let mut bm = BITMAP::default();
-            GetObjectW(object, std::mem::size_of::<BITMAP>() as i32, Some((&mut bm as *mut BITMAP).cast()));
+            GetObjectW(
+                object,
+                std::mem::size_of::<BITMAP>() as i32,
+                Some((&mut bm as *mut BITMAP).cast()),
+            );
             let (w, h) = (bm.bmWidth, bm.bmHeight);
             let mut info = BITMAPINFO {
                 bmiHeader: BITMAPINFOHEADER {
@@ -744,7 +969,15 @@ mod imp {
             };
             let mut px = vec![0u8; (w.max(0) * h.max(0) * 4) as usize];
             let dc = CreateCompatibleDC(None);
-            let lines = GetDIBits(dc, bitmap, 0, h as u32, Some(px.as_mut_ptr().cast()), &mut info, DIB_RGB_COLORS);
+            let lines = GetDIBits(
+                dc,
+                bitmap,
+                0,
+                h as u32,
+                Some(px.as_mut_ptr().cast()),
+                &mut info,
+                DIB_RGB_COLORS,
+            );
             let _ = DeleteDC(dc);
             let _ = DeleteObject(object);
             if lines == 0 || w <= 0 || h <= 0 {
@@ -754,7 +987,13 @@ mod imp {
             let has_alpha = px.chunks(4).any(|p| p[3] != 0);
             for p in px.chunks_mut(4) {
                 let a = if has_alpha { p[3] } else { 255 };
-                let un = |c: u8| if a == 0 || a == 255 { c } else { ((c as u32 * 255 + a as u32 / 2) / a as u32).min(255) as u8 };
+                let un = |c: u8| {
+                    if a == 0 || a == 255 {
+                        c
+                    } else {
+                        ((c as u32 * 255 + a as u32 / 2) / a as u32).min(255) as u8
+                    }
+                };
                 let (b, g, r) = (p[0], p[1], p[2]);
                 p[0] = un(r);
                 p[1] = un(g);
@@ -792,7 +1031,13 @@ mod tests {
     #[test]
     fn vdf_nested_and_escapes() {
         let v = parse_vdf("\"libraryfolders\"\n{\n\t\"0\"\n\t{\n\t\t\"path\"\t\t\"C:\\\\Program Files (x86)\\\\Steam\"\n\t}\n\t\"1\" { \"path\" \"D:\\\\SteamLibrary\" } // コメント\n}\n").unwrap();
-        assert_eq!(library_paths(&v), vec![PathBuf::from(r"C:\Program Files (x86)\Steam"), PathBuf::from(r"D:\SteamLibrary")]);
+        assert_eq!(
+            library_paths(&v),
+            vec![
+                PathBuf::from(r"C:\Program Files (x86)\Steam"),
+                PathBuf::from(r"D:\SteamLibrary")
+            ]
+        );
     }
 
     #[test]
@@ -814,17 +1059,42 @@ mod tests {
 
     #[test]
     fn steam_entry_builds_launch_from_appid() {
-        let e = steam_entry(&acf("413150", "Stardew Valley", "Stardew Valley", "4"), Path::new(r"D:\Lib")).unwrap();
+        let e = steam_entry(
+            &acf("413150", "Stardew Valley", "Stardew Valley", "4"),
+            Path::new(r"D:\Lib"),
+        )
+        .unwrap();
         assert_eq!(e.id, "steam:413150");
         assert_eq!(e.launch_uri, "steam://rungameid/413150");
-        assert_eq!(e.install_dir, PathBuf::from(r"D:\Lib\steamapps\common\Stardew Valley"));
+        assert_eq!(
+            e.install_dir,
+            PathBuf::from(r"D:\Lib\steamapps\common\Stardew Valley")
+        );
     }
 
     #[test]
     fn steam_entry_skips_tools_partial_and_unsafe_values() {
         let lib = Path::new(r"D:\Lib");
-        assert!(steam_entry(&acf("228980", "Steamworks Common Redistributables", "Steamworks Shared", "4"), lib).is_none());
-        assert!(steam_entry(&acf("1493710", "Proton Experimental", "Proton - Experimental", "4"), lib).is_none());
+        assert!(steam_entry(
+            &acf(
+                "228980",
+                "Steamworks Common Redistributables",
+                "Steamworks Shared",
+                "4"
+            ),
+            lib
+        )
+        .is_none());
+        assert!(steam_entry(
+            &acf(
+                "1493710",
+                "Proton Experimental",
+                "Proton - Experimental",
+                "4"
+            ),
+            lib
+        )
+        .is_none());
         assert!(steam_entry(&acf("10", "Half", "Half", "1026"), lib).is_none()); // 更新待ち (完全にはインストールされていない)
         assert!(steam_entry(&acf("10;calc", "Bad", "Bad", "4"), lib).is_none());
         assert!(steam_entry(&acf("10", "Bad", "..", "4"), lib).is_none());
@@ -844,7 +1114,9 @@ mod tests {
     fn epic_entry_skips_dlc_tools_incomplete_and_unsafe_values() {
         let base = |extra: Value| {
             let mut v = json!({ "AppName": "Game", "DisplayName": "Game", "InstallLocation": r"C:\Epic\Game" });
-            v.as_object_mut().unwrap().extend(extra.as_object().unwrap().clone());
+            v.as_object_mut()
+                .unwrap()
+                .extend(extra.as_object().unwrap().clone());
             epic_entry(&v)
         };
         assert!(base(json!({})).is_some());
@@ -854,7 +1126,12 @@ mod tests {
         assert!(base(json!({ "AppName": "a&b" })).is_none());
         assert!(base(json!({ "InstallLocation": "relative" })).is_none());
         // 名前空間が不正なら AppName だけで起動する
-        assert_eq!(base(json!({ "CatalogNamespace": "x?y", "CatalogItemId": "1" })).unwrap().launch_uri, "com.epicgames.launcher://apps/Game?action=launch&silent=true");
+        assert_eq!(
+            base(json!({ "CatalogNamespace": "x?y", "CatalogItemId": "1" }))
+                .unwrap()
+                .launch_uri,
+            "com.epicgames.launcher://apps/Game?action=launch&silent=true"
+        );
     }
 
     #[test]
@@ -864,7 +1141,10 @@ mod tests {
         assert_eq!(&data[12..16], b"IHDR");
         assert_eq!(&data[16..24], &[0, 0, 0, 2, 0, 0, 0, 1]);
         // IEND の CRC は常に AE426082
-        assert_eq!(&data[data.len() - 8..], &[0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82]);
+        assert_eq!(
+            &data[data.len() - 8..],
+            &[0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82]
+        );
     }
 
     #[test]
@@ -876,12 +1156,23 @@ mod tests {
         let png_of = |w: u32| png(w, 1, &vec![0; w as usize * 4]);
         std::fs::write(dir.join("GraphicsLogo.png"), png_of(150)).unwrap();
         std::fs::write(dir.join(r"Assets\SmallLogo.png"), png_of(44)).unwrap();
-        std::fs::write(dir.join(r"Assets\SmallLogo.altform-unplated_targetsize-256.png"), png_of(256)).unwrap();
-        std::fs::write(dir.join(r"Assets\SmallLogo.contrast-black_targetsize-400.png"), png_of(400)).unwrap();
+        std::fs::write(
+            dir.join(r"Assets\SmallLogo.altform-unplated_targetsize-256.png"),
+            png_of(256),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join(r"Assets\SmallLogo.contrast-black_targetsize-400.png"),
+            png_of(400),
+        )
+        .unwrap();
         let logo = appx_logo(&dir).map(|p| p.file_name().unwrap().to_string_lossy().to_string());
         let none = appx_logo(&dir.join("Assets"));
         let _ = std::fs::remove_dir_all(&dir);
-        assert_eq!(logo.as_deref(), Some("SmallLogo.altform-unplated_targetsize-256.png"));
+        assert_eq!(
+            logo.as_deref(),
+            Some("SmallLogo.altform-unplated_targetsize-256.png")
+        );
         assert!(none.is_none(), "マニフェストがなければ使わない");
     }
 
@@ -893,7 +1184,11 @@ mod tests {
         std::fs::create_dir_all(dir.join("classic")).unwrap();
         let xbox = dir.join(r"xbox\Minecraft.exe");
         std::fs::write(&xbox, b"x").unwrap();
-        std::fs::write(dir.join(r"xbox\appxmanifest.xml"), r#"<Identity Name="Microsoft.4297127D64EC6" Publisher="CN=Microsoft Corporation" />"#).unwrap();
+        std::fs::write(
+            dir.join(r"xbox\appxmanifest.xml"),
+            r#"<Identity Name="Microsoft.4297127D64EC6" Publisher="CN=Microsoft Corporation" />"#,
+        )
+        .unwrap();
         let classic = dir.join(r"classic\MinecraftLauncher.exe");
         std::fs::write(&classic, b"x").unwrap();
         let (a, b) = (minecraft_launch(&xbox), minecraft_launch(&classic));
@@ -911,15 +1206,40 @@ mod tests {
         std::fs::write(&exe, b"x").unwrap();
         std::fs::write(dir.join("run.bat"), b"x").unwrap();
         assert!(manual_exe_ok(&exe).is_ok());
-        assert!(manual_exe_ok(&dir.join("run.bat")).is_err(), ".bat は受け付けない");
-        assert!(manual_exe_ok(Path::new(r"Game\MyGame.exe")).is_err(), "相対パスは受け付けない");
-        assert!(manual_exe_ok(&dir.join(r"Game\Nope.exe")).is_err(), "存在しない");
-        assert_eq!(manual_id(&exe), manual_id(Path::new(&exe.to_string_lossy().to_uppercase())), "大文字小文字で別にしない");
+        assert!(
+            manual_exe_ok(&dir.join("run.bat")).is_err(),
+            ".bat は受け付けない"
+        );
+        assert!(
+            manual_exe_ok(Path::new(r"Game\MyGame.exe")).is_err(),
+            "相対パスは受け付けない"
+        );
+        assert!(
+            manual_exe_ok(&dir.join(r"Game\Nope.exe")).is_err(),
+            "存在しない"
+        );
+        assert_eq!(
+            manual_id(&exe),
+            manual_id(Path::new(&exe.to_string_lossy().to_uppercase())),
+            "大文字小文字で別にしない"
+        );
         let file = dir.join("manual-games.json");
-        let list = vec![ManualGame { id: manual_id(&exe), name: "My Game".into(), exe: exe.clone() }];
+        let list = vec![ManualGame {
+            id: manual_id(&exe),
+            name: "My Game".into(),
+            exe: exe.clone(),
+        }];
         save_manual(&file, &list).unwrap();
         assert_eq!(load_manual(&file), list);
-        let found = detect(&Roots { steam: None, epic_manifests: None, minecraft: vec![], icons: dir.join("icons"), manual: Some(file), launchers: crate::launchers::Places::fake(&dir, None) }).games;
+        let found = detect(&Roots {
+            steam: None,
+            epic_manifests: None,
+            minecraft: vec![],
+            icons: dir.join("icons"),
+            manual: Some(file),
+            launchers: crate::launchers::Places::fake(&dir, None),
+        })
+        .games;
         let _ = std::fs::remove_dir_all(&dir);
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].source, MANUAL_SOURCE);
@@ -941,7 +1261,10 @@ mod tests {
     #[cfg(windows)]
     #[test]
     fn icon_png_reads_windows_icon() {
-        let exe = std::path::PathBuf::from(std::env::var("SystemRoot").unwrap_or_else(|_| r"C:\Windows".into())).join("explorer.exe");
+        let exe = std::path::PathBuf::from(
+            std::env::var("SystemRoot").unwrap_or_else(|_| r"C:\Windows".into()),
+        )
+        .join("explorer.exe");
         let data = imp::icon_png(&exe).expect("explorer.exe のアイコン");
         assert_eq!(&data[..8], b"\x89PNG\r\n\x1a\n");
         assert!(data.len() > 1000);
@@ -954,12 +1277,22 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         let cache = dir.join(r"appcache\librarycache\9");
         std::fs::create_dir_all(&cache).unwrap();
-        for name in ["header_japanese.jpg", "library_600x900_japanese.jpg", "library_hero_japanese.jpg", "library_600x900_x1.jpg"] {
+        for name in [
+            "header_japanese.jpg",
+            "library_600x900_japanese.jpg",
+            "library_hero_japanese.jpg",
+            "library_600x900_x1.jpg",
+        ] {
             std::fs::write(cache.join(name), b"x").unwrap();
         }
-        let image = steam_image(&dir, "9").map(|p| p.file_name().unwrap().to_string_lossy().to_string());
+        let image =
+            steam_image(&dir, "9").map(|p| p.file_name().unwrap().to_string_lossy().to_string());
         let _ = std::fs::remove_dir_all(&dir);
-        assert_eq!(image.as_deref(), Some("library_600x900_japanese.jpg"), "縦長を優先し、言語名は英小文字だけ");
+        assert_eq!(
+            image.as_deref(),
+            Some("library_600x900_japanese.jpg"),
+            "縦長を優先し、言語名は英小文字だけ"
+        );
     }
 
     #[test]
@@ -973,30 +1306,64 @@ mod tests {
         std::fs::create_dir_all(dir.join(r"epic-install\Gamma")).unwrap();
         std::fs::create_dir_all(dir.join("epic")).unwrap();
         let lib2_text = lib2.to_string_lossy().replace('\\', "\\\\");
-        std::fs::write(steam.join(r"steamapps\libraryfolders.vdf"), format!("\"libraryfolders\" {{ \"1\" {{ \"path\" \"{lib2_text}\" }} }}")).unwrap();
+        std::fs::write(
+            steam.join(r"steamapps\libraryfolders.vdf"),
+            format!("\"libraryfolders\" {{ \"1\" {{ \"path\" \"{lib2_text}\" }} }}"),
+        )
+        .unwrap();
         std::fs::write(steam.join(r"steamapps\appmanifest_1.acf"), "\"AppState\" { \"appid\" \"1\" \"name\" \"Alpha\" \"StateFlags\" \"4\" \"installdir\" \"Alpha\" }").unwrap();
         std::fs::write(lib2.join(r"steamapps\appmanifest_2.acf"), "\"AppState\" { \"appid\" \"2\" \"name\" \"Beta\" \"StateFlags\" \"4\" \"installdir\" \"Beta\" }").unwrap();
         // インストール先がない項目は出さない
         std::fs::write(lib2.join(r"steamapps\appmanifest_3.acf"), "\"AppState\" { \"appid\" \"3\" \"name\" \"Gone\" \"StateFlags\" \"4\" \"installdir\" \"Gone\" }").unwrap();
-        std::fs::write(lib2.join(r"steamapps\appmanifest_4.acf"), "壊れたファイル {").unwrap();
+        std::fs::write(
+            lib2.join(r"steamapps\appmanifest_4.acf"),
+            "壊れたファイル {",
+        )
+        .unwrap();
         let gamma = dir.join(r"epic-install\Gamma");
-        std::fs::write(dir.join(r"epic\g.item"), json!({ "AppName": "Gamma", "DisplayName": "gamma", "InstallLocation": gamma }).to_string()).unwrap();
+        std::fs::write(
+            dir.join(r"epic\g.item"),
+            json!({ "AppName": "Gamma", "DisplayName": "gamma", "InstallLocation": gamma })
+                .to_string(),
+        )
+        .unwrap();
         // 画像 (#121): 縦長を優先し、なければ横長。1 段下のフォルダも見る。ない項目は None
         std::fs::create_dir_all(steam.join(r"appcache\librarycache\1")).unwrap();
         std::fs::write(steam.join(r"appcache\librarycache\1\header.jpg"), b"h").unwrap();
-        std::fs::write(steam.join(r"appcache\librarycache\1\library_600x900.jpg"), b"l").unwrap();
+        std::fs::write(
+            steam.join(r"appcache\librarycache\1\library_600x900.jpg"),
+            b"l",
+        )
+        .unwrap();
         // 新しい Steam: 1 段下のフォルダに library_header.jpg・library_capsule.jpg
         std::fs::create_dir_all(steam.join(r"appcache\librarycache\2\abc")).unwrap();
         std::fs::create_dir_all(steam.join(r"appcache\librarycache\2\def")).unwrap();
-        std::fs::write(steam.join(r"appcache\librarycache\2\abc\library_header.jpg"), b"h").unwrap();
-        std::fs::write(steam.join(r"appcache\librarycache\2\def\library_capsule.jpg"), b"c").unwrap();
+        std::fs::write(
+            steam.join(r"appcache\librarycache\2\abc\library_header.jpg"),
+            b"h",
+        )
+        .unwrap();
+        std::fs::write(
+            steam.join(r"appcache\librarycache\2\def\library_capsule.jpg"),
+            b"c",
+        )
+        .unwrap();
         let found = detect(&Roots::fake(&dir)).games;
         let _ = std::fs::remove_dir_all(&dir);
         let ids: Vec<&str> = found.iter().map(|e| e.id.as_str()).collect();
         assert_eq!(ids, vec!["steam:1", "steam:2", "epic:Gamma"]);
-        let image = |i: usize| found[i].image.as_ref().map(|p| p.file_name().unwrap().to_string_lossy().to_string());
+        let image = |i: usize| {
+            found[i]
+                .image
+                .as_ref()
+                .map(|p| p.file_name().unwrap().to_string_lossy().to_string())
+        };
         assert_eq!(image(0).as_deref(), Some("library_600x900.jpg"));
-        assert_eq!(image(1).as_deref(), Some("library_capsule.jpg"), "新しい Steam の縦長を横長より優先");
+        assert_eq!(
+            image(1).as_deref(),
+            Some("library_capsule.jpg"),
+            "新しい Steam の縦長を横長より優先"
+        );
         assert_eq!(image(2), None);
         assert_eq!(found[0].snapshot()["image"], json!(true));
         assert_eq!(found[2].snapshot()["image"], json!(false));

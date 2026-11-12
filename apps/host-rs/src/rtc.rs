@@ -7,8 +7,8 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 
 use datachannel::{
-    ConnectionState, DataChannelHandler, DataChannelInfo, IceCandidate, PeerConnectionHandler, RtcConfig,
-    RtcDataChannel, RtcPeerConnection, SdpType, SessionDescription,
+    ConnectionState, DataChannelHandler, DataChannelInfo, IceCandidate, PeerConnectionHandler,
+    RtcConfig, RtcDataChannel, RtcPeerConnection, SdpType, SessionDescription,
 };
 
 use crate::hub::Event;
@@ -31,15 +31,28 @@ pub struct DcHandler {
 
 impl DataChannelHandler for DcHandler {
     fn on_open(&mut self) {
-        let _ = self.tx.send(Event::RtcState { slot: self.slot, gen: self.gen, state: RtcSignal::ChannelOpen });
+        let _ = self.tx.send(Event::RtcState {
+            slot: self.slot,
+            gen: self.gen,
+            state: RtcSignal::ChannelOpen,
+        });
     }
     fn on_closed(&mut self) {
-        let _ = self.tx.send(Event::RtcState { slot: self.slot, gen: self.gen, state: RtcSignal::ChannelClosed });
+        let _ = self.tx.send(Event::RtcState {
+            slot: self.slot,
+            gen: self.gen,
+            state: RtcSignal::ChannelClosed,
+        });
     }
     fn on_message(&mut self, msg: &[u8]) {
         if let Ok(text) = std::str::from_utf8(msg) {
-            let received_at=crate::input_trace::start();
-            let _ = self.tx.send(Event::RtcMessage { slot: self.slot, gen: self.gen, text: text.to_string(), received_at });
+            let received_at = crate::input_trace::start();
+            let _ = self.tx.send(Event::RtcMessage {
+                slot: self.slot,
+                gen: self.gen,
+                text: text.to_string(),
+                received_at,
+            });
         }
     }
 }
@@ -55,7 +68,11 @@ impl PeerConnectionHandler for PcHandler {
     type DCH = DcHandler;
 
     fn data_channel_handler(&mut self, _info: DataChannelInfo) -> DcHandler {
-        DcHandler { slot: self.slot, gen: self.gen, tx: self.tx.clone() }
+        DcHandler {
+            slot: self.slot,
+            gen: self.gen,
+            tx: self.tx.clone(),
+        }
     }
 
     fn on_description(&mut self, desc: SessionDescription) {
@@ -74,8 +91,17 @@ impl PeerConnectionHandler for PcHandler {
     }
 
     fn on_candidate(&mut self, cand: IceCandidate) {
-        let candidate = cand.candidate.strip_prefix("a=").unwrap_or(&cand.candidate).to_string();
-        let _ = self.tx.send(Event::RtcCandidate { slot: self.slot, gen: self.gen, cand: candidate, mid: cand.mid });
+        let candidate = cand
+            .candidate
+            .strip_prefix("a=")
+            .unwrap_or(&cand.candidate)
+            .to_string();
+        let _ = self.tx.send(Event::RtcCandidate {
+            slot: self.slot,
+            gen: self.gen,
+            cand: candidate,
+            mid: cand.mid,
+        });
     }
 
     fn on_connection_state_change(&mut self, state: ConnectionState) {
@@ -84,7 +110,11 @@ impl PeerConnectionHandler for PcHandler {
             ConnectionState::Closed => RtcSignal::Closed,
             _ => return,
         };
-        let _ = self.tx.send(Event::RtcState { slot: self.slot, gen: self.gen, state: signal });
+        let _ = self.tx.send(Event::RtcState {
+            slot: self.slot,
+            gen: self.gen,
+            state: signal,
+        });
     }
 
     fn on_data_channel(&mut self, dc: Box<RtcDataChannel<DcHandler>>) {
@@ -105,7 +135,12 @@ impl Peer {
     pub fn new(slot: usize, gen: u64, tx: Sender<Event>) -> Result<Peer, String> {
         let channel: Channel = Arc::new(Mutex::new(None));
         let config = RtcConfig::new::<&str>(&[]);
-        let handler = PcHandler { slot, gen, tx, channel: channel.clone() };
+        let handler = PcHandler {
+            slot,
+            gen,
+            tx,
+            channel: channel.clone(),
+        };
         let pc = RtcPeerConnection::new(&config, handler).map_err(|e| e.to_string())?;
         Ok(Peer { channel, pc })
     }
@@ -114,12 +149,18 @@ impl Peer {
     pub fn offer(&mut self, sdp: &str) -> Result<(), String> {
         let session = datachannel::sdp::parse_sdp(sdp, false).map_err(|e| e.to_string())?;
         self.pc
-            .set_remote_description(&SessionDescription { sdp: session, sdp_type: SdpType::Offer })
+            .set_remote_description(&SessionDescription {
+                sdp: session,
+                sdp_type: SdpType::Offer,
+            })
             .map_err(|e| e.to_string())
     }
 
     pub fn candidate(&mut self, cand: &str, mid: &str) {
-        let _ = self.pc.add_remote_candidate(&IceCandidate { candidate: cand.to_string(), mid: mid.to_string() });
+        let _ = self.pc.add_remote_candidate(&IceCandidate {
+            candidate: cand.to_string(),
+            mid: mid.to_string(),
+        });
     }
 
     pub fn send(&self, text: &str) -> bool {

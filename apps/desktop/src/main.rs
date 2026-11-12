@@ -15,7 +15,11 @@ use std::time::{Duration, Instant};
 use tauri::{Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
 
 const WEB_DIR: &str = "apps/web/dist";
-const HOST_EXE: &str = if cfg!(windows) { "recooplay-host.exe" } else { "recooplay-host" };
+const HOST_EXE: &str = if cfg!(windows) {
+    "recooplay-host.exe"
+} else {
+    "recooplay-host"
+};
 const START_TIMEOUT: Duration = Duration::from_secs(15);
 const QUIT_TIMEOUT: Duration = Duration::from_secs(3);
 /// ホストの終了を調べる間隔と、続けて再起動する上限 (#222)
@@ -58,7 +62,9 @@ fn find_root() -> Option<PathBuf> {
     if let Ok(exe) = std::env::current_exe() {
         candidates.extend(exe.ancestors().skip(1).take(6).map(Path::to_path_buf));
     }
-    candidates.into_iter().find(|p| p.join(WEB_DIR).join("phone/index.html").is_file())
+    candidates
+        .into_iter()
+        .find(|p| p.join(WEB_DIR).join("phone/index.html").is_file())
 }
 
 /// ホストの実行ファイル: RECOOPLAY_HOST_EXE → アプリと同じフォルダ → リポジトリ内の release ビルド
@@ -66,8 +72,15 @@ fn find_host_exe(root: &Path) -> Option<PathBuf> {
     if let Ok(p) = std::env::var("RECOOPLAY_HOST_EXE") {
         return Some(PathBuf::from(p));
     }
-    let beside = std::env::current_exe().ok().and_then(|e| e.parent().map(|d| d.join(HOST_EXE)));
-    let built = root.join("apps").join("host-rs").join("target").join("release").join(HOST_EXE);
+    let beside = std::env::current_exe()
+        .ok()
+        .and_then(|e| e.parent().map(|d| d.join(HOST_EXE)));
+    let built = root
+        .join("apps")
+        .join("host-rs")
+        .join("target")
+        .join("release")
+        .join(HOST_EXE);
     beside.into_iter().chain([built]).find(|p| p.is_file())
 }
 
@@ -79,7 +92,9 @@ fn host_port(root: &Path) -> u16 {
         .or_else(|| {
             let text = std::fs::read_to_string(root.join("config.json")).ok()?;
             let v: serde_json::Value = serde_json::from_str(&text).ok()?;
-            v.get("port").and_then(serde_json::Value::as_u64).map(|p| p as u16)
+            v.get("port")
+                .and_then(serde_json::Value::as_u64)
+                .map(|p| p as u16)
         })
         .unwrap_or(8080)
 }
@@ -132,7 +147,10 @@ fn wait_ready(host: &Mutex<Option<Child>>, port: u16) -> Result<(), String> {
             return Ok(());
         }
         if started.elapsed() > START_TIMEOUT {
-            return Err(format!("PCホストが {} 秒以内に起動しませんでした。", START_TIMEOUT.as_secs()));
+            return Err(format!(
+                "PCホストが {} 秒以内に起動しませんでした。",
+                START_TIMEOUT.as_secs()
+            ));
         }
         std::thread::sleep(Duration::from_millis(200));
     }
@@ -140,7 +158,9 @@ fn wait_ready(host: &Mutex<Option<Child>>, port: u16) -> Result<(), String> {
 
 /// ホストに安全停止 (全キー・ボタンの解放) をさせてから終了させる。応答がなければ強制終了する
 fn stop_host(host: &Mutex<Option<Child>>) {
-    let Some(mut child) = host.lock().unwrap().take() else { return };
+    let Some(mut child) = host.lock().unwrap().take() else {
+        return;
+    };
     if let Some(mut stdin) = child.stdin.take() {
         let _ = stdin.write_all(b"quit\n");
         let _ = stdin.flush();
@@ -174,7 +194,10 @@ fn next_restart_count(count: u32, ran_for: Duration) -> Option<u32> {
 
 fn show_host_notice(app: &tauri::AppHandle, text: &str) {
     if let Some(w) = app.get_webview_window("main") {
-        let _ = w.eval(format!("window.showHostNotice?.({})", serde_json::Value::from(text)));
+        let _ = w.eval(format!(
+            "window.showHostNotice?.({})",
+            serde_json::Value::from(text)
+        ));
     }
 }
 
@@ -188,7 +211,9 @@ fn watch_host(handle: tauri::AppHandle, root: PathBuf, exe: PathBuf, port: u16) 
         {
             let mut guard = host.0.lock().unwrap();
             let Some(child) = guard.as_mut() else { return };
-            if !matches!(child.try_wait(), Ok(Some(_))) { continue; }
+            if !matches!(child.try_wait(), Ok(Some(_))) {
+                continue;
+            }
             *guard = None;
         }
         let Some(next) = next_restart_count(restarts, started.elapsed()) else {
@@ -209,20 +234,30 @@ fn watch_host(handle: tauri::AppHandle, root: PathBuf, exe: PathBuf, port: u16) 
 fn show_error(app: &tauri::AppHandle, text: &str) {
     *app.state::<StartupError>().0.lock().unwrap() = Some(text.to_string());
     if let Some(w) = app.get_webview_window("main") {
-        let _ = w.eval(format!("window.showError({})", serde_json::Value::from(text)));
+        let _ = w.eval(format!(
+            "window.showError({})",
+            serde_json::Value::from(text)
+        ));
     }
 }
 
 /// 切替要求の URL なら、求められた ON/OFF を返す。それ以外の移動は通常どおり通す
 fn overlay_request(url: &tauri::Url) -> Option<bool> {
     let loopback = matches!(url.host_str(), Some("127.0.0.1") | Some("localhost"));
-    if !loopback || url.path() != OVERLAY_PATH { return None; }
-    url.query_pairs().find(|(k, _)| k == "on").map(|(_, v)| v == "1")
+    if !loopback || url.path() != OVERLAY_PATH {
+        return None;
+    }
+    url.query_pairs()
+        .find(|(k, _)| k == "on")
+        .map(|(_, v)| v == "1")
 }
 
 /// オーバーレイの位置 (論理px)。PC アプリのウィンドウがあるモニターの右上
 fn overlay_position(monitor_pos: (f64, f64), monitor_size: (f64, f64)) -> (f64, f64) {
-    (monitor_pos.0 + monitor_size.0 - OVERLAY_SIZE.0 - OVERLAY_MARGIN, monitor_pos.1 + OVERLAY_MARGIN)
+    (
+        monitor_pos.0 + monitor_size.0 - OVERLAY_SIZE.0 - OVERLAY_MARGIN,
+        monitor_pos.1 + OVERLAY_MARGIN,
+    )
 }
 
 /// PC の画面へ現在の状態を伝える。画面は window.recooplayDesktop があるときだけ切替を出す
@@ -230,7 +265,9 @@ fn tell_overlay_state(app: &tauri::AppHandle, error: Option<&str>) {
     let on = *app.state::<OverlayOn>().0.lock().unwrap();
     let state = serde_json::json!({ "overlay": on, "overlayError": error });
     if let Some(w) = app.get_webview_window("main") {
-        let _ = w.eval(format!("window.recooplayDesktop={state};window.dispatchEvent(new Event('recooplay-desktop'))"));
+        let _ = w.eval(format!(
+            "window.recooplayDesktop={state};window.dispatchEvent(new Event('recooplay-desktop'))"
+        ));
     }
 }
 
@@ -240,28 +277,44 @@ fn tell_overlay_state(app: &tauri::AppHandle, error: Option<&str>) {
 /// 同じ保存先のウィンドウは起動オプションをそろえる必要があるので、メイン画面とオーバーレイの両方に使う
 fn browser_args(dry_run: Option<&str>, debug_port: Option<&str>) -> String {
     const DEFAULT: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection";
-    match (dry_run, debug_port.and_then(|p| p.parse::<u16>().ok()).filter(|p| *p > 0)) {
+    match (
+        dry_run,
+        debug_port
+            .and_then(|p| p.parse::<u16>().ok())
+            .filter(|p| *p > 0),
+    ) {
         (Some("1"), Some(port)) => format!("{DEFAULT} --remote-debugging-port={port}"),
         _ => DEFAULT.into(),
     }
 }
 
 fn window_browser_args() -> String {
-    browser_args(std::env::var("RECOOPLAY_DRY_RUN").ok().as_deref(), std::env::var("RECOOPLAY_WEBVIEW2_DEBUG_PORT").ok().as_deref())
+    browser_args(
+        std::env::var("RECOOPLAY_DRY_RUN").ok().as_deref(),
+        std::env::var("RECOOPLAY_WEBVIEW2_DEBUG_PORT")
+            .ok()
+            .as_deref(),
+    )
 }
 
 /// 透明・最前面・クリック透過・非アクティブのウィンドウで /overlay を表示する (#163、Q45)。
 /// フォーカスを取らず、マウス・キーボードを受けないので、ゲームの前面判定と入力の経路は変わらない
 fn open_overlay(app: &tauri::AppHandle, port: u16) -> Result<(), String> {
-    if app.get_webview_window(OVERLAY_LABEL).is_some() { return Ok(()); }
-    let monitor = app.get_webview_window("main").and_then(|w| w.current_monitor().ok().flatten())
+    if app.get_webview_window(OVERLAY_LABEL).is_some() {
+        return Ok(());
+    }
+    let monitor = app
+        .get_webview_window("main")
+        .and_then(|w| w.current_monitor().ok().flatten())
         .or_else(|| app.primary_monitor().ok().flatten())
         .ok_or("モニターの情報を取得できません")?;
     let scale = monitor.scale_factor();
     let pos = monitor.position().to_logical::<f64>(scale);
     let size = monitor.size().to_logical::<f64>(scale);
     let (x, y) = overlay_position((pos.x, pos.y), (size.width, size.height));
-    let url: tauri::Url = format!("http://127.0.0.1:{port}/overlay?layout=desktop").parse().map_err(|_| "URL を作れません")?;
+    let url: tauri::Url = format!("http://127.0.0.1:{port}/overlay?layout=desktop")
+        .parse()
+        .map_err(|_| "URL を作れません")?;
     let window = WebviewWindowBuilder::new(app, OVERLAY_LABEL, WebviewUrl::External(url))
         .title("Re:Cooplay 観客向け表示")
         .inner_size(OVERLAY_SIZE.0, OVERLAY_SIZE.1)
@@ -287,7 +340,9 @@ fn open_overlay(app: &tauri::AppHandle, port: u16) -> Result<(), String> {
 }
 
 fn close_overlay(app: &tauri::AppHandle) {
-    if let Some(w) = app.get_webview_window(OVERLAY_LABEL) { let _ = w.destroy(); }
+    if let Some(w) = app.get_webview_window(OVERLAY_LABEL) {
+        let _ = w.destroy();
+    }
 }
 
 /// 切替要求を処理する。Windows ではイベント処理の中でウィンドウを作るとデッドロックするため、別のスレッドで行う
@@ -295,7 +350,10 @@ fn handle_overlay_request(app: tauri::AppHandle, on: bool) {
     std::thread::spawn(move || {
         let port = *app.state::<HostPort>().0.lock().unwrap();
         let result = match (on, port) {
-            (false, _) => { close_overlay(&app); Ok(()) }
+            (false, _) => {
+                close_overlay(&app);
+                Ok(())
+            }
             (true, Some(port)) => open_overlay(&app, port),
             (true, None) => Err("PCホストの起動を待っています".to_string()),
         };
@@ -392,13 +450,20 @@ mod tests {
         assert_eq!(browser_args(Some("0"), Some("9222")), default);
         assert_eq!(browser_args(Some("1"), Some("abc")), default);
         assert_eq!(browser_args(Some("1"), Some("0")), default);
-        assert_eq!(browser_args(Some("1"), Some("9222")), format!("{default} --remote-debugging-port=9222"));
+        assert_eq!(
+            browser_args(Some("1"), Some("9222")),
+            format!("{default} --remote-debugging-port=9222")
+        );
     }
 
     #[test]
     fn missing_dll_is_distinguished_from_other_startup_failures() {
         let missing = host_exit_message(std::process::ExitStatus::from_raw(0xc0000135), 8080);
-        assert!(missing.contains("Visual C++") && missing.contains("x64") && missing.contains("不足・破損"));
+        assert!(
+            missing.contains("Visual C++")
+                && missing.contains("x64")
+                && missing.contains("不足・破損")
+        );
         assert!(!missing.contains("ポート"));
         let other = host_exit_message(std::process::ExitStatus::from_raw(1), 18600);
         assert!(other.contains("18600") && !other.contains("Visual C++"));
@@ -408,7 +473,10 @@ mod tests {
     fn host_restarts_stop_after_the_limit_and_count_again_after_a_stable_run() {
         let short = Duration::from_secs(1);
         assert_eq!(next_restart_count(0, short), Some(1));
-        assert_eq!(next_restart_count(MAX_RESTARTS - 1, short), Some(MAX_RESTARTS));
+        assert_eq!(
+            next_restart_count(MAX_RESTARTS - 1, short),
+            Some(MAX_RESTARTS)
+        );
         assert_eq!(next_restart_count(MAX_RESTARTS, short), None);
         assert_eq!(next_restart_count(MAX_RESTARTS, STABLE_RUN), Some(1));
     }
@@ -416,21 +484,41 @@ mod tests {
     #[test]
     fn overlay_requests_are_only_the_loopback_switch_url() {
         let url = |s: &str| s.parse::<tauri::Url>().unwrap();
-        assert_eq!(overlay_request(&url("http://127.0.0.1:8080/__desktop/overlay?on=1")), Some(true));
-        assert_eq!(overlay_request(&url("http://127.0.0.1:8080/__desktop/overlay?on=0")), Some(false));
+        assert_eq!(
+            overlay_request(&url("http://127.0.0.1:8080/__desktop/overlay?on=1")),
+            Some(true)
+        );
+        assert_eq!(
+            overlay_request(&url("http://127.0.0.1:8080/__desktop/overlay?on=0")),
+            Some(false)
+        );
         assert_eq!(overlay_request(&url("http://127.0.0.1:8080/app")), None);
-        assert_eq!(overlay_request(&url("http://192.0.2.10:8080/__desktop/overlay?on=1")), None);
-        assert_eq!(overlay_request(&url("http://127.0.0.1:8080/__desktop/overlay")), None);
+        assert_eq!(
+            overlay_request(&url("http://192.0.2.10:8080/__desktop/overlay?on=1")),
+            None
+        );
+        assert_eq!(
+            overlay_request(&url("http://127.0.0.1:8080/__desktop/overlay")),
+            None
+        );
     }
 
     #[test]
     fn overlay_sits_in_the_top_right_of_the_monitor() {
         let (x, y) = overlay_position((1920.0, 0.0), (1280.0, 720.0));
-        assert_eq!((x, y), (1920.0 + 1280.0 - OVERLAY_SIZE.0 - OVERLAY_MARGIN, OVERLAY_MARGIN));
+        assert_eq!(
+            (x, y),
+            (
+                1920.0 + 1280.0 - OVERLAY_SIZE.0 - OVERLAY_MARGIN,
+                OVERLAY_MARGIN
+            )
+        );
     }
 
     #[test]
     fn host_notice_always_mentions_keys_that_may_stay_pressed() {
-        for restarted in [true, false] { assert!(host_restart_notice(restarted).contains("物理キー")); }
+        for restarted in [true, false] {
+            assert!(host_restart_notice(restarted).contains("物理キー"));
+        }
     }
 }

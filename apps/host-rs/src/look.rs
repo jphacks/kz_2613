@@ -34,18 +34,38 @@ pub(crate) struct Look {
 
 impl Look {
     pub(crate) fn new(now: Instant, min_ms: f64, max_ms: f64) -> Self {
-        Self { slot: "P2", px: 0.0, py: 0.0, fx: 0.0, fy: 0.0, sum_x: 0, sum_y: 0, n: 0,
-            last_tick: now, last_arrive: None, gaps: VecDeque::new(), tau: min_ms, min_ms, max_ms }
+        Self {
+            slot: "P2",
+            px: 0.0,
+            py: 0.0,
+            fx: 0.0,
+            fy: 0.0,
+            sum_x: 0,
+            sum_y: 0,
+            n: 0,
+            last_tick: now,
+            last_arrive: None,
+            gaps: VecDeque::new(),
+            tau: min_ms,
+            min_ms,
+            max_ms,
+        }
     }
 
     pub(crate) fn add(&mut self, slot: &'static str, dx: f64, dy: f64, now: Instant) {
         self.slot = slot;
         if let Some(prev) = self.last_arrive {
             let gap = now.duration_since(prev).as_secs_f64() * 1000.0;
-            if gap < 1000.0 { self.gaps.push_back((now, gap)); }
+            if gap < 1000.0 {
+                self.gaps.push_back((now, gap));
+            }
         }
         self.last_arrive = Some(now);
-        while self.gaps.front().is_some_and(|(at, _)| now.duration_since(*at) > Duration::from_secs(2)) {
+        while self
+            .gaps
+            .front()
+            .is_some_and(|(at, _)| now.duration_since(*at) > Duration::from_secs(2))
+        {
             self.gaps.pop_front();
         }
         let max_gap = self.gaps.iter().map(|(_, g)| *g).fold(0.0, f64::max);
@@ -55,36 +75,62 @@ impl Look {
     }
 
     /// 直近に視点を送ってきた枠。他の枠の解放では視点を破棄しない判定に使う (#262)。
-    pub(crate) fn owner(&self) -> &'static str { self.slot }
+    pub(crate) fn owner(&self) -> &'static str {
+        self.slot
+    }
 
     /// 停止/epoch変更は未処理量と端数のみ破棄する。診断集計と間隔履歴は従来どおり残す。
     pub(crate) fn reset(&mut self) {
-        self.px = 0.0; self.py = 0.0; self.fx = 0.0; self.fy = 0.0;
+        self.px = 0.0;
+        self.py = 0.0;
+        self.fx = 0.0;
+        self.fy = 0.0;
     }
 
     /// 未処理量を、解放後の新しいタッチ分 (nx, ny) までに減らす (#262)。解放前の未処理分を捨てるためで、
     /// 向きの違う量や増やす方向には変えない (既にOSへ出した移動を逆向きに戻さない)。端数は解放前の分として捨てる。
     pub(crate) fn keep_at_most(&mut self, nx: f64, ny: f64) {
-        let clamp = |p: f64, n: f64| if p * n > 0.0 { p.signum() * p.abs().min(n.abs()) } else { 0.0 };
-        self.px = clamp(self.px, nx); self.py = clamp(self.py, ny);
-        self.fx = 0.0; self.fy = 0.0;
+        let clamp = |p: f64, n: f64| {
+            if p * n > 0.0 {
+                p.signum() * p.abs().min(n.abs())
+            } else {
+                0.0
+            }
+        };
+        self.px = clamp(self.px, nx);
+        self.py = clamp(self.py, ny);
+        self.fx = 0.0;
+        self.fy = 0.0;
     }
 
     pub(crate) fn tick(&mut self, now: Instant, allowed: bool) -> Option<Movement> {
         let dt = now.duration_since(self.last_tick).as_secs_f64() * 1000.0;
         self.last_tick = now;
-        if self.px == 0.0 && self.py == 0.0 { return None; }
-        if !allowed { self.reset(); return None; }
+        if self.px == 0.0 && self.py == 0.0 {
+            return None;
+        }
+        if !allowed {
+            self.reset();
+            return None;
+        }
         let k = 1.0 - (-dt / self.tau).exp();
         let small = self.px.abs() < 0.5 && self.py.abs() < 0.5;
         let ox = if small { self.px } else { self.px * k };
         let oy = if small { self.py } else { self.py * k };
-        self.px -= ox; self.py -= oy;
-        self.fx += ox; self.fy += oy;
+        self.px -= ox;
+        self.py -= oy;
+        self.fx += ox;
+        self.fy += oy;
         let ix = self.fx.trunc();
         let iy = self.fy.trunc();
-        self.fx -= ix; self.fy -= iy;
-        (ix != 0.0 || iy != 0.0).then_some(Movement { dx: ix as i32, dy: iy as i32, sum_x: ix as i64, sum_y: iy as i64 })
+        self.fx -= ix;
+        self.fy -= iy;
+        (ix != 0.0 || iy != 0.0).then_some(Movement {
+            dx: ix as i32,
+            dy: iy as i32,
+            sum_x: ix as i64,
+            sum_y: iy as i64,
+        })
     }
 
     /// 送出後に集計する。失敗時も数える既存診断の意味を、この責務移動では変えない。
@@ -101,7 +147,9 @@ mod tests {
 
     fn apply(look: &mut Look, at: Instant) -> Option<Movement> {
         let movement = look.tick(at, true);
-        if let Some(m) = movement { look.record_output(m); }
+        if let Some(m) = movement {
+            look.record_output(m);
+        }
         movement
     }
 
@@ -113,9 +161,12 @@ mod tests {
         look.add("P2", 100.0, -60.0, now);
         let k = 1.0 - (-4.0_f64 / 30.0).exp();
         let output = apply(&mut look, now + LOOK_TICK).unwrap();
-        assert_eq!((output.dx, output.dy), ((100.0*k).trunc() as i32, (-60.0*k).trunc() as i32));
-        assert!((look.px - 100.0*(1.0-k)).abs() < 1e-10);
-        assert!((look.py + 60.0*(1.0-k)).abs() < 1e-10);
+        assert_eq!(
+            (output.dx, output.dy),
+            ((100.0 * k).trunc() as i32, (-60.0 * k).trunc() as i32)
+        );
+        assert!((look.px - 100.0 * (1.0 - k)).abs() < 1e-10);
+        assert!((look.py + 60.0 * (1.0 - k)).abs() < 1e-10);
     }
 
     #[test]
@@ -124,7 +175,7 @@ mod tests {
         let mut look = Look::new(now, 30.0, 120.0);
         look.add("P3", 123.75, -52.25, now);
         for n in 1..=100 {
-            apply(&mut look, now + LOOK_TICK*n);
+            apply(&mut look, now + LOOK_TICK * n);
             assert!((look.sum_x as f64 + look.px + look.fx - 123.75).abs() < 1e-9);
             assert!((look.sum_y as f64 + look.py + look.fy + 52.25).abs() < 1e-9);
         }
@@ -146,9 +197,9 @@ mod tests {
         assert_eq!((look.px, look.py, look.fx, look.fy), (0.0, 0.0, 0.4, -0.4));
         assert_eq!(apply(&mut look, now + LOOK_TICK), None);
         look.add("P2", 0.4, -0.4, now + LOOK_TICK);
-        assert_eq!(apply(&mut look, now + LOOK_TICK*2), None);
-        look.add("P2", 0.4, -0.4, now + LOOK_TICK*2);
-        let output = apply(&mut look, now + LOOK_TICK*3).unwrap();
+        assert_eq!(apply(&mut look, now + LOOK_TICK * 2), None);
+        look.add("P2", 0.4, -0.4, now + LOOK_TICK * 2);
+        let output = apply(&mut look, now + LOOK_TICK * 3).unwrap();
         assert_eq!((output.dx, output.dy), (1, -1));
     }
 
@@ -190,11 +241,22 @@ mod tests {
         // 解放後の新しいタッチの分だけ残す (#262)。未処理量を増やさず、向きの違う量は0にする
         let now = Instant::now();
         let mut look = Look::new(now, 8.0, 48.0);
-        for ((px, py), (nx, ny), want) in [((105.0, 0.0), (5.0, 0.0), (5.0, 0.0)), ((3.0, -2.0), (5.0, -7.0), (3.0, -2.0)),
-            ((-4.0, 6.0), (5.0, 0.0), (0.0, 0.0)), ((-9.0, 9.0), (-2.0, 1.0), (-2.0, 1.0))] {
-            look.px = px; look.py = py; look.fx = 0.4; look.fy = -0.4;
+        for ((px, py), (nx, ny), want) in [
+            ((105.0, 0.0), (5.0, 0.0), (5.0, 0.0)),
+            ((3.0, -2.0), (5.0, -7.0), (3.0, -2.0)),
+            ((-4.0, 6.0), (5.0, 0.0), (0.0, 0.0)),
+            ((-9.0, 9.0), (-2.0, 1.0), (-2.0, 1.0)),
+        ] {
+            look.px = px;
+            look.py = py;
+            look.fx = 0.4;
+            look.fy = -0.4;
             look.keep_at_most(nx, ny);
-            assert_eq!(((look.px, look.py), (look.fx, look.fy)), (want, (0.0, 0.0)), "{px},{py} -> {nx},{ny}");
+            assert_eq!(
+                ((look.px, look.py), (look.fx, look.fy)),
+                (want, (0.0, 0.0)),
+                "{px},{py} -> {nx},{ny}"
+            );
         }
     }
 
@@ -222,7 +284,7 @@ mod tests {
         assert_eq!(look.tick(now + LOOK_TICK, false), None);
         assert_eq!((look.px, look.py, look.fx, look.fy), (0.0, 0.0, 0.0, 0.0));
         assert_eq!(look.last_tick, now + LOOK_TICK);
-        assert_eq!(apply(&mut look, now + LOOK_TICK*2), None);
+        assert_eq!(apply(&mut look, now + LOOK_TICK * 2), None);
     }
 
     #[test]

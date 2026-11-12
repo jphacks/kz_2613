@@ -58,13 +58,18 @@ mod imp {
 
     use windows::core::{BOOL, GUID, PWSTR};
     use windows::Win32::Foundation::{HANDLE, PROPERTYKEY};
-    use windows::Win32::Media::Audio::{eConsole, eRender, IMMDeviceEnumerator, MMDeviceEnumerator};
-    use windows::Win32::NetworkManagement::WiFi::{
-        wlan_intf_opcode_media_streaming_mode, WlanCloseHandle, WlanEnumInterfaces, WlanFreeMemory, WlanOpenHandle, WlanSetInterface,
-        WLAN_INTERFACE_INFO_LIST,
+    use windows::Win32::Media::Audio::{
+        eConsole, eRender, IMMDeviceEnumerator, MMDeviceEnumerator,
     };
-    use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CoTaskMemFree, CLSCTX_ALL, COINIT_MULTITHREADED, STGM_READ};
+    use windows::Win32::NetworkManagement::WiFi::{
+        wlan_intf_opcode_media_streaming_mode, WlanCloseHandle, WlanEnumInterfaces, WlanFreeMemory,
+        WlanOpenHandle, WlanSetInterface, WLAN_INTERFACE_INFO_LIST,
+    };
     use windows::Win32::System::Com::StructuredStorage::PropVariantToStringAlloc;
+    use windows::Win32::System::Com::{
+        CoCreateInstance, CoInitializeEx, CoTaskMemFree, CLSCTX_ALL, COINIT_MULTITHREADED,
+        STGM_READ,
+    };
 
     /// Wi-Fi のメディアストリーミングモード。開いたハンドルを持っている間だけ有効で、閉じると元に戻る。
     /// ハンドルはホストのスレッドだけで使うが、Hub ごとスレッドへ移すため数値で持つ
@@ -137,10 +142,14 @@ mod imp {
     /// 調べられないときは None。音の内容は読まない
     pub fn bluetooth_audio() -> Option<bool> {
         // PKEY_Device_EnumeratorName
-        let key = PROPERTYKEY { fmtid: GUID::from_u128(0xa45c254e_df1c_4efd_8020_67d146a850e0), pid: 24 };
+        let key = PROPERTYKEY {
+            fmtid: GUID::from_u128(0xa45c254e_df1c_4efd_8020_67d146a850e0),
+            pid: 24,
+        };
         unsafe {
             let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
-            let devices: IMMDeviceEnumerator = CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL).ok()?;
+            let devices: IMMDeviceEnumerator =
+                CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL).ok()?;
             let device = devices.GetDefaultAudioEndpoint(eRender, eConsole).ok()?;
             let store = device.OpenPropertyStore(STGM_READ).ok()?;
             let value = store.GetValue(&key).ok()?;

@@ -1,6 +1,6 @@
 # Re:Cooplay — Claude Code向けの案内
 
-mainへ統合する前に、対象PRの最新コミットでGitHub Actionsの必須チェック `structure`、`host-rs`、`web`、`desktop`、`protocol`、`package` の成功を確認する。資料のみの変更にも適用する。[CIの検証範囲](docs/develop/handoff/CI_VERIFICATION.md) を参照する。
+mainへ統合する前に、対象PRの最新コミットでGitHub Actionsの必須チェック `structure`、`host-rs`、`web`、`desktop`、`protocol`、`package`、`npm-audit`、`cargo-audit (host-rs)`、`cargo-audit (desktop)` の成功を確認する。資料のみの変更にも適用する。[CIの検証範囲](docs/develop/handoff/CI_VERIFICATION.md) を参照する。
 
 このリポジトリは**CodexとClaude Code**で共同利用する。最初に `AGENTS.md` の共通設計・安全性・使用言語のルールを読み、次の文書を参照する。ここに独立した別仕様を作らない。
 

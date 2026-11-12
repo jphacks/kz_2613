@@ -12,9 +12,17 @@ pub type Overrides = HashMap<String, GameOverrides>;
 
 /// 保存先。試験用の RECOOPLAY_KEY_OVERRIDES を優先し、設定を読まない起動 (シミュレーション) では保存しない
 pub fn default_path() -> Option<PathBuf> {
-    if let Ok(p) = std::env::var("RECOOPLAY_KEY_OVERRIDES") { return Some(PathBuf::from(p)); }
-    if std::env::var("RECOOPLAY_NO_CONFIG").as_deref() == Ok("1") { return None; }
-    std::env::var_os("LOCALAPPDATA").map(|p| PathBuf::from(p).join("Re-Cooplay").join("key-overrides.json"))
+    if let Ok(p) = std::env::var("RECOOPLAY_KEY_OVERRIDES") {
+        return Some(PathBuf::from(p));
+    }
+    if std::env::var("RECOOPLAY_NO_CONFIG").as_deref() == Ok("1") {
+        return None;
+    }
+    std::env::var_os("LOCALAPPDATA").map(|p| {
+        PathBuf::from(p)
+            .join("Re-Cooplay")
+            .join("key-overrides.json")
+    })
 }
 
 /// 操作に割り当ててよい出力か (ホイールは操作の種類が違うので選ばせない)
@@ -23,41 +31,70 @@ pub fn assignable(id: &str) -> bool {
 }
 
 pub fn parse(text: &str) -> Overrides {
-    let value: Value = serde_json::from_str(text.trim_start_matches('\u{feff}')).unwrap_or(Value::Null);
+    let value: Value =
+        serde_json::from_str(text.trim_start_matches('\u{feff}')).unwrap_or(Value::Null);
     let mut out = Overrides::new();
-    let Some(games) = value.get("games").and_then(Value::as_object) else { return out };
+    let Some(games) = value.get("games").and_then(Value::as_object) else {
+        return out;
+    };
     for (game, actions) in games {
-        let Some(actions) = actions.as_object() else { continue };
+        let Some(actions) = actions.as_object() else {
+            continue;
+        };
         let mut map = GameOverrides::new();
         for (action, v) in actions {
             match v {
-                Value::Null => { map.insert(action.clone(), None); }
-                Value::String(id) if assignable(id) => { map.insert(action.clone(), Some(id.clone())); }
+                Value::Null => {
+                    map.insert(action.clone(), None);
+                }
+                Value::String(id) if assignable(id) => {
+                    map.insert(action.clone(), Some(id.clone()));
+                }
                 _ => {} // 知らないキー名は捨てる
             }
         }
-        if !map.is_empty() { out.insert(game.clone(), map); }
+        if !map.is_empty() {
+            out.insert(game.clone(), map);
+        }
     }
     out
 }
 
 pub fn load(path: Option<&Path>) -> Overrides {
-    path.and_then(|p| std::fs::read_to_string(p).ok()).map(|t| parse(&t)).unwrap_or_default()
+    path.and_then(|p| std::fs::read_to_string(p).ok())
+        .map(|t| parse(&t))
+        .unwrap_or_default()
 }
 
 pub fn to_json(all: &Overrides) -> Value {
-    let games: Map<String, Value> = all.iter().map(|(g, m)| {
-        (g.clone(), Value::Object(m.iter().map(|(a, o)| (a.clone(), o.clone().map_or(Value::Null, Value::String))).collect()))
-    }).collect();
+    let games: Map<String, Value> = all
+        .iter()
+        .map(|(g, m)| {
+            (
+                g.clone(),
+                Value::Object(
+                    m.iter()
+                        .map(|(a, o)| (a.clone(), o.clone().map_or(Value::Null, Value::String)))
+                        .collect(),
+                ),
+            )
+        })
+        .collect();
     json!({ "version": 1, "games": games })
 }
 
 /// 一時ファイルへ書いてから置き換え、途中で止まっても壊れたファイルを残さない
 pub fn save(path: Option<&Path>, all: &Overrides) -> Result<(), String> {
     let Some(path) = path else { return Ok(()) };
-    if let Some(dir) = path.parent() { std::fs::create_dir_all(dir).map_err(|e| e.to_string())?; }
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
     let tmp = path.with_extension("json.tmp");
-    std::fs::write(&tmp, serde_json::to_vec_pretty(&to_json(all)).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+    std::fs::write(
+        &tmp,
+        serde_json::to_vec_pretty(&to_json(all)).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| e.to_string())?;
     std::fs::rename(&tmp, path).map_err(|e| e.to_string())
 }
 
@@ -83,7 +120,9 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("recooplay-keys-{}", std::process::id()));
         let path = dir.join("key-overrides.json");
         let mut all = Overrides::new();
-        all.entry("g".into()).or_default().insert("jump".into(), Some("MOUSE_L".into()));
+        all.entry("g".into())
+            .or_default()
+            .insert("jump".into(), Some("MOUSE_L".into()));
         save(Some(&path), &all).unwrap();
         assert_eq!(load(Some(&path)), all);
         assert!(!path.with_extension("json.tmp").exists());

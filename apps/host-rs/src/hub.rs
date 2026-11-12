@@ -16,26 +16,26 @@ use serde_json::{json, Map, Value};
 use tokio::sync::mpsc::UnboundedSender;
 
 use crate::config::Config;
-use crate::protocol::{self, s, num, InputMessage, LookMessage, CommandMessage, RemoteMessage};
-use crate::session::{self, Phase, InjectMode, MIN_PLAYERS, SLOT_NAMES};
 use crate::controls::{self, Kind, OUTPUTS};
-use crate::keybinds::{self, Keybinds};
-use crate::profiles::{self, Profile};
 use crate::focus::{Foreground, Target};
-use crate::game_service::{self, GameService, Launch, Watch, TITLES, LAUNCH_POLL};
+use crate::game_service::{self, GameService, Launch, Watch, LAUNCH_POLL, TITLES};
 use crate::games::{self, Entry};
 use crate::input::InputAdapter;
-use crate::look::{Look, LOOK_TICK};
-use crate::input_manager::{OutputState, PumpStep, MIN_HOLD_MS, MIN_GAP_MS};
 #[cfg(test)]
 use crate::input_manager::MAX_QUEUE;
+use crate::input_manager::{OutputState, PumpStep, MIN_GAP_MS, MIN_HOLD_MS};
+use crate::keybinds::{self, Keybinds};
+use crate::look::{Look, LOOK_TICK};
+use crate::profiles::{self, Profile};
+use crate::protocol::{self, num, s, CommandMessage, InputMessage, LookMessage, RemoteMessage};
 use crate::rtc::{Peer, RtcSignal};
+use crate::session::{self, InjectMode, Phase, MIN_PLAYERS, SLOT_NAMES};
 
 // 参加枠は P1〜P4 (#57)。2〜4人で遊び、人数は Ready の時点で接続している人数で決める (#105)
 const MAX_SLOTS: usize = 4;
 const NET_STALL_WARNING_COUNT: u32 = 3; // PCの通信警告と同じ閾値 (#131・#304)
-// 枠の既定の表示 (Minecraft を 3〜4人で遊ぶときの担当)。実際の担当は分担 (game.assigned) で決まる
-// 枠の呼び名。操作の分担は操作定義から決める (#141。Minecraft の固定の分担はやめた)
+                                        // 枠の既定の表示 (Minecraft を 3〜4人で遊ぶときの担当)。実際の担当は分担 (game.assigned) で決まる
+                                        // 枠の呼び名。操作の分担は操作定義から決める (#141。Minecraft の固定の分担はやめた)
 const SLOT_ROLES: [&str; MAX_SLOTS] = ["ホスト", "参加者", "参加者", "参加者"];
 /// 通信契約の版 (docs/protocol-specification.md)。変えるときは仕様書とシミュレーションも同時に更新する
 // PC アプリで選べるゲーム (apps/web/dist/shared/model/presentation.ts の GAMES と同じ id)。P0 は Minecraft Java Edition のみ。
@@ -63,15 +63,50 @@ pub enum Out {
 }
 
 pub enum Event {
-    WsOpen { id: u64, tx: UnboundedSender<Out>, queued: Arc<SendQueue>, ip: String, loopback: bool },
-    WsText { id: u64, text: String, enqueued_at: Option<Instant> },
-    WsClosed { id: u64, code: u16 },
-    RtcDescription { slot: usize, gen: u64, sdp: String, kind: String },
-    RtcCandidate { slot: usize, gen: u64, cand: String, mid: String },
-    RtcState { slot: usize, gen: u64, state: RtcSignal },
-    RtcMessage { slot: usize, gen: u64, text: String, received_at: Option<Instant> },
+    WsOpen {
+        id: u64,
+        tx: UnboundedSender<Out>,
+        queued: Arc<SendQueue>,
+        ip: String,
+        loopback: bool,
+    },
+    WsText {
+        id: u64,
+        text: String,
+        enqueued_at: Option<Instant>,
+    },
+    WsClosed {
+        id: u64,
+        code: u16,
+    },
+    RtcDescription {
+        slot: usize,
+        gen: u64,
+        sdp: String,
+        kind: String,
+    },
+    RtcCandidate {
+        slot: usize,
+        gen: u64,
+        cand: String,
+        mid: String,
+    },
+    RtcState {
+        slot: usize,
+        gen: u64,
+        state: RtcSignal,
+    },
+    RtcMessage {
+        slot: usize,
+        gen: u64,
+        text: String,
+        received_at: Option<Instant>,
+    },
     /// 緊急停止 (PC のホットキー / デスクトップアプリ)。全解放して注入を OFF にする
-    EmergencyStop { source: &'static str, enqueued_at: Option<Instant> },
+    EmergencyStop {
+        source: &'static str,
+        enqueued_at: Option<Instant>,
+    },
     /// 試験用: 前面のウィンドウが入力先かどうかを差し替える (DRY_RUN のときだけ)
     FakeTarget(bool),
     FakeActivate(bool),
@@ -87,7 +122,10 @@ pub enum Event {
     /// インストール済みのゲームを探し終えた (別スレッドから)
     GamesDetected(games::Detected),
     /// ランチャーへの起動要求が終わった (別スレッドから。Err は理由)
-    Launched { gen: u64, result: Result<(), String> },
+    Launched {
+        gen: u64,
+        result: Result<(), String>,
+    },
     Shutdown,
 }
 
@@ -102,22 +140,35 @@ enum Timer {
     RtcTimeout(usize, u64), // (スロット, 世代)
     InputFaultStop(u64),
     ReleaseRetry(u64),
-    LaunchWatch(u64),       // 起動の世代
+    LaunchWatch(u64), // 起動の世代
 }
 
 fn now_ms() -> u64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0)
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0)
 }
 
 /// PC アプリ (デスクトップアプリ) のウィンドウ。前面の判定 (check_target) と同じくプロセス名で照合する
 fn desktop_target() -> Target {
-    Target { processes: vec![DESKTOP_PROCESS.into()], title_contains: String::new(), dir: None, executable: None }
+    Target {
+        processes: vec![DESKTOP_PROCESS.into()],
+        title_contains: String::new(),
+        dir: None,
+        executable: None,
+    }
 }
 
 /// Minecraft の公式ランチャーのウィンドウ (#287)。Xbox アプリ版は Minecraft.exe、旧版は MinecraftLauncher.exe。
 /// 起動直後に同じタイトルで出る GamingServicesUI (更新の確認) はプロセス名で除く。Bedrock 版は Minecraft.Windows.exe で別
 fn launcher_target() -> Target {
-    Target { processes: vec!["minecraft.exe".into(), "minecraftlauncher.exe".into()], title_contains: "Minecraft Launcher".into(), dir: None, executable: None }
+    Target {
+        processes: vec!["minecraft.exe".into(), "minecraftlauncher.exe".into()],
+        title_contains: "Minecraft Launcher".into(),
+        dir: None,
+        executable: None,
+    }
 }
 
 fn dry_run() -> bool {
@@ -156,7 +207,9 @@ pub struct SendQueue {
 }
 
 impl SendQueue {
-    pub fn must_close(&self) -> bool { self.overflowed.load(Ordering::Relaxed) }
+    pub fn must_close(&self) -> bool {
+        self.overflowed.load(Ordering::Relaxed)
+    }
 }
 
 impl Conn {
@@ -168,7 +221,9 @@ impl Conn {
             self.queued.overflowed.store(true, Ordering::Relaxed);
             return;
         }
-        if self.tx.send(Out::Text(text)).is_err() { self.queued.len.fetch_sub(1, Ordering::Relaxed); }
+        if self.tx.send(Out::Text(text)).is_err() {
+            self.queued.len.fetch_sub(1, Ordering::Relaxed);
+        }
     }
 }
 
@@ -367,13 +422,13 @@ pub struct Hub {
     // 時間制の役割交代 (#161)。既定は OFF
     rotation_secs: u64,
     rotation_at: u64,
-    rotation_left: u64,   // 協力プレイを止めたときの交代までの残り (ms)。再開で続きから数え、交代を積み増さない
-    rotation_count: u64,  // 交代した回数 (スマホの「交代しました」の表示に使う)
-    rotation_soon: bool,  // 予告中
+    rotation_left: u64, // 協力プレイを止めたときの交代までの残り (ms)。再開で続きから数え、交代を積み増さない
+    rotation_count: u64, // 交代した回数 (スマホの「交代しました」の表示に使う)
+    rotation_soon: bool, // 予告中
     // 担当が変わり、本人がスマホで「確認しました」を押していない枠。押すまで Ready・再開できない
     role_ack: Vec<usize>,
-    app_focused: bool,           // PC アプリが前面か (手動復帰の判定に使う)
-    game_window_seen: bool,      // 選んだゲームのウィンドウを見たか。閉じたらロビーで PC アプリを前面に戻す (#292)
+    app_focused: bool,      // PC アプリが前面か (手動復帰の判定に使う)
+    game_window_seen: bool, // 選んだゲームのウィンドウを見たか。閉じたらロビーで PC アプリを前面に戻す (#292)
     // PC アプリ (デスクトップアプリ) から起動されたか。そのときは前面のプロセス名で PC アプリの前面を判定し、
     // 画面 (WebView2 は背面でも focused のまま) の知らせは使わない
     desktop: bool,
@@ -401,14 +456,31 @@ fn new_token() -> Option<String> {
 
 /// 比較にかかる時間から一致した長さを推測されないよう、全体を比べてから判定する
 fn token_eq(a: &str, b: &str) -> bool {
-    a.len() == b.len() && a.bytes().zip(b.bytes()).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
+    a.len() == b.len()
+        && a.bytes()
+            .zip(b.bytes())
+            .fold(0u8, |acc, (x, y)| acc | (x ^ y))
+            == 0
 }
 
 impl Hub {
-    pub fn new(tx: Sender<Event>, config: &Config, input: impl InputAdapter + 'static, log_dir: &Path) -> std::io::Result<Hub> {
+    pub fn new(
+        tx: Sender<Event>,
+        config: &Config,
+        input: impl InputAdapter + 'static,
+        log_dir: &Path,
+    ) -> std::io::Result<Hub> {
         std::fs::create_dir_all(log_dir)?;
-        let name = format!("session-{}.jsonl", chrono::Utc::now().format("%Y-%m-%dT%H-%M-%S-%3fZ"));
-        let log_file = BufWriter::new(File::options().create(true).append(true).open(log_dir.join(name))?);
+        let name = format!(
+            "session-{}.jsonl",
+            chrono::Utc::now().format("%Y-%m-%dT%H-%M-%S-%3fZ")
+        );
+        let log_file = BufWriter::new(
+            File::options()
+                .create(true)
+                .append(true)
+                .open(log_dir.join(name))?,
+        );
         let now = Instant::now();
         let mut hub = Hub {
             tx,
@@ -430,8 +502,14 @@ impl Hub {
             },
             inject: InjectMode::parse(&config.inject_mode).unwrap_or(InjectMode::Off),
             game_service: GameService::new(),
-            release_pending: BTreeSet::new(), pushed_route: std::cell::Cell::new("none"), input_fault: false,
-            fault_stop_gen: 0, fault_stop_pending: false, release_retry_gen: 0, release_retry_attempts: 0, release_retry_active: false,
+            release_pending: BTreeSet::new(),
+            pushed_route: std::cell::Cell::new("none"),
+            input_fault: false,
+            fault_stop_gen: 0,
+            fault_stop_pending: false,
+            release_retry_gen: 0,
+            release_retry_attempts: 0,
+            release_retry_active: false,
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
             look: Look::new(now, config.look_smooth_min_ms, config.look_smooth_max_ms),
             timers: BinaryHeap::new(),
@@ -466,7 +544,9 @@ impl Hub {
             lineup: None,
             seats: [0, 1, 2, 3],
             key_overrides_path: crate::key_overrides::default_path(),
-            key_overrides: crate::key_overrides::load(crate::key_overrides::default_path().as_deref()),
+            key_overrides: crate::key_overrides::load(
+                crate::key_overrides::default_path().as_deref(),
+            ),
             rotation_secs: 0,
             rotation_at: 0,
             rotation_left: 0,
@@ -486,7 +566,10 @@ impl Hub {
         if !list.iter().any(|p| p.id == "minecraft-java") {
             list.push(profiles::builtin_minecraft()); // フォルダがない・壊れている場合も Minecraft は動かす
         }
-        hub.log("profiles", json!({ "loaded": list.len(), "errors": errors }));
+        hub.log(
+            "profiles",
+            json!({ "loaded": list.len(), "errors": errors }),
+        );
         hub.profiles = list;
         hub.reload_keybinds();
         hub.schedule(now + LOOK_TICK, Timer::LookTick);
@@ -499,7 +582,7 @@ impl Hub {
 
     /// イベントループ。次のタイマーまでイベントを待ち、期限が来たタイマーを処理する
     /// 一覧のタイルの画像の表 (HTTP の /api/game-image と共有する)
-/// 準備・協力プレイ・一時停止の間だけ Wi-Fi のメディアストリーミングモードを有効にする (#131)。
+    /// 準備・協力プレイ・一時停止の間だけ Wi-Fi のメディアストリーミングモードを有効にする (#131)。
     /// dry-run では Windows の機能を呼ばず、状態とログだけ切り替える
     fn update_low_latency(&mut self) {
         let want = self.game.phase != Phase::Lobby;
@@ -528,15 +611,19 @@ impl Hub {
         let sampled_at = now_ms();
         let mut rows = Vec::new();
         for (i, slot_name) in SLOT_NAMES.iter().enumerate().take(MAX_SLOTS) {
-            let Some(s) = self.slots[i].as_mut().filter(|s| s.connected) else { continue };
+            let Some(s) = self.slots[i].as_mut().filter(|s| s.connected) else {
+                continue;
+            };
             let (stalls, max_stall) = s.arrivals.take();
             s.net_recent = (stalls, max_stall);
             if stalls >= NET_STALL_WARNING_COUNT {
                 s.net_last_warning = Some((sampled_at, stalls, max_stall));
             }
             let st = &s.client_stats;
-            rows.push(json!({ "slot": slot_name, "stalls": stalls, "maxStallMs": max_stall,
-                "rttAvg": st.get("avg"), "rttMax": st.get("max"), "path": st.get("path") }));
+            rows.push(
+                json!({ "slot": slot_name, "stalls": stalls, "maxStallMs": max_stall,
+                "rttAvg": st.get("avg"), "rttMax": st.get("max"), "path": st.get("path") }),
+            );
         }
         if !rows.is_empty() {
             self.log("net", json!({ "slots": rows, "bluetoothAudio": self.bluetooth_audio, "lowLatency": self.low_latency }));
@@ -550,19 +637,21 @@ impl Hub {
     pub fn run(mut self, rx: Receiver<Event>, port: u16) {
         if !dry_run() {
             let tx = self.tx.clone();
-            let _ = std::thread::Builder::new().name("bluetooth-audio".into()).spawn(move || {
-                let mut last = None;
-                loop {
-                    let on = crate::netwatch::bluetooth_audio().unwrap_or(false);
-                    if last != Some(on) {
-                        last = Some(on);
-                        if tx.send(Event::BluetoothAudio(on)).is_err() {
-                            break;
+            let _ = std::thread::Builder::new()
+                .name("bluetooth-audio".into())
+                .spawn(move || {
+                    let mut last = None;
+                    loop {
+                        let on = crate::netwatch::bluetooth_audio().unwrap_or(false);
+                        if last != Some(on) {
+                            last = Some(on);
+                            if tx.send(Event::BluetoothAudio(on)).is_err() {
+                                break;
+                            }
                         }
+                        std::thread::sleep(std::time::Duration::from_secs(5));
                     }
-                    std::thread::sleep(std::time::Duration::from_secs(5));
-                }
-            });
+                });
         }
         self.log("server_start", json!({ "port": port }));
         let mut last_look_tick: Option<Instant> = None;
@@ -576,7 +665,10 @@ impl Hub {
                 if timer == Timer::LookTick {
                     if let Some(start) = crate::runtime_measure::start() {
                         if let Some(last) = last_look_tick.replace(start) {
-                            crate::runtime_measure::sample("look_tick_interval_us", start.duration_since(last).as_micros() as u64);
+                            crate::runtime_measure::sample(
+                                "look_tick_interval_us",
+                                start.duration_since(last).as_micros() as u64,
+                            );
                         }
                     }
                 }
@@ -598,21 +690,38 @@ impl Hub {
                 }
                 Ok(ev) => {
                     let start = crate::runtime_measure::start();
-                    let metric = if matches!(ev, Event::EmergencyStop { .. }) { "hub_stop_us" } else { "hub_event_us" };
+                    let metric = if matches!(ev, Event::EmergencyStop { .. }) {
+                        "hub_stop_us"
+                    } else {
+                        "hub_event_us"
+                    };
                     let (queue_metric, total_metric, enqueued_at) = match &ev {
-                        Event::WsText { enqueued_at, .. } => ("hub_ws_queue_us", "hub_ws_enqueue_to_end_us", *enqueued_at),
-                        Event::EmergencyStop { enqueued_at, .. } => ("hub_stop_queue_us", "hub_stop_enqueue_to_end_us", *enqueued_at),
+                        Event::WsText { enqueued_at, .. } => {
+                            ("hub_ws_queue_us", "hub_ws_enqueue_to_end_us", *enqueued_at)
+                        }
+                        Event::EmergencyStop { enqueued_at, .. } => (
+                            "hub_stop_queue_us",
+                            "hub_stop_enqueue_to_end_us",
+                            *enqueued_at,
+                        ),
                         _ => ("", "", None),
                     };
                     if let (Some(enqueued), Some(start)) = (enqueued_at, start) {
-                        crate::runtime_measure::sample(queue_metric, start.duration_since(enqueued).as_micros() as u64);
+                        crate::runtime_measure::sample(
+                            queue_metric,
+                            start.duration_since(enqueued).as_micros() as u64,
+                        );
                     }
                     self.on_event(ev);
                     crate::runtime_measure::elapsed(metric, start);
                     crate::runtime_measure::elapsed(total_metric, enqueued_at);
                 }
                 Err(RecvTimeoutError::Timeout) => {}
-                Err(RecvTimeoutError::Disconnected) => { self.release_for_shutdown(); self.close_players_for_shutdown(); break; }
+                Err(RecvTimeoutError::Disconnected) => {
+                    self.release_for_shutdown();
+                    self.close_players_for_shutdown();
+                    break;
+                }
             }
         }
     }
@@ -640,9 +749,18 @@ impl Hub {
 
     fn log(&mut self, kind: &str, data: Value) {
         let has_data = data.as_object().is_some_and(|m| !m.is_empty());
-        let text = if has_data { data.to_string() } else { String::new() };
+        let text = if has_data {
+            data.to_string()
+        } else {
+            String::new()
+        };
         let entry = self.record(kind, data);
-        println!("[{}] {} {}", chrono::Local::now().format("%H:%M:%S"), kind, text);
+        println!(
+            "[{}] {} {}",
+            chrono::Local::now().format("%H:%M:%S"),
+            kind,
+            text
+        );
         self.broadcast_monitors(&json!({ "type": "log", "entry": entry }));
     }
 
@@ -683,30 +801,53 @@ impl Hub {
     // ---------- スナップショット ----------
 
     fn connected_slots(&self) -> Vec<usize> {
-        (0..MAX_SLOTS).filter(|&i| self.slots[i].as_ref().is_some_and(|s| s.connected)).collect()
+        (0..MAX_SLOTS)
+            .filter(|&i| self.slots[i].as_ref().is_some_and(|s| s.connected))
+            .collect()
     }
 
     fn ready_reasons(&self, require_focus: bool) -> Vec<String> {
         let connected = self.connected_slots();
         let roles = self.role_slots();
-        let unacked: Vec<usize> = self.role_ack.iter().copied().filter(|i| roles.contains(i)).collect();
+        let unacked: Vec<usize> = self
+            .role_ack
+            .iter()
+            .copied()
+            .filter(|i| roles.contains(i))
+            .collect();
         session::ReadyFacts {
-            phase: self.game.phase, connected: &connected, participants: &self.participants, unacked: &unacked,
-            has_profile: self.profile.is_some(), lineup_ok: self.lineup_ok(), title_known: self.title_known(&self.game.title),
-            controller_supported: self.profile.as_ref().is_none_or(profiles::controller_supported),
-            input_available: self.input.available() && !self.input_fault, stop_available: self.hotkey.is_ok() || self.fake_target.is_some(),
-            inject: self.inject, can_inject: self.can_inject(),
-        }.reasons(require_focus)
+            phase: self.game.phase,
+            connected: &connected,
+            participants: &self.participants,
+            unacked: &unacked,
+            has_profile: self.profile.is_some(),
+            lineup_ok: self.lineup_ok(),
+            title_known: self.title_known(&self.game.title),
+            controller_supported: self
+                .profile
+                .as_ref()
+                .is_none_or(profiles::controller_supported),
+            input_available: self.input.available() && !self.input_fault,
+            stop_available: self.hotkey.is_ok() || self.fake_target.is_some(),
+            inject: self.inject,
+            can_inject: self.can_inject(),
+        }
+        .reasons(require_focus)
     }
 
     fn can_prepare(&self) -> bool {
-        session::can_prepare(self.game.phase, self.connected_slots().contains(&0), self.lineup_ok())
+        session::can_prepare(
+            self.game.phase,
+            self.connected_slots().contains(&0),
+            self.lineup_ok(),
+        )
     }
 
     /// 決定したメンバーと分担が、今の選択と接続者に一致しているか
     fn lineup_ok(&self) -> bool {
         self.lineup.as_ref().is_some_and(|l| {
-            l.title == self.game.title && !l.expired_members.contains(&true)
+            l.title == self.game.title
+                && !l.expired_members.contains(&true)
                 && l.members == self.ranked(&self.connected_slots())
         })
     }
@@ -722,9 +863,16 @@ impl Hub {
             && members == names
             && connected.contains(&0)
             && connected.len() >= MIN_PLAYERS;
-        self.log("lineup", json!({ "accepted": accepted, "title": self.game.title, "members": names }));
+        self.log(
+            "lineup",
+            json!({ "accepted": accepted, "title": self.game.title, "members": names }),
+        );
         if accepted {
-            self.lineup = Some(Lineup { title: self.game.title.clone(), members: self.ranked(&connected), expired_members: [false; MAX_SLOTS] });
+            self.lineup = Some(Lineup {
+                title: self.game.title.clone(),
+                members: self.ranked(&connected),
+                expired_members: [false; MAX_SLOTS],
+            });
         }
         self.push_game();
     }
@@ -733,8 +881,14 @@ impl Hub {
     fn can_launch(&self) -> bool {
         matches!(self.game.phase, Phase::Lobby | Phase::Preparing)
             && self.lineup_ok()
-            && (self.games.iter().any(|g| g.id == self.game.title) || self.minecraft_entry().is_some_and(|m| m.id == self.game.title))
-            && !self.launch.as_ref().is_some_and(|l| l.id == self.game.title && l.state == "launching")
+            && (self.games.iter().any(|g| g.id == self.game.title)
+                || self
+                    .minecraft_entry()
+                    .is_some_and(|m| m.id == self.game.title))
+            && !self
+                .launch
+                .as_ref()
+                .is_some_and(|l| l.id == self.game.title && l.state == "launching")
     }
 
     fn can_ready(&self) -> bool {
@@ -742,18 +896,31 @@ impl Hub {
     }
 
     fn can_resume(&self) -> bool {
-        session::can_resume(self.game.phase, self.game.host_ready, self.ready_reasons(false).is_empty())
+        session::can_resume(
+            self.game.phase,
+            self.game.host_ready,
+            self.ready_reasons(false).is_empty(),
+        )
     }
 
     fn game_snapshot(&self) -> Value {
         let connected_idx = self.connected_slots();
         let connected: Vec<&str> = connected_idx.iter().map(|&i| SLOT_NAMES[i]).collect();
-        let lineup_disconnected: Vec<&str> = self.lineup.as_ref()
+        let lineup_disconnected: Vec<&str> = self
+            .lineup
+            .as_ref()
             .filter(|l| self.game.phase == Phase::Lobby && l.title == self.game.title)
-            .map(|l| SLOT_NAMES.iter().enumerate()
-                .filter(|(i, _)| l.members.contains(i) && (l.expired_members[*i] || !connected_idx.contains(i)))
-                .map(|(_, &name)| name)
-                .collect())
+            .map(|l| {
+                SLOT_NAMES
+                    .iter()
+                    .enumerate()
+                    .filter(|(i, _)| {
+                        l.members.contains(i)
+                            && (l.expired_members[*i] || !connected_idx.contains(i))
+                    })
+                    .map(|(_, &name)| name)
+                    .collect()
+            })
             .unwrap_or_default();
         json!({
             "phase": self.game.phase.name(),
@@ -815,7 +982,9 @@ impl Hub {
         Value::Array(
             (0..MAX_SLOTS)
                 .map(|i| match &self.slots[i] {
-                    None => json!({ "name": SLOT_NAMES[i], "role": SLOT_ROLES[i], "assigned": false }),
+                    None => {
+                        json!({ "name": SLOT_NAMES[i], "role": SLOT_ROLES[i], "assigned": false })
+                    }
                     Some(s) => json!({
                         "name": SLOT_NAMES[i],
                         "role": SLOT_ROLES[i],
@@ -849,11 +1018,22 @@ impl Hub {
     }
 
     fn game_focused(&self) -> bool {
-        self.conns.values().any(|c| matches!(c.role, Role::Monitor { page: Page::Game, focused: true }))
+        self.conns.values().any(|c| {
+            matches!(
+                c.role,
+                Role::Monitor {
+                    page: Page::Game,
+                    focused: true
+                }
+            )
+        })
     }
 
     fn can_inject(&self) -> bool {
-        self.title_known(&self.game.title) && self.input.available() && !self.input_fault && self.release_pending.is_empty()
+        self.title_known(&self.game.title)
+            && self.input.available()
+            && !self.input_fault
+            && self.release_pending.is_empty()
             && match self.inject {
                 InjectMode::Off => false,
                 InjectMode::Test => self.game_focused(),
@@ -865,10 +1045,19 @@ impl Hub {
     fn inject_snapshot(&self) -> Value {
         let outputs: Map<String, Value> = OUTPUTS
             .iter()
-            .map(|o| (o.id.to_string(), json!({ "label": o.label, "kind": o.kind.name(), "code": o.code })))
+            .map(|o| {
+                (
+                    o.id.to_string(),
+                    json!({ "label": o.label, "kind": o.kind.name(), "code": o.code }),
+                )
+            })
             .collect();
-        let down: Vec<&str> =
-            OUTPUTS.iter().zip(&self.outputs).filter(|(_, st)| st.physical).map(|(o, _)| o.id).collect();
+        let down: Vec<&str> = OUTPUTS
+            .iter()
+            .zip(&self.outputs)
+            .filter(|(_, st)| st.physical)
+            .map(|(o, _)| o.id)
+            .collect();
         json!({
             "mode": self.inject.name(),
             "gameFocused": self.game_focused(),
@@ -916,18 +1105,31 @@ impl Hub {
             return;
         }
         self.state_pending = true;
-        self.schedule(Instant::now() + Duration::from_millis(100), Timer::StateFlush);
+        self.schedule(
+            Instant::now() + Duration::from_millis(100),
+            Timer::StateFlush,
+        );
     }
 
     /// ホストのリモコンの操作先。スマホはこれが none の間はタッチパッドの移動を送らない
     fn remote_route(&self) -> &'static str {
-        if self.remote_app_active() { "app" } else if self.remote_game_active() { "game" } else if self.remote_launcher_active() { "launcher" } else { "none" }
+        if self.remote_app_active() {
+            "app"
+        } else if self.remote_game_active() {
+            "game"
+        } else if self.remote_launcher_active() {
+            "launcher"
+        } else {
+            "none"
+        }
     }
 
     /// 操作先は前面・入力の状態から都度決まるので、変わったのにスマホへ届いていなければ知らせる (#345)。
     /// 届かないと、スマホは操作先がないと思い込み、次の通知までスワイプを送らない
     fn push_game_if_route_changed(&self) {
-        if self.remote_route() != self.pushed_route.get() { self.push_game(); }
+        if self.remote_route() != self.pushed_route.get() {
+            self.push_game();
+        }
     }
 
     fn push_game(&self) {
@@ -942,28 +1144,54 @@ impl Hub {
     // lobby: ホストがリモコンで PC を操作 / coop: 3 人の分担操作 / paused: 分担操作を停止しホストにリモコンを戻す
 
     fn set_phase(&mut self, phase: Phase, reason: &str) {
-        let Some(change) = session::phase_change(self.game.phase, phase) else { return };
+        let Some(change) = session::phase_change(self.game.phase, phase) else {
+            return;
+        };
         let now = now_ms();
         // 協力プレイを止めたら交代までの残りを覚え、再開で続きから数える (止まっている間は進めない)
-        if self.game.phase == Phase::Coop && self.rotation_at != 0 { self.rotation_left = self.rotation_at.saturating_sub(now).max(1); }
+        if self.game.phase == Phase::Coop && self.rotation_at != 0 {
+            self.rotation_left = self.rotation_at.saturating_sub(now).max(1);
+        }
         self.release_outputs(None);
         self.reset_look();
-        if phase == Phase::Coop && self.input_fault { self.stop_input_failure(); return; }
+        if phase == Phase::Coop && self.input_fault {
+            self.stop_input_failure();
+            return;
+        }
         self.game.phase = phase;
-        if change.clear_lineup { self.assigned.clear(); self.participants.clear(); self.lineup = None; }
+        if change.clear_lineup {
+            self.assigned.clear();
+            self.participants.clear();
+            self.lineup = None;
+        }
         self.game.reason = Some(reason.to_string());
         self.advance_epoch();
         // 新しいプレイ (ロビーへ戻る・準備から始める) では残りを捨てる。ロビーでは交代を OFF に戻す (Q44)
-        if phase == Phase::Lobby { self.rotation_secs = 0; }
-        if matches!(phase, Phase::Lobby | Phase::Preparing) { self.rotation_left = 0; }
+        if phase == Phase::Lobby {
+            self.rotation_secs = 0;
+        }
+        if matches!(phase, Phase::Lobby | Phase::Preparing) {
+            self.rotation_left = 0;
+        }
         self.rotation_at = if phase == Phase::Coop && self.rotation_secs != 0 {
-            now + if self.rotation_left != 0 { self.rotation_left } else { self.rotation_secs * 1000 }
-        } else { 0 };
-        if phase == Phase::Coop { self.rotation_left = 0; }
+            now + if self.rotation_left != 0 {
+                self.rotation_left
+            } else {
+                self.rotation_secs * 1000
+            }
+        } else {
+            0
+        };
+        if phase == Phase::Coop {
+            self.rotation_left = 0;
+        }
         self.rotation_soon = false;
         // 操作できない状態で協力プレイに入った (再開した) ときは、操作できるようになるまで数えない
         self.sync_rotation_clock(now);
-        self.log("phase", json!({ "phase": phase.name(), "reason": reason, "epoch": self.game.epoch }));
+        self.log(
+            "phase",
+            json!({ "phase": phase.name(), "reason": reason, "epoch": self.game.epoch }),
+        );
         self.update_low_latency();
         self.push_game();
     }
@@ -972,58 +1200,112 @@ impl Hub {
     /// 切り替えるのは協力プレイに入る瞬間だけで、一時停止中に P1 が PC アプリを操作している間は前面を奪わない。
     /// Windows が拒否したときは、これまでどおり手動で前面にする案内を出す
     fn focus_for_coop(&mut self) -> bool {
-        if self.input_fault || !self.release_pending.is_empty() { return false; }
+        if self.input_fault || !self.release_pending.is_empty() {
+            return false;
+        }
         // Testモードは疑似ゲーム画面のfocusのみで判定し、実ウィンドウを切り替えない。
-        if self.inject != InjectMode::On { return self.can_inject(); }
+        if self.inject != InjectMode::On {
+            return self.can_inject();
+        }
         self.check_target();
-        if self.target_ok { return self.can_inject(); }
+        if self.target_ok {
+            return self.can_inject();
+        }
         self.release_outputs(None);
         self.reset_look();
-        if self.input_fault { return false; }
+        if self.input_fault {
+            return false;
+        }
         let simulated = self.fake_target.is_some();
         let result = if simulated {
-            if self.fake_activate { self.fake_target = Some(true); Ok(()) }
-            else { Err("シミュレーション：前面化を拒否しました".into()) }
+            if self.fake_activate {
+                self.fake_target = Some(true);
+                Ok(())
+            } else {
+                Err("シミュレーション：前面化を拒否しました".into())
+            }
         } else if dry_run() {
             Err("dry-run：実ウィンドウは操作しません".into())
-        } else { self.game_service.activate(&self.target) };
+        } else {
+            self.game_service.activate(&self.target)
+        };
         self.check_target();
         let ok = result.is_ok() && self.can_inject();
-        self.log("auto_focus", json!({ "ok": ok, "simulated": simulated || dry_run() }));
-        self.game.prepare_status = if ok { "対象ゲームを前面にしました".into() }
-            else { format!("{}。{}を手動で前面にしてください", result.err().unwrap_or("前面を確認できませんでした".into()), self.game_name()) };
+        self.log(
+            "auto_focus",
+            json!({ "ok": ok, "simulated": simulated || dry_run() }),
+        );
+        self.game.prepare_status = if ok {
+            "対象ゲームを前面にしました".into()
+        } else {
+            format!(
+                "{}。{}を手動で前面にしてください",
+                result.err().unwrap_or("前面を確認できませんでした".into()),
+                self.game_name()
+            )
+        };
         self.push_game();
         ok
     }
 
     /// PC アプリ (デスクトップアプリ) のウィンドウを前面にする (#292)。入力は送らず、前面にするだけ
     fn open_app(&mut self) -> Result<(), String> {
-        if !self.desktop { return Err("PCアプリから起動したときだけ使えます".into()); }
+        if !self.desktop {
+            return Err("PCアプリから起動したときだけ使えます".into());
+        }
         let result = if self.fake_target.is_some() {
-            if self.fake_activate { Ok(()) } else { Err("シミュレーション：前面化を拒否しました".into()) }
+            if self.fake_activate {
+                Ok(())
+            } else {
+                Err("シミュレーション：前面化を拒否しました".into())
+            }
         } else if dry_run() {
             Err("dry-run：実ウィンドウは操作しません".into())
         } else {
-            self.game_service.activate(&desktop_target()).map_err(|reason|
-                if reason.contains("見つかりません") { "PCアプリのウィンドウが見つかりません".into() } else { reason })
+            self.game_service
+                .activate(&desktop_target())
+                .map_err(|reason| {
+                    if reason.contains("見つかりません") {
+                        "PCアプリのウィンドウが見つかりません".into()
+                    } else {
+                        reason
+                    }
+                })
         };
         self.log("open_app", json!({ "ok": result.is_ok() }));
-        if self.fake_target.is_some() { if result.is_ok() { self.on_app_focus(true); } } else { self.check_target(); }
+        if self.fake_target.is_some() {
+            if result.is_ok() {
+                self.on_app_focus(true);
+            }
+        } else {
+            self.check_target();
+        }
         result.map_err(|reason| format!("{reason}。PCでReCooplayを前面にしてください"))
     }
 
     /// 選んだゲームが閉じたら、ロビーでは PC アプリを前面に戻す (#292)。1回閉じるごとに1回だけ
     fn watch_game_exit(&mut self) {
-        if self.fake_target.is_some() || dry_run() { return; }
+        if self.fake_target.is_some() || dry_run() {
+            return;
+        }
         self.return_to_app_after_game_exit();
     }
 
     fn return_to_app_after_game_exit(&mut self) {
-        if !self.desktop { return; }
-        if self.target_ok || self.game_service.exists(&self.target) { self.game_window_seen = true; return; }
-        if !self.game_window_seen || self.game.phase != Phase::Lobby { return; }
+        if !self.desktop {
+            return;
+        }
+        if self.target_ok || self.game_service.exists(&self.target) {
+            self.game_window_seen = true;
+            return;
+        }
+        if !self.game_window_seen || self.game.phase != Phase::Lobby {
+            return;
+        }
         self.game_window_seen = false;
-        if self.app_focused { return; }
+        if self.app_focused {
+            return;
+        }
         let ok = self.game_service.activate(&desktop_target()).is_ok();
         self.log("app_return", json!({ "ok": ok, "reason": "game exit" }));
         self.check_target();
@@ -1032,78 +1314,126 @@ impl Hub {
     fn maybe_auto_resume(&mut self) {
         // 再接続とPCアプリへの手動復帰が重なっても、前面の観測で復帰解除を先に確定する。
         self.check_target();
-        if !session::auto_resume_window(self.game.phase, self.game.reason.as_deref(), self.game.auto_resume,
-            now_ms(), self.game.auto_resume_until) { return; }
+        if !session::auto_resume_window(
+            self.game.phase,
+            self.game.reason.as_deref(),
+            self.game.auto_resume,
+            now_ms(),
+            self.game.auto_resume_until,
+        ) {
+            return;
+        }
         // WebRTC の接続中は待つ (つながるか、失敗して WebSocket のみになってから復帰)
-        let rtc_settled = self
-            .connected_slots()
-            .into_iter()
-            .all(|i| self.slots[i].as_ref().is_some_and(|s| s.rtc_state != "connecting"));
+        let rtc_settled = self.connected_slots().into_iter().all(|i| {
+            self.slots[i]
+                .as_ref()
+                .is_some_and(|s| s.rtc_state != "connecting")
+        });
         if self.can_resume() && rtc_settled {
-            if self.focus_for_coop() { self.set_phase(Phase::Coop, "auto resume"); }
-            else { self.game.auto_resume_until = 0; self.push_game(); } // 拒否されたら繰り返し前面を奪わず、明示操作を待つ。
+            if self.focus_for_coop() {
+                self.set_phase(Phase::Coop, "auto resume");
+            } else {
+                self.game.auto_resume_until = 0;
+                self.push_game();
+            } // 拒否されたら繰り返し前面を奪わず、明示操作を待つ。
         }
     }
 
     fn command(&mut self, slot: usize, cmd: &str) {
-        if !session::is_host(slot) { return; }
+        if !session::is_host(slot) {
+            return;
+        }
         let name = self.game_name();
-        let allowed = session::command_allowed(slot, cmd, self.game.phase,
+        let allowed = session::command_allowed(
+            slot,
+            cmd,
+            self.game.phase,
             cmd == "PREPARE" && self.game.phase == Phase::Lobby && self.can_prepare(),
             cmd == "READY" && self.game.phase == Phase::Preparing && self.can_ready(),
-            cmd == "RESUME" && self.game.phase == Phase::Paused && self.can_resume());
+            cmd == "RESUME" && self.game.phase == Phase::Paused && self.can_resume(),
+        );
         let mut rejected: Option<String> = None;
-        let accepted = allowed && match (cmd, self.game.phase) {
-            ("OPEN_GAME", Phase::Preparing | Phase::Paused) => {
-                self.game.prepare_status = if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
-                    "dry-run：実ウィンドウは操作しません".into()
-                } else { match self.game_service.activate(&self.target) {
-                    Ok(()) => "対象ゲームを前面にしました".into(),
-                    Err(reason) => format!("{}。{}を手動で前面にしてください", reason, name),
-                }};
-                self.push_game(); true
-            }
-            ("PREPARE", Phase::Lobby) => {
-                self.game.host_ready = false;
-                self.game.prepare_status = if self.fake_target.is_some() {
-                    "シミュレーション：実ゲームは起動していません".into()
-                } else if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
-                    format!("dry-run：{}を手動で開いてください", name)
-                } else {
-                    match self.game_service.activate(&self.target) {
-                        Ok(()) => format!("{}のウィンドウを前面にしました。プレイ中の画面まで進めてください", name),
-                        Err(reason) => format!("{}。{}を手動で開き、プレイ中の画面まで進めてください", reason, name),
+        let accepted = allowed
+            && match (cmd, self.game.phase) {
+                ("OPEN_GAME", Phase::Preparing | Phase::Paused) => {
+                    self.game.prepare_status =
+                        if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
+                            "dry-run：実ウィンドウは操作しません".into()
+                        } else {
+                            match self.game_service.activate(&self.target) {
+                                Ok(()) => "対象ゲームを前面にしました".into(),
+                                Err(reason) => {
+                                    format!("{}。{}を手動で前面にしてください", reason, name)
+                                }
+                            }
+                        };
+                    self.push_game();
+                    true
+                }
+                ("PREPARE", Phase::Lobby) => {
+                    self.game.host_ready = false;
+                    self.game.prepare_status = if self.fake_target.is_some() {
+                        "シミュレーション：実ゲームは起動していません".into()
+                    } else if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
+                        format!("dry-run：{}を手動で開いてください", name)
+                    } else {
+                        match self.game_service.activate(&self.target) {
+                            Ok(()) => format!(
+                                "{}のウィンドウを前面にしました。プレイ中の画面まで進めてください",
+                                name
+                            ),
+                            Err(reason) => format!(
+                                "{}。{}を手動で開き、プレイ中の画面まで進めてください",
+                                reason, name
+                            ),
+                        }
+                    };
+                    self.reload_keybinds();
+                    self.set_phase(Phase::Preparing, "host prepare");
+                    true
+                }
+                ("READY", Phase::Preparing) if self.focus_for_coop() => {
+                    self.reload_keybinds();
+                    self.fix_assignment();
+                    self.game.host_ready = true;
+                    self.set_phase(Phase::Coop, "host ready");
+                    self.game.phase == Phase::Coop && !self.input_fault
+                }
+                // 再開は Ready で決めた参加者・分担のまま (参加者がそろうまで再開できない)
+                ("RESUME", Phase::Paused) if self.focus_for_coop() => {
+                    self.reload_keybinds();
+                    self.set_phase(Phase::Coop, "host resume");
+                    self.game.phase == Phase::Coop && !self.input_fault
+                }
+                ("PAUSE", Phase::Coop | Phase::Paused) => {
+                    self.game.auto_resume_until = 0;
+                    self.game.reason = Some("host pause".into());
+                    if self.game.phase == Phase::Paused {
+                        self.release_outputs(None);
+                        self.reset_look();
+                        self.advance_epoch();
+                        self.push_game();
+                    } else {
+                        self.set_phase(Phase::Paused, "host pause");
                     }
-                };
-                self.reload_keybinds();
-                self.set_phase(Phase::Preparing, "host prepare"); true
-            }
-            ("READY", Phase::Preparing) if self.focus_for_coop() => {
-                self.reload_keybinds();
-                self.fix_assignment();
-                self.game.host_ready = true;
-                self.set_phase(Phase::Coop, "host ready"); self.game.phase == Phase::Coop && !self.input_fault
-            }
-            // 再開は Ready で決めた参加者・分担のまま (参加者がそろうまで再開できない)
-            ("RESUME", Phase::Paused) if self.focus_for_coop() => { self.reload_keybinds(); self.set_phase(Phase::Coop, "host resume"); self.game.phase == Phase::Coop && !self.input_fault }
-            ("PAUSE", Phase::Coop | Phase::Paused) => {
-                self.game.auto_resume_until = 0;
-                self.game.reason = Some("host pause".into());
-                if self.game.phase == Phase::Paused { self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); }
-                else { self.set_phase(Phase::Paused, "host pause"); } true
-            }
-            // PC アプリを前面にする (#292)。ロビー・準備中・一時停止中にスマホだけで PC アプリへ戻れるようにする
-            ("OPEN_APP", p) if p != Phase::Coop => match self.open_app() {
-                Ok(()) => true,
-                Err(reason) => { rejected = Some(reason); false }
-            },
-            ("END", p) if p != Phase::Lobby => {
-                self.game.host_ready = false;
-                self.game.auto_resume_until = 0;
-                self.set_phase(Phase::Lobby, "host end"); true
-            }
-            _ => false,
-        };
+                    true
+                }
+                // PC アプリを前面にする (#292)。ロビー・準備中・一時停止中にスマホだけで PC アプリへ戻れるようにする
+                ("OPEN_APP", p) if p != Phase::Coop => match self.open_app() {
+                    Ok(()) => true,
+                    Err(reason) => {
+                        rejected = Some(reason);
+                        false
+                    }
+                },
+                ("END", p) if p != Phase::Lobby => {
+                    self.game.host_ready = false;
+                    self.game.auto_resume_until = 0;
+                    self.set_phase(Phase::Lobby, "host end");
+                    true
+                }
+                _ => false,
+            };
         self.send(self.slots[slot].as_ref().and_then(|s| s.conn), &json!({
             "type": "command_result", "cmd": cmd, "accepted": accepted,
             "reasons": if accepted { vec![] } else if let Some(reason) = rejected { vec![reason] } else { self.ready_reasons(true) },
@@ -1115,12 +1445,18 @@ impl Hub {
         let id = if self.game.phase == Phase::Coop {
             // どのゲームも操作定義から作った画面で操作する (#60・#141)。分担で割り当てた操作 (act:<ID>) だけを、
             // ゲームのキー設定に合わせて送る。Minecraft の固定の操作名 (FWD など) は受け付けない
-            if !control.starts_with("act:") || !self.uses_generated_controls() { return None; }
+            if !control.starts_with("act:") || !self.uses_generated_controls() {
+                return None;
+            }
             self.action_output(slot, control)
         } else if slot == 0 && (self.remote_game_active() || self.remote_launcher_active()) {
             let default = controls::remote_control(control)?;
             // メニューでの「持ち物」はインベントリのキー (Minecraft の設定に合わせる)
-            if control == "REMOTE_E" { self.keybinds.output_for("INV").unwrap_or(Some(default)) } else { Some(default) }
+            if control == "REMOTE_E" {
+                self.keybinds.output_for("INV").unwrap_or(Some(default))
+            } else {
+                Some(default)
+            }
         } else {
             None
         }?;
@@ -1131,21 +1467,40 @@ impl Hub {
     fn reload_keybinds(&mut self) {
         // 定義のない検出したゲームには汎用の定義を当てる (#123)。Minecraft の固定の表を別のゲームへ送らない
         // 診断用の疑似ゲーム画面は Minecraft と同じ操作の定義を使う (#141)
-        self.profile = profiles::find(&self.profiles, &self.game.title).cloned().or_else(|| {
-            self.games.iter().find(|g| g.id == self.game.title).map(|g| profiles::generic(&g.id, &g.name))
-        }).or_else(|| (self.game.title == "pseudo-game").then(profiles::builtin_pseudo));
+        self.profile = profiles::find(&self.profiles, &self.game.title)
+            .cloned()
+            .or_else(|| {
+                self.games
+                    .iter()
+                    .find(|g| g.id == self.game.title)
+                    .map(|g| profiles::generic(&g.id, &g.name))
+            })
+            .or_else(|| (self.game.title == "pseudo-game").then(profiles::builtin_pseudo));
         self.keybinds = match &self.profile {
             Some(p) => {
-                let over = if p.id == "minecraft-java" { self.minecraft_options.as_deref() } else { None };
+                let over = if p.id == "minecraft-java" {
+                    self.minecraft_options.as_deref()
+                } else {
+                    None
+                };
                 Keybinds::build_with(p, over, self.key_overrides.get(&self.game.title))
             }
             None => Keybinds::none(),
         };
-        if self.profile.as_ref().is_some_and(|p| !profiles::controller_supported(p)) {
-            self.keybinds.warnings.push("このゲームはマウス操作が中心のため、スマホで分担できる操作がありません".into());
+        if self
+            .profile
+            .as_ref()
+            .is_some_and(|p| !profiles::controller_supported(p))
+        {
+            self.keybinds.warnings.push(
+                "このゲームはマウス操作が中心のため、スマホで分担できる操作がありません".into(),
+            );
         }
         // ファイルの場所 (ユーザー名を含む) はログに残さない
-        self.log("keybinds", json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings }));
+        self.log(
+            "keybinds",
+            json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings }),
+        );
     }
 
     fn keys_snapshot(&self) -> Value {
@@ -1154,7 +1509,10 @@ impl Hub {
             .controls
             .iter()
             .map(|(c, o)| {
-                let v = o.and_then(controls::output).map_or(Value::Null, |out| json!({ "out": out.id, "label": out.label }));
+                let v = o.and_then(controls::output).map_or(
+                    Value::Null,
+                    |out| json!({ "out": out.id, "label": out.label }),
+                );
                 (c.to_string(), v)
             })
             .collect();
@@ -1163,9 +1521,21 @@ impl Hub {
             .keybinds
             .actions
             .iter()
-            .map(|(a, o)| (a.clone(), o.and_then(controls::output).map_or(Value::Null, |out| json!({ "out": out.id, "label": out.label }))))
+            .map(|(a, o)| {
+                (
+                    a.clone(),
+                    o.and_then(controls::output).map_or(
+                        Value::Null,
+                        |out| json!({ "out": out.id, "label": out.label }),
+                    ),
+                )
+            })
             .collect();
-        let edited: Vec<&String> = self.key_overrides.get(&self.game.title).map(|m| m.keys().collect()).unwrap_or_default();
+        let edited: Vec<&String> = self
+            .key_overrides
+            .get(&self.game.title)
+            .map(|m| m.keys().collect())
+            .unwrap_or_default();
         json!({ "source": self.keybinds.source, "warnings": self.keybinds.warnings, "controls": controls, "actions": actions, "edited": edited })
     }
 
@@ -1178,8 +1548,13 @@ impl Hub {
     fn proposal_for(&self, p: &Profile, slots: &[usize]) -> Vec<Vec<String>> {
         let ranked = self.ranked(slots);
         let mut out = vec![Vec::new(); MAX_SLOTS];
-        for (k, a) in profiles::assignment_for(p, ranked.len().max(1)).into_iter().enumerate() {
-            if let Some(&i) = ranked.get(k) { out[i] = a; }
+        for (k, a) in profiles::assignment_for(p, ranked.len().max(1))
+            .into_iter()
+            .enumerate()
+        {
+            if let Some(&i) = ranked.get(k) {
+                out[i] = a;
+            }
         }
         out
     }
@@ -1193,12 +1568,18 @@ impl Hub {
 
     /// 担当を決める対象の枠 (協力プレイの参加者、なければ接続中の枠)
     fn role_slots(&self) -> Vec<usize> {
-        if self.participants.is_empty() { self.connected_slots() } else { self.participants.clone() }
+        if self.participants.is_empty() {
+            self.connected_slots()
+        } else {
+            self.participants.clone()
+        }
     }
 
     /// その枠の担当の番号 (席順で何番目か)。Minecraft の固定の表では 0 = 移動 (P1 の表)、1 = 視点、2 = アクション
     fn role_rank(&self, slot: usize) -> Option<usize> {
-        self.ranked(&self.role_slots()).iter().position(|&i| i == slot)
+        self.ranked(&self.role_slots())
+            .iter()
+            .position(|&i| i == slot)
     }
 
     /// 次の交代で使う席順と分担 (参加者の順に担当を 1 つずらす、Q46)
@@ -1208,8 +1589,13 @@ impl Hub {
         let assigned = match &self.profile {
             Some(p) => {
                 let mut out = vec![Vec::new(); MAX_SLOTS];
-                for (k, a) in profiles::assignment_for(p, next.len().max(1)).into_iter().enumerate() {
-                    if let Some(&i) = next.get(k) { out[i] = a; }
+                for (k, a) in profiles::assignment_for(p, next.len().max(1))
+                    .into_iter()
+                    .enumerate()
+                {
+                    if let Some(&i) = next.get(k) {
+                        out[i] = a;
+                    }
                 }
                 out
             }
@@ -1227,14 +1613,20 @@ impl Hub {
     /// 交代の時計を、実際に操作できる期間だけ進める (#161)。協力プレイ中でも、対象ゲームが前面にない・注入OFF・
     /// 入力の障害などで操作できない間は残り時間を凍結し、予告も取り消す。操作できるようになったら残りから数える
     fn sync_rotation_clock(&mut self, now: u64) {
-        if self.game.phase != Phase::Coop { return; }
+        if self.game.phase != Phase::Coop {
+            return;
+        }
         let active = self.can_inject();
         if !active && self.rotation_at != 0 {
             self.rotation_left = self.rotation_at.saturating_sub(now).max(1);
             self.rotation_at = 0;
             self.rotation_soon = false;
             self.push_game();
-        } else if active && self.rotation_at == 0 && self.rotation_left != 0 && self.rotation_secs != 0 {
+        } else if active
+            && self.rotation_at == 0
+            && self.rotation_left != 0
+            && self.rotation_secs != 0
+        {
             self.rotation_at = now + self.rotation_left;
             self.rotation_left = 0;
             self.push_game();
@@ -1247,7 +1639,9 @@ impl Hub {
     /// 交代の少し前に次の担当を予告する。Pause・切断・緊急停止の間は協力プレイでないので進まない
     fn rotate_roles_if_due(&mut self, now: u64) {
         self.sync_rotation_clock(now);
-        if self.game.phase != Phase::Coop || self.rotation_at == 0 { return; }
+        if self.game.phase != Phase::Coop || self.rotation_at == 0 {
+            return;
+        }
         if !session::rotation_due(self.game.phase, self.rotation_at, now) {
             if !self.rotation_soon && now + session::ROTATION_NOTICE_MS >= self.rotation_at {
                 self.rotation_soon = true;
@@ -1257,23 +1651,33 @@ impl Hub {
         }
         self.release_outputs(None);
         self.reset_look();
-        if self.input_fault { return; }
+        if self.input_fault {
+            return;
+        }
         let (seats, assigned) = self.rotation_next();
         self.seats = seats;
-        if self.profile.is_some() { self.assigned = assigned; }
+        if self.profile.is_some() {
+            self.assigned = assigned;
+        }
         self.advance_epoch();
         self.rotation_count += 1;
         self.rotation_soon = false;
         self.rotation_at = now + self.rotation_secs * 1000;
-        self.log("role_rotation", json!({ "epoch": self.game.epoch, "count": self.rotation_count }));
+        self.log(
+            "role_rotation",
+            json!({ "epoch": self.game.epoch, "count": self.rotation_count }),
+        );
         self.push_game();
         self.push_state();
     }
 
     /// キー割当の変更を保存して反映する (#50・#53)。保存に失敗しても今の実行には反映し、PC画面へ知らせる
     fn apply_key_change(&mut self) {
-        let saved = crate::key_overrides::save(self.key_overrides_path.as_deref(), &self.key_overrides);
-        if let Err(e) = &saved { self.log("key_save_error", json!({ "error": e })); }
+        let saved =
+            crate::key_overrides::save(self.key_overrides_path.as_deref(), &self.key_overrides);
+        if let Err(e) = &saved {
+            self.log("key_save_error", json!({ "error": e }));
+        }
         self.broadcast_monitors(&json!({ "type": "key_result", "ok": saved.is_ok() }));
         self.release_outputs(None);
         self.reset_look();
@@ -1286,12 +1690,16 @@ impl Hub {
     /// 一時停止中に今の接続で参加者と分担を決め直す (#162)。旧入力を捨て、全員の確認と明示の再開を求める
     fn change_players(&mut self) {
         let connected = self.connected_slots();
-        if !session::can_change_players(self.game.phase, &connected, &self.participants) { return; }
+        if !session::can_change_players(self.game.phase, &connected, &self.participants) {
+            return;
+        }
         self.release_outputs(None);
         self.reset_look();
         self.seats = [0, 1, 2, 3];
         self.participants = connected.clone();
-        if let Some(p) = self.profile.clone() { self.assigned = self.proposal_for(&p, &connected); }
+        if let Some(p) = self.profile.clone() {
+            self.assigned = self.proposal_for(&p, &connected);
+        }
         self.game.auto_resume_until = 0;
         self.role_ack = connected;
         self.advance_epoch();
@@ -1304,7 +1712,15 @@ impl Hub {
     /// 2 人の担当を入れ替える (#47)。開始前 (ロビー・準備中) と一時停止中だけ。全解放して epoch を進め、
     /// 2 人がスマホで新しい担当を確認するまで Ready・再開できない。ロビーでは分担の決定もやり直しになる
     fn swap_roles(&mut self, a: usize, b: usize) {
-        if !session::can_swap(self.game.phase, &self.connected_slots(), &self.participants, a, b) { return; }
+        if !session::can_swap(
+            self.game.phase,
+            &self.connected_slots(),
+            &self.participants,
+            a,
+            b,
+        ) {
+            return;
+        }
         self.seats.swap(a, b);
         self.release_outputs(None);
         self.reset_look();
@@ -1316,9 +1732,14 @@ impl Hub {
             self.game.auto_resume_until = 0;
         }
         for i in [a, b] {
-            if !self.role_ack.contains(&i) { self.role_ack.push(i); }
+            if !self.role_ack.contains(&i) {
+                self.role_ack.push(i);
+            }
         }
-        self.log("swap_roles", json!({ "a": SLOT_NAMES[a], "b": SLOT_NAMES[b], "phase": self.game.phase.name() }));
+        self.log(
+            "swap_roles",
+            json!({ "a": SLOT_NAMES[a], "b": SLOT_NAMES[b], "phase": self.game.phase.name() }),
+        );
         self.push_game();
         self.push_state();
     }
@@ -1331,12 +1752,20 @@ impl Hub {
             None => Vec::new(),
         };
         let players: Vec<&str> = self.participants.iter().map(|&i| SLOT_NAMES[i]).collect();
-        self.log("assignment", json!({ "players": players, "assigned": self.slot_map(&self.assigned) }));
+        self.log(
+            "assignment",
+            json!({ "players": players, "assigned": self.slot_map(&self.assigned) }),
+        );
     }
 
     /// 枠の番号ごとの分担 → { "P1": [...], ... } (担当のない枠は出さない)
     fn slot_map(&self, by_slot: &[Vec<String>]) -> Value {
-        let m: Map<String, Value> = by_slot.iter().enumerate().filter(|(_, a)| !a.is_empty()).map(|(i, a)| (SLOT_NAMES[i].to_string(), json!(a))).collect();
+        let m: Map<String, Value> = by_slot
+            .iter()
+            .enumerate()
+            .filter(|(_, a)| !a.is_empty())
+            .map(|(i, a)| (SLOT_NAMES[i].to_string(), json!(a)))
+            .collect();
         Value::Object(m)
     }
 
@@ -1356,7 +1785,11 @@ impl Hub {
 
     /// この枠が視点 (マウス移動) を担当しているか。分担で視点を割り当てた人だけ (#141)
     fn owns_look(&self, slot: usize) -> bool {
-        self.profile.as_ref().is_some_and(|p| p.actions.iter().any(|a| a.kind == "mouseDelta" && self.is_assigned(slot, &a.id)))
+        self.profile.as_ref().is_some_and(|p| {
+            p.actions
+                .iter()
+                .any(|a| a.kind == "mouseDelta" && self.is_assigned(slot, &a.id))
+        })
     }
 
     /// 生成した操作画面の入力 "act:<操作ID>" (ホイールは "act:<操作ID>:up|down") → 出力の ID。割り当てた操作だけ通す
@@ -1374,7 +1807,12 @@ impl Hub {
         match (action.kind.as_str(), dir) {
             ("wheel", Some("up")) => Some("WHEEL_UP"),
             ("wheel", Some("down")) => Some("WHEEL_DOWN"),
-            ("button", None) => self.keybinds.actions.iter().find(|(a, _)| a == id).and_then(|(_, o)| *o),
+            ("button", None) => self
+                .keybinds
+                .actions
+                .iter()
+                .find(|(a, _)| a == id)
+                .and_then(|(_, o)| *o),
             _ => None,
         }
     }
@@ -1382,26 +1820,35 @@ impl Hub {
     // ---------- 入力注入 ----------
 
     fn apply_output(&mut self, idx: usize, down: bool, slot: &str) {
-        if down && self.input_fault { return; }
+        if down && self.input_fault {
+            return;
+        }
         let o = &OUTPUTS[idx];
-        let trace_start=crate::input_trace::start();
+        let trace_start = crate::input_trace::start();
         let ok = match o.kind {
             Kind::Key { scan, ext } => self.input.key(scan, ext, down),
             Kind::Mouse { left } => self.input.mouse_button(left, down),
             Kind::Wheel { .. } => false,
         };
-        if let Some(start)=trace_start {
-            crate::input_trace::event("output",json!({"slot":slot,"out":o.id,"state":if down {"down"} else {"up"},"startedUs":crate::input_trace::stamp(start),"ok":ok}));
+        if let Some(start) = trace_start {
+            crate::input_trace::event(
+                "output",
+                json!({"slot":slot,"out":o.id,"state":if down {"down"} else {"up"},"startedUs":crate::input_trace::stamp(start),"ok":ok}),
+            );
         }
         if !ok {
             self.release_pending.insert(idx);
             if !self.input_fault {
-                self.input_fault = true; self.inject = InjectMode::Off; self.game.auto_resume_until = 0;
+                self.input_fault = true;
+                self.inject = InjectMode::Off;
+                self.game.auto_resume_until = 0;
                 self.fault_stop_pending = true;
                 self.fault_stop_gen += 1;
                 self.schedule(Instant::now(), Timer::InputFaultStop(self.fault_stop_gen));
             }
-        } else if !down { self.release_pending.remove(&idx); }
+        } else if !down {
+            self.release_pending.remove(&idx);
+        }
         let entry = self.record(
             "inject",
             json!({ "slot": slot, "out": o.id, "label": o.label, "state": if down { "down" } else { "up" }, "ok": ok }),
@@ -1411,7 +1858,9 @@ impl Hub {
 
     fn pump(&mut self, idx: usize) {
         loop {
-            if self.input_fault { return; }
+            if self.input_fault {
+                return;
+            }
             match self.outputs[idx].pump_step(Instant::now()) {
                 PumpStep::Idle => return,
                 PumpStep::Wait { delay, generation } => {
@@ -1424,10 +1873,17 @@ impl Hub {
     }
 
     fn set_output(&mut self, idx: usize, slot: &'static str, down: bool) {
-        if down && self.input_fault { return; }
-        let Some(dropped) = self.outputs[idx].set_holder(slot, down) else { return };
+        if down && self.input_fault {
+            return;
+        }
+        let Some(dropped) = self.outputs[idx].set_holder(slot, down) else {
+            return;
+        };
         for _ in 0..dropped {
-            self.record("queue_drop", json!({ "out": OUTPUTS[idx].id, "slot": slot }));
+            self.record(
+                "queue_drop",
+                json!({ "out": OUTPUTS[idx].id, "slot": slot }),
+            );
         }
         self.pump(idx);
     }
@@ -1440,21 +1896,34 @@ impl Hub {
     /// - 視点は look の番号以下を今後受け付けず、累積値の基準を解放時点へ進める (解放前の移動を後から適用しない)
     fn release_slot_inputs(&mut self, idx: usize, floor: i64, look: (i64, f64, f64)) {
         let name = SLOT_NAMES[idx];
-        let Some(slot) = self.slots[idx].as_mut() else { return };
+        let Some(slot) = self.slots[idx].as_mut() else {
+            return;
+        };
         slot.release_floor = slot.release_floor.max(floor);
-        let kept: Vec<String> = slot.press_iseq.iter().filter(|(_, &i)| i > floor).map(|(b, _)| b.clone()).collect();
+        let kept: Vec<String> = slot
+            .press_iseq
+            .iter()
+            .filter(|(_, &i)| i > floor)
+            .map(|(b, _)| b.clone())
+            .collect();
         slot.pressed.retain(|b| kept.contains(b));
         slot.press_iseq.retain(|_, i| *i > floor);
         // 視点: 解放時点までの番号と累積値を基準にする。解放より新しい視点が既に届いていれば、
         // その累積値と解放時点の差 (新しいタッチの分) だけを残し、解放前の未処理分は捨てる
         let (lseq, cx, cy) = look;
         let newer = if lseq >= slot.look_seq {
-            slot.look_seq = lseq; slot.look_cx = cx; slot.look_cy = cy; None
+            slot.look_seq = lseq;
+            slot.look_cx = cx;
+            slot.look_cy = cy;
+            None
         } else {
             Some((slot.look_cx - cx, slot.look_cy - cy))
         };
         let now = Instant::now();
-        let keep: BTreeSet<usize> = kept.iter().filter_map(|b| self.resolve_control(idx, b)).collect();
+        let keep: BTreeSet<usize> = kept
+            .iter()
+            .filter_map(|b| self.resolve_control(idx, b))
+            .collect();
         for o in 0..OUTPUTS.len() {
             let keep_own_press = keep.contains(&o);
             let output = &mut self.outputs[o];
@@ -1471,9 +1940,15 @@ impl Hub {
             }
         }
         if self.look.owner() == name {
-            match newer { Some((nx, ny)) => self.look.keep_at_most(nx, ny), None => self.reset_look() }
+            match newer {
+                Some((nx, ny)) => self.look.keep_at_most(nx, ny),
+                None => self.reset_look(),
+            }
         }
-        self.log("release_inputs", json!({ "slot": name, "iseq": floor, "kept": kept, "lseq": lseq }));
+        self.log(
+            "release_inputs",
+            json!({ "slot": name, "iseq": floor, "kept": kept, "lseq": lseq }),
+        );
         self.push_game();
     }
 
@@ -1489,11 +1964,17 @@ impl Hub {
 
     fn handle_control(&mut self, slot: usize, control: &str, state: &str) {
         // 経路はサーバーの前面判定で排他的に決める。WebViewのhasFocusだけでは決めない。
-        if slot == 0 && self.game.phase != Phase::Coop && controls::remote_control(control).is_some() && self.remote_app_active() {
+        if slot == 0
+            && self.game.phase != Phase::Coop
+            && controls::remote_control(control).is_some()
+            && self.remote_app_active()
+        {
             self.broadcast_monitors(&json!({ "type": "remote", "route":"app", "epoch":self.game.epoch, "control": control, "state": state }));
             return;
         }
-        let Some(idx) = self.resolve_control(slot, control) else { return };
+        let Some(idx) = self.resolve_control(slot, control) else {
+            return;
+        };
         let down = state == "down";
         let o = &OUTPUTS[idx];
         if let Kind::Wheel { notches } = o.kind {
@@ -1516,19 +1997,42 @@ impl Hub {
     }
 
     fn remote_app_active(&self) -> bool {
-        if self.input_fault { return false; }
-        if self.game.phase == Phase::Coop { return false; }
-        if self.desktop { return self.app_focused; }
-        let page = self.conns.values().any(|c| matches!(c.role, Role::Monitor {page:Page::App,focused:true}));
-        page && (self.fake_target.is_some() || self.game_service.foreground().is_some_and(|f|
-            ["msedge.exe", "chrome.exe", "firefox.exe"].contains(&f.process.as_str()) && f.title.contains("Re:Cooplay")))
+        if self.input_fault {
+            return false;
+        }
+        if self.game.phase == Phase::Coop {
+            return false;
+        }
+        if self.desktop {
+            return self.app_focused;
+        }
+        let page = self.conns.values().any(|c| {
+            matches!(
+                c.role,
+                Role::Monitor {
+                    page: Page::App,
+                    focused: true
+                }
+            )
+        });
+        page && (self.fake_target.is_some()
+            || self.game_service.foreground().is_some_and(|f| {
+                ["msedge.exe", "chrome.exe", "firefox.exe"].contains(&f.process.as_str())
+                    && f.title.contains("Re:Cooplay")
+            }))
     }
 
     /// ランチャーへのリモコン入力 (#287) も、前面から外れた・戻ったときに押下と旧入力を持ち越さない
     fn on_launcher_focus(&mut self, launcher: bool) {
-        if launcher == self.launcher_fg { return; }
+        if launcher == self.launcher_fg {
+            return;
+        }
         self.launcher_fg = launcher;
-        if self.inject == InjectMode::On { self.release_outputs(None); self.reset_look(); self.advance_epoch(); }
+        if self.inject == InjectMode::On {
+            self.release_outputs(None);
+            self.reset_look();
+            self.advance_epoch();
+        }
         self.log("launcher_focus", json!({ "ok": launcher }));
         self.push_game();
     }
@@ -1544,31 +2048,54 @@ impl Hub {
     }
 
     fn remote_game_active(&self) -> bool {
-        matches!(self.game.phase, Phase::Preparing | Phase::Paused) && !self.remote_app_active() && self.can_inject()
+        matches!(self.game.phase, Phase::Preparing | Phase::Paused)
+            && !self.remote_app_active()
+            && self.can_inject()
             && (self.hotkey.is_ok() || self.fake_target.is_some())
     }
 
     fn remote_message(&mut self, idx: usize, msg: &Value) {
         let msg = RemoteMessage::decode(msg);
-        if idx != 0 || self.game.phase == Phase::Coop || msg.epoch != Some(self.game.epoch) { return; }
+        if idx != 0 || self.game.phase == Phase::Coop || msg.epoch != Some(self.game.epoch) {
+            return;
+        }
         let seq = msg.seq;
         let slot = self.slots[idx].as_mut().unwrap();
-        if seq <= slot.remote_seq { return; }
+        if seq <= slot.remote_seq {
+            return;
+        }
         slot.remote_seq = seq;
         let kind = msg.kind;
         if kind == "release" {
-            self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); return;
+            self.release_outputs(None);
+            self.reset_look();
+            self.advance_epoch();
+            self.push_game();
+            return;
         }
         let x = msg.x;
         let y = msg.y;
-        if !matches!(kind.as_str(), "move" | "scroll") { return; }
+        if !matches!(kind.as_str(), "move" | "scroll") {
+            return;
+        }
         if self.remote_app_active() {
             self.broadcast_monitors(&json!({"type":"remote","route":"app","epoch":self.game.epoch,"kind":kind,"dx":x,"dy":y}));
         } else if self.remote_game_active() || self.remote_launcher_active() {
             // スクロール量に合わせてホイールを 1〜3 段送る (40px で 1 段、#122)。下へのスクロールはホイールの負の向き
-            let notches = if kind == "scroll" { ((y.abs() / 40.0).ceil() as i32).clamp(0, 3) * if y > 0.0 { -1 } else { 1 } } else { 0 };
-            let ok = if kind == "move" { self.input.mouse_move(x.round() as i32,y.round() as i32) } else { self.input.wheel(notches) };
-            let entry = self.record("remote_input",json!({"kind":kind,"dx":x,"dy":y,"notches":notches,"ok":ok}));
+            let notches = if kind == "scroll" {
+                ((y.abs() / 40.0).ceil() as i32).clamp(0, 3) * if y > 0.0 { -1 } else { 1 }
+            } else {
+                0
+            };
+            let ok = if kind == "move" {
+                self.input.mouse_move(x.round() as i32, y.round() as i32)
+            } else {
+                self.input.wheel(notches)
+            };
+            let entry = self.record(
+                "remote_input",
+                json!({"kind":kind,"dx":x,"dy":y,"notches":notches,"ok":ok}),
+            );
             self.broadcast_monitors(&json!({"type":"remote_input","entry":entry}));
         }
     }
@@ -1620,7 +2147,7 @@ impl Hub {
     /// 前面のウィンドウが入力先かを確認する。外れたら (常時 ON で注入中なら) 全キーを離し、PC 画面とスマホに知らせる
     fn check_target(&mut self) {
         let (fg, ok, launcher) = match self.fake_target {
-            Some(ok) => (None, ok, self.launcher_fg),  // 試験では FakeLauncher で変える
+            Some(ok) => (None, ok, self.launcher_fg), // 試験では FakeLauncher で変える
             None => {
                 let fg = self.game_service.foreground();
                 let ok = fg.as_ref().is_some_and(|f| self.target.matches(f));
@@ -1628,7 +2155,9 @@ impl Hub {
                 // PC アプリ (デスクトップアプリ) が前面か。WebView2 の画面は背面になっても blur を受け取らないため、
                 // 手動復帰の判定は前面のプロセス名で行う
                 if self.desktop {
-                    let app = fg.as_ref().is_some_and(|f| f.process.eq_ignore_ascii_case(DESKTOP_PROCESS));
+                    let app = fg
+                        .as_ref()
+                        .is_some_and(|f| f.process.eq_ignore_ascii_case(DESKTOP_PROCESS));
                     self.on_app_focus(app);
                 }
                 (fg, ok, launcher)
@@ -1645,7 +2174,10 @@ impl Hub {
             }
             self.sync_rotation_clock(now_ms());
             // ウィンドウのタイトル (ワールド名など) はログに残さない
-            self.log("target_focus", json!({ "ok": ok, "process": fg.as_ref().map(|f| f.process.clone()) }));
+            self.log(
+                "target_focus",
+                json!({ "ok": ok, "process": fg.as_ref().map(|f| f.process.clone()) }),
+            );
             self.target_fg = fg;
             self.push_game();
             self.push_state();
@@ -1662,7 +2194,9 @@ impl Hub {
         game_service::title_known(&self.games, title)
     }
 
-    fn game_name(&self) -> String { game_service::game_name(&self.games, &self.game.title) }
+    fn game_name(&self) -> String {
+        game_service::game_name(&self.games, &self.game.title)
+    }
 
     fn select_title(&mut self, title: String) {
         if title == self.game.title {
@@ -1705,9 +2239,11 @@ impl Hub {
         let roots = self.game_service.roots();
         let service = self.game_service.clone();
         let tx = self.tx.clone();
-        let spawned = std::thread::Builder::new().name("games".into()).spawn(move || {
-            let _ = tx.send(Event::GamesDetected(service.detect(&roots)));
-        });
+        let spawned = std::thread::Builder::new()
+            .name("games".into())
+            .spawn(move || {
+                let _ = tx.send(Event::GamesDetected(service.detect(&roots)));
+            });
         self.games_scanning = spawned.is_ok();
         self.push_state();
     }
@@ -1722,12 +2258,18 @@ impl Hub {
         }
         self.picking = true;
         let tx = self.tx.clone();
-        let fake = if dry_run() { std::env::var_os("RECOOPLAY_FAKE_PICK").map(PathBuf::from) } else { None };
+        let fake = if dry_run() {
+            std::env::var_os("RECOOPLAY_FAKE_PICK").map(PathBuf::from)
+        } else {
+            None
+        };
         let service = self.game_service.clone();
-        let spawned = std::thread::Builder::new().name("pick".into()).spawn(move || {
-            let picked = service.pick(dry_run(), fake);
-            let _ = tx.send(Event::ManualPicked(picked));
-        });
+        let spawned = std::thread::Builder::new()
+            .name("pick".into())
+            .spawn(move || {
+                let picked = service.pick(dry_run(), fake);
+                let _ = tx.send(Event::ManualPicked(picked));
+            });
         if spawned.is_err() {
             self.picking = false;
         }
@@ -1742,7 +2284,10 @@ impl Hub {
         let Some(exe) = picked else { return };
         match self.game_service.register(exe) {
             Ok(id) => {
-                self.log("manual_game", json!({ "action": "add", "id": format!("manual:{id}") }));
+                self.log(
+                    "manual_game",
+                    json!({ "action": "add", "id": format!("manual:{id}") }),
+                );
                 self.manual_result(true, "登録しました。一覧に「手動登録」として並びます");
                 self.scan_games();
             }
@@ -1769,18 +2314,30 @@ impl Hub {
         // ゲーム名・インストール先はログに残さない (件数だけ)
         let count = |src: &str| list.iter().filter(|g| g.source == src).count();
         let mut counts = json!({ "steam": count("steam"), "epic": count("epic"), "registered": count(games::MANUAL_SOURCE) });
-        if let (Some(m), serde_json::Value::Object(more)) = (counts.as_object_mut(), crate::launchers::counts(&list)) {
+        if let (Some(m), serde_json::Value::Object(more)) =
+            (counts.as_object_mut(), crate::launchers::counts(&list))
+        {
             m.extend(more);
         }
         self.log("games_detected", counts);
         if let Ok(mut images) = self.images.lock() {
-            *images = list.iter().filter_map(|g| g.image.clone().map(|p| (g.id.clone(), p))).collect();
+            *images = list
+                .iter()
+                .filter_map(|g| g.image.clone().map(|p| (g.id.clone(), p)))
+                .collect();
             if let Some(p) = detected.minecraft.and_then(|m| m.image) {
                 images.insert("minecraft-java".into(), p);
             }
         }
-        let previous = self.games.iter().find(|g| g.id == self.game.title).map(|g| g.install_dir.clone());
-        let next = list.iter().find(|g| g.id == self.game.title).map(|g| g.install_dir.clone());
+        let previous = self
+            .games
+            .iter()
+            .find(|g| g.id == self.game.title)
+            .map(|g| g.install_dir.clone());
+        let next = list
+            .iter()
+            .find(|g| g.id == self.game.title)
+            .map(|g| g.install_dir.clone());
         self.games = list;
         if !TITLES.contains(&self.game.title.as_str()) && previous != next {
             // 再検出で対象が消えたり場所が変わったら、全解放し旧入力・起動待ちを破棄する。
@@ -1789,7 +2346,14 @@ impl Hub {
             self.game.auto_resume_until = 0;
             self.launch = None;
             if self.game.phase == Phase::Coop {
-                self.set_phase(Phase::Paused, if next.is_none() { "game unavailable" } else { "game target changed" });
+                self.set_phase(
+                    Phase::Paused,
+                    if next.is_none() {
+                        "game unavailable"
+                    } else {
+                        "game target changed"
+                    },
+                );
             } else {
                 self.advance_epoch();
             }
@@ -1807,24 +2371,50 @@ impl Hub {
     }
 
     fn launch_game(&mut self, id: &str) {
-        let found = self.games.iter().find(|g| g.id == id).cloned().or_else(|| self.minecraft_entry().filter(|m| m.id == id));
+        let found = self
+            .games
+            .iter()
+            .find(|g| g.id == id)
+            .cloned()
+            .or_else(|| self.minecraft_entry().filter(|m| m.id == id));
         let Some(entry) = found else {
             // ランチャーが見つからない Minecraft・疑似ゲーム画面・未知の id は起動しない
-            let message = if TITLES.contains(&id) { "このゲームは自動で起動できません。手動で起動してください" } else { "一覧にないゲームです" };
+            let message = if TITLES.contains(&id) {
+                "このゲームは自動で起動できません。手動で起動してください"
+            } else {
+                "一覧にないゲームです"
+            };
             self.finish_launch(id, id, "failed", message.into());
             return;
         };
         if !matches!(self.game.phase, Phase::Lobby | Phase::Preparing) {
-            self.finish_launch(&entry.id, &entry.name, "failed", "協力プレイ中・一時停止中は起動できません。終了してから起動してください".into());
+            self.finish_launch(
+                &entry.id,
+                &entry.name,
+                "failed",
+                "協力プレイ中・一時停止中は起動できません。終了してから起動してください".into(),
+            );
             return;
         }
         if entry.id != self.game.title || !self.lineup_ok() {
-            self.log("launch_reject", json!({ "id": entry.id, "selected": entry.id == self.game.title }));
-            self.finish_launch(&entry.id, &entry.name, "failed", "ゲームを選び、メンバーと分担を決定してから起動してください".into());
+            self.log(
+                "launch_reject",
+                json!({ "id": entry.id, "selected": entry.id == self.game.title }),
+            );
+            self.finish_launch(
+                &entry.id,
+                &entry.name,
+                "failed",
+                "ゲームを選び、メンバーと分担を決定してから起動してください".into(),
+            );
             return;
         }
         // 起動中の重複要求 (連打) は無視する
-        if self.launch.as_ref().is_some_and(|l| l.id == entry.id && l.state == "launching") {
+        if self
+            .launch
+            .as_ref()
+            .is_some_and(|l| l.id == entry.id && l.state == "launching")
+        {
             self.log("launch_duplicate", json!({ "id": entry.id }));
             return;
         }
@@ -1835,73 +2425,139 @@ impl Hub {
         // すでに起動している (ウィンドウがある) ときは、起動し直さず前面にする
         if !dry_run() && (self.target_ok || self.game_service.exists(&self.target)) {
             let message = match self.game_service.activate(&self.target) {
-                Ok(()) => format!("{}はすでに起動しています。前面にしました。準備してReadyを押すと開始します", entry.name),
-                Err(reason) => format!("{}はすでに起動しています（{}）。手動で前面にしてください", entry.name, reason),
+                Ok(()) => format!(
+                    "{}はすでに起動しています。前面にしました。準備してReadyを押すと開始します",
+                    entry.name
+                ),
+                Err(reason) => format!(
+                    "{}はすでに起動しています（{}）。手動で前面にしてください",
+                    entry.name, reason
+                ),
             };
-            self.log("launch_result", json!({ "id": entry.id, "state": "started", "running": true }));
+            self.log(
+                "launch_result",
+                json!({ "id": entry.id, "state": "started", "running": true }),
+            );
             self.finish_launch(&entry.id, &entry.name, "started", message);
             return;
         }
         self.launch_gen += 1;
         let gen = self.launch_gen;
         let minecraft = entry.source == games::MINECRAFT_SOURCE;
-        let message = if dry_run() { format!("dry-run：{}は起動しません", entry.name) }
-            else if minecraft { "Minecraftのランチャーを開きました。ホストのスマホのリモコンで「プレイ」を押してください".into() }
-            else { format!("{}を起動しています", entry.name) };
-        self.log("launch_game", json!({ "id": entry.id, "source": entry.source }));
+        let message = if dry_run() {
+            format!("dry-run：{}は起動しません", entry.name)
+        } else if minecraft {
+            "Minecraftのランチャーを開きました。ホストのスマホのリモコンで「プレイ」を押してください".into()
+        } else {
+            format!("{}を起動しています", entry.name)
+        };
+        self.log(
+            "launch_game",
+            json!({ "id": entry.id, "source": entry.source }),
+        );
         // ランチャーへの要求 (ShellExecuteW) は Steam の起動待ちで数秒かかる (実機で約5秒)。
         // このスレッドで待つと入力・生存確認が止まり切断扱いになるので、別スレッドで行う
         if !dry_run() {
             let tx = self.tx.clone();
             let target = entry.clone();
             let service = self.game_service.clone();
-            let spawned = std::thread::Builder::new().name("launch".into()).spawn(move || {
-                let _ = tx.send(Event::Launched { gen, result: service.launch(&target) });
-            });
+            let spawned = std::thread::Builder::new()
+                .name("launch".into())
+                .spawn(move || {
+                    let _ = tx.send(Event::Launched {
+                        gen,
+                        result: service.launch(&target),
+                    });
+                });
             if spawned.is_err() {
-                self.finish_launch(&entry.id, &entry.name, "failed", format!("起動できませんでした。{}を手動で起動してください", entry.name));
+                self.finish_launch(
+                    &entry.id,
+                    &entry.name,
+                    "failed",
+                    format!(
+                        "起動できませんでした。{}を手動で起動してください",
+                        entry.name
+                    ),
+                );
                 return;
             }
         }
         // Minecraft はランチャーで「プレイ」を押す (ログイン・更新もある) ので長めに待つ
         let timeout = game_service::launch_timeout(minecraft);
-        self.launch = Some(Launch { id: entry.id, name: entry.name, state: "launching", message, gen, deadline: Instant::now() + timeout, seen: None });
+        self.launch = Some(Launch {
+            id: entry.id,
+            name: entry.name,
+            state: "launching",
+            message,
+            gen,
+            deadline: Instant::now() + timeout,
+            seen: None,
+        });
         self.schedule(Instant::now() + LAUNCH_POLL, Timer::LaunchWatch(gen));
         self.push_game();
         self.push_state();
     }
 
     fn on_launched(&mut self, gen: u64, result: Result<(), String>) {
-        let Some(l) = self.launch.as_ref().filter(|l| l.current(gen)) else { return };
+        let Some(l) = self.launch.as_ref().filter(|l| l.current(gen)) else {
+            return;
+        };
         let (id, name) = (l.id.clone(), l.name.clone());
         self.log("launch_request", json!({ "id": id, "ok": result.is_ok() }));
         if let Err(reason) = result {
-            self.finish_launch(&id, &name, "failed", format!("{}。{}を手動で起動してください", reason, name));
+            self.finish_launch(
+                &id,
+                &name,
+                "failed",
+                format!("{}。{}を手動で起動してください", reason, name),
+            );
         }
     }
 
     fn finish_launch(&mut self, id: &str, name: &str, state: &'static str, message: String) {
         self.launch_gen += 1;
-        self.launch = Some(Launch { id: id.into(), name: name.into(), state, message, gen: self.launch_gen, deadline: Instant::now(), seen: None });
+        self.launch = Some(Launch {
+            id: id.into(),
+            name: name.into(),
+            state,
+            message,
+            gen: self.launch_gen,
+            deadline: Instant::now(),
+            seen: None,
+        });
         self.push_game();
         self.push_state();
     }
 
     /// 起動したゲームのウィンドウが現れたら前面にする。期限までに現れなければ手動起動を案内する
     fn watch_launch(&mut self, gen: u64) {
-        let Some(l) = self.launch.as_ref().filter(|l| l.current(gen)) else { return };
+        let Some(l) = self.launch.as_ref().filter(|l| l.current(gen)) else {
+            return;
+        };
         let id = l.id.clone();
         let appeared = match self.fake_target {
             Some(ok) => ok,
             None => !dry_run() && (self.target_ok || self.game_service.exists(&self.target)),
         };
-        let activation = if !appeared || self.fake_target.is_some() || self.target_ok { Ok(()) }
-            else { self.game_service.activate(&self.target) };
-        let (state, message) = match self.launch.as_mut().unwrap().observe(gen, Instant::now(), appeared, activation) {
-            Watch::Ignore => return,
-            Watch::Wait => { self.schedule(Instant::now() + LAUNCH_POLL, Timer::LaunchWatch(gen)); return; }
-            Watch::Complete { state, message } => (state, message),
+        let activation = if !appeared || self.fake_target.is_some() || self.target_ok {
+            Ok(())
+        } else {
+            self.game_service.activate(&self.target)
         };
+        let (state, message) =
+            match self
+                .launch
+                .as_mut()
+                .unwrap()
+                .observe(gen, Instant::now(), appeared, activation)
+            {
+                Watch::Ignore => return,
+                Watch::Wait => {
+                    self.schedule(Instant::now() + LAUNCH_POLL, Timer::LaunchWatch(gen));
+                    return;
+                }
+                Watch::Complete { state, message } => (state, message),
+            };
         self.log("launch_result", json!({ "id": id, "state": state }));
         if let Some(l) = self.launch.as_mut() {
             l.state = state;
@@ -1913,82 +2569,136 @@ impl Hub {
     }
 
     fn set_inject_mode(&mut self, mode: InjectMode) {
-        if mode != InjectMode::Off && (self.fault_stop_pending || !self.release_pending.is_empty()) {
-            self.log("inject_mode_rejected", json!({ "reason": "release unconfirmed" }));
-            self.push_game(); self.push_state(); return;
+        if mode != InjectMode::Off && (self.fault_stop_pending || !self.release_pending.is_empty())
+        {
+            self.log(
+                "inject_mode_rejected",
+                json!({ "reason": "release unconfirmed" }),
+            );
+            self.push_game();
+            self.push_state();
+            return;
         }
         let fault_before = self.input_fault;
-        if self.inject != mode { self.release_outputs(None); self.reset_look(); self.advance_epoch(); }
+        if self.inject != mode {
+            self.release_outputs(None);
+            self.reset_look();
+            self.advance_epoch();
+        }
         if mode != InjectMode::Off && self.input_fault {
             if !fault_before || !self.release_pending.is_empty() {
-                self.inject = InjectMode::Off; self.push_game(); self.push_state(); return;
+                self.inject = InjectMode::Off;
+                self.push_game();
+                self.push_state();
+                return;
             }
-            self.input_fault = false; self.release_retry_gen += 1; self.release_retry_active = false;
+            self.input_fault = false;
+            self.release_retry_gen += 1;
+            self.release_retry_active = false;
         }
         self.inject = mode;
-        if mode == InjectMode::Off { self.start_release_retry(); }
+        if mode == InjectMode::Off {
+            self.start_release_retry();
+        }
         self.log("inject_mode", json!({ "mode": mode.name() }));
-        self.push_game(); self.push_state();
+        self.push_game();
+        self.push_state();
     }
 
     // 送出関数から再入させない。専用タイマーで停止効果を1回だけ適用する。
     fn stop_input_failure(&mut self) {
-        if !std::mem::take(&mut self.fault_stop_pending) { return; }
-        self.inject = InjectMode::Off; self.game.auto_resume_until = 0;
-        if self.game.phase == Phase::Coop { self.set_phase(Phase::Paused, "input failure"); }
-        else {
-            self.release_outputs(None); self.reset_look();
-            self.game.reason = Some("input failure".into()); self.advance_epoch(); self.push_game();
+        if !std::mem::take(&mut self.fault_stop_pending) {
+            return;
+        }
+        self.inject = InjectMode::Off;
+        self.game.auto_resume_until = 0;
+        if self.game.phase == Phase::Coop {
+            self.set_phase(Phase::Paused, "input failure");
+        } else {
+            self.release_outputs(None);
+            self.reset_look();
+            self.game.reason = Some("input failure".into());
+            self.advance_epoch();
+            self.push_game();
         }
         self.retry_pending_outputs();
         self.log("input_failure", json!({ "unconfirmed": self.release_pending.iter().map(|&i| OUTPUTS[i].id).collect::<Vec<_>>() }));
-        self.start_release_retry(); self.push_state();
+        self.start_release_retry();
+        self.push_state();
     }
 
     fn start_release_retry(&mut self) {
-        self.release_retry_gen += 1; self.release_retry_attempts = 0;
+        self.release_retry_gen += 1;
+        self.release_retry_attempts = 0;
         self.release_retry_active = !self.release_pending.is_empty();
         if self.release_retry_active {
-            self.schedule(Instant::now() + Duration::from_millis(50), Timer::ReleaseRetry(self.release_retry_gen));
+            self.schedule(
+                Instant::now() + Duration::from_millis(50),
+                Timer::ReleaseRetry(self.release_retry_gen),
+            );
         }
     }
 
     fn retry_pending_outputs(&mut self) {
-        for idx in self.release_pending.clone() { self.apply_output(idx, false, "system"); }
+        for idx in self.release_pending.clone() {
+            self.apply_output(idx, false, "system");
+        }
     }
 
     fn retry_releases(&mut self, gen: u64) {
-        if !self.release_retry_active || gen != self.release_retry_gen { return; }
+        if !self.release_retry_active || gen != self.release_retry_gen {
+            return;
+        }
         self.release_retry_attempts += 1;
         self.retry_pending_outputs();
         if self.release_pending.is_empty() || self.release_retry_attempts >= 3 {
-            self.release_retry_active = false; self.release_retry_gen += 1;
-        } else { self.schedule(Instant::now() + Duration::from_millis(50), Timer::ReleaseRetry(gen)); }
+            self.release_retry_active = false;
+            self.release_retry_gen += 1;
+        } else {
+            self.schedule(
+                Instant::now() + Duration::from_millis(50),
+                Timer::ReleaseRetry(gen),
+            );
+        }
         self.push_state();
         self.push_game_if_route_changed();
     }
 
     fn release_for_shutdown(&mut self) -> bool {
-        self.inject = InjectMode::Off; self.game.auto_resume_until = 0;
-        self.release_outputs(None); self.reset_look();
+        self.inject = InjectMode::Off;
+        self.game.auto_resume_until = 0;
+        self.release_outputs(None);
+        self.reset_look();
         // 終了直前はタイマーが動かないため、ここだけ有限回の同期再解放を行う。
         for _ in 0..3 {
-            if self.release_pending.is_empty() { break; }
+            if self.release_pending.is_empty() {
+                break;
+            }
             std::thread::sleep(Duration::from_millis(50));
             self.retry_pending_outputs();
         }
         let confirmed = self.release_pending.is_empty();
         self.log("shutdown", json!({ "releaseConfirmed": confirmed,
             "unconfirmed": self.release_pending.iter().map(|&i| OUTPUTS[i].id).collect::<Vec<_>>() }));
-        let _ = self.log_file.flush(); confirmed
+        let _ = self.log_file.flush();
+        confirmed
     }
 
     /// 解放の後、スマホへ PC アプリの終了を知らせる (#302)。スマホは再接続をやめ、画面全体で終了を示す。
     /// 送信は接続ごとのタスクが行うので、プロセスを終える前に少しだけ待つ
     fn close_players_for_shutdown(&self) {
-        let players: Vec<u64> = self.conns.iter().filter(|(_, c)| matches!(c.role, Role::Player { .. })).map(|(&id, _)| id).collect();
-        for &id in &players { self.close(Some(id), CLOSE_HOST_SHUTDOWN, "host shutdown"); }
-        if !players.is_empty() { std::thread::sleep(Duration::from_millis(200)); }
+        let players: Vec<u64> = self
+            .conns
+            .iter()
+            .filter(|(_, c)| matches!(c.role, Role::Player { .. }))
+            .map(|(&id, _)| id)
+            .collect();
+        for &id in &players {
+            self.close(Some(id), CLOSE_HOST_SHUTDOWN, "host shutdown");
+        }
+        if !players.is_empty() {
+            std::thread::sleep(Duration::from_millis(200));
+        }
     }
 
     fn on_focus_change(&mut self) {
@@ -2005,7 +2715,11 @@ impl Hub {
             self.game.auto_resume_until = 0;
             self.set_phase(Phase::Paused, "app focus");
         } else if self.game.phase == Phase::Paused
-            && self.game.reason.as_deref().is_some_and(|r| r.ends_with("disconnected"))
+            && self
+                .game
+                .reason
+                .as_deref()
+                .is_some_and(|r| r.ends_with("disconnected"))
         {
             self.release_outputs(None);
             self.reset_look();
@@ -2024,7 +2738,9 @@ impl Hub {
         if f == self.app_focused {
             return;
         }
-        self.release_outputs(None); self.reset_look(); self.advance_epoch();
+        self.release_outputs(None);
+        self.reset_look();
+        self.advance_epoch();
         self.app_focused = f;
         self.push_game();
         self.record("app_focus", json!({ "focused": f }));
@@ -2034,7 +2750,9 @@ impl Hub {
     }
 
     fn mark_disconnected(&mut self, idx: usize, reason: &str) {
-        let Some(s) = self.slots[idx].as_mut() else { return };
+        let Some(s) = self.slots[idx].as_mut() else {
+            return;
+        };
         if !s.connected {
             return;
         }
@@ -2043,7 +2761,10 @@ impl Hub {
         s.disconnected_at = now_ms();
         let released: Vec<String> = std::mem::take(&mut s.pressed).into_iter().collect();
         self.release_outputs(Some(SLOT_NAMES[idx]));
-        self.log("disconnect", json!({ "slot": SLOT_NAMES[idx], "reason": reason, "released": released }));
+        self.log(
+            "disconnect",
+            json!({ "slot": SLOT_NAMES[idx], "reason": reason, "released": released }),
+        );
         if self.game.phase == Phase::Preparing {
             self.release_outputs(None);
             self.reset_look();
@@ -2051,10 +2772,18 @@ impl Hub {
         }
         // 協力プレイ中に誰かが切れたら共同入力を止める (ホストの交代はロビーでだけ行う、#223)
         let now = now_ms();
-        let plan = session::disconnect_plan(self.game.phase, self.game.reason.as_deref(), self.participants.contains(&idx),
-            reason == "replaced", now, self.game.auto_resume_until);
+        let plan = session::disconnect_plan(
+            self.game.phase,
+            self.game.reason.as_deref(),
+            self.participants.contains(&idx),
+            reason == "replaced",
+            now,
+            self.game.auto_resume_until,
+        );
         if plan.pause_or_wait {
-            if plan.extend_deadline { self.game.auto_resume_until = now + self.game.auto_resume_ms; }
+            if plan.extend_deadline {
+                self.game.auto_resume_until = now + self.game.auto_resume_ms;
+            }
             if self.game.phase == Phase::Coop {
                 self.set_phase(Phase::Paused, &format!("{} disconnected", SLOT_NAMES[idx]));
             } else {
@@ -2068,7 +2797,9 @@ impl Hub {
 
     /// 移した枠の端末を 4008 で閉じ、同じトークンの再接続で新しい枠へ戻す。welcome と WebRTC を作り直す
     fn reconnect_slot(&mut self, idx: usize, now: u64) {
-        let Some(slot) = self.slots[idx].as_mut() else { return };
+        let Some(slot) = self.slots[idx].as_mut() else {
+            return;
+        };
         let conn = slot.conn.take();
         slot.connected = false;
         slot.disconnected_at = now;
@@ -2077,13 +2808,17 @@ impl Hub {
         slot.rtc_gen += 1;
         slot.ibuf.clear();
         // 閉じる通知で移動前の枠を切断扱いにしない
-        if let Some(c) = conn.and_then(|id| self.conns.get_mut(&id)) { c.role = Role::Unknown; }
+        if let Some(c) = conn.and_then(|id| self.conns.get_mut(&id)) {
+            c.role = Role::Unknown;
+        }
         self.close(conn, CLOSE_HOST_HANDOVER, "host handover");
     }
 
     /// 現在のホストが、ロビーで接続中の別の人へホストを譲る (#233)。2 つの枠を入れ替える
     fn transfer_host(&mut self, from: usize, to: usize) {
-        if !session::can_transfer_host(self.game.phase, from, to, &self.connected_slots()) { return; }
+        if !session::can_transfer_host(self.game.phase, from, to, &self.connected_slots()) {
+            return;
+        }
         self.release_outputs(None);
         self.reset_look();
         self.slots.swap(0, to);
@@ -2101,9 +2836,16 @@ impl Hub {
 
     /// ロビーで保持中の切断枠のうち、最も早く空く枠までの時間。保持中の枠がなければ None (#297)
     fn held_slot_retry_ms(&self, now: u64) -> Option<u64> {
-        if self.game.phase != Phase::Lobby { return None; }
-        self.slots.iter().flatten().filter(|s| !s.connected)
-            .map(|s| session::LOBBY_SLOT_HOLD_MS.saturating_sub(now.saturating_sub(s.disconnected_at)))
+        if self.game.phase != Phase::Lobby {
+            return None;
+        }
+        self.slots
+            .iter()
+            .flatten()
+            .filter(|s| !s.connected)
+            .map(|s| {
+                session::LOBBY_SLOT_HOLD_MS.saturating_sub(now.saturating_sub(s.disconnected_at))
+            })
             .min()
     }
 
@@ -2111,10 +2853,14 @@ impl Hub {
     /// P1 = ホストの前提を変えないよう枠ごと P1 へ移し、接続は 4008 で閉じる。スマホは通常の再接続で
     /// 同じトークンのまま P1 として戻り、welcome と WebRTC が作り直される。元のホストは参加者として戻る。
     fn release_lobby_slots(&mut self, now: u64) {
-        if self.game.phase != Phase::Lobby { return; }
+        if self.game.phase != Phase::Lobby {
+            return;
+        }
         let mut changed = false;
         for (i, slot_name) in SLOT_NAMES.iter().enumerate().take(MAX_SLOTS) {
-            let expired = self.slots[i].as_ref().is_some_and(|s| session::lobby_slot_expired(self.game.phase, s.connected, s.disconnected_at, now));
+            let expired = self.slots[i].as_ref().is_some_and(|s| {
+                session::lobby_slot_expired(self.game.phase, s.connected, s.disconnected_at, now)
+            });
             if expired {
                 if let Some(lineup) = self.lineup.as_mut().filter(|l| l.members.contains(&i)) {
                     lineup.expired_members[i] = true;
@@ -2186,7 +2932,9 @@ impl Hub {
                 for i in 0..MAX_SLOTS {
                     let stale = self.slots[i]
                         .as_ref()
-                        .filter(|s| s.connected && now.saturating_sub(s.last_seen) > HEARTBEAT_TIMEOUT_MS)
+                        .filter(|s| {
+                            s.connected && now.saturating_sub(s.last_seen) > HEARTBEAT_TIMEOUT_MS
+                        })
                         .map(|s| s.conn);
                     if let Some(conn) = stale {
                         self.mark_disconnected(i, "heartbeat timeout");
@@ -2220,15 +2968,24 @@ impl Hub {
             }
             Timer::RtcTimeout(idx, gen) => {
                 // つながらなければ WebSocket のみで続行 (自動復帰も待たせない)
-                let timed_out = self.slots[idx].as_mut().filter(|s| s.rtc_gen == gen && s.rtc_state == "connecting");
+                let timed_out = self.slots[idx]
+                    .as_mut()
+                    .filter(|s| s.rtc_gen == gen && s.rtc_state == "connecting");
                 if let Some(s) = timed_out {
                     s.rtc_state = "failed";
-                    self.log("rtc", json!({ "slot": SLOT_NAMES[idx], "state": "timeout" }));
+                    self.log(
+                        "rtc",
+                        json!({ "slot": SLOT_NAMES[idx], "state": "timeout" }),
+                    );
                     self.push_state();
                     self.maybe_auto_resume();
                 }
             }
-            Timer::InputFaultStop(gen) => { if self.input_fault && gen == self.fault_stop_gen { self.stop_input_failure(); } }
+            Timer::InputFaultStop(gen) => {
+                if self.input_fault && gen == self.fault_stop_gen {
+                    self.stop_input_failure();
+                }
+            }
             Timer::ReleaseRetry(gen) => self.retry_releases(gen),
             Timer::LaunchWatch(gen) => self.watch_launch(gen),
         }
@@ -2238,40 +2995,89 @@ impl Hub {
 
     fn on_event(&mut self, ev: Event) {
         match ev {
-            Event::WsOpen { id, tx, queued, ip, loopback } => {
-                self.conns.insert(id, Conn { tx, queued, ip, loopback, role: Role::Unknown });
+            Event::WsOpen {
+                id,
+                tx,
+                queued,
+                ip,
+                loopback,
+            } => {
+                self.conns.insert(
+                    id,
+                    Conn {
+                        tx,
+                        queued,
+                        ip,
+                        loopback,
+                        role: Role::Unknown,
+                    },
+                );
             }
-            Event::WsText { id, text, enqueued_at } => {
+            Event::WsText {
+                id,
+                text,
+                enqueued_at,
+            } => {
                 if let Some(msg) = protocol::parse_json(&text) {
-                    if let Some(Conn { role:Role::Player {slot}, .. })=self.conns.get(&id) {
-                        crate::input_trace::received(*slot,"ws",&msg,enqueued_at);
+                    if let Some(Conn {
+                        role: Role::Player { slot },
+                        ..
+                    }) = self.conns.get(&id)
+                    {
+                        crate::input_trace::received(*slot, "ws", &msg, enqueued_at);
                     }
                     self.on_ws_message(id, msg);
                 }
             }
             Event::WsClosed { id, code } => self.on_ws_closed(id, code),
-            Event::RtcDescription { slot, gen, sdp, kind } => {
+            Event::RtcDescription {
+                slot,
+                gen,
+                sdp,
+                kind,
+            } => {
                 if let Some(conn) = self.rtc_owner(slot, gen) {
-                    self.send(Some(conn), &json!({ "type": "rtc-answer", "sdp": sdp, "sdpType": kind }));
+                    self.send(
+                        Some(conn),
+                        &json!({ "type": "rtc-answer", "sdp": sdp, "sdpType": kind }),
+                    );
                 }
             }
-            Event::RtcCandidate { slot, gen, cand, mid } => {
+            Event::RtcCandidate {
+                slot,
+                gen,
+                cand,
+                mid,
+            } => {
                 if let Some(conn) = self.rtc_owner(slot, gen) {
-                    self.send(Some(conn), &json!({ "type": "rtc-cand", "cand": cand, "mid": mid }));
+                    self.send(
+                        Some(conn),
+                        &json!({ "type": "rtc-cand", "cand": cand, "mid": mid }),
+                    );
                 }
             }
             Event::RtcState { slot, gen, state } => self.on_rtc_state(slot, gen, state),
-            Event::RtcMessage { slot, gen, text, received_at } => {
+            Event::RtcMessage {
+                slot,
+                gen,
+                text,
+                received_at,
+            } => {
                 if self.rtc_owner(slot, gen).is_some() {
                     if let Some(msg) = protocol::parse_json(&text) {
-                        crate::input_trace::received(slot,"rtc",&msg,received_at);
+                        crate::input_trace::received(slot, "rtc", &msg, received_at);
                         self.handle_player_message(slot, msg, Via::Rtc);
                     }
                 }
             }
             Event::EmergencyStop { source, .. } => self.emergency_stop(source),
             Event::ManualPicked(picked) => self.on_manual_picked(picked),
-            Event::FakeRotationDue => { if self.rotation_at != 0 { self.rotation_at = now_ms(); self.rotate_roles_if_due(now_ms()); } }
+            Event::FakeRotationDue => {
+                if self.rotation_at != 0 {
+                    self.rotation_at = now_ms();
+                    self.rotate_roles_if_due(now_ms());
+                }
+            }
             Event::BluetoothAudio(on) => {
                 if self.bluetooth_audio != on {
                     self.bluetooth_audio = on;
@@ -2286,10 +3092,14 @@ impl Hub {
                 }
             }
             Event::FakeActivate(ok) => {
-                if self.fake_target.is_some() { self.fake_activate = ok; }
+                if self.fake_target.is_some() {
+                    self.fake_activate = ok;
+                }
             }
             Event::FakeLauncher(f) => {
-                if self.fake_target.is_some() { self.on_launcher_focus(f); }
+                if self.fake_target.is_some() {
+                    self.on_launcher_focus(f);
+                }
             }
             Event::FakeAppWindow(f) => {
                 // 試験では、この知らせが来たら PC アプリから起動された扱いにする
@@ -2306,7 +3116,10 @@ impl Hub {
 
     /// 今も有効な WebRTC 接続ならその持ち主の WebSocket 接続
     fn rtc_owner(&self, slot: usize, gen: u64) -> Option<u64> {
-        self.slots[slot].as_ref().filter(|s| s.rtc.is_some() && s.rtc_gen == gen).and_then(|s| s.conn)
+        self.slots[slot]
+            .as_ref()
+            .filter(|s| s.rtc.is_some() && s.rtc_gen == gen)
+            .and_then(|s| s.conn)
     }
 
     fn on_rtc_state(&mut self, idx: usize, gen: u64, state: RtcSignal) {
@@ -2328,10 +3141,18 @@ impl Hub {
     }
 
     fn on_ws_closed(&mut self, id: u64, code: u16) {
-        let Some(conn) = self.conns.remove(&id) else { return };
+        let Some(conn) = self.conns.remove(&id) else {
+            return;
+        };
         match conn.role {
-            Role::Monitor { page: Page::Game, .. } => self.on_focus_change(),
-            Role::Player { slot } if self.slots[slot].as_ref().is_some_and(|s| s.conn == Some(id)) => {
+            Role::Monitor {
+                page: Page::Game, ..
+            } => self.on_focus_change(),
+            Role::Player { slot }
+                if self.slots[slot]
+                    .as_ref()
+                    .is_some_and(|s| s.conn == Some(id)) =>
+            {
                 let s = self.slots[slot].as_mut().unwrap();
                 s.rtc = None;
                 s.rtc_state = "none";
@@ -2342,7 +3163,9 @@ impl Hub {
     }
 
     fn on_ws_message(&mut self, id: u64, msg: Value) {
-        let Some(conn) = self.conns.get(&id) else { return };
+        let Some(conn) = self.conns.get(&id) else {
+            return;
+        };
         let kind = s(&msg, "type").unwrap_or_default();
 
         if kind == "monitor" {
@@ -2357,15 +3180,23 @@ impl Hub {
                 Some("app") => Page::App,
                 _ => Page::Host,
             };
-            self.conns.get_mut(&id).unwrap().role = Role::Monitor { page, focused: false };
+            self.conns.get_mut(&id).unwrap().role = Role::Monitor {
+                page,
+                focused: false,
+            };
             return self.push_state();
         }
 
         match conn.role {
-            Role::Monitor { page, focused } => self.on_monitor_message(id, page, focused, &kind, &msg),
+            Role::Monitor { page, focused } => {
+                self.on_monitor_message(id, page, focused, &kind, &msg)
+            }
             _ if kind == "hello" => self.on_hello(id, &msg),
             Role::Player { slot } => {
-                if self.slots[slot].as_ref().is_some_and(|s| s.conn == Some(id)) {
+                if self.slots[slot]
+                    .as_ref()
+                    .is_some_and(|s| s.conn == Some(id))
+                {
                     self.handle_player_message(slot, msg, Via::Ws);
                 }
             }
@@ -2392,7 +3223,12 @@ impl Hub {
                 let f = msg.get("focused").and_then(Value::as_bool).unwrap_or(false);
                 if f != focused {
                     self.conns.get_mut(&id).unwrap().role = Role::Monitor { page, focused: f };
-                    if !self.desktop { self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); }
+                    if !self.desktop {
+                        self.release_outputs(None);
+                        self.reset_look();
+                        self.advance_epoch();
+                        self.push_game();
+                    }
                     // ブラウザで /app を開いた場合の知らせ。PC アプリから起動されたときは前面のプロセス名で判定する
                     if !self.desktop && f {
                         // ブラウザは接続ごとのfalse→trueを使う。閉じた接続のfocusを新しい画面へ持ち越さない。
@@ -2400,14 +3236,26 @@ impl Hub {
                     }
                 }
             }
-            "prepare" => { if self.can_prepare() { self.command(0, "PREPARE"); } }
-            "open_game" => { if self.connected_slots().contains(&0) { self.command(0, "OPEN_GAME"); } }
+            "prepare" => {
+                if self.can_prepare() {
+                    self.command(0, "PREPARE");
+                }
+            }
+            "open_game" => {
+                if self.connected_slots().contains(&0) {
+                    self.command(0, "OPEN_GAME");
+                }
+            }
             "select_game" => {
-                let Some(t) = s(msg, "title").filter(|t| self.title_known(t)) else { return };
+                let Some(t) = s(msg, "title").filter(|t| self.title_known(t)) else {
+                    return;
+                };
                 self.select_title(t);
             }
             "launch_game" => {
-                if let Some(id) = s(msg, "id") { self.launch_game(&id); }
+                if let Some(id) = s(msg, "id") {
+                    self.launch_game(&id);
+                }
             }
             "rotation" => {
                 let secs = msg.get("seconds").and_then(Value::as_u64).unwrap_or(0);
@@ -2419,31 +3267,69 @@ impl Hub {
             }
             "set_key" => {
                 // 協力プレイ中は変えない。変えたら旧キーを解放し、epoch を進めてから新しいキーで送る
-                if self.game.phase == Phase::Coop { return; }
-                let Some(action) = s(msg, "action") else { return };
-                let output = match msg.get("output") { Some(Value::Null) => None, Some(Value::String(id)) if crate::key_overrides::assignable(id) => Some(id.clone()), _ => return };
-                if !self.profile.as_ref().is_some_and(|p| p.actions.iter().any(|a| a.id == action && a.kind == "button")) { return; }
-                self.key_overrides.entry(self.game.title.clone()).or_default().insert(action.clone(), output.clone());
+                if self.game.phase == Phase::Coop {
+                    return;
+                }
+                let Some(action) = s(msg, "action") else {
+                    return;
+                };
+                let output = match msg.get("output") {
+                    Some(Value::Null) => None,
+                    Some(Value::String(id)) if crate::key_overrides::assignable(id) => {
+                        Some(id.clone())
+                    }
+                    _ => return,
+                };
+                if !self.profile.as_ref().is_some_and(|p| {
+                    p.actions
+                        .iter()
+                        .any(|a| a.id == action && a.kind == "button")
+                }) {
+                    return;
+                }
+                self.key_overrides
+                    .entry(self.game.title.clone())
+                    .or_default()
+                    .insert(action.clone(), output.clone());
                 self.log("set_key", json!({ "action": action, "output": output }));
                 self.apply_key_change();
             }
             "reset_keys" => {
-                if self.game.phase == Phase::Coop { return; }
+                if self.game.phase == Phase::Coop {
+                    return;
+                }
                 if self.key_overrides.remove(&self.game.title).is_some() {
                     self.log("reset_keys", json!({}));
                     self.apply_key_change();
                 }
             }
             "change_players" => {
-                if msg.get("epoch").and_then(Value::as_u64) == Some(self.game.epoch) { self.change_players(); }
+                if msg.get("epoch").and_then(Value::as_u64) == Some(self.game.epoch) {
+                    self.change_players();
+                }
             }
             "swap_roles" => {
-                let slot = |k: &str| s(msg, k).and_then(|n| SLOT_NAMES.iter().position(|x| *x == n));
-                if let (Some(a), Some(b)) = (slot("a"), slot("b")) { self.swap_roles(a, b); }
+                let slot =
+                    |k: &str| s(msg, k).and_then(|n| SLOT_NAMES.iter().position(|x| *x == n));
+                if let (Some(a), Some(b)) = (slot("a"), slot("b")) {
+                    self.swap_roles(a, b);
+                }
             }
             "confirm_lineup" => {
-                let members = msg.get("members").and_then(Value::as_array).map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect()).unwrap_or_default();
-                self.confirm_lineup(s(msg, "title"), members, msg.get("epoch").and_then(Value::as_u64));
+                let members = msg
+                    .get("members")
+                    .and_then(Value::as_array)
+                    .map(|a| {
+                        a.iter()
+                            .filter_map(|v| v.as_str().map(String::from))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                self.confirm_lineup(
+                    s(msg, "title"),
+                    members,
+                    msg.get("epoch").and_then(Value::as_u64),
+                );
             }
             // 分担の画面から戻ったら、決定を取り消す (戻った後の古い決定で起動・準備しない)
             "unconfirm_lineup" => {
@@ -2456,10 +3342,14 @@ impl Hub {
             // 手動で登録したアプリ (#49・#56)。PC 画面 (PC 本体の接続) からだけ
             "add_game" => self.pick_manual_game(),
             "rename_game" => {
-                if let (Some(id), Some(name)) = (s(msg, "id"), s(msg, "name")) { self.edit_manual_game(&id, Some(name)); }
+                if let (Some(id), Some(name)) = (s(msg, "id"), s(msg, "name")) {
+                    self.edit_manual_game(&id, Some(name));
+                }
             }
             "remove_game" => {
-                if let Some(id) = s(msg, "id") { self.edit_manual_game(&id, None); }
+                if let Some(id) = s(msg, "id") {
+                    self.edit_manual_game(&id, None);
+                }
             }
             "observe" => {
                 // 疑似ゲーム画面が実際に受け取った入力 (注入との照合結果)
@@ -2485,8 +3375,12 @@ impl Hub {
             }
             "phase" => {
                 if let Some(p) = s(msg, "phase").as_deref().and_then(Phase::parse) {
-                    if p == Phase::Lobby { self.game.host_ready = false; self.set_phase(p, "dashboard"); }
-                    else if p == Phase::Paused && self.game.phase == Phase::Coop { self.command(0, "PAUSE"); }
+                    if p == Phase::Lobby {
+                        self.game.host_ready = false;
+                        self.set_phase(p, "dashboard");
+                    } else if p == Phase::Paused && self.game.phase == Phase::Coop {
+                        self.command(0, "PAUSE");
+                    }
                 }
             }
             "reset" => {
@@ -2533,15 +3427,30 @@ impl Hub {
                 Some(id),
                 &json!({ "type": "error", "code": "protocol_version", "protocolVersion": PROTOCOL_VERSION }),
             );
-            self.log("reject_version", json!({ "got": version, "expected": PROTOCOL_VERSION }));
-            return self.close(Some(id), CLOSE_PROTOCOL_VERSION, "protocol version mismatch");
+            self.log(
+                "reject_version",
+                json!({ "got": version, "expected": PROTOCOL_VERSION }),
+            );
+            return self.close(
+                Some(id),
+                CLOSE_PROTOCOL_VERSION,
+                "protocol version mismatch",
+            );
         }
-        let client_id: String = s(msg, "clientId").unwrap_or_default().chars().take(64).collect();
+        let client_id: String = s(msg, "clientId")
+            .unwrap_or_default()
+            .chars()
+            .take(64)
+            .collect();
         if client_id.is_empty() {
             return self.close(Some(id), 4002, "no clientId");
         }
         let ip = self.conns[&id].ip.clone();
-        let existing = (0..MAX_SLOTS).find(|&i| self.slots[i].as_ref().is_some_and(|s| s.client_id == client_id));
+        let existing = (0..MAX_SLOTS).find(|&i| {
+            self.slots[i]
+                .as_ref()
+                .is_some_and(|s| s.client_id == client_id)
+        });
         if let Some(i) = existing {
             // 再接続はサーバーが発行したトークンで照合する。clientId だけ知っている別の端末には枠を渡さない
             let token = s(msg, "token").unwrap_or_default();
@@ -2597,7 +3506,10 @@ impl Hub {
         slot.net_last_warning = None;
         slot.last_seen = now;
         slot.last_seq = 0;
-        slot.next_iseq = num(msg, "nextIseq").map(|n| n as i64).filter(|&n| n >= 1).unwrap_or(1);
+        slot.next_iseq = num(msg, "nextIseq")
+            .map(|n| n as i64)
+            .filter(|&n| n >= 1)
+            .unwrap_or(1);
         slot.release_floor = 0;
         slot.press_iseq.clear();
         slot.look_seq = 0;
@@ -2657,13 +3569,15 @@ impl Hub {
                 if let Some(stats) = msg.get("stats") {
                     slot.client_stats = stats.clone();
                 }
-                slot.clock.observe(crate::freshness::mono_ms(), num(&msg, "t"));
+                slot.clock
+                    .observe(crate::freshness::mono_ms(), num(&msg, "t"));
                 let conn = slot.conn;
                 self.send(conn, &json!({ "type": "pong", "t": msg.get("t") }));
             }
             "ka" => {
                 // WebRTC の生存確認 (スマホの無線を起こしておく役目も兼ねる)
-                slot.clock.observe(crate::freshness::mono_ms(), num(&msg, "t"));
+                slot.clock
+                    .observe(crate::freshness::mono_ms(), num(&msg, "t"));
                 if let Some(peer) = &slot.rtc {
                     peer.send(&json!({ "type": "kpong", "t": msg.get("t") }).to_string());
                 }
@@ -2687,8 +3601,14 @@ impl Hub {
             }
             "release_inputs" if via == Via::Ws => {
                 if msg.get("epoch").and_then(Value::as_u64) == Some(self.game.epoch) {
-                    let look = match (msg.get("lseq").and_then(Value::as_i64), num(&msg, "cx"), num(&msg, "cy")) {
-                        (Some(l), Some(x), Some(y)) if x.is_finite() && y.is_finite() => Some((l, x, y)),
+                    let look = match (
+                        msg.get("lseq").and_then(Value::as_i64),
+                        num(&msg, "cx"),
+                        num(&msg, "cy"),
+                    ) {
+                        (Some(l), Some(x), Some(y)) if x.is_finite() && y.is_finite() => {
+                            Some((l, x, y))
+                        }
                         _ => None,
                     };
                     match (msg.get("iseq").and_then(Value::as_i64), look) {
@@ -2696,16 +3616,25 @@ impl Hub {
                         (Some(floor), Some(look)) => self.release_slot_inputs(idx, floor, look),
                         // 押下と視点の両方の境界がない要求 (旧版のスマホ) は、解放前の入力を確実に拒否できないので、
                         // 従来どおり全参加者を解放してepochを進める
-                        _ => { self.release_outputs(None); self.reset_look(); self.advance_epoch(); self.push_game(); }
+                        _ => {
+                            self.release_outputs(None);
+                            self.reset_look();
+                            self.advance_epoch();
+                            self.push_game();
+                        }
                     }
                 }
             }
             "remote" if via == Via::Ws => self.remote_message(idx, &msg),
             // 新しい担当をスマホで確認した (#47)
             "transfer_host" if via == Via::Ws => {
-                if msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) { return; }
+                if msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
+                    return;
+                }
                 let to = s(&msg, "to").and_then(|name| SLOT_NAMES.iter().position(|n| *n == name));
-                if let Some(to) = to { self.transfer_host(idx, to); }
+                if let Some(to) = to {
+                    self.transfer_host(idx, to);
+                }
             }
             "role_ok" if via == Via::Ws => {
                 if msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
@@ -2738,7 +3667,10 @@ impl Hub {
             }
             Err(e) => {
                 slot.rtc_state = "failed";
-                self.log("rtc", json!({ "slot": SLOT_NAMES[idx], "state": "error", "error": e }));
+                self.log(
+                    "rtc",
+                    json!({ "slot": SLOT_NAMES[idx], "state": "error", "error": e }),
+                );
                 self.push_state();
             }
         }
@@ -2747,16 +3679,22 @@ impl Hub {
     /// 入力は同じものが WebSocket と WebRTC の両方から届く。番号順に、先に届いた方で 1 回だけ処理する。
     /// 番号が飛んだら (WebRTC で欠けた) WebSocket の到着を待つので、押下と解放の順番が入れ替わることはない。
     fn accept_input(&mut self, idx: usize, msg: Value, via: Via) {
-        let Some(msg) = InputMessage::decode(msg) else { return };
+        let Some(msg) = InputMessage::decode(msg) else {
+            return;
+        };
         let iseq = msg.iseq;
         let slot = self.slots[idx].as_mut().unwrap();
         // 届いた時刻で基準を更新する。重複 (WS/RTCの後着) も届いた事実として使える
-        slot.clock.observe(crate::freshness::mono_ms(), num(&msg.raw, "t"));
+        slot.clock
+            .observe(crate::freshness::mono_ms(), num(&msg.raw, "t"));
         if iseq < slot.next_iseq || slot.ibuf.contains_key(&iseq) {
             return;
         }
         if crate::input_trace::start().is_some() {
-            crate::input_trace::event("buffer",json!({"slot":SLOT_NAMES[idx],"epoch":msg.epoch,"iseq":iseq,"via":via.name(),"next":slot.next_iseq}));
+            crate::input_trace::event(
+                "buffer",
+                json!({"slot":SLOT_NAMES[idx],"epoch":msg.epoch,"iseq":iseq,"via":via.name(),"next":slot.next_iseq}),
+            );
         }
         if slot.ibuf.len() > 200 {
             slot.ibuf.clear();
@@ -2764,7 +3702,9 @@ impl Hub {
         slot.ibuf.insert(iseq, (msg, via));
         loop {
             let slot = self.slots[idx].as_mut().unwrap();
-            let Some((m, v)) = slot.ibuf.remove(&slot.next_iseq) else { break };
+            let Some((m, v)) = slot.ibuf.remove(&slot.next_iseq) else {
+                break;
+            };
             slot.next_iseq += 1;
             self.process_input(idx, m, v);
         }
@@ -2772,8 +3712,13 @@ impl Hub {
 
     fn process_input(&mut self, idx: usize, msg: InputMessage, via: Via) {
         if crate::input_trace::start().is_some() {
-            let output=self.resolve_control(idx,&msg.button).map(|i| OUTPUTS[i].id);
-            crate::input_trace::event("accepted",json!({"slot":SLOT_NAMES[idx],"epoch":msg.epoch,"iseq":msg.iseq,"via":via.name(),"out":output,"state":msg.state,"stale":msg.epoch!=Some(self.game.epoch)}));
+            let output = self
+                .resolve_control(idx, &msg.button)
+                .map(|i| OUTPUTS[i].id);
+            crate::input_trace::event(
+                "accepted",
+                json!({"slot":SLOT_NAMES[idx],"epoch":msg.epoch,"iseq":msg.iseq,"via":via.name(),"out":output,"state":msg.state,"stale":msg.epoch!=Some(self.game.epoch)}),
+            );
         }
         let button = msg.button;
         let state = msg.state;
@@ -2802,7 +3747,9 @@ impl Hub {
         // 順序待ちの後に処理する時点で判定する。解放 (up) は常に適用する
         if state == "down" && !burst {
             let slot = self.slots[idx].as_mut().unwrap();
-            let delay = slot.clock.delay(crate::freshness::mono_ms(), num(&msg.raw, "t"));
+            let delay = slot
+                .clock
+                .delay(crate::freshness::mono_ms(), num(&msg.raw, "t"));
             if !delay.is_some_and(|d| d < crate::freshness::STALE_DOWN_MS) {
                 slot.stale_downs += 1;
                 let conn = slot.conn;
@@ -2839,7 +3786,9 @@ impl Hub {
 
     /// 視点は累積値で届くので、欠けたパケットの分も次のパケットで取り戻せる。古いパケットは捨てる
     fn accept_look(&mut self, idx: usize, msg: &Value) {
-        let Some(msg) = LookMessage::decode(msg) else { return };
+        let Some(msg) = LookMessage::decode(msg) else {
+            return;
+        };
         // 別epochの累積値は現在の基準にも混ぜない。
         if msg.epoch != Some(self.game.epoch) {
             return;
@@ -2879,9 +3828,9 @@ mod tests {
     include!("release_order_tests.rs");
     include!("review_rotation_tests.rs");
     use super::*;
-    use std::collections::VecDeque;
-    use crate::input::Input;
     use crate::input::testing::{Operation, RecordingInput};
+    use crate::input::Input;
+    use std::collections::VecDeque;
     use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
     mod measurement {
@@ -2897,8 +3846,12 @@ mod tests {
 
     fn fixture_with_input(input: Box<dyn InputAdapter>) -> (Hub, UnboundedReceiver<Out>) {
         let (tx, _rx) = std::sync::mpsc::channel();
-        let log_file = BufWriter::new(File::options().write(true)
-            .open(if cfg!(windows) { "NUL" } else { "/dev/null" }).unwrap());
+        let log_file = BufWriter::new(
+            File::options()
+                .write(true)
+                .open(if cfg!(windows) { "NUL" } else { "/dev/null" })
+                .unwrap(),
+        );
         let now = Instant::now();
         let mut hub = Hub {
             tx,
@@ -2920,8 +3873,14 @@ mod tests {
             },
             inject: InjectMode::On,
             game_service: GameService::new(),
-            release_pending: BTreeSet::new(), pushed_route: std::cell::Cell::new("none"), input_fault: false,
-            fault_stop_gen: 0, fault_stop_pending: false, release_retry_gen: 0, release_retry_attempts: 0, release_retry_active: false,
+            release_pending: BTreeSet::new(),
+            pushed_route: std::cell::Cell::new("none"),
+            input_fault: false,
+            fault_stop_gen: 0,
+            fault_stop_pending: false,
+            release_retry_gen: 0,
+            release_retry_attempts: 0,
+            release_retry_active: false,
             outputs: OUTPUTS.iter().map(|_| OutputState::default()).collect(),
             look: Look::new(now, 30.0, 120.0),
             timers: BinaryHeap::new(),
@@ -2970,23 +3929,42 @@ mod tests {
             desktop: false,
         };
         let (monitor_tx, monitor_rx) = unbounded_channel();
-        hub.conns.insert(1, Conn { tx: monitor_tx, queued: Default::default(), ip: String::new(), loopback: true,
-            role: Role::Monitor { page: Page::Host, focused: false } });
+        hub.conns.insert(
+            1,
+            Conn {
+                tx: monitor_tx,
+                queued: Default::default(),
+                ip: String::new(),
+                loopback: true,
+                role: Role::Monitor {
+                    page: Page::Host,
+                    focused: false,
+                },
+            },
+        );
         hub.game.phase = Phase::Coop;
         hub.profile = Some(profiles::builtin_minecraft());
-        hub.assigned = vec![vec!["forward".into()], vec!["look".into()], vec!["attack".into()]];
+        hub.assigned = vec![
+            vec!["forward".into()],
+            vec!["look".into()],
+            vec!["attack".into()],
+        ];
         hub.slots[0] = Some(Slot::new("test1".into(), "test-token1".into()));
         hub.slots[1] = Some(Slot::new("test2".into(), "test-token2".into()));
         (hub, monitor_rx)
     }
 
-    fn index(id: &str) -> usize { OUTPUTS.iter().position(|o| o.id == id).unwrap() }
+    fn index(id: &str) -> usize {
+        OUTPUTS.iter().position(|o| o.id == id).unwrap()
+    }
 
     fn injections(rx: &mut UnboundedReceiver<Out>) -> Vec<Value> {
         let mut result = Vec::new();
         while let Ok(Out::Text(t)) = rx.try_recv() {
             let v: Value = serde_json::from_str(&t).unwrap();
-            if v["type"] == "inject" { result.push(v["entry"].clone()); }
+            if v["type"] == "inject" {
+                result.push(v["entry"].clone());
+            }
         }
         result
     }
@@ -3013,7 +3991,12 @@ mod tests {
         finish_wait(&mut h, i);
         assert!(!h.outputs[i].physical);
         let out = injections(&mut rx);
-        assert_eq!(out.iter().map(|v| v["state"].as_str().unwrap()).collect::<Vec<_>>(), ["down", "up"]);
+        assert_eq!(
+            out.iter()
+                .map(|v| v["state"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            ["down", "up"]
+        );
     }
 
     #[test]
@@ -3028,7 +4011,10 @@ mod tests {
         assert!(h.outputs[key].physical);
         assert!(h.outputs[mouse].physical);
         h.release_outputs(None);
-        assert!(h.outputs.iter().all(|s| !s.physical && s.holders.is_empty() && s.queue.is_empty() && !s.timer_pending));
+        assert!(h.outputs.iter().all(|s| !s.physical
+            && s.holders.is_empty()
+            && s.queue.is_empty()
+            && !s.timer_pending));
         let out = injections(&mut rx);
         assert_eq!(out.iter().filter(|v| v["state"] == "up").count(), 2);
     }
@@ -3045,22 +4031,35 @@ mod tests {
         let before_hold = Instant::now();
         h.set_output(i, "P1", false);
         let after_hold = Instant::now();
-        let hold_due = h.timers.iter().find_map(|Reverse((at, _, timer))|
-            (*timer == Timer::Pump(i, h.outputs[i].timer_gen)).then_some(*at)).unwrap();
+        let hold_due = h
+            .timers
+            .iter()
+            .find_map(|Reverse((at, _, timer))| {
+                (*timer == Timer::Pump(i, h.outputs[i].timer_gen)).then_some(*at)
+            })
+            .unwrap();
         assert!(hold_due >= before_hold + Duration::from_millis(60));
         assert!(hold_due <= after_hold + Duration::from_millis(60));
         h.set_output(i, "P1", true);
         h.set_output(i, "P1", false);
         assert!(h.outputs[i].physical);
         assert!(h.outputs[i].timer_pending);
-        assert_eq!(h.outputs[i].queue.iter().map(|x| x.0).collect::<Vec<_>>(), [false, true, false]);
+        assert_eq!(
+            h.outputs[i].queue.iter().map(|x| x.0).collect::<Vec<_>>(),
+            [false, true, false]
+        );
         finish_wait(&mut h, i); // upの後、次のdownはgap待ち
         assert!(!h.outputs[i].physical);
         assert!(h.outputs[i].timer_pending);
         assert!(h.outputs[i].queue.front().unwrap().0);
         let after_gap = Instant::now();
-        let gap_due = h.timers.iter().find_map(|Reverse((at, _, timer))|
-            (*timer == Timer::Pump(i, h.outputs[i].timer_gen)).then_some(*at)).unwrap();
+        let gap_due = h
+            .timers
+            .iter()
+            .find_map(|Reverse((at, _, timer))| {
+                (*timer == Timer::Pump(i, h.outputs[i].timer_gen)).then_some(*at)
+            })
+            .unwrap();
         assert!(gap_due >= h.outputs[i].changed_at.unwrap() + Duration::from_millis(50));
         assert!(gap_due <= after_gap + Duration::from_millis(50));
         finish_wait(&mut h, i); // downの後、次のupはhold待ち
@@ -3069,7 +4068,13 @@ mod tests {
         finish_wait(&mut h, i);
         assert!(!h.outputs[i].physical);
         assert!(h.outputs[i].queue.is_empty());
-        assert_eq!(injections(&mut rx).iter().map(|v| v["state"].as_str().unwrap()).collect::<Vec<_>>(), ["down", "up", "down", "up"]);
+        assert_eq!(
+            injections(&mut rx)
+                .iter()
+                .map(|v| v["state"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            ["down", "up", "down", "up"]
+        );
     }
 
     #[test]
@@ -3130,15 +4135,29 @@ mod tests {
             h.outputs[i].changed_at = Some(Instant::now() + Duration::from_secs(60));
             h.set_output(i, "P1", false);
             h.set_output(i, "P1", true);
-            h.look.px = 100.0; h.look.py = -50.0; h.look.fx = 0.4; h.look.fy = -0.3;
+            h.look.px = 100.0;
+            h.look.py = -50.0;
+            h.look.fx = 0.4;
+            h.look.fy = -0.3;
             let old_epoch = h.game.epoch;
-            if emergency { h.emergency_stop("test"); }
-            else { h.set_phase(Phase::Paused, "host pause"); }
+            if emergency {
+                h.emergency_stop("test");
+            } else {
+                h.set_phase(Phase::Paused, "host pause");
+            }
             assert!(h.game.phase == Phase::Paused);
             assert_eq!(h.game.epoch, old_epoch + 1);
-            assert_eq!((h.look.px, h.look.py, h.look.fx, h.look.fy), (0.0, 0.0, 0.0, 0.0));
-            assert!(h.outputs.iter().all(|s| !s.physical && s.holders.is_empty() && s.queue.is_empty()));
-            if emergency { assert!(h.inject == InjectMode::Off); }
+            assert_eq!(
+                (h.look.px, h.look.py, h.look.fx, h.look.fy),
+                (0.0, 0.0, 0.0, 0.0)
+            );
+            assert!(h
+                .outputs
+                .iter()
+                .all(|s| !s.physical && s.holders.is_empty() && s.queue.is_empty()));
+            if emergency {
+                assert!(h.inject == InjectMode::Off);
+            }
             // OS設定を呼ぶ状態遷移を増やさず再開後のtickを直接再現する。
             h.game.phase = Phase::Coop;
             h.look_tick();
@@ -3152,15 +4171,25 @@ mod tests {
         let (mut h, mut rx) = fixture();
         h.set_output(index("KEY_W"), "P1", true);
         h.set_output(index("MOUSE_L"), "P3", true);
-        h.look.px = 40.0; h.look.fx = 0.4;
+        h.look.px = 40.0;
+        h.look.fx = 0.4;
         while rx.try_recv().is_ok() {}
         let old_epoch = h.game.epoch;
         h.set_phase(Phase::Paused, "host pause");
         let mut messages = Vec::new();
-        while let Ok(Out::Text(text)) = rx.try_recv() { messages.push(serde_json::from_str::<Value>(&text).unwrap()); }
-        let phase = messages.iter().position(|m| m["type"] == "log" && m["entry"]["kind"] == "phase").unwrap();
+        while let Ok(Out::Text(text)) = rx.try_recv() {
+            messages.push(serde_json::from_str::<Value>(&text).unwrap());
+        }
+        let phase = messages
+            .iter()
+            .position(|m| m["type"] == "log" && m["entry"]["kind"] == "phase")
+            .unwrap();
         let game = messages.iter().position(|m| m["type"] == "game").unwrap();
-        let ups: Vec<_> = messages.iter().enumerate().filter(|(_, m)| m["type"] == "inject" && m["entry"]["state"] == "up").collect();
+        let ups: Vec<_> = messages
+            .iter()
+            .enumerate()
+            .filter(|(_, m)| m["type"] == "inject" && m["entry"]["state"] == "up")
+            .collect();
         assert_eq!(ups.len(), 2);
         assert!(ups.iter().all(|(i, _)| *i < phase));
         assert!(phase < game);
@@ -3168,7 +4197,10 @@ mod tests {
         assert_eq!(messages[game]["game"]["epoch"], old_epoch + 1);
         assert_eq!(messages[game]["game"]["phase"], "paused");
         assert_eq!((h.look.px, h.look.fx), (0.0, 0.0));
-        assert!(h.outputs.iter().all(|s| !s.physical && s.holders.is_empty() && s.queue.is_empty()));
+        assert!(h
+            .outputs
+            .iter()
+            .all(|s| !s.physical && s.holders.is_empty() && s.queue.is_empty()));
         h.command(0, "PAUSE");
         assert_eq!(h.game.epoch, old_epoch + 2); // 同phaseのホスト停止も失効処理を省略しない。
         assert_eq!(h.game.auto_resume_until, 0);
@@ -3179,7 +4211,8 @@ mod tests {
         let (mut h, _rx) = fixture();
         for field in ["lseq", "cx", "cy"] {
             let mut msg = json!({"epoch":1,"lseq":1,"cx":10,"cy":4});
-            msg[field] = json!("NaN"); h.accept_look(1, &msg);
+            msg[field] = json!("NaN");
+            h.accept_look(1, &msg);
             assert_eq!(h.slots[1].as_ref().unwrap().look_seq, 0);
             assert_eq!((h.look.px, h.look.py), (0.0, 0.0));
         }
@@ -3196,15 +4229,27 @@ mod tests {
         h.accept_look(1, &json!({"epoch":1,"lseq":1,"cx":10,"cy":0}));
         assert_eq!(h.look.px, 10.0);
         let epoch = h.game.epoch;
-        h.handle_player_message(1, json!({"type":"release_inputs","epoch":1,"iseq":0,"lseq":2,"cx":100,"cy":0}), Via::Ws);
-        assert_eq!((h.look.px, h.game.epoch), (0.0, epoch), "本人の視点の未処理分を捨て、epochは変えない");
+        h.handle_player_message(
+            1,
+            json!({"type":"release_inputs","epoch":1,"iseq":0,"lseq":2,"cx":100,"cy":0}),
+            Via::Ws,
+        );
+        assert_eq!(
+            (h.look.px, h.game.epoch),
+            (0.0, epoch),
+            "本人の視点の未処理分を捨て、epochは変えない"
+        );
         h.accept_look(1, &json!({"epoch":1,"lseq":2,"cx":100,"cy":0}));
         assert_eq!(h.look.px, 0.0, "解放前に送った視点を後から適用しない");
         // 新しいタッチは解放時点の累積値から数える (捨てた移動を混ぜない)
         h.accept_look(1, &json!({"epoch":1,"lseq":3,"cx":105,"cy":2}));
         assert_eq!((h.look.px, h.look.py), (5.0, 2.0));
         // 視点の境界 (lseq) のない旧版の要求は、解放前の視点を拒否できないので、全体の解放とepoch更新にする
-        h.handle_player_message(1, json!({"type":"release_inputs","epoch":1,"iseq":0}), Via::Ws);
+        h.handle_player_message(
+            1,
+            json!({"type":"release_inputs","epoch":1,"iseq":0}),
+            Via::Ws,
+        );
         assert_eq!((h.look.px, h.game.epoch), (0.0, epoch + 1));
         h.accept_look(1, &json!({"epoch":1,"lseq":4,"cx":106,"cy":2}));
         assert_eq!(h.look.px, 0.0, "旧epochの視点は適用しない");
@@ -3220,15 +4265,29 @@ mod tests {
         h.accept_input(0, input(1, "down"), Via::Ws);
         h.accept_input(0, input(2, "up"), Via::Ws);
         h.accept_input(0, input(3, "down"), Via::Rtc); // 新しい指
-        h.handle_player_message(0, json!({"type":"release_inputs","epoch":1,"iseq":2,"lseq":0,"cx":0,"cy":0}), Via::Ws);
-        assert!(h.slots[0].as_ref().unwrap().pressed.contains("act:forward"), "解放より後の押下の論理保持を残す");
-        assert!(h.outputs[w].holders.contains("P1"), "解放より後の押下の出力を残す");
+        h.handle_player_message(
+            0,
+            json!({"type":"release_inputs","epoch":1,"iseq":2,"lseq":0,"cx":0,"cy":0}),
+            Via::Ws,
+        );
+        assert!(
+            h.slots[0].as_ref().unwrap().pressed.contains("act:forward"),
+            "解放より後の押下の論理保持を残す"
+        );
+        assert!(
+            h.outputs[w].holders.contains("P1"),
+            "解放より後の押下の出力を残す"
+        );
         h.accept_input(0, input(3, "down"), Via::Ws); // 同じ番号のWS側は重複として捨てる
         assert!(h.outputs[w].holders.contains("P1"));
         // 解放の時点で押していた押下は離す
         h.accept_input(0, input(4, "up"), Via::Ws);
         h.accept_input(0, input(5, "down"), Via::Ws);
-        h.handle_player_message(0, json!({"type":"release_inputs","epoch":1,"iseq":5,"lseq":0,"cx":0,"cy":0}), Via::Ws);
+        h.handle_player_message(
+            0,
+            json!({"type":"release_inputs","epoch":1,"iseq":5,"lseq":0,"cx":0,"cy":0}),
+            Via::Ws,
+        );
         assert!(!h.slots[0].as_ref().unwrap().pressed.contains("act:forward"));
         assert!(!h.outputs[w].holders.contains("P1"));
         h.release_outputs(None);
@@ -3239,23 +4298,55 @@ mod tests {
         let (mut h, _rx) = fixture();
         h.keybinds = Keybinds::build(h.profile.as_ref().unwrap(), None);
         let (tx, mut rx) = unbounded_channel();
-        h.conns.insert(90, Conn { tx, queued: Default::default(), ip: String::new(), loopback: false, role: Role::Player { slot: 0 } });
+        h.conns.insert(
+            90,
+            Conn {
+                tx,
+                queued: Default::default(),
+                ip: String::new(),
+                loopback: false,
+                role: Role::Player { slot: 0 },
+            },
+        );
         h.slots[0].as_mut().unwrap().conn = Some(90);
-        h.accept_input(0, json!({"iseq":"NaN","epoch":1,"button":"act:forward","state":"down"}), Via::Rtc);
+        h.accept_input(
+            0,
+            json!({"iseq":"NaN","epoch":1,"button":"act:forward","state":"down"}),
+            Via::Rtc,
+        );
         assert_eq!(h.slots[0].as_ref().unwrap().next_iseq, 1);
         assert!(h.slots[0].as_ref().unwrap().ibuf.is_empty());
         // 送信時刻を解釈できない押下は鮮度を判定できないので適用しない (#285)。ACKは原値のまま返す
-        h.accept_input(0, json!({"iseq":"1","epoch":1,"button":"act:forward","state":"down","t":"wire-time"}), Via::Ws);
-        let Out::Text(text) = rx.try_recv().unwrap() else { panic!("ACKが必要") };
+        h.accept_input(
+            0,
+            json!({"iseq":"1","epoch":1,"button":"act:forward","state":"down","t":"wire-time"}),
+            Via::Ws,
+        );
+        let Out::Text(text) = rx.try_recv().unwrap() else {
+            panic!("ACKが必要")
+        };
         let ack: Value = serde_json::from_str(&text).unwrap();
-        assert_eq!(ack["t"], "wire-time"); assert_eq!(ack["stale"], true);
+        assert_eq!(ack["t"], "wire-time");
+        assert_eq!(ack["stale"], true);
         assert!(!h.outputs[index("KEY_W")].physical);
-        h.accept_input(0, json!({"iseq":"2.9","epoch":1,"button":"act:forward","state":"down","t":"12.5"}), Via::Ws);
-        let Out::Text(text) = rx.try_recv().unwrap() else { panic!("ACKが必要") };
+        h.accept_input(
+            0,
+            json!({"iseq":"2.9","epoch":1,"button":"act:forward","state":"down","t":"12.5"}),
+            Via::Ws,
+        );
+        let Out::Text(text) = rx.try_recv().unwrap() else {
+            panic!("ACKが必要")
+        };
         let ack: Value = serde_json::from_str(&text).unwrap();
-        assert_eq!(ack["iseq"], "2.9"); assert_eq!(ack["t"], "12.5"); assert!(ack.get("stale").is_none());
+        assert_eq!(ack["iseq"], "2.9");
+        assert_eq!(ack["t"], "12.5");
+        assert!(ack.get("stale").is_none());
         assert!(h.outputs[index("KEY_W")].physical);
-        h.accept_input(0, json!({"iseq":2,"epoch":1,"button":"act:forward","state":"up"}), Via::Rtc);
+        h.accept_input(
+            0,
+            json!({"iseq":2,"epoch":1,"button":"act:forward","state":"up"}),
+            Via::Rtc,
+        );
         assert!(h.outputs[index("KEY_W")].physical); // 後着重複は解放しない。
         h.release_outputs(None);
     }
@@ -3270,10 +4361,17 @@ mod tests {
         h.set_output(index("MOUSE_L"), "P2", true);
         // ping で基準を作る (スマホの時計は PC と同期していない想定で大きくずらす)
         let skew = 5_000_000.0;
-        h.slots[0].as_mut().unwrap().clock.observe(mono_ms(), Some(mono_ms() + skew));
+        h.slots[0]
+            .as_mut()
+            .unwrap()
+            .clock
+            .observe(mono_ms(), Some(mono_ms() + skew));
         // 2秒前に押した押下が、詰まりの後にまとめて届いた: 実行しない
         h.accept_input(0, json!({"iseq":1,"epoch":epoch,"button":"act:forward","state":"down","t":mono_ms() + skew - 2000.0}), Via::Ws);
-        assert!(!h.outputs[index("KEY_W")].physical, "遅れた押下を実行しない");
+        assert!(
+            !h.outputs[index("KEY_W")].physical,
+            "遅れた押下を実行しない"
+        );
         assert!(!h.slots[0].as_ref().unwrap().pressed.contains("act:forward"));
         assert_eq!(h.slots[0].as_ref().unwrap().stale_downs, 1);
         // その解放は常に適用し (何も押していないので変化なし)、番号は進める
@@ -3282,7 +4380,10 @@ mod tests {
         // 指を離した後の新しい押下は正常に入力できる
         h.accept_input(0, json!({"iseq":3,"epoch":epoch,"button":"act:forward","state":"down","t":mono_ms() + skew}), Via::Ws);
         assert!(h.outputs[index("KEY_W")].physical, "新しい押下は入力できる");
-        assert!(h.outputs[index("MOUSE_L")].physical, "他の参加者の保持を解放しない");
+        assert!(
+            h.outputs[index("MOUSE_L")].physical,
+            "他の参加者の保持を解放しない"
+        );
         h.release_outputs(None);
     }
 
@@ -3291,35 +4392,69 @@ mod tests {
         let recorder = crate::input::testing::RecordingInput::default();
         let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
         let (tx, _rx) = unbounded_channel();
-        h.on_event(Event::WsOpen { id: 90, tx, queued: Default::default(), ip: String::new(), loopback: false });
+        h.on_event(Event::WsOpen {
+            id: 90,
+            tx,
+            queued: Default::default(),
+            ip: String::new(),
+            loopback: false,
+        });
         let epoch = h.game.epoch;
-        for msg in [json!({"type":"input","iseq":1,"epoch":epoch,"button":"act:forward","state":"down"}),
-            json!({"type":"inject_mode","mode":"off"}), json!({"type":"reset"}), json!({"type":"command","cmd":"PAUSE"})] {
-            h.on_event(Event::WsText { id:90, text:msg.to_string(), enqueued_at: None });
+        for msg in [
+            json!({"type":"input","iseq":1,"epoch":epoch,"button":"act:forward","state":"down"}),
+            json!({"type":"inject_mode","mode":"off"}),
+            json!({"type":"reset"}),
+            json!({"type":"command","cmd":"PAUSE"}),
+        ] {
+            h.on_event(Event::WsText {
+                id: 90,
+                text: msg.to_string(),
+                enqueued_at: None,
+            });
         }
-        assert!(recorder.calls().is_empty()); assert_eq!(h.game.epoch, epoch); assert!(h.game.phase == Phase::Coop);
+        assert!(recorder.calls().is_empty());
+        assert_eq!(h.game.epoch, epoch);
+        assert!(h.game.phase == Phase::Coop);
     }
 
     #[test]
     fn stale_launch_completions_and_watchers_cannot_overwrite_a_new_selection() {
         let (mut h, _rx) = fixture();
         h.launch_gen = 7;
-        h.launch = Some(Launch { id: "minecraft-java".into(), name: "Minecraft".into(), state: "launching",
-            message: "待機".into(), gen: 7, deadline: Instant::now() + Duration::from_secs(300), seen: None });
-        h.on_launched(6, Err("旧結果".into())); h.watch_launch(6);
+        h.launch = Some(Launch {
+            id: "minecraft-java".into(),
+            name: "Minecraft".into(),
+            state: "launching",
+            message: "待機".into(),
+            gen: 7,
+            deadline: Instant::now() + Duration::from_secs(300),
+            seen: None,
+        });
+        h.on_launched(6, Err("旧結果".into()));
+        h.watch_launch(6);
         assert_eq!(h.launch.as_ref().unwrap().message, "待機");
-        h.set_output(index("KEY_W"), "P1", true); h.look.px = 20.0;
+        h.set_output(index("KEY_W"), "P1", true);
+        h.look.px = 20.0;
         let epoch = h.game.epoch;
         h.select_title("pseudo-game".into());
-        assert!(h.launch.is_none()); assert!(h.game.phase == Phase::Lobby); assert!(h.game.epoch > epoch);
-        assert!(h.outputs.iter().all(|s| !s.physical && s.queue.is_empty())); assert_eq!(h.look.px, 0.0);
-        h.on_launched(7, Err("切替前の結果".into())); h.watch_launch(7);
-        assert!(h.launch.is_none()); assert_eq!(h.game.title, "pseudo-game");
+        assert!(h.launch.is_none());
+        assert!(h.game.phase == Phase::Lobby);
+        assert!(h.game.epoch > epoch);
+        assert!(h.outputs.iter().all(|s| !s.physical && s.queue.is_empty()));
+        assert_eq!(h.look.px, 0.0);
+        h.on_launched(7, Err("切替前の結果".into()));
+        h.watch_launch(7);
+        assert!(h.launch.is_none());
+        assert_eq!(h.game.title, "pseudo-game");
     }
 
     #[test]
     fn launcher_window_matches_only_the_official_minecraft_launcher() {
-        let fg = |process: &str, title: &str| Foreground { process: process.into(), path: String::new(), title: title.into() };
+        let fg = |process: &str, title: &str| Foreground {
+            process: process.into(),
+            path: String::new(),
+            title: title.into(),
+        };
         assert!(launcher_target().matches(&fg("minecraft.exe", "Minecraft Launcher")));
         assert!(launcher_target().matches(&fg("minecraftlauncher.exe", "Minecraft Launcher")));
         // 実機で起動直後に同じタイトルで出た更新確認・ゲーム本体・Bedrock 版は対象にしない
@@ -3340,12 +4475,21 @@ mod tests {
         assert!(h.remote_launcher_active());
         assert_eq!(h.game_snapshot()["remoteRoute"], "launcher");
         h.handle_control(1, "ENTER", "down");
-        assert!(!h.outputs[index("ENTER")].physical, "ホスト以外は操作できない");
+        assert!(
+            !h.outputs[index("ENTER")].physical,
+            "ホスト以外は操作できない"
+        );
         h.handle_control(0, "ENTER", "down");
-        assert!(h.outputs[index("ENTER")].physical, "ホストのリモコンでランチャーの「プレイ」を押せる");
+        assert!(
+            h.outputs[index("ENTER")].physical,
+            "ホストのリモコンでランチャーの「プレイ」を押せる"
+        );
         let epoch = h.game.epoch;
         h.on_event(Event::FakeLauncher(false));
-        assert!(!h.outputs[index("ENTER")].physical, "ランチャーが前面から外れたら離す");
+        assert!(
+            !h.outputs[index("ENTER")].physical,
+            "ランチャーが前面から外れたら離す"
+        );
         assert!(h.game.epoch > epoch);
         assert_eq!(h.game_snapshot()["remoteRoute"], "none");
         h.on_event(Event::FakeLauncher(true));
@@ -3354,7 +4498,10 @@ mod tests {
         h.game.phase = Phase::Preparing;
         assert!(h.remote_launcher_active());
         h.game.title = "pseudo-game".into();
-        assert!(!h.remote_launcher_active(), "Minecraft 以外を選んでいるときは使わない");
+        assert!(
+            !h.remote_launcher_active(),
+            "Minecraft 以外を選んでいるときは使わない"
+        );
         h.release_outputs(None);
     }
 
@@ -3387,16 +4534,29 @@ mod tests {
         h.hotkey = Err("他のアプリが使用中".into());
         h.on_launcher_focus(true); // ランチャーが前面に来た観測だけを模擬する
         assert!(h.launcher_fg);
-        assert!(!h.remote_launcher_active(), "緊急停止が使えないのにランチャーへ送らない");
+        assert!(
+            !h.remote_launcher_active(),
+            "緊急停止が使えないのにランチャーへ送らない"
+        );
         assert_eq!(h.game_snapshot()["remoteRoute"], "none");
         let epoch = h.game.epoch;
         h.handle_control(0, "ENTER", "down");
         h.handle_control(0, "MOUSE_L", "down");
-        h.remote_message(0, &json!({"epoch":epoch,"rseq":1,"kind":"move","dx":5,"dy":5}));
+        h.remote_message(
+            0,
+            &json!({"epoch":epoch,"rseq":1,"kind":"move","dx":5,"dy":5}),
+        );
         h.remote_message(0, &json!({"epoch":epoch,"rseq":2,"kind":"scroll","dy":80}));
-        assert!(recorder.calls().is_empty(), "キー・クリック・移動・ホイールのどれも送らない: {:?}", recorder.calls());
+        assert!(
+            recorder.calls().is_empty(),
+            "キー・クリック・移動・ホイールのどれも送らない: {:?}",
+            recorder.calls()
+        );
         h.hotkey = Ok(());
-        assert!(h.remote_launcher_active(), "登録できていればランチャーへ送れる");
+        assert!(
+            h.remote_launcher_active(),
+            "登録できていればランチャーへ送れる"
+        );
         assert_eq!(h.game_snapshot()["remoteRoute"], "launcher");
         h.release_outputs(None);
     }
@@ -3406,57 +4566,98 @@ mod tests {
         let (mut h, _rx) = fixture();
         // PC アプリから起動していなければ使えない
         h.game.phase = Phase::Lobby;
-        assert!(h.open_app().unwrap_err().contains("PCアプリから起動したときだけ"));
+        assert!(h
+            .open_app()
+            .unwrap_err()
+            .contains("PCアプリから起動したときだけ"));
         h.desktop = true;
         h.command(0, "OPEN_APP");
         assert!(h.app_focused, "ロビーではPCアプリを前面にできる");
         // 協力プレイ中は受け付けない (前面を奪って一時停止させない)
-        h.app_focused = false; h.game.phase = Phase::Coop;
-        h.command(0, "OPEN_APP"); assert!(!h.app_focused);
+        h.app_focused = false;
+        h.game.phase = Phase::Coop;
+        h.command(0, "OPEN_APP");
+        assert!(!h.app_focused);
         // ホスト以外は使えない
         h.game.phase = Phase::Paused;
-        h.command(1, "OPEN_APP"); assert!(!h.app_focused);
+        h.command(1, "OPEN_APP");
+        assert!(!h.app_focused);
         h.fake_activate = false;
         assert!(h.open_app().unwrap_err().contains("前面化を拒否"));
         h.fake_activate = true;
-        h.command(0, "OPEN_APP"); assert!(h.app_focused);
+        h.command(0, "OPEN_APP");
+        assert!(h.app_focused);
         assert_eq!(h.game_snapshot()["canOpenApp"], true);
-        h.game.phase = Phase::Coop; assert_eq!(h.game_snapshot()["canOpenApp"], false);
+        h.game.phase = Phase::Coop;
+        assert_eq!(h.game_snapshot()["canOpenApp"], false);
     }
 
     #[test]
     fn closing_the_game_returns_the_desktop_app_to_front_once_in_lobby() {
-        struct Windows { open: std::sync::Mutex<bool>, activated: std::sync::Mutex<Vec<Vec<String>>> }
-        impl game_service::GameBackend for Windows {
-            fn roots(&self) -> games::Roots { panic!("探索しない") }
-            fn detect(&self, _: &games::Roots) -> games::Detected { panic!("探索しない") }
-            fn foreground(&self) -> Option<Foreground> { None }
-            fn exists(&self, _: &Target) -> bool { *self.open.lock().unwrap() }
-            fn activate(&self, t: &Target) -> Result<(), String> { self.activated.lock().unwrap().push(t.processes.clone()); Ok(()) }
-            fn launch(&self, _: &Entry) -> Result<(), String> { panic!("起動しない") }
-            fn pick_exe(&self) -> Option<PathBuf> { panic!("選択しない") }
+        struct Windows {
+            open: std::sync::Mutex<bool>,
+            activated: std::sync::Mutex<Vec<Vec<String>>>,
         }
-        let backend = std::sync::Arc::new(Windows { open: std::sync::Mutex::new(true), activated: Default::default() });
+        impl game_service::GameBackend for Windows {
+            fn roots(&self) -> games::Roots {
+                panic!("探索しない")
+            }
+            fn detect(&self, _: &games::Roots) -> games::Detected {
+                panic!("探索しない")
+            }
+            fn foreground(&self) -> Option<Foreground> {
+                None
+            }
+            fn exists(&self, _: &Target) -> bool {
+                *self.open.lock().unwrap()
+            }
+            fn activate(&self, t: &Target) -> Result<(), String> {
+                self.activated.lock().unwrap().push(t.processes.clone());
+                Ok(())
+            }
+            fn launch(&self, _: &Entry) -> Result<(), String> {
+                panic!("起動しない")
+            }
+            fn pick_exe(&self) -> Option<PathBuf> {
+                panic!("選択しない")
+            }
+        }
+        let backend = std::sync::Arc::new(Windows {
+            open: std::sync::Mutex::new(true),
+            activated: Default::default(),
+        });
         let (mut h, _rx) = fixture();
         h.game_service = GameService::with_backend(backend.clone());
-        h.fake_target = None; h.desktop = true; h.game.phase = Phase::Paused;
+        h.fake_target = None;
+        h.desktop = true;
+        h.game.phase = Phase::Paused;
         h.return_to_app_after_game_exit();
         assert!(h.game_window_seen);
         // 一時停止中に閉じても前面を変えず、ロビーへ戻ってから PC アプリを前面にする
-        *backend.open.lock().unwrap() = false; h.target_ok = false;
+        *backend.open.lock().unwrap() = false;
+        h.target_ok = false;
         h.return_to_app_after_game_exit();
         assert!(backend.activated.lock().unwrap().is_empty());
         h.game.phase = Phase::Lobby;
         h.return_to_app_after_game_exit();
-        assert_eq!(*backend.activated.lock().unwrap(), vec![vec![DESKTOP_PROCESS.to_string()]]);
+        assert_eq!(
+            *backend.activated.lock().unwrap(),
+            vec![vec![DESKTOP_PROCESS.to_string()]]
+        );
         // 閉じたままなら繰り返さない
         h.return_to_app_after_game_exit();
         assert_eq!(backend.activated.lock().unwrap().len(), 1);
         // ゲームを見ていないまま (未起動) なら前面を変えない
         let (mut h, _rx) = fixture();
-        let idle = std::sync::Arc::new(Windows { open: std::sync::Mutex::new(false), activated: Default::default() });
+        let idle = std::sync::Arc::new(Windows {
+            open: std::sync::Mutex::new(false),
+            activated: Default::default(),
+        });
         h.game_service = GameService::with_backend(idle.clone());
-        h.fake_target = None; h.target_ok = false; h.desktop = true; h.game.phase = Phase::Lobby;
+        h.fake_target = None;
+        h.target_ok = false;
+        h.desktop = true;
+        h.game.phase = Phase::Lobby;
         h.return_to_app_after_game_exit();
         assert!(idle.activated.lock().unwrap().is_empty());
     }
@@ -3465,23 +4666,44 @@ mod tests {
     fn game_backend_focus_loss_releases_all_outputs_and_invalidates_old_work() {
         struct MissingWindow;
         impl game_service::GameBackend for MissingWindow {
-            fn roots(&self) -> games::Roots { panic!("探索しない") }
-            fn detect(&self, _: &games::Roots) -> games::Detected { panic!("探索しない") }
-            fn foreground(&self) -> Option<Foreground> { None }
-            fn exists(&self, _: &Target) -> bool { false }
-            fn activate(&self, _: &Target) -> Result<(), String> { Err("拒否".into()) }
-            fn launch(&self, _: &Entry) -> Result<(), String> { panic!("起動しない") }
-            fn pick_exe(&self) -> Option<PathBuf> { panic!("選択しない") }
+            fn roots(&self) -> games::Roots {
+                panic!("探索しない")
+            }
+            fn detect(&self, _: &games::Roots) -> games::Detected {
+                panic!("探索しない")
+            }
+            fn foreground(&self) -> Option<Foreground> {
+                None
+            }
+            fn exists(&self, _: &Target) -> bool {
+                false
+            }
+            fn activate(&self, _: &Target) -> Result<(), String> {
+                Err("拒否".into())
+            }
+            fn launch(&self, _: &Entry) -> Result<(), String> {
+                panic!("起動しない")
+            }
+            fn pick_exe(&self) -> Option<PathBuf> {
+                panic!("選択しない")
+            }
         }
         let recorder = crate::input::testing::RecordingInput::default();
         let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
         h.game_service = GameService::with_backend(std::sync::Arc::new(MissingWindow));
-        h.set_output(index("KEY_W"), "P1", true); h.set_output(index("MOUSE_L"), "P3", true);
-        h.look.px = 40.0; h.fake_target = None;
-        let epoch = h.game.epoch; h.check_target();
-        assert!(!h.can_inject()); assert_eq!(h.game.epoch, epoch + 1);
+        h.set_output(index("KEY_W"), "P1", true);
+        h.set_output(index("MOUSE_L"), "P3", true);
+        h.look.px = 40.0;
+        h.fake_target = None;
+        let epoch = h.game.epoch;
+        h.check_target();
+        assert!(!h.can_inject());
+        assert_eq!(h.game.epoch, epoch + 1);
         assert_eq!(h.look.px, 0.0);
-        assert!(h.outputs.iter().all(|s| !s.physical && s.holders.is_empty() && s.queue.is_empty()));
+        assert!(h
+            .outputs
+            .iter()
+            .all(|s| !s.physical && s.holders.is_empty() && s.queue.is_empty()));
         assert_eq!(recorder.calls().len(), 4);
     }
 
@@ -3500,7 +4722,10 @@ mod tests {
         h.accept_look(1, &json!({"epoch":epoch,"lseq":99,"cx":9000.0,"cy":9000.0}));
         assert_eq!(h.slots[1].as_ref().unwrap().look_seq, 0);
         assert_eq!(h.slots[1].as_ref().unwrap().look_cx, 0.0);
-        h.accept_look(1, &json!({"epoch":h.game.epoch,"lseq":1,"cx":2.0,"cy":-3.0}));
+        h.accept_look(
+            1,
+            &json!({"epoch":h.game.epoch,"lseq":1,"cx":2.0,"cy":-3.0}),
+        );
         assert_eq!((h.look.px, h.look.py), (2.0, -3.0));
     }
 
@@ -3549,12 +4774,19 @@ mod tests {
     fn stale_input_consumes_sequence_without_changing_pressed_or_output_state() {
         let (mut h, _rx) = fixture();
         h.advance_epoch();
-        h.accept_input(0, json!({"iseq":1,"epoch":1,"button":"act:forward","state":"down"}), Via::Rtc);
+        h.accept_input(
+            0,
+            json!({"iseq":1,"epoch":1,"button":"act:forward","state":"down"}),
+            Via::Rtc,
+        );
         let slot = h.slots[0].as_ref().unwrap();
         assert_eq!(slot.next_iseq, 2);
         assert_eq!(slot.events, 0);
         assert!(slot.pressed.is_empty());
-        assert!(h.outputs.iter().all(|s| !s.physical && s.holders.is_empty()));
+        assert!(h
+            .outputs
+            .iter()
+            .all(|s| !s.physical && s.holders.is_empty()));
     }
     #[test]
     fn target_loss_and_return_release_all_inputs_and_each_advance_epoch() {
@@ -3568,7 +4800,10 @@ mod tests {
         assert!(!h.target_ok);
         assert!(!h.can_inject());
         assert_eq!(h.game.epoch, epoch + 1);
-        assert!(h.outputs.iter().all(|s| !s.physical && s.holders.is_empty() && s.queue.is_empty()));
+        assert!(h
+            .outputs
+            .iter()
+            .all(|s| !s.physical && s.holders.is_empty() && s.queue.is_empty()));
         assert_eq!((h.look.px, h.look.fx), (0.0, 0.0));
         h.on_event(Event::FakeTarget(true));
         assert!(h.target_ok);
@@ -3579,11 +4814,16 @@ mod tests {
     #[test]
     fn look_tick_discards_pending_motion_when_injection_is_off() {
         let (mut h, _rx) = fixture();
-        h.look.px = 10.0; h.look.py = -20.0;
-        h.look.fx = 0.4; h.look.fy = -0.6;
+        h.look.px = 10.0;
+        h.look.py = -20.0;
+        h.look.fx = 0.4;
+        h.look.fy = -0.6;
         h.inject = InjectMode::Off;
         h.look_tick();
-        assert_eq!((h.look.px, h.look.py, h.look.fx, h.look.fy), (0.0, 0.0, 0.0, 0.0));
+        assert_eq!(
+            (h.look.px, h.look.py, h.look.fx, h.look.fy),
+            (0.0, 0.0, 0.0, 0.0)
+        );
         assert_eq!((h.look.sum_x, h.look.sum_y, h.look.n), (0, 0, 0));
     }
 
@@ -3600,17 +4840,39 @@ mod tests {
         h.handle_control(0, "act:hotbar:down", "down");
         h.handle_control(0, "act:hotbar:down", "up"); // ホイールのupは送出しない。
         h.game.phase = Phase::Paused;
-        h.remote_message(0, &json!({"epoch":1,"rseq":1,"kind":"move","dx":3.6,"dy":-2.2}));
+        h.remote_message(
+            0,
+            &json!({"epoch":1,"rseq":1,"kind":"move","dx":3.6,"dy":-2.2}),
+        );
         h.remote_message(0, &json!({"epoch":1,"rseq":2,"kind":"scroll","dy":80}));
         let operations: Vec<_> = recorder.calls().into_iter().map(|c| c.operation).collect();
-        assert_eq!(operations, [
-            Operation::Key { scan: 0x48, ext: true, down: true },
-            Operation::Key { scan: 0x48, ext: true, down: false },
-            Operation::Button { left: true, down: true },
-            Operation::Button { left: false, down: false },
-            Operation::Wheel(1), Operation::Wheel(-1),
-            Operation::Move { dx: 4, dy: -2 }, Operation::Wheel(-2),
-        ]);
+        assert_eq!(
+            operations,
+            [
+                Operation::Key {
+                    scan: 0x48,
+                    ext: true,
+                    down: true
+                },
+                Operation::Key {
+                    scan: 0x48,
+                    ext: true,
+                    down: false
+                },
+                Operation::Button {
+                    left: true,
+                    down: true
+                },
+                Operation::Button {
+                    left: false,
+                    down: false
+                },
+                Operation::Wheel(1),
+                Operation::Wheel(-1),
+                Operation::Move { dx: 4, dy: -2 },
+                Operation::Wheel(-2),
+            ]
+        );
     }
 
     #[test]
@@ -3624,9 +4886,25 @@ mod tests {
         h.release_outputs(None);
         assert!(!h.outputs[i].physical);
         let calls = recorder.calls();
-        assert_eq!(calls.iter().map(|c| c.ok).collect::<Vec<_>>(), [false, true]);
-        assert_eq!(calls[1].operation, Operation::Key { scan: 0x11, ext: false, down: false });
-        assert_eq!(injections(&mut rx).iter().map(|v| v["ok"].as_bool().unwrap()).collect::<Vec<_>>(), [false, true]);
+        assert_eq!(
+            calls.iter().map(|c| c.ok).collect::<Vec<_>>(),
+            [false, true]
+        );
+        assert_eq!(
+            calls[1].operation,
+            Operation::Key {
+                scan: 0x11,
+                ext: false,
+                down: false
+            }
+        );
+        assert_eq!(
+            injections(&mut rx)
+                .iter()
+                .map(|v| v["ok"].as_bool().unwrap())
+                .collect::<Vec<_>>(),
+            [false, true]
+        );
     }
 
     #[test]
@@ -3658,9 +4936,22 @@ mod tests {
         h.release_outputs(None);
         let calls = recorder.calls();
         assert_eq!(calls.len(), 4);
-        assert_eq!(calls[2].operation, Operation::Key { scan: 0x11, ext: false, down: false });
+        assert_eq!(
+            calls[2].operation,
+            Operation::Key {
+                scan: 0x11,
+                ext: false,
+                down: false
+            }
+        );
         assert!(!calls[2].ok);
-        assert_eq!(calls[3].operation, Operation::Button { left: true, down: false });
+        assert_eq!(
+            calls[3].operation,
+            Operation::Button {
+                left: true,
+                down: false
+            }
+        );
         assert!(calls[3].ok);
         assert!(h.outputs.iter().all(|s| !s.physical && s.queue.is_empty()));
     }
@@ -3669,28 +4960,43 @@ mod tests {
     fn failed_release_stops_every_input_then_retries_without_restoring_old_work() {
         let recorder = RecordingInput::with_results([true, false, false, true]);
         let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
-        h.set_output(index("KEY_W"), "P1", true); h.look.px = 50.0;
+        h.set_output(index("KEY_W"), "P1", true);
+        h.look.px = 50.0;
         h.release_outputs(None);
-        assert!(h.input_fault); assert!(!h.can_inject()); assert!(h.inject == InjectMode::Off);
+        assert!(h.input_fault);
+        assert!(!h.can_inject());
+        assert!(h.inject == InjectMode::Off);
         assert!(h.release_pending.contains(&index("KEY_W")));
         h.set_output(index("MOUSE_L"), "P3", true);
-        h.handle_look(1, 20.0, 10.0); h.handle_control(0, "REMOTE_WHEEL_UP", "down");
+        h.handle_look(1, 20.0, 10.0);
+        h.handle_control(0, "REMOTE_WHEEL_UP", "down");
         assert_eq!(recorder.calls().len(), 2);
         let epoch = h.game.epoch;
         h.on_timer(Timer::InputFaultStop(h.fault_stop_gen), Instant::now());
-        assert!(h.game.phase == Phase::Paused); assert_eq!(h.game.epoch, epoch + 1);
-        assert_eq!(h.game.reason.as_deref(), Some("input failure")); assert_eq!(h.game.auto_resume_until, 0);
-        assert_eq!((h.look.px, h.look.py, h.look.fx, h.look.fy), (0.0, 0.0, 0.0, 0.0));
-        assert!(h.outputs.iter().all(|s| !s.physical && s.queue.is_empty() && s.holders.is_empty()));
+        assert!(h.game.phase == Phase::Paused);
+        assert_eq!(h.game.epoch, epoch + 1);
+        assert_eq!(h.game.reason.as_deref(), Some("input failure"));
+        assert_eq!(h.game.auto_resume_until, 0);
+        assert_eq!(
+            (h.look.px, h.look.py, h.look.fx, h.look.fy),
+            (0.0, 0.0, 0.0, 0.0)
+        );
+        assert!(h
+            .outputs
+            .iter()
+            .all(|s| !s.physical && s.queue.is_empty() && s.holders.is_empty()));
         let old_retry = h.release_retry_gen;
         h.on_timer(Timer::ReleaseRetry(old_retry), Instant::now());
-        assert!(h.release_pending.is_empty()); assert!(h.input_fault); assert!(!h.can_resume());
+        assert!(h.release_pending.is_empty());
+        assert!(h.input_fault);
+        assert!(!h.can_resume());
         assert_eq!(recorder.calls().len(), 4);
         h.desktop = true;
         h.app_focused = true;
         assert!(!h.remote_app_active());
         h.set_inject_mode(InjectMode::On);
-        assert!(!h.input_fault); assert!(h.can_inject());
+        assert!(!h.input_fault);
+        assert!(h.can_inject());
         assert!(h.remote_app_active());
         h.on_timer(Timer::ReleaseRetry(old_retry), Instant::now());
         assert_eq!(recorder.calls().len(), 4);
@@ -3698,28 +5004,46 @@ mod tests {
 
     #[test]
     fn repeated_release_failure_has_three_timer_passes_and_retains_uncertainty_after_reset() {
-        let recorder = RecordingInput::with_results(std::iter::once(true).chain(std::iter::repeat_n(false, 50)));
+        let recorder = RecordingInput::with_results(
+            std::iter::once(true).chain(std::iter::repeat_n(false, 50)),
+        );
         let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
-        h.set_output(index("MOUSE_L"), "P1", true); h.release_outputs(None);
+        h.set_output(index("MOUSE_L"), "P1", true);
+        h.release_outputs(None);
         h.on_timer(Timer::InputFaultStop(h.fault_stop_gen), Instant::now());
         let gen = h.release_retry_gen;
-        for _ in 0..10 { h.on_timer(Timer::ReleaseRetry(gen), Instant::now()); }
-        assert_eq!(h.release_retry_attempts, 3); assert!(!h.release_retry_active);
+        for _ in 0..10 {
+            h.on_timer(Timer::ReleaseRetry(gen), Instant::now());
+        }
+        assert_eq!(h.release_retry_attempts, 3);
+        assert!(!h.release_retry_active);
         assert_eq!(recorder.calls().len(), 6); // down + 最初のup + 停止時up + タイマー3回。
-        for mode in [InjectMode::On, InjectMode::Test] { h.set_inject_mode(mode); assert!(h.inject == InjectMode::Off); }
+        for mode in [InjectMode::On, InjectMode::Test] {
+            h.set_inject_mode(mode);
+            assert!(h.inject == InjectMode::Off);
+        }
         let before = recorder.calls().len();
-        for _ in 0..10 { h.release_outputs(None); }
+        for _ in 0..10 {
+            h.release_outputs(None);
+        }
         h.on_ws_message(1, json!({"type":"reset"}));
-        assert!(h.input_fault); assert!(!h.release_pending.is_empty()); assert!(!h.can_inject());
-        h.set_phase(Phase::Coop, "拒否すべき再開"); assert!(h.game.phase != Phase::Coop);
+        assert!(h.input_fault);
+        assert!(!h.release_pending.is_empty());
+        assert!(!h.can_inject());
+        h.set_phase(Phase::Coop, "拒否すべき再開");
+        assert!(h.game.phase != Phase::Coop);
         h.on_timer(Timer::ReleaseRetry(gen), Instant::now());
-        assert_eq!(recorder.calls().len(), before); assert_eq!(h.release_retry_attempts, 3);
+        assert_eq!(recorder.calls().len(), before);
+        assert_eq!(h.release_retry_attempts, 3);
         h.emergency_stop("test");
-        assert!(h.release_retry_active); assert_ne!(h.release_retry_gen, gen);
+        assert!(h.release_retry_active);
+        assert_ne!(h.release_retry_gen, gen);
     }
 
     fn lobby_with(slots: &[(usize, bool)], disconnected_at: u64) -> Hub {
-        let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(std::iter::repeat_n(true, 50))));
+        let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(
+            std::iter::repeat_n(true, 50),
+        )));
         h.game.phase = Phase::Lobby; // 共通のフィクスチャは協力プレイ中で始まる
         h.slots = Default::default();
         for &(i, connected) in slots {
@@ -3755,7 +5079,11 @@ mod tests {
         let mut h = lobby_with(&[(0, true), (1, true), (2, true)], 1_000);
         h.seats.swap(1, 2);
         let members = vec!["P1".into(), "P2".into(), "P3".into()];
-        h.confirm_lineup(Some(h.game.title.clone()), members.clone(), Some(h.game.epoch));
+        h.confirm_lineup(
+            Some(h.game.title.clone()),
+            members.clone(),
+            Some(h.game.epoch),
+        );
         assert!(h.can_prepare());
 
         let slot = h.slots[1].as_mut().unwrap();
@@ -3794,7 +5122,10 @@ mod tests {
         assert_eq!(h.slots[0].as_ref().unwrap().client_id, "client0"); // 期限までは元のホストの枠を保つ
         h.release_lobby_slots(1_000 + session::LOBBY_SLOT_HOLD_MS);
         let host = h.slots[0].as_ref().unwrap();
-        assert_eq!((host.client_id.as_str(), host.token.as_str(), host.connected), ("client1", "token1", false));
+        assert_eq!(
+            (host.client_id.as_str(), host.token.as_str(), host.connected),
+            ("client1", "token1", false)
+        );
         assert!(h.slots[1].is_none() && h.slots[2].is_some());
         assert_eq!(h.game.epoch, epoch + 1);
     }
@@ -3804,8 +5135,14 @@ mod tests {
         let mut h = lobby_with(&[(0, true), (1, false), (2, true), (3, true)], 1_000);
         h.slots[3].as_mut().unwrap().connected = false;
         h.slots[3].as_mut().unwrap().disconnected_at = 6_000;
-        assert_eq!(h.held_slot_retry_ms(9_000), Some(session::LOBBY_SLOT_HOLD_MS - 8_000)); // 早く切断した P2 が先に空く
-        assert_eq!(h.held_slot_retry_ms(1_000 + session::LOBBY_SLOT_HOLD_MS + 5), Some(0));
+        assert_eq!(
+            h.held_slot_retry_ms(9_000),
+            Some(session::LOBBY_SLOT_HOLD_MS - 8_000)
+        ); // 早く切断した P2 が先に空く
+        assert_eq!(
+            h.held_slot_retry_ms(1_000 + session::LOBBY_SLOT_HOLD_MS + 5),
+            Some(0)
+        );
         h.game.phase = Phase::Paused; // 協力プレイの開始後は枠を空けないので、待つ時間を示さない
         assert_eq!(h.held_slot_retry_ms(9_000), None);
         let h = lobby_with(&[(0, true), (1, true), (2, true), (3, true)], 0);
@@ -3834,7 +5171,7 @@ mod tests {
         h.release_lobby_slots(later);
         assert!(h.slots[3].is_none() && h.slots[0].is_some());
         assert_eq!(h.game.epoch, epoch); // 参加者の枠の解放ではホストも epoch も変わらない
-        // P1 の解放後に戻った枠だけが接続中でも、ホスト不在のままにしない
+                                         // P1 の解放後に戻った枠だけが接続中でも、ホスト不在のままにしない
         let mut h = lobby_with(&[(2, true)], 1_000);
         h.release_lobby_slots(later);
         assert_eq!(h.slots[0].as_ref().unwrap().client_id, "client2");
@@ -3851,8 +5188,14 @@ mod tests {
         assert_eq!(h.slots[0].as_ref().unwrap().client_id, "client0"); // 接続していない枠へは譲れない
         h.transfer_host(0, 2);
         let (host, old) = (h.slots[0].as_ref().unwrap(), h.slots[2].as_ref().unwrap());
-        assert_eq!((host.client_id.as_str(), host.token.as_str()), ("client2", "token2"));
-        assert_eq!((old.client_id.as_str(), old.token.as_str()), ("client0", "token0"));
+        assert_eq!(
+            (host.client_id.as_str(), host.token.as_str()),
+            ("client2", "token2")
+        );
+        assert_eq!(
+            (old.client_id.as_str(), old.token.as_str()),
+            ("client0", "token0")
+        );
         assert_eq!(h.slots[1].as_ref().unwrap().client_id, "client1"); // 他の人は変わらない
         assert!(!host.connected && !old.connected); // 同じトークンの再接続で新しい枠へ戻る
         assert_eq!(h.game.epoch, epoch + 1);
@@ -3899,34 +5242,67 @@ mod tests {
         h.look.px = 30.0;
         let epoch = h.game.epoch;
         h.rotate_roles_if_due(4_000);
-        assert!(!h.rotation_soon && h.game.epoch == epoch, "予告の前は何もしない");
+        assert!(
+            !h.rotation_soon && h.game.epoch == epoch,
+            "予告の前は何もしない"
+        );
         h.rotate_roles_if_due(5_000);
         assert!(h.rotation_soon, "5秒前に予告する");
-        assert_eq!(h.game_snapshot()["rotationNext"]["P2"], json!(first[0]), "予告で次の担当を示す (P1 の担当が P2 へ)");
+        assert_eq!(
+            h.game_snapshot()["rotationNext"]["P2"],
+            json!(first[0]),
+            "予告で次の担当を示す (P1 の担当が P2 へ)"
+        );
         assert_eq!(h.game_snapshot()["rotationNext"]["P1"], json!(first[2]));
         assert!(h.outputs[index("KEY_W")].physical, "予告では入力を止めない");
         h.rotate_roles_if_due(10_000);
         assert!(h.game.phase == Phase::Coop, "交代で一時停止しない");
-        assert!(h.outputs.iter().all(|o| !o.physical && o.queue.is_empty()), "全員の入力を解放し保留を捨てる");
+        assert!(
+            h.outputs.iter().all(|o| !o.physical && o.queue.is_empty()),
+            "全員の入力を解放し保留を捨てる"
+        );
         assert_eq!(h.look.px, 0.0);
-        assert!(h.game.epoch > epoch, "旧担当の遅れた入力を新しい epoch で効かせない");
+        assert!(
+            h.game.epoch > epoch,
+            "旧担当の遅れた入力を新しい epoch で効かせない"
+        );
         assert!(h.role_ack.is_empty(), "確認・明示の再開を待たない");
         // P1→P2→P3→P1 の順に担当が隣へ移る。3回で元に戻る
-        assert_eq!((h.assigned[0].clone(), h.assigned[1].clone(), h.assigned[2].clone()), (first[2].clone(), first[0].clone(), first[1].clone()));
-        assert_eq!((h.rotation_at, h.rotation_count, h.rotation_soon), (70_000, 1, false));
-        h.rotate_roles_if_due(70_000); h.rotate_roles_if_due(130_000);
+        assert_eq!(
+            (
+                h.assigned[0].clone(),
+                h.assigned[1].clone(),
+                h.assigned[2].clone()
+            ),
+            (first[2].clone(), first[0].clone(), first[1].clone())
+        );
+        assert_eq!(
+            (h.rotation_at, h.rotation_count, h.rotation_soon),
+            (70_000, 1, false)
+        );
+        h.rotate_roles_if_due(70_000);
+        h.rotate_roles_if_due(130_000);
         assert_eq!(h.assigned[..3], first[..3], "N人でN回交代すると元に戻る");
     }
 
     #[test]
     fn role_rotation_follows_slot_order_with_gaps_four_players_and_after_a_manual_swap() {
-        for (participants, seats) in [(vec![0, 1, 2, 3], [0, 1, 2, 3]), (vec![0, 1, 3], [0, 1, 2, 3]), (vec![0, 1, 2], [1, 0, 2, 3])] {
+        for (participants, seats) in [
+            (vec![0, 1, 2, 3], [0, 1, 2, 3]),
+            (vec![0, 1, 3], [0, 1, 2, 3]),
+            (vec![0, 1, 2], [1, 0, 2, 3]),
+        ] {
             let (mut h, _rx) = fixture();
             h.participants = participants.clone();
             h.seats = seats;
             let ranked = Hub::ranked_by(&h.seats, &participants);
             h.assigned = vec![Vec::new(); MAX_SLOTS];
-            for (k, a) in profiles::assignment_for(&h.profile.clone().unwrap(), participants.len()).into_iter().enumerate() { h.assigned[ranked[k]] = a; }
+            for (k, a) in profiles::assignment_for(&h.profile.clone().unwrap(), participants.len())
+                .into_iter()
+                .enumerate()
+            {
+                h.assigned[ranked[k]] = a;
+            }
             let first = h.assigned.clone();
             h.rotation_secs = 60;
             h.rotation_at = 10_000;
@@ -3936,11 +5312,25 @@ mod tests {
             // 枠の番号順に、1つ前の参加者の担当を受け継ぐ (P1→P2→…→最後→P1)
             for (k, &slot) in participants.iter().enumerate() {
                 let prev = participants[(k + participants.len() - 1) % participants.len()];
-                assert_eq!(h.assigned[slot], first[prev], "{participants:?} {seats:?}: {} は {} の担当を受け継ぐ", SLOT_NAMES[slot], SLOT_NAMES[prev]);
-                assert_eq!(next[SLOT_NAMES[slot]], json!(first[prev]), "予告と実際の交代が一致する");
+                assert_eq!(
+                    h.assigned[slot], first[prev],
+                    "{participants:?} {seats:?}: {} は {} の担当を受け継ぐ",
+                    SLOT_NAMES[slot], SLOT_NAMES[prev]
+                );
+                assert_eq!(
+                    next[SLOT_NAMES[slot]],
+                    json!(first[prev]),
+                    "予告と実際の交代が一致する"
+                );
             }
-            for _ in 1..participants.len() { let at = h.rotation_at; h.rotate_roles_if_due(at); }
-            assert_eq!(h.assigned, first, "{participants:?}: N人でN回交代すると元に戻る");
+            for _ in 1..participants.len() {
+                let at = h.rotation_at;
+                h.rotate_roles_if_due(at);
+            }
+            assert_eq!(
+                h.assigned, first,
+                "{participants:?}: N人でN回交代すると元に戻る"
+            );
         }
     }
 
@@ -3950,32 +5340,49 @@ mod tests {
         h.participants = vec![0, 1];
         h.assigned = h.proposal_for(&h.profile.clone().unwrap(), &[0, 1]);
         h.rotation_secs = 60;
-        h.fake_target = Some(true); h.check_target();
+        h.fake_target = Some(true);
+        h.check_target();
         assert!(h.can_inject() && h.game.phase == Phase::Coop);
         let start = now_ms();
         h.rotation_at = start + 20_000; // 残り20秒
-        // 対象ゲームが前面から外れる (Alt+Tab 等)。協力プレイのまま操作できなくなる
-        h.fake_target = Some(false); h.check_target();
+                                        // 対象ゲームが前面から外れる (Alt+Tab 等)。協力プレイのまま操作できなくなる
+        h.fake_target = Some(false);
+        h.check_target();
         assert!(!h.can_inject() && h.game.phase == Phase::Coop);
         assert_eq!(h.rotation_at, 0, "操作できない間は数えない");
         let left = h.rotation_left;
-        assert!(left > 19_000 && left <= 20_000, "残り時間を凍結する: {left}");
+        assert!(
+            left > 19_000 && left <= 20_000,
+            "残り時間を凍結する: {left}"
+        );
         // 長い時間が経っても、予告も交代もしない
-        for t in [start + 20_000, start + 600_000, u64::MAX / 2] { h.rotate_roles_if_due(t); }
-        assert_eq!((h.rotation_count, h.rotation_soon, h.rotation_at), (0, false, 0));
+        for t in [start + 20_000, start + 600_000, u64::MAX / 2] {
+            h.rotate_roles_if_due(t);
+        }
+        assert_eq!(
+            (h.rotation_count, h.rotation_soon, h.rotation_at),
+            (0, false, 0)
+        );
         assert_eq!(h.game_snapshot()["rotationSoon"], false);
         // 前面に戻ったら、凍結した残りから数える
-        h.fake_target = Some(true); h.check_target();
+        h.fake_target = Some(true);
+        h.check_target();
         let resumed = now_ms();
-        assert!(h.rotation_at >= resumed + left - 1_000 && h.rotation_at <= resumed + left, "残りから数える");
+        assert!(
+            h.rotation_at >= resumed + left - 1_000 && h.rotation_at <= resumed + left,
+            "残りから数える"
+        );
         assert_eq!(h.rotation_left, 0);
         h.rotate_roles_if_due(h.rotation_at - 1);
         assert_eq!(h.rotation_count, 0, "残りを操作するまでは交代しない");
-        let at = h.rotation_at; h.rotate_roles_if_due(at);
+        let at = h.rotation_at;
+        h.rotate_roles_if_due(at);
         assert_eq!(h.rotation_count, 1, "残りを操作したら1回だけ交代する");
         // 前面にないまま一時停止・再開しても数えない
-        h.fake_target = Some(false); h.check_target();
-        h.set_phase(Phase::Paused, "host pause"); h.set_phase(Phase::Coop, "resume");
+        h.fake_target = Some(false);
+        h.check_target();
+        h.set_phase(Phase::Paused, "host pause");
+        h.set_phase(Phase::Coop, "resume");
         assert_eq!(h.rotation_at, 0, "操作できないまま再開しても数えない");
         assert!(h.rotation_left > 0);
     }
@@ -3995,11 +5402,19 @@ mod tests {
         let left = h.rotation_left;
         assert!((19_000..=20_000).contains(&left));
         h.set_phase(Phase::Coop, "host resume");
-        assert!(h.rotation_at <= now_ms() + left && h.rotation_at + 2_000 >= now_ms() + left, "再開で残りから数え、交代を積み増さない");
+        assert!(
+            h.rotation_at <= now_ms() + left && h.rotation_at + 2_000 >= now_ms() + left,
+            "再開で残りから数え、交代を積み増さない"
+        );
         h.set_phase(Phase::Lobby, "host end");
-        assert_eq!((h.rotation_secs, h.rotation_at, h.rotation_left), (0, 0, 0), "新しいプレイでは OFF から始める (Q44)");
+        assert_eq!(
+            (h.rotation_secs, h.rotation_at, h.rotation_left),
+            (0, 0, 0),
+            "新しいプレイでは OFF から始める (Q44)"
+        );
         // OFF では交代も予告もしない
-        h.game.phase = Phase::Coop; h.rotation_at = 0;
+        h.game.phase = Phase::Coop;
+        h.rotation_at = 0;
         let epoch = h.game.epoch;
         h.rotate_roles_if_due(u64::MAX);
         assert!(!h.rotation_soon && h.game.epoch == epoch);
@@ -4007,7 +5422,9 @@ mod tests {
 
     #[test]
     fn reset_clears_the_previous_session_lineup_and_reason() {
-        let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(std::iter::repeat_n(true, 50))));
+        let (mut h, _rx) = fixture_with_input(Box::new(RecordingInput::with_results(
+            std::iter::repeat_n(true, 50),
+        )));
         h.participants = vec![0, 1, 2];
         h.assigned = vec![vec!["a".into()], vec!["b".into()], vec!["c".into()]];
         h.game.phase = Phase::Coop;
@@ -4015,21 +5432,37 @@ mod tests {
         h.game.auto_resume_until = 99;
         h.on_ws_message(1, json!({"type":"reset"}));
         assert!(h.participants.is_empty() && h.assigned.is_empty());
-        assert!(h.game.phase == Phase::Lobby && h.game.reason.is_none() && h.game.auto_resume_until == 0);
+        assert!(
+            h.game.phase == Phase::Lobby
+                && h.game.reason.is_none()
+                && h.game.auto_resume_until == 0
+        );
     }
 
     #[test]
     fn stalled_connection_queue_stops_at_the_limit_but_close_still_goes_out() {
         let (tx, mut rx) = unbounded_channel();
-        let conn = Conn { tx, queued: Default::default(), ip: String::new(), loopback: true, role: Role::Unknown };
-        for _ in 0..WS_QUEUE_LIMIT + 100 { conn.push_text("x".into()); }
+        let conn = Conn {
+            tx,
+            queued: Default::default(),
+            ip: String::new(),
+            loopback: true,
+            role: Role::Unknown,
+        };
+        for _ in 0..WS_QUEUE_LIMIT + 100 {
+            conn.push_text("x".into());
+        }
         assert_eq!(conn.queued.len.load(Ordering::Relaxed), WS_QUEUE_LIMIT);
         assert!(conn.queued.must_close());
         conn.tx.send(Out::Close(4001, "reset".into())).unwrap();
         let mut texts = 0;
         let mut closed = false;
         while let Ok(out) = rx.try_recv() {
-            match out { Out::Text(_) => texts += 1, Out::Close(..) => closed = true, Out::Terminate => {} }
+            match out {
+                Out::Text(_) => texts += 1,
+                Out::Close(..) => closed = true,
+                Out::Terminate => {}
+            }
         }
         assert_eq!(texts, WS_QUEUE_LIMIT);
         assert!(closed);
@@ -4037,16 +5470,21 @@ mod tests {
 
     #[test]
     fn failure_during_mode_change_cannot_reenable_or_skip_the_fault_stop() {
-        let recorder = RecordingInput::with_results(std::iter::once(true).chain(std::iter::repeat_n(false, 20)));
+        let recorder = RecordingInput::with_results(
+            std::iter::once(true).chain(std::iter::repeat_n(false, 20)),
+        );
         let (mut h, _rx) = fixture_with_input(Box::new(recorder));
         h.set_output(index("KEY_W"), "P1", true);
         h.set_inject_mode(InjectMode::Off);
-        assert!(h.input_fault); let stop = h.fault_stop_gen;
+        assert!(h.input_fault);
+        let stop = h.fault_stop_gen;
         h.on_timer(Timer::InputFaultStop(stop), Instant::now());
         assert!(h.game.phase == Phase::Paused);
-        h.set_inject_mode(InjectMode::On); assert!(h.inject == InjectMode::Off);
+        h.set_inject_mode(InjectMode::On);
+        assert!(h.inject == InjectMode::Off);
         h.game.phase = Phase::Preparing;
-        h.set_phase(Phase::Coop, "ready"); assert!(h.game.phase != Phase::Coop);
+        h.set_phase(Phase::Coop, "ready");
+        assert!(h.game.phase != Phase::Coop);
     }
 
     #[test]
@@ -4068,26 +5506,52 @@ mod tests {
     fn failed_down_is_also_released_and_stale_pump_cannot_emit_more_presses() {
         let recorder = RecordingInput::with_results([false, true]);
         let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
-        let i = index("KEY_W"); h.set_output(i, "P1", true);
+        let i = index("KEY_W");
+        h.set_output(i, "P1", true);
         let pump = h.outputs[i].timer_gen;
-        h.set_output(i, "P1", false); h.set_output(i, "P1", true);
+        h.set_output(i, "P1", false);
+        h.set_output(i, "P1", true);
         h.on_timer(Timer::InputFaultStop(h.fault_stop_gen), Instant::now());
         h.on_timer(Timer::Pump(i, pump), Instant::now());
-        assert!(h.release_pending.is_empty()); assert!(h.input_fault);
-        assert_eq!(recorder.calls().iter().map(|c| c.operation.clone()).collect::<Vec<_>>(), [
-            Operation::Key { scan: 0x11, ext: false, down: true }, Operation::Key { scan: 0x11, ext: false, down: false }]);
+        assert!(h.release_pending.is_empty());
+        assert!(h.input_fault);
+        assert_eq!(
+            recorder
+                .calls()
+                .iter()
+                .map(|c| c.operation.clone())
+                .collect::<Vec<_>>(),
+            [
+                Operation::Key {
+                    scan: 0x11,
+                    ext: false,
+                    down: true
+                },
+                Operation::Key {
+                    scan: 0x11,
+                    ext: false,
+                    down: false
+                }
+            ]
+        );
     }
 
     #[test]
     fn shutdown_has_finite_release_retries_and_reports_unconfirmed_failure() {
         for recovers in [true, false] {
-            let results = if recovers { vec![true, false, false, true] } else { vec![true, false, false, false, false] };
+            let results = if recovers {
+                vec![true, false, false, true]
+            } else {
+                vec![true, false, false, false, false]
+            };
             let recorder = RecordingInput::with_results(results);
             let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
-            h.set_output(index("KEY_W"), "P1", true); h.look.px = 50.0;
+            h.set_output(index("KEY_W"), "P1", true);
+            h.look.px = 50.0;
             assert_eq!(h.release_for_shutdown(), recovers);
             assert_eq!(h.release_pending.is_empty(), recovers);
-            assert_eq!(h.look.px, 0.0); assert!(h.inject == InjectMode::Off);
+            assert_eq!(h.look.px, 0.0);
+            assert!(h.inject == InjectMode::Off);
             assert!(recorder.calls().len() <= 5);
         }
     }
@@ -4133,12 +5597,14 @@ mod tests {
         let (mut h, _rx) = fixture_with_input(Box::new(recorder.clone()));
         h.keybinds.actions.push(("forward".into(), Some("KEY_W")));
         assert!(!h.can_inject());
-        assert!(h.ready_reasons(true).iter().any(|r| r == "入力ドライバーが利用できません"));
+        assert!(h
+            .ready_reasons(true)
+            .iter()
+            .any(|r| r == "入力ドライバーが利用できません"));
         h.handle_control(0, "act:forward", "down");
         assert!(recorder.calls().is_empty());
         let snapshot = h.inject_snapshot();
         assert_eq!(snapshot["available"], false);
         assert_eq!(snapshot["error"], "試験用の利用不可");
     }
-
 }

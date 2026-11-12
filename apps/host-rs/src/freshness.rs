@@ -21,8 +21,12 @@ pub struct ClockBase {
 impl ClockBase {
     /// スマホの送信時刻 t を受信時刻 now (ホストの単調時計 ms) で観測する。不正な t は使わない
     pub fn observe(&mut self, now: f64, t: Option<f64>) {
-        let Some(t) = t.filter(|t| t.is_finite() && *t >= 0.0) else { return };
-        if self.current.is_none() && self.previous.is_none() { self.started = now; }
+        let Some(t) = t.filter(|t| t.is_finite() && *t >= 0.0) else {
+            return;
+        };
+        if self.current.is_none() && self.previous.is_none() {
+            self.started = now;
+        }
         if now - self.started >= BUCKET_MS {
             self.previous = self.current.take();
             self.started = now;
@@ -51,7 +55,11 @@ impl ClockBase {
 /// ホストの単調時計 (ms)。壁時計の変更に影響されない
 pub fn mono_ms() -> f64 {
     static START: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
-    START.get_or_init(std::time::Instant::now).elapsed().as_secs_f64() * 1000.0
+    START
+        .get_or_init(std::time::Instant::now)
+        .elapsed()
+        .as_secs_f64()
+        * 1000.0
 }
 
 #[cfg(test)]
@@ -66,8 +74,14 @@ mod tests {
         c.observe(100.0, Some(100.0 - 20.0 - skew)); // 20ms で届いた ping
         c.observe(1100.0, Some(1100.0 - 15.0 - skew)); // 15ms (最速)
         assert_eq!(c.delay(2000.0, Some(2000.0 - 15.0 - skew)), Some(0.0));
-        assert!(c.fresh_down(2000.0, Some(2000.0 - 400.0 - skew)), "正常時の最大級の遅れは破棄しない");
-        assert!(!c.fresh_down(5000.0, Some(5000.0 - 2015.0 - skew)), "2秒遅れた押下は破棄する");
+        assert!(
+            c.fresh_down(2000.0, Some(2000.0 - 400.0 - skew)),
+            "正常時の最大級の遅れは破棄しない"
+        );
+        assert!(
+            !c.fresh_down(5000.0, Some(5000.0 - 2015.0 - skew)),
+            "2秒遅れた押下は破棄する"
+        );
         assert!(!c.fresh_down(5000.0, Some(5000.0 - 15.0 - STALE_DOWN_MS - skew)));
     }
 
@@ -76,16 +90,22 @@ mod tests {
         let mut c = ClockBase::default();
         assert!(!c.fresh_down(10.0, Some(5.0)), "基準がない");
         c.observe(10.0, Some(5.0));
-        for t in [None, Some(f64::NAN), Some(f64::INFINITY), Some(-1.0)] { assert!(!c.fresh_down(20.0, t)); }
+        for t in [None, Some(f64::NAN), Some(f64::INFINITY), Some(-1.0)] {
+            assert!(!c.fresh_down(20.0, t));
+        }
         c.observe(20.0, Some(f64::NAN));
-        assert_eq!(c.delay(20.0, Some(15.0)), Some(0.0), "不正な時刻で基準を汚さない");
+        assert_eq!(
+            c.delay(20.0, Some(15.0)),
+            Some(0.0),
+            "不正な時刻で基準を汚さない"
+        );
     }
 
     #[test]
     fn base_follows_the_recent_window_instead_of_a_stale_minimum() {
         let mut c = ClockBase::default();
         c.observe(0.0, Some(0.0)); // 基準 0
-        // 30秒以上たつと古い最小値は捨て、新しい区間の最小値に追従する (スマホ時計の進み方の差)
+                                   // 30秒以上たつと古い最小値は捨て、新しい区間の最小値に追従する (スマホ時計の進み方の差)
         c.observe(16_000.0, Some(15_990.0)); // 10
         c.observe(32_000.0, Some(31_980.0)); // 20
         assert_eq!(c.delay(32_000.0, Some(31_980.0)), Some(10.0));

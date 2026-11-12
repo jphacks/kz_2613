@@ -22,12 +22,19 @@ impl Input {
     /// 単体試験専用。環境変数やWindowsのタイマー設定に触れず、実入力を必ず無効にする。
     #[cfg(test)]
     pub(crate) fn for_test() -> Self {
-        Self { dry_run: true, error: None }
+        Self {
+            dry_run: true,
+            error: None,
+        }
     }
 
     pub fn new() -> Self {
         let dry_run = std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1");
-        let error = if cfg!(windows) || dry_run { None } else { Some("Windows 以外では注入できません".to_string()) };
+        let error = if cfg!(windows) || dry_run {
+            None
+        } else {
+            Some("Windows 以外では注入できません".to_string())
+        };
         #[cfg(windows)]
         unsafe {
             // Windows のタイマー分解能は既定 15.6ms。視点の補間を細かく刻めるよう 1ms にする (プロセス終了で自動的に戻る)
@@ -74,12 +81,24 @@ impl Input {
 }
 
 impl InputAdapter for Input {
-    fn available(&self) -> bool { Input::available(self) }
-    fn error(&self) -> Option<&str> { Input::error(self) }
-    fn key(&mut self, scan: u16, ext: bool, down: bool) -> bool { Input::key(self, scan, ext, down) }
-    fn mouse_button(&mut self, left: bool, down: bool) -> bool { Input::mouse_button(self, left, down) }
-    fn mouse_move(&mut self, dx: i32, dy: i32) -> bool { Input::mouse_move(self, dx, dy) }
-    fn wheel(&mut self, notches: i32) -> bool { Input::wheel(self, notches) }
+    fn available(&self) -> bool {
+        Input::available(self)
+    }
+    fn error(&self) -> Option<&str> {
+        Input::error(self)
+    }
+    fn key(&mut self, scan: u16, ext: bool, down: bool) -> bool {
+        Input::key(self, scan, ext, down)
+    }
+    fn mouse_button(&mut self, left: bool, down: bool) -> bool {
+        Input::mouse_button(self, left, down)
+    }
+    fn mouse_move(&mut self, dx: i32, dy: i32) -> bool {
+        Input::mouse_move(self, dx, dy)
+    }
+    fn wheel(&mut self, notches: i32) -> bool {
+        Input::wheel(self, notches)
+    }
 }
 
 /// 試験専用。実OS入力を呼ばず、要求の順序・引数・成否を観測する。
@@ -117,14 +136,25 @@ pub(crate) mod testing {
 
     impl RecordingInput {
         pub fn with_results(results: impl IntoIterator<Item = bool>) -> Self {
-            Self { state: Arc::new(Mutex::new(State { calls: Vec::new(), results: results.into_iter().collect() })), error: None }
+            Self {
+                state: Arc::new(Mutex::new(State {
+                    calls: Vec::new(),
+                    results: results.into_iter().collect(),
+                })),
+                error: None,
+            }
         }
 
         pub fn unavailable(message: &str) -> Self {
-            Self { error: Some(message.into()), ..Self::default() }
+            Self {
+                error: Some(message.into()),
+                ..Self::default()
+            }
         }
 
-        pub fn calls(&self) -> Vec<Call> { self.state.lock().unwrap().calls.clone() }
+        pub fn calls(&self) -> Vec<Call> {
+            self.state.lock().unwrap().calls.clone()
+        }
 
         fn record(&mut self, operation: Operation) -> bool {
             let mut state = self.state.lock().unwrap();
@@ -135,12 +165,24 @@ pub(crate) mod testing {
     }
 
     impl InputAdapter for RecordingInput {
-        fn available(&self) -> bool { self.error.is_none() }
-        fn error(&self) -> Option<&str> { self.error.as_deref() }
-        fn key(&mut self, scan: u16, ext: bool, down: bool) -> bool { self.record(Operation::Key { scan, ext, down }) }
-        fn mouse_button(&mut self, left: bool, down: bool) -> bool { self.record(Operation::Button { left, down }) }
-        fn mouse_move(&mut self, dx: i32, dy: i32) -> bool { self.record(Operation::Move { dx, dy }) }
-        fn wheel(&mut self, notches: i32) -> bool { self.record(Operation::Wheel(notches)) }
+        fn available(&self) -> bool {
+            self.error.is_none()
+        }
+        fn error(&self) -> Option<&str> {
+            self.error.as_deref()
+        }
+        fn key(&mut self, scan: u16, ext: bool, down: bool) -> bool {
+            self.record(Operation::Key { scan, ext, down })
+        }
+        fn mouse_button(&mut self, left: bool, down: bool) -> bool {
+            self.record(Operation::Button { left, down })
+        }
+        fn mouse_move(&mut self, dx: i32, dy: i32) -> bool {
+            self.record(Operation::Move { dx, dy })
+        }
+        fn wheel(&mut self, notches: i32) -> bool {
+            self.record(Operation::Wheel(notches))
+        }
     }
 }
 
@@ -163,7 +205,13 @@ mod imp {
         send(INPUT {
             r#type: INPUT_KEYBOARD,
             Anonymous: INPUT_0 {
-                ki: KEYBDINPUT { wVk: VIRTUAL_KEY(0), wScan: scan, dwFlags: flags, time: 0, dwExtraInfo: 0 },
+                ki: KEYBDINPUT {
+                    wVk: VIRTUAL_KEY(0),
+                    wScan: scan,
+                    dwFlags: flags,
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
             },
         })
     }
@@ -172,7 +220,14 @@ mod imp {
         send(INPUT {
             r#type: INPUT_MOUSE,
             Anonymous: INPUT_0 {
-                mi: MOUSEINPUT { dx, dy, mouseData: data as _, dwFlags: flags, time: 0, dwExtraInfo: 0 },
+                mi: MOUSEINPUT {
+                    dx,
+                    dy,
+                    mouseData: data as _,
+                    dwFlags: flags,
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
             },
         })
     }
