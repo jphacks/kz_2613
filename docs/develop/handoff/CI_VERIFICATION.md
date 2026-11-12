@@ -1,6 +1,6 @@
 # CIの検証範囲
 
-統合前に `gh pr checks <PR番号>` で最新のPRに対する `structure`、`host-rs`、`web`、`desktop`、`protocol`、`package` がすべて成功していることを確認する。未実行・実行中・失敗は統合待ちとする。GitHubのブランチ保護の設定は使わない。PR更新時は古いPR実行を取り消し、mainへのpushでも全ジョブを実行する。
+統合前に `gh pr checks <PR番号>` で最新のPRに対する `structure`、`host-rs`、`web`、`desktop`、`protocol`、`package`、`npm-audit`、`cargo-audit (host-rs)`、`cargo-audit (desktop)` がすべて成功していることを確認する。未実行・実行中・失敗は統合待ちとする。GitHubのブランチ保護の設定は使わない。PR更新時は古いPR実行を取り消し、mainへのpushでも全ジョブを実行する。
 
 | 確かめること | 現行CIの根拠 |
 | --- | --- |
@@ -8,6 +8,7 @@
 | 対象喪失・緊急停止・終了時の入力停止 | `protocol-sim.mjs`、`shutdown-sim.mjs`、`input-probe-sim.mjs` のdry-run・模擬経路 |
 | PCとスマホの表示、通信・保持元の境界 | Webの型検査、`product-web-test.mjs`、`check-static-pages.mjs`、`auxiliary-pages-smoke.mjs` |
 | 配布物、サイレント導入・更新・アンインストール | `package-smoke.mjs`、`installer-smoke.mjs`、Rustのデスクトップ試験 |
+| Rustの整形・Clippy、RustとWebの依存関係 | `host-rs`・`desktop` 内の `cargo fmt --check` と `cargo clippy -D warnings`、`cargo-audit` と `npm-audit` |
 | 実機試験補助の経路・測定データ判定 | `scripts/device/` の単体試験 |
 
 Windowsの物理ホットキー・前面切替・実入力、スマホ実機の指操作、実Wi-Fi断、Minecraft、クリーンPCでの対話導入と表示倍率は、[実機受入手順](../acceptance/README.md)で確認する。
