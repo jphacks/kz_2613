@@ -49,6 +49,16 @@
 | `GET /api/game-image?id=...` | 検出ゲームの画像 | ループバックのみ。画像なしは404 |
 | `GET /ws` | WebSocketへアップグレード | 参加者はLAN、monitorはループバックのみ |
 
+### RustとWebの境界検査
+
+| 境界 | 実行時に検査する場所 | CIの確認 |
+|:--|:--|:--|
+| スマホからホストへの入力・視点・制御 | Rustの `protocol.rs` がJSONを解釈し、`hub.rs` と `session.rs` が接続・担当・epoch・順序を検査する | Rustの単体試験と `protocol-sim.mjs` |
+| ホストからスマホへの参加応答・ゲーム状態・ACK | Webの `shared/transport/protocol.ts` が受信値を検査する | `protocol-boundary-test.mjs` と、Rustの実出力で参加応答・ゲーム状態を照合する `protocol-sim.mjs` |
+| ホストからPC画面への状態・リモコン通知 | Webの `shared/transport/pc-messages.ts` が受信値を検査する | `pc-boundary-test.mjs` と、Rustの実出力で初回・参加後の状態を照合する `protocol-sim.mjs` |
+
+現行ホストは `welcome` に通信版を含めます。Webの受信デコーダーは、版がある場合は現行版との一致を要求し、版がない `welcome` も受理します。スマホからホストへの `hello` では版が必須です。RustとWebの型定義を変更するときは、該当方向の実行時検査とCIの期待値も確認します。
+
 ---
 
 ## WebSocket接続フロー
