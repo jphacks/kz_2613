@@ -6,6 +6,10 @@
 
 - PRとmainの実行条件を分け、古いPR実行を取り消す。製品Webの一括試験が実行する9本の個別呼び出しを整理し、必須チェックと検証範囲を記録した。
 - `node scripts/sim/product-web-test.mjs`、`python scripts/check-public-docs.py`、`git diff --check` が合格。Windows上の全ジョブはGitHub Actionsで確認する。
+## 2026-11-12 — 人数変更の通信試験で状態を待つ（#379）
+
+- CIの `C1: 待機タイムアウト lineupOk` を受け、C1がMinecraftのロビーで3枠を受信してから、その状態で分担を確定する。役割確認は1人目の受理を待ち、全員が確認するまで再開できないことを検査する。
+- `node --check scripts/sim/protocol-sim.mjs` と差分検査が合格。ホストを起動する通信試験と反復はGitHub Actionsで確認する。
 
 ## 2026-10-24 — 初期構築パッケージの作成
 - パッケージ作成時に確認した `jphacks/kz_2613` のmainには、`README.md` と `LICENSE` だけが存在した。
