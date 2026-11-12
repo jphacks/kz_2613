@@ -16,7 +16,9 @@ pub fn start(tx: Sender<Event>) -> Result<(), String> {
 mod imp {
     use std::sync::mpsc::Sender;
 
-    use windows::Win32::UI::Input::KeyboardAndMouse::{RegisterHotKey, MOD_ALT, MOD_CONTROL, MOD_NOREPEAT, VK_F12};
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        RegisterHotKey, MOD_ALT, MOD_CONTROL, MOD_NOREPEAT, VK_F12,
+    };
     use windows::Win32::UI::WindowsAndMessaging::{GetMessageW, MSG, WM_HOTKEY};
 
     use crate::hub::Event;
@@ -30,7 +32,12 @@ mod imp {
             .name("hotkey".into())
             .spawn(move || {
                 let registered = unsafe {
-                    RegisterHotKey(None, HOTKEY_ID, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_F12.0 as u32)
+                    RegisterHotKey(
+                        None,
+                        HOTKEY_ID,
+                        MOD_CONTROL | MOD_ALT | MOD_NOREPEAT,
+                        VK_F12.0 as u32,
+                    )
                 };
                 if let Err(e) = registered {
                     let _ = ready_tx.send(Err(e.to_string()));
@@ -40,12 +47,17 @@ mod imp {
                 let mut msg = MSG::default();
                 while unsafe { GetMessageW(&mut msg, None, 0, 0) }.as_bool() {
                     if msg.message == WM_HOTKEY && msg.wParam.0 == HOTKEY_ID as usize {
-                        let _ = tx.send(Event::EmergencyStop { source: "hotkey", enqueued_at: None });
+                        let _ = tx.send(Event::EmergencyStop {
+                            source: "hotkey",
+                            enqueued_at: None,
+                        });
                     }
                 }
             })
             .map_err(|e| e.to_string())?;
-        ready_rx.recv().unwrap_or_else(|_| Err("ホットキーのスレッドが終了しました".into()))
+        ready_rx
+            .recv()
+            .unwrap_or_else(|_| Err("ホットキーのスレッドが終了しました".into()))
     }
 }
 
