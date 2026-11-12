@@ -52,6 +52,10 @@ lifetime.listen($('closeSettings'), 'click',()=>$<HTMLDialogElement>('settings')
 lifetime.listen($('connectionHelpBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
 lifetime.listen($('settingsConnectionBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
 lifetime.listen($('closeConnectionHelp'), 'click',()=>$<HTMLDialogElement>('connectionHelp').close());
+// 全員の接続のリセット (#412)。確認してから送る。ホストは全員を切断し、枠とホストを最初から決め直す (#213)
+lifetime.listen($('resetAllBtn'), 'click',()=>openDialog($<HTMLDialogElement>('resetConfirm')));
+lifetime.listen($('resetCancel'), 'click',()=>$<HTMLDialogElement>('resetConfirm').close());
+lifetime.listen($('resetConfirmBtn'), 'click',()=>{send({type:'reset'});$<HTMLDialogElement>('resetConfirm').close();});
 lifetime.listen($('reloadInfo'), 'click',loadInfo);
 // ホットスポットを ON にする (#133)。押したときだけ。PC 本体の画面からだけ受け付ける
 // 結果は QR の下の案内に出す (失敗したときは、次に成功するまで出し続ける)

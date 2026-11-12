@@ -840,6 +840,12 @@ dialog .seg {
   gap: 12px;
 }
 
+dialog .danger-action {
+  border-color: var(--color-error);
+  color: var(--color-error);
+  font-weight: 700;
+}
+
 dialog button[aria-pressed=true] {
   background: var(--color-ice);
 }

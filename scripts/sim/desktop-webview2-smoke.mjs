@@ -147,6 +147,28 @@ try {
     return rect.width > 0 && rect.height > 0 && rect.left >= -1 && rect.top >= -1
       && rect.right <= innerWidth + 1 && rect.bottom <= innerHeight + 1;
   })()`),'最小ウィンドウで設定が表示領域を外れています');
+  // 全員の接続のリセット (#412)：設定から確認の画面を開き、やめると送らず、確かめると送る
+  const monitor=new WebSocket(hostOrigin.replace('http','ws')+'/ws');const logs=[];
+  monitor.onmessage=event=>{try{const m=JSON.parse(event.data);if(m.type==='log')logs.push(m.entry.kind);}catch{}};
+  await until(()=>monitor.readyState===WebSocket.OPEN,'リセットの確認用にホストへ接続できません');
+  monitor.send(JSON.stringify({type:'monitor',page:'host'}));
+  await evaluate("document.querySelector('#resetAllBtn').click()");
+  await until(()=>evaluate("document.querySelector('#resetConfirm').open && !document.querySelector('#settings').open && document.activeElement?.id==='resetCancel'"),
+    'リセットの確認が開かない、または既定の選択が「やめる」ではありません');
+  await evaluate("document.querySelector('#resetCancel').click()");
+  await until(()=>evaluate("!document.querySelector('#resetConfirm').open"),'「やめる」で確認が閉じません');
+  await new Promise(resolve=>setTimeout(resolve,500));
+  assert(!logs.includes('reset'),'「やめる」なのにリセットを送りました');
+  await evaluate("document.querySelector('#settingsBtn').click()");
+  await evaluate("document.querySelector('#resetAllBtn').click()");
+  await until(()=>evaluate("document.querySelector('#resetConfirm').open"),'リセットの確認が開きません');
+  await evaluate("document.querySelector('#resetConfirmBtn').click()");
+  await until(()=>logs.includes('reset'),'確かめてもリセットがホストへ届きません');
+  assert(await evaluate("!document.querySelector('#resetConfirm').open"),'リセットの後も確認が開いたままです');
+  monitor.close();
+  console.log('WebView2のPCアプリから、確認してリセットできることを確認');
+  await evaluate("document.querySelector('#settingsBtn').click()");
+  await until(()=>evaluate("document.querySelector('#settings').open"),'デスクトップの設定が開き直せません');
   await evaluate("document.querySelector('#overlayDetails').open=true;document.querySelector('#desktopOverlaySetting').click()");
   await until(async()=> (await targets()).find(target=>target.url.startsWith(hostOrigin+'/overlay')),
     'オーバーレイが開きません');
