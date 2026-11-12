@@ -2,6 +2,11 @@
 
 成功したという結果を捏造しない。実際の環境で実行した観測結果を追記する。
 
+## 2026-11-12 — CIの重複実行と統合前チェック（#379）
+
+- PRとmainの実行条件を分け、古いPR実行を取り消す。製品Webの一括試験が実行する9本の個別呼び出しを整理し、必須チェックと検証範囲を記録した。
+- `node scripts/sim/product-web-test.mjs`、`python scripts/check-public-docs.py`、`git diff --check` が合格。Windows上の全ジョブはGitHub Actionsで確認する。
+
 ## 2026-10-24 — 初期構築パッケージの作成
 - パッケージ作成時に確認した `jphacks/kz_2613` のmainには、`README.md` と `LICENSE` だけが存在した。
 - 根拠はユーザーとの会話、共有要件v0.2、要件書から参照するチーム議事録。
