@@ -37,7 +37,7 @@ main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .remoteButtons { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; }
 .remoteButtons:has([data-ctl="REMOTE_E"]:not([hidden])) { grid-template-columns: repeat(5,minmax(0,1fr)); }
 .remoteButtons .key[hidden] { display: none; }
-.remoteButtons .key { font-size: 10px; padding: 6px 2px; border-width: 2px; border-radius: 12px; }
+.remoteButtons .key { font-size: 11px; padding: 6px 2px; border-width: 2px; border-radius: 12px; }
 #remoteRoute { text-align: center; font-size: 11px; flex-shrink: 0; }
 #remoteNote { max-height: 72px; overflow-y: auto; flex-shrink: 1; min-height: 30px; padding: 0 4px; }
 .wait-scene { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 24px; }

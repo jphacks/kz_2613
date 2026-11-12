@@ -1,5 +1,5 @@
 // PC画面とスマホ画面の最新の全画面を撮る (docs/screenshots.md 用)。
-// 起動: node scripts/sim/capture-screens.mjs --bin <ホスト実行ファイル> [--chrome <chrome.exe>] [--pc-size 800x560] [--out <保存先>] [--min-text 11]
+// 起動: node scripts/sim/capture-screens.mjs --bin <ホスト実行ファイル> [--pc-size 800x560] [--phone-size 390x844] [--assert-layout]
 // Rustホストを dry-run・疑似の入力先で起動し、headless Chrome で PC 1台・スマホ3台を開いて画面のボタンを押して進める。
 // OS入力・実ゲームの操作はしない。ゲーム一覧は偽のランチャー情報、QR・URLの IP は説明用の 192.0.2.10 に差し替える。
 // 実機・Minecraft での合格の根拠には使わない。
@@ -18,9 +18,14 @@ const OUT=path.join(ROOT,arg('--out','docs/screenshots'));
 const PORT=Number(process.env.PORT||18095),CDP_PORT=Number(process.env.CDP_PORT||9335);
 const DEMO_IP='192.0.2.10'; // RFC 5737 の説明用アドレス。実環境の IP を画像に残さない
 // --pc-size 800x560 で、Tauriの最小ウィンドウなど別の大きさのPC画面を撮る (#270)
-const [PC_W,PC_H]=arg('--pc-size','1920x1080').split('x').map(Number);
-const PC={width:PC_W,height:PC_H,deviceScaleFactor:1,mobile:false};
-const PHONE={width:402,height:874,deviceScaleFactor:2,mobile:true};
+function viewport(flag,fallback,deviceScaleFactor,mobile){
+  const value=arg(flag,fallback);
+  if(!/^[1-9]\d{1,3}x[1-9]\d{1,3}$/.test(value))throw Error(`${flag} は 幅x高さ で指定してください`);
+  const [width,height]=value.split('x').map(Number);
+  return {width,height,deviceScaleFactor,mobile};
+}
+const PC=viewport('--pc-size','1920x1080',1,false);
+const PHONE=viewport('--phone-size','402x874',2,true);
 const UA={
   iPhone:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
   Android:'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36',
@@ -49,7 +54,7 @@ const host=spawn(BIN,[],{env:{...process.env,PORT:String(PORT),RECOOPLAY_ROOT:RO
   RECOOPLAY_FAKE_HOTSPOT:'ReCooplay-Demo|demo-passphrase|on'},stdio:['pipe','ignore','inherit']});
 const hostCmd=c=>host.stdin.write(c+'\n');
 const chrome=spawn(CHROME,['--headless=new',`--remote-debugging-port=${CDP_PORT}`,`--user-data-dir=${path.join(tmp,'chrome')}`,'--no-first-run','--no-default-browser-check',
-  '--hide-scrollbars','--mute-audio','--disable-extensions','about:blank'],{stdio:'ignore'});
+  '--no-proxy-server','--disable-background-networking','--hide-scrollbars','--mute-audio','--disable-extensions','about:blank'],{stdio:'ignore'});
 
 async function waitHttp(url){for(let i=0;i<100;i++){try{const r=await fetch(url);if(r.ok)return r;}catch{}await sleep(200);}throw Error(`応答なし: ${url}`);}
 
@@ -57,7 +62,10 @@ async function waitHttp(url){for(let i=0;i<100;i++){try{const r=await fetch(url)
 let cdp,nextId=1;const pending=new Map(),listeners=[];
 function call(method,params={},sessionId){
   const id=nextId++;cdp.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));
-  return new Promise((resolve,reject)=>pending.set(id,{resolve,reject,method}));
+  return new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>{pending.delete(id);reject(Error(`CDPの応答なし: ${method}`));},10000);
+    pending.set(id,{resolve,reject,method,timer});
+  });
 }
 async function openCdp(){
   const {webSocketDebuggerUrl}=await (await waitHttp(`http://127.0.0.1:${CDP_PORT}/json/version`)).json();
@@ -65,7 +73,7 @@ async function openCdp(){
   await new Promise((r,j)=>{cdp.onopen=r;cdp.onerror=j;});
   cdp.onmessage=e=>{
     const m=JSON.parse(e.data);
-    if(m.id&&pending.has(m.id)){const p=pending.get(m.id);pending.delete(m.id);m.error?p.reject(Error(`${p.method}: ${m.error.message}`)):p.resolve(m.result);}
+    if(m.id&&pending.has(m.id)){const p=pending.get(m.id);pending.delete(m.id);clearTimeout(p.timer);m.error?p.reject(Error(`${p.method}: ${m.error.message}`)):p.resolve(m.result);}
     else if(m.method)for(const l of listeners)l(m);
   };
 }
@@ -105,32 +113,33 @@ async function page(name,size,ua){
       throw Error(`${name}: 待機タイムアウト ${what} ${now}`);},
     shot:async(file)=>{
       await sleep(500);
-      const {data}=await s('Page.captureScreenshot',{format:'jpeg',quality:88,captureBeyondViewport:false});
-      fs.writeFileSync(path.join(OUT,file),Buffer.from(data,'base64'));
       const text=await eval_('document.body.innerText');
       const ips=(text.match(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g)||[]).filter(ip=>ip!==DEMO_IP&&ip!=='127.0.0.1');
       if(ips.length)throw Error(`${file}: 画面に IP が残っています`);
+      const {data}=await s('Page.captureScreenshot',{format:'jpeg',quality:88,captureBeyondViewport:false});
+      fs.writeFileSync(path.join(OUT,file),Buffer.from(data,'base64'));
       shots.push(file);console.log(`撮影: ${file}`);
-      if(name==='PC')audit[file]=await auditPc(eval_,file);
+      (name==='PC'?pcAudit:phoneAudit)[file]=await auditLayout(eval_,file,name==='PC');
     }};
 }
-const shots=[],audit={};
+const shots=[],pcAudit={},phoneAudit={};
 // PC画面の監査 (#270)：見えている文字の実際の大きさ (縮小後のpx) と、画面外に出たボタン。
 // 文字の下限は --min-text (既定 11px)。数値だけでなく、画像を人が見て読めるかも確かめる
 const MIN_TEXT=Number(arg('--min-text','11'));
-async function auditPc(eval_,file){
+if(!Number.isFinite(MIN_TEXT)||MIN_TEXT<=0)throw Error('--min-text は正の数で指定してください');
+async function auditLayout(eval_,file,desktop){
   const r=await eval_(`(()=>{
     const scale=Number(getComputedStyle(document.body).getPropertyValue('--pc-scale'))||1,min=${MIN_TEXT},small=[],outside=[];
     const visible=e=>{const s=getComputedStyle(e);return e.getClientRects().length&&s.visibility!=='hidden'&&s.opacity!=='0';};
-    const top=document.querySelector('dialog[open]');
+    const top=document.querySelector('dialog[open]'),desktop=${desktop};
     for(const e of (top||document.body).querySelectorAll('*')){
       if(!visible(e)||e.closest('svg,[aria-hidden=true]'))continue;
       const own=[...e.childNodes].some(n=>n.nodeType===3&&n.textContent.trim());
       if(own){const px=parseFloat(getComputedStyle(e).fontSize)*(e.closest('.desktop-shell')&&!e.closest('dialog')?scale:1);
-        if(px<min)small.push({text:e.textContent.trim().slice(0,24),px:Math.round(px*10)/10});}
+        if(px<min)small.push({text:e.textContent.trim().slice(0,24),px:Math.round(px*10)/10,decorative:!!e.closest('.brand-message')});}
       // ダイアログの中は内部スクロールで届くので、ダイアログ自体が画面に収まっているかだけを見る
       if(e.matches('button,a,select,input,summary')&&!top){const b=e.getBoundingClientRect();
-        if(b.right>innerWidth+1||b.bottom>innerHeight+1||b.left<-1||b.top<-1)outside.push(e.textContent.trim().slice(0,24));}
+        if(b.right>innerWidth+1||b.left<-1||(desktop&&(b.bottom>innerHeight+1||b.top<-1)))outside.push(e.textContent.trim().slice(0,24));}
     }
     if(top){const b=top.getBoundingClientRect();if(b.right>innerWidth+1||b.bottom>innerHeight+1||b.left<-1||b.top<-1)outside.push('ダイアログ');}
     return {scale:Math.round(scale*1000)/1000,small,outside};
@@ -231,7 +240,12 @@ async function main(){
   await pc.s('Input.dispatchMouseEvent',{type:'mouseReleased',x,y,button:'left',clickCount:1});
   await pc.waitFor(`!document.getElementById('nextBtn').classList.contains('resume-input')`,'PC操作による入力再開');
 
-  fs.writeFileSync(path.join(OUT,'shots.json'),JSON.stringify({captured:new Date().toISOString(),pc:`${PC.width}x${PC.height}`,phone:`${PHONE.width}x${PHONE.height}@${PHONE.deviceScaleFactor}x`,files:shots,pcAudit:{minText:MIN_TEXT,...audit}},null,2)+'\n');
+  fs.writeFileSync(path.join(OUT,'shots.json'),JSON.stringify({captured:new Date().toISOString(),pc:`${PC.width}x${PC.height}`,phone:`${PHONE.width}x${PHONE.height}@${PHONE.deviceScaleFactor}x`,files:shots,pcAudit:{minText:MIN_TEXT,...pcAudit},phoneAudit:{minText:MIN_TEXT,...phoneAudit}},null,2)+'\n');
+  if(process.argv.includes('--assert-layout')){
+    const failures=Object.entries({...pcAudit,...phoneAudit})
+      .filter(([,result])=>result.outside.length||result.small.some(entry=>!entry.decorative));
+    if(failures.length)throw Error(`画面寸法の監査に失敗: ${failures.map(([file])=>file).join('、')}`);
+  }
   console.log(`${shots.length}枚を ${path.relative(ROOT,OUT)} に保存`);
 }
 
