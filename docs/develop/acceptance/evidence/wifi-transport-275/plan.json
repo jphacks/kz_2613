@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "axis": "transport",
+  "durationMs": 60000,
+  "order": [
+    {
+      "label": "baseline",
+      "trial": 1,
+      "assets": "c63a55cd865a891b24b06aec29413b93d9cf326f",
+      "args": [
+        "--benchmark-ms",
+        "60000",
+        "--condition",
+        "baseline",
+        "--trial",
+        "1"
+      ]
+    },
+    {
+      "label": "candidate",
+      "trial": 1,
+      "assets": "c63a55cd865a891b24b06aec29413b93d9cf326f",
+      "args": [
+        "--benchmark-ms",
+        "60000",
+        "--condition",
+        "candidate",
+        "--trial",
+        "1",
+        "--ws-only"
+      ]
+    },
+    {
+      "label": "candidate",
+      "trial": 2,
+      "assets": "c63a55cd865a891b24b06aec29413b93d9cf326f",
+      "args": [
+        "--benchmark-ms",
+        "60000",
+        "--condition",
+        "candidate",
+        "--trial",
+        "2",
+        "--ws-only"
+      ]
+    },
+    {
+      "label": "baseline",
+      "trial": 2,
+      "assets": "c63a55cd865a891b24b06aec29413b93d9cf326f",
+      "args": [
+        "--benchmark-ms",
+        "60000",
+        "--condition",
+        "baseline",
+        "--trial",
+        "2"
+      ]
+    },
+    {
+      "label": "baseline",
+      "trial": 3,
+      "assets": "c63a55cd865a891b24b06aec29413b93d9cf326f",
+      "args": [
+        "--benchmark-ms",
+        "60000",
+        "--condition",
+        "baseline",
+        "--trial",
+        "3"
+      ]
+    },
+    {
+      "label": "candidate",
+      "trial": 3,
+      "assets": "c63a55cd865a891b24b06aec29413b93d9cf326f",
+      "args": [
+        "--benchmark-ms",
+        "60000",
+        "--condition",
+        "candidate",
+        "--trial",
+        "3",
+        "--ws-only"
+      ]
+    }
+  ]
+}
