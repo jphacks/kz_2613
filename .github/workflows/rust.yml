@@ -202,6 +202,26 @@ jobs:
       - name: 入力プローブの安全経路（--mock、OS 入力なし）
         timeout-minutes: 5
         run: node scripts/sim/input-probe-sim.mjs
+      - name: PCとスマホの寸法別の画面を検査する
+        id: viewport-layout
+        timeout-minutes: 6
+        shell: pwsh
+        env:
+          RECOOPLAY_RUNTIME_MEASURE: '1'
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $false
+          $hostExe = 'apps/host-rs/target/release/recooplay-host.exe'
+          $failed = $false
+          node scripts/sim/capture-screens.mjs --bin $hostExe --pc-size 800x560 --phone-size 390x844 --assert-layout --out data/local/ci-layout/compact
+          if ($LASTEXITCODE) { $failed = $true }
+          node scripts/sim/capture-screens.mjs --bin $hostExe --pc-size 900x1000 --phone-size 402x874 --assert-layout --out data/local/ci-layout/tall
+          if ($LASTEXITCODE -or $failed) { exit 1 }
+      - uses: actions/upload-artifact@v4
+        timeout-minutes: 5
+        if: ${{ !cancelled() && (steps.viewport-layout.outcome == 'success' || steps.viewport-layout.outcome == 'failure') }}
+        with:
+          name: viewport-layout
+          path: data/local/ci-layout
 
   package:
     runs-on: windows-latest
