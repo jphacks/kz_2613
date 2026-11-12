@@ -1883,10 +1883,33 @@ async function main() {
       p2 = await join('P2'); await welcome(p2);
       await phaseIs(p1, 'coop', from);
       assert((await autoFocus()) === before + 4, '自動復帰で前面にしなかった');
-      // 後続の試験のためロビーへ戻す
-      from = p1.mark();
+    });
+
+    await check('終了: coop中にENDすると全員の押下を解放し、終了前の入力を拒否する', async () => {
+      const current = await p1.waitFor(m => m.type === 'game' && m.game.phase === 'coop' && m.game.epoch === p1.epoch);
+      const epoch = current.game.epoch;
+      await p3.waitFor(m => m.type === 'game' && m.game.phase === 'coop' && m.game.epoch === epoch);
+      const pressedFrom = mon.mark();
+      p1.input('FWD', 'down');
+      p3.input('ATTACK', 'down');
+      await injected(mon, 'KEY_W', 'down', pressedFrom);
+      await injected(mon, 'MOUSE_L', 'down', pressedFrom);
+
+      const releasedFrom = mon.mark();
+      const from = p1.mark();
       p1.send({ type: 'command', cmd: 'END' });
-      await phaseIs(p1, 'lobby', from);
+      const ended = await phaseIs(p1, 'lobby', from);
+      assert(ended.game.reason === 'host end' && ended.game.epoch > epoch, 'ENDで旧epochを失効させなかった');
+      await injected(mon, 'KEY_W', 'up', releasedFrom);
+      await injected(mon, 'MOUSE_L', 'up', releasedFrom);
+
+      for (const [player, action] of [[p1, 'act:forward'], [p3, 'act:attack']]) {
+        const ackFrom = player.mark();
+        const iseq = player.rawInput(action, 'down', { epoch });
+        const ack = await player.waitFor(m => m.type === 'ack' && m.iseq === iseq, { from: ackFrom, what: '終了前の入力への応答' });
+        assert(ack.stale === true, `${action}: 終了前の入力を拒否しなかった`);
+      }
+      await noPress(mon, releasedFrom);
     });
 
     await check('切断: 4 秒受信がなければ切断扱いにする', async () => {
