@@ -120,14 +120,37 @@ try {
     `@(Get-CimInstance Win32_Process -Filter "ParentProcessId=${app.pid} and Name='recooplay-host.exe'").ProcessId`));
   assert(Number.isSafeInteger(hostId)&&hostId>0,'ホストのプロセスを特定できません');
   assert.equal(powershell('-Command',`(Get-Process -Id ${hostId} -ErrorAction Stop).ProcessName`),'recooplay-host');
+  const closeScript=fileURLToPath(new URL('./close-desktop-window.ps1',import.meta.url));
+  const viewport = "({width:innerWidth,height:innerHeight,dpr:devicePixelRatio})";
+  const beforeResize = await evaluate(viewport);
+  powershell('-File',closeScript,'-ProcessId',String(app.pid),'-MinimumSize');
+  const compact = await until(async () => {
+    const current = await evaluate(viewport);
+    return current.width < beforeResize.width && current.height < beforeResize.height
+      && current.width <= 850 && current.height <= 620 && current;
+  }, 'WebView2が最小ウィンドウ付近まで縮みません');
+  console.log('WebView2の最小ウィンドウ: '+JSON.stringify({before:beforeResize,after:compact}));
+  await until(() => evaluate(`(() => {
+    const nodes = ['#qr svg', '#nextBtn', '#settingsBtn'].map(selector => document.querySelector(selector));
+    return nodes.every(node => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && rect.left >= -1 && rect.top >= -1
+        && rect.right <= innerWidth + 1 && rect.bottom <= innerHeight + 1;
+    });
+  })()`), '最小ウィンドウで参加画面のQRや操作が表示領域を外れています');
   await evaluate("document.querySelector('#settingsBtn').click()");
   await until(()=>evaluate("document.querySelector('#settings').open && !document.querySelector('#desktopOverlaySetting')?.disabled && !!document.querySelector('#desktopOverlaySetting')"),
     'デスクトップの設定が開きません');
+  assert(await evaluate(`(() => {
+    const rect = document.querySelector('#settings').getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && rect.left >= -1 && rect.top >= -1
+      && rect.right <= innerWidth + 1 && rect.bottom <= innerHeight + 1;
+  })()`),'最小ウィンドウで設定が表示領域を外れています');
   await evaluate("document.querySelector('#overlayDetails').open=true;document.querySelector('#desktopOverlaySetting').click()");
   await until(async()=> (await targets()).find(target=>target.url.startsWith(hostOrigin+'/overlay')),
     'オーバーレイが開きません');
   await until(()=>evaluate("window.recooplayDesktop?.overlay===true"),'オーバーレイの表示が確定しません');
-  const closeScript=fileURLToPath(new URL('./close-desktop-window.ps1',import.meta.url));
   powershell('-File',closeScript,'-ProcessId',String(app.pid));
   const exit=await until(()=>exited,'オーバーレイ表示中にTauriが終了しません');
   assert.equal(exit.code,0);
