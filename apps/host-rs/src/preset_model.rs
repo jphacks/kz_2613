@@ -4,6 +4,8 @@
 //   - 2 つの操作を「同じ人が持つべきか」の確率
 // を出す。学習は scripts/preset-model/train.py (重みは assets/preset-model.bin、exe に埋め込む)。
 // 特徴量の作り方 (featurize) は train.py と完全に同じでなければならない。
+// 版2 (#430) は、操作名を文字 n-gram の代わりに多言語 MiniLM の小型版 (text_encoder) で読む。重みが大きいので exe に埋め込まず、
+// フォルダ (RECOOPLAY_PRESET_MODEL_DIR か、exe と同じ場所の preset-model-v2) に置いたときだけ使う。ないときは埋め込みの版1。
 // 送ってよい操作 (担当の付くグループ) は操作定義が決め、モデルは「誰が持つか」だけを決める。
 
 use std::collections::HashMap;
@@ -67,8 +69,25 @@ struct Layer {
     ln2: (Vec<f32>, Vec<f32>),
 }
 
+/// 操作名の読み方。版1 は文字 n-gram の埋め込みの平均、版2 は MiniLM のベクトルを text_proj で D 次元へ写す
+enum TextReader {
+    NGram {
+        nb: usize,
+        text: Vec<f32>,
+    },
+    Encoder {
+        enc: Box<crate::text_encoder::TextEncoder>,
+        w1: Vec<f32>,
+        b1: Vec<f32>,
+        w2: Vec<f32>,
+        b2: Vec<f32>,
+    },
+}
+
 pub struct Model {
-    nb: usize,
+    reader: TextReader,
+    /// 重みのハッシュ。保存した分担 (model_presets) は、版が同じときだけ使う
+    version: String,
     d: usize,
     heads: usize,
     ffn: usize,
@@ -76,7 +95,6 @@ pub struct Model {
     n_cat: usize,
     keys: Vec<String>,
     types: Vec<String>,
-    text: Vec<f32>,
     key: Vec<f32>,
     typ: Vec<f32>,
     ln0: (Vec<f32>, Vec<f32>),
@@ -106,33 +124,101 @@ pub struct Output {
     pub axis: Vec<Vec<f32>>,
 }
 
-/// モデルの版 (重みのハッシュ)。保存した分担 (model_presets) は、版が同じときだけ使う
-pub fn version() -> &'static str {
-    static V: OnceLock<String> = OnceLock::new();
-    V.get_or_init(|| {
-        let mut h: u64 = 0xcbf2_9ce4_8422_2325;
-        for &b in WEIGHTS {
+fn fnv64(parts: &[&[u8]]) -> u64 {
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+    for part in parts {
+        for &b in *part {
             h ^= u64::from(b);
             h = h.wrapping_mul(0x0100_0000_01b3);
         }
-        format!("preset-model-{h:016x}")
-    })
+    }
+    h
+}
+
+/// モデルの版 (重みのハッシュ)。保存した分担 (model_presets) は、版が同じときだけ使う
+pub fn version() -> &'static str {
+    model().map_or("none", |m| m.version.as_str())
+}
+
+/// 版2 の置き場所。RECOOPLAY_PRESET_MODEL_DIR か、exe と同じ場所の preset-model-v2
+pub fn v2_dir() -> Option<std::path::PathBuf> {
+    if let Some(d) = std::env::var_os("RECOOPLAY_PRESET_MODEL_DIR") {
+        return Some(d.into());
+    }
+    let beside = std::env::current_exe()
+        .ok()?
+        .parent()?
+        .join("preset-model-v2");
+    beside.join("preset-model.bin").is_file().then_some(beside)
 }
 
 pub fn model() -> Option<&'static Model> {
     static M: OnceLock<Option<Model>> = OnceLock::new();
-    M.get_or_init(|| match Model::load(WEIGHTS) {
-        Ok(m) => Some(m),
-        Err(e) => {
-            log::warn!("プリセットのモデルを読めません (規則による分担に戻します): {e}");
-            None
+    M.get_or_init(|| {
+        if let Some(dir) = v2_dir() {
+            match Model::load_v2(&dir) {
+                Ok(m) => return Some(m),
+                // 版2 を読めないときは、埋め込みの版1 で続ける
+                Err(e) => log::warn!("プリセットのモデル (版2) を読めません (版1 を使います): {e}"),
+            }
+        }
+        match Model::load(WEIGHTS) {
+            Ok(m) => Some(m),
+            Err(e) => {
+                log::warn!("プリセットのモデルを読めません (規則による分担に戻します): {e}");
+                None
+            }
         }
     })
     .as_ref()
 }
 
+/// 操作名の文字列 (版2 の入力)。表示名・ID・設定名を単語に分けて空白でつなぎ、" | " で区切る (train.py の text_of と同じ)
+pub fn text_of(a: &Input) -> String {
+    [Some(a.label), Some(a.id), a.bind]
+        .into_iter()
+        .flatten()
+        .filter(|v| !v.is_empty())
+        .map(|v| {
+            let w: Vec<String> = words(v).into_iter().map(|(_, w)| w).collect();
+            if w.is_empty() {
+                v.to_string()
+            } else {
+                w.join(" ")
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" | ")
+}
+
 impl Model {
+    /// 版1 (埋め込み)
     pub fn load(bytes: &[u8]) -> Result<Model, String> {
+        Self::parse(
+            bytes,
+            1,
+            None,
+            format!("preset-model-{:016x}", fnv64(&[bytes])),
+        )
+    }
+
+    /// 版2：dir の preset-model.bin (RCPM 版2)・text-encoder.bin・tokenizer.json
+    pub fn load_v2(dir: &std::path::Path) -> Result<Model, String> {
+        let head = std::fs::read(dir.join("preset-model.bin"))
+            .map_err(|e| format!("preset-model.bin を読めません: {e}"))?;
+        let enc_bytes = std::fs::read(dir.join("text-encoder.bin"))
+            .map_err(|e| format!("text-encoder.bin を読めません: {e}"))?;
+        let enc = crate::text_encoder::TextEncoder::load(dir)?;
+        let version = format!("preset-model-v2-{:016x}", fnv64(&[&head, &enc_bytes]));
+        Self::parse(&head, 2, Some(enc), version)
+    }
+
+    fn parse(
+        bytes: &[u8],
+        want: u64,
+        enc: Option<crate::text_encoder::TextEncoder>,
+        version: String,
+    ) -> Result<Model, String> {
         if bytes.len() < 8 || &bytes[..4] != b"RCPM" {
             return Err("形式が違います".into());
         }
@@ -140,7 +226,7 @@ impl Model {
         let header: Value =
             serde_json::from_slice(bytes.get(8..8 + hl).ok_or("ヘッダーが途中で切れています")?)
                 .map_err(|e| e.to_string())?;
-        if header["version"].as_u64() != Some(1) {
+        if header["version"].as_u64() != Some(want) {
             return Err("対応していない版です".into());
         }
         let num = |k: &str| {
@@ -183,13 +269,38 @@ impl Model {
             off += 4 * n;
         }
         let mut take = |k: &str| t.remove(k).ok_or(format!("重み {k} がありません"));
-        let (nb, d, heads, ffn, pair) = (
-            num("nb")?,
-            num("d")?,
-            num("heads")?,
-            num("ffn")?,
-            num("pair")?,
-        );
+        let (d, heads, ffn, pair) = (num("d")?, num("heads")?, num("ffn")?, num("pair")?);
+        let reader = match enc {
+            None => {
+                let nb = num("nb")?;
+                let text = take("text.weight")?;
+                if text.len() != nb * d {
+                    return Err("重みの大きさが合いません".into());
+                }
+                TextReader::NGram { nb, text }
+            }
+            Some(enc) => {
+                let (w1, b1, w2, b2) = (
+                    take("text_proj.0.weight")?,
+                    take("text_proj.0.bias")?,
+                    take("text_proj.2.weight")?,
+                    take("text_proj.2.bias")?,
+                );
+                if w1.len() != enc.dim() * d
+                    || w2.len() != d * d
+                    || header["text"]["dim"].as_u64() != Some(enc.dim() as u64)
+                {
+                    return Err("重みの大きさが合いません".into());
+                }
+                TextReader::Encoder {
+                    enc: Box::new(enc),
+                    w1,
+                    b1,
+                    w2,
+                    b2,
+                }
+            }
+        };
         let mut layers = Vec::new();
         for i in 0..num("layers")? {
             let p = |s: &str| format!("layers.{i}.{s}");
@@ -207,7 +318,8 @@ impl Model {
             });
         }
         let m = Model {
-            nb,
+            reader,
+            version,
             d,
             heads,
             ffn,
@@ -215,7 +327,6 @@ impl Model {
             n_cat: strs("coarse").len(),
             keys: strs("keys"),
             types: strs("types"),
-            text: take("text.weight")?,
             key: take("key.weight")?,
             typ: take("typ.weight")?,
             ln0: (take("ln0.weight")?, take("ln0.bias")?),
@@ -227,28 +338,61 @@ impl Model {
             axis_w: take("axis.weight")?,
             axis_bias: take("axis_bias")?.first().copied().unwrap_or(0.0),
         };
-        if m.text.len() != nb * d
-            || m.key.len() != m.keys.len() * d
-            || m.n_cat != RANK.len()
-            || d % heads != 0
-        {
+        if m.key.len() != m.keys.len() * d || m.n_cat != RANK.len() || d % heads != 0 {
             return Err("重みの大きさが合いません".into());
         }
         Ok(m)
     }
 
-    pub fn infer(&self, actions: &[Input]) -> Output {
+    /// 操作名の部分 (操作ごとに D 次元)
+    fn text_part(&self, actions: &[Input]) -> Vec<f32> {
         let (n, d) = (actions.len(), self.d);
         let mut x = vec![0.0f32; n * d];
-        for (i, a) in actions.iter().enumerate() {
-            let row = &mut x[i * d..(i + 1) * d];
-            let h = featurize(&[Some(a.label), Some(a.id), a.bind], self.nb);
-            for &f in &h {
-                for (r, w) in row.iter_mut().zip(&self.text[f * d..(f + 1) * d]) {
-                    *r += w;
+        match &self.reader {
+            TextReader::NGram { nb, text } => {
+                for (i, a) in actions.iter().enumerate() {
+                    let row = &mut x[i * d..(i + 1) * d];
+                    let h = featurize(&[Some(a.label), Some(a.id), a.bind], *nb);
+                    for &f in &h {
+                        for (r, w) in row.iter_mut().zip(&text[f * d..(f + 1) * d]) {
+                            *r += w;
+                        }
+                    }
+                    let cnt = h.len().max(1) as f32;
+                    row.iter_mut().for_each(|r| *r /= cnt);
                 }
             }
-            let cnt = h.len().max(1) as f32;
+            TextReader::Encoder {
+                enc,
+                w1,
+                b1,
+                w2,
+                b2,
+            } => {
+                // 同じ文字列は 1 回だけ計算する
+                let texts: Vec<String> = actions.iter().map(text_of).collect();
+                let mut uniq: Vec<String> = texts.clone();
+                uniq.sort();
+                uniq.dedup();
+                let vecs = enc.encode_all(&uniq);
+                let dim = enc.dim();
+                for (i, t) in texts.iter().enumerate() {
+                    let v = &vecs[uniq.binary_search(t).unwrap()];
+                    let mut h = linear(v, 1, w1, Some(b1), dim, d);
+                    h.iter_mut()
+                        .for_each(|a| *a = crate::text_encoder::gelu_erf(*a));
+                    x[i * d..(i + 1) * d].copy_from_slice(&linear(&h, 1, w2, Some(b2), d, d));
+                }
+            }
+        }
+        x
+    }
+
+    pub fn infer(&self, actions: &[Input]) -> Output {
+        let (n, d) = (actions.len(), self.d);
+        let mut x = self.text_part(actions);
+        for (i, a) in actions.iter().enumerate() {
+            let row = &mut x[i * d..(i + 1) * d];
             let k = a
                 .default
                 .and_then(|k| self.keys.iter().position(|x| x == k))
@@ -256,7 +400,7 @@ impl Model {
             let t = self.types.iter().position(|x| x == a.kind).unwrap_or(0);
             let (key, typ) = (&self.key[k * d..(k + 1) * d], &self.typ[t * d..(t + 1) * d]);
             for ((r, kv), tv) in row.iter_mut().zip(key).zip(typ) {
-                *r = *r / cnt + kv + tv;
+                *r += kv + tv;
             }
         }
         layer_norm(&mut x, d, &self.ln0);
@@ -919,9 +1063,93 @@ mod tests {
     }
 
     /// Python (train.py) の推論と同じ値になる (特徴量・重みの読み方・計算の順の取り違えを防ぐ)
+    /// 版2 (#430)：Python の書き出し (parity.json) と、操作名の文字列・MiniLM のベクトル・分担の判断の出力が一致する。
+    /// 重みは Git の対象外なので、data/local/preset-model/export-v2 か RECOOPLAY_PRESET_MODEL_DIR にあるときだけ確かめる
+    #[test]
+    fn v2_matches_python_when_the_files_are_present() {
+        let dir = std::env::var_os("RECOOPLAY_PRESET_MODEL_DIR")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| {
+                std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../data/local/preset-model/export-v2")
+            });
+        if !dir.join("parity.json").is_file() {
+            eprintln!("版2 のファイルがないので確かめない: {}", dir.display());
+            return;
+        }
+        let m = Model::load_v2(&dir).expect("版2 を読める");
+        let TextReader::Encoder { enc, .. } = &m.reader else {
+            panic!("版2 は MiniLM で読む")
+        };
+        let fx: Value =
+            serde_json::from_str(&std::fs::read_to_string(dir.join("parity.json")).unwrap())
+                .unwrap();
+        for case in fx["cases"].as_array().unwrap() {
+            let inputs: Vec<Input> = case["actions"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|a| Input {
+                    id: a["id"].as_str().unwrap(),
+                    label: a["label"].as_str().unwrap_or(""),
+                    bind: a["bind"].as_str(),
+                    kind: a["type"].as_str().unwrap(),
+                    default: a["default"].as_str(),
+                })
+                .collect();
+            let started = std::time::Instant::now();
+            for (i, a) in inputs.iter().enumerate() {
+                let text = text_of(a);
+                assert_eq!(
+                    text,
+                    case["texts"][i].as_str().unwrap(),
+                    "{} の文字列",
+                    a.id
+                );
+                let v = enc.encode(&text).unwrap();
+                let want: Vec<f32> = case["textVectors"][i]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|x| x.as_f64().unwrap() as f32)
+                    .collect();
+                let dot: f32 = v.iter().zip(&want).map(|(a, b)| a * b).sum();
+                let norm = |x: &[f32]| x.iter().map(|a| a * a).sum::<f32>().sqrt();
+                let cos = dot / norm(&v) / norm(&want);
+                assert!(cos > 0.9999, "{} のベクトル: cos {cos}", a.id);
+            }
+            let one_by_one = started.elapsed();
+            let started = std::time::Instant::now();
+            let out = m.infer(&inputs);
+            eprintln!(
+                "版2：{} 操作の推論 {} ms（1件ずつの計算 {} ms）",
+                inputs.len(),
+                started.elapsed().as_millis(),
+                one_by_one.as_millis()
+            );
+            for i in 0..inputs.len() {
+                for k in 0..m.n_cat {
+                    let want = case["category"][i][k].as_f64().unwrap() as f32;
+                    assert!(
+                        (out.category[i][k] - want).abs() < 2e-3,
+                        "{i} カテゴリ {k}: {} != {want}",
+                        out.category[i][k]
+                    );
+                }
+                for j in 0..inputs.len() {
+                    for (got, key) in [(out.affinity[i][j], "affinity"), (out.axis[i][j], "axis")] {
+                        let want = case[key][i][j].as_f64().unwrap() as f32;
+                        assert!((got - want).abs() < 2e-3, "{key} {i},{j}: {got} != {want}");
+                    }
+                }
+            }
+        }
+    }
+
     #[test]
     fn inference_matches_python() {
-        let m = model().expect("埋め込んだ重みが読める");
+        // 版2 を置いた環境でも、埋め込みの版1 を確かめる
+        let m = &Model::load(WEIGHTS).expect("埋め込んだ重みが読める");
         let fx: Value =
             serde_json::from_str(include_str!("../assets/preset-model-parity.json")).unwrap();
         for case in fx["cases"].as_array().unwrap() {
@@ -944,7 +1172,13 @@ mod tests {
                     .map(|v| v.as_u64().unwrap() as usize)
                     .collect();
                 assert_eq!(
-                    featurize(&[Some(a.label), Some(a.id), a.bind], m.nb),
+                    featurize(
+                        &[Some(a.label), Some(a.id), a.bind],
+                        match &m.reader {
+                            TextReader::NGram { nb, .. } => *nb,
+                            _ => unreachable!(),
+                        }
+                    ),
                     want,
                     "{} の特徴",
                     a.id

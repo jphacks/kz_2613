@@ -121,6 +121,8 @@ pub enum Event {
     FakeLauncher(bool),
     /// インストール済みのゲームを探し終えた (別スレッドから)
     GamesDetected(games::Detected),
+    /// 裏のスレッドで作ったモデルの分担 (#431)。(ゲームの定義の ID, 作った分担)
+    ModelPresetMade(String, crate::model_presets::Stored, u64),
     /// ランチャーへの起動要求が終わった (別スレッドから。Err は理由)
     Launched {
         gen: u64,
@@ -421,6 +423,10 @@ pub struct Hub {
     model_timer: bool,
     /// モデルの分担を使う設定 (RECOOPLAY_PRESETS=model で、重みを読めたとき)
     presets_model: bool,
+    /// 裏のスレッドで作っているゲーム (1 本ずつ)
+    model_busy: Option<String>,
+    /// 試験では裏のスレッドを使わずに、その場で作る
+    model_inline: bool,
     // 時間制の役割交代 (#161)。既定は OFF
     rotation_secs: u64,
     rotation_at: u64,
@@ -554,6 +560,8 @@ impl Hub {
             model_queue: Default::default(),
             model_timer: false,
             presets_model: profiles::preset_source() == "model",
+            model_busy: None,
+            model_inline: false,
             key_overrides_path: crate::key_overrides::default_path(),
             key_overrides: crate::key_overrides::load(
                 crate::key_overrides::default_path().as_deref(),
@@ -1498,6 +1506,15 @@ impl Hub {
             if let Some(id) = self.profile.as_ref().map(|p| p.id.clone()) {
                 if self.make_model_preset(&id) {
                     self.model_queue.retain(|x| x != &id);
+                } else if self
+                    .profile
+                    .as_ref()
+                    .is_some_and(|p| self.needs_model_preset(p))
+                    && self.model_busy.as_deref() != Some(id.as_str())
+                {
+                    // 別のゲームを作っている途中なら、次に作る
+                    self.model_queue.retain(|x| x != &id);
+                    self.model_queue.push_front(id);
                 }
             }
         }
@@ -2502,8 +2519,12 @@ impl Hub {
         }
     }
 
-    /// モデルで 1 本の分担を作って保存する。作ったら true
+    /// モデルで 1 本の分担を作り始める。読み込みと推論 (版2 は MiniLM) は裏のスレッドで行い、
+    /// ホストの処理 (入力・通信) を待たせない。作り始めたら true
     fn make_model_preset(&mut self, id: &str) -> bool {
+        if self.model_busy.is_some() {
+            return false;
+        }
         let Some(p) = profiles::find(&self.profiles, id).cloned() else {
             return false;
         };
@@ -2511,23 +2532,55 @@ impl Hub {
             return false;
         }
         let started = Instant::now();
-        let stored = crate::model_presets::compute(
-            &p,
-            crate::preset_model::version(),
-            profiles::model_assignment_for,
-        );
-        self.model_presets.insert(p.id.clone(), stored);
+        let work = move || {
+            let version = crate::preset_model::version().to_string();
+            crate::model_presets::compute(&p, &version, profiles::model_assignment_for)
+        };
+        if self.model_inline {
+            let stored = work();
+            self.finish_model_preset(id.to_string(), stored, started.elapsed().as_millis() as u64);
+            return true;
+        }
+        let tx = self.tx.clone();
+        let key = id.to_string();
+        let spawned = std::thread::Builder::new()
+            .name("model-preset".into())
+            .spawn(move || {
+                let stored = work();
+                let _ = tx.send(Event::ModelPresetMade(
+                    key,
+                    stored,
+                    started.elapsed().as_millis() as u64,
+                ));
+            });
+        if spawned.is_ok() {
+            self.model_busy = Some(id.to_string());
+        }
+        spawned.is_ok()
+    }
+
+    /// 作った分担を保存する。選んでいるゲームなら画面とスマホへ知らせ、待ち行列の次へ進む
+    fn finish_model_preset(&mut self, id: String, stored: crate::model_presets::Stored, ms: u64) {
+        self.model_busy = None;
+        // 作っている間に版が変わった (読み込みに失敗して版1 に戻ったなど) ときも、作った版のまま保存する。照合で合わなければ使わない
+        self.model_presets.insert(id.clone(), stored);
         if let Some(path) = self.model_presets_path.clone() {
             if let Err(e) = crate::model_presets::save(&path, &self.model_presets) {
                 log::warn!("モデルの分担を保存できません: {e}");
             }
         }
         // ゲーム名は残さない (時間と残りの本数だけ)
-        self.log(
-            "model_preset",
-            json!({ "ms": started.elapsed().as_millis() as u64, "left": self.model_queue.len() }),
-        );
-        true
+        self.log("model_preset", json!({ "ms": ms, "left": self.model_queue.len(), "model": crate::preset_model::version() }));
+        if self.profile.as_ref().is_some_and(|p| p.id == id) {
+            self.push_game();
+        }
+        if !self.model_queue.is_empty() && !self.model_timer {
+            self.model_timer = true;
+            self.schedule(
+                Instant::now() + Duration::from_millis(20),
+                Timer::ModelPreset,
+            );
+        }
     }
 
     /// 待ち行列から 1 本作る。協力プレイ中は入力の処理を優先して作らない
@@ -2536,13 +2589,17 @@ impl Hub {
             self.schedule(Instant::now() + Duration::from_secs(1), Timer::ModelPreset);
             return;
         }
-        if let Some(id) = self.model_queue.pop_front() {
-            let current = self.profile.as_ref().is_some_and(|p| p.id == id);
-            if self.make_model_preset(&id) && current {
-                self.push_game();
+        if self.model_busy.is_some() {
+            // 作り終えたら finish_model_preset が次を予約する
+            self.model_timer = false;
+            return;
+        }
+        while let Some(id) = self.model_queue.pop_front() {
+            if self.make_model_preset(&id) {
+                break;
             }
         }
-        if self.model_queue.is_empty() {
+        if self.model_queue.is_empty() || self.model_busy.is_some() {
             self.model_timer = false;
         } else {
             self.schedule(
@@ -3370,6 +3427,7 @@ impl Hub {
                 }
             }
             Event::GamesDetected(list) => self.on_games_detected(list),
+            Event::ModelPresetMade(id, stored, ms) => self.finish_model_preset(id, stored, ms),
             Event::Launched { gen, result } => self.on_launched(gen, result),
             Event::Shutdown => {}
         }
@@ -4272,6 +4330,8 @@ mod tests {
             model_queue: Default::default(),
             model_timer: false,
             presets_model: false,
+            model_busy: None,
+            model_inline: true,
             rotation_secs: 0,
             rotation_at: 0,
             rotation_left: 0,

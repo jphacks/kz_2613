@@ -27,6 +27,7 @@ mod protocol;
 mod rtc;
 mod runtime_measure;
 mod session;
+mod text_encoder;
 
 use std::net::SocketAddr;
 use std::path::{Component, Path, PathBuf};
