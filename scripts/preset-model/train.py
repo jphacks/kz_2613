@@ -63,10 +63,12 @@ class TextEncoder:
         # 配布の大きさを測る比較 (--text-vocab・--text-int8)。語彙の外のトークンは <unk> にし、
         # 重みは行ごと (出力ごと) に8ビットへ丸めてから戻す (保存を8ビットにしたのと同じ値で計算する)
         self.keep = None
+        self.name, self.int8, self.kept = name, int8, None
         if vocab:
             keep = set(json.load(open(vocab, encoding="utf-8"))) | set(self.tok.all_special_ids)
             self.keep = torch.zeros(len(self.tok), dtype=torch.bool)
             self.keep[sorted(keep)] = True
+            self.kept = sorted(keep)
         if int8:
             with torch.no_grad():
                 for p in self.model.parameters():
@@ -684,6 +686,98 @@ def export_parity(model, keys, games):
     print(f"書き出し: {os.path.relpath(path, ROOT)}")
 
 
+def quantize_rows(w):
+    """行ごと (出力ごと) の8ビット。TextEncoder の --text-int8 と同じ丸め方で、保存値から同じ重みに戻る"""
+    scale = w.abs().amax(dim=1, keepdim=True).clamp(min=1e-8) / 127
+    return (w / scale).round().clamp(-127, 127).to(torch.int8), scale.squeeze(1).float()
+
+
+def export_text_encoder(out_dir):
+    """MiniLM 小型版 (#429) を書き出す。text-encoder.bin (独自の形式 RCTE) と、元のトークナイザーのファイル。
+    語彙の表は残す行だけ。2次元の重みは行ごとの8ビット + 倍率 (float32)、それ以外は float32。
+    推論: トークナイザーで ID にし、残す語彙にない ID は <unk> にしてから、vocab の並びで行番号に直す"""
+    if TEXT.kept is None or not TEXT.int8:
+        raise SystemExit("MiniLM の書き出しには --text-vocab と --text-int8 が要ります")
+    os.makedirs(out_dir, exist_ok=True)
+    m = TEXT.model.cpu()
+    cfg = m.config
+    sd = {k: v.detach().float().cpu() for k, v in m.state_dict().items()}
+    kept = torch.tensor(TEXT.kept)
+    sd["embeddings.word_embeddings.weight"] = sd["embeddings.word_embeddings.weight"][kept]
+    tensors, blobs = [], []
+    for k, v in sd.items():
+        if k.endswith("position_ids"):
+            continue
+        if v.dim() == 2 and k != "embeddings.position_embeddings.weight" and k != "embeddings.token_type_embeddings.weight":
+            q, scale = quantize_rows(v)
+            tensors.append({"name": k, "shape": list(v.shape), "dtype": "i8", "scale": "f32"})
+            blobs += [q.numpy().tobytes(), scale.numpy().astype("<f4").tobytes()]
+        else:
+            tensors.append({"name": k, "shape": list(v.shape), "dtype": "f32"})
+            blobs.append(v.numpy().astype("<f4").tobytes())
+    # 位置の番号の始まり: BERT 型は 0、XLM-R 型は padding_idx + 1 (語彙は XLM-R でも本体が BERT 型のことがある)
+    position_start = cfg.pad_token_id + 1 if cfg.model_type in ("xlm-roberta", "roberta") else 0
+    header = {"version": 1, "source": TEXT.name, "license": "Apache-2.0", "modelType": cfg.model_type, "positionStart": position_start,
+              "layers": cfg.num_hidden_layers, "hidden": cfg.hidden_size, "heads": cfg.num_attention_heads,
+              "intermediate": cfg.intermediate_size, "maxPositions": cfg.max_position_embeddings,
+              "layerNormEps": cfg.layer_norm_eps, "padTokenId": cfg.pad_token_id, "unkTokenId": TEXT.tok.unk_token_id,
+              "maxLength": 48, "pooling": "mean", "vocab": TEXT.kept, "tensors": tensors}
+    hj = json.dumps(header, ensure_ascii=False).encode("utf-8")
+    path = os.path.join(out_dir, "text-encoder.bin")
+    with open(path, "wb") as f:
+        f.write(b"RCTE")
+        f.write(struct.pack("<I", len(hj)))
+        f.write(hj)
+        for b in blobs:
+            f.write(b)
+    TEXT.tok.save_pretrained(out_dir)  # 元のトークナイザー (Apache-2.0) をそのまま同梱する
+    print(f"書き出し: {path} ({os.path.getsize(path) // 1024} KiB)")
+
+
+def export_model_v2(model, keys, out_dir):
+    """分担を判断する部分 (RCPM 版2)。操作名は MiniLM のベクトル (text_proj で D 次元へ写す) で読む"""
+    sd = {k: v.detach().cpu().float().contiguous() for k, v in model.state_dict().items()
+          if k != "mask_vec" and not k.startswith("key_head.") and k != "text.weight"}
+    tensors = [{"name": k, "shape": list(v.shape)} for k, v in sd.items()]
+    header = {"version": 2, "text": {"encoder": "text-encoder.bin", "dim": TEXT.dim, "input": "label | id | bind (単語に分けて空白でつなぐ)"},
+              "d": D, "heads": HEADS, "layers": LAYERS, "ffn": FFN, "pair": PAIR,
+              "types": TYPES, "coarse": COARSE, "keys": keys, "tensors": tensors}
+    hj = json.dumps(header, ensure_ascii=False).encode("utf-8")
+    os.makedirs(out_dir, exist_ok=True)
+    path = os.path.join(out_dir, "preset-model.bin")
+    with open(path, "wb") as f:
+        f.write(b"RCPM")
+        f.write(struct.pack("<I", len(hj)))
+        f.write(hj)
+        for t in tensors:
+            f.write(sd[t["name"]].numpy().astype("<f4").tobytes())
+    print(f"書き出し: {path} ({os.path.getsize(path) // 1024} KiB)")
+
+
+def export_parity_v2(model, keys, games, out_dir):
+    """Rust の推論 (#430) と照合する基準: 操作名の文字列・MiniLM のベクトル・分担の判断の出力"""
+    model.eval()
+    cases = []
+    for g in games:
+        data = {k: v.to(DEV) for k, v in encode([g], keys).items()}
+        with torch.no_grad():
+            cat, aff, axis, _ = model(data["feats"], data["key"], data["typ"], data["mask"], tid=data["tid"])
+        n = len(g["actions"])
+        texts = [TextEncoder.text_of(a) for a in g["actions"]]
+        vec = TEXT.matrix[torch.tensor(TEXT.ids(texts), device=TEXT.matrix.device)].cpu()
+        cases.append({
+            "name": g["name"], "texts": texts,
+            "actions": [{k: a.get(k) for k in ("id", "label", "bind", "type", "default") if a.get(k) is not None} for a in g["actions"]],
+            "textVectors": [[round(float(x), 6) for x in row] for row in vec],
+            "category": [[round(float(x), 5) for x in row] for row in cat[0, :n].softmax(-1)],
+            "affinity": [[round(float(x), 5) for x in row] for row in torch.sigmoid(aff[0, :n, :n])],
+            "axis": [[round(float(x), 5) for x in row] for row in torch.sigmoid(axis[0, :n, :n])],
+        })
+    path = os.path.join(out_dir, "parity.json")
+    json.dump({"cases": cases}, open(path, "w", encoding="utf-8"), ensure_ascii=False)
+    print(f"書き出し: {path}")
+
+
 # ---------------------------------------------------------------- 本体
 
 def train(games, keys, args, rng, log=True):
@@ -752,6 +846,7 @@ def main():
     ap.add_argument("--weight-decay", type=float, default=0.01)
     ap.add_argument("--device", default="cpu", help="cpu / cuda")
     ap.add_argument("--text-vocab", default=None, help="比較実験: --text-encoder の語彙をこの JSON (トークン ID の一覧) に絞る")
+    ap.add_argument("--export-dir", default=None, help="--text-encoder の書き出し先 (既定 data/local/preset-model/export-v2)")
     ap.add_argument("--text-int8", action="store_true", help="比較実験: --text-encoder の重みを8ビットに丸める")
     ap.add_argument("--text-encoder", default=None, help="比較実験: 事前学習済みの BERT 系モデル (Hugging Face の名前) で操作名を読む。書き出しは未対応")
     ap.add_argument("--dump-preds", action="store_true", help="--gh-folds で、評価したゲームの操作ごとの予測を PRED 行で出す")
@@ -830,9 +925,17 @@ def main():
         report(total, "全ゲーム")
         return
 
-    if TEXT is not None:
-        raise SystemExit("--text-encoder は比較実験用で、Rust 向けの書き出しには対応していません (--cv / --gh-folds と使う)")
     model = train(real + extra + gh_labeled_train, keys, args, rng)
+    if TEXT is not None:
+        # MiniLM 小型版 (#429)。apps/host-rs/assets には書かず、別のフォルダへ (Rust の推論は #430)
+        out = args.export_dir or os.path.join(ROOT, "data", "local", "preset-model", "export-v2")
+        print("評価")
+        evaluate(model, encode(real, keys), "学習に使った実在のゲーム (参考)")
+        export_text_encoder(out)
+        export_model_v2(model, keys, out)
+        # 照合の正解は公開済みの手作りの定義だけで作る (このPCで読んだ操作は学習データなので配布物に入れない)
+        export_parity_v2(model, keys, [next(g for g in real if g["name"].endswith("(定義)"))], out)
+        return
     print("評価")
     evaluate(model, encode(real, keys), "学習に使った実在のゲーム (参考)")
     evaluate(model, templates, "ジャンルの型の定義 (学習に不使用)")
