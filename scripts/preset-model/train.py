@@ -56,10 +56,24 @@ class TextEncoder:
     """事前学習済みの BERT 系モデル (Hugging Face) で、操作の名前の文字列を固定のベクトルにする。重みは学習しない。
     同じ文字列は一度だけ計算し、表 (matrix) の行番号で引く"""
 
-    def __init__(self, name, device):
+    def __init__(self, name, device, vocab=None, int8=False):
         from transformers import AutoModel, AutoTokenizer
         self.tok = AutoTokenizer.from_pretrained(name)
-        self.model = AutoModel.from_pretrained(name).to(device).eval()
+        self.model = AutoModel.from_pretrained(name).eval()
+        # 配布の大きさを測る比較 (--text-vocab・--text-int8)。語彙の外のトークンは <unk> にし、
+        # 重みは行ごと (出力ごと) に8ビットへ丸めてから戻す (保存を8ビットにしたのと同じ値で計算する)
+        self.keep = None
+        if vocab:
+            keep = set(json.load(open(vocab, encoding="utf-8"))) | set(self.tok.all_special_ids)
+            self.keep = torch.zeros(len(self.tok), dtype=torch.bool)
+            self.keep[sorted(keep)] = True
+        if int8:
+            with torch.no_grad():
+                for p in self.model.parameters():
+                    if p.dim() == 2:
+                        scale = p.abs().amax(dim=1, keepdim=True).clamp(min=1e-8) / 127
+                        p.copy_((p / scale).round().clamp(-127, 127) * scale)
+        self.model = self.model.to(device)
         self.device = device
         self.dim = self.model.config.hidden_size
         self.index = {"": 0}
@@ -81,7 +95,10 @@ class TextEncoder:
         for i in range(0, len(new), 512):
             chunk = new[i:i + 512]
             with torch.no_grad():
-                b = self.tok(chunk, padding=True, truncation=True, max_length=48, return_tensors="pt").to(self.device)
+                b = self.tok(chunk, padding=True, truncation=True, max_length=48, return_tensors="pt")
+                if self.keep is not None:
+                    b["input_ids"] = torch.where(self.keep[b["input_ids"]], b["input_ids"], torch.full_like(b["input_ids"], self.tok.unk_token_id))
+                b = b.to(self.device)
                 h = self.model(**b).last_hidden_state
                 m = b["attention_mask"].unsqueeze(-1).float()
                 v = (h * m).sum(1) / m.sum(1).clamp(min=1)  # 平均プーリング
@@ -734,6 +751,8 @@ def main():
     ap.add_argument("--lr", type=float, default=2e-3)
     ap.add_argument("--weight-decay", type=float, default=0.01)
     ap.add_argument("--device", default="cpu", help="cpu / cuda")
+    ap.add_argument("--text-vocab", default=None, help="比較実験: --text-encoder の語彙をこの JSON (トークン ID の一覧) に絞る")
+    ap.add_argument("--text-int8", action="store_true", help="比較実験: --text-encoder の重みを8ビットに丸める")
     ap.add_argument("--text-encoder", default=None, help="比較実験: 事前学習済みの BERT 系モデル (Hugging Face の名前) で操作名を読む。書き出しは未対応")
     ap.add_argument("--dump-preds", action="store_true", help="--gh-folds で、評価したゲームの操作ごとの予測を PRED 行で出す")
     ap.add_argument("--gh-eval-ids", default=None, help="--gh-folds で評価に使うゲームIDの一覧 (JSON)。ほかの注釈付きは常に学習側")
@@ -745,7 +764,7 @@ def main():
     FFN = args.ffn or 2 * D
     DEV = torch.device(args.device)
     if args.text_encoder:
-        TEXT = TextEncoder(args.text_encoder, DEV)
+        TEXT = TextEncoder(args.text_encoder, DEV, args.text_vocab, args.text_int8)
         print(f"操作名の読み取り: {args.text_encoder}（{TEXT.dim}次元、重みは固定）", flush=True)
     print(f"モデル: {LAYERS}層・{D}次元・{HEADS}ヘッド・FFN {FFN}・n-gram {NB}・dropout {DROPOUT}・lr {args.lr}・{DEV}", flush=True)
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
