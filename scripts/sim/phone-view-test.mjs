@@ -16,7 +16,7 @@ update('P1',{});
 assert.equal((view().view==='v-remote'),true);
 assert.equal(view().remote.startLabel,'ゲームを準備する');
 assert.equal(view().remote.startDisabled,false);
-assert.match(view().remote.note,/このリモコンでも操作/);
+assert.match(view().remote.note,/このリモコンでPCの画面を操作できます（PCアプリ以外のウィンドウでは実際のマウスとして動きます）/);
 assert.equal(view().inventory,null);
 update('P1',{lineupOk:true,title:'minecraft-java',launch:{id:'minecraft-java',state:'started'}});
 assert.match(view().remote.note,/準備する.*プレイ画面まで/);
