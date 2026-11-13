@@ -16,6 +16,8 @@ mod input_manager;
 mod input_trace;
 mod key_overrides;
 mod keybinds;
+#[cfg(feature = "latency-measure")]
+mod latency;
 mod launchers;
 mod look;
 mod netinfo;

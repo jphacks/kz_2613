@@ -74,7 +74,7 @@ function matches(element, selector) {
     && (attribute[2] === undefined || element.dataset[attribute[1]] === attribute[2]);
 }
 
-export function controllerHarness({viewOnly=false}={}) {
+export function controllerHarness({viewOnly=false,latency=false}={}) {
   let now = 1000, timerId = 0;
   const timers = new Map(), sockets = [], peers = [], storage = new Map();
   const document = new Events(), window = new Events(), portrait = new Events(), elements = new Map();
@@ -120,7 +120,7 @@ export function controllerHarness({viewOnly=false}={}) {
   const context = vm.createContext({
     document, window, console, navigator: { userAgent: '自動試験用' }, location: { host: 'test.invalid' },
     performance: { now: () => now, timeOrigin: 0 }, TextDecoder, TextEncoder, ArrayBuffer, Blob,
-    WebSocket: Socket, RTCPeerConnection: Peer,
+    WebSocket: Socket, RTCPeerConnection: Peer, ...(latency ? {__LATENCY_MEASURE__: true} : {}),
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
     crypto: { randomUUID: () => 'test-client' }, matchMedia: () => portrait,
     setInterval: (fn, ms) => addTimer(fn, ms, true), clearInterval: id => timers.delete(id),
