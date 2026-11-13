@@ -624,7 +624,10 @@ mod tests {
             r#"{"id":"m","role":"P1","split":[{"id":"a","actions":["l"]},{"id":"b","actions":["r"]},{"id":"c","actions":["j"]}]}"#,
         ))
         .unwrap();
-        assert_eq!(rule_assignment_for(&p, 3), vec![vec!["l"], vec!["r"], vec!["j"]]);
+        assert_eq!(
+            rule_assignment_for(&p, 3),
+            vec![vec!["l"], vec!["r"], vec!["j"]]
+        );
         assert_eq!(rule_assignment_for(&p, 1), vec![vec!["l", "r", "j"]]);
         // 分けられる部分がないグループは半分にする (全員に担当が付く)
         let q = parse(&minimal(r#"{"id":"x","group":"m"},{"id":"y","group":"m"},{"id":"z","group":"m"},{"id":"w","group":"m"}"#, r#"{"id":"m","role":"P1"}"#)).unwrap();
