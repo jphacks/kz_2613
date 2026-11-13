@@ -1,6 +1,7 @@
 // 操作定義のないゲームのファイルから、操作 (名前・初期キー・種類) を読む (#431)。
 // 読む範囲は scripts/profiles/extract.mjs と同じ。ゲームを起動しない・ファイルを書き換えない・外部へ送らない。
-// 今は Unity Input System (ゲームに埋め込まれた .inputactions の JSON) だけ。ほかのエンジンは読めないので None を返す。
+// 読める形式: Unity Input System (ゲームに埋め込まれた .inputactions の JSON)、.NET の DLL にある操作名 (Rewired の定数・列挙型。キーなし)。
+// ほかの形式は読めないので None を返す。
 use std::path::{Path, PathBuf};
 
 use serde_json::Value;
@@ -24,8 +25,10 @@ const MAX_FILE: u64 = 300_000_000;
 
 /// 読めたら (操作, 読んだ形式の説明)
 pub fn read(install_dir: &Path) -> Option<(Vec<ReadAction>, &'static str)> {
-    let actions = unity_input_actions(install_dir)?;
-    (!actions.is_empty()).then_some((actions, "Unity Input System の埋め込み定義"))
+    if let Some(actions) = unity_input_actions(install_dir).filter(|a| !a.is_empty()) {
+        return Some((actions, "Unity Input System の埋め込み定義"));
+    }
+    dotnet_actions(install_dir).filter(|(a, _)| !a.is_empty())
 }
 
 /// <ゲーム>_Data フォルダ
@@ -246,6 +249,228 @@ fn unity_input_actions(dir: &Path) -> Option<Vec<ReadAction>> {
     (!assets.is_empty()).then(|| actions_from_assets(&assets))
 }
 
+// ---------- .NET のメタデータ (ECMA-335) から、型の定数・列挙の名前を読む。コードは実行しない ----------
+
+struct Bytes<'a>(&'a [u8]);
+
+impl Bytes<'_> {
+    fn u16(&self, o: usize) -> Option<usize> {
+        Some(u16::from_le_bytes(self.0.get(o..o + 2)?.try_into().ok()?) as usize)
+    }
+    fn u32(&self, o: usize) -> Option<usize> {
+        Some(u32::from_le_bytes(self.0.get(o..o + 4)?.try_into().ok()?) as usize)
+    }
+    fn u64(&self, o: usize) -> Option<u64> {
+        Some(u64::from_le_bytes(self.0.get(o..o + 8)?.try_into().ok()?))
+    }
+    fn idx(&self, o: usize, size: usize) -> Option<usize> {
+        if size == 2 {
+            self.u16(o)
+        } else {
+            self.u32(o)
+        }
+    }
+    fn cstr(&self, o: usize) -> Option<String> {
+        let rest = self.0.get(o..)?;
+        let end = rest.iter().position(|&b| b == 0)?;
+        String::from_utf8(rest[..end].to_vec()).ok()
+    }
+}
+
+/// DLL の型ごとに (名前空間, 名前, フィールドの名前の一覧)
+pub fn dotnet_types(bytes: &[u8]) -> Option<Vec<(String, String, Vec<String>)>> {
+    let b = Bytes(bytes);
+    if bytes.get(..2)? != b"MZ" {
+        return None;
+    }
+    let pe = b.u32(0x3c)?;
+    if bytes.get(pe..pe + 4)? != b"PE\0\0" {
+        return None;
+    }
+    let nsec = b.u16(pe + 6)?;
+    let opt_size = b.u16(pe + 20)?;
+    let opt = pe + 24;
+    let dd = opt + if b.u16(opt)? == 0x10b { 96 } else { 112 };
+    let cli_rva = b.u32(dd + 14 * 8)?;
+    let secs: Vec<(usize, usize, usize, usize)> = (0..nsec)
+        .map(|i| {
+            let o = opt + opt_size + i * 40;
+            Some((
+                b.u32(o + 8)?,
+                b.u32(o + 12)?,
+                b.u32(o + 16)?,
+                b.u32(o + 20)?,
+            ))
+        })
+        .collect::<Option<_>>()?;
+    let off = |rva: usize| {
+        secs.iter()
+            .find(|&&(vs, va, rs, _)| rva >= va && rva < va + vs.max(rs))
+            .map(|&(_, va, _, raw)| rva - va + raw)
+    };
+    let md = off(b.u32(off(cli_rva)? + 8)?)?;
+    let vlen = b.u32(md + 12)?;
+    let mut p = md + 16 + vlen + 2;
+    let ns = b.u16(p)?;
+    p += 2;
+    let (mut tables, mut strings) = (None, None);
+    for _ in 0..ns {
+        let o = b.u32(p)?;
+        let name = b.cstr(p + 8)?;
+        match name.as_str() {
+            "#~" | "#-" => tables = Some(md + o),
+            "#Strings" => strings = Some(md + o),
+            _ => {}
+        }
+        p = (p + 8 + name.len() + 1 + 3) & !3;
+    }
+    let (t, s) = (tables?, strings?);
+    let heap = *bytes.get(t + 6)?;
+    let valid = b.u64(t + 8)?;
+    let mut rows = [0usize; 64];
+    let mut q = t + 24;
+    for (i, r) in rows.iter_mut().enumerate() {
+        if valid >> i & 1 == 1 {
+            *r = b.u32(q)?;
+            q += 4;
+        }
+    }
+    let si = if heap & 1 != 0 { 4 } else { 2 };
+    let gi = if heap & 2 != 0 { 4 } else { 2 };
+    let bi = if heap & 4 != 0 { 4 } else { 2 };
+    let idx = |t: usize| if rows[t] < 65536 { 2 } else { 4 };
+    let coded = |ts: &[usize], bits: u32| {
+        if ts.iter().map(|&t| rows[t]).max().unwrap_or(0) < (1 << (16 - bits)) {
+            2
+        } else {
+            4
+        }
+    };
+    let size = [
+        2 + si + gi * 3,
+        coded(&[0, 0x1a, 0x23, 1], 2) + si * 2,
+        4 + si * 2 + coded(&[2, 1, 0x1b], 2) + idx(4) + idx(6),
+        idx(4),
+        2 + si + bi,
+    ];
+    let mut base = [0usize; 5];
+    for i in 0..5 {
+        base[i] = q;
+        q += size[i] * rows[i];
+    }
+    let name_at = |i: usize| b.cstr(s + i);
+    let mut types = Vec::new();
+    for r in 0..rows[2] {
+        let o = base[2] + r * size[2] + 4;
+        let name = name_at(b.idx(o, si)?)?;
+        let namespace = name_at(b.idx(o + si, si)?)?;
+        let fields = b.idx(o + si * 2 + coded(&[2, 1, 0x1b], 2), idx(4))?;
+        types.push((namespace, name, fields));
+    }
+    let mut out = Vec::new();
+    for (i, (namespace, name, first)) in types.iter().enumerate() {
+        let end = types.get(i + 1).map_or(rows[4] + 1, |t| t.2);
+        let mut fields = Vec::new();
+        for f in *first..end.max(*first) {
+            if f == 0 || f > rows[4] {
+                break;
+            }
+            let n = name_at(b.idx(base[4] + (f - 1) * size[4] + 2, si)?)?;
+            if n != "value__" {
+                fields.push(n);
+            }
+        }
+        out.push((namespace.clone(), name.clone(), fields));
+    }
+    Some(out)
+}
+
+/// Managed の DLL から、操作名の定数・列挙を探す (Mono のビルドだけ。IL2CPP には Managed がない)
+fn dotnet_actions(dir: &Path) -> Option<(Vec<ReadAction>, &'static str)> {
+    let managed = data_dir(dir)?.join("Managed");
+    let mut dlls: Vec<PathBuf> = std::fs::read_dir(&managed)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|x| x.eq_ignore_ascii_case("dll")))
+        // Unity・.NET の標準のライブラリは操作名を持たないので読まない
+        .filter(|p| {
+            let n = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            ![
+                "Unity",
+                "System",
+                "Mono",
+                "mscorlib",
+                "netstandard",
+                "Microsoft",
+            ]
+            .iter()
+            .any(|x| n.starts_with(x))
+        })
+        .collect();
+    dlls.sort();
+    let to_actions = |names: &[String]| -> Vec<ReadAction> {
+        names
+            .iter()
+            .take(MAX_ACTIONS)
+            .map(|n| {
+                let l = n.to_ascii_lowercase();
+                let kind = if l.contains("delta") || l.contains("look") {
+                    "mouseDelta"
+                } else {
+                    "button"
+                };
+                ReadAction {
+                    id: n.clone(),
+                    label: n.clone(),
+                    kind,
+                    default: None,
+                }
+            })
+            .collect()
+    };
+    let mut enums: Option<Vec<String>> = None;
+    for dll in &dlls {
+        if std::fs::metadata(dll).map(|m| m.len()).unwrap_or(u64::MAX) > MAX_FILE {
+            continue;
+        }
+        let Ok(bytes) = std::fs::read(dll) else {
+            continue;
+        };
+        let Some(types) = dotnet_types(&bytes) else {
+            continue;
+        };
+        // Rewired が書き出す操作名の定数 (RewiredConsts.Action) を優先する
+        if let Some((_, _, f)) = types
+            .iter()
+            .find(|(ns, n, f)| ns == "RewiredConsts" && n == "Action" && !f.is_empty())
+        {
+            return Some((
+                to_actions(f),
+                "Rewired の操作名の定数（RewiredConsts.Action、キーなし）",
+            ));
+        }
+        if enums.is_none() && dll.file_name().is_some_and(|n| n == "Assembly-CSharp.dll") {
+            enums = types
+                .into_iter()
+                .find(|(_, n, f)| {
+                    [
+                        "InputKey",
+                        "InputAction",
+                        "KeyAction",
+                        "PlayerAction",
+                        "GameAction",
+                        "InputType",
+                    ]
+                    .contains(&n.as_str())
+                        && !f.is_empty()
+                })
+                .map(|t| t.2);
+        }
+    }
+    enums.map(|f| (to_actions(&f), ".NET の操作の列挙型（キーなし）"))
+}
+
 #[cfg(test)]
 pub mod tests {
     use super::*;
@@ -355,6 +580,43 @@ pub mod tests {
                 None => eprintln!("{d}: 読めない（{} ms）", started.elapsed().as_millis()),
             }
         }
+    }
+
+    /// .NET のメタデータの読み取りを、Windows に入っている mscorlib.dll の列挙型で確かめる
+    #[test]
+    fn reads_enum_names_from_dotnet_metadata() {
+        let windir = std::env::var("WINDIR").unwrap_or_else(|_| r"C:\Windows".into());
+        let dll = Path::new(&windir)
+            .join("Microsoft.NET")
+            .join("Framework64")
+            .join("v4.0.30319")
+            .join("mscorlib.dll");
+        let Ok(bytes) = std::fs::read(&dll) else {
+            eprintln!("mscorlib.dll がないので確かめない");
+            return;
+        };
+        let types = dotnet_types(&bytes).expect("メタデータを読める");
+        let (_, _, fields) = types
+            .iter()
+            .find(|(ns, n, _)| ns == "System" && n == "DayOfWeek")
+            .expect("System.DayOfWeek がある");
+        assert_eq!(
+            fields,
+            &[
+                "Sunday",
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday"
+            ]
+        );
+        assert!(
+            dotnet_types(b"MZ not a real pe file").is_none(),
+            "壊れた DLL では落ちずに None"
+        );
+        assert!(dotnet_types(&bytes[..bytes.len() / 3]).is_none_or(|t| !t.is_empty()));
     }
 
     #[test]
