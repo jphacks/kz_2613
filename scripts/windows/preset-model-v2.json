@@ -1,4 +1,5 @@
 {
+  "note": "分担のモデルの版2（#430）の取得元・版・SHA-256。Hugging Face のリポジトリを更新したら（モデルカードの修正だけでも版が変わる）、python scripts/preset-model/pin_v2.py で固定し直してからコミットする。しないと package.ps1 と CI が照合で止まる。詳細は scripts/preset-model/README.md の「版2の配布と更新」",
   "repo": "YOSHI0209/recooplay-preset-model-v2",
   "revision": "b0692e8d84447faf8abd70b584002895274e8496",
   "license": "CC BY-NC-ND 4.0（text-encoder.bin とトークナイザーは Apache-2.0 の改変物。NOTICE 参照）",

@@ -4,6 +4,18 @@
 
 ゲームの操作一覧を読み、2〜4人用の分担（プリセット）を作るための小さなエンコーダです。学習はこのフォルダのPythonで行い、推論はRustホスト（`apps/host-rs/src/preset_model.rs`）が、プリセットのないゲームを一覧で見つけたときに1回だけ行い、結果を保存します（#431）。重みはexeに埋め込むので、配布物に依存は増えず、インターネットも使いません。
 
+## 版2の配布と更新（ほかの作業者向け）
+
+操作名を多言語 MiniLM の小型版で読む「版2」（#429・#430）は、次のように扱っています。触る前に読んでください。
+
+- **重みの置き場所**：Hugging Face の公開リポジトリ [YOSHI0209/recooplay-preset-model-v2](https://huggingface.co/YOSHI0209/recooplay-preset-model-v2) です。約57MBあるので Git には入れていません。ライセンスは CC BY-NC-ND 4.0（非営利・改変禁止。一部は Apache-2.0 のモデルの改変物で、表示は同梱の `NOTICE`）で、Re:Cooplay のソースコード（MIT）とは別です。
+- **既定は規則の分担のまま**：モデルで分担を作るのは、環境変数 `RECOOPLAY_PRESETS=model` を付けて起動したときだけです。版2は、ホストの exe と同じ場所の `preset-model-v2` フォルダ（または `RECOOPLAY_PRESET_MODEL_DIR`）にあるときだけ使い、ないとき・読めないときは exe に埋め込んだ版1 に戻ります。
+- **配布物が約57MB大きくなる**：`scripts/windows/package.ps1` が版2を取得して `preset-model-v2\` に同梱します（zip・インストーラーとも）。取得元・版・SHA-256 は `scripts/windows/preset-model-v2.json` に固定しています。
+- **Hugging Face を更新したら、必ず固定し直す**：モデルカードの修正だけでも版が変わります。`python scripts/preset-model/pin_v2.py` で `preset-model-v2.json` の版とハッシュを取り直してからコミットしてください。しないと、配布物の作成と CI（host-rs の一致試験、package の同梱物の照合）が SHA-256 の不一致で止まります。
+- **CI**：host-rs のジョブが版2と照合の正解（`parity.json`）を取得し、Rust の推論が Python と一致するか（`v2_matches_python_when_the_files_are_present`）を確かめます。手元で試すときは `powershell -File scripts/windows/fetch-preset-model.ps1 -Dest data/local/preset-model/export-v2 -IncludeTests` で取得します。
+- **重みを作り直すとき**：`train.py --text-encoder sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 --text-vocab <語彙> --text-int8 --dim 64 --export-dir <出力先>` で書き出します。学習データ（`data/`）はリポジトリにないので、管理者から受け取ってください。
+
+
 ## 学習データ：実在のゲームだけ・ローカルで読める情報だけ
 
 合成したゲームは使いません（比較用に `--synthetic` で混ぜられます）。データは次の2つです。
