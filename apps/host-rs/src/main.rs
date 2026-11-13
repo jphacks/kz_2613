@@ -18,6 +18,7 @@ mod key_overrides;
 mod keybinds;
 mod launchers;
 mod look;
+mod model_presets;
 mod netinfo;
 mod netwatch;
 mod preset_model;

@@ -371,11 +371,11 @@ pub fn preset_source() -> &'static str {
     }
 }
 
-/// 参加人数 n (1〜4) に合わせた分担の案 (プリセット)。preset_source() に従って作る
-pub fn assignment_for(p: &Profile, n: usize) -> Vec<Vec<String>> {
+/// モデルで作る分担 (保存する前の計算、#431)。モデルを読めないときは規則
+pub fn model_assignment_for(p: &Profile, n: usize) -> Vec<Vec<String>> {
     match crate::preset_model::model() {
-        Some(m) if preset_source() == "model" => crate::preset_model::presets(m, p, n),
-        _ => rule_assignment_for(p, n),
+        Some(m) => crate::preset_model::presets(m, p, n),
+        None => rule_assignment_for(p, n),
     }
 }
 
@@ -464,10 +464,16 @@ pub fn rule_assignment_for(p: &Profile, n: usize) -> Vec<Vec<String>> {
     slots
 }
 
-/// 画面に配る要約。players は今の参加人数 (分担の案をこの人数で作る)。人数ごとの案 (1〜4 人) も付ける
-pub fn snapshot(p: &Profile, players: usize) -> Value {
+/// 画面に配る要約。players は今の参加人数 (分担の案をこの人数で作る)。人数ごとの案 (1〜4 人) も付ける。
+/// assign は人数 → 分担 (保存したモデルの分担か規則、#431)、source はその作り方 (model / rule)
+pub fn snapshot(
+    p: &Profile,
+    players: usize,
+    assign: &dyn Fn(usize) -> Vec<Vec<String>>,
+    source: &str,
+) -> Value {
     let named = |n: usize| -> serde_json::Map<String, Value> {
-        assignment_for(p, n)
+        assign(n)
             .into_iter()
             .enumerate()
             .map(|(i, a)| (format!("P{}", i + 1), json!(a)))
@@ -490,7 +496,7 @@ pub fn snapshot(p: &Profile, players: usize) -> Value {
         "players": players,
         "assignment": assign,
         "assignments": by_players,
-        "presetSource": preset_source(),
+        "presetSource": source,
     })
 }
 

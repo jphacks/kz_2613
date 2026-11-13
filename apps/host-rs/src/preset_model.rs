@@ -106,6 +106,19 @@ pub struct Output {
     pub axis: Vec<Vec<f32>>,
 }
 
+/// モデルの版 (重みのハッシュ)。保存した分担 (model_presets) は、版が同じときだけ使う
+pub fn version() -> &'static str {
+    static V: OnceLock<String> = OnceLock::new();
+    V.get_or_init(|| {
+        let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+        for &b in WEIGHTS {
+            h ^= u64::from(b);
+            h = h.wrapping_mul(0x0100_0000_01b3);
+        }
+        format!("preset-model-{h:016x}")
+    })
+}
+
 pub fn model() -> Option<&'static Model> {
     static M: OnceLock<Option<Model>> = OnceLock::new();
     M.get_or_init(|| match Model::load(WEIGHTS) {

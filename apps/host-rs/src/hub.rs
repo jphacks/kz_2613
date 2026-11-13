@@ -141,6 +141,7 @@ enum Timer {
     InputFaultStop(u64),
     ReleaseRetry(u64),
     LaunchWatch(u64), // 起動の世代
+    ModelPreset,      // 未知のゲームの分担をモデルで 1 本作る (#431)
 }
 
 fn now_ms() -> u64 {
@@ -413,6 +414,13 @@ pub struct Hub {
     // 利用者が変えたキー割当 (#50・#53)
     key_overrides_path: Option<std::path::PathBuf>,
     key_overrides: crate::key_overrides::Overrides,
+    /// モデルで作って保存した分担 (#431)。未知のゲームを一覧で見つけたときに 1 回だけ作る
+    model_presets_path: Option<std::path::PathBuf>,
+    model_presets: crate::model_presets::Store,
+    model_queue: std::collections::VecDeque<String>,
+    model_timer: bool,
+    /// モデルの分担を使う設定 (RECOOPLAY_PRESETS=model で、重みを読めたとき)
+    presets_model: bool,
     // 時間制の役割交代 (#161)。既定は OFF
     rotation_secs: u64,
     rotation_at: u64,
@@ -539,6 +547,13 @@ impl Hub {
             participants: Vec::new(),
             lineup: None,
             seats: [0, 1, 2, 3],
+            model_presets_path: crate::model_presets::default_path(),
+            model_presets: crate::model_presets::load(
+                crate::model_presets::default_path().as_deref(),
+            ),
+            model_queue: Default::default(),
+            model_timer: false,
+            presets_model: profiles::preset_source() == "model",
             key_overrides_path: crate::key_overrides::default_path(),
             key_overrides: crate::key_overrides::load(
                 crate::key_overrides::default_path().as_deref(),
@@ -952,7 +967,7 @@ impl Hub {
             "keys": self.keys_snapshot(),
             // 選んだゲームの操作定義の要約と分担の案 (#97)
             "profile": self.profile.as_ref().map(|p| {
-                let mut v = profiles::snapshot(p, connected_idx.len().max(1));
+                let mut v = profiles::snapshot(p, connected_idx.len().max(1), &|n| self.assignment(p, n), self.assignment_source(p));
                 // 分担の案は、今接続している枠の名前で示す (P3 が空いていて P4 がいる場合など)
                 v["assignment"] = self.slot_map(&self.proposal(p));
                 v
@@ -1478,6 +1493,14 @@ impl Hub {
                     .map(|g| profiles::generic(&g.id, &g.name))
             })
             .or_else(|| (self.game.title == "pseudo-game").then(profiles::builtin_pseudo));
+        // 一覧の待ち行列より先に、選んだゲームの分担を作る (#431)。協力プレイ中は作らない
+        if self.game.phase != Phase::Coop {
+            if let Some(id) = self.profile.as_ref().map(|p| p.id.clone()) {
+                if self.make_model_preset(&id) {
+                    self.model_queue.retain(|x| x != &id);
+                }
+            }
+        }
         self.keybinds = match &self.profile {
             Some(p) => {
                 let over = if p.id == "minecraft-java" {
@@ -1550,7 +1573,8 @@ impl Hub {
     fn proposal_for(&self, p: &Profile, slots: &[usize]) -> Vec<Vec<String>> {
         let ranked = self.ranked(slots);
         let mut out = vec![Vec::new(); MAX_SLOTS];
-        for (k, a) in profiles::assignment_for(p, ranked.len().max(1))
+        for (k, a) in self
+            .assignment(p, ranked.len().max(1))
             .into_iter()
             .enumerate()
         {
@@ -1591,7 +1615,8 @@ impl Hub {
         let assigned = match &self.profile {
             Some(p) => {
                 let mut out = vec![Vec::new(); MAX_SLOTS];
-                for (k, a) in profiles::assignment_for(p, next.len().max(1))
+                for (k, a) in self
+                    .assignment(p, next.len().max(1))
                     .into_iter()
                     .enumerate()
                 {
@@ -2410,6 +2435,123 @@ impl Hub {
         }
     }
 
+    /// n 人の分担。モデルの分担が保存してあればそれを、なければ (計算前・検証済みの定義・規則の設定) 規則で作る (#431)。
+    /// ここではモデルを動かさない
+    fn assignment(&self, p: &Profile, n: usize) -> Vec<Vec<String>> {
+        if self.assignment_source(p) == "model" {
+            if let Some(a) = crate::model_presets::lookup(
+                &self.model_presets,
+                p,
+                crate::preset_model::version(),
+                n,
+            ) {
+                return a.clone();
+            }
+        }
+        profiles::rule_assignment_for(p, n)
+    }
+
+    /// 画面に出す分担の作り方。モデルの分担を使う設定で、保存した分担が今の定義に合うときだけ model
+    fn assignment_source(&self, p: &Profile) -> &'static str {
+        let usable = self.presets_model
+            && crate::model_presets::needs_model(p)
+            && crate::model_presets::lookup(
+                &self.model_presets,
+                p,
+                crate::preset_model::version(),
+                1,
+            )
+            .is_some();
+        if usable {
+            "model"
+        } else {
+            "rule"
+        }
+    }
+
+    /// まだモデルの分担がない (未知の) ゲームか
+    fn needs_model_preset(&self, p: &Profile) -> bool {
+        self.presets_model
+            && crate::model_presets::needs_model(p)
+            && crate::model_presets::lookup(
+                &self.model_presets,
+                p,
+                crate::preset_model::version(),
+                1,
+            )
+            .is_none()
+    }
+
+    /// 一覧の読み込みの後、プリセットのないゲームを待ち行列に入れる (#431)。1 本ずつタイマーで作る
+    fn queue_model_presets(&mut self) {
+        let ids: Vec<String> = self.games.iter().map(|g| g.id.clone()).collect();
+        for id in ids {
+            let Some(p) = profiles::find(&self.profiles, &id) else {
+                continue;
+            };
+            if self.needs_model_preset(p) && !self.model_queue.contains(&p.id) {
+                self.model_queue.push_back(p.id.clone());
+            }
+        }
+        if !self.model_queue.is_empty() && !self.model_timer {
+            self.model_timer = true;
+            self.schedule(
+                Instant::now() + Duration::from_millis(50),
+                Timer::ModelPreset,
+            );
+        }
+    }
+
+    /// モデルで 1 本の分担を作って保存する。作ったら true
+    fn make_model_preset(&mut self, id: &str) -> bool {
+        let Some(p) = profiles::find(&self.profiles, id).cloned() else {
+            return false;
+        };
+        if !self.needs_model_preset(&p) {
+            return false;
+        }
+        let started = Instant::now();
+        let stored = crate::model_presets::compute(
+            &p,
+            crate::preset_model::version(),
+            profiles::model_assignment_for,
+        );
+        self.model_presets.insert(p.id.clone(), stored);
+        if let Some(path) = self.model_presets_path.clone() {
+            if let Err(e) = crate::model_presets::save(&path, &self.model_presets) {
+                log::warn!("モデルの分担を保存できません: {e}");
+            }
+        }
+        // ゲーム名は残さない (時間と残りの本数だけ)
+        self.log(
+            "model_preset",
+            json!({ "ms": started.elapsed().as_millis() as u64, "left": self.model_queue.len() }),
+        );
+        true
+    }
+
+    /// 待ち行列から 1 本作る。協力プレイ中は入力の処理を優先して作らない
+    fn model_preset_tick(&mut self) {
+        if self.game.phase == Phase::Coop {
+            self.schedule(Instant::now() + Duration::from_secs(1), Timer::ModelPreset);
+            return;
+        }
+        if let Some(id) = self.model_queue.pop_front() {
+            let current = self.profile.as_ref().is_some_and(|p| p.id == id);
+            if self.make_model_preset(&id) && current {
+                self.push_game();
+            }
+        }
+        if self.model_queue.is_empty() {
+            self.model_timer = false;
+        } else {
+            self.schedule(
+                Instant::now() + Duration::from_millis(20),
+                Timer::ModelPreset,
+            );
+        }
+    }
+
     fn on_games_detected(&mut self, detected: games::Detected) {
         let list = detected.games;
         // Minecraft のランチャー (#128)。一覧には混ぜず、画面の固定の項目に画像を付けるためだけに使う
@@ -2447,6 +2589,7 @@ impl Hub {
             .find(|g| g.id == self.game.title)
             .map(|g| g.install_dir.clone());
         self.games = list;
+        self.queue_model_presets();
         if !TITLES.contains(&self.game.title.as_str()) && previous != next {
             // 再検出で対象が消えたり場所が変わったら、全解放し旧入力・起動待ちを破棄する。
             self.release_outputs(None);
@@ -3074,6 +3217,7 @@ impl Hub {
                 crate::runtime_measure::elapsed("log_flush_us", start);
                 self.schedule(at + Duration::from_secs(1), Timer::Heartbeat);
             }
+            Timer::ModelPreset => self.model_preset_tick(),
             Timer::StateFlush => {
                 self.state_pending = false;
                 self.push_state();
@@ -3954,6 +4098,90 @@ mod tests {
     use std::collections::VecDeque;
     use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
+    fn unknown_game(h: &mut Hub, id: &str, status: &str) -> Profile {
+        let p = crate::model_presets::test_profile(
+            id,
+            status,
+            &[
+                ("forward", "movement"),
+                ("back", "movement"),
+                ("jump", "movement"),
+                ("use", "gameplay"),
+                ("attack", "gameplay"),
+                ("map", "gameplay"),
+            ],
+        );
+        h.profiles.push(p.clone());
+        h.games.push(games::Entry {
+            id: id.into(),
+            name: "試験".into(),
+            source: "steam",
+            install_dir: PathBuf::new(),
+            launch_uri: String::new(),
+            image: None,
+            icon_source: None,
+        });
+        p
+    }
+
+    #[test]
+    fn model_presets_are_made_once_for_unknown_games_when_the_list_is_read() {
+        // 一覧の読み込みでプリセットのないゲームだけを 1 回作り、以後は保存した分担を配る (#431)
+        let (mut h, _rx) = fixture();
+        h.presets_model = true;
+        h.game.phase = Phase::Lobby;
+        let p = unknown_game(&mut h, "steam:42", "extracted");
+        let verified = unknown_game(&mut h, "steam:43", "device");
+        assert_eq!(
+            h.assignment(&p, 3),
+            profiles::rule_assignment_for(&p, 3),
+            "作る前は規則の分担"
+        );
+        assert_eq!(h.assignment_source(&p), "rule");
+        h.queue_model_presets();
+        assert_eq!(
+            h.model_queue,
+            VecDeque::from(vec!["steam:42".to_string()]),
+            "検証済みの定義は作らない"
+        );
+        h.model_preset_tick();
+        assert!(
+            h.model_queue.is_empty() && !h.model_timer,
+            "queue={:?} timer={}",
+            h.model_queue,
+            h.model_timer
+        );
+        assert_eq!(h.assignment_source(&p), "model");
+        for n in 1..=4 {
+            assert_eq!(h.assignment(&p, n), profiles::model_assignment_for(&p, n));
+        }
+        assert_eq!(h.assignment_source(&verified), "rule");
+        h.queue_model_presets();
+        assert!(h.model_queue.is_empty(), "作ったゲームは二度と作らない");
+        assert!(!h.make_model_preset("steam:42"));
+        // 操作定義が変わったら、保存した分担は使わず、次の読み込みで作り直す
+        let mut changed = p.clone();
+        changed.actions.pop();
+        assert_eq!(h.assignment_source(&changed), "rule");
+    }
+
+    #[test]
+    fn model_presets_wait_during_coop_and_stay_off_without_the_setting() {
+        let (mut h, _rx) = fixture();
+        let p = unknown_game(&mut h, "steam:44", "extracted");
+        h.queue_model_presets();
+        assert!(h.model_queue.is_empty(), "規則の設定ではモデルを動かさない");
+        h.presets_model = true;
+        h.queue_model_presets();
+        h.game.phase = Phase::Coop;
+        h.model_preset_tick();
+        assert_eq!(h.model_queue.len(), 1, "協力プレイ中は作らない");
+        assert_eq!(h.assignment_source(&p), "rule");
+        h.game.phase = Phase::Paused;
+        h.model_preset_tick();
+        assert_eq!(h.assignment_source(&p), "model");
+    }
+
     mod measurement {
         use super::*;
         include!("hub_measurement.rs");
@@ -4039,6 +4267,11 @@ mod tests {
             seats: [0, 1, 2, 3],
             key_overrides_path: None,
             key_overrides: Default::default(),
+            model_presets_path: None,
+            model_presets: Default::default(),
+            model_queue: Default::default(),
+            model_timer: false,
+            presets_model: false,
             rotation_secs: 0,
             rotation_at: 0,
             rotation_left: 0,
@@ -5616,7 +5849,8 @@ mod tests {
             h.seats = seats;
             let ranked = Hub::ranked_by(&h.seats, &participants);
             h.assigned = vec![Vec::new(); MAX_SLOTS];
-            for (k, a) in profiles::assignment_for(&h.profile.clone().unwrap(), participants.len())
+            for (k, a) in h
+                .assignment(&h.profile.clone().unwrap(), participants.len())
                 .into_iter()
                 .enumerate()
             {
