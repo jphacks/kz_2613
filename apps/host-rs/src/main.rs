@@ -461,17 +461,44 @@ async fn static_file(
         Some("json") => "application/json",
         _ => "application/octet-stream",
     };
+    // ファイル名にハッシュが付いたビルドの JS・CSS は、中身が変われば名前も変わるのでキャッシュさせる (#308)。
+    // スマホが再接続・再読み込みのたびに読み直さずに済む。HTML・画像など名前の変わらないものは従来どおり保存させない
+    let cache = if immutable_asset(path) {
+        "public, max-age=31536000, immutable"
+    } else {
+        "no-store"
+    };
     match tokio::fs::read(&real).await {
         Ok(data) => (
-            [
-                (header::CONTENT_TYPE, mime),
-                (header::CACHE_CONTROL, "no-store"),
-            ],
+            [(header::CONTENT_TYPE, mime), (header::CACHE_CONTROL, cache)],
             data,
         )
             .into_response(),
         Err(_) => (StatusCode::NOT_FOUND, "not found").into_response(),
     }
+}
+
+/// Vite がビルドで出す、名前にハッシュ (8文字) の付いた JS・CSS か (/assets/<名前>-<ハッシュ>.js)。
+/// ハッシュ自体に `-` や `_` が入ることがある (例: index-B-9_sktw.js) ので、末尾の 8 文字とその前の `-` で判定する
+fn immutable_asset(path: &str) -> bool {
+    let Some(name) = path.strip_prefix("/assets/") else {
+        return false;
+    };
+    if name.contains('/') {
+        return false;
+    }
+    let Some(stem) = name
+        .strip_suffix(".js")
+        .or_else(|| name.strip_suffix(".css"))
+    else {
+        return false;
+    };
+    let b = stem.as_bytes();
+    b.len() >= 10
+        && b[b.len() - 9] == b'-'
+        && b[b.len() - 8..]
+            .iter()
+            .all(|c| c.is_ascii_alphanumeric() || *c == b'_' || *c == b'-')
 }
 
 // DNS再束縛と別Originからの管理操作を防ぐ。OriginなしはPC内の非ブラウザ検証クライアントに限る。
@@ -607,6 +634,35 @@ async fn send_ws_text(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_hashed_build_assets_are_cached() {
+        // Vite がビルドで出す名前 (ハッシュ 8 文字) の JS・CSS だけ (#308)
+        for p in [
+            "/assets/phone-4qsUqWul.js",
+            "/assets/jsx-runtime-DJz8YQL1.js",
+            "/assets/preload-helper-B_9_sktw.js",
+            "/assets/index-B-9_sktw.js",
+            "/assets/phone-Bliy9y0a.css",
+        ] {
+            assert!(immutable_asset(p), "{p}");
+        }
+        // HTML・名前の変わらない画像・アイコン・階層の下・ハッシュでない名前は保存させない
+        for p in [
+            "/",
+            "/phone/index.html",
+            "/assets/logo.png",
+            "/assets/phone-stars.svg",
+            "/assets/characters/blue.png",
+            "/assets/characters/x-12345678.js",
+            "/assets/app.js",
+            "/assets/-12345678.js",
+            "/assets/phone-123.js",
+            "/game/runtime-12345678.js",
+        ] {
+            assert!(!immutable_asset(p), "{p}");
+        }
+    }
 
     #[test]
     fn build_info_reads_the_manifest_with_bom_and_falls_back_to_the_build_version() {
