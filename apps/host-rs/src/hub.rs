@@ -438,6 +438,8 @@ pub struct Hub {
     detected_path: Option<std::path::PathBuf>,
     detected: crate::model_presets::DetectedStore,
     detect_queue: std::collections::VecDeque<String>,
+    /// ホストが「規則の分担」を選んだ定義 (#432)。ここにない定義は、モデルの分担があればそれを使う
+    prefer_rule: std::collections::HashSet<String>,
     // 時間制の役割交代 (#161)。既定は OFF
     rotation_secs: u64,
     rotation_at: u64,
@@ -578,6 +580,7 @@ impl Hub {
                 crate::model_presets::detected_path().as_deref(),
             ),
             detect_queue: Default::default(),
+            prefer_rule: Default::default(),
             key_overrides_path: crate::key_overrides::default_path(),
             key_overrides: crate::key_overrides::load(
                 crate::key_overrides::default_path().as_deref(),
@@ -994,6 +997,9 @@ impl Hub {
                 let mut v = profiles::snapshot(p, connected_idx.len().max(1), &|n| self.assignment(p, n), self.assignment_source(p));
                 // 分担の案は、今接続している枠の名前で示す (P3 が空いていて P4 がいる場合など)
                 v["assignment"] = self.slot_map(&self.proposal(p));
+                // モデルの分担を選べるか (#432)。作り方の切り替えと作り直しは、ロビーで分担を決める前だけ
+                v["modelPresetAvailable"] = Value::from(self.model_preset_available(p));
+                v["presetChoosable"] = Value::from(self.game.phase == Phase::Lobby);
                 v
             }),
             // 今の協力プレイで使っている分担 (Ready・再開のときに決めたもの)
@@ -2499,6 +2505,7 @@ impl Hub {
     /// 画面に出す分担の作り方。モデルの分担を使う設定で、保存した分担が今の定義に合うときだけ model
     fn assignment_source(&self, p: &Profile) -> &'static str {
         let usable = self.presets_model
+            && !self.prefer_rule.contains(&p.id)
             && crate::model_presets::needs_model(p)
             && crate::model_presets::lookup(
                 &self.model_presets,
@@ -2512,6 +2519,69 @@ impl Hub {
         } else {
             "rule"
         }
+    }
+
+    /// この定義にモデルの分担を保存してあるか (ホストが規則を選んでいても true)
+    fn model_preset_available(&self, p: &Profile) -> bool {
+        self.presets_model
+            && crate::model_presets::needs_model(p)
+            && crate::model_presets::lookup(
+                &self.model_presets,
+                p,
+                crate::preset_model::version(),
+                1,
+            )
+            .is_some()
+    }
+
+    /// 分担の作り方を選ぶ (#432)。ロビーだけ。決めた分担は取り消す (違う分担で始めない)
+    fn select_preset_source(&mut self, model: bool) {
+        let Some(p) = self.profile.clone() else {
+            return;
+        };
+        if self.game.phase != Phase::Lobby || (model && !self.model_preset_available(&p)) {
+            return;
+        }
+        let changed = if model {
+            self.prefer_rule.remove(&p.id)
+        } else {
+            self.prefer_rule.insert(p.id.clone())
+        };
+        if changed {
+            if self.lineup.take().is_some() {
+                self.log("lineup", json!({ "cancelled": true }));
+            }
+            self.log(
+                "preset_source",
+                json!({ "source": if model { "model" } else { "rule" } }),
+            );
+            self.push_game();
+        }
+    }
+
+    /// 選んでいるゲームのモデルの分担を作り直す (#432)。ロビーだけ。ファイルから作った仮の定義は、読み直すところから
+    fn remake_preset(&mut self) {
+        let Some(p) = self.profile.clone() else {
+            return;
+        };
+        if self.game.phase != Phase::Lobby
+            || !self.presets_model
+            || !crate::model_presets::needs_model(&p)
+        {
+            return;
+        }
+        if self.lineup.take().is_some() {
+            self.log("lineup", json!({ "cancelled": true }));
+        }
+        self.prefer_rule.remove(&p.id);
+        self.model_presets.remove(&p.id);
+        if p.id.starts_with("detected:") {
+            self.detected.remove(&self.game.title);
+        }
+        self.log("remake_preset", json!({}));
+        // 定義を引き直し (仮の定義は汎用の定義に戻る)、選んだゲームを先に作る
+        self.reload_keybinds();
+        self.push_game();
     }
 
     /// まだモデルの分担がない (未知の) ゲームか
@@ -3839,6 +3909,13 @@ impl Hub {
                 }
             }
             "refresh_games" => self.scan_games(),
+            // 分担の作り方 (規則・モデル) を選ぶ・モデルの分担を作り直す (#432)
+            "preset_source" => match s(msg, "source").as_deref() {
+                Some("model") => self.select_preset_source(true),
+                Some("rule") => self.select_preset_source(false),
+                _ => {}
+            },
+            "remake_preset" => self.remake_preset(),
             // 手動で登録したアプリ (#49・#56)。PC 画面 (PC 本体の接続) からだけ
             "add_game" => self.pick_manual_game(),
             "rename_game" => {
@@ -4481,6 +4558,47 @@ mod tests {
     }
 
     #[test]
+    fn host_can_choose_rule_or_model_presets_and_remake_them_in_the_lobby() {
+        // 分担画面で規則とモデルを選び、モデルの分担を作り直せる (#432)
+        let (mut h, _rx) = fixture();
+        h.presets_model = true;
+        h.game.phase = Phase::Lobby;
+        let p = unknown_game(&mut h, "steam:91", "extracted");
+        h.game.title = "steam:91".into();
+        h.reload_keybinds();
+        assert!(h.model_preset_available(&p));
+        assert_eq!(
+            h.assignment_source(&p),
+            "model",
+            "設定がモデルなら、初めはモデルの分担"
+        );
+        h.select_preset_source(false);
+        assert_eq!(h.assignment_source(&p), "rule");
+        assert_eq!(h.assignment(&p, 2), profiles::rule_assignment_for(&p, 2));
+        assert!(
+            h.model_preset_available(&p),
+            "規則を選んでもモデルの分担は残る"
+        );
+        h.select_preset_source(true);
+        assert_eq!(h.assignment_source(&p), "model");
+        // 作り直すと保存した分担を消し、選んでいるゲームを先に作り直す
+        h.remake_preset();
+        assert_eq!(
+            h.assignment_source(&p),
+            "model",
+            "その場で作り直す (試験ではスレッドを使わない)"
+        );
+        // 協力プレイ中は切り替えない
+        h.game.phase = Phase::Coop;
+        h.select_preset_source(false);
+        assert_eq!(h.assignment_source(&p), "model");
+        let v = h.game_snapshot();
+        assert_eq!(v["profile"]["modelPresetAvailable"], true);
+        assert_eq!(v["profile"]["presetChoosable"], false);
+        assert_eq!(v["profile"]["presetSource"], "model");
+    }
+
+    #[test]
     fn model_presets_wait_during_coop_and_stay_off_without_the_setting() {
         let (mut h, _rx) = fixture();
         let p = unknown_game(&mut h, "steam:44", "extracted");
@@ -4592,6 +4710,7 @@ mod tests {
             detected_path: None,
             detected: Default::default(),
             detect_queue: Default::default(),
+            prefer_rule: Default::default(),
             rotation_secs: 0,
             rotation_at: 0,
             rotation_left: 0,
