@@ -274,7 +274,6 @@ try{
     await until(()=>mon.state().game.connected.length===playerCount,'participants');
     const g=mon.state().game;mon.send({type:'confirm_lineup',title:g.title,members:g.connected,epoch:g.epoch});
     await until(()=>mon.state().game.lineupOk,'分担確定');
-    await click('#startBtn');await until(()=>mon.state().game.phase==='preparing','preparing');
     await click('#startBtn');await until(()=>mon.state().game.phase==='coop','coop');
     if(observeRtcFault){
       await check('RTC単独: 同じWSで新規入力を受理',async()=>{
