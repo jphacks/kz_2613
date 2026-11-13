@@ -23,6 +23,17 @@ function test(name, fn) {
 const slot = (name, connected, ua = '') => ({ name, assigned: true, connected, ua });
 const game = (connected, extra = {}) => ({ phase: 'lobby', required: 3, connected, canReady: connected.includes('P1') && connected.length >= 2, ...extra });
 
+test('分担の作り方: モデルの分担があるゲームの分担の画面だけに出し、ロビーで決める前だけ押せる (#432)',()=>{
+  const base = pcState.get();
+  const roles = profile => pcModel({...base, ui:{...base.ui, screen:'roles'}, state:{slots:[slot('P1',true),slot('P2',true)]}, game:game(['P1','P2'], {title:'steam:1', profile})});
+  const actions = [{id:'a',type:'button'}];
+  assert.equal(roles({id:'x',name:'x',actions}).preset.hidden, true, 'モデルの分担がなければ出さない');
+  const on = roles({id:'x',name:'x',actions,modelPresetAvailable:true,presetSource:'model',presetChoosable:true}).preset;
+  assert.deepEqual(on, {hidden:false, source:'model', disabled:false});
+  assert.equal(roles({id:'x',name:'x',actions,modelPresetAvailable:true,presetSource:'rule',presetChoosable:false}).preset.source, 'rule');
+  assert.equal(roles({id:'x',name:'x',actions,modelPresetAvailable:true,presetChoosable:false}).preset.disabled, true);
+});
+
 test('操作定義: 未検証でも開始できることと、確かめながら遊ぶ案内・分担できないゲームを区別する (#123)',()=>{
   for(const status of ['template','extracted','unverified']){
     const note=profileNotice({name:'試験ゲーム',status,controllerSupported:true});

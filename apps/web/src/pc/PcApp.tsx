@@ -71,6 +71,12 @@ function Workspace({model}:{model:PcModel}) {
       <div className="role-band"><h2 id="roleHeading">{model.roleHeading}</h2></div>
       <div id="roles" className="role-columns" style={{'--role-count': model.roleSlots.length} as CSSProperties}>{model.columns.map((c: RoleColumnModel) => <RoleColumn key={c.slot} c={c} />)}</div>
       <button id="keyBindingsBtn" className="role-keys">このPCのキー設定を確認</button>
+      <div id="presetChoice" className="preset-choice" role="group" aria-label="分担の作り方" hidden={model.preset.hidden}>
+        <span>分担の作り方</span>
+        <button data-preset="rule" aria-pressed={model.preset.source === 'rule'} disabled={model.preset.disabled}>規則</button>
+        <button data-preset="model" aria-pressed={model.preset.source === 'model'} disabled={model.preset.disabled}>モデル（未検証）</button>
+        <button id="remakePresetBtn" disabled={model.preset.disabled}>割り当てを作り直す</button>
+      </div>
     </section>
     <div id="warning" className="safety-warning" role="alert" hidden={!model.notices.length}>{model.notices.map(notice => <p key={notice}>{notice}</p>)}</div>
   </main>;

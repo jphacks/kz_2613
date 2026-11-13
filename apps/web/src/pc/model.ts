@@ -100,6 +100,12 @@ export function pcModel(s: PcSnapshot) {
     keyButtons: game?.profile?.actions.filter(a => a.type === 'button') ?? [],
     outputs: Object.entries(inject?.outputs ?? {}).filter(([, output]) => ['key','mouse'].includes(output.kind)),
     edited: new Set(game?.keys?.edited ?? []), locked: !game || game.phase === 'coop',
+    // 分担の作り方 (#432)。モデルの分担を保存してあるゲームの分担の画面だけに出す。切り替え・作り直しはロビーで決める前だけ
+    preset: {
+      hidden: view !== 'roles' || !game?.profile?.modelPresetAvailable,
+      source: game?.profile?.presetSource === 'model' ? 'model' : 'rule',
+      disabled: !game?.profile?.presetChoosable,
+    },
     hotkey: inject?.emergencyHotkeyError ? '緊急停止キーを登録できません' : `緊急停止：${inject?.emergencyHotkey || 'Ctrl+Alt+F12'}`,
   };
 }

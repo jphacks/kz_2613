@@ -48,6 +48,12 @@ function openSettings(showKeys: boolean) {
 }
 lifetime.listen($('settingsBtn'), 'click',()=>openSettings(false));
 lifetime.listen($('keyBindingsBtn'), 'click',()=>openSettings(true));
+// 分担の作り方 (#432)。規則とモデルの分担を切り替え、モデルの分担を作り直す。可否はホストが判定する (ロビーで決める前だけ)
+lifetime.listen($('remakePresetBtn'), 'click',()=>send({type:'remake_preset'}));
+lifetime.listenDocument('click',e=>{
+  const source=(e.target instanceof Element?e.target:null)?.closest<HTMLElement>('[data-preset]')?.dataset.preset;
+  if(source==='rule'||source==='model')send({type:'preset_source',source});
+});
 lifetime.listen($('closeSettings'), 'click',()=>$<HTMLDialogElement>('settings').close());
 lifetime.listen($('connectionHelpBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
 lifetime.listen($('settingsConnectionBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
@@ -108,7 +114,7 @@ function rolesRun(action:UiAction|undefined){
 function markRemoteFocus(){document.body.dataset.remoteNav='1';}
 lifetime.listenDocument('pointerdown',e=>{if(e.isTrusted)delete document.body.dataset.remoteNav;});
 // 分担の画面で選べるもの：主ボタン・補助ボタン・入れ替える列・キー設定の確認 (#294)
-const roleControls=()=>usableControls(document.querySelectorAll<HTMLElement>('#nextBtn,#subBtn,#changePlayersBtn,#roleStage [data-swap],#keyBindingsBtn'));
+const roleControls=()=>usableControls(document.querySelectorAll<HTMLElement>('#nextBtn,#subBtn,#changePlayersBtn,#roleStage [data-swap],#keyBindingsBtn,#presetChoice button'));
 function rolesRemote(c:string){
   const controls=roleControls(),active=document.activeElement instanceof HTMLElement?document.activeElement:null;
   if(moveRemoteFocus(controls,active,c)){markRemoteFocus();return;}

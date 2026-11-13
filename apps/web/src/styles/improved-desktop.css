@@ -107,3 +107,13 @@ body[data-remote-nav] :is(button, a, summary, select, input, [data-swap]):focus 
   .safety-warning { font-size: 28px; }
   .state-banner p { font-size: 34px; }
 }
+/* 分担の作り方 (#432)。キー設定の確認の右に並べる */
+.preset-choice { position: absolute; left: 440px; top: 975px; display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; }
+.preset-choice[hidden] { display: none; }
+.preset-choice button { min-height: 48px; padding: 0 16px; border: 2px solid var(--color-cyan); border-radius: 24px; background: var(--color-panel-translucent); font-size: 20px; }
+.preset-choice button[aria-pressed=true] { background: var(--color-cyan); color: var(--color-paper); }
+@media (max-width: 1100px), (max-height: 620px) {
+  /* 下の行は緊急停止の表示と重なるので、見出しの帯とプレイヤーの列の間に置く */
+  .preset-choice, .preset-choice button { font-size: 27px; }
+  .preset-choice { left: 60px; top: 312px; }
+}
