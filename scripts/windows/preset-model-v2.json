@@ -1,0 +1,43 @@
+{
+  "note": "分担のモデルの版2（#430）の取得元・版・SHA-256。Hugging Face のリポジトリを更新したら（モデルカードの修正だけでも版が変わる）、python scripts/preset-model/pin_v2.py で固定し直してからコミットする。しないと package.ps1 と CI が照合で止まる。詳細は scripts/preset-model/README.md の「版2の配布と更新」",
+  "repo": "YOSHI0209/recooplay-preset-model-v2",
+  "revision": "b0692e8d84447faf8abd70b584002895274e8496",
+  "license": "CC BY-NC-ND 4.0（text-encoder.bin とトークナイザーは Apache-2.0 の改変物。NOTICE 参照）",
+  "files": {
+    "text-encoder.bin": {
+      "sha256": "3eb9adb3f6adeeba618cf962a01227c72cf02bdae8c8765e2571e510966c6b4f",
+      "size": 39875166,
+      "bundle": true
+    },
+    "preset-model.bin": {
+      "sha256": "8411b9fd56da2ad082dc46d99eaff4e478ff75000c54b07379f474ce30ee847d",
+      "size": 419481,
+      "bundle": true
+    },
+    "tokenizer.json": {
+      "sha256": "68f711cf6404da14890b6688348217d0b8bce4d9ca3ae5d351fe5c65d4f35aaf",
+      "size": 17082986,
+      "bundle": true
+    },
+    "README.md": {
+      "sha256": "06d9f6999febb070a7497fd450b24bbda67d0f857f21927d4d5f00d33ebaa14f",
+      "size": 11679,
+      "bundle": true
+    },
+    "NOTICE": {
+      "sha256": "0d8e9fb82d7ef35cadc0065cf899035a1b4a26843ae13ad2fcd4166bf6eca177",
+      "size": 1176,
+      "bundle": true
+    },
+    "LICENSE-APACHE-2.0": {
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "size": 11358,
+      "bundle": true
+    },
+    "parity.json": {
+      "sha256": "e6fe55cca9a46f3d64e3941f0a1732d80a512c99fe9df8d63a290c58884bdaf3",
+      "size": 61784,
+      "bundle": false
+    }
+  }
+}

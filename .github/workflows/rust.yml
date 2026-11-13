@@ -49,6 +49,16 @@ jobs:
       - run: cargo build --release --locked
         timeout-minutes: 25
         working-directory: apps/host-rs
+      # 分担のモデルの版2 (#430) と照合の正解を取得し、Python との一致試験を走らせる。重みは Git の対象外
+      - uses: actions/cache@v4
+        timeout-minutes: 5
+        with:
+          path: data/local/preset-model/export-v2
+          key: preset-model-v2-${{ hashFiles('scripts/windows/preset-model-v2.json') }}
+      - name: 分担のモデル（版2）を取得する
+        timeout-minutes: 10
+        shell: powershell
+        run: ./scripts/windows/fetch-preset-model.ps1 -Dest data/local/preset-model/export-v2 -IncludeTests
       - run: cargo test --release --locked
         timeout-minutes: 25
         working-directory: apps/host-rs

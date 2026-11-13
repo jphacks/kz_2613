@@ -10,6 +10,7 @@
 #   config.example.json                           設定の例 (config.json にコピーして使う)
 #   allow-firewall.ps1                            受信の許可 (管理者 PowerShell で実行)
 #   README.txt                                    起動・ファイアウォール・注意事項
+#   preset-model-v2\                              分担のモデルの版2 (Hugging Face から版を固定して取得、SHA-256 を照合。#430)
 # ログは展開したフォルダの logs\ に書く。Program Files のような書き込めない場所には置かない。
 # WebView2 ランタイムが必要 (Windows 11 は標準で入っている)。Minecraft のファイル・素材は含めない。
 param([string]$Out = "dist")
@@ -59,6 +60,8 @@ Copy-Item -Recurse (Join-Path $root "apps\game-profiles") (Join-Path $stage "app
 Copy-Item (Join-Path $root "config.example.json") $stage
 Copy-Item (Join-Path $root "scripts\windows\allow-firewall.ps1") $stage
 Copy-Item (Join-Path $root "LICENSE") $stage
+# 分担のモデルの版2 (重みは Git の対象外)。取得元・版・ハッシュは scripts\windows\preset-model-v2.json に固定
+& (Join-Path $PSScriptRoot "fetch-preset-model.ps1") -Dest (Join-Path $stage "preset-model-v2")
 
 @"
 Re:Cooplay $version (commit $commit$dirty)
@@ -76,6 +79,13 @@ Minecraft の公式製品ではありません。Mojang・Microsoft の承認・
   スマホから接続できないときは、管理者の PowerShell でこのフォルダを開いて実行する:
     powershell -ExecutionPolicy Bypass -File .\allow-firewall.ps1 -Program .\recooplay-host.exe
   許可はローカルサブネットからだけ。削除: Remove-NetFirewallRule -DisplayName "Re:Cooplay test*"
+
+■ 分担のモデル (preset-model-v2 フォルダ)
+  操作の定義がないゲームの分担を作るモデル (Re:Cooplay Preset Model v2) です。
+  使うのは、環境変数 RECOOPLAY_PRESETS=model を付けて起動したときだけです (初期値は規則による分担)。
+  ライセンスは CC BY-NC-ND 4.0 (非営利・改変禁止) で、Re:Cooplay のソースコード (MIT) とは別です。
+  一部は Apache License 2.0 のモデルを改変したもので、表示は preset-model-v2\NOTICE と LICENSE-APACHE-2.0 にあります。
+  https://huggingface.co/YOSHI0209/recooplay-preset-model-v2
 
 ■ 安全
   - 緊急停止: Ctrl+Alt+F12 (すべてのキー・マウスボタンを離し、ゲームへの入力を OFF にする)

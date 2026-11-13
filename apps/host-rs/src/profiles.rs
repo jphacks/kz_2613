@@ -358,13 +358,34 @@ pub fn find<'a>(list: &'a [Profile], game_id: &str) -> Option<&'a Profile> {
     })
 }
 
-/// 参加人数 n (1〜4) に合わせた分担の案 (#105)。
+/// 分担の案の作り方。既定は規則 (rule_assignment_for)。環境変数 RECOOPLAY_PRESETS=model のときだけ
+/// BERT 風のモデル (preset_model) で作る。重みを読めないときは規則に戻る。
+/// モデルの案は人による評価 (10〜20 本) が済むまで既定にしない (#411)
+pub fn preset_source() -> &'static str {
+    if std::env::var("RECOOPLAY_PRESETS").as_deref() == Ok("model")
+        && crate::preset_model::model().is_some()
+    {
+        "model"
+    } else {
+        "rule"
+    }
+}
+
+/// モデルで作る分担 (保存する前の計算、#431)。モデルを読めないときは規則
+pub fn model_assignment_for(p: &Profile, n: usize) -> Vec<Vec<String>> {
+    match crate::preset_model::model() {
+        Some(m) => crate::preset_model::presets(m, p, n),
+        None => rule_assignment_for(p, n),
+    }
+}
+
+/// 参加人数 n (1〜4) に合わせた規則による分担の案 (#105)。
 /// 1. 担当の付くグループ (role が P1〜P3) を、定義の順 (= 優先度: 移動・視点・攻撃・持ち物…) に 1 つの単位とする
 /// 2. 単位が人数より少なければ、分けられるグループ (split) を重い順に部分へ分け、それでも足りなければ重い単位を半分に分ける
 /// 3. 優先度の高い単位から 1 人ずつ配り、残りは負担 (重みの合計) が最も軽い人へ配る
 ///
 /// メニュー (host) は P1 (ホスト) のリモコンのまま、会話等 (none) は分担しない
-pub fn assignment_for(p: &Profile, n: usize) -> Vec<Vec<String>> {
+pub fn rule_assignment_for(p: &Profile, n: usize) -> Vec<Vec<String>> {
     let n = n.clamp(1, 4);
     let weight = |ids: &[String]| -> f64 {
         ids.iter()
@@ -443,10 +464,16 @@ pub fn assignment_for(p: &Profile, n: usize) -> Vec<Vec<String>> {
     slots
 }
 
-/// 画面に配る要約。players は今の参加人数 (分担の案をこの人数で作る)。人数ごとの案 (1〜4 人) も付ける
-pub fn snapshot(p: &Profile, players: usize) -> Value {
+/// 画面に配る要約。players は今の参加人数 (分担の案をこの人数で作る)。人数ごとの案 (1〜4 人) も付ける。
+/// assign は人数 → 分担 (保存したモデルの分担か規則、#431)、source はその作り方 (model / rule)
+pub fn snapshot(
+    p: &Profile,
+    players: usize,
+    assign: &dyn Fn(usize) -> Vec<Vec<String>>,
+    source: &str,
+) -> Value {
     let named = |n: usize| -> serde_json::Map<String, Value> {
-        assignment_for(p, n)
+        assign(n)
             .into_iter()
             .enumerate()
             .map(|(i, a)| (format!("P{}", i + 1), json!(a)))
@@ -469,6 +496,7 @@ pub fn snapshot(p: &Profile, players: usize) -> Value {
         "players": players,
         "assignment": assign,
         "assignments": by_players,
+        "presetSource": source,
     })
 }
 
@@ -576,7 +604,7 @@ mod tests {
     #[test]
     fn minecraft_assignment_by_players() {
         let p = builtin_minecraft();
-        let a = |n| assignment_for(&p, n);
+        let a = |n| rule_assignment_for(&p, n);
         assert_eq!(a(1).len(), 1);
         assert_eq!(a(1)[0].len(), 13);
         assert_eq!(
@@ -602,11 +630,14 @@ mod tests {
             r#"{"id":"m","role":"P1","split":[{"id":"a","actions":["l"]},{"id":"b","actions":["r"]},{"id":"c","actions":["j"]}]}"#,
         ))
         .unwrap();
-        assert_eq!(assignment_for(&p, 3), vec![vec!["l"], vec!["r"], vec!["j"]]);
-        assert_eq!(assignment_for(&p, 1), vec![vec!["l", "r", "j"]]);
+        assert_eq!(
+            rule_assignment_for(&p, 3),
+            vec![vec!["l"], vec!["r"], vec!["j"]]
+        );
+        assert_eq!(rule_assignment_for(&p, 1), vec![vec!["l", "r", "j"]]);
         // 分けられる部分がないグループは半分にする (全員に担当が付く)
         let q = parse(&minimal(r#"{"id":"x","group":"m"},{"id":"y","group":"m"},{"id":"z","group":"m"},{"id":"w","group":"m"}"#, r#"{"id":"m","role":"P1"}"#)).unwrap();
-        let a = assignment_for(&q, 2);
+        let a = rule_assignment_for(&q, 2);
         assert_eq!(a, vec![vec!["x", "y"], vec!["z", "w"]]);
         // メニュー (host) と会話 (none) は分担しない
         let h = parse(&minimal(
@@ -614,7 +645,7 @@ mod tests {
             r#"{"id":"m","role":"P1"},{"id":"h","role":"host"},{"id":"c","role":"none"}"#,
         ))
         .unwrap();
-        assert_eq!(assignment_for(&h, 3).concat(), vec!["x"]);
+        assert_eq!(rule_assignment_for(&h, 3).concat(), vec!["x"]);
     }
 }
 #[cfg(test)]
@@ -638,7 +669,7 @@ mod review_tests {
     #[test]
     fn assignment_keeps_roles_and_splits_movement_without_duplicates() {
         let p = builtin_minecraft();
-        let a = assignment_for(&p, 3);
+        let a = rule_assignment_for(&p, 3);
         // 3人の分担は、これまでの固定の分担と同じ (P1 移動・P2 視点・P3 攻撃・使う・持ち物、#141)
         assert_eq!(
             a,
@@ -654,7 +685,7 @@ mod review_tests {
             .as_array_mut()
             .unwrap()
             .retain(|a| a["group"] == "movement");
-        let a = assignment_for(&parse(&v).unwrap(), 3);
+        let a = rule_assignment_for(&parse(&v).unwrap(), 3);
         assert!(a.iter().all(|a| !a.is_empty()));
         let flat: Vec<_> = a.iter().flatten().collect();
         assert_eq!(
@@ -679,7 +710,7 @@ mod review_tests {
             find(std::slice::from_ref(&p), "steam:1").map(|x| x.name.as_str()),
             Some("試験")
         );
-        let a = assignment_for(&p, 3);
+        let a = rule_assignment_for(&p, 3);
         assert!(
             a[0].contains(&"forward".to_string())
                 && a[1].contains(&"look".to_string())
@@ -778,7 +809,7 @@ mod representative_tests {
             "協力プレイ中に押せないグループを作らない"
         );
         for n in 2..=4 {
-            let a = assignment_for(&p, n);
+            let a = rule_assignment_for(&p, n);
             let all: Vec<&String> = a.iter().flatten().collect();
             for id in ["cursor", "click", "use", "pause", "map", "forward", "left"] {
                 assert_eq!(all.iter().filter(|x| **x == id).count(), 1, "{n}人: {id}");
@@ -800,7 +831,7 @@ mod representative_tests {
             let playable: Vec<String> = parts(&p).concat();
             let first = &parts(&p)[0];
             for n in 1..=4 {
-                let a = assignment_for(&p, n);
+                let a = rule_assignment_for(&p, n);
                 let name = format!("{kind} {id} {n}人");
                 assert_eq!(a.len(), n, "{name}: 人数分の担当");
                 // 重複・漏れなし。メニュー (host) などは配らない
@@ -843,7 +874,7 @@ mod representative_tests {
             println!("\n### {kind}：{}（{id}）", p.name);
             println!("| 人数 | 担当（操作の数／重み） |\n|---|---|");
             for n in 1..=4 {
-                let cells: Vec<String> = assignment_for(&p, n)
+                let cells: Vec<String> = rule_assignment_for(&p, n)
                     .iter()
                     .enumerate()
                     .map(|(i, a)| {

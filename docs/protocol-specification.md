@@ -161,7 +161,7 @@ PREPARE / READY / RESUME / OPEN_GAME / OPEN_APPは現在epochを必須としま�
 | `inputActive / inputTarget` | 入力可能か、onだが対象が前面でないか |
 | `autoResume / autoResumeMs / autoResumeUntil` | 自動復帰設定（初期OFF）、待機時間、期限 |
 
-`keys.actions`は操作IDから実出力の`{out,label}`またはnullへの対応です。`profile.assignment`は現在接続者への案、`profile.assignments`は人数別の案です。`assigned`が現在の共同操作の認可に使う確定値です。
+`keys.actions`は操作IDから実出力の`{out,label}`またはnullへの対応です。`profile.assignment`は現在接続者への案、`profile.assignments`は人数別の案です。`profile.presetSource`は案の作り方（`model`＝BERT風モデル、`rule`＝規則）です。`assigned`が現在の共同操作の認可に使う確定値です。
 
 ---
 
