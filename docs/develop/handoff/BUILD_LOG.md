@@ -2333,3 +2333,9 @@
 - 切り替え：ホストは feature `latency-measure`（`#[cfg]` で囲み、通常のビルドではコンパイルされない）、スマホは `npm run build:latency`（Viteの `define` で `__LATENCY_MEASURE__` を true にする。通常のビルドでは false として取り除かれる）。通常のビルドの成果物に計測の処理が入らないことを、ビルドした結果の文字列の検索で確かめた（通常0件、計測用1件）。
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
+
+## 2026-11-14 — 終了時にスマホへWi-Fiの案内を表示する（#415、Codex）
+
+- 協力プレイを終えてロビーへ戻ったときと、PCアプリの正常終了通知を受けたとき、スマホのWi-Fiを普段のネットワークへ戻す案内を表示する。
+- `npm --prefix apps/web run build`、`node scripts/sim/phone-view-test.mjs`、`node scripts/sim/phone-lifecycle-test.mjs` 34/34、`git diff --check` が合格。
+- 非管理者でのホットスポット停止・設定変更と、停止前の通知到達は、現行配布形態での確認が残る。
