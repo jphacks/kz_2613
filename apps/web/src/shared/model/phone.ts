@@ -102,7 +102,7 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
       : `「${PREPARE_GAME_LABEL}」を押して準備を始めてください`];
   } else {
     instructions = [`PCアプリの画面でゲームを選び、分担を決めてください（${MIN_PLAYERS}〜${MAX_PLAYERS}人）`,
-      'PCアプリが前面にあれば、このリモコンでも操作できます'];
+      'このリモコンでPCの画面を操作できます（PCアプリ以外のウィンドウでは実際のマウスとして動きます）'];
   }
   const note = [...new Set(instructions.flatMap(text => text?.trim() ? [text.trim().replace(/[。！？]$/, '')] : []))]
     .map(text => `${text}。`).join('');
