@@ -24,6 +24,7 @@ export function PcApp() {
 <SettingsDialog state={state} model={model} connection={connection}/>
 <RenameDialog/>
 <ConnectionHelpDialog connection={connection}/>
+<ResetDialog/>
 </>;
 }
 
@@ -99,6 +100,7 @@ function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;co
   <details id="inputDetails"><summary>入力の一時停止（診断・緊急用）</summary><div className="seg" id="modeSeg"><button data-mode="off" aria-pressed={state.inject?.mode === 'off'}>入力を止める</button><button data-mode="on" aria-pressed={state.inject?.mode === 'on'}>入力を再開する</button></div></details>
   <details><summary>手順・詳しい確認</summary><ol id="gameSteps">{model.gameSteps.map(step => <li key={step}>{step}</li>)}</ol><p id="gameStatus">{game?.prepareStatus || ''}</p><p><a href="/host">診断画面を開く</a></p></details>
   <button id="settingsConnectionBtn">参加用QR・接続方法</button>
+  <button id="resetAllBtn" className="danger-action">接続中のスマホをすべてリセット</button>
   <details id="requirements"><summary>動作環境・制限事項</summary>
     <ul className="legal">
       <li>PC：Windows 11 x64。WebView2ランタイムとMicrosoft Visual C++ v14 Redistributable（x64）が必要です。</li>
@@ -120,6 +122,20 @@ function RenameDialog() {
   <h2 id="renameTitle">名前を変更</h2>
   <form id="renameForm" method="dialog"><input id="renameInput" maxLength={60} aria-label="ゲームの名前" required />
   <p><button id="renameSave" value="save">保存</button><button id="renameCancel" type="button">キャンセル</button></p></form>
+</dialog>;
+}
+
+// 全員の接続のリセット (#412)。仮想カーソル・リモコンでも押せるよう、confirm() ではなく画面内の確認にする
+function ResetDialog() {
+  return <dialog id="resetConfirm" aria-labelledby="resetTitle">
+  <h2 id="resetTitle">接続中のスマホをすべてリセットしますか？</h2>
+  <ul>
+    <li>接続中のスマホは、すべて切断されます。</li>
+    <li>P1〜P4の枠とホストを最初から決め直します。最初に参加し直した人がホスト（P1）になります。</li>
+    <li>協力プレイ中なら止まり、分担も消えます。押していたキーはすべて離します。</li>
+    <li>スマホは、ページを再読み込みして参加し直してください。</li>
+  </ul>
+  <p><button id="resetCancel" autoFocus>やめる</button><button id="resetConfirmBtn" className="danger-action">リセットする</button></p>
 </dialog>;
 }
 
