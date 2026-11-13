@@ -5,6 +5,10 @@ edition = "2021"
 description = "Re:Cooplay PC host (Rust port of the Node prototype): HTTP + WebSocket + WebRTC, Windows SendInput"
 publish = false
 
+[features]
+# 押してから実入力までの遅延の計測 (計測用のビルドだけ。通常のビルド・配布物には入れない)
+latency-measure = []
+
 [dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "sync", "time", "signal", "fs"] }
 axum = { version = "0.8", features = ["ws"] }

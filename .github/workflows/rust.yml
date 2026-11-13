@@ -71,6 +71,15 @@ jobs:
             apps/host-rs/target/release/recooplay-host.exe
             apps/host-rs/target/release/recooplay-input-probe.exe
           if-no-files-found: error
+      # 遅延の計測用ビルド (feature latency-measure) が壊れていないかを確かめる。配布物には入れないので、アップロードの後に行う
+      - name: 遅延の計測用ビルドの整形・Clippy・試験（配布物には入れない）
+        timeout-minutes: 25
+        shell: pwsh
+        run: |
+          cargo clippy --manifest-path apps/host-rs/Cargo.toml --locked --release --all-targets --features latency-measure -- -D warnings
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cargo test --manifest-path apps/host-rs/Cargo.toml --release --locked --features latency-measure
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
   web:
     runs-on: windows-latest
