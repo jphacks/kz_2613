@@ -388,6 +388,9 @@ pub struct Hub {
     launcher_fg: bool,
     // Minecraft のランチャーを開いた後、そのウィンドウを前面に出す試み (起動の世代, 試した回数)。一度出せたら None (#419)
     launcher_raise: Option<(u64, u32)>,
+    // 押してから実入力までの遅延の計測。計測用のビルド (feature `latency-measure`) だけに入る
+    #[cfg(feature = "latency-measure")]
+    latency: crate::latency::Latency,
     // ホストのリモコンのカーソルが PC アプリの枠を越えて、OS のカーソルで動いているか (#405)
     remote_outside: bool,
     target_ok: bool,
@@ -528,6 +531,8 @@ impl Hub {
             target_fg: None,
             launcher_fg: false,
             launcher_raise: None,
+            #[cfg(feature = "latency-measure")]
+            latency: Default::default(),
             remote_outside: false,
             target_ok: false,
             fake_activate: true,
@@ -1832,6 +1837,16 @@ impl Hub {
             Kind::Mouse { left } => self.input.mouse_button(left, down),
             Kind::Wheel { .. } => false,
         };
+        #[cfg(feature = "latency-measure")]
+        {
+            if down && ok {
+                if let Some(si) = SLOT_NAMES.iter().position(|n| *n == slot) {
+                    if let Some((iseq, sample)) = self.latency.injected(si, idx) {
+                        self.log_latency(si, iseq, sample);
+                    }
+                }
+            }
+        }
         if let Some(start) = trace_start {
             crate::input_trace::event(
                 "output",
@@ -1984,6 +1999,14 @@ impl Hub {
                 return;
             }
             let ok = self.input.wheel(notches);
+            #[cfg(feature = "latency-measure")]
+            {
+                if ok {
+                    if let Some((iseq, sample)) = self.latency.injected_now(slot) {
+                        self.log_latency(slot, iseq, sample);
+                    }
+                }
+            }
             let entry = self.record(
                 "inject",
                 json!({ "slot": SLOT_NAMES[slot], "out": o.id, "label": o.label, "state": "down", "ok": ok }),
@@ -1995,7 +2018,22 @@ impl Hub {
         if down && !(self.can_inject() || (slot == 0 && self.remote_desktop_active())) {
             return;
         }
+        #[cfg(feature = "latency-measure")]
+        {
+            if down {
+                self.latency.bind(slot, idx);
+            }
+        }
         self.set_output(idx, SLOT_NAMES[slot], down);
+    }
+
+    #[cfg(feature = "latency-measure")]
+    fn log_latency(&mut self, slot: usize, iseq: u64, s: crate::latency::Sample) {
+        let r = |v: f64| (v * 10.0).round() / 10.0;
+        self.log(
+            "latency",
+            json!({ "slot": SLOT_NAMES[slot], "iseq": iseq, "touchMs": r(s.touch_ms), "rttMs": r(s.rtt_ms), "hostMs": r(s.host_ms), "totalMs": r(s.total_ms()) }),
+        );
     }
 
     fn remote_app_active(&self) -> bool {
@@ -3695,6 +3733,17 @@ impl Hub {
                 let conn = slot.conn;
                 self.send(conn, &json!({ "type": "pong", "t": msg.get("t") }));
             }
+            #[cfg(feature = "latency-measure")]
+            "latency" => {
+                // 計測用 (`?latency`)。押下ごとのスマホ側の値。入力の判断には使わない
+                let iseq = num(&msg, "iseq").filter(|n| *n >= 0.0).map(|n| n as u64);
+                let (touch, rtt) = (num(&msg, "touchMs"), num(&msg, "rttMs"));
+                if let (Some(iseq), Some(touch), Some(rtt)) = (iseq, touch, rtt) {
+                    if let Some(sample) = self.latency.phone(idx, iseq, touch, rtt) {
+                        self.log_latency(idx, iseq, sample);
+                    }
+                }
+            }
             "ka" => {
                 // WebRTC の生存確認 (スマホの無線を起こしておく役目も兼ねる)
                 slot.clock
@@ -3899,7 +3948,15 @@ impl Hub {
             json!({ "slot": SLOT_NAMES[idx], "button": button, "state": state, "iseq": msg.raw.get("iseq"), "via": via.name(), "burst": burst }),
         );
         if !burst {
+            #[cfg(feature = "latency-measure")]
+            {
+                if state == "down" {
+                    self.latency.begin(idx, msg.iseq.max(0) as u64);
+                }
+            }
             self.handle_control(idx, &button, &state);
+            #[cfg(feature = "latency-measure")]
+            self.latency.end();
             self.broadcast_monitors(&json!({ "type": "log", "entry": entry }));
         }
         self.push_state_throttled();
@@ -4026,6 +4083,8 @@ mod tests {
             target_fg: None,
             launcher_fg: false,
             launcher_raise: None,
+            #[cfg(feature = "latency-measure")]
+            latency: Default::default(),
             remote_outside: false,
             target_ok: true,
             fake_activate: true,

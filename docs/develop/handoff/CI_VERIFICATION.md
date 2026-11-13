@@ -11,6 +11,8 @@
 | Rustの整形・Clippy、RustとWebの依存関係 | `host-rs`・`desktop` 内の `cargo fmt --check` と `cargo clippy -D warnings`、`cargo-audit` と `npm-audit` |
 | 実機試験補助の経路・測定データ判定 | `scripts/device/` の単体試験 |
 
+押してから実入力までの遅延の計測用ビルド（ホストの feature `latency-measure`、スマホの `npm run build:latency`）は、通常の配布物に入れない。必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験で壊れていないことだけを確かめる。計測用の配布zip（`-latency-measure` 付き）は、手動で起動する `latency-measure.yml` で作る。
+
 Rustの版はリポジトリ直下の `rust-toolchain.toml` で固定する（#379）。新しいRustでClippyの検査項目が増えた日に、変更と無関係なPRが失敗しないようにするため。`host-rs`・`desktop`・`cargo-audit` のジョブは最初にその版を入れ、`rustc --version` をログに出す。版を上げるときは、`channel` の行だけを変える専用のPRで、整形・Clippy・試験が通ることを確かめる。
 
 Windowsの物理ホットキー・前面切替・実入力、スマホ実機の指操作、実Wi-Fi断、Minecraft、クリーンPCでの対話導入と表示倍率は、[実機受入手順](../acceptance/README.md)で確認する。

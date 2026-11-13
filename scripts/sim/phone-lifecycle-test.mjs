@@ -231,6 +231,23 @@ if (process.argv.includes('--repro-shared-pointer')) {
     attack.fire('pointerdown', { pointerId: 3 });
     assert.deepEqual(current.sent.filter(m => m.type === 'input').map(m => [m.button, m.state, m.epoch]), [['act:attack', 'down', 8]], '新しいタッチは入力できる');
   });
+  await test('遅延の計測: 計測用ビルドだけ、押下のACKで触れてから送信までと往復をホストへ送る。通常のビルドでは送らない', async () => {
+    for (const latency of [false, true]) {
+      const h = controllerHarness({ latency }); await h.ready(); const socket = h.sockets[0];
+      h.control('act:jump').fire('pointerdown', { pointerId: 1, timeStamp: 990 });
+      const down = h.inputs().find(m => m.button === 'act:jump' && m.state === 'down');
+      h.advance(40); socket.receive({ type: 'ack', iseq: down.iseq, via: 'ws' });
+      const sent = socket.sent.filter(m => m.type === 'latency');
+      if (!latency) { assert.equal(sent.length, 0, '通常のビルドでは送らない'); continue; }
+      assert.equal(sent.length, 1); assert.equal(sent[0].iseq, down.iseq);
+      assert.equal(sent[0].touchMs, down.t - 990); assert(sent[0].rttMs >= 40, '往復は ACK までの時間');
+      // 遅れて捨てられた押下 (stale) は送らない
+      h.control('act:attack').fire('pointerdown', { pointerId: 2, timeStamp: 1000 });
+      const late = h.inputs().find(m => m.button === 'act:attack' && m.state === 'down');
+      socket.receive({ type: 'ack', iseq: late.iseq, via: 'ws', stale: true });
+      assert.equal(socket.sent.filter(m => m.type === 'latency').length, 1);
+    }
+  });
   await test('遅延破棄: ホストが押下をstaleで返したら押したままの表示を解き、離すまで案内する (#285 Q25/Q27)', async () => {
     const h = controllerHarness(); await h.ready(); const socket = h.sockets[0];
     const attack = h.control('act:attack'), jump = h.control('act:jump');

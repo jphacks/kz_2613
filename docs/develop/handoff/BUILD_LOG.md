@@ -2274,3 +2274,10 @@
 - ユーザーが比較ページでB案（リモコン型）を選び、上下左右・Enter・Eキーを外すと判断した（`2026-10-24-user-decisions.md` に追記）。`HostRemoteScreen` を、参加状況を入れた見出し、タッチパッドと下の縁の左右クリック（`.trackpad`）、カーソル感度、Escの丸ボタンと上下に分けたホイール（`.remote-keys`）、画面の下に固定した進めるボタン（`.host-actions`）の順にした。見た目は `styles/phone-host-remote.css`。要素のidは変えていない。
 - 表示しなくなったEキーのための `PhoneDisplay.inventory` と、矢印・Enterのボタン、関係するCSSを削除した。ホスト側の `UP`・`ENTER`・`REMOTE_E` などの受け付けはそのまま（PCのキーボード操作や古い画面との互換のため）。`phone-view-test` からEキー表示の確認を削除した。
 - `npm run build`（型検査を含む）、`phone-view-test`・`phone-lifecycle-test`・`phone-session-test`・`product-web-test`・`ui-input-test`・`app-view-test`・`check-static-pages`・`verify-ui-evidence`・`controller-preview-test`・`phone-layout-test` が成功。ビルドしたスマホ画面を模擬ホストにつないでheadless Chromeで開き、受付中と一時停止中の表示を目視確認した。Rustホスト・実機は未確認。
+## 2026-11-14 — 押してから実入力までの遅延の計測用ビルド（Claude Code）
+
+- 利用者の依頼：ユーザーがボタンを押してから操作が実入力（SendInput）されるまでの遅延を、iPhoneで測り、平均・中央・最大を出したい。計測したいときだけこの経路を通し、通常のデバッグやリリースには含めない。
+- 方法：スマホとPCの時計は合わないので、押下ごとに3区間を測って足す。①触れてから送信まで（スマホ、イベントの `timeStamp` と送信時刻）、②送信から押下のACKまでの往復（スマホ）、③ホストでの処理の開始からSendInputまで（ホスト、最低押下・解放時間による待ちを含む）。合計＝①＋②÷2＋③。**片道は往復の半分とみなす仮定**が残る。順序待ちの時間は②に含まれ、半分ずつに割り振られる。
+- 切り替え：ホストは feature `latency-measure`（`#[cfg]` で囲み、通常のビルドではコンパイルされない）、スマホは `npm run build:latency`（Viteの `define` で `__LATENCY_MEASURE__` を true にする。通常のビルドでは false として取り除かれる）。通常のビルドの成果物に計測の処理が入らないことを、ビルドした結果の文字列の検索で確かめた（通常0件、計測用1件）。
+- CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
+- 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。

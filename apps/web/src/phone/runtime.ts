@@ -27,6 +27,10 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   });
   let pingTimer: ReturnType<typeof setInterval> | undefined;
   const pending = new Map<number,number>(); // iseq -> 送信時刻
+  // 押してから実入力までの遅延の計測。計測用のビルド (RECOOPLAY_LATENCY_MEASURE=1) だけに入り、通常のビルドでは定数 false として取り除かれる。
+  // 押下ごとに、触れてから送信までと ACK までの往復をホストへ送る
+  const measureLatency = typeof __LATENCY_MEASURE__ !== 'undefined' && __LATENCY_MEASURE__;
+  const touchAt = new Map<number,number>(); // iseq -> 指が触れた時刻
   const rtts: number[] = [];
   let sent = 0;
   let lastIseq = 0; // 直近に送った入力の iseq (通信テストが自分の入力だけを集めるため)
@@ -92,6 +96,8 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
         if (msg.stale && downControl && pressing.get(downControl) === msg.iseq) dropStaleDown(downControl);
         if (t0 != null) {
           pending.delete(msg.iseq);
+          const touch = touchAt.get(msg.iseq); touchAt.delete(msg.iseq);
+          if (measureLatency && touch != null && !msg.stale && isOpen()) session.send({type:'latency', iseq:msg.iseq, touchMs:Math.max(0, t0 - touch), rttMs:performance.now() - t0});
           via[msg.via] = (via[msg.via] || 0) + 1;
           burst?.ack(msg.iseq, performance.now() - t0, msg.via);
           rtts.push(performance.now() - t0);
@@ -238,6 +244,10 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
     down: (ctl, at) => {
       const sent = sendInput({ button: ctl, state: 'down' });
       if (sent) recordInputMetric('pointerdown', at);
+      if (sent && measureLatency && typeof at === 'number' && Number.isFinite(at)) {
+        if (touchAt.size > 256) touchAt.clear();
+        touchAt.set(lastIseq, at > 1e12 ? at - performance.timeOrigin : at);
+      }
       if (navigator.vibrate) navigator.vibrate(8);
       return sent;
     },
