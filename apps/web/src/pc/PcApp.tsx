@@ -85,7 +85,7 @@ function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;co
   <nav id="steps" aria-label="画面の移動" hidden={!['join','game','roles'].includes(model.view)}>{SCREENS.map(screen => <button key={screen} data-go={screen} disabled={model.view === 'join' && screen !== 'join' && !model.canAdvance} aria-label={SCREEN_TITLES[screen as keyof typeof SCREEN_TITLES]} aria-current={screen === state.ui.screen ? 'page' : 'false'}>{{join: '参加',game: '選択',roles: '分担'}[screen as 'join'|'game'|'roles']}</button>)}</nav>
   </details>
   <details id="keyDetails"><summary>担当と実際に送るキー</summary><p id="keyWarnings" role="status">{model.warnings}</p><div id="keyBindings">{model.bindings.map(b => <Fragment key={b.slot}><h3>{b.slot}：{b.title}</h3><ul>{b.lines.map((line: string, i: number) => <li key={i}>{line}</li>)}</ul></Fragment>)}</div><div id="keyEditor"><KeyEditor model={model} state={state} /></div></details>
-  <p id="inputSafety">{model.name}が前面のときだけ操作を送ります。停止時はすべてのキーとボタンを離します。</p>
+  <p id="inputSafety">協力プレイ中は、{model.name}が前面のときだけ担当の操作を送ります。協力プレイの前・一時停止中は、ホストのスマホのリモコンでPCの画面全体（ランチャーなどほかのウィンドウを含む）を操作できます。入力を止めたときや緊急停止のときは、すべてのキーとボタンを離します。</p>
 
   <details id="commDetails"><summary>通信の設定</summary>
     <label className="comm-setting"><input type="checkbox" id="autoResumeSetting" checked={model.comm.checked} disabled={model.comm.locked} onChange={event => settingsActions.setAutoResume(event.currentTarget.checked)} /> 切断から戻ったら自動で再開する</label>
@@ -105,7 +105,7 @@ function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;co
     <ul className="legal">
       <li>PC：Windows 11 x64。WebView2ランタイムとMicrosoft Visual C++ v14 Redistributable（x64）が必要です。</li>
       <li>スマホ：2〜4台。PCと同じWi-Fi、またはPCのモバイルホットスポットに接続します。アプリは不要です。</li>
-      <li>入力：協力プレイ中、入力が有効で、選択したゲームが前面のときだけ送ります。緊急停止はCtrl+Alt+F12です。</li>
+      <li>入力：協力プレイ中は、入力が有効で、選択したゲームが前面のときだけ担当の操作を送ります。協力プレイの前・一時停止中は、ホストのスマホのリモコンでPCの画面全体を操作できます。緊急停止はCtrl+Alt+F12です。</li>
       <li>マウス：左ボタンを押したまま右クリックが届かない場合は、Orchisなどのマウスジェスチャーやボタンの割り当てを行う常駐アプリを終了するか、該当機能を無効にしてください。</li>
       <li>ゲーム：一覧に出ても動作を保証しません。「未検証」のゲームは、操作が届くか確かめながら遊んでください。</li>
       <li>未確認：開発環境のないPCでの起動は検証中です。インターネット経由の参加には対応していません。</li>
