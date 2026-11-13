@@ -2274,6 +2274,8 @@
 - ユーザーが比較ページでB案（リモコン型）を選び、上下左右・Enter・Eキーを外すと判断した（`2026-10-24-user-decisions.md` に追記）。`HostRemoteScreen` を、参加状況を入れた見出し、タッチパッドと下の縁の左右クリック（`.trackpad`）、カーソル感度、Escの丸ボタンと上下に分けたホイール（`.remote-keys`）、画面の下に固定した進めるボタン（`.host-actions`）の順にした。見た目は `styles/phone-host-remote.css`。要素のidは変えていない。
 - 表示しなくなったEキーのための `PhoneDisplay.inventory` と、矢印・Enterのボタン、関係するCSSを削除した。ホスト側の `UP`・`ENTER`・`REMOTE_E` などの受け付けはそのまま（PCのキーボード操作や古い画面との互換のため）。`phone-view-test` からEキー表示の確認を削除した。
 - `npm run build`（型検査を含む）、`phone-view-test`・`phone-lifecycle-test`・`phone-session-test`・`product-web-test`・`ui-input-test`・`app-view-test`・`check-static-pages`・`verify-ui-evidence`・`controller-preview-test`・`phone-layout-test` が成功。ビルドしたスマホ画面を模擬ホストにつないでheadless Chromeで開き、受付中と一時停止中の表示を目視確認した。Rustホスト・実機は未確認。
+- レビューでの修正（Claude Code）：リモコンから◀▶を外すと、PCアプリのキー割当（プルダウン）をスマホから変えられなくなる。リモコンのクリックではプルダウンの一覧を開けないため（#294）。キー割当の各行に「◀」「▶」のボタンを置き、クリックで1つ前・1つ後のキーへ切り替えられるようにした（`stepKey`、送らない→先頭→…→末尾→送らないと巡回）。プルダウンはPCのマウス用に残す。説明文「ホストのスマホでは▲▼で項目を選び、◀▶でキーを切り替えます」を、ボタンの説明に直した。確認：型検査、`npm run build`、`app-view` 36/36（`stepKey` の試験を追加）、`phone-view`、`phone-lifecycle` 34/34、`ui-input` 20/20、`product-web-test`、`check-static-pages`。実機は未確認。
+
 ## 2026-11-14 — 押してから実入力までの遅延の計測用ビルド（Claude Code）
 
 - 利用者の依頼：ユーザーがボタンを押してから操作が実入力（SendInput）されるまでの遅延を、iPhoneで測り、平均・中央・最大を出したい。計測したいときだけこの経路を通し、通常のデバッグやリリースには含めない。

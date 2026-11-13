@@ -862,6 +862,7 @@ dialog button[aria-pressed=true] {
 table.key-editor { border-collapse: collapse; margin: 8px 0; }
 table.key-editor th { text-align: left; padding: 4px 12px 4px 0; font-weight: 500; }
 table.key-editor select { min-height: 36px; }
+table.key-editor .key-step { min-width: 36px; min-height: 36px; margin: 0 4px; }
 dialog details {
   margin: 18px 0;
 }
