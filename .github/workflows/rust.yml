@@ -35,8 +35,17 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             apps/host-rs/target
-          key: host-rs-${{ runner.os }}-${{ hashFiles('apps/host-rs/Cargo.lock') }}
+          key: host-rs-${{ runner.os }}-${{ hashFiles('apps/host-rs/Cargo.lock', 'rust-toolchain.toml') }}
           restore-keys: host-rs-${{ runner.os }}-
+      - name: Rustの版をそろえる（rust-toolchain.toml）
+        timeout-minutes: 10
+        shell: pwsh
+        run: |
+          $channel = (Select-String -Path rust-toolchain.toml -Pattern '^channel = "(.+)"').Matches[0].Groups[1].Value
+          rustup toolchain install $channel --profile minimal --component rustfmt,clippy
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          rustc --version
+          cargo --version
       - run: cargo build --release --locked
         timeout-minutes: 25
         working-directory: apps/host-rs
@@ -136,8 +145,17 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             apps/desktop/target
-          key: desktop-${{ runner.os }}-${{ hashFiles('apps/desktop/Cargo.lock') }}
+          key: desktop-${{ runner.os }}-${{ hashFiles('apps/desktop/Cargo.lock', 'rust-toolchain.toml') }}
           restore-keys: desktop-${{ runner.os }}-
+      - name: Rustの版をそろえる（rust-toolchain.toml）
+        timeout-minutes: 10
+        shell: pwsh
+        run: |
+          $channel = (Select-String -Path rust-toolchain.toml -Pattern '^channel = "(.+)"').Matches[0].Groups[1].Value
+          rustup toolchain install $channel --profile minimal --component rustfmt,clippy
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          rustc --version
+          cargo --version
       - run: cargo build --release --locked
         timeout-minutes: 25
         working-directory: apps/desktop
@@ -330,6 +348,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         timeout-minutes: 2
+      - name: Rustの版をそろえる（rust-toolchain.toml）
+        timeout-minutes: 10
+        shell: pwsh
+        run: |
+          $channel = (Select-String -Path rust-toolchain.toml -Pattern '^channel = "(.+)"').Matches[0].Groups[1].Value
+          rustup toolchain install $channel --profile minimal --component rustfmt,clippy
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          rustc --version
+          cargo --version
       - name: RustSecの監査ツールを用意する
         timeout-minutes: 20
         run: cargo install --locked --version 0.22.1 cargo-audit
