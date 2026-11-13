@@ -1,0 +1,6 @@
+# Rust の版を固定する (#379)。新しい Rust で Clippy の検査項目が増えると、変更していないコードが -D warnings で失敗するため。
+# 版を上げるときは、この行だけを変える専用の PR を出し、整形・Clippy・試験が通ることを確かめる。
+[toolchain]
+channel = "1.99.1"
+components = ["rustfmt", "clippy"]
+profile = "minimal"
