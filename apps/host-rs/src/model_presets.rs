@@ -169,6 +169,81 @@ pub fn save(path: &Path, store: &Store) -> std::io::Result<()> {
     std::fs::rename(tmp, path)
 }
 
+// ---------- ゲームのファイルから読んで作った仮の操作定義 (#431) ----------
+// 操作定義のないゲームごとに、作った仮の定義 (読めなかったときは None) を、作ったモデルの版と一緒に保存する。
+// 同じ版では読み直さない。版が変われば作り直す。
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Detected {
+    pub model: String,
+    pub profile: Option<Value>,
+}
+
+pub type DetectedStore = HashMap<String, Detected>;
+
+pub fn detected_path() -> Option<PathBuf> {
+    if let Ok(p) = std::env::var("RECOOPLAY_DETECTED_PROFILES") {
+        return Some(PathBuf::from(p));
+    }
+    if std::env::var("RECOOPLAY_NO_CONFIG").as_deref() == Ok("1") {
+        return None;
+    }
+    std::env::var_os("LOCALAPPDATA").map(|p| {
+        PathBuf::from(p)
+            .join("Re-Cooplay")
+            .join("detected-profiles.json")
+    })
+}
+
+pub fn parse_detected(text: &str) -> DetectedStore {
+    let value: Value =
+        serde_json::from_str(text.trim_start_matches('\u{feff}')).unwrap_or(Value::Null);
+    let mut out = DetectedStore::new();
+    for (game, v) in value
+        .get("games")
+        .and_then(Value::as_object)
+        .into_iter()
+        .flatten()
+    {
+        let Some(model) = v.get("model").and_then(Value::as_str) else {
+            continue;
+        };
+        // 読み込み時に形式を確かめ、壊れた定義は「なし」として扱う (次の版で作り直す)
+        let profile = v
+            .get("profile")
+            .filter(|p| crate::profiles::parse(p).is_ok())
+            .cloned();
+        out.insert(
+            game.clone(),
+            Detected {
+                model: model.to_string(),
+                profile,
+            },
+        );
+    }
+    out
+}
+
+pub fn load_detected(path: Option<&Path>) -> DetectedStore {
+    path.and_then(|p| std::fs::read_to_string(p).ok())
+        .map(|t| parse_detected(&t))
+        .unwrap_or_default()
+}
+
+pub fn save_detected(path: &Path, store: &DetectedStore) -> std::io::Result<()> {
+    let games: Map<String, Value> = store
+        .iter()
+        .map(|(g, d)| (g.clone(), json!({ "model": d.model, "profile": d.profile })))
+        .collect();
+    let v = json!({ "note": "Re:Cooplay がゲームのファイルから読んで作った仮の操作定義 (未検証)。消すと次の一覧の読み込みで作り直します", "games": games });
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir)?;
+    }
+    let tmp = path.with_extension("json.tmp");
+    std::fs::write(&tmp, serde_json::to_string_pretty(&v)?)?;
+    std::fs::rename(tmp, path)
+}
+
 /// 試験用の操作定義 (ホストの試験からも使う)
 #[cfg(test)]
 pub fn test_profile(id: &str, status: &str, actions: &[(&str, &str)]) -> Profile {

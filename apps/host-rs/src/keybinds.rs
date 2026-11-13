@@ -521,7 +521,7 @@ fn source_cfg(text: &str) -> HashMap<String, Key> {
 // ---------- キー名 → 出力 ----------
 
 /// Unity Input System のパス: <Keyboard>/w、<Mouse>/leftButton など
-fn unity_path(path: &str) -> Key {
+pub fn unity_path(path: &str) -> Key {
     let p = path.trim();
     if let Some(k) = p.strip_prefix("<Keyboard>/") {
         return name_key(k);

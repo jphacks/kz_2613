@@ -616,6 +616,72 @@ pub fn featurize(texts: &[Option<&str>], nb: usize) -> Vec<usize> {
 
 // ---------------------------------------------------------------- プリセットの組み立て
 
+/// カテゴリ (train.py の COARSE の順) → 仮の操作定義のグループ (ID・表示名・担当)
+const GROUP_OF_CATEGORY: [(&str, &str, &str); 6] = [
+    ("movement", "移動", "P1"),
+    ("look", "視点", "P2"),
+    ("gameplay", "攻撃・使う", "P3"),
+    ("inventory", "持ち物", "P3"),
+    ("menu", "メニュー", "host"),
+    ("communication", "会話", "none"),
+];
+
+/// ゲームのファイルから読んだ操作 (#431) を分類して、仮の操作定義 (確認の状態は extracted、未検証) を作る。
+/// グループはモデルのカテゴリで決め、マウスの移動 (mouseDelta) は視点にする。返す JSON は保存用、Profile は使う形
+pub fn synthesize(
+    m: &Model,
+    game_id: &str,
+    name: &str,
+    actions: &[crate::game_actions::ReadAction],
+    source: &str,
+) -> Result<(Value, Profile), String> {
+    if actions.is_empty() {
+        return Err("操作がありません".into());
+    }
+    let inputs: Vec<Input> = actions
+        .iter()
+        .map(|a| Input {
+            id: &a.id,
+            label: &a.label,
+            bind: Some(&a.id),
+            kind: a.kind,
+            default: a.default,
+        })
+        .collect();
+    let out = m.infer(&inputs);
+    let group_of = |i: usize| -> usize {
+        if actions[i].kind == "mouseDelta" {
+            return 1;
+        }
+        let c = &out.category[i];
+        (0..c.len())
+            .max_by(|&a, &b| c[a].total_cmp(&c[b]))
+            .unwrap_or(2)
+            .min(GROUP_OF_CATEGORY.len() - 1)
+    };
+    let groups: Vec<usize> = (0..actions.len()).map(group_of).collect();
+    let mut used: Vec<usize> = groups.clone();
+    used.sort();
+    used.dedup();
+    let v = serde_json::json!({
+        "schema": crate::profiles::SCHEMA,
+        "id": format!("detected:{game_id}"),
+        "name": name,
+        "match": { "ids": [game_id] },
+        "suitability": "unknown",
+        "verification": { "status": "extracted", "sources": [format!("{source}を読み、分担のモデルで分類（{}）", m.version)] },
+        "groups": used.iter().map(|&g| { let (id, label, role) = GROUP_OF_CATEGORY[g]; serde_json::json!({ "id": id, "label": label, "role": role }) }).collect::<Vec<_>>(),
+        "actions": actions.iter().zip(&groups).map(|(a, &g)| {
+            let mut x = serde_json::json!({ "id": a.id, "label": a.label, "group": GROUP_OF_CATEGORY[g].0, "type": a.kind });
+            // スマホから送れるキー・左右のマウスボタンだけを初期キーにする (ホイールなどは送らない)
+            if let Some(k) = a.default.filter(|k| crate::key_overrides::assignable(k)) { x["default"] = Value::from(k); }
+            x
+        }).collect::<Vec<_>>(),
+    });
+    let p = crate::profiles::parse(&v)?;
+    Ok((v, p))
+}
+
 /// 参加人数 n (1〜4) のプリセット。操作定義の担当の付く操作 (role が P1〜P3) だけを配る。
 /// 1. モデルが「同じ人が持つべき」とした操作をまとめる (平均連結、確率 0.5 超)
 /// 2. まとまりが人数より多ければ、意味の近さ・カテゴリの相性から負担の罰則を引いた値が最も高い 2 つを統合する

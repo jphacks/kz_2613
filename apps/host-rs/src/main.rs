@@ -7,6 +7,7 @@ mod config;
 mod controls;
 mod focus;
 mod freshness;
+mod game_actions;
 mod game_service;
 mod games;
 mod hotkey;
