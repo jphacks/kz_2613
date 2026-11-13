@@ -49,6 +49,48 @@ FFN = 64
 PAIR = 16          # 「同じ人が持つか」の射影の次元
 DROPOUT = 0.0      # 学習時だけ。推論 (Rust) には影響しない
 DEV = torch.device("cpu")  # --device で GPU を使う
+TEXT = None        # --text-encoder: 事前学習済みの BERT 系モデルで操作名を読む (比較実験用。Rust では未対応)
+
+
+class TextEncoder:
+    """事前学習済みの BERT 系モデル (Hugging Face) で、操作の名前の文字列を固定のベクトルにする。重みは学習しない。
+    同じ文字列は一度だけ計算し、表 (matrix) の行番号で引く"""
+
+    def __init__(self, name, device):
+        from transformers import AutoModel, AutoTokenizer
+        self.tok = AutoTokenizer.from_pretrained(name)
+        self.model = AutoModel.from_pretrained(name).to(device).eval()
+        self.device = device
+        self.dim = self.model.config.hidden_size
+        self.index = {"": 0}
+        self.rows = [torch.zeros(self.dim)]
+        self.matrix = None
+
+    @staticmethod
+    def text_of(action):
+        # ラベル・ID・設定名をつなぐ。区切りや大文字小文字の切れ目は空白にして、単語として読ませる
+        parts = []
+        for k in ("label", "id", "bind"):
+            v = action.get(k)
+            if v:
+                parts.append(" ".join(w for _, w in words(v)) or v)
+        return " | ".join(parts)
+
+    def ids(self, texts):
+        new = [t for t in dict.fromkeys(texts) if t not in self.index]
+        for i in range(0, len(new), 512):
+            chunk = new[i:i + 512]
+            with torch.no_grad():
+                b = self.tok(chunk, padding=True, truncation=True, max_length=48, return_tensors="pt").to(self.device)
+                h = self.model(**b).last_hidden_state
+                m = b["attention_mask"].unsqueeze(-1).float()
+                v = (h * m).sum(1) / m.sum(1).clamp(min=1)  # 平均プーリング
+            for t, row in zip(chunk, v.float().cpu()):
+                self.index[t] = len(self.rows)
+                self.rows.append(row)
+        if new or self.matrix is None:
+            self.matrix = torch.stack(self.rows).to(DEV)
+        return [self.index[t] for t in texts]
 MAX_LEN = 160      # Core Keeper は操作が 136 件
 FMAX = 96          # 1 つの操作の特徴の上限 (添字の小さい順に残す)
 TYPES = ["button", "axis2d", "mouseDelta", "wheel", "text"]
@@ -419,13 +461,20 @@ def encode(games, keys):
     coarse = np.full((n, MAX_LEN), -1, dtype=np.int64)
     fine = np.full((n, MAX_LEN), -1, dtype=np.int64)
     sub = np.full((n, MAX_LEN), -1, dtype=np.int64)
+    tid = np.zeros((n, MAX_LEN), dtype=np.int64)
+    if TEXT is not None:
+        flat = [TextEncoder.text_of(a) for g in games for a in g["actions"][:MAX_LEN]]
+        ids = iter(TEXT.ids(flat))
+        for i, g in enumerate(games):
+            for j in range(len(g["actions"][:MAX_LEN])):
+                tid[i, j] = next(ids)
     for i, g in enumerate(games):
         for j, (a, (c, f, s)) in enumerate(zip(g["actions"][:MAX_LEN], g["labels"][:MAX_LEN])):
             h, k, t = featurize(a, keys)
             feats[i, j, :len(h)] = h
             key[i, j], typ[i, j], mask[i, j], coarse[i, j], fine[i, j], sub[i, j] = k, t, True, c, f, s
     return {k: torch.from_numpy(v) for k, v in
-            dict(feats=feats, key=key, typ=typ, mask=mask, coarse=coarse, fine=fine, sub=sub).items()}
+            dict(feats=feats, key=key, typ=typ, mask=mask, coarse=coarse, fine=fine, sub=sub, tid=tid).items()}
 
 
 # ---------------------------------------------------------------- モデル
@@ -457,6 +506,8 @@ class PresetBert(nn.Module):
     def __init__(self, n_keys):
         super().__init__()
         self.text = nn.Embedding(NB + 1, D, padding_idx=NB)  # 文字 n-gram の埋め込み (平均) = EmbeddingBag
+        # 事前学習済みの BERT 系モデルのベクトルを D 次元へ写す (--text-encoder のとき、n-gram の代わりに使う)
+        self.text_proj = nn.Sequential(nn.Linear(TEXT.dim, D), nn.GELU(), nn.Linear(D, D)) if TEXT is not None else None
         self.key = nn.Embedding(n_keys, D)
         self.typ = nn.Embedding(len(TYPES), D)
         self.mask_vec = nn.Parameter(torch.zeros(D))  # 学習時だけ: 名前を伏せた操作 ([MASK])
@@ -471,9 +522,12 @@ class PresetBert(nn.Module):
         # 自己教師ありの課題: 伏せたキーを当てる (学習時だけ。書き出さない)
         self.key_head = nn.Linear(D, n_keys)
 
-    def forward(self, feats, key, typ, mask, text_mask=None):
-        cnt = (feats < NB).sum(-1, keepdim=True).clamp(min=1)
-        t = self.text(feats.long()).sum(-2) / cnt
+    def forward(self, feats, key, typ, mask, text_mask=None, tid=None):
+        if self.text_proj is not None:
+            t = self.text_proj(TEXT.matrix[tid])
+        else:
+            cnt = (feats < NB).sum(-1, keepdim=True).clamp(min=1)
+            t = self.text(feats.long()).sum(-2) / cnt
         if text_mask is not None:
             t = torch.where(text_mask[..., None], self.mask_vec.expand_as(t), t)
         x = self.ln0(t + self.key(key) + self.typ(typ))
@@ -491,7 +545,7 @@ def losses(model, batch, train):
     tm = (torch.rand(mask.shape, device=mask.device) < 0.15) & mask if train else None
     key = batch["key"]
     km = (torch.rand(mask.shape, device=mask.device) < 0.15) & mask & (key > 0) if train else torch.zeros_like(mask)
-    cat, aff, axis, kl = model(batch["feats"], torch.where(km, torch.zeros_like(key), key), batch["typ"], mask, tm)
+    cat, aff, axis, kl = model(batch["feats"], torch.where(km, torch.zeros_like(key), key), batch["typ"], mask, tm, batch["tid"])
     lk = F.cross_entropy(kl[km], key[km]) if km.any() else torch.zeros(())
     # カテゴリは注釈のある操作だけで学ぶ (注釈のない GitHub のデータはキーの予測だけに使う)
     cm = mask & (batch["coarse"] >= 0)
@@ -520,11 +574,11 @@ def counts(model, data):
     mask = data["mask"]
     pred = aff > 0
     pos = pm & (target == 1)
-    _, _, axis, _ = model(data["feats"], data["key"], data["typ"], mask)
+    _, _, axis, _ = model(data["feats"], data["key"], data["typ"], mask, tid=data["tid"])
     am = pos & (data["sub"][:, :, None] >= 0) & (data["sub"][:, None, :] >= 0)
     at = data["sub"][:, :, None] == data["sub"][:, None, :]
     key = data["key"]
-    _, _, _, kl = model(data["feats"], torch.zeros_like(key), data["typ"], mask)
+    _, _, _, kl = model(data["feats"], torch.zeros_like(key), data["typ"], mask, tid=data["tid"])
     known = mask & (key > 0)
     # 振り分けに使う操作 (移動・視点・行動・持ち物) どうしの組だけ。メニュー・会話は P1 のリモコンのままで配らない
     play = (data["coarse"] >= 0) & (data["coarse"] <= COARSE.index("item"))
@@ -549,7 +603,7 @@ def dump_preds(model, g, keys):
     """誤りの分析用: 操作ごとのカテゴリの予測と正解 (PRED 行)"""
     model.eval()
     data = {k: v.to(DEV) for k, v in encode([g], keys).items()}
-    cat, _, _, _ = model(data["feats"], data["key"], data["typ"], data["mask"])
+    cat, _, _, _ = model(data["feats"], data["key"], data["typ"], data["mask"], tid=data["tid"])
     pred = cat[0].argmax(-1).tolist()
     for i, (a, lab) in enumerate(zip(g["actions"], g["labels"])):
         if lab[0] >= 0:
@@ -598,7 +652,7 @@ def export_parity(model, keys, games):
     for g in games:
         data = {k: v.to(DEV) for k, v in encode([g], keys).items()}
         with torch.no_grad():
-            cat, aff, axis, _ = model(data["feats"], data["key"], data["typ"], data["mask"])
+            cat, aff, axis, _ = model(data["feats"], data["key"], data["typ"], data["mask"], tid=data["tid"])
         n = len(g["actions"])
         cases.append({
             "name": g["name"],
@@ -652,7 +706,7 @@ def train(games, keys, args, rng, log=True):
 
 
 def main():
-    global STYLE_AUG, LAYERS, D, HEADS, FFN, PAIR, NB, DROPOUT, DEV
+    global STYLE_AUG, LAYERS, D, HEADS, FFN, PAIR, NB, DROPOUT, DEV, TEXT
     ap = argparse.ArgumentParser()
     ap.add_argument("--copies", type=int, default=150, help="実在のゲーム 1 本あたりの水増しの数")
     ap.add_argument("--epochs", type=int, default=25)
@@ -680,6 +734,7 @@ def main():
     ap.add_argument("--lr", type=float, default=2e-3)
     ap.add_argument("--weight-decay", type=float, default=0.01)
     ap.add_argument("--device", default="cpu", help="cpu / cuda")
+    ap.add_argument("--text-encoder", default=None, help="比較実験: 事前学習済みの BERT 系モデル (Hugging Face の名前) で操作名を読む。書き出しは未対応")
     ap.add_argument("--dump-preds", action="store_true", help="--gh-folds で、評価したゲームの操作ごとの予測を PRED 行で出す")
     ap.add_argument("--gh-eval-ids", default=None, help="--gh-folds で評価に使うゲームIDの一覧 (JSON)。ほかの注釈付きは常に学習側")
     ap.add_argument("--holdout-github", action="store_true",
@@ -689,6 +744,9 @@ def main():
     LAYERS, D, HEADS, PAIR, NB, DROPOUT = args.layers, args.dim, args.heads, args.pair, args.nb, args.dropout
     FFN = args.ffn or 2 * D
     DEV = torch.device(args.device)
+    if args.text_encoder:
+        TEXT = TextEncoder(args.text_encoder, DEV)
+        print(f"操作名の読み取り: {args.text_encoder}（{TEXT.dim}次元、重みは固定）", flush=True)
     print(f"モデル: {LAYERS}層・{D}次元・{HEADS}ヘッド・FFN {FFN}・n-gram {NB}・dropout {DROPOUT}・lr {args.lr}・{DEV}", flush=True)
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
     torch.set_num_threads(args.threads or max(1, os.cpu_count() // 2))
@@ -753,6 +811,8 @@ def main():
         report(total, "全ゲーム")
         return
 
+    if TEXT is not None:
+        raise SystemExit("--text-encoder は比較実験用で、Rust 向けの書き出しには対応していません (--cv / --gh-folds と使う)")
     model = train(real + extra + gh_labeled_train, keys, args, rng)
     print("評価")
     evaluate(model, encode(real, keys), "学習に使った実在のゲーム (参考)")
