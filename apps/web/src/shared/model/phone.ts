@@ -71,6 +71,9 @@ export function waitModel({ me, game, roleTitle, joined, autoWait }: {me:Slot;ga
   };
 }
 
+/** 準備中に分担の画面へ戻るボタンの表記 (#427) */
+export const END_PREPARING_LABEL = '準備をやめて分担に戻る';
+
 /** ホストのリモコン画面の内容。入力の要素 (タッチパッド・キー) は含まない */
 export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHost:boolean;game:PhoneGame;name:string;autoWait?:boolean}) {
   const phase = game.phase;
@@ -90,7 +93,9 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
   if (phase === 'preparing') {
     instructions = [game.prepareStatus, ...reasons, game.canReady
       ? 'プレイ画面まで進んだら「Ready」を押してください'
-      : '準備が整うと「Ready」を押せます'];
+      : '準備が整うと「Ready」を押せます',
+    // Readyを押せないとき (ゲームを閉じてしまったときなど) は、スマホだけで分担の画面へ戻れることを示す (#427)
+    game.canReady ? null : `やり直すときは「${END_PREPARING_LABEL}」を押してください`];
   } else if (phase === 'paused') {
     instructions = [reasonText(game.reason, me), game.inputTarget ? game.prepareStatus : '', ...(game.canResume ? [] : reasons)];
     if (autoWait && isHost) instructions.push('制限時間内に全員が戻ると自動で再開します');
@@ -116,7 +121,9 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
     openGameLabel: `${name}を前面にする`,
     // 前面にするボタンは、ゲームが前面でないときだけ (協力プレイに入るときはホストが自動で前面にする、#138)
     openGameHidden: !['preparing', 'paused'].includes(phase) || !game.inputTarget,
-    endVisible: phase === 'paused',
+    // 準備中も分担の画面へ戻れる (#427)。協力プレイはまだ始まっていないので、表記を分ける
+    endVisible: phase === 'paused' || phase === 'preparing',
+    endLabel: phase === 'preparing' ? END_PREPARING_LABEL : '協力プレイを終了（分担に戻る）',
     // ホストを譲る (#233)。ロビーのホストにだけ出す。認可はホストが判定する
     transferTo: isHost && phase === 'lobby' ? game.connected.filter((p) => p !== me) : [],
     note,

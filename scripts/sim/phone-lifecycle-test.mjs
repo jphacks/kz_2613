@@ -314,6 +314,19 @@ if (process.argv.includes('--repro-shared-pointer')) {
     const end = current.sent.filter(message => message.type === 'command' && message.cmd === 'END');
     assert.equal(end.length, 1); assert.equal(end[0].epoch, 9);
   });
+  await test('準備中の「分担に戻る」: 準備中の文言で確認し、OKでENDを1回送る。確認中に協力プレイへ進んだら送らない (#427)', async () => {
+    const h = controllerHarness(); await h.ready({ phase: 'preparing' }); const socket = h.sockets[0];
+    const commands = () => socket.sent.filter(message => message.type === 'command' && message.cmd === 'END');
+    assert.notEqual(h.el('endBtn').style.display, 'none', '準備中も戻るボタンを出す');
+    h.el('endBtn').fire('click');
+    assert(h.el('phoneConfirm').open); assert.match(h.confirmation.get().message, /準備をやめて/);
+    h.answerConfirm(true); assert.equal(commands().length, 1);
+    const g = controllerHarness(); await g.ready({ phase: 'preparing' });
+    g.el('endBtn').fire('click'); assert(g.el('phoneConfirm').open);
+    g.sockets[0].receive({ type: 'game', game: g.game({ phase: 'paused', epoch: 8 }) });
+    g.answerConfirm(true);
+    assert.equal(g.messages().filter(m => m.type === 'command' && m.cmd === 'END').length, 0, '段階が変わった確認では送らない');
+  });
   await test('終端の案内: PCアプリの終了・満員などでは確認と診断の画面を閉じ、確認した操作を後から送らない (#302 レビュー)', async () => {
     for (const end of [h => h.sockets[0].close(4009), h => h.sockets[0].receive({ type: 'full', retryMs: null }), h => h.sockets[0].close(4005), h => h.sockets[0].close(4001)]) {
       const h = controllerHarness(); await h.ready({ phase: 'paused' });

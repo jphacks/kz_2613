@@ -8,7 +8,7 @@ import { recordInputMetric, inputMetrics } from '../shared/input/metrics.ts';
 import { bindTouchpad, bindTouchpadSensitivity } from '../shared/input/touchpad.ts';
 import { myActions } from '../shared/model/actions.ts';
 import { phoneAdvice } from '../shared/model/presentation.ts';
-import { fullText } from '../shared/model/phone.ts';
+import { fullText, END_PREPARING_LABEL } from '../shared/model/phone.ts';
 import {createLifetime} from '../shared/input/lifetime.ts';
 import {byId} from '../shared/dom.ts';
 import {createBurstRecorder,formatBurstResult} from './burst-stats.ts';
@@ -312,7 +312,13 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   document.querySelectorAll<HTMLElement>('[data-ctl]').forEach(bindControl);
   document.querySelectorAll<HTMLElement>('[data-cmd]').forEach((el) => lifetime.listen(el, 'click', () => command(el.dataset.cmd!)));
   lifetime.listen($('startBtn'), 'click', () => command(session.game?.phase === 'paused' ? 'RESUME' : session.game?.phase === 'preparing' ? 'READY' : 'PREPARE'));
-  lifetime.listen($('endBtn'), 'click', () => phoneView.confirm({message:'協力プレイを終了して、分担の画面に戻りますか？',ok:'終了して分担に戻る',valid:remote=>remote.endVisible,run:()=>command('END')}));
+  lifetime.listen($('endBtn'), 'click', () => {
+    // 準備中は協力プレイがまだ始まっていないので、確認の文言を分ける (#427)。確認中に段階が変わったら閉じる
+    const preparing = session.game?.phase === 'preparing';
+    phoneView.confirm(preparing
+      ? {message:'ゲームの準備をやめて、分担の画面に戻りますか？',ok:'分担に戻る',valid:remote=>remote.endVisible&&remote.endLabel===END_PREPARING_LABEL,run:()=>command('END')}
+      : {message:'協力プレイを終了して、分担の画面に戻りますか？',ok:'終了して分担に戻る',valid:remote=>remote.endVisible&&remote.endLabel!==END_PREPARING_LABEL,run:()=>command('END')});
+  });
   function command(cmd: string) { if (isOpen()) session.send({ type: 'command', cmd, epoch: session.game?.epoch }); }
 
   lifetime.listenEvent(document, 'contextmenu', (e) => e.preventDefault());

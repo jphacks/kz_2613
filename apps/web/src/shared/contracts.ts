@@ -9,7 +9,7 @@ export interface PlayerChip { name: Slot; on: boolean; label: string }
 export interface WaitModel { character: string; heading: string; role: string; title: string; players: PlayerChip[] }
 export interface RemoteModel {
   players: PlayerChip[]; route: string; startLabel: string; startDisabled: boolean;
-  openGameLabel: string; openGameHidden: boolean; endVisible: boolean; transferTo: Slot[]; note: string;
+  openGameLabel: string; openGameHidden: boolean; endVisible: boolean; endLabel: string; transferTo: Slot[]; note: string;
   routeBlocked: boolean; notice: string; openAppHidden: boolean; appReturnHint: string;
 }
 export interface PlayerCardModel { slot: Slot; index: number; className: string; badge: string; name: string; role: string; device: string }
