@@ -669,6 +669,37 @@ mod tests {
     }
 
     /// 表は `cargo test --release preset_table -- --ignored --nocapture` で出力する
+    /// 人による評価 (#411) 用に、規則とモデルの 2〜4 人の案を JSON で出す。
+    /// `cargo test --release preset_review_json -- --ignored --nocapture` の REVIEW 行を集める。
+    /// 対象は RECOOPLAY_REVIEW_IDS (カンマ区切り) で変えられる
+    #[test]
+    #[ignore]
+    fn preset_review_json() {
+        let m = model().unwrap();
+        let ids = std::env::var("RECOOPLAY_REVIEW_IDS").unwrap_or_else(|_| {
+            [
+                "minecraft-java", "steam-945360", "steam-105600", "steam-1966720", "steam-413150", "steam-3241660",
+                "steam-1568590", "steam-1621690", "steam-892970", "steam-620", "steam-550", "steam-440", "steam-730",
+                "steam-4000", "steam-268910", "steam-2483190", "steam-1172470", "steam-2767030", "steam-250900",
+            ]
+            .join(",")
+        });
+        for id in ids.split(',').map(str::trim).filter(|x| !x.is_empty()) {
+            let p = load(id);
+            let names = |a: Vec<Vec<String>>| -> Vec<Vec<String>> {
+                a.into_iter()
+                    .map(|s| s.iter().filter_map(|x| p.actions.iter().find(|a| &a.id == x)).map(|a| a.label.clone()).collect())
+                    .collect()
+            };
+            let players: serde_json::Map<String, Value> = (2..=4)
+                .map(|n| {
+                    (n.to_string(), serde_json::json!({ "rule": names(profiles::rule_assignment_for(&p, n)), "model": names(presets(m, &p, n)) }))
+                })
+                .collect();
+            println!("REVIEW {}", serde_json::json!({ "id": id, "name": p.name, "status": p.status, "players": players }));
+        }
+    }
+
     #[test]
     #[ignore]
     fn preset_table() {

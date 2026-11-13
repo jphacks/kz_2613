@@ -667,6 +667,7 @@ def main():
     ap.add_argument("--lr", type=float, default=2e-3)
     ap.add_argument("--weight-decay", type=float, default=0.01)
     ap.add_argument("--device", default="cpu", help="cpu / cuda")
+    ap.add_argument("--gh-eval-ids", default=None, help="--gh-folds で評価に使うゲームIDの一覧 (JSON)。ほかの注釈付きは常に学習側")
     ap.add_argument("--holdout-github", action="store_true",
                     help="GitHub の注釈付きのゲームを学習から外し、初見の生データとして評価する (書き出さない)")
     args = ap.parse_args()
@@ -697,8 +698,13 @@ def main():
 
     if args.gh_folds:
         order = sorted(gh_labeled, key=lambda g: g["game"])
+        # --gh-eval-ids: 評価に使うゲームをこの一覧に固定する (注釈を足しても、比べる評価の組を変えない)
+        pool = order
+        if args.gh_eval_ids:
+            ids = set(json.load(open(args.gh_eval_ids, encoding="utf-8")))
+            pool = [g for g in order if g["game"] in ids]
         for k in ([args.gh_fold_only] if args.gh_fold_only is not None else range(args.gh_folds)):
-            held = order[k::args.gh_folds]
+            held = pool[k::args.gh_folds]
             rest = [dict(g, copies=args.copies) for g in order if g not in held]
             model = train(real + extra + rest, keys, args, rng, log=False)
             for g in held:
