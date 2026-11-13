@@ -137,7 +137,18 @@ if (process.argv.includes('--repro-shared-pointer')) {
     const h = controllerHarness(); await h.ready(); const dc = h.peers[0].channel; dc.readyState = 'open'; dc.onopen();
     h.control('act:attack').fire('pointerdown'); h.control('act:attack').fire('pointerup');
     const rtc = dc.sent.filter(message => message.type === 'input');
-    assert.deepEqual(JSON.parse(JSON.stringify(rtc)), h.inputs().map(({ seq, ...message }) => message));
+    assert.deepEqual(JSON.parse(JSON.stringify(rtc.map(({ inputs, ...message }) => message))),
+      h.inputs().map(({ seq, ...message }) => message));
+    assert.deepEqual(rtc[0].inputs, []);
+    assert.deepEqual(rtc[1].inputs.map(message => message.iseq), [1]);
+    h.advance(50);
+    assert.deepEqual(dc.sent.findLast(message => message.type === 'ka').inputs.map(message => message.iseq), [1, 2]);
+    h.sockets[0].receive({type:'ack',iseq:1,via:'rtc'});
+    h.advance(50);
+    assert.deepEqual(dc.sent.findLast(message => message.type === 'ka').inputs.map(message => message.iseq), [2]);
+    h.sockets[0].receive({type:'game',game:h.game({epoch:8})});
+    h.advance(50);
+    assert.deepEqual(dc.sent.findLast(message => message.type === 'ka').inputs, []);
     assert.deepEqual(h.inputs().map(message => message.seq), [1, 2]);
     dc.readyState = 'closed'; dc.onclose(); h.control('act:jump').fire('pointerdown', { pointerId: 2 });
     assert.equal(h.inputs().at(-1).iseq, 3); assert.equal(dc.sent.filter(message => message.type === 'input').length, 2);

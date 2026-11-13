@@ -43,7 +43,7 @@ const SLOT_ROLES: [&str; MAX_SLOTS] = ["ホスト", "参加者", "参加者", "�
 // PC アプリ (apps/desktop) の実行ファイル名。前面になったら PC アプリへの手動復帰とみなす
 const DESKTOP_PROCESS: &str = "recooplay-desktop.exe";
 const DEFAULT_TITLE: &str = TITLES[0];
-const PROTOCOL_VERSION: u64 = 5;
+const PROTOCOL_VERSION: u64 = 6;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 /// 接続ごとの送信待ちの上限。健全な接続は溜まらず、読取りが止まった接続だけが達する (#197)
@@ -3678,8 +3678,7 @@ impl Hub {
             } => {
                 if self.rtc_owner(slot, gen).is_some() {
                     if let Some(msg) = protocol::parse_json(&text) {
-                        crate::input_trace::received(slot, "rtc", &msg, received_at);
-                        self.handle_player_message(slot, msg, Via::Rtc);
+                        self.handle_fast_message(slot, msg, received_at);
                     }
                 }
             }
@@ -3730,6 +3729,26 @@ impl Hub {
     }
 
     /// 今も有効な WebRTC 接続ならその持ち主の WebSocket 接続
+    fn handle_fast_message(&mut self, slot: usize, mut msg: Value, received_at: Option<Instant>) {
+        if matches!(
+            msg.get("type").and_then(Value::as_str),
+            Some("input" | "ka")
+        ) {
+            if let Some(Value::Array(inputs)) =
+                msg.as_object_mut().and_then(|obj| obj.remove("inputs"))
+            {
+                for input in inputs.into_iter().take(64) {
+                    if input.get("type").and_then(Value::as_str) == Some("input") {
+                        crate::input_trace::received(slot, "rtc", &input, received_at);
+                        self.handle_player_message(slot, input, Via::Rtc);
+                    }
+                }
+            }
+        }
+        crate::input_trace::received(slot, "rtc", &msg, received_at);
+        self.handle_player_message(slot, msg, Via::Rtc);
+    }
+
     fn rtc_owner(&self, slot: usize, gen: u64) -> Option<u64> {
         self.slots[slot]
             .as_ref()
@@ -5118,6 +5137,29 @@ mod tests {
         assert_eq!((h.look.px, h.game.epoch), (0.0, epoch + 1));
         h.accept_look(1, &json!({"epoch":1,"lseq":4,"cx":106,"cy":2}));
         assert_eq!(h.look.px, 0.0, "旧epochの視点は適用しない");
+    }
+
+    #[test]
+    fn fast_redundancy_fills_a_gap_without_replaying_duplicates_or_released_inputs() {
+        let (mut h, _rx) = fixture();
+        h.keybinds = Keybinds::build(h.profile.as_ref().unwrap(), None);
+        let input = |iseq: i64, state: &str| json!({"type":"input","iseq":iseq,"epoch":1,"button":"act:forward","state":state,"t":1.0});
+        h.handle_fast_message(0, input(2, "up"), None);
+        assert_eq!(h.slots[0].as_ref().unwrap().next_iseq, 1);
+        h.handle_fast_message(
+            0,
+            json!({"type":"ka","t":1,"inputs":[input(1, "down"),input(2, "up")]}),
+            None,
+        );
+        assert_eq!(h.slots[0].as_ref().unwrap().next_iseq, 3);
+        h.release_slot_inputs(0, 3, (0, 0.0, 0.0));
+        h.handle_fast_message(
+            0,
+            json!({"type":"ka","t":1,"inputs":[input(1, "down"),input(3, "down")]}),
+            None,
+        );
+        assert_eq!(h.slots[0].as_ref().unwrap().next_iseq, 4);
+        assert!(!h.slots[0].as_ref().unwrap().pressed.contains("act:forward"));
     }
 
     #[test]

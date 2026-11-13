@@ -34,7 +34,9 @@
 
 ## 接続情報
 
-**通信契約**: `protocolVersion = 5`。版がない・一致しないhelloは枠を割り当てず拒否します。DataChannelは`fast`、`ordered:false`、`maxRetransmits:0`です。待ち受けは既定`0.0.0.0:8080`、`PORT`で変更できます。STUN/TURNは使いません。
+**通信契約**: `protocolVersion = 6`。版がない・一致しないhelloは枠を割り当てず拒否します。DataChannelは`fast`、`ordered:false`、`maxRetransmits:0`です。待ち受けは既定`0.0.0.0:8080`、`PORT`で変更できます。STUN/TURNは使いません。
+
+速達経路の `input` と50ms周期の `ka` は、直近500msに送信してACKが届いていない入力を `inputs` 配列に同梱できます。1フレームに現入力と合わせて最大64件、UTF-8で最大16KiBです。ブラウザーが通知する送信上限も守ります。ホストは同梱分を既存の連番・epoch・解放境界・遅延破棄の判定に通します。WebSocketは各入力を従来どおり1件ずつ送ります。
 
 通信版を変更するときは、Rustの `hub.rs` とWebの `shared/transport/version.ts` を同じ変更で更新します。CIの `protocol-sim.mjs` はWebの版でビルド済みホストへ参加し、実際に返る `welcome` の版まで照合します。
 

@@ -2340,3 +2340,9 @@
 - 合格：`npm --prefix apps/web run build`（型検査込み）、`node scripts/sim/product-web-test.mjs`（`app-view` 37/37、`phone-lifecycle` 35/35、`ui-input` 20/20、`protocol-boundary` 8/8、`phone-view` を含む）、`node scripts/sim/check-static-pages.mjs`、`cargo fmt --manifest-path apps/host-rs/Cargo.toml --check`、`git diff --check`。Node 22.15.0ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定した。
 - Rustは最初の試行でPerlがPATHになく、OpenSSLの構築前に失敗した。再試行でOpenSSLのコンパイルへ進んだ。Rust単体試験・通信シミュレーションの結果は追記する。
 - Minecraft実機では、ロビーのリモコンで起動後のメニューを操作してワールドへ入り、「分担操作開始」1回で協力プレイに入れることを確認する。
+
+## 2026-11-14 — 未確認の入力を速達経路に同梱する（#451、Codex）
+
+- 50ms周期の生存確認と速達入力に、直近500msの未確認入力を同梱する。上限は64件・16KiB。通信契約は版6。#440の版5を前提にするため、PR #453をベースにした。
+- 合格：Web型検査、`node scripts/sim/product-web-test.mjs`（Node 22ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定）、`git diff --check`。欠番補完と本人解放を確認するRust試験を追加した。
+- Rust試験の実行、欠落・乱順・長時間断を組み合わせた通信検証、同一端末・Wi-Fiでの変更前後の分布と破棄件数の計測が残る。
