@@ -544,6 +544,19 @@ def counts(model, data):
     }
 
 
+@torch.no_grad()
+def dump_preds(model, g, keys):
+    """誤りの分析用: 操作ごとのカテゴリの予測と正解 (PRED 行)"""
+    model.eval()
+    data = {k: v.to(DEV) for k, v in encode([g], keys).items()}
+    cat, _, _, _ = model(data["feats"], data["key"], data["typ"], data["mask"])
+    pred = cat[0].argmax(-1).tolist()
+    for i, (a, lab) in enumerate(zip(g["actions"], g["labels"])):
+        if lab[0] >= 0:
+            print("PRED " + json.dumps({"game": g["game"], "id": a["id"], "label": a.get("label"), "default": a.get("default"),
+                                        "pred": COARSE[pred[i]], "gold": COARSE[lab[0]]}, ensure_ascii=False), flush=True)
+
+
 def report(c, name):
     r = lambda k: c[k] / c[k + "_n"] if c[k + "_n"] else float("nan")
     print(f"  {name}: カテゴリ {r('cat'):.3f} / 同じ人の判定 {r('pair'):.3f}・同じまとまりの再現率 {r('recall'):.3f}"
@@ -667,6 +680,7 @@ def main():
     ap.add_argument("--lr", type=float, default=2e-3)
     ap.add_argument("--weight-decay", type=float, default=0.01)
     ap.add_argument("--device", default="cpu", help="cpu / cuda")
+    ap.add_argument("--dump-preds", action="store_true", help="--gh-folds で、評価したゲームの操作ごとの予測を PRED 行で出す")
     ap.add_argument("--gh-eval-ids", default=None, help="--gh-folds で評価に使うゲームIDの一覧 (JSON)。ほかの注釈付きは常に学習側")
     ap.add_argument("--holdout-github", action="store_true",
                     help="GitHub の注釈付きのゲームを学習から外し、初見の生データとして評価する (書き出さない)")
@@ -709,6 +723,8 @@ def main():
             model = train(real + extra + rest, keys, args, rng, log=False)
             for g in held:
                 print("COUNTS " + json.dumps({"game": g["game"], **counts(model, encode([g], keys))}), flush=True)
+                if args.dump_preds:
+                    dump_preds(model, g, keys)
             print(f"組 {k + 1}/{args.gh_folds}: 評価 {len(held)} 本", flush=True)
         print("gh-folds 完了", flush=True)
         return
