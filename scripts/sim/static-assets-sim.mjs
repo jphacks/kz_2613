@@ -28,11 +28,13 @@ try {
     for(const [,asset]of html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g))assert.equal((await fetch(base+asset)).status,200,asset);
   }
   for(const route of ['/index.html','/app.html','/phone-react.html','/app-react.html','/scripts/controller.js','/scripts/desktop.js'])assert.equal((await fetch(base+route)).status,404,`旧パス: ${route}`);
-  const publicDir=path.join(root,'apps/web/dist');let count=0,bytes=0;
+  const publicDir=path.join(root,'apps/web/dist');let count=0,bytes=0,cached=0;
   for(const rel of fs.readdirSync(publicDir,{recursive:true}).filter(p=>types[path.extname(p)])){
     const response=await fetch(base+'/'+rel.replaceAll('\\','/'));
     assert.equal(response.status,200,rel);assert(response.headers.get('content-type')?.startsWith(types[path.extname(rel)]),`MIME: ${rel}`);
-    assert.equal(response.headers.get('cache-control'),'no-store',`キャッシュ: ${rel}`);
+    // ハッシュ付きのビルドの JS・CSS だけキャッシュさせ、ほかは保存させない (#308)
+    const hashed=/^assets\/[^/]+-[A-Za-z0-9_-]{8}\.(?:js|css)$/.test(rel.split(path.sep).join('/'));
+    assert.equal(response.headers.get('cache-control'),hashed?'public, max-age=31536000, immutable':'no-store',`キャッシュ: ${rel}`);if(hashed)cached++;
     const body=Buffer.from(await response.arrayBuffer());assert(body.length>0,rel);bytes+=body.length;count++;
     if(path.extname(rel)==='.png')assert.equal(body.subarray(1,4).toString(),'PNG',rel);
     if(['.html','.js','.css'].includes(path.extname(rel))) {
@@ -41,7 +43,8 @@ try {
       if(rel.endsWith('.css'))for(const [,url]of text.matchAll(/url\(['"]?([^)'"\s]+)['"]?\)/g))assert(fs.existsSync(url.startsWith('/')?path.join(publicDir,url):path.resolve(publicDir,path.dirname(rel),url)),`背景がない: ${rel}→${url}`);
     }
   }
-  console.log(`合格: ${count}ファイルのHTTP・MIME・キャッシュ・ローカル素材 (${bytes} bytes)`);
+  assert(cached>0,'ハッシュ付きのJS・CSSを1つもキャッシュさせていない');
+  console.log(`合格: ${count}ファイルのHTTP・MIME・キャッシュ（うちキャッシュ可 ${cached}）・ローカル素材 (${bytes} bytes)`);
 }finally{
   if(child.exitCode===null&&!launchError)child.stdin.end('quit\n');
   let code=await Promise.race([closed,sleep(3000).then(()=>null)]);
