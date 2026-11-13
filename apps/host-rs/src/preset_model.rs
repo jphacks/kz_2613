@@ -161,8 +161,10 @@ impl Model {
                 .ok_or(format!("{name} が途中で切れています"))?;
             t.insert(
                 name,
-                raw.chunks_exact(4)
-                    .map(|c| f32::from_le_bytes(c.try_into().unwrap()))
+                raw.as_chunks::<4>()
+                    .0
+                    .iter()
+                    .map(|c| f32::from_le_bytes(*c))
                     .collect(),
             );
             off += 4 * n;
@@ -239,8 +241,9 @@ impl Model {
                 .and_then(|k| self.keys.iter().position(|x| x == k))
                 .unwrap_or(0);
             let t = self.types.iter().position(|x| x == a.kind).unwrap_or(0);
-            for j in 0..d {
-                row[j] = row[j] / cnt + self.key[k * d + j] + self.typ[t * d + j];
+            let (key, typ) = (&self.key[k * d..(k + 1) * d], &self.typ[t * d..(t + 1) * d]);
+            for ((r, kv), tv) in row.iter_mut().zip(key).zip(typ) {
+                *r = *r / cnt + kv + tv;
             }
         }
         layer_norm(&mut x, d, &self.ln0);
