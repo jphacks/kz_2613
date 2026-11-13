@@ -386,6 +386,8 @@ pub struct Hub {
     target_fg: Option<Foreground>,
     // PC アプリ以外のウィンドウ (ランチャー・ダイアログ等) が前面か (#287、#405)
     launcher_fg: bool,
+    // Minecraft のランチャーを開いた後、そのウィンドウを前面に出す試み (起動の世代, 試した回数)。一度出せたら None (#419)
+    launcher_raise: Option<(u64, u32)>,
     // ホストのリモコンのカーソルが PC アプリの枠を越えて、OS のカーソルで動いているか (#405)
     remote_outside: bool,
     target_ok: bool,
@@ -525,6 +527,7 @@ impl Hub {
             launch_gen: 0,
             target_fg: None,
             launcher_fg: false,
+            launcher_raise: None,
             remote_outside: false,
             target_ok: false,
             fake_activate: true,
@@ -2036,8 +2039,58 @@ impl Hub {
             self.reset_look();
             self.advance_epoch();
         }
-        self.log("launcher_focus", json!({ "ok": launcher }));
+        // 何が前面になったかを残す (#419)。ウィンドウのタイトルは個人の情報を含みうるので、プロセス名だけ
+        let process = self
+            .fake_target
+            .is_none()
+            .then(|| self.game_service.foreground().map(|f| f.process))
+            .flatten();
+        self.log(
+            "launcher_focus",
+            json!({ "ok": launcher, "process": process }),
+        );
         self.push_game();
+    }
+
+    /// Minecraft のランチャーを前面に出す (#419)。ランチャーは裏で動くホストが開くので、Windows が前面を譲らず
+    /// PC アプリの後ろに開くことがある。ウィンドウが現れたら一度だけ前面にし、出せたら以降は前面を奪わない
+    fn raise_launcher(&mut self, gen: u64) {
+        let Some((g, tries)) = self.launcher_raise else {
+            return;
+        };
+        if g != gen {
+            self.launcher_raise = None;
+            return;
+        }
+        let target = game_service::minecraft_launcher_target();
+        if self
+            .game_service
+            .foreground()
+            .is_some_and(|f| target.matches(&f))
+        {
+            self.launcher_raise = None;
+            self.log("launcher_front", json!({ "ok": true, "already": true }));
+            return;
+        }
+        if !self.game_service.exists(&target) {
+            return; // まだ現れていない (回数に数えない)
+        }
+        let tries = tries + 1;
+        match self.game_service.activate(&target) {
+            Ok(()) => {
+                self.launcher_raise = None;
+                self.log("launcher_front", json!({ "ok": true, "tries": tries }));
+                self.check_target();
+            }
+            Err(reason) if tries >= game_service::LAUNCHER_RAISE_TRIES => {
+                self.launcher_raise = None;
+                self.log(
+                    "launcher_front",
+                    json!({ "ok": false, "tries": tries, "reason": reason }),
+                );
+            }
+            Err(_) => self.launcher_raise = Some((g, tries)),
+        }
     }
 
     /// 前面のウィンドウが Re:Cooplay の PC アプリ (デスクトップアプリ、またはブラウザーで開いた /app) か
@@ -2539,6 +2592,8 @@ impl Hub {
         }
         // Minecraft はランチャーで「プレイ」を押す (ログイン・更新もある) ので長めに待つ
         let timeout = game_service::launch_timeout(minecraft);
+        // ランチャーが現れたら前面に出す (#419)。dry-run ではランチャーを開かない
+        self.launcher_raise = (minecraft && !dry_run()).then_some((gen, 0));
         self.launch = Some(Launch {
             id: entry.id,
             name: entry.name,
@@ -2594,6 +2649,10 @@ impl Hub {
             Some(ok) => ok,
             None => !dry_run() && (self.target_ok || self.game_service.exists(&self.target)),
         };
+        // ゲーム本体が現れるまでは、開いたランチャーを前面に出す (#419)
+        if !appeared && self.fake_target.is_none() {
+            self.raise_launcher(gen);
+        }
         let activation = if !appeared || self.fake_target.is_some() || self.target_ok {
             Ok(())
         } else {
@@ -2614,6 +2673,7 @@ impl Hub {
                 Watch::Complete { state, message } => (state, message),
             };
         self.log("launch_result", json!({ "id": id, "state": state }));
+        self.launcher_raise = None;
         if let Some(l) = self.launch.as_mut() {
             l.state = state;
             l.message = message;
@@ -3965,6 +4025,7 @@ mod tests {
             launch_gen: 0,
             target_fg: None,
             launcher_fg: false,
+            launcher_raise: None,
             remote_outside: false,
             target_ok: true,
             fake_activate: true,
@@ -4810,6 +4871,114 @@ mod tests {
         h.game.phase = Phase::Lobby;
         h.return_to_app_after_game_exit();
         assert!(idle.activated.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn minecraft_launcher_is_raised_once_after_it_appears() {
+        // ランチャーは裏のホストが開くので PC アプリの後ろに出ることがある (#419)。現れたら一度だけ前面にする
+        struct Launcher {
+            open: std::sync::Mutex<bool>,
+            results: std::sync::Mutex<Vec<Result<(), String>>>,
+            activated: std::sync::Mutex<Vec<Vec<String>>>,
+        }
+        impl game_service::GameBackend for Launcher {
+            fn roots(&self) -> games::Roots {
+                panic!("探索しない")
+            }
+            fn detect(&self, _: &games::Roots) -> games::Detected {
+                panic!("探索しない")
+            }
+            fn foreground(&self) -> Option<Foreground> {
+                None
+            }
+            fn exists(&self, t: &Target) -> bool {
+                // ゲーム本体 (javaw) はまだ現れない。ランチャーだけ
+                t.processes.iter().any(|p| p == "minecraft.exe") && *self.open.lock().unwrap()
+            }
+            fn activate(&self, t: &Target) -> Result<(), String> {
+                self.activated.lock().unwrap().push(t.processes.clone());
+                self.results.lock().unwrap().pop().unwrap_or(Ok(()))
+            }
+            fn launch(&self, _: &Entry) -> Result<(), String> {
+                panic!("起動しない")
+            }
+            fn pick_exe(&self) -> Option<PathBuf> {
+                panic!("選択しない")
+            }
+        }
+        let backend = std::sync::Arc::new(Launcher {
+            open: std::sync::Mutex::new(false),
+            results: std::sync::Mutex::new(vec![
+                Ok(()),
+                Err("Windowsが前面化を許可しませんでした".into()),
+            ]),
+            activated: Default::default(),
+        });
+        let (mut h, _rx) = fixture();
+        h.game_service = GameService::with_backend(backend.clone());
+        h.fake_target = None;
+        h.target_ok = false;
+        h.game.phase = Phase::Lobby;
+        let gen = 7;
+        h.launch = Some(Launch {
+            id: "minecraft-java".into(),
+            name: "Minecraft".into(),
+            state: "launching",
+            message: String::new(),
+            gen,
+            deadline: Instant::now() + Duration::from_secs(300),
+            seen: None,
+        });
+        h.launcher_raise = Some((gen, 0));
+        // まだランチャーが現れていなければ、前面化を求めず、回数にも数えない
+        h.watch_launch(gen);
+        assert!(backend.activated.lock().unwrap().is_empty());
+        assert_eq!(h.launcher_raise, Some((gen, 0)));
+        // 現れたら前面化を求める。1回目が拒まれたら次の確認でやり直す
+        *backend.open.lock().unwrap() = true;
+        h.watch_launch(gen);
+        assert_eq!(h.launcher_raise, Some((gen, 1)), "拒まれたらやり直す");
+        h.watch_launch(gen);
+        assert_eq!(h.launcher_raise, None, "前面に出せたら終える");
+        let launcher = game_service::minecraft_launcher_target().processes;
+        assert_eq!(
+            *backend.activated.lock().unwrap(),
+            vec![launcher.clone(), launcher]
+        );
+        // 一度出せたら、利用者が別のウィンドウへ移っても前面を奪わない
+        h.watch_launch(gen);
+        assert_eq!(backend.activated.lock().unwrap().len(), 2);
+        // 何度も拒まれたら、上限で諦める
+        *backend.results.lock().unwrap() = (0..10).map(|_| Err("拒否".to_string())).collect();
+        h.launcher_raise = Some((gen, 0));
+        for _ in 0..10 {
+            h.watch_launch(gen);
+        }
+        assert_eq!(h.launcher_raise, None);
+        assert_eq!(
+            backend.activated.lock().unwrap().len(),
+            2 + game_service::LAUNCHER_RAISE_TRIES as usize
+        );
+        // 別の起動 (世代違い) の試みは捨てる
+        h.launcher_raise = Some((gen + 1, 0));
+        h.watch_launch(gen);
+        assert_eq!(h.launcher_raise, None);
+    }
+
+    #[test]
+    fn minecraft_launcher_target_matches_only_the_official_launcher() {
+        let t = game_service::minecraft_launcher_target();
+        let fg = |process: &str, title: &str| Foreground {
+            process: process.into(),
+            path: String::new(),
+            title: title.into(),
+        };
+        assert!(t.matches(&fg("minecraft.exe", "Minecraft Launcher")));
+        assert!(t.matches(&fg("minecraftlauncher.exe", "Minecraft Launcher")));
+        // 起動直後に同じタイトルで出る更新確認・ゲーム本体・Bedrock 版は対象にしない
+        assert!(!t.matches(&fg("gamingservicesui.exe", "Minecraft Launcher")));
+        assert!(!t.matches(&fg("javaw.exe", "Minecraft 1.21")));
+        assert!(!t.matches(&fg("minecraft.windows.exe", "Minecraft")));
     }
 
     #[test]
