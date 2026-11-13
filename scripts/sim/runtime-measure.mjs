@@ -92,6 +92,7 @@ async function run(players, scenario) {
       c.send({ type: 'hello', protocolVersion: 4, clientId: `runtime-p${i}`, ua: 'runtime-measure' }); await c.wait(m => m.type === 'welcome'); }
     const p1 = phones[0]; await p1.wait(m => m.type === 'game' && m.game.connected.length === players);
     mon.send({ type: 'inject_mode', mode: 'on' });
+    mon.send({ type: 'select_game', title: 'minecraft-java' }); await p1.wait(m => m.type === 'game' && m.game.title === 'minecraft-java');
     mon.send({ type: 'confirm_lineup', title: p1.game.title, members: p1.game.connected, epoch: p1.epoch }); await p1.wait(m => m.type === 'game' && m.game.lineupOk);
     p1.send({ type: 'command', cmd: 'PREPARE', epoch: p1.epoch }); await p1.wait(m => m.type === 'game' && m.game.phase === 'preparing');
     p1.send({ type: 'command', cmd: 'READY', epoch: p1.epoch }); await p1.wait(m => m.type === 'game' && m.game.phase === 'coop');

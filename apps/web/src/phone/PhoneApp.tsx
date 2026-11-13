@@ -50,7 +50,7 @@ function Header({state,status}:{state:PhoneDisplay;status:Status}) {
   return <header>
   <span className="brand"><img className="brand-image" src="/assets/logo.png" width="960" height="720" alt="Re:Cooplay" /></span>
   <div id="slot">{state.snapshot.me ?? '--'}</div>
-  <div id="role"><b>{state.role}</b>{state.roleCopy}</div>
+  <div id="role" hidden={!state.role}><b>{state.role}</b>{state.roleCopy}</div>
   <div className="right">
     <span className={`pill ${status.kind}`} id="status">{status.text}</span>
     <span className={`pill${game ? ` ${game.phase}` : ''}`} id="phase">{game ? PHASE_LABELS[game.phase] : '-'}</span>
@@ -94,7 +94,7 @@ function WaitingScreen({state}:{state:PhoneDisplay}) {
     <div className="players" id="players2">{state.wait.players.map(p => <span key={p.name} className={p.on ? 'on' : ''}>{p.label}</span>)}</div>
     <div className="wait-scene">
       <div className="phone-character" aria-hidden="true"><img id="waitCharacter" src={state.wait.character} alt="" /></div>
-      <div className="card wait-card"><h1 className="dotted" id="waitHeading">{state.wait.heading}</h1><div className="role-label">あなたの担当（{state.snapshot.me}）</div><div id="waitRole">{state.wait.role}</div><p id="waitTitle" role="status">{state.wait.title}</p></div>
+      <div className="card wait-card"><h1 className="dotted" id="waitHeading">{state.wait.heading}</h1>{state.wait.role && <><div className="role-label">あなたの担当（{state.snapshot.me}）</div><div id="waitRole">{state.wait.role}</div></>}<p id="waitTitle" role="status">{state.wait.title}</p></div>
     </div>
   </section>;
 }

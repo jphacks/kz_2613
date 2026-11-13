@@ -395,6 +395,17 @@ async function main() {
       }
     });
 
+    await check('ゲーム選択: 初回参加では分担案を送らず、選んだゲームに合わせる (#447)', async () => {
+      const initial = await p2.waitFor(m => m.type === 'game' && m.game.connected.length === 3);
+      assert(initial.game.title === '' && initial.game.profile === null && !initial.game.canPrepare);
+      for (const title of ['pseudo-game', 'minecraft-java']) {
+        const from = p2.mark();
+        mon.send({type:'select_game', title});
+        const selected = await p2.waitFor(m => m.type === 'game' && m.game.title === title, {from});
+        assert(selected.game.profile?.id === title && selected.game.profile.assignment?.P2?.length > 0);
+      }
+    });
+
     await check('トークン: welcome で枠ごとに 128bit 以上の推測困難な値を発行する', async () => {
       const t = [tokens.P1, tokens.P2, tokens.P3];
       assert(t.every((x) => /^[0-9a-f]{32,}$/.test(x || '')), `トークンの形式: ${t.join(',')}`);

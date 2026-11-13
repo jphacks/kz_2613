@@ -149,7 +149,7 @@ PREPARE / READY / RESUME / OPEN_GAME / OPEN_APPは現在epochを必須としま�
 | `phase / reason / epoch` | lobby / preparing / coop / paused、遷移理由、入力の世代 |
 | `required / maxPlayers / connected` | 最低2人、最大4枠、接続中の枠 |
 | `canPrepare / canReady / canResume / readyReasons` | 要求可否と拒否理由 |
-| `title / titleName / launch` | 選択ゲーム、表示名、起動要求の状態 |
+| `title / titleName / launch` | 選択ゲーム、表示名、起動要求の状態。未選択の `title` は空文字で、操作定義 `profile` は `null` |
 | `lineup / lineupOk` | 決定したゲームとメンバー、現在との一致。決定済みの枠が保持期限を過ぎた場合は再決定が必要 |
 | `lineupDisconnected` | ロビーで、決定後に切断中または保持期限を過ぎた枠番号。再決定後は空 |
 | `participants / assigned` | Readyで固定した参加者と操作割当 |
