@@ -478,9 +478,8 @@ async fn static_file(
     }
 }
 
-// DNS再束縛と別Originからの管理操作を防ぐ。OriginなしはPC内の非ブラウザ検証クライアントに限る。
-/// 解決済みの実体がPC専用画面フォルダの配下ならLANへ返さない。
-/// Vite がビルドで出す、名前にハッシュ (8文字) の付いた JS・CSS か (/assets/<名前>-<ハッシュ>.js)
+/// Vite がビルドで出す、名前にハッシュ (8文字) の付いた JS・CSS か (/assets/<名前>-<ハッシュ>.js)。
+/// ハッシュ自体に `-` や `_` が入ることがある (例: index-B-9_sktw.js) ので、末尾の 8 文字とその前の `-` で判定する
 fn immutable_asset(path: &str) -> bool {
     let Some(name) = path.strip_prefix("/assets/") else {
         return false;
@@ -494,15 +493,16 @@ fn immutable_asset(path: &str) -> bool {
     else {
         return false;
     };
-    stem.rsplit_once('-').is_some_and(|(base, hash)| {
-        !base.is_empty()
-            && hash.len() == 8
-            && hash
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
-    })
+    let b = stem.as_bytes();
+    b.len() >= 10
+        && b[b.len() - 9] == b'-'
+        && b[b.len() - 8..]
+            .iter()
+            .all(|c| c.is_ascii_alphanumeric() || *c == b'_' || *c == b'-')
 }
 
+// DNS再束縛と別Originからの管理操作を防ぐ。OriginなしはPC内の非ブラウザ検証クライアントに限る。
+/// 解決済みの実体がPC専用画面フォルダの配下ならLANへ返さない。
 fn is_pc_only_page(path: &Path, root: &Path) -> bool {
     let Some(name) = path
         .strip_prefix(root)
@@ -642,6 +642,7 @@ mod tests {
             "/assets/phone-4qsUqWul.js",
             "/assets/jsx-runtime-DJz8YQL1.js",
             "/assets/preload-helper-B_9_sktw.js",
+            "/assets/index-B-9_sktw.js",
             "/assets/phone-Bliy9y0a.css",
         ] {
             assert!(immutable_asset(p), "{p}");
