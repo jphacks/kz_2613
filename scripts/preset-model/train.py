@@ -255,7 +255,7 @@ def synth_game(rng, keys, held_out):
     return {"name": f"synthetic-{genre}", "actions": actions, "labels": labels}
 
 
-GROUP_COARSE = {"movement": "move", "steering": "move", "throttle": "move", "look": "look", "gameplay": "action",
+GROUP_COARSE = {"movement": "move", "steering": "move", "throttle": "action", "look": "look", "gameplay": "action",
                 "inventory": "item", "menu": "menu", "communication": "social"}
 
 

@@ -37,15 +37,17 @@ CONCEPTS = {
     # 姿勢・移動の補助
     "jump": ("move", "posture", B, ["SPACE", "KEY_K", "KEY_Z"], ["ジャンプ", "跳ぶ", "飛ぶ", "跳躍", "ジャンプする"], ["jump", "hop", "leap", "jump up"]),
     "crouch": ("move", "posture", B, ["LCTRL", "KEY_C", "LSHIFT"], ["しゃがむ", "しゃがみ", "かがむ", "伏せる", "スニーク"], ["crouch", "sneak", "duck", "prone", "crouch toggle"]),
-    "sprint": ("move", "posture", B, ["LSHIFT", "LCTRL", "KEY_X"], ["走る", "ダッシュ", "全力疾走", "走る・回避", "スプリント"], ["sprint", "run", "dash", "sprint toggle", "fast move"]),
-    "dodge": ("move", "posture", B, ["SPACE", "LALT", "KEY_C", "LSHIFT"], ["回避", "ローリング", "緊急回避", "避ける", "ステップ"], ["dodge", "roll", "evade", "dodge roll", "step"]),
+    "sprint": ("move", "posture", B, ["LSHIFT", "LCTRL", "KEY_X"], ["走る", "全力疾走", "走る・回避", "スプリント"], ["sprint", "run", "sprint toggle", "fast move"]),
+    # ダッシュ・回避は「行動」(人による確認、2026-11-13：「ダッシュと回避は一緒でもいい」)。同じ人に持たせるまとまりは走る・しゃがむと同じ
+    "dodge": ("action", "posture", B, ["SPACE", "LALT", "KEY_C", "LSHIFT"], ["回避", "ダッシュ", "ローリング", "緊急回避", "避ける", "ステップ"], ["dodge", "dash", "roll", "evade", "dodge roll", "step"]),
     "walk": ("move", "posture", B, ["LALT", "LCTRL"], ["歩く", "ゆっくり歩く", "忍び足"], ["walk", "walk toggle", "slow walk"]),
     "climb": ("move", "posture", B, ["SPACE", "KEY_F"], ["登る", "よじ登る", "つかまる"], ["climb", "mantle", "vault"]),
     # 乗り物
     "steer_left": ("move", "dir", B, ["KEY_A", "ARROW_LEFT"], ["左に曲がる", "ハンドル左", "左旋回"], ["steer left", "turn left"]),
     "steer_right": ("move", "dir", B, ["KEY_D", "ARROW_RIGHT"], ["右に曲がる", "ハンドル右", "右旋回"], ["steer right", "turn right"]),
-    "accelerate": ("move", "throttle", B, ["KEY_W", "ARROW_UP"], ["アクセル", "加速", "前進する", "スロットル"], ["accelerate", "throttle", "gas", "accel"]),
-    "brake": ("move", "throttle", B, ["KEY_S", "ARROW_DOWN"], ["ブレーキ", "減速", "バック・ブレーキ", "止まる"], ["brake", "reverse", "decelerate", "brake reverse"]),
+    # アクセル・ブレーキは「行動」(人による確認、2026-11-13：移動はハンドルや歩く方向だけ)。アクセルとブレーキは同じ人
+    "accelerate": ("action", "throttle", B, ["KEY_W", "ARROW_UP"], ["アクセル", "加速", "前進する", "スロットル"], ["accelerate", "throttle", "gas", "accel"]),
+    "brake": ("action", "throttle", B, ["KEY_S", "ARROW_DOWN"], ["ブレーキ", "減速", "バック・ブレーキ", "止まる"], ["brake", "reverse", "decelerate", "brake reverse"]),
     "handbrake": ("action", "drive", B, ["SPACE"], ["サイドブレーキ", "ハンドブレーキ", "ドリフト"], ["handbrake", "drift", "ebrake"]),
     "boost": ("action", "drive", B, ["LSHIFT", "KEY_N"], ["ブースト", "ニトロ", "加速アイテム"], ["boost", "nitro", "turbo"]),
     "horn": ("action", "drive", B, ["KEY_H"], ["クラクション", "ホーン"], ["horn", "honk"]),
