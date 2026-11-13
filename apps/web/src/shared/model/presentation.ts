@@ -308,10 +308,8 @@ export const GAME_COLUMNS = 3;
 /**
  * 選択画面の主ボタン (クリック・Enter) の動作。選ぶだけで起動せず、メンバー・分担の画面へ進む (#109)
  */
-export function gameAction(ui: Navigation, _game: PhoneGame | null, list: GameEntry[]) {
-  const entry = list.find((g) => g.id === ui.game);
-  if (!entry) return { kind: 'none', label: 'ゲームを選んでください' };
-  return { kind: 'next', label: 'このゲームで遊ぶ' };
+export function isGameDoubleClick(previous: {id:string;at:number}|null, id: string, at: number) {
+  return previous?.id === id && at >= previous.at && at - previous.at <= 400;
 }
 
 /**
