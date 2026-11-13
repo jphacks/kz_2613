@@ -20,6 +20,7 @@ mod launchers;
 mod look;
 mod netinfo;
 mod netwatch;
+mod preset_model;
 mod profiles;
 mod protocol;
 mod rtc;

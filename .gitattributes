@@ -3,6 +3,8 @@
 *.png binary
 *.jpg binary
 *.ico binary
+# プリセットのモデルの重み (改行の変換で壊さない)
+*.bin binary
 
 # 末尾への追記同士の競合を避ける。両方の記録を残す
 docs/develop/handoff/BUILD_LOG.md merge=union
