@@ -103,3 +103,10 @@ export function pcModel(s: PcSnapshot) {
     hotkey: inject?.emergencyHotkeyError ? '緊急停止キーを登録できません' : `緊急停止：${inject?.emergencyHotkey || 'Ctrl+Alt+F12'}`,
   };
 }
+
+/** キー割当の1つ前・1つ後 (先頭は「送らない」= null)。ホストのリモコンのクリックではプルダウンの一覧を開けないため、◀▶のボタンで切り替える (#294、#436) */
+export function stepKey(outputs: string[], current: string | null, step: -1 | 1): string | null {
+  const options: (string | null)[] = [null, ...outputs];
+  const at = Math.max(0, options.indexOf(current));
+  return options[(at + step + options.length) % options.length];
+}

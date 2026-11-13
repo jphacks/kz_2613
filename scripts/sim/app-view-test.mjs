@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 const { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } = await import('../../apps/web/src/shared/model/presentation.ts');
 
 const {logText} = await import('../../apps/web/src/diagnostics/model.ts');
-const {pcModel, pcState} = await import('../../apps/web/src/pc/model.ts');
+const {pcModel, pcState, stepKey} = await import('../../apps/web/src/pc/model.ts');
 
 const results = [];
 function test(name, fn) {
@@ -464,5 +464,13 @@ test('演出: 状態が変わった瞬間だけ返し、協力プレイ中と一
 });
 
 const failed = results.filter((r) => !r).length;
+// キー割当の◀▶ (#436)：送らない→先頭→…→末尾→送らない と巡回する。リモコンのクリックだけで全ての選択肢へ届く
+assert.equal(stepKey(['KEY_W','KEY_E'], null, 1), 'KEY_W');
+assert.equal(stepKey(['KEY_W','KEY_E'], 'KEY_W', 1), 'KEY_E');
+assert.equal(stepKey(['KEY_W','KEY_E'], 'KEY_E', 1), null);
+assert.equal(stepKey(['KEY_W','KEY_E'], null, -1), 'KEY_E');
+assert.equal(stepKey(['KEY_W','KEY_E'], 'KEY_X', 1), 'KEY_W', '一覧にない値は送らないとみなして次へ');
+assert.equal(stepKey([], null, 1), null);
+
 console.log(`\n${results.length - failed}/${results.length} 合格 (app-view)`);
 process.exit(failed ? 1 : 0);

@@ -7,6 +7,7 @@ import '../styles/phone-layout.css';
 import '../styles/phone-skins.css';
 import '../styles/phone-background.css';
 import '../styles/view-transition.css';
+import '../styles/phone-host-remote.css';
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import { byId } from '../shared/dom';

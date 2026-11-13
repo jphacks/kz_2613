@@ -17,8 +17,6 @@ main { padding: 14px max(14px,env(safe-area-inset-right)) max(14px,env(safe-area
 .players { display: none; }
 .key { border: 2px solid var(--color-cyan); color: var(--color-black); background: var(--color-phone-surface); border-radius: 20px; box-shadow: 0 3px 0 var(--color-shadow); }
 .key small { color: var(--color-logo); }
-.remote .col { flex-basis: 32%; grid-template-columns: 1fr; }
-.remote .col .key { white-space: nowrap; } /* 「Enterキー」の「キー」を2行目に折り返さない (#308) */
 .cmd { border: 3px solid var(--color-phone-button); background: var(--color-button-surface); color: var(--color-button-ink); box-shadow: 1px 3px 0 var(--color-shadow); font-size: 17px; }
 .cmd.pause { border-color: var(--color-cyan); color: var(--color-cyan-ink); background: var(--color-paper); }
 .cmd.sub { min-height: 44px; color: var(--color-logo); background: var(--color-surface); font-size: 12px; }
@@ -84,7 +82,7 @@ body[data-host=false] #phoneDiagnostics footer > span, body[data-host=false] #bu
 #phoneDiagnostics footer { display: flex; gap: 12px; flex-direction: column; font-size: 13px; padding: 12px 0; }
 #phoneDiagnostics footer button { font-size: 14px; min-height: 44px; margin: 0; }
 /* 短い画面は入力の44pxを守り、待機カードの余白を段階的に減らす。 */
-@media (max-width:340px) { body { padding-left: 0; padding-right: 0; } .remote .key { font-size: 14px; } }
+@media (max-width:340px) { body { padding-left: 0; padding-right: 0; } }
 @media (max-height:740px) and (orientation:portrait) {
   main { padding-top: 10px; padding-bottom: 10px; }
   .view { gap: 7px; }
@@ -102,7 +100,6 @@ body[data-host=false] #phoneDiagnostics footer > span, body[data-host=false] #bu
   main { padding: 8px max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left)); }
   .view { gap: 5px; }
   .host-card h1 { font-size: 20px; }
-  .remote .key,.remoteButtons .key { min-height: 44px; }
   #remotePad { min-height: 64px; padding: 5px; }
   #remotePad::before { display: none; }
   #remoteRoute { line-height: 1.2; }
