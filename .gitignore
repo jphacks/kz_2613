@@ -20,6 +20,8 @@ coverage/
 *.log
 logs/
 data/local/
+# プリセットのモデルの学習データ (注釈・評価の正解・このPCで読んだ操作)。公開リポジトリに置かない
+scripts/preset-model/data/
 # OS/editor
 .DS_Store
 Thumbs.db
