@@ -170,6 +170,20 @@ pub(crate) fn target_for(entries: &[Entry], title: &str, base: &Target) -> Targe
         },
     }
 }
+/// Minecraft の公式ランチャーのウィンドウ (#287・#419)。Xbox アプリ版は Minecraft.exe、旧版は MinecraftLauncher.exe。
+/// 起動直後に同じタイトルで出る GamingServicesUI (更新の確認) はプロセス名で除く。Bedrock 版は Minecraft.Windows.exe で別
+pub(crate) fn minecraft_launcher_target() -> Target {
+    Target {
+        processes: vec!["minecraft.exe".into(), "minecraftlauncher.exe".into()],
+        title_contains: "Minecraft Launcher".into(),
+        dir: None,
+        executable: None,
+    }
+}
+
+/// ランチャーを前面に出す試みの上限 (ウィンドウが現れてから。LAUNCH_POLL ごとに 1 回)
+pub(crate) const LAUNCHER_RAISE_TRIES: u32 = 6;
+
 pub(crate) fn minecraft_entry(launch: Option<&str>) -> Option<Entry> {
     launch.map(|launch| Entry {
         id: "minecraft-java".into(),
