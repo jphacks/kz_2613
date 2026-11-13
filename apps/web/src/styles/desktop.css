@@ -21,7 +21,16 @@ body {
   height: 1080px;
   transform: translate(-50%,-50%) scale(var(--pc-scale));
   transform-origin: center;
-  background: url('/assets/pc-stars.png') 0 0 / 1920px 1080px no-repeat;
+  /* スマホの背景にそろえる: 水色→クリーム→レモンの空に、平たい大きな星 (内側の線は空が透ける) と、星・3本線の流れ星 */
+  background:
+    url('/assets/pc-stars-pattern.svg') 0 0 / 1920px 1080px no-repeat,
+    url('/assets/pc-big-star.svg') 0 0 / 1920px 1080px no-repeat,
+    linear-gradient(to bottom,
+      color-mix(in srgb, var(--color-cyan) 30%, var(--color-cream)) 0%,
+      color-mix(in srgb, var(--color-cyan) 12%, var(--color-cream)) 30%,
+      var(--color-cream) 55%,
+      color-mix(in srgb, var(--color-lemon) 50%, var(--color-cream)) 80%,
+      var(--color-lemon) 100%);
 }
 
 .sidebar {

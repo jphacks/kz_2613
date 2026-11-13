@@ -59,37 +59,33 @@ function Header({state,status}:{state:PhoneDisplay;status:Status}) {
 </header>;
 }
 
+// ホストのリモコン (リモコン型)。PCアプリはタッチパッドのカーソルとクリックで操作する。
+// 矢印・Enter・Eキーは置かない (ユーザー判断 2026-11-13)。進めるボタンは画面の下に固定する
 function HostRemoteScreen({state}:{state:PhoneDisplay}) {
   return <section className={`view${state.view === 'v-remote' ? ' show' : ''}`} id="v-remote">
-    <div className="host-card"><h1>あなたがホストです！</h1>{state.view === 'v-remote' && <HostPadHint/>}</div>
-    <div className="players" id="players1">{state.remote.players.map(p => <span key={p.name} className={p.on ? 'on' : ''}>{p.label}</span>)}</div>
-    <div className="remote">
-      <div className="dpad">
-        <button className="key u" data-ctl="UP">▲</button>
-        <button className="key l" data-ctl="LEFT">◀</button>
-        <button className="key r" data-ctl="RIGHT">▶</button>
-        <button className="key d" data-ctl="DOWN">▼</button>
-      </div>
-      <div className="col">
-        <button className="key" data-ctl="ENTER">Enterキー</button>
-        <button className="key" data-ctl="ESC">Escキー</button>
-      </div>
+    <div className="host-card"><h1>あなたがホストです！</h1>
+      <div className="players" id="players1">{state.remote.players.map(p => <span key={p.name} className={p.on ? 'on' : ''}>{p.label}</span>)}</div>
+      {state.view === 'v-remote' && <HostPadHint/>}</div>
+    <div className="trackpad">
+      <div id="remotePad" role="application" aria-label="ホストのタッチパッド">指でPCのカーソルを動かす</div>
+      <div className="pad-clicks"><button className="key" data-ctl="REMOTE_LEFT">左クリック</button><button className="key" data-ctl="REMOTE_RIGHT">右クリック</button></div>
     </div>
-    <div id="remotePad" role="application" aria-label="ホストのタッチパッド">指でPCのカーソルを動かす</div>
     <label className="sens">カーソル感度 <input id="remotePadSensitivity" type="range" min="0.5" max="6" step="0.1" defaultValue="1" aria-label="カーソル感度" /> <span id="remotePadSensitivityValue">1.0倍</span></label>
-    <div className="remoteButtons">
-      <button className="key" data-ctl="REMOTE_LEFT">左クリック</button><button className="key" data-ctl="REMOTE_RIGHT">右クリック</button><button className="key" data-ctl="REMOTE_E" hidden={state.inventory === null}>{state.inventory}</button>
-      <button className="key" data-ctl="REMOTE_WHEEL_UP">ホイール↑</button><button className="key" data-ctl="REMOTE_WHEEL_DOWN">ホイール↓</button>
+    <div className="remote-keys">
+      <button className="key esc" data-ctl="ESC">Esc</button>
+      <div className="wheel-pair"><button className="key" data-ctl="REMOTE_WHEEL_UP">ホイール↑</button><button className="key" data-ctl="REMOTE_WHEEL_DOWN">ホイール↓</button></div>
     </div>
     <div id="remoteRoute" className={`note${state.remote.routeBlocked ? ' route-blocked' : ''}`} role="status">{state.remote.route}</div>
-    <button className="cmd" id="startBtn" disabled={state.remote.startDisabled}>{state.remote.startLabel}</button>
-    <button className="cmd sub" id="openGameBtn" data-cmd="OPEN_GAME" hidden={state.remote.openGameHidden}>{state.remote.openGameLabel}</button>
-    <button className="cmd sub" id="openAppBtn" data-cmd="OPEN_APP" hidden={state.remote.openAppHidden} aria-describedby={state.remote.appReturnHint ? 'appReturnHint' : undefined}>PCアプリを前面にする</button>
-    <p className="note" id="appReturnHint" hidden={!state.remote.appReturnHint}>{state.remote.appReturnHint}</p>
-    <button className="cmd sub" id="endBtn" style={{display: state.remote.endVisible ? 'block' : 'none'}}>{state.remote.endLabel}</button>
-    <div id="hostTransfer" className="host-transfer" hidden={!state.remote.transferTo.length}>{state.remote.transferTo.length ? 'ホストを譲る：' : null}{state.remote.transferTo.map(p => <button className="key" key={p} onClick={() => transferHost(p)}>{p}</button>)}</div>
-    <div className="note" id="remoteNote">{state.remote.note}</div>
-    <div className="note" id="remoteNotice" hidden={!state.remote.notice}>{state.remote.notice}</div>
+    <div className="host-actions">
+      <button className="cmd" id="startBtn" disabled={state.remote.startDisabled}>{state.remote.startLabel}</button>
+      <button className="cmd sub" id="openGameBtn" data-cmd="OPEN_GAME" hidden={state.remote.openGameHidden}>{state.remote.openGameLabel}</button>
+      <button className="cmd sub" id="openAppBtn" data-cmd="OPEN_APP" hidden={state.remote.openAppHidden} aria-describedby={state.remote.appReturnHint ? 'appReturnHint' : undefined}>PCアプリを前面にする</button>
+      <p className="note" id="appReturnHint" hidden={!state.remote.appReturnHint}>{state.remote.appReturnHint}</p>
+      <button className="cmd sub" id="endBtn" style={{display: state.remote.endVisible ? 'block' : 'none'}}>{state.remote.endLabel}</button>
+      <div id="hostTransfer" className="host-transfer" hidden={!state.remote.transferTo.length}>{state.remote.transferTo.length ? 'ホストを譲る：' : null}{state.remote.transferTo.map(p => <button className="key" key={p} onClick={() => transferHost(p)}>{p}</button>)}</div>
+      <div className="note" id="remoteNote">{state.remote.note}</div>
+      <div className="note" id="remoteNotice" hidden={!state.remote.notice}>{state.remote.notice}</div>
+    </div>
   </section>;
 }
 

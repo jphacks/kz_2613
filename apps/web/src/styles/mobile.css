@@ -26,18 +26,9 @@ main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .cmd.sub { font-size: 12px; min-height: 44px; padding: 7px; border-width: 2px; color: var(--muted); }
 .cmd.pause { border-color: var(--color-warning); color: var(--color-warning); }
 .note { font-size: 12px; line-height: 1.5; }
-.remote { display: flex; gap: 6px; align-items: stretch; }
-.dpad { flex: 1; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; }
-.remote .col { flex: 0 0 30%; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-.remote .key { border-width: 2px; padding: 5px; font-size: 16px; min-height: 44px; border-radius: 14px; }
-.remote .key small { display: none; }
 #remotePad { flex: 1; min-height: 80px; border: 3px dashed var(--color-cyan); border-radius: 24px; touch-action: none; display: grid; place-items: center; text-align: center; padding: 12px; background: color-mix(in srgb,var(--color-paper) 88%,transparent); color: var(--color-purple); font-size: 14px; font-weight: 700; }
 #remotePad::before { content: '✧'; display: block; font-size: 34px; }
 #remotePad.down { background: var(--color-ice); }
-.remoteButtons { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; }
-.remoteButtons:has([data-ctl="REMOTE_E"]:not([hidden])) { grid-template-columns: repeat(5,minmax(0,1fr)); }
-.remoteButtons .key[hidden] { display: none; }
-.remoteButtons .key { font-size: 11px; padding: 6px 2px; border-width: 2px; border-radius: 12px; }
 #remoteRoute { text-align: center; font-size: 11px; flex-shrink: 0; }
 #remoteNote { max-height: 72px; overflow-y: auto; flex-shrink: 1; min-height: 30px; padding: 0 4px; }
 .wait-scene { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 24px; }
@@ -73,7 +64,7 @@ footer button { min-height: 24px; padding: 0 8px; font-size: 9px; border-width: 
 .connecting { text-align: center; margin: auto; font-size: 18px; line-height: 2; }
 @media (max-height: 740px) and (orientation: portrait) { body { gap: 5px; padding-top: max(5px,env(safe-area-inset-top)); } header { padding: 2px 0; } .view { gap: 5px; } .host-card { padding: 7px 10px; border-radius: 18px; } .host-card h1 { font-size: 20px; } .host-card p { display: none; } #remoteNote { max-height: 46px; font-size: 11px; } .wait-scene { gap: 12px; } .wait-card { padding: 18px; } #remotePad::before { font-size: 24px; } }
 @media (max-height: 600px) and (orientation: portrait) { header .brand { display: none; } .host-card h1 { font-size: 17px; } #remotePad { min-height: 64px; font-size: 12px; } #remoteNote { max-height: 34px; } .wait-scene .mascot { width: 64px; height: 64px; font-size: 36px; } }
-@media (max-width: 340px) { body { padding-left: 8px; padding-right: 8px; } #role { font-size: 9px; } #role b { font-size: 11px; } .remoteButtons .key { font-size: 9px; } }
+@media (max-width: 340px) { body { padding-left: 8px; padding-right: 8px; } #role { font-size: 9px; } #role b { font-size: 11px; } }
 @media (orientation: landscape) { #rotatePrompt { display: flex; } main { visibility: hidden; } }
 /* 操作定義から作る画面 (#60) */
 #v-gen { display: none; flex-direction: column; gap: 10px; }

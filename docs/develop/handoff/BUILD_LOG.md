@@ -2262,3 +2262,15 @@
 - 遅延（ホストの観測）：押下の受信からPCへの出力まで、中央値2ms・95%で48ms・最大135ms（259件）。往復時間の平均の中央値は、P1 61ms・P2 89ms・P3 77ms。利用者の感想：操作の遅れは感じなかった。分担の偏りはあまり感じず適切。ジャンプやスニークを持ち物の担当にまとめてもよかったかもしれない。
 - 途中の記録：細工の送信の約20秒後に、P2が `replaced` で張り直して一時停止した（細工の影響を否定できない）。ページを再読み込みした後、一時停止中にもう1回 `replaced` が起きた（#426）。P3の2回の切断は、利用者の操作ミス。準備中にMinecraftを閉じると、分担の画面へ戻るボタンがない（#427）。ロビーでホストが15秒戻らず、ホストが次の枠へ移った。
 - 未確認：Minecraftの版、AT-D05の同じ台本での3回（#217）、同意を得た動画。
+
+## 2026-11-13 — PC画面の背景をスマホにそろえる（Claude Code）
+
+- ユーザーが比較ページで、PC画面（Windowsアプリ）の背景をスマホと同じ模様にし、真ん中の大きな星は「平たい5つ角の星の内側に一回り小さな星の線を入れ、その線を切り抜いて後ろの空を見せる」案（A2-透過）を選んだ。周りの模様は普通の星を減らして流れ星を増やした（流れ星14・星13）。
+- `.desktop-shell` の背景を `pc-stars.png` から、水色→クリーム→レモンのグラデーション（`--color-cyan`・`--color-cream`・`--color-lemon` から作る）と、`assets/pc-big-star.svg`（大きな星。サイドバーの右側の中央）・`assets/pc-stars-pattern.svg`（星と3本線の流れ星）の重ねに変えた。`pc-stars.png` は使わなくなったが削除していない。
+- `npm run build`・`controller-preview-test`・`product-web-test`・`check-static-pages`・`verify-ui-evidence` が成功。ビルドした `/pc/` をheadless Chromeで開き、背景と大きな星の位置を目視確認した。Rustホスト・Tauri上の表示は未確認。
+
+## 2026-11-13 — ホストのリモコンをリモコン型にする（Claude Code）
+
+- ユーザーが比較ページでB案（リモコン型）を選び、上下左右・Enter・Eキーを外すと判断した（`2026-10-24-user-decisions.md` に追記）。`HostRemoteScreen` を、参加状況を入れた見出し、タッチパッドと下の縁の左右クリック（`.trackpad`）、カーソル感度、Escの丸ボタンと上下に分けたホイール（`.remote-keys`）、画面の下に固定した進めるボタン（`.host-actions`）の順にした。見た目は `styles/phone-host-remote.css`。要素のidは変えていない。
+- 表示しなくなったEキーのための `PhoneDisplay.inventory` と、矢印・Enterのボタン、関係するCSSを削除した。ホスト側の `UP`・`ENTER`・`REMOTE_E` などの受け付けはそのまま（PCのキーボード操作や古い画面との互換のため）。`phone-view-test` からEキー表示の確認を削除した。
+- `npm run build`（型検査を含む）、`phone-view-test`・`phone-lifecycle-test`・`phone-session-test`・`product-web-test`・`ui-input-test`・`app-view-test`・`check-static-pages`・`verify-ui-evidence`・`controller-preview-test`・`phone-layout-test` が成功。ビルドしたスマホ画面を模擬ホストにつないでheadless Chromeで開き、受付中と一時停止中の表示を目視確認した。Rustホスト・実機は未確認。

@@ -1,0 +1,82 @@
+/* ホストのリモコン (リモコン型、ユーザー判断 2026-11-13)。
+   タッチパッドの下の縁を左右クリックにし、Escは丸ボタン、ホイールの↑↓は1つの枠を上下に分ける。
+   進めるボタン (#startBtn など) は画面の下に固定する。見た目はキャラクターの色 (--color-cyan) と厚い下の影 */
+#v-remote { gap: 8px; padding-bottom: 0; }
+#v-remote .host-card { padding: 8px 10px; }
+#v-remote .host-card h1 { font-size: clamp(18px, 5.4vw, 26px); }
+#v-remote .host-card .players { display: flex; justify-content: center; gap: 6px; margin-top: 6px; }
+#v-remote .host-card .players span { flex: 0 1 auto; padding: 3px 10px; }
+
+/* タッチパッドと左右クリックを1つの枠にする */
+#v-remote .trackpad {
+  flex: 1;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  border: 3px solid var(--color-cyan);
+  border-radius: 28px;
+  overflow: hidden;
+  background: var(--color-pad-surface);
+  box-shadow: 0 4px 0 var(--color-shadow);
+}
+#v-remote .trackpad #remotePad { flex: 1; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
+#v-remote :is(.pad-clicks, .wheel-pair) { display: grid; }
+#v-remote .pad-clicks { grid-template-columns: 1fr 1fr; border-top: 3px solid var(--color-cyan); }
+#v-remote :is(.pad-clicks, .wheel-pair) .key {
+  min-height: 48px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--color-cyan) 12%, var(--color-surface));
+  font-size: 14px;
+  font-weight: 800;
+}
+#v-remote :is(.pad-clicks, .wheel-pair) .key + .key { border-left: 3px solid var(--color-cyan); }
+#v-remote :is(.pad-clicks, .wheel-pair) .key.down { background: color-mix(in srgb, var(--color-cyan) 32%, var(--color-surface)); }
+
+/* Esc (丸) とホイール (上下に分けた1つの枠) */
+#v-remote .remote-keys { display: grid; grid-template-columns: 1fr 1.6fr; gap: 14px; align-items: center; padding: 0 6px; }
+#v-remote .remote-keys .esc {
+  width: min(100%, 92px);
+  aspect-ratio: 1;
+  justify-self: center;
+  min-height: 0;
+  border-radius: 50%;
+  border: 3px solid var(--color-cyan);
+  background: color-mix(in srgb, var(--color-cyan) 12%, var(--color-surface));
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--color-cyan) 55%, var(--color-fx-shade));
+  font-size: 18px;
+  font-weight: 800;
+}
+#v-remote .remote-keys .esc.down { transform: translateY(4px); box-shadow: 0 1px 0 color-mix(in srgb, var(--color-cyan) 55%, var(--color-fx-shade)); }
+#v-remote .wheel-pair {
+  grid-template-rows: 1fr 1fr;
+  border: 3px solid var(--color-cyan);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--color-cyan) 55%, var(--color-fx-shade));
+}
+#v-remote .wheel-pair .key + .key { border-left: 0; border-top: 3px solid var(--color-cyan); }
+
+/* 進めるボタンは画面の下に固定する */
+#v-remote .host-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 -2px;
+  padding: 10px 2px max(8px, env(safe-area-inset-bottom));
+  background: var(--color-surface);
+  border-top: 3px solid var(--color-phone-button);
+  border-radius: 20px 20px 0 0;
+}
+#v-remote .host-actions .note:empty { display: none; }
+
+@media (max-height: 640px) and (orientation: portrait) {
+  #v-remote .trackpad { min-height: 110px; }
+  #v-remote .remote-keys .esc { width: min(100%, 70px); font-size: 15px; }
+  #v-remote :is(.pad-clicks, .wheel-pair) .key { min-height: 40px; font-size: 12px; }
+}
