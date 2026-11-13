@@ -23,9 +23,12 @@ function inventory(dir, prefix = '') {
     return entry.isDirectory() ? inventory(path.join(dir, entry.name), relative + '/') : [relative];
   }).sort();
 }
+// 分担のモデルの版2 (#430)。取得元・版・ハッシュは scripts/windows/preset-model-v2.json に固定
+const presetModel = readJson(path.join(root, 'scripts/windows/preset-model-v2.json'));
+const presetFiles = Object.entries(presetModel.files).filter(([, f]) => f.bundle).map(([name, f]) => [`preset-model-v2/${name}`, f.sha256]);
 const expected = ['recooplay-desktop.exe', 'recooplay-host.exe', 'config.example.json',
   'allow-firewall.ps1', 'LICENSE', 'README.txt', ...['apps/web/dist', 'apps/game-profiles']
-    .flatMap(dir => inventory(path.join(root, dir)).map(file => `${dir}/${file}`))].sort();
+    .flatMap(dir => inventory(path.join(root, dir)).map(file => `${dir}/${file}`)), ...presetFiles.map(([p]) => p)].sort();
 function verify(dir) {
   const manifest = readJson(path.join(dir, 'package-manifest.json'));
   assert.equal(manifest.formatVersion, 1);
@@ -39,6 +42,8 @@ function verify(dir) {
     // expectedとの一致を確認済みのパスだけを使う。
     const bytes = fs.readFileSync(path.join(dir, file.path));
     assert.equal(hash(bytes), file.sha256, `SHA-256不一致: ${file.path}`);
+    const pinned = presetFiles.find(([p]) => p === file.path);
+    if (pinned) assert.equal(file.sha256, pinned[1], `分担のモデルが固定した版と違います: ${file.path}`);
     if (file.path.startsWith('apps/') || ['config.example.json', 'LICENSE'].includes(file.path)) {
       assert.deepEqual(bytes, fs.readFileSync(path.join(root, file.path)), `ソースと不一致: ${file.path}`);
     }
