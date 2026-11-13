@@ -2333,3 +2333,9 @@
 - 切り替え：ホストは feature `latency-measure`（`#[cfg]` で囲み、通常のビルドではコンパイルされない）、スマホは `npm run build:latency`（Viteの `define` で `__LATENCY_MEASURE__` を true にする。通常のビルドでは false として取り除かれる）。通常のビルドの成果物に計測の処理が入らないことを、ビルドした結果の文字列の検索で確かめた（通常0件、計測用1件）。
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
+
+## 2026-11-14 — 参加ページが開けないときの案内（#414、Codex）
+
+- 参加用QRの近くに「開けないとき」を追加し、同じWi-Fi、ブラウザのローカル通信権限、URLの手入力、VPN等のローカル通信設定を確認できるようにした。
+- Webビルド・製品Web回帰・静的ページ検査・公開資料検査・差分検査に合格。WebView2の最小サイズでQRとの非重複とダイアログ開閉を確認するスモーク試験を追加し、構文検査に合格。WebView2の実行結果はCIで確認する。
+- Androidで権限を拒否し、案内に沿って許可後に参加できることは実機受入に残す。
