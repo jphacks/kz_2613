@@ -1,5 +1,5 @@
 // スマホ画面の表示内容の計算。既存の画面とReact版で共用する (#235)。DOMと入力には触れない。
-import {SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,PREPARE_GAME_LABEL} from './presentation.ts';
+import {SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,START_COOP_LABEL} from './presentation.ts';
 import type {PhoneGame, Slot} from '../contracts.ts';
 
 const CHARACTERS = { P1: 'blue', P2: 'green', P3: 'purple', P4: 'red' };
@@ -64,7 +64,7 @@ export function waitModel({ me, game, roleTitle, joined, autoWait }: {me:Slot;ga
       : phase === 'paused' ? (autoWait
         ? `${reasonText(game.reason, me)}。制限時間内に全員が戻ると自動で再開します。再開できない場合はホストの操作をお待ちください。`
         : 'ホストが「再開する」を押すと操作画面に戻ります。')
-      : phase === 'preparing' ? 'ホストが「Ready」を押すと操作画面に変わります。'
+      : phase === 'preparing' ? `ホストが「${START_COOP_LABEL}」を押すと操作画面に変わります。`
       : game.lineupOk ? 'ホストがゲームを起動するまでお待ちください。'
       : 'ホストがゲームと分担を決めるまでお待ちください。',
     players: playerChips(game, me),
@@ -92,8 +92,8 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
   let instructions: (string | null | undefined)[];
   if (phase === 'preparing') {
     instructions = [game.prepareStatus, ...reasons, game.canReady
-      ? 'プレイ画面まで進んだら「Ready」を押してください'
-      : '準備が整うと「Ready」を押せます',
+      ? `プレイ画面まで進んだら「${START_COOP_LABEL}」を押してください`
+      : `準備が整うと「${START_COOP_LABEL}」を押せます`,
     // Readyを押せないとき (ゲームを閉じてしまったときなど) は、スマホだけで分担の画面へ戻れることを示す (#427)
     game.canReady ? null : `やり直すときは「${END_PREPARING_LABEL}」を押してください`];
   } else if (phase === 'paused') {
@@ -102,12 +102,10 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
     if (game.canResume) instructions.push('続けるには「再開する」を押してください');
     instructions.push('遊び終えたら「協力プレイを終了（分担に戻る）」を押してください');
   } else if (game.lineupOk) {
-    const started = game.remoteRoute === 'game' || (game.launch?.id === game.title && game.launch?.state === 'started');
-    instructions = [started ? `「${PREPARE_GAME_LABEL}」を押してプレイ画面まで進んでください`
-      : `「${PREPARE_GAME_LABEL}」を押して準備を始めてください`];
+    instructions = [`プレイ画面まで進んだら「${START_COOP_LABEL}」を押してください`, ...reasons];
   } else {
     instructions = [`PCアプリの画面でゲームを選び、分担を決めてください（${MIN_PLAYERS}〜${MAX_PLAYERS}人）`,
-      'このリモコンでPCの画面を操作できます（PCアプリ以外のウィンドウでは実際のマウスとして動きます）'];
+      'このリモコンでPCの画面を操作できます（PCアプリ以外のウィンドウでは実際のマウスとして動きます）', ...reasons];
   }
   const note = [...new Set(instructions.flatMap(text => text?.trim() ? [text.trim().replace(/[。！？]$/, '')] : []))]
     .map(text => `${text}。`).join('');
@@ -116,8 +114,8 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
     route: routeText(game, name), routeBlocked: game.remoteRoute === 'none', notice: '',
     // ゲームが前面に残っても、スマホだけでPCアプリへ戻れるようにする (#292)
     openAppHidden, appReturnHint: returnInstructions.join(''),
-    startLabel: phase === 'paused' ? '再開する' : phase === 'preparing' ? `Ready・${game.connected.length}人で操作を始める` : PREPARE_GAME_LABEL,
-    startDisabled: !(phase === 'paused' ? game.canResume : phase === 'preparing' ? game.canReady : game.canPrepare),
+    startLabel: phase === 'paused' ? '再開する' : START_COOP_LABEL,
+    startDisabled: !(phase === 'paused' ? game.canResume : game.canReady),
     openGameLabel: `${name}を前面にする`,
     // 前面にするボタンは、ゲームが前面でないときだけ (協力プレイに入るときはホストが自動で前面にする、#138)
     openGameHidden: !['preparing', 'paused'].includes(phase) || !game.inputTarget,

@@ -106,7 +106,6 @@ function rolesRun(action:UiAction|undefined){
   if(!action||action.disabled)return;
   if(action.kind==='confirm'&&game)send({type:'confirm_lineup',title:game.title,members:game.connected,epoch:game.epoch});
   else if(action.kind==='launch')send({type:'launch_game',id:action.id});
-  else if(action.kind==='prepare')send({type:'prepare'});
   else if(action.kind==='swap')setUi({...ui,swap:true});
   else if(action.kind==='back'){swapPick=null;setUi({...ui,swap:false});}
 }

@@ -5,7 +5,7 @@ import type {PcInfo} from './domain.ts';
 // 画面の部品に依存しない純粋な関数だけを置き、Node の試験 (scripts/sim/app-view-test.mjs) で表示とサーバー状態の一致を確かめる。
 // 開始・準備・再開できるかはサーバーの canReady・canPrepare・canResume をそのまま使い、画面側で判定し直さない。
 
-export const PREPARE_GAME_LABEL = 'ゲームを準備する';
+export const START_COOP_LABEL = '分担操作開始';
 export const SCREENS: readonly ScreenId[] = ['join', 'game', 'roles'];
 
 // 参加人数 (#57)。2〜4人で遊び、Ready の時点で接続している人数で分担を決める (ホストが判定する)
@@ -250,7 +250,7 @@ export const GAMES = [
       'PCの画面でゲームを選び、メンバーと分担を決定する',
       '「ゲームを起動する」で公式ランチャーを開き、「プレイ」を押してワールドに入る（ランチャーが見つからないときは手動で起動する）',
       'ホットバーに使うアイテムを並べておく（インベントリ操作はホストのリモコンでは限られます）',
-      `「${PREPARE_GAME_LABEL}」の後、Minecraftを前面にしてホストがスマホでReadyを押す`,
+      `Minecraftを前面にして、ホストのスマホで「${START_COOP_LABEL}」を押す`,
     ],
   },
 ];
@@ -332,16 +332,15 @@ export function rolesAction(game: PhoneGame | null, list: GameEntry[]): UiAction
   }
   if (game.phase !== 'lobby') return { kind: 'none', label: '準備中', disabled: true };
   const entry = list.find((g) => g.id === game.title);
-  const prepare: UiAction = { kind: 'prepare', label: PREPARE_GAME_LABEL, disabled: !game.canPrepare };
-  if (!entry?.launchable) return { ...prepare, note: `${entry?.name || 'ゲーム'}は自動で起動できません。手動で起動してから準備してください` };
+  const startHint: UiAction = { kind: 'none', label: 'ホストのスマホで開始', disabled: true };
+  if (!entry?.launchable) return { ...startHint, note: `${entry?.name || 'ゲーム'}を手動で起動してください` };
   const launch = launchView(game.launch, entry.id);
   if (!launch) return { kind: 'launch', label: 'ゲームを起動する', id: entry.id, disabled: !game.canLaunch };
   if (launch.state === 'launching') return { kind: 'wait', label: '起動中…', disabled: true, note: launch.message };
   if (launch.state === 'failed' || launch.state === 'timeout') {
-    return { kind: 'launch', label: 'もう一度起動する', id: entry.id, disabled: !game.canLaunch, note: `${launch.title}。${launch.message}`,
-      alt: { ...prepare, label: '手動で起動して準備へ' } };
+    return { kind: 'launch', label: 'もう一度起動する', id: entry.id, disabled: !game.canLaunch, note: `${launch.title}。${launch.message}` };
   }
-  return { ...prepare, note: launch.message };
+  return { ...startHint, note: launch.message };
 }
 
 export function device(ua: string | undefined) {

@@ -40,7 +40,7 @@ function Sidebar({state,model,connection}:{state:PcState;model:PcModel;connectio
   <button className="sub-cta" id="subBtn" hidden={model.sub.hidden} disabled={model.sub.disabled}>{model.sub.label}</button>
   <button className="sub-cta" id="changePlayersBtn" hidden={!(model.view === 'paused' && game?.canChangePlayers)}>今の{game?.connected.length || 0}人で分担し直す</button>
   <button className="main-cta disabled-start" id="blockedStart" disabled hidden={model.blockedStart}>START</button>
-  <div className="main-cta start-instruction" id="readyInstruction" role="note" hidden={model.readyInstruction}>START<span>ホストのスマホでReady</span></div>
+  <div className="main-cta start-instruction" id="readyInstruction" role="note" hidden={model.readyInstruction}>START<span>ホストのスマホで分担操作開始</span></div>
   <div className="join-guide" id="joinGuide" hidden={model.view !== 'join'}>
     <p className="qr-bubble" id="qrBubble"><Lines text={connection.guide.bubble.replace(/<br>/g, '\n')} /></p>
     <svg className="qr-arrow" viewBox="0 0 36 30" aria-hidden="true"><path d="M2 2H34L18 27Z"/></svg>

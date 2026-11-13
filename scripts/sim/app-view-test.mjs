@@ -265,11 +265,11 @@ test('分担の画面: 決定 → 起動 → 準備の順に案内し、失敗�
   const launching = rolesAction({ ...ok, canLaunch: false, launch: { id: 'steam:413150', state: 'launching', message: '起動しています' } }, list);
   assert.equal(launching.kind, 'wait'); assert.equal(launching.disabled, true, '起動中は押せない');
   const failed = rolesAction({ ...ok, launch: { id: 'steam:413150', state: 'timeout', message: '手動で起動してください' } }, list);
-  assert.equal(failed.kind, 'launch'); assert.match(failed.label, /もう一度/); assert.equal(failed.alt.kind, 'prepare'); assert.match(failed.note, /確認できません/);
+  assert.equal(failed.kind, 'launch'); assert.match(failed.label, /もう一度/); assert.match(failed.note, /確認できません/);
   const started = rolesAction({ ...ok, canPrepare: true, launch: { id: 'steam:413150', state: 'started', message: '前面にしました' } }, list);
-  assert.deepEqual([started.kind, started.disabled, started.note], ['prepare', false, '前面にしました']);
+  assert.deepEqual([started.kind, started.disabled, started.note], ['none', true, '前面にしました']);
   const mc = rolesAction({ ...ok, title: 'minecraft-java', canPrepare: true }, list);
-  assert.equal(mc.kind, 'prepare'); assert.match(mc.note, /手動で起動/);
+  assert.equal(mc.kind, 'none'); assert.match(mc.note, /手動で起動/);
   assert.equal(rolesAction({ ...ok, phase: 'preparing' }, list).kind, 'none', '準備中は起動・準備ボタンを出さない');
 });
 
@@ -367,7 +367,7 @@ test('操作設定: 選択ゲームの手順・待機状態・実ポートを表
   const active = {...snapshot, inject:{mode:'on',active:false},infoPort:18080};
   const amongUs = pcModel({...active, game:game(['P1'], {title:'steam:945360'})});
   assert.doesNotMatch(amongUs.gameSteps.join(' '), /Minecraft|ホットバー|公式ランチャー/);
-  assert.match(amongUs.gameSteps.join(' '), /Ready/);
+  assert.match(amongUs.gameSteps.join(' '), /分担操作開始/);
   assert.match(amongUs.inputState, /協力プレイを始めるまで/);
   assert.equal(amongUs.overlayUrl, 'http://127.0.0.1:18080/overlay');
   const minecraft = pcModel({...snapshot, game:game(['P1'], {title:'minecraft-java'}), inject:{mode:'off',active:false}});

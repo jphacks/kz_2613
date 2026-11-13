@@ -34,7 +34,7 @@
 
 ## 接続情報
 
-**通信契約**: `protocolVersion = 4`。版がない・一致しないhelloは枠を割り当てず拒否します。DataChannelは`fast`、`ordered:false`、`maxRetransmits:0`です。待ち受けは既定`0.0.0.0:8080`、`PORT`で変更できます。STUN/TURNは使いません。
+**通信契約**: `protocolVersion = 5`。版がない・一致しないhelloは枠を割り当てず拒否します。DataChannelは`fast`、`ordered:false`、`maxRetransmits:0`です。待ち受けは既定`0.0.0.0:8080`、`PORT`で変更できます。STUN/TURNは使いません。
 
 通信版を変更するときは、Rustの `hub.rs` とWebの `shared/transport/version.ts` を同じ変更で更新します。CIの `protocol-sim.mjs` はWebの版でビルド済みホストへ参加し、実際に返る `welcome` の版まで照合します。
 
@@ -120,7 +120,7 @@ sequenceDiagram
 | `role_ok` | WS | 現在`epoch`。担当が変わった本人による確認 |
 | `latency` | WS | **遅延の計測用ビルドだけ**（スマホは `npm run build:latency`、ホストは feature `latency-measure`）。`iseq`, `touchMs`（触れてから送信まで）, `rttMs`（送信から押下のACKまで）。押下のACKを受けたときに送る。ホストは同じ押下の「処理の開始からSendInputまで」と合わせて `latency` をログに残す（片道は往復の半分とみなす）。入力の判断には使わない。通常のビルドでは送らず、ホストも受け付けない |
 
-PREPARE / READY / RESUME / OPEN_GAME / OPEN_APPは現在epochを必須とします。OPEN_APPは協力プレイ中以外に、PCアプリ（`recooplay-desktop.exe`）のウィンドウを前面にするだけで入力は送りません。PCアプリから起動していないとき・前面化に失敗したときは `command_result` の `reasons` に理由を返します。ゲームの状態の `canOpenApp` が真のときだけスマホにボタンを出します。PCアプリから起動したホストは、選んだゲームのウィンドウが閉じたらロビーでPCアプリを1回だけ前面に戻します（#292）。PREPAREは分担決定後にpreparingへ移すだけで、READYが開始条件を満たしたときだけcoopへ進みます。監視画面からcoopを強制できません。
+PREPARE / READY / RESUME / OPEN_GAME / OPEN_APPは現在epochを必須とします。OPEN_APPは協力プレイ中以外に、PCアプリ（`recooplay-desktop.exe`）のウィンドウを前面にするだけで入力は送りません。PCアプリから起動していないとき・前面化に失敗したときは `command_result` の `reasons` に理由を返します。ゲームの状態の `canOpenApp` が真のときだけスマホにボタンを出します。PCアプリから起動したホストは、選んだゲームのウィンドウが閉じたらロビーでPCアプリを1回だけ前面に戻します（#292）。通常の開始操作はロビーからのREADYです。分担決定・参加者・入力・緊急停止・対象ゲームの前面確認を満たす場合に全解放とepoch更新を行い、coopへ直接進みます。従来のPREPAREからpreparingへ進む経路も保持します。監視画面からcoopを強制できません。
 
 ### 操作の認可
 
