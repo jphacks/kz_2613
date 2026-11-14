@@ -5,6 +5,7 @@ import path from 'node:path';
 import http from 'node:http';
 import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { createInterface } from 'node:readline';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const arg = (name, fallback) => { const i = process.argv.indexOf(name); return i < 0 ? fallback : process.argv[i + 1]; };
@@ -16,7 +17,8 @@ const duration = Number(arg('--duration-ms', '5000'));
 const out = path.resolve(arg('--out', 'data/local/runtime-probe-results.json'));
 const cases = arg('--cases', 'normal,burst,slow-monitor,disconnect,many-log').split(',');
 const counts = arg('--players', '2,4').split(',').map(Number);
-assert(Number.isInteger(duration) && duration >= 1000 && duration <= 10000);
+assert(Number.isInteger(duration) && duration >= 1000 && duration <= 60000,
+  '--duration-ms は1000〜60000の整数を指定してください');
 assert(counts.every(n => n === 2 || n === 4));
 assert(cases.every(s => ['normal', 'burst', 'slow-monitor', 'disconnect', 'many-log'].includes(s)));
 fs.mkdirSync(path.join(root, 'data/local'), { recursive: true });
@@ -26,6 +28,7 @@ const percentile = (values, q) => { const v = [...values].sort((a, b) => a - b);
 class Client {
   constructor(url) { this.ws = new WebSocket(url); this.messages = []; this.discarded = 0; this.epoch = 0; this.seq = 0; this.pending = new Map(); this.rtts = []; }
   async open() { await new Promise((ok, fail) => { this.ws.onopen = ok; this.ws.onerror = fail; });
+    this.ws.addEventListener('close', event => { this.closeCode = event.code; });
     this.ws.onmessage = e => { const m = JSON.parse(e.data); if (m.type === 'game') this.game = m.game;
       if (m.type === 'game') this.epoch = m.game.epoch;
       if (m.type === 'pong' && this.pending.has(m.t)) { this.rtts.push(performance.now() - this.pending.get(m.t)); this.pending.delete(m.t); }
@@ -38,7 +41,12 @@ class Client {
   mark() { return this.discarded + this.messages.length; }
   since(mark) { return this.messages.slice(Math.max(0, mark - this.discarded)); }
   async wait(predicate, from = 0, timeout = 8000) { const until = performance.now() + timeout;
-    while (performance.now() < until) { const hit = this.since(from).find(predicate); if (hit) return hit; await sleep(2); }
+    while (performance.now() < until) {
+      const hit = this.since(from).find(predicate);
+      if (hit) return hit;
+      if (this.closeCode !== undefined) throw new Error(`WS切断 (${this.closeCode}) を受信: ${predicate}`);
+      await sleep(2);
+    }
     throw new Error(`受信待機タイムアウト ${predicate.toString()}`);
   }
   close() { this.ws.close(); }
@@ -75,7 +83,13 @@ async function run(players, scenario) {
     const match = output.match(/server_start \{"port":([1-9]\d{0,4})\}/);
     if (match) ready(Number(match[1]));
   });
-  host.stderr.on('data', b => { output = (output + b).slice(-5000); });
+  const sendClosures = [];
+  const stderr = createInterface({ input: host.stderr });
+  stderr.on('line', line => {
+    output = (output + '\n' + line).slice(-5000);
+    const match = /^ws_send_close (\{.*\})$/.exec(line);
+    if (match) sendClosures.push(JSON.parse(match[1]));
+  });
   const closed = new Promise(resolve => {
     host.once('exit', resolve);
     host.once('error', e => { output += e.message; resolve('error'); });
@@ -152,7 +166,14 @@ async function run(players, scenario) {
     }
     return { players, scenario, durationMs: actualLoadMs, sent, pingSamples: rtts.length,
       pingMs: { p50: percentile(rtts, .5), p95: percentile(rtts, .95), max: rtts.length ? Math.max(...rtts) : null },
-      stopRoundTripMs, safeStop: true, runtime, logBytes: fs.readdirSync(dir).filter(f => f.endsWith('.jsonl')).reduce((n, f) => n + fs.statSync(path.join(dir, f)).size, 0) };
+      stopRoundTripMs, safeStop: true, runtime, sendClosures, logBytes: fs.readdirSync(dir).filter(f => f.endsWith('.jsonl')).reduce((n, f) => n + fs.statSync(path.join(dir, f)).size, 0) };
+  } catch (error) {
+    if (host.exitCode === null && host.stdin.writable) {
+      host.stdin.end('quit\n');
+      await Promise.race([closed, sleep(3000)]);
+    }
+    error.sendClosures = sendClosures;
+    throw error;
   } finally {
     clearInterval(pingTimer);
     slow?.destroy();
@@ -161,6 +182,19 @@ async function run(players, scenario) {
   }
 }
 
-for (const players of counts) for (const scenario of cases) { const result = await run(players, scenario); results.push(result); console.log(JSON.stringify(result)); }
-fs.writeFileSync(out, JSON.stringify({ kind: '本番Hubと実loopback WSの内部・外部観測。観測値であり実機遅延や上限の保証ではない',
-  executable: { name: path.basename(bin), sha256: crypto.createHash('sha256').update(fs.readFileSync(bin)).digest('hex') }, results }, null, 2) + '\n');
+let failure;
+try {
+  for (const players of counts) for (const scenario of cases) {
+    try {
+      const result = await run(players, scenario);
+      results.push(result);
+      console.log(JSON.stringify(result));
+    } catch (error) {
+      failure = { players, scenario, message: error.message, sendClosures: error.sendClosures };
+      throw error;
+    }
+  }
+} finally {
+  fs.writeFileSync(out, JSON.stringify({ kind: '本番Hubと実loopback WSの内部・外部観測。観測値であり実機遅延や上限の保証ではない',
+    executable: { name: path.basename(bin), sha256: crypto.createHash('sha256').update(fs.readFileSync(bin)).digest('hex') }, results, failure }, null, 2) + '\n');
+}
