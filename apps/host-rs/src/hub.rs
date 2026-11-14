@@ -164,6 +164,15 @@ enum Timer {
     ModelPreset,      // 未知のゲームの分担をモデルで 1 本作る (#431)
 }
 
+/// パニックの内容 (文字列なら取り出す)
+fn panic_message(payload: &(dyn std::any::Any + Send)) -> String {
+    payload
+        .downcast_ref::<&str>()
+        .map(|s| s.to_string())
+        .or_else(|| payload.downcast_ref::<String>().cloned())
+        .unwrap_or_else(|| "（内容不明）".into())
+}
+
 fn now_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -714,78 +723,118 @@ impl Hub {
         self.log("server_start", json!({ "port": port }));
         let mut last_look_tick: Option<Instant> = None;
         loop {
-            let now = Instant::now();
-            while let Some(Reverse((at, _, timer))) = self.timers.peek().copied() {
-                if at > now {
-                    break;
-                }
-                self.timers.pop();
-                if timer == Timer::LookTick {
-                    if let Some(start) = crate::runtime_measure::start() {
-                        if let Some(last) = last_look_tick.replace(start) {
-                            crate::runtime_measure::sample(
-                                "look_tick_interval_us",
-                                start.duration_since(last).as_micros() as u64,
-                            );
-                        }
-                    }
-                }
-                self.on_timer(timer, at);
-            }
-            let wait = self
-                .timers
-                .peek()
-                .map(|Reverse((at, _, _))| at.saturating_duration_since(Instant::now()))
-                .unwrap_or(Duration::from_secs(1));
-            match rx.recv_timeout(wait) {
-                Ok(Event::Shutdown) => {
-                    // 終了時は押しっぱなしを残さない
-                    crate::netinfo::block_hotspot_start();
-                    let confirmed = self.release_for_shutdown();
-                    self.close_players_for_shutdown();
-                    let hotspot = crate::netinfo::stop_owned_hotspot();
-                    self.log("hotspotShutdown", json!({ "result": hotspot }));
-                    let _ = self.log_file.flush();
-                    crate::runtime_measure::finish();
-                    crate::input_trace::finish();
-                    std::process::exit(if confirmed { 0 } else { 1 });
-                }
-                Ok(ev) => {
-                    let start = crate::runtime_measure::start();
-                    let metric = if matches!(ev, Event::EmergencyStop { .. }) {
-                        "hub_stop_us"
-                    } else {
-                        "hub_event_us"
-                    };
-                    let (queue_metric, total_metric, enqueued_at) = match &ev {
-                        Event::WsText { enqueued_at, .. } => {
-                            ("hub_ws_queue_us", "hub_ws_enqueue_to_end_us", *enqueued_at)
-                        }
-                        Event::EmergencyStop { enqueued_at, .. } => (
-                            "hub_stop_queue_us",
-                            "hub_stop_enqueue_to_end_us",
-                            *enqueued_at,
-                        ),
-                        _ => ("", "", None),
-                    };
-                    if let (Some(enqueued), Some(start)) = (enqueued_at, start) {
-                        crate::runtime_measure::sample(
-                            queue_metric,
-                            start.duration_since(enqueued).as_micros() as u64,
-                        );
-                    }
-                    self.on_event(ev);
-                    crate::runtime_measure::elapsed(metric, start);
-                    crate::runtime_measure::elapsed(total_metric, enqueued_at);
-                }
-                Err(RecvTimeoutError::Timeout) => {}
-                Err(RecvTimeoutError::Disconnected) => {
-                    self.release_for_shutdown();
-                    self.close_players_for_shutdown();
-                    break;
+            // 1 回分の処理 (タイマーとイベント) をパニックから守る。パニックしたら押しっぱなしを残さずに終える (#517)
+            let step = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                self.step(&rx, &mut last_look_tick)
+            }));
+            match step {
+                Ok(true) => {}
+                Ok(false) => break,
+                Err(payload) => {
+                    let released = self.recover_from_panic(panic_message(payload.as_ref()));
+                    std::process::exit(if released { 2 } else { 3 });
                 }
             }
         }
+    }
+
+    /// hub の 1 回分の処理。チャネルが閉じたら false
+    fn step(&mut self, rx: &Receiver<Event>, last_look_tick: &mut Option<Instant>) -> bool {
+        let now = Instant::now();
+        while let Some(Reverse((at, _, timer))) = self.timers.peek().copied() {
+            if at > now {
+                break;
+            }
+            self.timers.pop();
+            if timer == Timer::LookTick {
+                if let Some(start) = crate::runtime_measure::start() {
+                    if let Some(last) = last_look_tick.replace(start) {
+                        crate::runtime_measure::sample(
+                            "look_tick_interval_us",
+                            start.duration_since(last).as_micros() as u64,
+                        );
+                    }
+                }
+            }
+            self.on_timer(timer, at);
+        }
+        let wait = self
+            .timers
+            .peek()
+            .map(|Reverse((at, _, _))| at.saturating_duration_since(Instant::now()))
+            .unwrap_or(Duration::from_secs(1));
+        match rx.recv_timeout(wait) {
+            Ok(Event::Shutdown) => {
+                // 終了時は押しっぱなしを残さない
+                crate::netinfo::block_hotspot_start();
+                let confirmed = self.release_for_shutdown();
+                self.close_players_for_shutdown();
+                let hotspot = crate::netinfo::stop_owned_hotspot();
+                self.log("hotspotShutdown", json!({ "result": hotspot }));
+                let _ = self.log_file.flush();
+                crate::runtime_measure::finish();
+                crate::input_trace::finish();
+                std::process::exit(if confirmed { 0 } else { 1 });
+            }
+            Ok(ev) => {
+                let start = crate::runtime_measure::start();
+                let metric = if matches!(ev, Event::EmergencyStop { .. }) {
+                    "hub_stop_us"
+                } else {
+                    "hub_event_us"
+                };
+                let (queue_metric, total_metric, enqueued_at) = match &ev {
+                    Event::WsText { enqueued_at, .. } => {
+                        ("hub_ws_queue_us", "hub_ws_enqueue_to_end_us", *enqueued_at)
+                    }
+                    Event::EmergencyStop { enqueued_at, .. } => (
+                        "hub_stop_queue_us",
+                        "hub_stop_enqueue_to_end_us",
+                        *enqueued_at,
+                    ),
+                    _ => ("", "", None),
+                };
+                if let (Some(enqueued), Some(start)) = (enqueued_at, start) {
+                    crate::runtime_measure::sample(
+                        queue_metric,
+                        start.duration_since(enqueued).as_micros() as u64,
+                    );
+                }
+                self.on_event(ev);
+                crate::runtime_measure::elapsed(metric, start);
+                crate::runtime_measure::elapsed(total_metric, enqueued_at);
+            }
+            Err(RecvTimeoutError::Timeout) => {}
+            Err(RecvTimeoutError::Disconnected) => {
+                self.release_for_shutdown();
+                self.close_players_for_shutdown();
+                return false;
+            }
+        }
+        true
+    }
+
+    /// hub がパニックしたときの後始末 (#517)。押しっぱなしを離して終える (スマホへの終了の通知・ホットスポットの停止はしない、#522)。
+    /// 状態が壊れている可能性があるので、後始末の途中のパニックも受け止める。全部離せたら true
+    fn recover_from_panic(&mut self, message: String) -> bool {
+        eprintln!("hub が異常終了しました（押しっぱなしの入力を離して終了します）: {message}");
+        let released = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            self.log("hubPanic", json!({ "message": message }));
+            // 試験ではホットスポットの状態 (プロセス全体で共有) に触れない
+            if !cfg!(test) {
+                crate::netinfo::block_hotspot_start();
+            }
+            let ok = self.release_for_shutdown();
+            // スマホへ「PC アプリの終了」(4009) は送らない。PC アプリはホストを起動し直すので、スマホは通常の切断として
+            // 再接続を続け、新しいホストへ参加し直す (#522)。協力プレイは再接続後も自動では再開しない。
+            // 同じ理由で、アプリが起動したホットスポットも止めない (止めるとスマホの Wi-Fi が切れ、再接続できない)
+            ok
+        }))
+        .unwrap_or(false);
+        let _ = self.log_file.flush();
+        crate::runtime_measure::finish();
+        crate::input_trace::finish();
+        released
     }
 
     fn schedule(&mut self, at: Instant, timer: Timer) {
@@ -6736,6 +6785,44 @@ mod tests {
                     down: false
                 }
             ]
+        );
+    }
+
+    #[test]
+    fn panic_recovery_releases_held_inputs() {
+        let recorder = RecordingInput::with_results([true, true]);
+        let (mut h, mut rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.set_output(index("KEY_W"), "P1", true);
+        h.look.px = 30.0;
+        assert!(
+            h.recover_from_panic("試験のパニック".into()),
+            "押しっぱなしを全部離せた"
+        );
+        assert!(h.release_pending.is_empty());
+        assert_eq!(h.look.px, 0.0);
+        assert!(h.inject == InjectMode::Off, "入力を止める");
+        assert!(
+            recorder
+                .calls()
+                .iter()
+                .any(|c| matches!(c.operation, Operation::Key { down: false, .. })),
+            "キーを離した"
+        );
+        // スマホへ「PC アプリの終了」(4009) は送らない (PC アプリが起動し直したホストへ再接続させる、#522)
+        while let Ok(out) = rx.try_recv() {
+            assert!(!matches!(out, Out::Close(code, _) if code == CLOSE_HOST_SHUTDOWN));
+        }
+        assert_eq!(
+            panic_message(&"文字列" as &(dyn std::any::Any + Send)),
+            "文字列"
+        );
+        assert_eq!(
+            panic_message(&String::from("所有") as &(dyn std::any::Any + Send)),
+            "所有"
+        );
+        assert_eq!(
+            panic_message(&1u8 as &(dyn std::any::Any + Send)),
+            "（内容不明）"
         );
     }
 
