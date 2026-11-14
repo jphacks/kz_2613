@@ -2338,3 +2338,7 @@
 
 - CIの資料に配布ジョブのWebView2試験を明記し、認可、全解放、入力先の制限、導入でCIと実機が確認する範囲を記録した。
 - `python scripts/check-public-docs.py`、`python scripts/verify_overlay.py`、`git diff --check` が合格。
+## 2026-11-14 — RustSec監査ツールのビルドを再利用する（#379、Codex）
+
+- cargo-auditの実行ファイルだけをOS・アーキテクチャ・ツール版・Rust版でキャッシュする。キャッシュがなければ固定版を従来どおりソースからビルドする。両クレートの必須監査では毎回RustSecのデータベースを更新する。
+- ワークフローのYAML構造、両クレートの監査コマンド、構造検査、差分検査を確認した。CIでのキャッシュ復元と実行時間は未測定。
