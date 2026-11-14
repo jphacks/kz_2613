@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { createLayoutStore } from '../shared/model/layout.ts';
 import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked,liftHint,rotationNotice,confirmation,answerConfirm,offline } from './view';
 import { SKINS } from '../shared/model/skin.ts';
+import { Icon } from '../shared/icons.ts';
 
 type PhoneDisplay = ReturnType<typeof display.get>;
 type Status = ReturnType<typeof connection.get>;
@@ -26,7 +27,7 @@ export function PhoneApp() {
 <div id="roleNotice" className="role-notice" role="alert" hidden={!state.roleNotice}><p id="roleNoticeText">{state.roleNotice}</p><button id="roleOkBtn">新しい担当を確認しました</button></div>
 
 <main style={stopped?{visibility:'hidden'}:undefined}>
-  <div className="connecting" id="connecting" hidden={!!state.view}><span className="mascot" aria-hidden="true">✦</span>PCホストへ接続しています…</div>
+  <div className="connecting" id="connecting" hidden={!!state.view}><span className="mascot" aria-hidden="true"><Icon name="sparkle" /></span>PCホストへ接続しています…</div>
   <HostRemoteScreen state={state}/>
   <WaitingScreen state={state}/>
   <GameplayScreen state={state}/>
@@ -54,7 +55,7 @@ function Header({state,status}:{state:PhoneDisplay;status:Status}) {
     <span className={`pill ${status.kind}`} id="status">{status.text}</span>
     <span className={`pill${game ? ` ${game.phase}` : ''}`} id="phase">{game ? PHASE_LABELS[game.phase] : '-'}</span>
   </div>
-  <button className="phone-settings" id="phoneSettingsBtn" aria-label="メニュー（配置の編集・接続・診断）">⋯</button>
+  <button className="phone-settings" id="phoneSettingsBtn" aria-label="メニュー（配置の編集・接続・診断）"><Icon name="more" /></button>
 </header>;
 }
 
@@ -72,7 +73,7 @@ function HostRemoteScreen({state}:{state:PhoneDisplay}) {
     <label className="sens">カーソル感度 <input id="remotePadSensitivity" type="range" min="0.5" max="6" step="0.1" defaultValue="1" aria-label="カーソル感度" /> <span id="remotePadSensitivityValue">1.0倍</span></label>
     <div className="remote-keys">
       <button className="key esc" data-ctl="ESC">Esc</button>
-      <div className="wheel-pair"><button className="key" data-ctl="REMOTE_WHEEL_UP">ホイール↑</button><button className="key" data-ctl="REMOTE_WHEEL_DOWN">ホイール↓</button></div>
+      <div className="wheel-pair"><button className="key" data-ctl="REMOTE_WHEEL_UP" aria-label="ホイール上">ホイール<Icon name="arrow-up" /></button><button className="key" data-ctl="REMOTE_WHEEL_DOWN" aria-label="ホイール下">ホイール<Icon name="arrow-down" /></button></div>
     </div>
     <div id="remoteRoute" className={`note${state.remote.routeBlocked ? ' route-blocked' : ''}`} role="status">{state.remote.route}</div>
     <div className="host-actions">
