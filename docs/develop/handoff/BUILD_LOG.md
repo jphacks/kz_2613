@@ -2334,6 +2334,10 @@
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
 
+## 2026-11-14 — キー割当を初期値に戻す（#438、Codex）
+
+- ゲーム自身のキー設定を反映した初期値と比較し、一致する場合はRe:Cooplayの上書きを削除する。操作を送らない設定も同じ規則で扱う。
+- 通信シミュレーションに、個別に戻したときの変更済み表示と保存ファイルの確認を追加した。構文検査、Rustの整形、差分検査を実施。Rustホストでの実行はCIで確認する。
 ## 2026-11-14 — PCのキー割当リセットを型付き操作に接続する（#278、Codex）
 
 - PCの「このゲームのキーを初期値に戻す」ボタンから、型付きの `settingsActions.resetKeys` を経由して既存の `reset_keys` を送る。従来の無効化条件とホストの認可・全解放処理を維持する。
