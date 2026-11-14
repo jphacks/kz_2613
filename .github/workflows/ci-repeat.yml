@@ -71,8 +71,18 @@ jobs:
           for ($attempt = $first; $attempt -lt $first + 5; $attempt++) {
             $env:RECOOPLAY_SMOKE_DIAGNOSTICS = Join-Path $env:REPEAT_DIAGNOSTICS "browser-$attempt"
             $log = Join-Path $env:REPEAT_DIAGNOSTICS "protocol-$attempt.txt"
+            $env:RECOOPLAY_PROTOCOL_DIAGNOSTICS = Join-Path $env:RUNNER_TEMP "protocol-sessions-$attempt"
             node scripts/sim/protocol-sim.mjs --bin $env:REPEAT_HOST *> $log
-            if ($LASTEXITCODE) { $failures++; Write-Host "通信試験 $attempt 回目が失敗" }
+            if ($LASTEXITCODE) {
+              $failures++
+              Write-Host "通信試験 $attempt 回目が失敗"
+              if (Test-Path -LiteralPath $env:RECOOPLAY_PROTOCOL_DIAGNOSTICS) {
+                foreach ($session in Get-ChildItem -LiteralPath $env:RECOOPLAY_PROTOCOL_DIAGNOSTICS -Recurse -File -Filter 'session-*.jsonl') {
+                  $name = "protocol-$attempt-$($session.Directory.Name)-$($session.Name)"
+                  Copy-Item -LiteralPath $session.FullName -Destination (Join-Path $env:REPEAT_DIAGNOSTICS $name)
+                }
+              }
+            }
             $log = Join-Path $env:REPEAT_DIAGNOSTICS "browser-$attempt.txt"
             node scripts/sim/auxiliary-pages-smoke.mjs --bin $env:REPEAT_HOST --pages overlay,diagnostics,pseudo-game *> $log
             if ($LASTEXITCODE) { $failures++; Write-Host "補助画面 $attempt 回目が失敗" }
