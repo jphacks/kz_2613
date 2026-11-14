@@ -2565,6 +2565,13 @@
 - 疑似ゲーム画面（開発用）と、文中の「→」（手順の説明）は文字のまま。
 - 試験：`check-static-pages.mjs` に、製品の画面のソース（疑似ゲーム画面とコメントを除く）に対象の記号が残っていないことの検査を足した。`controller-preview-test.mjs` にスティックの矢印が SVG であること。
 - 確認：`npm run build`（型検査を含む）、`check-static-pages`、`controller-preview-test`、`ui-input-test` 20/20、`product-web-test`、`app-view-test` 37/37、`phone-view-test`、`controller-layout-test`、`phone-layout-test` 15/15 が合格。Android・iPhone の実機での見た目は未確認。
+## 2026-11-15 — README と技術仕様書を Award Day 時点に合わせる（Claude Code）
+
+- 利用者の依頼：README を更新する。今までの書き方を踏襲し、README に書ききらず技術仕様書を増やしてよい。「Ready」ではなく「開始ボタン」、分担のモデルは「BERT風」ではなく「Transformer encoder」と書き、学習させたことを入れる。
+- README：遊び方の手順（開始ボタン・独自AIの分担）、特長に1文ずつ（時間での交代・ファイルからの読み取り）、技術仕様書の一覧に分担AI仕様書、活用した技術（React・TypeScript、Transformer encoder、多言語MiniLM）、「Award Dayまでに追加した機能・技術」（既存の「独自技術」と同じ形で3項目）。Hack Day の内容は残した。
+- 新しい `docs/preset-model-specification.md`（分担AI仕様書）：構成・学習・推論と組み立て・評価・定義のないゲームの読み取り・配布と設定・適用範囲。
+- 総合仕様書・ゲーム操作定義仕様書・技術選定の理由・動作確認の範囲の古い記述（BERT風、静的HTML、2人・4人の実機は未確認、操作画面のカスタマイズは今後）を直した。
+- 確認：`python scripts/check-public-docs.py` 合格（18 ファイル、351 参照）。
 ## 2026-11-15 — 操作の応答に含まれるコマンド名をWebで検証する（#272、Codex）
 
 - Rustホストが `command_result` に必ず送る `cmd` をWebの型と受信検証に追加した。Webの境界試験で欠落・不正型を拒否し、通信試験でホストの開始拒否をWebのデコーダーに通す。
@@ -2582,3 +2589,16 @@
 - 検証成功：`apps/web` で `npm ci`・`npm run build`（型検査含む）、`node scripts/sim/check-static-pages.mjs`、`controller-preview-test.mjs`、`ui-input-test.mjs`（20/20）、`product-web-test.mjs`、`app-view-test.mjs`（追加後38/38）、`phone-view-test.mjs`、`controller-layout-test.mjs`、`phone-layout-test.mjs`（15/15）、`py -3 scripts/verify_overlay.py`、`git diff --check`。nodeの試験はリポジトリルートから実行。
 - ブラウザーでのプレビュー表示を試みたが、Computer Use が `The browser access host is unavailable` を返したため、目視の画面確認は未実施。Android・iPhoneでの撮影も未実施。実機受入を合格扱いせず、#515は自動クローズしない。
 - 追加のユーザー依頼により、READMEの技術仕様書一覧へ Re:Cooplay Preset Model v2 のHugging Face URLを追記した。既存のREADME・LICENSEは保持した。
+## 2026-11-15 — フォントに頼る記号・絵文字を SVG のアイコンにする（#515、Claude Code）
+
+- `apps/web/src/shared/icons.ts` にアイコンをまとめた（矢印4方向・⋯・↶・星・注意・別タブ）。`currentColor`・1em・`aria-hidden`。画面の試験が TSX を1つずつ変換して読む作りなので、JSX を使わず `createElement` で組み立てた。
+- 置き換え：スティックの矢印（`controller-layout.ts` の記号のデータ `mark` を外し、`Controller.tsx` で向きからアイコンを描く）、スマホのメニューの「⋯」、配置の編集の「↶」「⋯」、接続中の「✦」、ホストのリモコンのホイール（「ホイール」＋矢印のアイコン）、PC のタイルの「▶」とキー割当の「◀▶」、診断画面の「⚠」「↗」。CSS の飾り（✦✧✥↔●）は、データ URI の SVG をマスクにして文字の色で塗る（`shared.css` の `--icon-*`）。外部の CDN・アイコンのフォントは使わない。
+- 操作定義から作るホイールのボタンは「ホイール上・下」の文字にした（配置の編集のプルダウンにも同じ文字が出るため）。ホストから届く矢印キーの名前（↑↓←→）は、画面で「上矢印キー」などの文字にする（`keyLabelText`）。
+- 疑似ゲーム画面（開発用）と、文中の「→」（手順の説明）は文字のまま。
+- 試験：`check-static-pages.mjs` に、製品の画面のソース（疑似ゲーム画面とコメントを除く）に対象の記号が残っていないことの検査を足した。`controller-preview-test.mjs` にスティックの矢印が SVG であること。
+- 確認：`npm run build`（型検査を含む）、`check-static-pages`、`controller-preview-test`、`ui-input-test` 20/20、`product-web-test`、`app-view-test` 37/37、`phone-view-test`、`controller-layout-test`、`phone-layout-test` 15/15 が合格。Android・iPhone の実機での見た目は未確認。
+
+### #515 最新mainでの引き継ぎ確認
+- `npm --prefix apps/web run build`、`node scripts/sim/check-static-pages.mjs` に合格。
+- Node.js 22.15.0 で `--experimental-strip-types` を指定し、`controller-preview-test.mjs`、`ui-input-test.mjs`（20/20）、`phone-view-test.mjs`（8観点）に合格。対象は `scripts/sim/`。
+- Android・iPhoneでの画面撮影と位置の確認は未実施。
