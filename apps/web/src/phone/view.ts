@@ -19,7 +19,7 @@ export interface PhoneDisplay {
 export const display = createStore<PhoneDisplay>({
   controller:null, snapshot: { me: null, isHost: false, game: null }, view: null, controllerHost: false, controllerTitle: '', role: '接続中…', roleCopy: '', roleNotice: '', warning: '',
   wait: { character: '/assets/characters/blue.png', heading: '接続完了!!', role: '', title: 'ホストの準備を待っています', players: [] },
-  remote: { players: [], route: '', routeBlocked: false, notice: '', openAppHidden: true, startLabel: 'START', startDisabled: false, openGameLabel: 'ゲームを前面にする', openGameHidden: true, endVisible: false, endLabel: '協力プレイを終了（分担に戻る）', transferTo: [], note: 'ゲームをプレイ中の画面まで進めた後、ホストだけがReadyを押します。' },
+  remote: { players: [], notice: '', openAppHidden: true, startLabel: 'START', startDisabled: false, openGameLabel: 'ゲームを前面にする', openGameHidden: true, endVisible: false, endLabel: '協力プレイを終了（分担に戻る）', transferTo: [], note: 'ゲームをプレイ中の画面まで進めた後、ホストだけがReadyを押します。' },
 });
 let bindings: PhoneViewBindings | undefined;
 const skins = createSkinStore({ getItem: (key: string) => localStorage.getItem(key), setItem: (key: string, value: string) => localStorage.setItem(key, value) });
@@ -50,6 +50,11 @@ function closeConfirm(){
   if(!confirmation.get())return;
   flushSync(()=>confirmation.set(null));
   const dialog=byId<HTMLDialogElement>('phoneConfirm');if(dialog.open)dialog.close();
+}
+/** 参加者の退出 (#546)。ロビーで、ホスト以外の人だけ。枠を空けて次の人へ交代する。ホストのPCで受け付けると接続を閉じる */
+export function canLeave(snapshot: PhoneSnapshot) { return !snapshot.isHost && snapshot.game?.phase === 'lobby'; }
+export function leaveRoom() {
+  askConfirm({message:'退出して、次の人に交代しますか？',ok:'退出する',valid:()=>canLeave(display.get().snapshot),run:()=>bindings?.onLeave()});
 }
 // OKは通信中かつ要求がまだ有効なときだけ送る。切断中は閉じずに待たせ、要求を黙って失わない
 export function answerConfirm(ok:boolean){

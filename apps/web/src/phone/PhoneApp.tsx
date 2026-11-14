@@ -1,8 +1,9 @@
 import {LayoutController,LayoutEditor} from './LayoutController';
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { createLayoutStore } from '../shared/model/layout.ts';
-import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked,liftHint,rotationNotice,confirmation,answerConfirm,offline } from './view';
+import { display, skin, chooseSkin, transferHost, canLeave, leaveRoom,connection,telemetry,blocked,liftHint,rotationNotice,confirmation,answerConfirm,offline } from './view';
 import { SKINS } from '../shared/model/skin.ts';
+import { Icon } from '../shared/icons.ts';
 import { hold, HOLDS } from '../shared/input/hold.ts';
 
 type PhoneDisplay = ReturnType<typeof display.get>;
@@ -28,14 +29,14 @@ export function PhoneApp() {
   };
   return <>
 <div className="phone-bg" aria-hidden="true"><i className="phone-bg-stars"></i></div>
-<Header state={state} status={status} onEdit={controller && !stopped && !editing ? startEdit : undefined}/>
+<Header state={state} status={status} showPause={state.view === 'v-gen' && state.controllerHost && !stopped} pauseDisabled={editing || status.kind !== 'ok'} onEdit={controller && !stopped && !editing ? startEdit : undefined}/>
 
 <div id="inputWarn" style={{display: state.warning ? 'block' : 'none'}}>{state.warning}</div>
 
 <div id="roleNotice" className="role-notice" role="alert" hidden={!state.roleNotice}><p id="roleNoticeText">{state.roleNotice}</p><button id="roleOkBtn">新しい担当を確認しました</button></div>
 
 <main style={stopped?{visibility:'hidden'}:undefined}>
-  <div className="connecting" id="connecting" hidden={!!state.view}><span className="mascot" aria-hidden="true">✦</span>PCホストへ接続しています…</div>
+  <div className="connecting" id="connecting" hidden={!!state.view}><span className="mascot" aria-hidden="true"><Icon name="sparkle" /></span>PCホストへ接続しています…</div>
   <HostRemoteScreen state={state}/>
   <WaitingScreen state={state}/>
   <GameplayScreen state={state} editing={editing} stopEditing={() => setEditing(false)}/>
@@ -53,7 +54,7 @@ export function PhoneApp() {
 </>;
 }
 
-function Header({state,status,onEdit}:{state:PhoneDisplay;status:Status;onEdit?:()=>void}) {
+function Header({state,status,showPause,pauseDisabled,onEdit}:{state:PhoneDisplay;status:Status;showPause:boolean;pauseDisabled:boolean;onEdit?:()=>void}) {
   const game = state.snapshot.game;
   return <header>
   <span className="brand"><img className="brand-image" src="/assets/logo.png" width="960" height="720" alt="Re:Cooplay" /></span>
@@ -63,12 +64,18 @@ function Header({state,status,onEdit}:{state:PhoneDisplay;status:Status;onEdit?:
     <span className={`pill ${status.kind}`} id="status">{status.text}</span>
     <span className={`pill${game ? ` ${game.phase}` : ''}`} id="phase">{game ? PHASE_LABELS[game.phase] : '-'}</span>
   </div>
+  <button type="button" className="phone-settings phone-pause" id="genPause" data-cmd="PAUSE"
+    aria-label="一時停止してホスト操作へ戻る" hidden={!showPause} disabled={pauseDisabled}>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+    </svg>
+  </button>
   {onEdit && <button type="button" className="phone-settings phone-edit" id="genEditLayout" aria-label="配置を編集" onClick={onEdit}>
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
       <path d="m4 16-1 5 5-1L21 7l-4-4L4 16Z M14 6l4 4"/>
     </svg>
   </button>}
-  <button className="phone-settings" id="phoneSettingsBtn" aria-label="接続・診断を確認">⋯</button>
+  <button className="phone-settings" id="phoneSettingsBtn" aria-label="接続・診断を確認"><Icon name="more" /></button>
 </header>;
 }
 
@@ -91,9 +98,8 @@ function HostRemoteScreen({state}:{state:PhoneDisplay}) {
         <button className="key esc" data-ctl="ESC">Esc</button>
         <HostTransfer to={state.remote.transferTo}/>
       </div>
-      <div className="wheel-pair"><button className="key" data-ctl="REMOTE_WHEEL_UP">ホイール↑</button><button className="key" data-ctl="REMOTE_WHEEL_DOWN">ホイール↓</button></div>
+      <div className="wheel-pair"><button className="key" data-ctl="REMOTE_WHEEL_UP" aria-label="ホイール上">ホイール<Icon name="arrow-up" /></button><button className="key" data-ctl="REMOTE_WHEEL_DOWN" aria-label="ホイール下">ホイール<Icon name="arrow-down" /></button></div>
     </div>
-    <div id="remoteRoute" className={`note${state.remote.routeBlocked ? ' route-blocked' : ''}`} role="status">{state.remote.route}</div>
     <div className="host-actions">
       <button className="cmd" id="startBtn" disabled={state.remote.startDisabled}>{state.remote.startLabel}</button>
       <div className="host-sub">
@@ -149,13 +155,13 @@ function GameplayScreen({state,editing,stopEditing}:{state:PhoneDisplay;editing:
       ? <LayoutEditor key={c.key} initial={loaded.layout} game={c.game} slot={c.slot}
           onSave={layout => { const ok = layouts.save(layout); if (ok) finish(); return ok; }} onCancel={stopEditing} />
       : <LayoutController key={c.key} layout={loaded.layout} game={c.game} slot={c.slot} bindings={c.bindings} />)}</div>
-    <button className="cmd pause" data-cmd="PAUSE" id="genPause" hidden={!state.controllerHost}>一時停止・ホスト操作へ</button>
   </section>;
 }
 
 function DiagnosticsDialog({state,status,selectedSkin}:{state:PhoneDisplay;status:Status;selectedSkin:string}) {
   const game = state.snapshot.game;
-  return <dialog id="phoneDiagnostics" aria-labelledby="phoneDiagnosticsTitle"><h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection">{[status.text,game?PHASE_LABELS[game.phase]:'-',state.snapshot.me??'--'].join('・')}</p><div id="skinPicker" className="skin-picker" role="group" aria-label="画面の色">{SKINS.map(s => <button key={s.id} data-skin={s.id} aria-pressed={selectedSkin === s.id} onClick={() => chooseSkin(s.id)}>{s.label}</button>)}</div><HoldPicker/><PhoneDiagnostics phase={game?.phase}/><button id="closePhoneDiagnostics">閉じる</button></dialog>;
+  return <dialog id="phoneDiagnostics" aria-labelledby="phoneDiagnosticsTitle"><h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection">{[status.text,game?PHASE_LABELS[game.phase]:'-',state.snapshot.me??'--'].join('・')}</p><div id="skinPicker" className="skin-picker" role="group" aria-label="画面の色">{SKINS.map(s => <button key={s.id} data-skin={s.id} aria-pressed={selectedSkin === s.id} onClick={() => chooseSkin(s.id)}>{s.label}</button>)}</div><HoldPicker/><PhoneDiagnostics phase={game?.phase}/>{canLeave(state.snapshot) && <button id="leaveRoom" onClick={() => {
+    (document.getElementById('phoneDiagnostics') as HTMLDialogElement | null)?.close(); leaveRoom(); }}>退出する（次の人に交代）</button>}<button id="closePhoneDiagnostics">閉じる</button></dialog>;
 }
 
 // 回転ロックのまま横に持つときの、スティック・視点の向き (#514)。端末ごとに保存する。変えると本人の押下をすべて離す

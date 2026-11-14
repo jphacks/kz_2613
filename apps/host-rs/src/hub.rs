@@ -51,6 +51,7 @@ pub const WS_QUEUE_LIMIT: usize = 4096;
 const MONITOR_INPUT_LOG_LIMIT: usize = 256;
 const CLOSE_HOST_HANDOVER: u16 = 4008;
 const CLOSE_HOST_SHUTDOWN: u16 = 4009; // PC アプリ (ホスト) の終了。スマホは再接続しない (#302)
+const CLOSE_LEFT: u16 = 4010; // 参加者の退出 (#546)。枠を空けたので、スマホは再接続しない
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
 const RTC_TIMEOUT: Duration = Duration::from_secs(5);
 const FOCUS_CHECK: Duration = Duration::from_millis(100); // 前面のウィンドウを確認する間隔
@@ -482,6 +483,8 @@ pub struct Hub {
     role_ack: Vec<usize>,
     app_focused: bool,      // PC アプリが前面か (手動復帰の判定に使う)
     game_window_seen: bool, // 選んだゲームのウィンドウを見たか。閉じたらロビーで PC アプリを前面に戻す (#292)
+    // 選んだゲームのウィンドウが今あるか (前面でなくてもよい)。1秒ごとに確かめる。ロビーで背面のゲームから開始する判定に使う (#556)
+    target_window_open: bool,
     // PC アプリ (デスクトップアプリ) から起動されたか。そのときは前面のプロセス名で PC アプリの前面を判定し、
     // 画面 (WebView2 は背面でも focused のまま) の知らせは使わない
     desktop: bool,
@@ -634,6 +637,7 @@ impl Hub {
                 .map(|v| v == "1"),
             app_focused: false,
             game_window_seen: false,
+            target_window_open: false,
             desktop: std::env::var("RECOOPLAY_DESKTOP").as_deref() == Ok("1"),
         };
         let (mut list, errors) = profiles::load_dir(&config.profiles_dir);
@@ -1017,11 +1021,22 @@ impl Hub {
                 .is_some_and(|l| l.id == self.game.title && l.state == "launching")
     }
 
+    /// ロビーから開始するとき、押す前にゲームが前面である必要があるか (#556)。
+    /// 選んだゲームが起動していれば (背面でも)、「分担操作開始」を押した瞬間に前面へ出してから開始するので要らない。
+    /// 起動していなければ、これまでどおりゲームを前面にするまで開始できない
+    fn lobby_requires_focus(&self) -> bool {
+        self.game.phase == Phase::Lobby && !self.target_running()
+    }
+
+    /// 選んだゲームのウィンドウがあるか。試験 (疑似の入力先) では、ゲームは起動している扱いにする
+    fn target_running(&self) -> bool {
+        self.target_ok || self.fake_target.is_some() || self.target_window_open
+    }
+
     fn can_ready(&self) -> bool {
         session::can_ready(
             self.game.phase,
-            self.ready_reasons(self.game.phase == Phase::Lobby)
-                .is_empty(),
+            self.ready_reasons(self.lobby_requires_focus()).is_empty(),
         )
     }
 
@@ -1100,7 +1115,7 @@ impl Hub {
             "canReady": self.can_ready(),
             "canResume": self.can_resume(),
             "hostReady": self.game.host_ready,
-            "readyReasons": self.ready_reasons(self.game.phase == Phase::Lobby),
+            "readyReasons": self.ready_reasons(self.lobby_requires_focus()),
             "prepareStatus": self.game.prepare_status,
             "titleName": self.game_name(),
             "launch": self.launch.as_ref().map(|l| json!({ "id": l.id, "state": l.state, "message": l.message })),
@@ -1429,6 +1444,12 @@ impl Hub {
         if self.fake_target.is_some() || dry_run() {
             return;
         }
+        let open = self.target_ok || self.game_service.exists(&self.target);
+        if open != self.target_window_open {
+            self.target_window_open = open;
+            // 開始できるか (canReady) が変わるので知らせる
+            self.push_game();
+        }
         self.return_to_app_after_game_exit();
     }
 
@@ -1538,9 +1559,9 @@ impl Hub {
                     self.set_phase(Phase::Preparing, "host prepare");
                     true
                 }
-                ("READY", Phase::Lobby | Phase::Preparing)
-                    if self.game.phase == Phase::Lobby || self.focus_for_coop() =>
-                {
+                // ロビーでも、背面のゲームは開始の瞬間に前面へ出し、入力先が一致してから協力プレイへ進む (#556)。
+                // 前面にできなければ開始せず、入力も送らない (理由と手動で前面にする案内を返す)
+                ("READY", Phase::Lobby | Phase::Preparing) if self.focus_for_coop() => {
                     self.reload_keybinds();
                     self.fix_assignment();
                     self.game.host_ready = true;
@@ -1578,6 +1599,13 @@ impl Hub {
                     self.game.host_ready = false;
                     self.game.auto_resume_until = 0;
                     self.set_phase(Phase::Lobby, "host end");
+                    // ゲームは閉じずに、PC アプリを前面へ戻す (#546)。同じゲームのまま参加者の交代と分担の決め直しへ進む。
+                    // 前面にできなくても終了は成り立つ (スマホの「PCアプリを前面にする」で戻せる)
+                    if self.desktop {
+                        if let Err(reason) = self.open_app() {
+                            self.log("end_open_app_failed", json!({ "reason": reason }));
+                        }
+                    }
                     true
                 }
                 _ => false,
@@ -2653,6 +2681,7 @@ impl Hub {
     fn apply_target(&mut self) {
         self.target = game_service::target_for(&self.games, &self.game.title, &self.base_target);
         self.game_window_seen = false;
+        self.target_window_open = false;
         self.check_target();
         self.push_state();
     }
@@ -3686,6 +3715,32 @@ impl Hub {
         self.push_state();
     }
 
+    /// 参加者が自分で退出する (#546)。展示で来場者が入れ替わるとき、15秒の保持を待たずに枠を空け、次の端末が参加できるようにする。
+    /// 枠ごと消すので、退出した端末の古い接続・WebRTC の操作は通らない (接続と枠の対応で弾く)。
+    /// 決めた参加者と入れ替えは捨て、次の参加者で分担を決め直す (前の参加者の担当を黙って引き継がない)
+    fn leave_slot(&mut self, idx: usize) {
+        if !session::can_leave(self.game.phase, idx) {
+            return;
+        }
+        let Some(slot) = self.slots[idx].take() else {
+            return;
+        };
+        self.release_outputs(Some(SLOT_NAMES[idx]));
+        if let Some(id) = slot.conn {
+            if let Some(conn) = self.conns.get_mut(&id) {
+                conn.role = Role::Unknown;
+            }
+        }
+        self.close(slot.conn, CLOSE_LEFT, "left");
+        self.lineup = None;
+        self.seats = [0, 1, 2, 3];
+        self.role_ack.clear();
+        self.advance_epoch();
+        self.log("slot_left", json!({ "slot": SLOT_NAMES[idx] }));
+        self.push_game();
+        self.push_state();
+    }
+
     /// ロビーで保持中の切断枠のうち、最も早く空く枠までの時間。保持中の枠がなければ None (#297)
     fn held_slot_retry_ms(&self, now: u64) -> Option<u64> {
         if self.game.phase != Phase::Lobby {
@@ -4591,6 +4646,8 @@ impl Hub {
                     self.transfer_host(idx, to);
                 }
             }
+            // 参加者の退出 (#546)。ロビーで、ホスト以外の本人だけが自分の枠を空ける
+            "leave" if via == Via::Ws => self.leave_slot(idx),
             "role_ok" if via == Via::Ws => {
                 if msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch) {
                     return;
@@ -5197,6 +5254,7 @@ mod tests {
             fake_target: Some(true),
             app_focused: false,
             game_window_seen: false,
+            target_window_open: false,
             desktop: false,
         };
         let (monitor_tx, monitor_rx) = unbounded_channel();
@@ -6693,6 +6751,55 @@ mod tests {
     }
 
     #[test]
+    fn lobby_start_brings_the_running_game_to_front_or_does_not_start() {
+        let mut h = lobby_with(&[(0, true), (1, true)], 1_000);
+        h.confirm_lineup(
+            Some(h.game.title.clone()),
+            vec!["P1".into(), "P2".into()],
+            Some(h.game.epoch),
+        );
+        // 協力プレイの終了後など、PC アプリが前面でゲームは起動したまま背面 (#556)
+        h.fake_target = Some(false);
+        h.check_target();
+        assert!(
+            !h.lobby_requires_focus(),
+            "起動済みのゲームなら背面でも押せる"
+        );
+        assert!(
+            h.can_ready(),
+            "{:?}",
+            h.ready_reasons(h.lobby_requires_focus())
+        );
+        // 前面にできなければ開始しない
+        h.fake_activate = false;
+        h.command(0, "READY");
+        assert!(h.game.phase == Phase::Lobby, "前面にできないのに開始した");
+        assert!(h.game.prepare_status.contains("手動で前面"));
+        // 前面にできれば、入力先が一致してから協力プレイへ進む
+        h.fake_activate = true;
+        h.command(0, "READY");
+        assert!(h.game.phase == Phase::Coop);
+        assert_eq!(h.fake_target, Some(true));
+    }
+
+    #[test]
+    fn lobby_requires_focus_only_while_the_game_window_is_missing() {
+        let mut h = lobby_with(&[(0, true)], 0);
+        h.fake_target = None;
+        h.target_ok = false;
+        h.target_window_open = false;
+        assert!(
+            h.lobby_requires_focus(),
+            "ゲームが起動していなければ、前面にするまで開始できない"
+        );
+        h.target_window_open = true;
+        assert!(!h.lobby_requires_focus());
+        h.target_window_open = false;
+        h.game.phase = Phase::Paused;
+        assert!(!h.lobby_requires_focus(), "ロビー以外の条件は変えない");
+    }
+
+    #[test]
     fn lobby_host_that_does_not_return_moves_to_the_youngest_connected_slot() {
         let mut h = lobby_with(&[(0, false), (1, true), (2, true)], 1_000);
         let epoch = h.game.epoch;
@@ -6777,6 +6884,98 @@ mod tests {
         assert_eq!(h.slots[1].as_ref().unwrap().client_id, "client1"); // 他の人は変わらない
         assert!(!host.connected && !old.connected); // 同じトークンの再接続で新しい枠へ戻る
         assert_eq!(h.game.epoch, epoch + 1);
+    }
+
+    #[test]
+    fn a_participant_can_leave_the_lobby_and_free_the_slot_for_the_next_visitor() {
+        let mut h = lobby_with(&[(0, true), (1, true), (2, true)], 1_000);
+        let (tx, mut rx) = unbounded_channel();
+        h.conns.insert(
+            7,
+            Conn {
+                tx,
+                queued: Default::default(),
+                ip: String::new(),
+                loopback: false,
+                role: Role::Player { slot: 2 },
+            },
+        );
+        h.slots[2].as_mut().unwrap().conn = Some(7);
+        h.seats = [0, 2, 1, 3];
+        h.role_ack = vec![1, 2];
+        let epoch = h.game.epoch;
+        // ホストは退出しない (来場者だけが交代する)
+        h.leave_slot(0);
+        assert_eq!(h.slots[0].as_ref().unwrap().client_id, "client0");
+        assert_eq!(h.game.epoch, epoch);
+        h.leave_slot(2);
+        assert!(h.slots[2].is_none(), "15秒待たずに枠を空ける");
+        assert!(
+            h.slots[0].is_some() && h.slots[1].is_some(),
+            "ほかの人は残る"
+        );
+        assert!(
+            matches!(h.conns[&7].role, Role::Unknown),
+            "古い接続の操作は通さない"
+        );
+        let mut closed = None;
+        while let Ok(out) = rx.try_recv() {
+            if let Out::Close(code, _) = out {
+                closed = Some(code);
+            }
+        }
+        assert_eq!(closed, Some(CLOSE_LEFT), "スマホは再接続しない");
+        assert_eq!(h.seats, [0, 1, 2, 3], "前の参加者の入れ替えを引き継がない");
+        assert!(h.lineup.is_none() && h.role_ack.is_empty());
+        assert_eq!(h.game.epoch, epoch + 1);
+        // 閉じた接続の後始末で、空いた枠 (次の参加者が入った枠) を切断扱いにしない
+        h.slots[2] = Some(Slot::new("next".into(), "next-token".into()));
+        h.slots[2].as_mut().unwrap().connected = true;
+        h.on_ws_closed(7, CLOSE_LEFT);
+        assert!(h.slots[2].as_ref().unwrap().connected);
+        // 退出した端末の古い接続からの操作は、どの枠にも届かない
+        let before = h.game.epoch;
+        h.conns.insert(
+            8,
+            Conn {
+                tx: unbounded_channel().0,
+                queued: Default::default(),
+                ip: String::new(),
+                loopback: false,
+                role: Role::Unknown,
+            },
+        );
+        h.on_ws_message(8, json!({"type":"leave"}));
+        assert!(h.slots[2].is_some() && h.game.epoch == before);
+    }
+
+    #[test]
+    fn leaving_is_rejected_after_the_lobby() {
+        for phase in [Phase::Preparing, Phase::Coop, Phase::Paused] {
+            let mut h = lobby_with(&[(0, true), (1, true)], 1_000);
+            h.game.phase = phase;
+            h.leave_slot(1);
+            assert!(h.slots[1].is_some(), "開始後は枠と分担を保つ");
+        }
+    }
+
+    #[test]
+    fn ending_coop_keeps_the_game_and_brings_the_desktop_app_to_front() {
+        let (mut h, _rx) = fixture();
+        h.desktop = true;
+        h.game.phase = Phase::Coop;
+        let title = h.game.title.clone();
+        h.command(0, "END");
+        assert!(h.game.phase == Phase::Lobby);
+        assert_eq!(h.game.title, title, "選んだゲームを保つ");
+        assert!(h.app_focused, "PCアプリを前面へ戻す");
+        // 前面にできなくても終了は成り立つ
+        let (mut h, _rx) = fixture();
+        h.desktop = true;
+        h.fake_activate = false;
+        h.game.phase = Phase::Paused;
+        h.command(0, "END");
+        assert!(h.game.phase == Phase::Lobby && !h.app_focused);
     }
 
     #[test]

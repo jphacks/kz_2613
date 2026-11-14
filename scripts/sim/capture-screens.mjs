@@ -145,6 +145,16 @@ async function auditLayout(eval_,file,desktop){
     const remote=document.querySelector('#v-remote.show');
     if(!desktop&&!top&&remote){
       const start=remote.scrollTop;
+      // 下に固定した領域が、スクロールしていない状態で上の操作に重ならない (#553)
+      remote.scrollTop=0;
+      const actions=remote.querySelector('.host-actions');
+      if(actions&&visible(actions)){
+        const top=actions.getBoundingClientRect().top;
+        for(const [sel,label] of [['.remote-keys','リモコンのEsc・ホイール'],['.trackpad','タッチパッド']]){
+          const el=remote.querySelector(sel);
+          if(el&&visible(el)&&!actions.contains(el)&&el.getBoundingClientRect().bottom>top+1)outside.push(label+'が下の固定領域に隠れる');
+        }
+      }
       remote.scrollTop=remote.scrollHeight;
       const panel=remote.getBoundingClientRect();
       // 説明は決まった高さの枠の中でスクロールする (#536)。枠が画面内にあり、末尾までスクロールで読めるかを見る
@@ -220,6 +230,18 @@ async function main(){
   await p1.shot('phone-p1-03-coop-move.jpg');
   await p2.shot('phone-p2-03-coop-look.jpg');
   await p3.shot('phone-p3-02-coop-action.jpg');
+
+  await p1.waitFor(`(() => {
+    const pause = document.querySelector('header #genPause');
+    if (!pause || pause.hidden || pause.disabled || !pause.querySelector('svg')) return false;
+    const box = pause.getBoundingClientRect();
+    return box.width >= 44 && box.height >= 44
+      && box.right <= document.querySelector('header .brand-image').getBoundingClientRect().left
+      && !document.querySelector('#v-gen [data-cmd="PAUSE"]');
+  })()`,'上部の一時停止アイコン・44px・操作領域の確保');
+  for (const participant of [p2, p3]) {
+    await participant.waitFor("document.getElementById('genPause').hidden", '参加者には一時停止を表示しない');
+  }
 
   // 一時停止
   await p1.click('#genPause');

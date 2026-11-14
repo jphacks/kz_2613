@@ -144,7 +144,7 @@ export function controllerHarness({viewOnly=false,latency=false,logger=console}=
     const run = new vm.Script(`(function(imports) {\n${source}\nreturn {${names.join(',')}};\n})`, { filename: absolute }).runInContext(context);
     const exports = run(imports); modules.set(absolute, exports); return exports;
   }
-  const {createReactPhoneView,display,connection,telemetry,blocked,liftHint,rotationNotice,confirmation,answerConfirm,transferHost,offline}=load(path.join(ROOT,'apps/web/src/phone/view.ts'));
+  const {createReactPhoneView,display,connection,telemetry,blocked,liftHint,rotationNotice,confirmation,answerConfirm,transferHost,leaveRoom,offline}=load(path.join(ROOT,'apps/web/src/phone/view.ts'));
   let bound=[],lastController=null;
   const materialize=()=>{
     const data=display.get();
@@ -201,10 +201,11 @@ export function controllerHarness({viewOnly=false,latency=false,logger=console}=
   const inputs = () => sockets.flatMap(socket => socket.sent).filter(message => message.type === 'input');
   const messages = () => sockets.flatMap(socket => socket.sent);
   const control = name => document.querySelectorAll('[data-ctl]').find(node => node.dataset.ctl === name);
-  async function ready(overrides = {}) {
-    sockets[0].open(); sockets[0].receive({ type: 'welcome', slot: 'P1', isHost: true, role: 'ホスト', token: 'test-token' });
+  // welcome: 参加者 (ホスト以外) として始めるときの上書き。例 { slot: 'P2', isHost: false }
+  async function ready(overrides = {}, welcome = {}) {
+    sockets[0].open(); sockets[0].receive({ type: 'welcome', slot: 'P1', isHost: true, role: 'ホスト', token: 'test-token', ...welcome });
     sockets[0].receive({ type: 'game', game: game(overrides) });
     await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
   }
-  return {render,display,liftHint,rotationNotice,confirmation,answerConfirm,transferHost,calls,dispose:()=>controller?.dispose(),activeTimers:()=>timers.size, document, window, portrait, el, sockets, peers, storage, advance, game, ready, inputs, messages, control };
+  return {render,display,liftHint,rotationNotice,confirmation,answerConfirm,transferHost,leaveRoom,calls,dispose:()=>controller?.dispose(),activeTimers:()=>timers.size, document, window, portrait, el, sockets, peers, storage, advance, game, ready, inputs, messages, control };
 }

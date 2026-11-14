@@ -64,12 +64,39 @@ test('操作定義: 未検証でも開始できることと、確かめながら
   assert.match(profileNotice({name:'カードゲーム',status:'template',controllerSupported:false}),/マウス操作が中心/);
 });
 
+test('展示の部分交代: 選択済みゲームのロビーで、残留者と空き枠があればQRで募集できる (#551)',()=>{
+  const base = pcState.get();
+  const lobby = game(['P1'], {title:'minecraft-java'});
+  const snapshot = {...base, online:true, ui:{...base.ui,screen:'roles'}, game:lobby, state:{slots:[slot('P1',true)]}};
+  assert.equal(pcModel(snapshot).canRecruit,true);
+  assert.equal(pcModel({...snapshot,online:false}).canRecruit,false);
+  assert.equal(pcModel({...snapshot,game:{...lobby,phase:'paused'}}).canRecruit,false);
+  assert.equal(pcModel({...snapshot,state:{slots:[]}}).canRecruit,false);
+  assert.equal(pcModel({...snapshot,state:{slots:['P1','P2','P3','P4'].map(name=>slot(name,true))}}).canRecruit,false);
+});
+
+test('分担画面: 操作定義の注意だけを詳細ダイアログへ移す (#555)',()=>{
+  const base = pcState.get();
+  const profile = {name:'試験ゲーム', status:'extracted', controllerSupported:true, actions:[]};
+  const state = {...base, hostNotice:'PCホストを再起動しました', game:game(['P1','P2'], {profile})};
+  const roles = pcModel({...state, ui:{...base.ui, screen:'roles'}});
+  assert.match(roles.profileNotice,/未検証/);
+  assert(!roles.notices.includes(roles.profileNotice));
+  assert(roles.notices.includes(state.hostNotice));
+  const paused = pcModel({...state, game:{...state.game,phase:'paused'}});
+  assert.equal(paused.profileNotice,'');
+  assert(paused.notices.includes(roles.profileNotice));
+});
+
 test('PC画面: 定期更新で手動移動を戻さず、準備・停止への遷移時だけ分担へ案内する',()=>{
   const ui={screen:'join',game:'minecraft-java'};
   assert.equal(screenOnGameUpdate(ui,'paused',{phase:'paused',title:'minecraft-java'}).screen,'join');
   assert.equal(screenOnGameUpdate(ui,'lobby',{phase:'preparing',title:'minecraft-java'}).screen,'roles');
   assert.equal(screenOnGameUpdate({...ui,screen:'game'},'coop',{phase:'paused',title:'minecraft-java'}).screen,'roles');
   assert.equal(screenOnGameUpdate(ui,'lobby',{phase:'lobby',title:'minecraft-java'}).screen,'join');
+  // 協力プレイの終了 (END) でロビーへ戻っても、同じゲームのまま分担の画面にいる。ゲーム選択からやり直さない (#546)
+  { const back=screenOnGameUpdate({...ui,screen:'roles',game:'minecraft-java'},'coop',{phase:'lobby',title:'minecraft-java'});
+    assert.deepEqual([back.screen,back.game],['roles','minecraft-java']); assert.equal(desktopView(back,{phase:'lobby'}),'roles'); }
 });
 
 test('枠: 空き・接続中・切断中をサーバーの slots どおりに表示する', () => {
@@ -188,6 +215,15 @@ test('キー表示: 担当の操作にはホストの keys (ゲームのキー�
   assert.match(lines, /Qキー/);
   assert.doesNotMatch(lines, /ダッシュ|捨てる/);
   assert.match(lines, /送らない/);
+});
+
+test('方向キーの表示: ホストの矢印キー名を文字にし、担当表示にも反映する (#515)', () => {
+  for (const [label, expected] of [['\u2191','上矢印キー'],['\u2193','下矢印キー'],['\u2190','左矢印キー'],['\u2192','右矢印キー']]) {
+    const g = {profile:{...mc, assignment:{P1:['forward']}}, keys:{actions:{forward:{label}}}};
+    const lines = roleView(g, 'P1').lines.join();
+    assert(lines.includes(expected), `${label}: ${expected}`);
+    assert(!lines.includes(label), 'フォントの矢印を担当表示に残さない');
+  }
 });
 
 test('分担の確認: 操作定義があれば分担の案 (協力プレイ中は決まった分担) を、グループと実際のキーで出す', () => {
