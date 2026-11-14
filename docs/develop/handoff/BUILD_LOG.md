@@ -2346,3 +2346,4 @@
 - 50ms周期の生存確認と速達入力に、直近500msの未確認入力を同梱する。上限は64件・16KiB。通信契約は版6。#440の版5を前提にするため、PR #453をベースにした。
 - 合格：Web型検査、`node scripts/sim/product-web-test.mjs`（Node 22ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定）、`git diff --check`。欠番補完と本人解放を確認するRust試験を追加した。
 - Rust試験の実行、欠落・乱順・長時間断を組み合わせた通信検証、同一端末・Wi-Fiでの変更前後の分布と破棄件数の計測が残る。
+- 追試（#451）：ACKがない入力は500msを過ぎると同梱せず、その後の解放はWebSocketで送ることを検証した。phone-lifecycle 36/36。

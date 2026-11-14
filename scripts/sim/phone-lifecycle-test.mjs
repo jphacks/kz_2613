@@ -153,6 +153,19 @@ if (process.argv.includes('--repro-shared-pointer')) {
     dc.readyState = 'closed'; dc.onclose(); h.control('act:jump').fire('pointerdown', { pointerId: 2 });
     assert.equal(h.inputs().at(-1).iseq, 3); assert.equal(dc.sent.filter(message => message.type === 'input').length, 2);
   });
+  await test('速達経路: ACKがない入力も500msを過ぎたら同梱しない (#451)', async () => {
+    const h = controllerHarness(); await h.ready();
+    const dc = h.peers[0].channel; dc.readyState = 'open'; dc.onopen();
+    h.control('act:attack').fire('pointerdown');
+    const payload = () => dc.sent.findLast(message => message.type === 'ka').inputs;
+    h.advance(450);
+    assert.deepEqual(payload().map(message => message.iseq), [1]);
+    h.advance(100);
+    assert.deepEqual(payload(), []);
+    h.control('act:attack').fire('pointerup');
+    assert.deepEqual(h.inputs().map(message => message.state), ['down', 'up']);
+    assert.deepEqual(dc.sent.at(-1).inputs, []);
+  });
   await test('通信断/再接続: 保持を失効しtoken・nextIseqを引き継ぎ、旧Socketのgame/closeを無視する', async () => {
     const h = controllerHarness(); await h.ready(); const old = h.sockets[0];
     h.control('act:attack').fire('pointerdown'); old.close(); h.advance(250);
