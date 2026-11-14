@@ -32,18 +32,6 @@ export function inputWarnText({ isHost, game, name, notice }: {isHost:boolean;ga
   return [target, isHost && game.phase !== 'coop' ? notice : ''].filter(Boolean).join(' ');
 }
 
-/** リモコンの操作先。前面にあるのに「前面にしてください」と出さず、届かない理由を段階に合わせて示す (#291) */
-function routeText(game: PhoneGame, name: string) {
-  if (game.remoteRoute === 'app') return 'PCアプリを操作中';
-  if (game.remoteRoute === 'game') return `${name}のメニューを操作中`;
-  // PC アプリ以外の前面のウィンドウ (ランチャー・ダイアログ等、#287・#405)。PC のマウスを使わずに先へ進める
-  if (game.remoteRoute === 'desktop') return 'PCの画面を操作中（実際のマウスとして動きます）';
-  if (game.remoteRoute !== 'none') return '';
-  if (!sendsToGame(game)) return 'PCアプリを前面にすると、リモコンを使えます';
-  if (game.inputTarget) return `${name}が前面にないため、リモコンは届きません`;
-  return `リモコンは今は届きません${game.readyReasons?.length ? `（${game.readyReasons[0]}）` : ''}`;
-}
-
 /**
  * 時間制の役割交代の短い案内 (#161)。協力プレイ中の参加者だけ。予告では次の担当、交代の直後は新しい担当を示す。
  * 画面を覆わず、操作を止めない
@@ -107,7 +95,7 @@ export function remoteModel({ me, isHost, game, name }: {me:Slot;isHost:boolean;
     .map(text => `${text}。`).join('');
   return {
     players: playerChips(game, me),
-    route: routeText(game, name), routeBlocked: game.remoteRoute === 'none', notice: '',
+    notice: '',
     // ゲームが前面に残っても、スマホだけでPCアプリへ戻れるようにする (#292)
     openAppHidden,
     startLabel: phase === 'paused' ? '再開する' : START_COOP_LABEL,

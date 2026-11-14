@@ -20,16 +20,21 @@ code = code.replace(/from (["'])([^"']+)\1/g, (_, quote, specifier) => {
 const {Controller} = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
 const game = {profile:{id:'preview',name:'試験',actions:[
   {id:'forward',type:'button',group:'move'}, {id:'right',type:'button',group:'move'},
+  {id:'back',type:'button',group:'move'}, {id:'left',type:'button',group:'move'},
   {id:'jump',type:'button',group:'move'}, {id:'look',type:'mouseDelta',group:'look'},
   {id:'wheel',type:'wheel',group:'look'},
-]},assigned:{P1:['forward','right','jump','look','wheel']},keys:{actions:{jump:{label:'Space'}}}};
+]},assigned:{P1:['forward','right','back','left','jump','look','wheel']},keys:{actions:{jump:{label:'Space'}}}};
 const html = renderToStaticMarkup(createElement(Controller, {groups:controllerLayout(game,'P1')}));
 assert.match(html, /inert=""/);
 assert.match(html, /class="stick gen-stick"/);
 assert.match(html, /class="look-pad"/);
 assert.match(html, /Spaceキー/);
-assert.match(html, /ホイール↑/);
-assert.match(html, /ホイール↓/);
+assert.match(html, /ホイール上/);
+assert.match(html, /ホイール下/);
+for (const direction of ['up','down','left','right']) {
+  assert.match(html, new RegExp(`<svg[^>]*data-icon="arrow-${direction}"[^>]*aria-hidden="true"[^>]*focusable="false"`), '4方向とも読み上げ・フォーカス対象外の SVG で描く (#515)');
+}
+assert.doesNotMatch(html, /[▲▼◀▶]/, 'スティックの矢印に記号の文字を使わない (#515)');
 assert(!/data-ctl=|data-cmd=|id="(?:pad|sens|sensVal)"/.test(html), 'プレビューに実入力の探索属性や重複IDを出さない');
 assert(!/disabled=""/.test(html), '無効化の既定スタイルでプレイ時の見た目を変えない');
 if (process.argv.includes('--write-preview')) {

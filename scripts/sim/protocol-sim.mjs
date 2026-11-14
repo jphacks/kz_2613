@@ -285,6 +285,12 @@ const phaseIs = (c, phase, from, timeout = 2000) =>
 async function main() {
   console.log(`protocol-sim: port=${PORT} (RECOOPLAY_DRY_RUN=1)`);
   const host = startHost();
+  // 協力プレイの終了 (END) で PC アプリが前面になる (#546)。続けて遊ぶ試験は、ゲームを前面へ戻し、その反映を待ってから進める
+  async function refocusGame(player) {
+    const from = player.mark();
+    host.child.stdin.write('app blur\n');
+    await player.waitFor((m) => m.type === 'game' && m.game.remoteRoute !== 'app', { from, what: 'ゲームを前面に戻す' });
+  }
   let exitCode = 1;
   try {
     await waitReady();
@@ -1197,6 +1203,9 @@ async function main() {
       let from = p1.mark();
       p1.send({ type: 'command', cmd: 'END' });
       const lobby3 = await phaseIs(p1, 'lobby', from);
+      // ゲームは閉じずに、PC アプリから起動したホストは PC アプリを前面へ戻す (#546)
+      await p1.waitFor((m) => m.type === 'game' && m.game.phase === 'lobby' && m.game.remoteRoute === 'app', { from, what: '終了でPCアプリが前面' });
+      await refocusGame(p1); // 終了でPCアプリが前面になる (#546)。後続はゲームを前面に戻してから進める
       assert(!('fixedControls' in lobby3.game) && lobby3.game.profile.assignment.P3, '3人のMinecraftも操作定義の分担');
       // 2人: P1 移動 / P2 視点＋攻撃・持ち物
       from = p1.mark();
@@ -1243,6 +1252,7 @@ async function main() {
       from = p1.mark();
       p1.send({ type: 'command', cmd: 'END' });
       await phaseIs(p1, 'lobby', from);
+      await refocusGame(p1); // 終了でPCアプリが前面になる (#546)。後続はゲームを前面に戻してから進める
       p3 = await join('P3'); await welcome(p3);
       const p4 = await join('P4'); await welcome(p4);
       await p1.waitFor((m) => m.type === 'game' && m.game.connected.length === 4, { from, what: '4人' });
@@ -1261,6 +1271,7 @@ async function main() {
       from = p1.mark();
       p1.send({ type: 'command', cmd: 'END' });
       await phaseIs(p1, 'lobby', from);
+      await refocusGame(p1); // 終了でPCアプリが前面になる (#546)。後続はゲームを前面に戻してから進める
       p4.close();
       await p1.waitFor((m) => m.type === 'game' && m.game.connected.length === 3, { from, what: '3人に戻す' });
       await confirmLineup(mon, p1); p1.send({ type: 'command', cmd: 'PREPARE' });
@@ -1332,6 +1343,7 @@ async function main() {
       from = p1.mark();
       p1.send({ type: 'command', cmd: 'END' });
       const lobby = await phaseIs(p1, 'lobby', from);
+      await refocusGame(p1); // 終了でPCアプリが前面になる (#546)。後続はゲームを前面に戻してから進める
       assert(lobby.game.roleOf.P2 === 'P3', '終了で入れ替えが消えた');
       await confirmLineup(mon, p1);
       from = p1.mark();
@@ -2033,6 +2045,26 @@ async function main() {
       const old = await join('T1', id(1)); const o = await welcome(old);
       assert(o.slot === 'P3' && o.isHost === false, JSON.stringify({ slot: o.slot, isHost: o.isHost }));
       for (const x of [host, old, b]) x.close();
+    });
+
+    await check('参加者の退出: ロビーでホスト以外だけが自分の枠を空け、次の端末がすぐ同じ枠に入れる (#546)', async () => {
+      mon.send({ type: 'reset' });
+      await sleep(200);
+      const id = (n) => ({ clientId: `sim-leave-${n}` });
+      const a = await join('L1', id(1)); await welcome(a);
+      const b = await join('L2', id(2)); await welcome(b);
+      a.send({ type: 'leave' }); // ホストは退出しない
+      await sleep(300);
+      assert(a.closed === null, 'ホストの接続を閉じた');
+      const from = a.msgs.length;
+      b.send({ type: 'leave' });
+      assert((await b.waitClose()) === 4010, `close ${b.closed}`);
+      const { game } = await a.waitFor(m => m.type === 'game' && m.game.connected.join(',') === 'P1', { from, what: '退出後の参加者' });
+      assert(game.phase === 'lobby', game.phase);
+      // 15秒の保持を待たずに、別の端末が空いた枠へ入る
+      const next = await join('L3', id(3)); const w = await welcome(next);
+      assert(w.slot === 'P2' && w.reconnected !== true, JSON.stringify({ slot: w.slot, reconnected: w.reconnected }));
+      for (const x of [a, next]) x.close();
     });
 
     await check('人数の変更: 一時停止中にPC画面から今の接続で分担し直し、全員の確認と明示の再開を求める (#162)', async () => {
