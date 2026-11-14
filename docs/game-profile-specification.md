@@ -110,7 +110,7 @@ Steam・Epic Gamesの検出情報はゲーム選択と入力先の判定に用�
 
 ### 規則による割当（`RECOOPLAY_PRESETS=rule`）
 
-環境変数`RECOOPLAY_PRESETS=rule`でホストを起動したとき、モデルの重みを読めないとき、ホストが分担の画面で「規則」を選んだときは、下の規則で2〜4人用の案を作ります。`game.profile.presetSource`は`rule`です。
+環境変数`RECOOPLAY_PRESETS=rule`でホストを起動したとき、モデルの重みを読めないとき、ホストが分担の画面で「定型ルール」（規則）を選んだときは、下の規則で2〜4人用の案を作ります。`game.profile.presetSource`は`rule`です。
 
 ### 既定：BERT風モデルによるプリセット
 
