@@ -30,7 +30,8 @@ export function createPhoneSession({storage,createClientId,now}:SessionOptions) 
   function detach(){const old=socket;socket=null;return old}
   function resetRetry(){retry=0}
   function isOpen(){return !stopped&&socket?.readyState===1}
-  function silent(){return isOpen()&&now()-lastServerMsg>=3000}
+  function serverSilenceMs(){return now()-lastServerMsg}
+  function silent(){return isOpen()&&serverSilenceMs()>=3000}
   function sequenced<T extends object>(message:T){return {...message,seq:++seq}}
   function input(message:ButtonInput):SequencedInput{return {type:'input',...message,iseq:++iseq,epoch:game?.epoch,t:now()}}
   function send(message:object){if(stopped||!socket||socket.readyState!==1)return false;socket.send(JSON.stringify(message));return true}
@@ -39,6 +40,6 @@ export function createPhoneSession({storage,createClientId,now}:SessionOptions) 
     const states:Record<Connection,[string,string]>={connecting:['接続中','warn'],connected:[reconnected?'再接続OK':'接続OK','ok'],disconnected:['切断 — 再接続待ち','ng'],replaced:['別タブで接続中','ng'],reset:['リセットされました','ng'],version:['版が不一致','ng'],token:['参加できません','ng'],closed:['PCアプリが終了しました','ng'],full:['満員で参加できません','ng']};
     return states[connection];
   }
-  return {connecting,attach,current,open,received,authenticate,welcome,updateGame,stop,disconnected,detach,resetRetry,isOpen,silent,sequenced,input,send,view,status,
+  return {connecting,attach,current,open,received,authenticate,welcome,updateGame,stop,disconnected,detach,resetRetry,isOpen,silent,serverSilenceMs,sequenced,input,send,view,status,
     get socket(){return socket},get stopped(){return stopped},get me(){return me},get isHost(){return isHost},get game(){return game}};
 }
