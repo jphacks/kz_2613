@@ -56,7 +56,6 @@ lifetime.listenDocument('click',e=>{
   const source=(e.target instanceof Element?e.target:null)?.closest<HTMLElement>('[data-preset]')?.dataset.preset;
   if(source==='rule'||source==='model')send({type:'preset_source',source});
 });
-lifetime.listen($('closeSettings'), 'click',()=>$<HTMLDialogElement>('settings').close());
 lifetime.listen($('connectionHelpBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
 lifetime.listen($('joinTroubleshootingBtn'), 'click',()=>openDialog($<HTMLDialogElement>('joinTroubleshooting')));
 lifetime.listen($('settingsConnectionBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
@@ -108,7 +107,6 @@ function rolesRun(action:UiAction|undefined){
   if(!action||action.disabled)return;
   if(action.kind==='confirm'&&game)send({type:'confirm_lineup',title:game.title,members:game.connected,epoch:game.epoch});
   else if(action.kind==='launch')send({type:'launch_game',id:action.id});
-  else if(action.kind==='prepare')send({type:'prepare'});
   else if(action.kind==='swap')setUi({...ui,swap:true});
   else if(action.kind==='back'){swapPick=null;setUi({...ui,swap:false});}
 }

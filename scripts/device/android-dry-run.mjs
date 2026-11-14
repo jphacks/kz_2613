@@ -269,14 +269,13 @@ try{
       await collectWifiProof('initial');return {host:report.networkProof.host,pcEndpoints:statuses,redactedInfo};
     });
     // PC上の模擬参加者を補助として使う。3台の実機受入ではない。
-    for(const slot of ['P2','P3','P4'].slice(0,playerCount-1)){const c=await open(client());c.send({type:'hello',protocolVersion:4,clientId:`acceptance-${slot}`,ua:'simulation'});await until(()=>c.messages.some(m=>m.type==='welcome'),'模擬参加');}
+    for(const slot of ['P2','P3','P4'].slice(0,playerCount-1)){const c=await open(client());c.send({type:'hello',protocolVersion:5,clientId:`acceptance-${slot}`,ua:'simulation'});await until(()=>c.messages.some(m=>m.type==='welcome'),'模擬参加');}
     ping=setInterval(()=>{for(const c of clients)if(c.ws.readyState===1)c.send({type:'ping',t:Date.now()});},1000);
     await until(()=>mon.state().game.connected.length===playerCount,'participants');
     mon.send({type:'select_game',title:'minecraft-java'});
     await until(()=>mon.state().game.title==='minecraft-java','ゲーム選択');
     const g=mon.state().game;mon.send({type:'confirm_lineup',title:g.title,members:g.connected,epoch:g.epoch});
     await until(()=>mon.state().game.lineupOk,'分担確定');
-    await click('#startBtn');await until(()=>mon.state().game.phase==='preparing','preparing');
     await click('#startBtn');await until(()=>mon.state().game.phase==='coop','coop');
     if(observeRtcFault){
       await check('RTC単独: 同じWSで新規入力を受理',async()=>{

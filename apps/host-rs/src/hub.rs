@@ -42,7 +42,7 @@ const SLOT_ROLES: [&str; MAX_SLOTS] = ["ホスト", "参加者", "参加者", "�
 // "pseudo-game" は診断用の疑似ゲーム画面 (/game) で、PC アプリの一覧には出さない (ゲーム変更の試験にも使う)
 // PC アプリ (apps/desktop) の実行ファイル名。前面になったら PC アプリへの手動復帰とみなす
 const DESKTOP_PROCESS: &str = "recooplay-desktop.exe";
-const PROTOCOL_VERSION: u64 = 4;
+const PROTOCOL_VERSION: u64 = 5;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 /// 接続ごとの送信待ちの上限。健全な接続は溜まらず、読取りが止まった接続だけが達する (#197)
@@ -64,6 +64,12 @@ pub enum Out {
 }
 
 pub enum Event {
+    #[cfg(feature = "latency-measure")]
+    WsSendGap {
+        id: u64,
+        gap_ms: u64,
+        send_ms: u64,
+    },
     WsOpen {
         id: u64,
         tx: UnboundedSender<Out>,
@@ -730,8 +736,12 @@ impl Hub {
             match rx.recv_timeout(wait) {
                 Ok(Event::Shutdown) => {
                     // 終了時は押しっぱなしを残さない
+                    crate::netinfo::block_hotspot_start();
                     let confirmed = self.release_for_shutdown();
                     self.close_players_for_shutdown();
+                    let hotspot = crate::netinfo::stop_owned_hotspot();
+                    self.log("hotspotShutdown", json!({ "result": hotspot }));
+                    let _ = self.log_file.flush();
                     crate::runtime_measure::finish();
                     crate::input_trace::finish();
                     std::process::exit(if confirmed { 0 } else { 1 });
@@ -948,7 +958,11 @@ impl Hub {
     }
 
     fn can_ready(&self) -> bool {
-        session::can_ready(self.game.phase, self.ready_reasons(false).is_empty())
+        session::can_ready(
+            self.game.phase,
+            self.ready_reasons(self.game.phase == Phase::Lobby)
+                .is_empty(),
+        )
     }
 
     fn can_resume(&self) -> bool {
@@ -1026,7 +1040,7 @@ impl Hub {
             "canReady": self.can_ready(),
             "canResume": self.can_resume(),
             "hostReady": self.game.host_ready,
-            "readyReasons": self.ready_reasons(false),
+            "readyReasons": self.ready_reasons(self.game.phase == Phase::Lobby),
             "prepareStatus": self.game.prepare_status,
             "titleName": self.game_name(),
             "launch": self.launch.as_ref().map(|l| json!({ "id": l.id, "state": l.state, "message": l.message })),
@@ -1409,15 +1423,20 @@ impl Hub {
             return;
         }
         let name = self.game_name();
+        let epoch = self.game.epoch;
+        if cmd == "READY" && self.game.phase == Phase::Lobby && self.inject == InjectMode::On {
+            self.check_target();
+        }
         let allowed = session::command_allowed(
             slot,
             cmd,
             self.game.phase,
             cmd == "PREPARE" && self.game.phase == Phase::Lobby && self.can_prepare(),
-            cmd == "READY" && self.game.phase == Phase::Preparing && self.can_ready(),
+            cmd == "READY" && epoch == self.game.epoch && self.can_ready(),
             cmd == "RESUME" && self.game.phase == Phase::Paused && self.can_resume(),
         );
-        let mut rejected: Option<String> = None;
+        let mut rejected = (epoch != self.game.epoch)
+            .then(|| "入力先が変わりました。前面を確認して、もう一度押してください".into());
         let accepted = allowed
             && match (cmd, self.game.phase) {
                 ("OPEN_GAME", Phase::Preparing | Phase::Paused) => {
@@ -1457,7 +1476,9 @@ impl Hub {
                     self.set_phase(Phase::Preparing, "host prepare");
                     true
                 }
-                ("READY", Phase::Preparing) if self.focus_for_coop() => {
+                ("READY", Phase::Lobby | Phase::Preparing)
+                    if self.game.phase == Phase::Lobby || self.focus_for_coop() =>
+                {
                     self.reload_keybinds();
                     self.fix_assignment();
                     self.game.host_ready = true;
@@ -3645,6 +3666,19 @@ impl Hub {
                 }
             }
             Event::WsClosed { id, code } => self.on_ws_closed(id, code),
+            #[cfg(feature = "latency-measure")]
+            Event::WsSendGap {
+                id,
+                gap_ms,
+                send_ms,
+            } => {
+                if let Some(Role::Player { slot }) = self.conns.get(&id).map(|conn| &conn.role) {
+                    self.record(
+                        "ws_send_gap",
+                        json!({ "slot": SLOT_NAMES[*slot], "gapMs": gap_ms, "sendMs": send_ms }),
+                    );
+                }
+            }
             Event::RtcDescription {
                 slot,
                 gen,
