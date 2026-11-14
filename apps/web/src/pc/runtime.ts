@@ -240,6 +240,7 @@ return {
   setAutoResume: (on:boolean) => send({type:'auto_resume',on}),
   setRotation: (seconds:number) => send({type:'rotation',seconds}),
   setKey: (action:string,output:string|null) => send({type:'set_key',action,output}),
+  resetKeys: () => send({type:'reset_keys'}),
 };
 
 }
