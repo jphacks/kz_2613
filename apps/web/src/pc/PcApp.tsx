@@ -24,6 +24,7 @@ export function PcApp() {
 <SettingsDialog state={state} model={model} connection={connection}/>
 <RenameDialog/>
 <ConnectionHelpDialog connection={connection}/>
+<JoinTroubleshootingDialog/>
 <ResetDialog/>
 </>;
 }
@@ -51,7 +52,10 @@ function Sidebar({state,model,connection}:{state:PcState;model:PcModel;connectio
     <p className="qr-step-label join-label" id="joinLabel" hidden={!connection.guide.two}>② 参加する</p>
     <div className="qr" id="qr" dangerouslySetInnerHTML={{__html: connection.qr}} />
     <p className="qr-note" id="qrNote" hidden={!connection.note}>{connection.note}</p>
-    <button className="connection-help" id="connectionHelpBtn">接続方法・URLを確認</button>
+    <div className="connection-help">
+      <button id="connectionHelpBtn">接続方法・URLを確認</button>
+      <button id="joinTroubleshootingBtn" aria-haspopup="dialog">開けないとき</button>
+    </div>
   </div>
   <button className="open-game" id="openGameBtn" hidden={model.openGameHidden}>{model.name}を前面にする</button>
   <p className="action-note" id="actionNote" role="status">{model.actionNote}</p>
@@ -73,8 +77,8 @@ function Workspace({model}:{model:PcModel}) {
       <button id="keyBindingsBtn" className="role-keys">このPCのキー設定を確認</button>
       <div id="presetChoice" className="preset-choice" role="group" aria-label="分担の作り方" hidden={model.preset.hidden}>
         <span>分担の作り方</span>
-        <button data-preset="rule" aria-pressed={model.preset.source === 'rule'} disabled={model.preset.disabled}>規則</button>
-        <button data-preset="model" aria-pressed={model.preset.source === 'model'} disabled={model.preset.disabled}>モデル（未検証）</button>
+        <button data-preset="rule" aria-pressed={model.preset.source === 'rule'} disabled={model.preset.disabled} title="操作の種類（移動・視点・行動など）ごとに、決まったルールで割り当てます">定型ルール</button>
+        <button data-preset="model" aria-pressed={model.preset.source === 'model'} disabled={model.preset.disabled} title="Re:Cooplay独自のAIが、操作の名前とキーから割り当てを考えます。実機での確認はまだです">独自AI</button>
         <button id="remakePresetBtn" disabled={model.preset.disabled}>割り当てを作り直す</button>
       </div>
     </section>
@@ -119,7 +123,7 @@ function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;co
     </ul>
   </details>
   <p id="buildInfo" className="legal">{connection.build}</p>
-  <button id="closeSettings">閉じる</button>
+  <form method="dialog"><button id="closeSettings">閉じる</button></form>
 </dialog>;
 }
 
@@ -150,6 +154,20 @@ function ConnectionHelpDialog({connection}:{connection:ConnectionModel}) {
   <h2 id="connectionTitle">スマホを接続する</h2><p>PCと同じWi-Fiへ接続してから、QRを読み取ってください。最初に読み取った人がホスト（P1）になります。2〜4人で遊べます。</p>
   <div id="helpQr" className="help-qr" dangerouslySetInnerHTML={{__html: connection.qr}} />
   <p className="url" id="url">{connection.url}</p><p id="urlNote">{connection.urlNote}</p><p id="wifi">{connection.wifi}</p>
-  <button id="reloadInfo">QRを取得し直す</button><button id="closeConnectionHelp">閉じる</button>
+  <button id="reloadInfo">QRを取得し直す</button><form method="dialog"><button id="closeConnectionHelp">閉じる</button></form>
 </dialog>;
+}
+
+function JoinTroubleshootingDialog() {
+  return <dialog id="joinTroubleshooting" aria-labelledby="joinTroubleshootingTitle">
+    <h2 id="joinTroubleshootingTitle">参加ページが開けないとき</h2>
+    <ol>
+      <li>スマホがPCと同じWi-Fi（モバイルホットスポット）につながっているか確認します。</li>
+      <li><strong>Android</strong>　設定 → アプリ → お使いのブラウザ → 権限を開き、「付近のデバイス」があれば許可します。</li>
+      <li><strong>iPhone</strong>　設定 → プライバシーとセキュリティ → ローカルネットワークで、お使いのブラウザが表示されていればオンにします。</li>
+      <li>QRを読み直します。手入力する場合は、参加URLを <code>http://</code> から入力します。</li>
+      <li>VPNやセキュリティアプリでローカル通信を制限している場合は、設定でローカル通信を許可します。</li>
+    </ol>
+    <form method="dialog"><button id="closeJoinTroubleshooting" autoFocus>閉じる</button></form>
+  </dialog>;
 }

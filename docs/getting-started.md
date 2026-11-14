@@ -36,6 +36,8 @@ DLL不足の案内が出た場合は、[Microsoft公式のVisual C++ランタイ
 
 接続できない場合は信頼するローカルネットワークへのファイアウォール許可を確認します。同梱の`allow-firewall.ps1`は配布物のREADMEに従って使用します。ファイアウォール全体を無効化する必要はありません。
 
+スマホが同じWi-Fiにつながっていて参加ページだけ開けない場合は、PC画面の参加用QRの近くにある「開けないとき」を開きます。Androidではブラウザの権限に「付近のデバイス」があれば許可します。iPhoneでは「設定 → プライバシーとセキュリティ → ローカルネットワーク」にブラウザが表示されていればオンにします。その後、参加用QRを読み直してください。 [Android Developers](https://developer.android.com/privacy-and-security/local-network-permission) · [Appleサポート](https://support.apple.com/ja-jp/102229)
+
 ## 接続を確認
 
 最初のスマホがP1・ホストになり、後の端末へ参加枠が割り当てられます。PCとスマホの表示を確認して[ゲーム選択と開始](usage.md)へ進みます。プレイ中はスマホをロックせず、操作画面を開いたままにします。

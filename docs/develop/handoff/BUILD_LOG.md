@@ -2334,6 +2334,18 @@
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
 
+## 2026-11-14 — ゲーム選択前の分担表示を抑える（#447、Codex）
+
+- ホストとPC画面を未選択から始める。既存の文字列型の `game.title` を空にし、既存の `profile: null` を使う。スマホはゲーム選択を待つ表示にし、選択後はホストが配る分担を表示する。参加枠と担当確認の仕組みは従来どおり使う。
+- 合格：`npm --prefix apps/web run build`、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/verify_overlay.py`、`python scripts/check-public-docs.py`、変更したシミュレーションの構文検査、`git diff --check`。Node 22.15.0ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定した。
+- 初回参加・ゲーム選択・再選択を確認する通信試験を追加した。Rustホストの実行を伴う確認はGitHub CIで行い、Android・iPhoneでの表示は実機受入に残す。
+- 追試（#447）：選択IDと操作定義IDを別に照合し、キー設定はMinecraft選択後の通知を参照するようにした。CI run 43485721653 のホストで通信66/66、Chromeの画面検査（PC 800×560・スマホ390×844）23画面が合格。
+## 2026-11-14 — 分担の初期設定をモデルにする（Claude Code）
+
+- 利用者の判断：分担の案の初期設定を規則からモデルに切り替える（#474）。`RECOOPLAY_PRESETS=rule` でなければモデルの分担を使う（`profiles::model_presets_enabled`）。使われなくなった `preset_source()` は消した。規則に戻すときは `RECOOPLAY_PRESETS=rule`。
+- 検証済みのプリセットがあるゲームは `model_presets::needs_model` で対象外のまま。試験の `fixture()` は `presets_model` を明示しているので、既存の試験の前提は変わらない。
+- 版2の重み（約57MB）の読み込みで待ち受けの開始が遅れないよう、起動時に裏のスレッドで読み始める（`profiles::warm_model`）。読み終わる前に分担が要るときは、その処理だけが読み終わりを待つ。
+- 合わせて AGENTS.md・`game-profile-specification.md`・`scripts/preset-model/README.md`・配布物の説明（`package.ps1`）・判断の記録を直した。実機は未確認。
 ## 2026-11-14 — ロビーから分担操作を開始する（#440、Codex）
 
 - スマホの開始操作を「分担操作開始」に統合した。対象の前面、確定した分担と接続者、担当の確認、入力ドライバー、緊急停止の条件をホストで確認し、全解放とepoch更新を経て協力プレイへ進む。通信契約は版5。従来の準備経路は互換用に残した。
@@ -2353,3 +2365,232 @@
 
 - Android模擬参加、PCブラウザー補助、ホスト負荷計測、終了試験を `PHONE_PROTOCOL_VERSION` の参照にそろえた。通信版6のPR #457をベースにした。
 - Webビルド、変更4スクリプトの構文検査、Android補助CLI 23/23、通信境界 8/8、差分検査が合格。Node 22での実行にはTypeScriptの直接読み込みオプションを指定した。
+## 2026-11-14 — ゲーム選択のダブルクリック（#445、Codex）
+
+- 同じタイルへの400ms以内の2回のクリックで分担へ進む。PCのクリックと仮想カーソルのクリックを同じ処理で判定する。選択中のタイルの「▶」とEnterからも進める。
+- 合格：`npm --prefix apps/web run build`、`NODE_OPTIONS=--experimental-strip-types` を指定した `node scripts/sim/product-web-test.mjs`（app-view 37/37、ui-input 20/20）、`node scripts/sim/check-static-pages.mjs`、`git diff --check`。
+- Tauri・WebView2での表示と、PCマウス・スマホの仮想カーソルを使った通し操作は実機受入に残す。
+## 2026-11-14 — 参加ページが開けないときの案内（#414、Codex）
+
+- 参加用QRの近くに「開けないとき」を追加し、同じWi-Fi、ブラウザのローカル通信権限、URLの手入力、VPN等のローカル通信設定を確認できるようにした。
+- Webビルド・製品Web回帰・静的ページ検査・公開資料検査・差分検査に合格。WebView2の最小サイズでQRとの非重複とダイアログ開閉を確認するスモーク試験を追加し、構文検査に合格。WebView2の実行結果はCIで確認する。
+- Androidで権限を拒否し、案内に沿って許可後に参加できることは実機受入に残す。
+## 2026-11-14 — 終了時にスマホへWi-Fiの案内を表示する（#415、Codex）
+
+- 協力プレイを終えてロビーへ戻ったときと、PCアプリの正常終了通知を受けたとき、スマホのWi-Fiを普段のネットワークへ戻す案内を表示する。
+- `npm --prefix apps/web run build`、`node scripts/sim/phone-view-test.mjs`、`node scripts/sim/phone-lifecycle-test.mjs` 34/34、`git diff --check` が合格。
+- 非管理者でのホットスポット停止・設定変更と、停止前の通知到達は、現行配布形態での確認が残る。
+
+## 2026-11-14 — アプリが起動したホットスポットを終了時に停止する（#415 A、Codex）
+
+- [設計の記録](../decisions/2026-11-14-hotspot-shutdown.md)。終了処理は入力解放、スマホへの終了通知、ホットスポットの停止の順とする。停止結果を資格情報なしで記録する。
+- Windowsで `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` が成功。OpenSSLの既知のPDB警告あり。 `npm ci --offline`、`npm run build`、`cargo fmt --manifest-path apps/host-rs/Cargo.toml --all --check`、`python scripts/verify_overlay.py`、`git diff --check` が成功。
+- Node.js 22.15.0の `node --experimental-strip-types scripts/sim/protocol-sim.mjs --bin data/local/hotspot-host.exe` が66/66成功。事前にONの場合の保持、同時の起動要求、スマホへの終了通知コード4009、入力解放後の模擬停止、パスワードの非記録を確認した。
+- 非管理者でのWindows実機停止と、SSID・パスワードを変更・復元するBが残る。
+## 2026-11-14 — 監視WebSocketの読取停止を60秒の負荷で追試する（#197、Codex）
+
+- `runtime-measure.mjs` で最大60秒を指定できるようにし、WS切断コードと失敗時点までの測定結果を保存する。PR #456 のWindowsホストを使用し、OS入力は無効。
+- `node scripts/sim/runtime-measure.mjs --bin <exe> --players 2,4 --cases slow-monitor --duration-ms 60000` は2人で合格（送信待ち最大4096件）。4人ではホストで解放を記録したが、監視で停止状態の待機に失敗した。4人の再試行では監視の1006をJSONに記録した。[条件と結果](../decisions/2026-11-06-host-runtime-measurement.md#2026-11-14の60秒追試)。
+- 同スクリプトの `--players 2 --cases normal --duration-ms 1000`、60秒超の拒否、`node --check`、構造・公開資料検査、`git diff --check` が成功。4人時の監視切断の原因と実Wi-Fiでの受入は未確認。
+
+## 2026-11-14 — 監視WebSocketが切断された条件を計測する（#197、Codex）
+
+- 既存のdry-run計測時に、送信結果と上限超過の有無を接続番号付きで出力する。計測スクリプトは成功・失敗の双方でこの情報を保存し、失敗時にもホストに正常終了を要求する。
+- Windowsの `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml`、`node --check scripts/sim/runtime-measure.mjs`、`git diff --check` が成功。新しいホストのSHA-256は `6ea869f4afd7b0d2bb055918686002e8554835bc1100251ad5c7ccae373e20a6`。
+- `runtime-measure.mjs --players 2 --cases normal,slow-monitor --duration-ms 5000` は2/2合格。 `--players 4 --cases slow-monitor --duration-ms 60000` は停止通知の待機で失敗した。読取り継続側は送信成功かつ上限超過で切断され、ホストログにはキー解放が残った。通知配送の改善と実Wi-Fi受入は未実施。
+
+## 2026-11-14 — 監視キューの混雑時に入力診断ログの転送を抑える（#197、Codex）
+
+- 送信待ちが256件以上の監視接続への入力診断ログの転送を省く。保存ログと制御通知は従来の経路を使う。テストで診断ログによるキュー飽和を防ぎ、緊急停止の状態通知が残ることを確認した。
+- Windowsの `cargo build --release --locked --offline` と `cargo test --release --locked --offline` が成功。ホスト200件、プローブ4件合格、既存の除外5件。Webビルド、構造検査、差分検査も成功。
+- `runtime-measure.mjs --players 4 --cases slow-monitor --duration-ms 60000` が合格。読み続ける監視で停止と全解放、参加者で旧epochの拒否を確認。実Wi-Fi受入は未実施。
+## 2026-11-14 — 別ホストへの参加を通信回帰で検証する（#452、Codex）
+
+- 2台目のdry-runホストをOS割当ポートで起動し、元ホストの参加情報で新規参加できることと、元ホストで元の枠に再接続できることを確認する。既存の不一致トークン拒否も引き続き実行する。
+- PR #456のWindowsホストを使った `node --experimental-strip-types scripts/sim/protocol-sim.mjs --bin <exe>` は66/66合格。Webビルド、スクリプト構文、差分検査も成功。実スマホのWi-Fi切替・旧タブは未検証。
+
+## 2026-11-14 — キー割当を初期値に戻す（#438、Codex）
+
+- ゲーム自身のキー設定を反映した初期値と比較し、一致する場合はRe:Cooplayの上書きを削除する。操作を送らない設定も同じ規則で扱う。
+- 通信シミュレーションに、個別に戻したときの変更済み表示と保存ファイルの確認を追加した。構文検査、Rustの整形、差分検査を実施。Rustホストでの実行はCIで確認する。
+## 2026-11-14 — PCのキー割当リセットを型付き操作に接続する（#278、Codex）
+
+- PCの「このゲームのキーを初期値に戻す」ボタンから、型付きの `settingsActions.resetKeys` を経由して既存の `reset_keys` を送る。従来の無効化条件とホストの認可・全解放処理を維持する。
+- Webビルドと `node scripts/sim/product-web-test.mjs` が合格。Node 22でTypeScriptを直接読むため `NODE_OPTIONS=--experimental-strip-types` を指定。Tauriでのマウス・仮想カーソルの押下は未確認。
+## 2026-11-14 — ボタン押下の遅延区間を分ける（#437、Codex）
+
+- 計測用Webビルドで、ボタンのイベント時刻から送信までが150msを超えた場合に、ハンドラー入口までと入口から送信までを分けて `recooplay:pointer-delay` としてコンソールへ記録する。入力連番でホスト側の計測と照合できる。
+- 計測版・通常版のWebビルドに合格し、計測版だけに診断文字列があることを確認した。スマホ入力ライフサイクル試験34/34と差分検査が合格。iPhone実指での外れ値の再現とSafariタイムラインとの照合が残る。
+## 2026-11-14 — WebSocket無応答時の受信・タイマー間隔を記録する（#426、Codex）
+
+- 計測用Webビルドで、無応答による張り直し直前に `recooplay:ws-silence` をブラウザーのコンソールへ1件記録する。最後のWS受信からの時間、監視タイマーの実間隔、進行状態、ページの可視性、RTCの開閉を記録する。3秒判定と切断時の停止・全解放は従来どおり。
+- `npm --prefix apps/web run build:latency` と通常の `build` に合格し、診断文字列が計測用にだけ含まれることを確認した。`node scripts/sim/phone-lifecycle-test.mjs` 34/34 と `git diff --check` が合格。
+- Androidの次回測定ではコンソールを保存し、同じ再接続の前後でホストの送信記録と照合する。今回の変更で実Wi-Fiの原因は確定していない。
+## 2026-11-14 — 速達経路の実Wi-Fi比較で押下遅延を集計する（#451、Codex）
+
+- `python scripts/device/summarize-press-latency.py <変更前のsession.jsonl> <変更後のsession.jsonl>` で参加枠別の計測成立数、遅延破棄数、平均・中央値・p95・p99・最大を出力する。各ファイルは同一端末・同一Wi-Fi・同じ操作手順で採取する。端末とホストの値がそろった押下だけが分布に入り、合計時間は片道を往復の半分とする推定値。遅延破棄数のほかに入力試行数は別途記録する。
+- 模擬JSONLで統計、遅延破棄だけがある参加枠、解放・別の破棄理由の除外、計測値なし・不正値の拒否を確認。実端末での比較は未実施。
+
+## 2026-11-14 — 開発・検証スクリプトの用途を整理する（#256、Codex）
+
+- 最新mainの参照とCIを照合して、手動ツールとCIの用途を `scripts/README.md` に記録した。旧プレビューの補助で、現行コードから参照されない `mini-ws.mjs` を削除した。Tauriの起動画面とホスト配信用の素材は、各々で使うため同梱を維持する。
+- `python scripts/check-public-docs.py`、`node scripts/sim/verify-ui-evidence.mjs`（104画面）、`python scripts/verify_overlay.py`、`git diff --check` が合格。
+## 2026-11-14 — 通信版の更新とキャッシュの受入手順（#272、Codex）
+
+- Rust・Web・補助スクリプトの版更新、同一コミットの配布、旧タブからの再接続と再読み込みの受入手順を通信仕様書に追加した。
+- `python scripts/check-public-docs.py`、`python scripts/verify_overlay.py`、`git diff --check` が合格。型契約の正本・CIでの型差分検査と、Android・iPhoneでの実機受入は残る。
+## 2026-11-14 — CIと実機受入の検証範囲を整理する（#379、Codex）
+
+- CIの資料に配布ジョブのWebView2試験を明記し、認可、全解放、入力先の制限、導入でCIと実機が確認する範囲を記録した。
+- `python scripts/check-public-docs.py`、`python scripts/verify_overlay.py`、`git diff --check` が合格。
+## 2026-11-14 — RustSec監査ツールのビルドを再利用する（#379、Codex）
+
+- cargo-auditの実行ファイルだけをOS・アーキテクチャ・ツール版・Rust版でキャッシュする。キャッシュがなければ固定版を従来どおりソースからビルドする。両クレートの必須監査では毎回RustSecのデータベースを更新する。
+- ワークフローのYAML構造、両クレートの監査コマンド、構造検査、差分検査を確認した。CIでのキャッシュ復元と実行時間は未測定。
+
+## 2026-11-14 — スマホの操作画面と配置編集を同じキャンバスにする（#271・#50・#376、Claude Code）
+
+- チームの仕様（操作画面・編集画面、2026-11-13）の確定項目に合わせた。未編集の人も含め、プレイと編集を `#genControls` いっぱいの同じ領域・同じ位置計算で描き、編集の前後で位置・幅・高さが一致する。初期配置は担当の部品だけで領域を埋める。上部はロゴと「⋯」だけにし、「配置を編集」は「⋯」の中、編集中は上の帯を「破棄・↶・保存」にした（2026-11-14 ユーザー判断）。
+- レイアウトのデータを版2（`w`・`h`）にし、8つのハンドル（スティックは正方形で四隅だけ）、長押しメニュー、重なる場所でのいちばん近い空きへのスナップ（なければ元の位置へ）、ぶつかる手前で止まるリサイズ、元に戻すを実装した。ほかの部品は動かさない。版1の保存値は読まずに初期配置へ戻す。
+- `phone-layout-test` 15/15、web の試験一式、`npm run build`、`check-public-docs` が合格。撮影の仕組み（dry-run＋headless Chrome、タッチ再現）で編集〜保存〜再読み込みの位置一致と、編集中の送信0件を確認し、協力プレイ画面の撮影証拠3枚を更新した。実機（iPhone Safari・Android Chrome）の指の操作は未確認。全員の初期配置が変わるため、Award Day の前に入れるなら実機で一度通す。詳細は [判断記録](../decisions/2026-11-14-phone-operation-canvas.md)。
+## 2026-11-14 — PCの接続案内を標準のダイアログ操作で閉じる（#278、Codex）
+
+- 参加トラブル案内と同じ `method="dialog"` を使い、接続案内の閉じるボタン専用のDOMリスナーを外した。WebView2の試験に閉じた後のフォーカス復帰を追加した。
+- Webの型検査とビルドは成功。手元で既存配布のexeと今回のWeb資産を組み合わせたWebView2試験では、参加画面のReact描画待ちでタイムアウトした。変更箇所のWebView2確認はCIの同一コミット配布物に残す。
+今回の追加確認では node scripts/sim/product-web-test.mjs が成功した。
+
+## 2026-11-14 — エンジンごとの操作の読み取り（#481、Claude Code）
+
+- 利用者の依頼：ゲームエンジンごとに操作の読み取りを増やす（一覧 #481、各エンジン #480・#482〜#495）。第1弾として、形式が素直で試験用のファイルを作れるものを実装した。
+- ホスト：`apps/host-rs/src/engines/` を足し、`game_actions::read` の順番を「Unity Input System（PlayerPrefs の上書きを反映）→ Unity 以外のエンジン → .NET の Rewired → Unity の旧 Input Manager → .NET の列挙型」にした。Rewired を旧 Input Manager より先にしたのは、手元の Core Keeper（Rewired）で旧 Input Manager の既定の名残が先に当たり、操作が3件しか出なかったため。
+  - RPGツクール MV・MZ の `Input.keyMapper` と有効なプラグインの追加、RGSS・2000/2003 の既定のキー（#480）。ウディタの既定のキー（#488）。
+  - Source 2 の `.vcfg`（#487）、Creation Engine の `ControlMap_Custom.txt` と Skyrim の既定（#486）、Quake 系と Source 1 の cfg（`keybinds::source_cfg` を `pub(crate)` にして使い回す、#491）。
+  - Unity の旧 Input Manager を型情報なしで読む（#483）。手元の Project Winter（IL2CPP）で、移動（Horizontal・Vertical）・Attack・Aim・視点を読めた。最初はゲームパッドの軸の番号（28）を上限27で弾いて並びが途切れ、マウスボタンの軸だけが出ていたので、上限を63にし、途切れた並びもまとめて拾うようにした。Unity の描画機能が足すデバッグ用の軸（`Debug *`）と、同じキーの別名の軸（`MouseButton0`）は出さない。BongoCat（作品が足した軸なし）は読まずに汎用定義へ戻る。
+  - Unity の PlayerPrefs（#484）：手元の BongoCat で、値の名前に `_h<ハッシュ>` が付き、文字列が UTF-8 のバイナリ値であることを確認した。キーを変えた記録のあるゲームは手元になく、上書きの反映は fixture だけで確認した。Rewired の保存（XML）は操作名と結び付けられないので読まない。
+- カタログ：`scripts/profiles/engines.mjs` に同じ読み取りを置き、`extract.mjs` から同じ順番で呼ぶ（Rewired は従来どおり JS では読まない）。PlayerPrefs は `reg query` で読み取り専用で読む。
+- 確認：手元ではホスト全体（OpenSSL）を空きメモリ不足でビルドできないため、`engines` と、それが使う `controls.rs`・`keybinds.rs` の一部（Key・name_key・source_cfg・expand をそのまま取り出したもの）だけの小さなクレートで、Rust の単体試験16件・Clippy（`-D warnings`）・`windows` クレートのレジストリ部分のビルドが合格した。`cargo fmt --check` 合格。JS は `profile-engines-test.mjs` 8/8（Rust と同じ入力・期待値）、`profile-extract-test.mjs` 合格。ホスト全体のビルド・試験は CI で確認する。
+- 実ゲームで未確認：ツクール・ウディタ・Source 2・Bethesda・Quake 系（手元に該当するゲームがない）。分担が成り立つかの実機確認も未実施。
+- 第2弾（同じ PR）：Godot 3・4（#485。PCK の `project.binary` の `input/*` から、イベントのクラス名と `keycode`・`physical_keycode`・`scancode`・`button_index` の整数を拾う。exe に埋め込んだ PCK は末尾の `GDPC` だけ先に確かめ、大きな exe を無駄に読まない）、Unreal Engine 4・5（#482。pak を 8 MB ずつ読んで `[/Script/Engine.InputSettings]` を探し、利用者の `Input.ini` を重ねて `keybinds::ue_input_ini` で読む。`MouseX`・`MouseY` の軸は視点）、CryEngine（#489。pak の zip から actionmaps の XML）。zip の展開のためにホストに `flate2`（`rust_backend`、純 Rust）を足した（PC アプリの依存と同じ版。ロックに adler2・crc32fast・flate2・miniz_oxide・simd-adler32 が増えた）。
+- 第2弾の確認：小さなクレートで Rust の単体試験24件・Clippy 合格、`profile-engines-test.mjs` 11/11。手元の Outlast（Unreal Engine 3）はフォルダの作りが違うので読まない（対象は UE4・UE5）。Godot・UE4/5・CryEngine の実物は手元になく、fixture だけで確認した。
+## 2026-11-14 — 分担の作り方の表記を「定型ルール／独自AI」にする（#475、Claude Code）
+
+- 利用者の判断：分担の画面の「規則」を「定型ルール」、「モデル（未検証）」を「独自AI」にする。ルールで割り当てることが、エンジニアでなくても分かる表記にする。各ボタンに説明の title を付けた。値（`rule`・`model`）と通信は変えていない。
+- 同じ判断で、分担の既定をモデルにすること（#474）も利用者が了承した。
+## 2026-11-14 — WebSocket送信間隔を計測用ホストで記録する（#426、Codex）
+
+- 計測用ホストで参加者へのWebSocket本文の送信完了間隔が3秒以上の場合に `ws_send_gap` をセッションJSONLへ記録する。枠、前回の成功からの間隔 `gapMs`、今回のソケット送信処理に要した `sendMs` を含む。通信・停止の閾値に変更はない。
+- Androidの `recooplay:ws-silence` と同じ試行で比較する。送信完了は受信側での到着を示さず、次の送信が成功しなかった場合の空白はこのログでは確定できない。実機での原因切り分けは未実施。
+- Windowsで `cargo clippy --release --offline --locked --all-targets --features latency-measure -- -D warnings`、Rust書式、差分検査が成功。
+## 2026-11-14 — 押下遅延診断の出力を回帰試験で確認する（#437、Codex）
+
+- 150msちょうどでは記録せず、151msでは計測用ビルドだけが押下の連番と2区間の時間を記録することを確認した。
+- `node --experimental-strip-types scripts/sim/phone-lifecycle-test.mjs` は36/36合格。iPhone実指での原因調査は未実施。
+## 2026-11-14 — スマホの受信途絶ログを回帰試験で確認する（#426、Codex）
+
+- 2999msでは接続を維持し、3000msで旧接続を閉じる直前に計測用ビルドだけが診断を1回出すことを確認した。両ビルドで再接続を検証した。
+- `node --experimental-strip-types scripts/sim/phone-lifecycle-test.mjs` は37/37合格。実端末での再現とホストログとの照合は未実施。
+## 2026-11-14 — 配布WebView2の失敗ログを保存する（#379、Codex）
+
+- 配布PCアプリのWebView2スモークの標準出力・標準エラーをCIログに出し、失敗時は `windows-webview2-diagnostics` の成果物にも保存する。試験の終了コードはそのまま必須チェックへ渡す。
+- PowerShellで標準出力・標準エラーを出す模擬試験を実行し、成功と失敗の終了コードおよびログの両方を確認した。GitHub上の成果物の保存は実行結果待ち。
+## 2026-11-14 — 配布WebView2の失敗時に画面とセッションログを採取する（#379、Codex）
+
+- 失敗時にdry-runホストのセッションJSONLを保存し、CDPが応答する場合は画面をPNGで採取する。採取の失敗を記録して、元の例外をそのまま返す。
+- スクリプト構文、構造、差分検査が成功。GitHubでの失敗時成果物は未確認。
+## 2026-11-14 — WebSocket終了直前の送信空白を記録する（#426、Codex）
+
+- 計測用ホストで、参加者の接続が最後の本文送信成功から3秒以上経って終了した場合に、枠・空白時間・終了コードを `ws_send_gap_at_close` として残す。次の本文送信が成功する前に接続が終了した試行でもホスト側の空白を確認できる。
+- Windowsの計測機能付きClippyが成功。Android実機での再現と受信ログの照合は未実施。
+## 2026-11-14 — 操作設定を標準ダイアログ操作で閉じる（#278、Codex）
+
+- 閉じるボタンを `method="dialog"` のフォームへ移し、専用のDOMリスナーを削除した。配布試験にフォーカス復帰と再表示を追加した。
+- Webの型検査・ビルド、試験スクリプトの構文、差分検査が成功。配布WebView2試験はCI待ち。
+- 第3弾（同じ PR）：利用者の判断（2026-11-14「汎用定義メイン」）で、GameMaker・LÖVE・HTML5 系は読み取りを作らず、エンジンだけを見分けて 2D 向けの汎用の割当（矢印・Z・X・C・Shift・Enter・Esc）にした（`engines/generic2d.rs`、ほかのどれにも当たらないときだけ）。XNA・FNA・MonoGame は WASD とマウスの作品が多いので従来の汎用定義のまま。Ren'Py（#492）は推奨人数の Issue（#479）にまとめた。確認：Rust 25件・Clippy、`profile-engines-test.mjs` 12/12。
+## 2026-11-14 — 親の標準入力が閉じたときのホットスポット停止を確認する（#415、Codex）
+
+- 明示の `quit` と標準入力のEOFそれぞれで、ホストの安全停止ログ、スマホへの終了コード4009、アプリが起動した模擬ホットスポットの停止、資格情報の非記録を確認した。
+- Windows releaseビルド、Webビルド、通信dry-run 67/67が成功。非管理者での実ホットスポット停止は未実施。
+
+## 2026-11-14 — 主要タイトルで漏れていたエンジンの読み取り（#505〜#509、Claude Code）
+
+- 主要タイトル（`top500-games.json` の上位で分担に向く約150本）のエンジンを照合し、漏れていたもののうちファイルが文字で読めそうなものを実装した（PR #502 の上に重ねた別 PR）。
+  - REDengine（#505）：Cyberpunk 2077 の `inputUserMappings.xml`（`val` の負・正で軸を2つの操作に分ける）、The Witcher 3 の `input.settings` の `[Exploration]`・`[Combat]`。Cyberpunk 2077 の利用者の変更（`UserSettings.json`）は形式を確かめていないので読まない。
+  - Prism3D（#506）：ETS2・ATS のプロファイルの `controls.sii` の `mix` の行。暗号化された `.sii` は読まない。
+  - GIANTS Engine（#507）：Farming Simulator の `inputBinding.xml`。操作が多いので歩き・運転・乗り降りを先に40件まで。
+  - Factorio（#508）：`config.ini` の `[controls]`。書かれていない操作は既定のキー、修飾キー付きは送れないので初期キーなし。
+  - Project Zomboid（#509）：`keys.ini`。Build 42 で GLFW のキーコードになった可能性があるので、`Forward` の値で DirectInput（W = 17）と GLFW（W = 87）を見分ける。
+- RE Engine（#510）は、キー割当の保存先を実物で確かめられないので実装していない（今は汎用定義になる）。
+- 確認：小さなクレートで Rust の単体試験31件・Clippy 合格、`profile-engines-test.mjs` 17/17（Rust と同じ入力・期待値）。どのゲームも手元になく、ファイルの形式は知識による（fixture だけで確認）。実機は未確認。
+
+## 2026-11-14 — 利用者がキーを変えたら、ファイルから作った仮の定義を読み直す（#524、Claude Code）
+
+- `engines::user_config` に、仮の定義の元にした利用者のキー設定のファイルの場所を返す処理をまとめた（Source 2 の `.vcfg`、Bethesda の `ControlMap_Custom.txt`、Witcher 3 の `input.settings`、ETS2・ATS の `controls.sii`、Farming Simulator の `inputBinding.xml`、Factorio の `config.ini`、Zomboid の `keys.ini`、Unreal の `Input.ini`、Quake 系・Source 1 の cfg）。ゲーム本体のファイル（ツクールの `rpg_core.js` など）は対象外。
+- 仮の定義を保存するとき、そのファイルの更新日時を `configModified` として残す（ファイルがなかったことも残す。古い保存には記録がないので今までどおり）。
+- `needs_detect` は、選んでいるゲームについてだけ更新日時を比べ、変わっていれば読み直す（協力プレイ中は読み直さない。一覧の全部のファイルは見ない）。選んだとき・準備のとき（`reload_keybinds`）に読み直しが始まる。
+- 試験：`changed_user_config_makes_the_selected_game_read_again`（hub）、`detected_config_time_round_trips`（model_presets）。エンジン部分は小さなクレートで試験31件・Clippy 合格、`cargo fmt --check` 合格。hub の部分は CI で確かめる。
+## 2026-11-14 — ツクールの「決定」を独自AIがメニューにして配らない問題を直す（#512、Claude Code）
+
+- 事象：RPGツクール XP 製の「青鬼」を #502 の読み取りと独自AI（既定の分担）で試すと、自動取得した9操作のうち、決定・キャンセルなど5つをモデルが menu に分類した。menu は P1 のリモコンに残して配らないため、配られるのは移動の4つだけで、「調べる」を誰も押せなかった。
+- 修正：`ReadAction` に分類の手がかり `group` を足し、`preset_model::synthesize` でモデルの分類より優先する。ツクール（MV・MZ の記号 ok・escape・cancel・menu と、RGSS・2000/2003 の既定）とウディタは決定・キャンセルを gameplay、移動を movement にした。2D 向けの汎用の割当は、移動と Z・X・C に手がかりを付けた。A ボタン・ページ送り・Shift・Enter・Esc は、これまでどおりモデルの分類に任せる。
+- 試験：`reader_group_hint_overrides_the_model_category`（ツクール XP の既定で、1〜4人のどの分担にも決定・キャンセル・移動が配られる）。
+
+
+## 2026-11-14 — hub のパニックでも押しっぱなしを残さない（#517、Claude Code）
+
+- hub の1回分の処理（タイマーとイベント）を `step` に分け、`run` で `catch_unwind` で包んだ。パニックしたら `recover_from_panic` で、ログ（`hubPanic`）と全解放（`release_for_shutdown`）を行い、プロセスを終える（全部離せたら終了コード 2、離せなかったら 3）。後始末の途中のパニックも受け止め、プロセスは必ず終える。PC アプリはホストの終了に気づく。
+- スマホへ「PC アプリの終了」（4009）は送らない（#522）。PC アプリはホストのプロセスが終わると起動し直すので、スマホは通常の切断として再接続を続け、新しいホストへ参加し直す（前の参加情報のままでも新規参加になることは #473 の通信試験で確認済み）。協力プレイは自動では再開しない。
+- 同じ理由で、アプリが起動したホットスポットも止めない（止めるとスマホの Wi-Fi が切れ、起動し直したホストへ再接続できない。レビューでの修正）。起動し直したホストは、そのホットスポットを自分が起動したものと扱わないので、通常の終了でも止まらない。
+- 試験：`panic_recovery_releases_held_inputs`（押しっぱなしの W と視点の未処理分を離し、入力を止め、4009 を送らない）。試験ではホットスポットの共有状態に触れない。
+- 確認：`cargo fmt --check` 合格。手元ではホスト全体をビルドできないため、ビルド・試験は CI で確かめる。実際にパニックさせての実機確認は未実施。
+## 2026-11-14 — WebView2 の画面確認で PowerShell が時間切れになる不安定な失敗（#379、Claude Code）
+
+- `package` の「配布PCアプリのWebView2で参加画面・設定・終了を確認」が、`close-desktop-window.ps1 -MinimumSize` の呼び出しで `spawnSync pwsh ETIMEDOUT` になることがある。#468・#454 の CI と、main（43595522683）で起きた。同じコミットの再実行では通った。
+- 原因の見立て：このスクリプトは呼ぶたびに `Add-Type` で C# をコンパイルし、CI の新しい実行環境では最初のコンパイルが Node 側の上限（10秒）を超えることがある。
+- `desktop-webview2-smoke.mjs` の PowerShell の呼び出しの上限を 60 秒にした（ステップの上限は5分のまま）。CI で落ちなくなるかを見る。
+## 2026-11-14 — 分担のモデルの裏の処理が落ちても止まらないようにする（#519、Claude Code）
+
+- `make_detected`・`make_model_preset` の裏のスレッドの処理を `catch_unwind` で包み、パニックしたら `Event::ModelFailed` を送るようにした。hub は `model_failed` で作業中の印（`model_busy`）を消し、ログ（`model_failed`、ゲーム名なし）に残して待ち行列の次へ進む。失敗したゲームは保存しないので、次の一覧の読み込みでもう一度試す。
+- 試験：`model_thread_panic_clears_busy_and_moves_on`。`cargo fmt --check` 合格。ホスト全体のビルド・試験は CI で確かめる。
+
+## 2026-11-14 — Fallout 4・Starfield の既定の ControlMap を BA2 から読む（#527、Claude Code）
+
+- `engines/ba2.rs`：BA2（GNRL、版 1・7・8・2・3）の目次と名前の表を読み、名前で 1 つのファイルを取り出す。圧縮は zlib だけ（Starfield の一部の LZ4 は読まない）。画像のアーカイブ（DX10）は読まない。
+- `engines/creation.rs`：`ControlMap_Custom.txt` がないとき、Fallout 4・Starfield は Data の「* - Interface.ba2」から `Interface/Controls/PC/ControlMap.txt` を取り出して読む。Skyrim SE の BSA（LZ4）は依存が増えるので、今までどおり既定の割当の表。
+- カタログ（`engines.mjs`）にも同じ読み取り（`ba2Extract`）を足した。
+- 確認：小さなクレートで Rust の単体試験33件・Clippy 合格、`cargo fmt --check` 合格、`profile-engines-test.mjs` 18/18。BA2 の版 2・3 の先頭の長さは知識による（実物で確かめていない）。Fallout 4・Starfield の実物は手元にない。
+## 2026-11-14 — 通信回帰試験のセッションログを保存する（#379、Codex）
+
+- 通信試験が失敗した場合、既存の標準出力ログと、dry-runホストごとのセッションJSONLを同じ成果物に保存する。模擬ゲームや設定のファイルは成果物の対象外。
+- WindowsでWebをビルドした後、通信試験が67/67合格し、指定先に3プロセス分のセッションJSONLを確認した。Web資産が未生成だった初回のHTTP試験失敗時にも3件のJSONLが残った。GitHub上の成果物アップロードは未確認。
+
+## 2026-11-15 — インターネット経由の遠隔共同プレイの成立性の調査（#158、Claude Code）
+
+- 方式の比較（入力の経路：VPN 型・WebRTC＋STUN・TURN・中継サーバー、映像の経路：既存の画面共有・WebRTC 配信・既存の配信機能）、LAN 版との差分、安全面、判断の整理を `docs/develop/decisions/2026-11-15-remote-play-study.md` に記録した。
+- コードの確認：`rtc.rs` は STUN・TURN を使わない（`RtcConfig::new(&[])`）。
+- PoC はしていない。どの接続環境でも未試験、映像を含む一巡の遅れも未測定。判断案は保留（進めるならコードを変えずに VPN＋画面共有で体験を測る）。
+
+## 2026-11-15 — README と技術仕様書を Award Day 時点に合わせる（Claude Code）
+
+- 利用者の依頼：README を更新する。今までの書き方を踏襲し、README に書ききらず技術仕様書を増やしてよい。「Ready」ではなく「開始ボタン」、分担のモデルは「BERT風」ではなく「Transformer encoder」と書き、学習させたことを入れる。
+- README：遊び方の手順（開始ボタン・独自AIの分担）、特長に1文ずつ（時間での交代・ファイルからの読み取り）、技術仕様書の一覧に分担AI仕様書、活用した技術（React・TypeScript、Transformer encoder、多言語MiniLM）、「Award Dayまでに追加した機能・技術」（既存の「独自技術」と同じ形で3項目）。Hack Day の内容は残した。
+- 新しい `docs/preset-model-specification.md`（分担AI仕様書）：構成・学習・推論と組み立て・評価・定義のないゲームの読み取り・配布と設定・適用範囲。
+- 総合仕様書・ゲーム操作定義仕様書・技術選定の理由・動作確認の範囲の古い記述（BERT風、静的HTML、2人・4人の実機は未確認、操作画面のカスタマイズは今後）を直した。
+- 確認：`python scripts/check-public-docs.py` 合格（18 ファイル、351 参照）。
+## 2026-11-15 — 操作の応答に含まれるコマンド名をWebで検証する（#272、Codex）
+
+- Rustホストが `command_result` に必ず送る `cmd` をWebの型と受信検証に追加した。Webの境界試験で欠落・不正型を拒否し、通信試験でホストの開始拒否をWebのデコーダーに通す。
+- Webの型検査・ビルド、`node scripts/sim/product-web-test.mjs`、構文・差分検査が成功。ホストと通す追加アサーションはCI待ち。
+- 手動の反復試験にも適用し、失敗した試行のJSONLだけを試行番号とホスト別の名前で保存する。
+## 2026-11-15 — Androidの反復計測で押下のstale ACKを数える（#451、Codex）
+
+- 計測区間に送った押下のうち、stale ACKを受けた連番を重複なく集計する。staleには遅延以外の理由も含まれるため、遅延による破棄の内訳はホストのセッションログで確認する。
+- 模擬観測データで重複ACK、解放、区間外のACKが集計を増やさないことを確認。実指の比較は未実施。
+## 2026-11-15 — Androidでゲーム選択前後の担当表示を確認する（#447、Codex）
+
+- Android補助試験に、P1の担当がゲーム選択前は非表示で、Minecraft選択後は表示される確認を追加した。
+- main `d5227aa` のWindows配布版で Android Chrome 1台と模擬参加者1台の実Wi-Fi dry-runを実施し、15/15合格。iPhoneは未確認。
+
+### #457 最新mainを取り込んだ後の検証
+- mainのゲーム未選択時の挙動を保持し、通信契約は版6を採用。
+- Webビルド、静的ページ検証、`phone-lifecycle-test.mjs`（38/38）、`ui-input-test.mjs`（20/20）に合格。Node.js 22.15.0 では `--experimental-strip-types` を指定。
+- 更新コミットのRust・通信・配布はGitHub Actionsで確認する。既存のAndroid実Wi-Fi比較は合成タッチで、実指とMinecraftでの受入は未実施。

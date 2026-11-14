@@ -5,6 +5,7 @@
 
 mod config;
 mod controls;
+mod engines;
 mod focus;
 mod freshness;
 mod game_actions;
@@ -117,6 +118,8 @@ async fn main() {
         .unwrap_or_else(|_| root.join("logs"));
     runtime_measure::init(&log_dir);
     input_trace::init(&log_dir);
+    // 分担のモデルの重みは裏で読む (待ち受けの開始を遅らせない、#474)
+    profiles::warm_model();
     let mut hub = match Hub::new(tx.clone(), &config, input, &log_dir) {
         Ok(h) => h,
         Err(e) => {
@@ -575,6 +578,8 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
         loopback: is_loopback(&addr),
     });
     let mut code: u16 = 1006;
+    #[cfg(feature = "latency-measure")]
+    let mut last_text_sent: Option<std::time::Instant> = None;
     loop {
         tokio::select! {
             incoming = socket.recv() => match incoming {
@@ -590,8 +595,33 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
                 Some(Out::Text(text)) => {
                     queued.len.fetch_sub(1, Ordering::Relaxed);
                     // 読取りが止まった接続は切断判定と同じ時間で打ち切る。送信待ちが上限に達した接続も切る (#197)
+                    #[cfg(feature = "latency-measure")]
+                    let send_started = std::time::Instant::now();
                     let sent = tokio::time::timeout(WS_SEND_TIMEOUT, send_ws_text(&mut socket, &rx, Message::Text(text.into()))).await;
-                    if !matches!(sent, Ok(Ok(()))) || queued.must_close() {
+                    #[cfg(feature = "latency-measure")]
+                    if matches!(sent, Ok(Ok(()))) {
+                        let now = std::time::Instant::now();
+                        if let Some(previous) = last_text_sent.replace(now) {
+                            let gap_ms = now.duration_since(previous).as_millis() as u64;
+                            if gap_ms >= 3000 {
+                                app.send(Event::WsSendGap {
+                                    id,
+                                    gap_ms,
+                                    send_ms: now.duration_since(send_started).as_millis() as u64,
+                                });
+                            }
+                        }
+                    }
+                    let overflow = queued.must_close();
+                    if !matches!(sent, Ok(Ok(()))) || overflow {
+                        if runtime_measure::enabled() {
+                            let send = match sent {
+                                Err(_) => "timeout",
+                                Ok(Err(_)) => "error",
+                                Ok(Ok(())) => "ok",
+                            };
+                            eprintln!("ws_send_close {{\"connection\":{id},\"send\":\"{send}\",\"overflow\":{overflow}}}");
+                        }
                         break;
                     }
                 }
@@ -605,7 +635,12 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
             },
         }
     }
-    app.send(Event::WsClosed { id, code });
+    app.send(Event::WsClosed {
+        id,
+        code,
+        #[cfg(feature = "latency-measure")]
+        since_last_send_ms: last_text_sent.map(|sent| sent.elapsed().as_millis() as u64),
+    });
 }
 
 async fn send_ws_text(

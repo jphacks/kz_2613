@@ -36,7 +36,7 @@
 | 定義データ | JSON、schema 1 |
 | 検証・割当 | Rust、profiles.rs |
 | 設定読取り | keybinds.rs |
-| 画面生成 | React + TypeScript、shared/controller-layout.ts・phone/Controller.tsx |
+| 画面生成 | React + TypeScript、shared/controller-layout.ts・shared/model/layout.ts・phone/LayoutController.tsx |
 | 静的抽出・カタログ | Node.js、scripts/profiles/ |
 
 ---
@@ -67,6 +67,36 @@ Steam・Epic Gamesの検出情報はゲーム選択と入力先の判定に用�
 | キー設定の読取り | アクションに対応する実出力と警告 | 対応reader・設定形式に限る |
 | 人数別の割当 | 参加者ごとのアクションID | 定義のグループ・重みを使う |
 | 画面生成 | 担当だけを操作できるコントローラー | ゲーム映像は配信しない |
+
+### 定義のないゲームのファイルからの読み取り
+
+検証済みの定義がないゲームは、インストール先のファイルから操作を読み、分担のモデルで分類した仮の定義（`extracted`・未検証）を作ります（#431）。読めなければ`generic`を使います。操作の意味がエンジンで決まっているもの（ツクール・ウディタの決定・キャンセル・移動、2D 向けの汎用の割当の移動と Z・X・C）は、読み取り側が分類を決め、モデルの分類より優先します。RPG の決定をメニューに分類して P1 のリモコンに残し、誰も「調べる」を押せなくなるのを防ぐためです（#512）。ホストは`apps/host-rs/src/game_actions.rs`と`apps/host-rs/src/engines/`、カタログの下書きは`scripts/profiles/extract.mjs`と`scripts/profiles/engines.mjs`で、読む範囲と順番をそろえています。ゲームを起動せず、コードを実行せず、ファイルを書き換えず、暗号化されたデータは読みません。
+
+上から順に試し、最初に読めたものを使います。
+
+| エンジン・形式 | 読むもの | キー |
+|:--|:--|:--|
+| Unity Input System | ゲームに埋め込まれた`.inputactions`。PlayerPrefs（レジストリ `HKCU\Software\<会社名>\<製品名>`）に保存された上書きを反映（#484） | あり |
+| RPGツクール MV・MZ | `rpg_core.js`／`rmmz_core.js`の`Input.keyMapper`と、有効なプラグインの`keyMapper[n] = '...'`（#480） | あり |
+| RPGツクール VX Ace・VX・XP・2000/2003 | 種類だけを見分け、エンジン固定の既定のキー（#480） | 既定 |
+| WOLF RPG エディター | 種類だけを見分け、エンジン固定の既定のキー（#488） | 既定 |
+| Source 2 | Steam の`userdata/<アカウント>/<AppID>/local/cfg/`の`.vcfg`（#487） | 利用者の設定 |
+| Creation Engine（Skyrim SE・Fallout 4・Starfield） | `Documents\My Games\<ゲーム>\ControlMap_Custom.txt`。ない場合は、Fallout 4・Starfield は`* - Interface.ba2`の中の既定の`ControlMap.txt`（zlib の BA2 だけ、#527）、Skyrim は既定の割当の表（#486） | 利用者の設定 |
+| REDengine（Cyberpunk 2077・The Witcher 3） | Cyberpunk 2077 は`r6/config/inputUserMappings.xml`、The Witcher 3 は`Documents\The Witcher 3\input.settings`の遊びの節（#505） | あり |
+| Prism3D（Euro Truck Simulator 2・American Truck Simulator） | プロファイルの`controls.sii`の`mix`の行（暗号化されたものは読まない、#506） | 利用者の設定 |
+| GIANTS Engine（Farming Simulator） | `Documents\My Games\FarmingSimulator20xx\inputBinding.xml`。歩き・運転などを先に40件まで（#507） | 利用者の設定 |
+| Factorio | `%APPDATA%\Factorio\config\config.ini`の`[controls]`。書かれていない操作は既定のキー（#508） | あり |
+| Project Zomboid | `%USERPROFILE%\Zomboid\Lua\keys.ini`（DirectInput と GLFW のキーコードを見分ける、#509） | 利用者の設定 |
+| Godot 3・4 | PCK（独立した`.pck`か exe の末尾）の`project.binary`の InputMap。組み込みの`ui_*`は出さない（#485） | あり |
+| Unreal Engine 4・5 | pak の中の`DefaultInput.ini`（暗号化・圧縮されていないもの）と、`%LOCALAPPDATA%\<Project>\Saved\Config\Windows`（UE4 は`WindowsNoEditor`）の`Input.ini`。Enhanced Input は未対応（#482） | あり |
+| CryEngine | pak（zip）の中の`defaultProfile.xml`などの actionmaps（#489） | あり |
+| Quake 系・Source 1 | `id1/config.cfg`・`baseq2/config.cfg`・`baseq3/q3config.cfg`、`<mod>/cfg/config.cfg`（#491） | 利用者の設定 |
+| GameMaker・LÖVE・HTML5 系（NW.js・Electron） | 読み取りなし。エンジンだけを見分けて、2D 向けの汎用の割当（矢印・Z・X・C・Shift・Enter・Esc）。XNA・FNA・MonoGame は従来の`generic`（#490・#494・#495・#493） | 既定 |
+| .NET（Rewired） | `RewiredConsts.Action`の定数 | なし |
+| Unity の旧 Input Manager | `globalgamemanagers`の軸（型情報なしで読む）。作品が足した軸がなければ使わない（#483） | あり |
+| .NET の列挙型 | `Assembly-CSharp.dll`の操作らしい列挙型 | なし |
+
+利用者の設定を読んだ場合は、その時点のキーを初期キーにします。仮の定義は、PCの分担の画面で作り直すと読み直します。
 
 ---
 
@@ -108,13 +138,13 @@ Steam・Epic Gamesの検出情報はゲーム選択と入力先の判定に用�
 
 ## 人数別の割当
 
-### 既定：規則による割当
+### 規則による割当（`RECOOPLAY_PRESETS=rule`）
 
-既定では、下の規則で2〜4人用の案を作ります。`game.profile.presetSource`は`rule`です。
+環境変数`RECOOPLAY_PRESETS=rule`でホストを起動したとき、モデルの重みを読めないとき、ホストが分担の画面で「定型ルール」（規則）を選んだときは、下の規則で2〜4人用の案を作ります。`game.profile.presetSource`は`rule`です。
 
-### 試験中：BERT風モデルによるプリセット（`RECOOPLAY_PRESETS=model`）
+### 既定：独自AI（Transformer encoder）によるプリセット
 
-環境変数`RECOOPLAY_PRESETS=model`でホストを起動すると、小さなBERT風エンコーダ（`apps/host-rs/src/preset_model.rs`、重みは`apps/host-rs/assets/preset-model.bin`をexeに埋め込み）で2〜4人用の案を作ります。`game.profile.presetSource`は`model`です。重みを読めないときは規則に戻ります。人による評価（10〜20本）が済むまでは既定にしません（#411）。
+既定では、検証済みのプリセットがないゲームの2〜4人用の案を、実在のゲームの操作定義で学習させた小さなTransformer encoder（[分担AI仕様書](preset-model-specification.md)、`apps/host-rs/src/preset_model.rs`、重みは`apps/host-rs/assets/preset-model.bin`をexeに埋め込み。版2があればそちら）で作ります。`game.profile.presetSource`は`model`です。重みを読めないときは規則に戻ります（#474。#411 までは規則が既定）。
 
 モデルの入力は各操作の`label`・`id`・`bind`・`default`・`type`だけです。グループ名は入力に使いません。出力は次の3つです。
 
@@ -195,7 +225,7 @@ sequenceDiagram
 
 ## 操作画面と開始条件
 
-全ゲーム・全人数で`shared/controller-layout.ts`の描画モデルと`phone/Controller.tsx`を使い、ボタン・ホイール・視点パッド・方向キー群のスティックを作ります。ボタンは`keys.actions`の実キーを表示し、`act:<ID>`で送ります。サーバーは現在epoch・確定割当・操作種類・実出力を検証します。視点はその担当者だけが送れます。
+全ゲーム・全人数で`shared/controller-layout.ts`の描画モデルからボタン・ホイール・視点パッド・方向キー群のスティックを作り、スマホでは`shared/model/layout.ts`の個人レイアウト（未編集なら担当の部品で画面を埋める初期配置）として`phone/LayoutController.tsx`で描きます。ボタンは`keys.actions`の実キーを表示し、`act:<ID>`で送ります。サーバーは現在epoch・確定割当・操作種類・実出力を検証します。視点はその担当者だけが送れます。
 
 `template / extracted / unverified`も開始条件が揃えばReadyできます。確認状態を理由に開始を制限しませんが、未検証表示は保持します。分担可能な操作のない定義や、生成画面・出力が扱えない種類を含む定義ではReadyを拒否します。
 

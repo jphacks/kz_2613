@@ -358,16 +358,20 @@ pub fn find<'a>(list: &'a [Profile], game_id: &str) -> Option<&'a Profile> {
     })
 }
 
-/// 分担の案の作り方。既定は規則 (rule_assignment_for)。環境変数 RECOOPLAY_PRESETS=model のときだけ
-/// BERT 風のモデル (preset_model) で作る。重みを読めないときは規則に戻る。
-/// モデルの案は人による評価 (10〜20 本) が済むまで既定にしない (#411)
-pub fn preset_source() -> &'static str {
-    if std::env::var("RECOOPLAY_PRESETS").as_deref() == Ok("model")
-        && crate::preset_model::model().is_some()
-    {
-        "model"
-    } else {
-        "rule"
+/// モデルの分担を使う設定か (重みは読まない)。既定は true で、RECOOPLAY_PRESETS=rule のときだけ false (#474)。
+/// 重みを読めないときは、モデルの分担を作る処理が規則 (rule_assignment_for) に戻る
+pub fn model_presets_enabled() -> bool {
+    std::env::var("RECOOPLAY_PRESETS").as_deref() != Ok("rule")
+}
+
+/// 重みを裏のスレッドで読み始める。版2 (約57MB) の読み込みで、ホストの待ち受けの開始を遅らせない (#474)
+pub fn warm_model() {
+    if model_presets_enabled() {
+        let _ = std::thread::Builder::new()
+            .name("model-load".into())
+            .spawn(|| {
+                let _ = crate::preset_model::model();
+            });
     }
 }
 

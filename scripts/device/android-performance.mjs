@@ -17,7 +17,7 @@ export async function beginPerformance({evaluate, page, durationMs}) {
     for (const [proto,via] of [[WebSocket.prototype,'ws'],[RTCDataChannel.prototype,'rtc']]) {
       const original=proto.send;
       proto.send=function(data){
-        if(via==='ws'&&!p.attached&&this.url.endsWith('/ws')){p.attached=true;this.addEventListener('message',e=>{try{const m=JSON.parse(e.data);if(m.type==='ack')p.acks.push({at:performance.now(),iseq:m.iseq,via:m.via});}catch{}});}
+        if(via==='ws'&&!p.attached&&this.url.endsWith('/ws')){p.attached=true;this.addEventListener('message',e=>{try{const m=JSON.parse(e.data);if(m.type==='ack')p.acks.push({at:performance.now(),iseq:m.iseq,via:m.via,stale:m.stale===true});}catch{}});}
         try { const m=JSON.parse(data);if(['input','look'].includes(m.type))p.sends.push({at:performance.now(),via,type:m.type,state:m.state,control:m.button,iseq:m.iseq,lseq:m.lseq,epoch:m.epoch,event:p.last}); }catch{}
         return original.call(this,data);
       };
@@ -66,6 +66,8 @@ export async function finishPerformance(evaluate, workload) {
   const edge=state=>ws.filter(s=>s.state===state&&s.event?.kind===(state==='down'?'pointerdown':'pointerup')).map(s=>s.at-s.event.at);
   const rtts=ws.filter(s=>ack.has(s.iseq)).map(s=>ack.get(s.iseq).at-s.at);
   const unacked=ws.filter(s=>!ack.has(s.iseq)).length;
+  const stale = new Set(raw.acks.filter(a=>a.stale).map(a=>a.iseq));
+  const staleDownAcks = new Set(ws.filter(s=>s.state==='down'&&stale.has(s.iseq)).map(s=>s.iseq)).size;
   assert(ws.length>20,'性能試行の送信サンプルが不足');assert.equal(unacked,0,'性能試行の未ACK');
-  return {workload,raw,summary:{downToSendMs:summarize(edge('down')),upToSendMs:summarize(edge('up')),ackRttMs:summarize(rtts),unacked,firstVia:raw.acks.reduce((v,a)=>(v[a.via]=(v[a.via]||0)+1,v),{}),method:'Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない'}};
+  return {workload,raw,summary:{downToSendMs:summarize(edge('down')),upToSendMs:summarize(edge('up')),ackRttMs:summarize(rtts),unacked,staleDownAcks,firstVia:raw.acks.reduce((v,a)=>(v[a.via]=(v[a.via]||0)+1,v),{}),method:'Android Chrome CDP touch / USB reverse、WS送信までの端末内時間とACK RTT。実指・ゲーム応答ではない'}};
 }
