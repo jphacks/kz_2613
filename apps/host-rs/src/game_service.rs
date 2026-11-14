@@ -8,8 +8,8 @@ use std::time::{Duration, Instant};
 pub(crate) const TITLES: [&str; 2] = ["minecraft-java", "pseudo-game"];
 pub(crate) const LAUNCH_POLL: Duration = Duration::from_millis(500);
 const FOCUS_WAIT: Duration = Duration::from_secs(5);
-/// ゲームの終了 (#547)。閉じる要求のあと、強制終了に移るまで待つ時間
-const CLOSE_GRACE: Duration = Duration::from_secs(5);
+/// ゲームの終了 (#547)。閉じる要求のあと、終わるのを待つ時間。過ぎても強制終了はしない
+const CLOSE_GRACE: Duration = Duration::from_secs(15);
 pub(crate) fn launch_timeout(minecraft: bool) -> Duration {
     Duration::from_secs(if minecraft { 300 } else { 90 })
 }
@@ -87,7 +87,7 @@ impl GameService {
     pub(crate) fn activate(&self, target: &Target) -> Result<(), String> {
         self.backend.activate(target)
     }
-    /// 選んだゲームを終了する (#547)。時間がかかる (最大で約8秒) ので、hub の外のスレッドで呼ぶ
+    /// 選んだゲームを終了する (#547)。時間がかかる (最大で約15秒) ので、hub の外のスレッドで呼ぶ
     pub(crate) fn close(&self, target: &Target) -> Result<CloseOutcome, String> {
         self.backend.close(target)
     }

@@ -154,7 +154,7 @@ function QuitGameDialog({name}:{name:string}) {
   return <dialog id="quitConfirm" aria-labelledby="quitTitle">
   <h2 id="quitTitle">{name}を終了しますか？</h2>
   <ul>
-    <li>ゲームを閉じます。閉じなければ強制終了します。<b>保存していない進行は失われることがあります。</b></li>
+    <li>ゲームに閉じる操作を送ります。強制終了はしません。<b>保存していない進行は失われることがあります。</b></li>
     <li>押していたキーはすべて離し、分担は消えます。終了後はゲーム選択の画面に戻ります。</li>
     <li>スマホの接続とRe:Cooplay・Wi-Fiはそのままです。</li>
   </ul>

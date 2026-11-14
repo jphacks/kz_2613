@@ -1067,7 +1067,7 @@ impl Hub {
                     .collect()
             })
             .unwrap_or_default();
-        json!({
+        let mut game = json!({
             "phase": self.game.phase.name(),
             "required": self.game.required,
             "maxPlayers": MAX_SLOTS,
@@ -1125,9 +1125,10 @@ impl Hub {
             // 入力が PC に届く状態か (注入モード・入力先のウィンドウ)。スマホに「届いていない」ことを知らせる
             "inputActive": self.can_inject(),
             "inputTarget": self.inject == InjectMode::On && !self.target_ok,
-            // ゲームの終了 (#547)。終了中か・PC アプリから終了できるか・最後の結果
-            "quit": { "busy": self.quitting, "can": self.can_quit_game(), "message": self.quit_message },
-        })
+        });
+        // ゲームの終了 (#547)。終了中か・PC アプリから終了できるか・最後の結果 (json! の再帰の上限を超えないよう後から足す)
+        game["quit"] = json!({ "busy": self.quitting, "can": self.can_quit_game(), "message": self.quit_message });
+        game
     }
 
     fn slot_snapshot(&self) -> Value {
@@ -2619,14 +2620,14 @@ impl Hub {
                 self.quit_message = match outcome {
                     CloseOutcome::NotRunning => format!("{name}はすでに終了していました"),
                     CloseOutcome::Closed => format!("{name}を終了しました"),
-                    CloseOutcome::Terminated => {
-                        format!("{name}が閉じなかったため、強制終了しました")
-                    }
                 };
                 self.clear_game_selection();
             }
             Err(reason) => {
-                self.quit_message = format!("{reason}。{name}の画面から終了してください");
+                // 閉じたあとでもう一度押せば、ウィンドウがないので「すでに終了」としてゲーム選択へ戻る
+                self.quit_message = format!(
+                    "{reason}。{name}の画面から終了してから、もう一度「{name}を終了する」を押してください"
+                );
                 self.push_game();
                 self.push_state();
             }
@@ -6101,6 +6102,9 @@ mod tests {
                 self.activated.lock().unwrap().push(t.processes.clone());
                 Ok(())
             }
+            fn close(&self, _: &Target) -> Result<crate::focus::CloseOutcome, String> {
+                panic!("終了しない")
+            }
             fn launch(&self, _: &Entry) -> Result<(), String> {
                 panic!("起動しない")
             }
@@ -6173,6 +6177,9 @@ mod tests {
             fn activate(&self, t: &Target) -> Result<(), String> {
                 self.activated.lock().unwrap().push(t.processes.clone());
                 self.results.lock().unwrap().pop().unwrap_or(Ok(()))
+            }
+            fn close(&self, _: &Target) -> Result<crate::focus::CloseOutcome, String> {
+                panic!("終了しない")
             }
             fn launch(&self, _: &Entry) -> Result<(), String> {
                 panic!("起動しない")
@@ -6274,6 +6281,9 @@ mod tests {
             }
             fn activate(&self, _: &Target) -> Result<(), String> {
                 Err("拒否".into())
+            }
+            fn close(&self, _: &Target) -> Result<crate::focus::CloseOutcome, String> {
+                panic!("終了しない")
             }
             fn launch(&self, _: &Entry) -> Result<(), String> {
                 panic!("起動しない")
@@ -6739,9 +6749,9 @@ mod tests {
         assert!(h.quit_message.contains("画面から終了"));
         // 終了したら、選択・分担・決定を消してゲーム選択へ戻る。参加者はそのまま
         h.quit_game(Some(title.clone()), Some(h.game.epoch));
-        h.finish_quit_game(Ok(CloseOutcome::Terminated));
+        h.finish_quit_game(Ok(CloseOutcome::Closed));
         assert!(h.game.title.is_empty() && h.lineup.is_none() && h.assigned.is_empty());
-        assert!(h.quit_message.contains("強制終了"));
+        assert!(h.quit_message.contains("終了しました"));
         assert!(h.slots[0].is_some() && h.slots[1].is_some());
         assert!(h.game.phase == Phase::Lobby);
         // 遅れて届いた結果は、終了中でなければ無視する

@@ -123,13 +123,12 @@ pub enum CloseOutcome {
     NotRunning,
     /// 閉じる要求 (WM_CLOSE) で終了した
     Closed,
-    /// 閉じる要求で終わらず、強制終了した
-    Terminated,
 }
 
 /// 選んだゲームを終了する (#547)。入力先と一致する本体のウィンドウを持つプロセスだけを対象にする。
-/// まず閉じる要求を送り、grace のあいだに終わらなければ、最初に照合したものと同じ実行ファイルのまま
-/// 動いているプロセスだけを強制終了する。対象を特定できなければ何も終了しない (推測で終了しない)
+/// 閉じる要求を送り、grace のあいだ終わるのを待つ。終わらなくても強制終了はしない
+/// (Minecraft は閉じるときにワールドを保存するので、途中で止めると壊れるおそれがある)。
+/// 対象を特定できなければ何も終了しない (推測で終了しない)
 pub fn close(target: &Target, grace: std::time::Duration) -> Result<CloseOutcome, String> {
     imp::close(target, grace)
 }
@@ -141,8 +140,7 @@ mod imp {
     use windows::Win32::Foundation::{HANDLE, WPARAM};
     use windows::Win32::System::Threading::{
         AttachThreadInput, GetCurrentThreadId, GetExitCodeProcess, OpenProcess,
-        QueryFullProcessImageNameW, TerminateProcess, PROCESS_NAME_WIN32,
-        PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
+        QueryFullProcessImageNameW, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
         BringWindowToTop, EnumWindows, GetForegroundWindow, GetWindow, GetWindowLongW,
@@ -397,22 +395,10 @@ mod imp {
             let _ = unsafe { PostMessageW(Some(w.hwnd), WM_CLOSE, WPARAM(0), LPARAM(0)) };
         }
         if wait_exit(&matched, grace) {
-            return Ok(super::CloseOutcome::Closed);
-        }
-        // 閉じる要求で終わらなければ、同じ実行ファイルのまま動いているプロセスだけを強制終了する
-        for pid in still_running(&matched) {
-            unsafe {
-                let handle = OpenProcess(PROCESS_TERMINATE, false, pid)
-                    .map_err(|_| "ゲームを終了する権限がありません".to_string())?;
-                let result = TerminateProcess(handle, 1);
-                let _ = CloseHandle(handle);
-                result.map_err(|_| "ゲームを強制終了できませんでした".to_string())?;
-            }
-        }
-        if wait_exit(&matched, std::time::Duration::from_secs(3)) {
-            Ok(super::CloseOutcome::Terminated)
+            Ok(super::CloseOutcome::Closed)
         } else {
-            Err("ゲームが終了しませんでした".into())
+            // 保存中・確認ダイアログなどで閉じきっていない。強制終了はせず、手で閉じてもらう
+            Err("ゲームがまだ閉じていません（保存中かもしれません）".into())
         }
     }
 }

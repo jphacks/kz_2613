@@ -2684,6 +2684,10 @@
 - PC：分担・準備・一時停止の画面のサイドバーの下に「（ゲーム名）を終了する」。押すと画面内の確認（保存していない進行が失われることがある）。分担の画面では「前面にする」と横並び。結果は画面上部のお知らせに出し、選択が外れたら分担の画面からゲーム選択へ戻る。
 - 試験：Rust（受け付ける条件・失敗時は選択を残す・成功時は選択と分担を消す・遅れた結果を無視）、`protocol-sim.mjs`（協力プレイ中・古い epoch・違うゲーム・スマホからは終了しない、終了後はゲーム選択で参加者は残る）、`app-view-test`（38/38、ボタンの表示条件と画面の遷移）。`focus.rs` は単体のクレートで `cargo clippy -D warnings` が通ることを確かめた（実際のプロセスの終了は手元で動かしていない）。ホストの試験と `protocol-sim` は CI で確認する。`capture-screens.mjs --assert-layout` は CI と同じ2つの大きさで合格。
 - 未実施：Windows 実機で Minecraft などを実際に終了する確認（通常の終了・強制終了）、連続展示の通し確認。
+- 利用者の判断（2026-11-15）：#547 は本 PR に一本化（#564・#567・#568 は閉じた）。**強制終了はしない**。Minecraft は閉じるときにワールドを保存するので、途中で `TerminateProcess` すると壊れるおそれがある。
+  - `focus::close` は WM_CLOSE を送って15秒待つだけにし、`CloseOutcome::Terminated` を削除。時間内に閉じなければ選択を残し、「ゲームの画面から終了してから、もう一度『終了する』を押してください」と案内する。閉じたあとで押し直すと、ウィンドウがないので「すでに終了していました」としてゲーム選択へ戻る（#567 の手動の経路の代わり）。
+  - main（#558・#566 など）を取り込み、`protocol-sim.mjs` と hub の試験の衝突を解消。`game` の `json!` が再帰の上限を超えたので、`quit` は後から足す。main で増えた試験用の `GameBackend` に `close` を足した。
+  - `cargo fmt --check`・`cargo clippy --all-targets -D warnings`・`cargo test --release --locked`（248件）、`npm run build`、`app-view-test` 41/41、`protocol-sim.mjs` 71/71（dry-run）に合格。実ゲームを閉じる確認は未実施。
 ### #546 展示で一部の参加者を交代して再開する試験
 - `npm --prefix apps/web run build` に合格。
 - PR #549 のWindowsホスト成果物（run 43640947083）を使い、`node --experimental-strip-types scripts/sim/protocol-sim.mjs --bin <host.exe>` で69/69合格。終了してもMinecraftの選択を維持し、P1を残してP2を補充し、新しいepochで同じゲームを再開できることを確認。
