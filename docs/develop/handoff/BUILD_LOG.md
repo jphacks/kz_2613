@@ -2685,3 +2685,21 @@
 - セッションAPIが存在しない旧Windowsに限り、永続設定を変更せず従来の起動APIへ戻す。WinRTが返したエラーコード・状態コードを資格情報を含まない固定文言で案内。
 - 情報取得は起動処理中のロックを待たず、取得した状態のCOM照会はロックの外で行う。遷移中は旧Wi-Fi QRを表示しない。
 - Windowsでnetinfo単体ビルド・単体試験に合格。実機は未実施。
+## 2026-11-15 — ロビーで背面になったゲームも「分担操作開始」で前面へ出して開始する（#556、Claude Code）
+
+- ロビーの開始条件は「対象ゲームが前面」を必須にしていた（`ready_reasons(require_focus)`）うえ、ロビーの `READY` では前面化（`focus_for_coop`）を呼んでいなかった。協力プレイの終了で PC アプリが前面になると（#549）、次の組が開始できない。
+- ホスト：選んだゲームのウィンドウがあるか（`target_window_open`、1秒ごとに確認）を持ち、ゲームが起動していればロビーでも前面を必須にしない（`lobby_requires_focus`）。ロビーの `READY` でも `focus_for_coop` を呼び、前面にできたときだけ開始する。判断の追記：`docs/develop/decisions/2026-11-14-single-coop-start.md`。
+- 試験：Rust（背面から開始・前面にできなければ開始しない・ウィンドウがなければ前面が必要）、`protocol-sim.mjs`（前面にできないときの開始拒否、背面のゲームから開始）。手元では Rust をビルドできないため CI で確認する。`cargo fmt --check` は成功。
+- 未実施：Windows 実機で、PC アプリが前面のまま Minecraft を前面化して開始する確認。
+### #555 分担画面の操作定義に関する注意
+- Webビルドと `node --experimental-strip-types scripts/sim/app-view-test.mjs`（39/39）に合格。
+- `check-static-pages.mjs` は基点からあるPCリモコンの凡例「◀」で停止した。変更前後の撮影と実機受入は未実施。
+## 2026-11-15 — ホストのリモコンで入力先の案内が下部パネルに隠れる（#553、Claude Code）
+
+- 原因：#550 で下部（`host-actions`）を sticky で固定し、表示域が低い端末（384×701）ではその上の `#remoteRoute` に重なった。main `14c34de` の CI のホストで 384×701 を撮影して再現した。
+- 修正：入力先の案内を下部の固定領域の先頭の決まった枠（2行分、文の長さで高さを変えず、入力先を失った案内も省略しない）へ移した。高さ760px以下では、タッチパッド・Esc・ホイールを縮める（従来は640px以下）。
+- 監査：`capture-screens.mjs` に、スクロールしていない状態で Esc・ホイール・タッチパッド・入力先の案内が下部の固定領域に隠れないかの判定を追加。修正前の画面で4枚を検出し、修正後は 384×701・390×844・402×874 で合格。CI の compact の大きさを 390×844 → 384×701 にした（低い側を確かめる）。
+- `phone-view-test`・`phone-lifecycle-test`（38/38）・`product-web-test`・`check-static-pages`・`verify-ui-evidence`、`npm run typecheck`・`vite build` に合格。実機の確認は未実施。
+- 利用者の判断（2026-11-15）：入力先の案内（「PCアプリを操作中」など）はそもそも要らない。案内の行は例外時（実際のマウスとして動く・リモコンが届かない）も含めて全部消し、リモコンを広く取る。不要な領域は設けない。
+  - `#remoteRoute` と、モデルの `route`・`routeBlocked`（`routeText`）を削除。下部の補足欄（`host-notes`）は最大2行にし、文がないときは場所を取らない。空いた高さはタッチパッドに回す。部品を縮める条件は 640px 以下に戻した。
+  - `capture-screens.mjs --assert-layout`（384×701・390×844・402×874）、`npm run typecheck`・`vite build` に合格（ホストは main db4baa2 の手元ビルド）。
