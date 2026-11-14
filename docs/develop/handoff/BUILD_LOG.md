@@ -2614,6 +2614,13 @@
 - ローカル検証：PyYAMLのBaseLoaderでYAMLと選択肢を確認、全PowerShell手順をASTで構文検査。抽出したdesktop手順へnodeの代替関数を注入し、全成功と3回目だけ終了コード7の2系列で、各5回継続・6〜10の試行番号・全出力ログ・終了コードと失敗判定が保持されることを確認した。Windows PowerShell 5.1の検証側でJSON配列を二重に包んだため初回の検証は失敗し、読み取り側を修正して再実施した（保存JSONには5件が存在していた）。
 - `py -3 scripts/verify_overlay.py`、`py -3 scripts/check-public-docs.py`、`git diff --check` 成功。GitHub Actionsでの実WebView2反復は、同じコミットの配布CI成功後に実施する。ローカルでは実アプリ・OS入力・ネットワーク設定は操作していない。
 
+## 2026-11-15 — ホストのリモコン画面を整理する：不要な文の削除・「ホストに譲る」をEscの下へ・下部の固定（#536、Claude Code）
+
+- #536 のコメント（利用者の判断 2026-11-15）に従い、「タッチパッドでPCのカーソルを動かせます。」、Alt+Tab・担当の入れ替えの案内（`appReturnHint`）、一時停止中の手順の文（「ホストが停止。…押してください。」）を削除した。ホスト以外の理由（緊急停止・切断など）で止まったときは、安全のため理由だけを短く残す（AGENTS.md の安全の決まり）。前面化の失敗などの操作結果（`prepareStatus`）は残す。
+- 「ホストに譲る」をリモコンの中、Esc の下に置いた（Esc は 92px→72px）。押すと上向きのメニューで相手を選び、既存のページ内確認を経て譲る。譲れないときも枠は残し（visibility）、まわりのボタンを動かさない。
+- 下部（`host-actions`）を固定：主ボタン1行、補助ボタンは3つの決まった枠（ゲームの前面化・PCアプリの前面化・終了）で出さない枠は空けたまま、説明は2行の高さの枠の中でスクロールする。
+- 試験：`phone-view-test`（文の削除・緊急停止の理由は残る）、`phone-lifecycle-test`（38/38）、`review-terminal-regression`、`product-web-test`、`product-lifetime-test`、`app-view-test`、`ui-input-test`、`check-static-pages`、`verify-ui-evidence`、`product-module-graph-test`、`npm run typecheck`・`vite build` に合格。main `14c34de` のCIのホストで `capture-screens.mjs --assert-layout` を CI と同じ2つの大きさで実行し合格（PC側の11px未満1件は既存）。説明の監査は、枠が画面内にあり枠内スクロールで読めるかの判定に改めた。
+- 未実施：実機（Android・iPhone）でのEscと譲渡ボタンの収まり・タップ領域の確認。一時停止を上のバーのアイコンにする案（#536 のコメント、候補）は未着手。
 ## 2026-11-15 — 回転ロックのまま横持ちで、スティック・視点の向きを90度回す（#514、Claude Code）
 
 - `apps/web/src/shared/input/hold.ts` に持ち方（縦持ち・左に90度・右に90度）を追加し、スティックは指の位置、視点パッドは移動量（dx・dy）を回してから方向・送る量を決める。画面の配置・送る入力の種類・認可・送信経路・感度・視点30Hzは変えない。

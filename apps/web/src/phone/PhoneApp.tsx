@@ -60,7 +60,9 @@ function Header({state,status}:{state:PhoneDisplay;status:Status}) {
 }
 
 // ホストのリモコン (リモコン型)。PCアプリはタッチパッドのカーソルとクリックで操作する。
-// 矢印・Enter・Eキーは置かない (ユーザー判断 2026-11-13)。進めるボタンは画面の下に固定する
+// 矢印・Enter・Eキーは置かない (ユーザー判断 2026-11-13)。進めるボタンは画面の下に固定する。
+// 下の領域は、出すボタン・文の有無で高さを変えない (#536 の利用者判断 2026-11-15)。
+// 補助ボタンは3つの決まった枠に置き、出さないボタンの枠は空けたままにする。説明は2行の枠の中でスクロールする
 function HostRemoteScreen({state}:{state:PhoneDisplay}) {
   return <section className={`view${state.view === 'v-remote' ? ' show' : ''}`} id="v-remote">
     <div className="host-card"><h1>あなたがホストです！</h1>
@@ -72,21 +74,38 @@ function HostRemoteScreen({state}:{state:PhoneDisplay}) {
     </div>
     <label className="sens">カーソル感度 <input id="remotePadSensitivity" type="range" min="0.5" max="6" step="0.1" defaultValue="1" aria-label="カーソル感度" /> <span id="remotePadSensitivityValue">1.0倍</span></label>
     <div className="remote-keys">
-      <button className="key esc" data-ctl="ESC">Esc</button>
+      <div className="remote-left">
+        <button className="key esc" data-ctl="ESC">Esc</button>
+        <HostTransfer to={state.remote.transferTo}/>
+      </div>
       <div className="wheel-pair"><button className="key" data-ctl="REMOTE_WHEEL_UP">ホイール↑</button><button className="key" data-ctl="REMOTE_WHEEL_DOWN">ホイール↓</button></div>
     </div>
     <div id="remoteRoute" className={`note${state.remote.routeBlocked ? ' route-blocked' : ''}`} role="status">{state.remote.route}</div>
     <div className="host-actions">
       <button className="cmd" id="startBtn" disabled={state.remote.startDisabled}>{state.remote.startLabel}</button>
-      <button className="cmd sub" id="openGameBtn" data-cmd="OPEN_GAME" hidden={state.remote.openGameHidden}>{state.remote.openGameLabel}</button>
-      <button className="cmd sub" id="openAppBtn" data-cmd="OPEN_APP" hidden={state.remote.openAppHidden} aria-describedby={state.remote.appReturnHint ? 'appReturnHint' : undefined}>PCアプリを前面にする</button>
-      <p className="note" id="appReturnHint" hidden={!state.remote.appReturnHint}>{state.remote.appReturnHint}</p>
-      <button className="cmd sub" id="endBtn" style={{display: state.remote.endVisible ? 'block' : 'none'}}>{state.remote.endLabel}</button>
-      <div id="hostTransfer" className="host-transfer" hidden={!state.remote.transferTo.length}>{state.remote.transferTo.length ? 'ホストを譲る：' : null}{state.remote.transferTo.map(p => <button className="key" key={p} onClick={() => transferHost(p)}>{p}</button>)}</div>
-      <div className="note" id="remoteNote">{state.remote.note}</div>
-      <div className="note" id="remoteNotice" hidden={!state.remote.notice}>{state.remote.notice}</div>
+      <div className="host-sub">
+        <button className="cmd sub" id="openGameBtn" data-cmd="OPEN_GAME" hidden={state.remote.openGameHidden}>{state.remote.openGameLabel}</button>
+        <button className="cmd sub" id="openAppBtn" data-cmd="OPEN_APP" hidden={state.remote.openAppHidden}>PCアプリを前面にする</button>
+        <button className="cmd sub" id="endBtn" style={{display: state.remote.endVisible ? 'block' : 'none'}}>{state.remote.endLabel}</button>
+      </div>
+      <div className="host-notes" role="status">
+        <div className="note" id="remoteNote">{state.remote.note}</div>
+        <div className="note" id="remoteNotice" hidden={!state.remote.notice}>{state.remote.notice}</div>
+      </div>
     </div>
   </section>;
+}
+
+// 「ホストに譲る」(#233・#536)。リモコンの中、Esc の下に置き、押すと譲る相手を選ぶメニューを開く。
+// 譲れないとき (ロビー以外・ほかに誰もいない) も枠は残し、まわりのボタンを動かさない。決める前にページ内で確認する
+function HostTransfer({to}:{to:PhoneDisplay['remote']['transferTo']}) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => { if (!to.length) setOpen(false); }, [to.length]);
+  return <div id="hostTransfer" className="host-transfer" style={to.length ? undefined : {visibility: 'hidden'}}>
+    <button className="key transfer" id="hostTransferBtn" aria-haspopup="menu" aria-expanded={open} disabled={!to.length} onClick={() => setOpen(o => !o)}>ホストに譲る</button>
+    {open && <div className="host-transfer-menu" role="menu" aria-label="ホストを譲る相手">{to.map(p =>
+      <button key={p} role="menuitem" onClick={() => { setOpen(false); transferHost(p); }}>{p}に譲る</button>)}</div>}
+  </div>;
 }
 
 function WaitingScreen({state}:{state:PhoneDisplay}) {
@@ -163,8 +182,8 @@ function PhoneDiagnostics({phase}:{phase:string|undefined}) {
 // 通信の復旧・遅れた押下の破棄の後、押したままの指では操作を再開しない。離せば自動で消える (#285 Q27)
 function HostPadHint() {
   const visible = useSyncExternalStore(liftHint.subscribe, liftHint.get);
+  // 「タッチパッドでPCのカーソルを動かせます。」は出さない (#536 の利用者判断 2026-11-15：不要なので削除)
   return <div className="host-pad-hint">
-    <span className="host-pad-help" hidden={visible}>タッチパッドでPCのカーソルを動かせます。</span>
     <span id="liftHint" role="status" hidden={!visible}>指を離して操作を再開</span>
   </div>;
 }

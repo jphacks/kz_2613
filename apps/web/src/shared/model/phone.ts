@@ -78,20 +78,12 @@ export function waitModel({ me, game, roleTitle, joined, autoWait }: {me:Slot;ga
 export const END_PREPARING_LABEL = '準備をやめて分担に戻る';
 
 /** ホストのリモコン画面の内容。入力の要素 (タッチパッド・キー) は含まない */
-export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHost:boolean;game:PhoneGame;name:string;autoWait?:boolean}) {
+export function remoteModel({ me, isHost, game, name }: {me:Slot;isHost:boolean;game:PhoneGame;name:string;autoWait?:boolean}) {
   const phase = game.phase;
   const reasons = game.readyReasons ?? [];
   const appInFront = game.remoteRoute === 'app';
   const openAppHidden = !isHost || !game.canOpenApp || appInFront;
-  const returnInstructions = [];
-  if (isHost && (phase === 'preparing' || phase === 'paused')) {
-    if (!appInFront) returnInstructions.push(openAppHidden
-      ? 'PCアプリへは、PCでAlt+Tabを押して戻れます。'
-      : 'ボタンで戻れないときは、PCでAlt+Tabを押してください。');
-    if (phase === 'paused' && game.canSwap) {
-      returnInstructions.push('担当を変えるには、PCアプリで「担当を入れ替える」を選んでください。');
-    }
-  }
+  // Alt+Tab・担当の入れ替えの案内は出さない (#536 の利用者判断 2026-11-15：不要なので削除)
   let instructions: (string | null | undefined)[];
   if (phase === 'preparing') {
     instructions = [game.prepareStatus, ...reasons, game.canReady
@@ -100,10 +92,10 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
     // Readyを押せないとき (ゲームを閉じてしまったときなど) は、スマホだけで分担の画面へ戻れることを示す (#427)
     game.canReady ? null : `やり直すときは「${END_PREPARING_LABEL}」を押してください`];
   } else if (phase === 'paused') {
-    instructions = [reasonText(game.reason, me), game.inputTarget ? game.prepareStatus : '', ...(game.canResume ? [] : reasons)];
-    if (autoWait && isHost) instructions.push('制限時間内に全員が戻ると自動で再開します');
-    if (game.canResume) instructions.push('続けるには「再開する」を押してください');
-    instructions.push('遊び終えたら「協力プレイを終了（分担に戻る）」を押してください');
+    // 一時停止中の手順の文 (「ホストが停止。…押してください。」) は出さない (#536 の利用者判断 2026-11-15)。
+    // ホスト以外の理由 (緊急停止・切断・入力先の喪失など) で止まったときだけ、安全のために理由を短く残す (AGENTS.md)。
+    // 前面化の失敗など、ホストの操作の結果 (prepareStatus) も残す
+    instructions = [game.reason === 'host pause' ? '' : reasonText(game.reason, me), game.inputTarget ? game.prepareStatus : ''];
   } else if (game.lineupOk) {
     instructions = [`プレイ画面まで進んだら「${START_COOP_LABEL}」を押してください`, ...reasons];
   } else {
@@ -117,7 +109,7 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
     players: playerChips(game, me),
     route: routeText(game, name), routeBlocked: game.remoteRoute === 'none', notice: '',
     // ゲームが前面に残っても、スマホだけでPCアプリへ戻れるようにする (#292)
-    openAppHidden, appReturnHint: returnInstructions.join(''),
+    openAppHidden,
     startLabel: phase === 'paused' ? '再開する' : START_COOP_LABEL,
     startDisabled: !(phase === 'paused' ? game.canResume : game.canReady),
     openGameLabel: `${name}を前面にする`,
