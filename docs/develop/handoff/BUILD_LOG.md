@@ -2675,3 +2675,8 @@
 - Webビルドと撮影スクリプトの構文検証に合格。
 - `node scripts/sim/capture-screens.mjs --bin <host.exe> --out data/local/536-dialogs --pc-size 800x560` で23枚を保存。参加トラブル案内と全員リセット確認を撮影し、キャンセル後も通常の遷移と緊急停止試験が完了した。
 - Chrome dry-runでの撮影。Android実機・PCアプリでの追加撮影は未実施。
+
+### #546 展示で一部の参加者を交代して再開する試験
+- `npm --prefix apps/web run build` に合格。
+- PR #549 のWindowsホスト成果物（run 43640947083）を使い、`node --experimental-strip-types scripts/sim/protocol-sim.mjs --bin <host.exe>` で69/69合格。終了してもMinecraftの選択を維持し、P1を残してP2を補充し、新しいepochで同じゲームを再開できることを確認。
+- dry-runの模擬通信。Minecraft、Wi-Fi全員交代、実機での前面化は未検証。
