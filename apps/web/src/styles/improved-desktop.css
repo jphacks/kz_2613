@@ -117,3 +117,13 @@ body[data-remote-nav] :is(button, a, summary, select, input, [data-swap]):focus 
   .preset-choice, .preset-choice button { font-size: 27px; }
   .preset-choice { left: 60px; top: 312px; }
 }
+
+.profile-notice-button {
+  position: absolute;
+  inset: 20px 20px auto auto;
+  width: 108px;
+  height: 108px;
+  padding: 0;
+  color: var(--color-warning);
+}
+.profile-notice-button .icon { width: 48px; height: 48px; }

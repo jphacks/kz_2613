@@ -64,6 +64,7 @@ export function pcModel(s: PcSnapshot) {
   const lineupNotice = disconnected.length
     ? `${disconnected.join('・')}が切断したため、分担を確認してください。メンバーが変わった場合は決め直してください。`
     : '';
+  const gameProfileNotice = profileNotice(game?.profile);
   const cards = playerCards(slots, view, game);
   const pauseResumeHint = stopped
     ? '安全を確かめてから\n「入力を再開する」を押します。'
@@ -93,7 +94,8 @@ export function pcModel(s: PcSnapshot) {
     blockedStart: view !== 'preparing' || stopped, readyInstruction: view !== 'ready' || stopped,
     openGameHidden: !['preparing','ready','paused'].includes(view) || !game?.inputTarget,
     actionNote: view === 'roles' ? swapPick ? swapHint : (roleAction.note || (game?.lineupOk ? '' : swapHint)) : view === 'preparing' ? `${name}をプレイ中の画面まで進めてください。` : '',
-    notices: [lineupNotice, s.hostNotice, warning, networkNotice(state?.network, state?.slots), profileNotice(game?.profile)].filter(Boolean),
+    profileNotice: view === 'roles' ? gameProfileNotice : '',
+    notices: [lineupNotice, s.hostNotice, warning, networkNotice(state?.network, state?.slots), view === 'roles' ? '' : gameProfileNotice].filter(Boolean),
     comm: commSettingsView(game, s.infoPort),
     gameCards: list.map(g => gameCard(g, ui.game, game?.launch)),
     gamesCount: s.manualMessage || gamesCountText(list, !!state?.gamesScanning), scanning: !!state?.gamesScanning,
