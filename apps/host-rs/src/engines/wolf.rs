@@ -3,7 +3,7 @@
 // データ (Data.wolf など) は暗号化されていることがあるので読まず、ファイルの並びで見分けて既定のキーで操作を作る。
 use std::path::Path;
 
-use super::{button, child_ci};
+use super::{button, child_ci, in_group};
 use crate::game_actions::ReadAction;
 
 pub fn read(dir: &Path) -> Option<(Vec<ReadAction>, &'static str)> {
@@ -28,12 +28,25 @@ pub fn is_wolf(dir: &Path) -> bool {
 
 pub fn actions() -> Vec<ReadAction> {
     vec![
-        button("wolf/up", "上へ移動", Some("ARROW_UP")),
-        button("wolf/down", "下へ移動", Some("ARROW_DOWN")),
-        button("wolf/left", "左へ移動", Some("ARROW_LEFT")),
-        button("wolf/right", "右へ移動", Some("ARROW_RIGHT")),
-        button("wolf/ok", "決定", Some("KEY_Z")),
-        button("wolf/cancel", "キャンセル・メニュー", Some("KEY_X")),
+        in_group(button("wolf/up", "上へ移動", Some("ARROW_UP")), "movement"),
+        in_group(
+            button("wolf/down", "下へ移動", Some("ARROW_DOWN")),
+            "movement",
+        ),
+        in_group(
+            button("wolf/left", "左へ移動", Some("ARROW_LEFT")),
+            "movement",
+        ),
+        in_group(
+            button("wolf/right", "右へ移動", Some("ARROW_RIGHT")),
+            "movement",
+        ),
+        // 決定・キャンセルは RPG の遊びの中心なので行動として配る (#512)
+        in_group(button("wolf/ok", "決定", Some("KEY_Z")), "gameplay"),
+        in_group(
+            button("wolf/cancel", "キャンセル・メニュー", Some("KEY_X")),
+            "gameplay",
+        ),
         button("wolf/sub", "サブキー（ダッシュなど）", Some("LSHIFT")),
     ]
 }

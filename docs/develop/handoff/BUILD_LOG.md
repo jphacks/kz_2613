@@ -2509,3 +2509,10 @@
   - Project Zomboid（#509）：`keys.ini`。Build 42 で GLFW のキーコードになった可能性があるので、`Forward` の値で DirectInput（W = 17）と GLFW（W = 87）を見分ける。
 - RE Engine（#510）は、キー割当の保存先を実物で確かめられないので実装していない（今は汎用定義になる）。
 - 確認：小さなクレートで Rust の単体試験31件・Clippy 合格、`profile-engines-test.mjs` 17/17（Rust と同じ入力・期待値）。どのゲームも手元になく、ファイルの形式は知識による（fixture だけで確認）。実機は未確認。
+
+## 2026-11-14 — ツクールの「決定」を独自AIがメニューにして配らない問題を直す（#512、Claude Code）
+
+- 事象：RPGツクール XP 製の「青鬼」を #502 の読み取りと独自AI（既定の分担）で試すと、自動取得した9操作のうち、決定・キャンセルなど5つをモデルが menu に分類した。menu は P1 のリモコンに残して配らないため、配られるのは移動の4つだけで、「調べる」を誰も押せなかった。
+- 修正：`ReadAction` に分類の手がかり `group` を足し、`preset_model::synthesize` でモデルの分類より優先する。ツクール（MV・MZ の記号 ok・escape・cancel・menu と、RGSS・2000/2003 の既定）とウディタは決定・キャンセルを gameplay、移動を movement にした。2D 向けの汎用の割当は、移動と Z・X・C に手がかりを付けた。A ボタン・ページ送り・Shift・Enter・Esc は、これまでどおりモデルの分類に任せる。
+- 試験：`reader_group_hint_overrides_the_model_category`（ツクール XP の既定で、1〜4人のどの分担にも決定・キャンセル・移動が配られる）。
+
