@@ -86,6 +86,8 @@ pub enum Event {
     WsClosed {
         id: u64,
         code: u16,
+        #[cfg(feature = "latency-measure")]
+        since_last_send_ms: Option<u64>,
     },
     RtcDescription {
         slot: usize,
@@ -3655,7 +3657,24 @@ impl Hub {
                     self.on_ws_message(id, msg);
                 }
             }
-            Event::WsClosed { id, code } => self.on_ws_closed(id, code),
+            Event::WsClosed {
+                id,
+                code,
+                #[cfg(feature = "latency-measure")]
+                since_last_send_ms,
+            } => {
+                #[cfg(feature = "latency-measure")]
+                if let Some(gap_ms) = since_last_send_ms.filter(|gap| *gap >= 3000) {
+                    if let Some(Role::Player { slot }) = self.conns.get(&id).map(|conn| &conn.role)
+                    {
+                        self.record(
+                            "ws_send_gap_at_close",
+                            json!({ "slot": SLOT_NAMES[*slot], "gapMs": gap_ms, "closeCode": code }),
+                        );
+                    }
+                }
+                self.on_ws_closed(id, code);
+            }
             #[cfg(feature = "latency-measure")]
             Event::WsSendGap {
                 id,
