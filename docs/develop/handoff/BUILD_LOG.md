@@ -2546,3 +2546,9 @@
 - `engines/creation.rs`：`ControlMap_Custom.txt` がないとき、Fallout 4・Starfield は Data の「* - Interface.ba2」から `Interface/Controls/PC/ControlMap.txt` を取り出して読む。Skyrim SE の BSA（LZ4）は依存が増えるので、今までどおり既定の割当の表。
 - カタログ（`engines.mjs`）にも同じ読み取り（`ba2Extract`）を足した。
 - 確認：小さなクレートで Rust の単体試験33件・Clippy 合格、`cargo fmt --check` 合格、`profile-engines-test.mjs` 18/18。BA2 の版 2・3 の先頭の長さは知識による（実物で確かめていない）。Fallout 4・Starfield の実物は手元にない。
+
+## 2026-11-15 — ホストの記録を残す件数・日数（#523、Claude Code）
+
+- `log_retention.rs` を足し、`Hub::new` で新しい記録を作る前に、古い `session-*.jsonl` を消すようにした。既定は「新しい 30 件は必ず残し、それより古いもののうち 30 日を過ぎたものを消す」。名前に `keep` を含む記録は消さない。`RECOOPLAY_LOG_KEEP`（件数）・`RECOOPLAY_LOG_KEEP_DAYS`（日数、0 なら消さない）で変えられる。ほかのファイルには触れない。消した件数は新しい記録に `logRetention` として残す。
+- 既定値は判断待ち（#523）。実機の受入の証拠として残したい古い記録は、名前に `keep` を付けるか、`RECOOPLAY_LOG_KEEP_DAYS=0` で起動する。
+- 確認：`log_retention.rs` は標準ライブラリだけなので `rustc --test` で単体の試験が合格。`cargo fmt --check` 合格。ホスト全体のビルド・試験は CI で確かめる。

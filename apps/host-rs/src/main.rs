@@ -21,6 +21,7 @@ mod keybinds;
 #[cfg(feature = "latency-measure")]
 mod latency;
 mod launchers;
+mod log_retention;
 mod look;
 mod model_presets;
 mod netinfo;

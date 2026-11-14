@@ -519,6 +519,10 @@ impl Hub {
         log_dir: &Path,
     ) -> std::io::Result<Hub> {
         std::fs::create_dir_all(log_dir)?;
+        // 古い記録を消す (#523)。新しい記録を作る前に行い、消した件数は新しい記録に残す
+        let (keep, max_age) = crate::log_retention::settings();
+        let pruned =
+            crate::log_retention::prune(log_dir, keep, max_age, std::time::SystemTime::now()).len();
         let name = format!(
             "session-{}.jsonl",
             chrono::Utc::now().format("%Y-%m-%dT%H-%M-%S-%3fZ")
@@ -637,6 +641,9 @@ impl Hub {
             "profiles",
             json!({ "loaded": list.len(), "errors": errors }),
         );
+        if pruned > 0 {
+            hub.log("logRetention", json!({ "removed": pruned, "keep": keep }));
+        }
         hub.profiles = list;
         hub.reload_keybinds();
         hub.schedule(now + LOOK_TICK, Timer::LookTick);
