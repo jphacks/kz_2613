@@ -4617,11 +4617,11 @@ mod tests {
             .insert("steam:9001".into(), stored(Some(now.map(|t| t - 10))));
         assert!(
             h.needs_detect("steam:9001"),
-            "更新日時が変わったら読み直す: saved={:?} now={:?} title={} phase={:?} presets_model={} profile={}",
+            "更新日時が変わったら読み直す: saved={:?} now={:?} title={} phase={} presets_model={} profile={}",
             h.detected.get("steam:9001").map(|d| d.config_modified),
             crate::engines::config_modified(&dir),
             h.game.title,
-            h.game.phase,
+            h.game.phase.name(),
             h.presets_model,
             profiles::find(&h.profiles, "steam:9001").is_some()
         );
