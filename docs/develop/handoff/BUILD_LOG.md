@@ -2336,6 +2336,7 @@
 
 ## 2026-11-14 — 分担の初期設定をモデルにする（Claude Code）
 
-- 利用者の判断：分担の案の初期設定を規則からモデルに切り替える（#474）。`profiles::preset_source()` を、`RECOOPLAY_PRESETS=rule` でなく重みを読めれば `model` を返す形にした。規則に戻すときは `RECOOPLAY_PRESETS=rule`。
+- 利用者の判断：分担の案の初期設定を規則からモデルに切り替える（#474）。`RECOOPLAY_PRESETS=rule` でなければモデルの分担を使う（`profiles::model_presets_enabled`）。使われなくなった `preset_source()` は消した。規則に戻すときは `RECOOPLAY_PRESETS=rule`。
 - 検証済みのプリセットがあるゲームは `model_presets::needs_model` で対象外のまま。試験の `fixture()` は `presets_model` を明示しているので、既存の試験の前提は変わらない。
+- 版2の重み（約57MB）の読み込みで待ち受けの開始が遅れないよう、起動時に裏のスレッドで読み始める（`profiles::warm_model`）。読み終わる前に分担が要るときは、その処理だけが読み終わりを待つ。
 - 合わせて AGENTS.md・`game-profile-specification.md`・`scripts/preset-model/README.md`・配布物の説明（`package.ps1`）・判断の記録を直した。実機は未確認。
