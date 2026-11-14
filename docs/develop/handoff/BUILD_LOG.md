@@ -2339,3 +2339,9 @@
 - `runtime-measure.mjs` で最大60秒を指定できるようにし、WS切断コードと失敗時点までの測定結果を保存する。PR #456 のWindowsホストを使用し、OS入力は無効。
 - `node scripts/sim/runtime-measure.mjs --bin <exe> --players 2,4 --cases slow-monitor --duration-ms 60000` は2人で合格（送信待ち最大4096件）。4人ではホストで解放を記録したが、監視で停止状態の待機に失敗した。4人の再試行では監視の1006をJSONに記録した。[条件と結果](../decisions/2026-11-06-host-runtime-measurement.md#2026-11-14の60秒追試)。
 - 同スクリプトの `--players 2 --cases normal --duration-ms 1000`、60秒超の拒否、`node --check`、構造・公開資料検査、`git diff --check` が成功。4人時の監視切断の原因と実Wi-Fiでの受入は未確認。
+
+## 2026-11-14 — 監視WebSocketが切断された条件を計測する（#197、Codex）
+
+- 既存のdry-run計測時に、送信結果と上限超過の有無を接続番号付きで出力する。計測スクリプトは成功・失敗の双方でこの情報を保存し、失敗時にもホストに正常終了を要求する。
+- Windowsの `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml`、`node --check scripts/sim/runtime-measure.mjs`、`git diff --check` が成功。新しいホストのSHA-256は `6ea869f4afd7b0d2bb055918686002e8554835bc1100251ad5c7ccae373e20a6`。
+- `runtime-measure.mjs --players 2 --cases normal,slow-monitor --duration-ms 5000` は2/2合格。 `--players 4 --cases slow-monitor --duration-ms 60000` は停止通知の待機で失敗した。読取り継続側は送信成功かつ上限超過で切断され、ホストログにはキー解放が残った。通知配送の改善と実Wi-Fi受入は未実施。

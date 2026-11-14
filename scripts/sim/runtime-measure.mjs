@@ -5,6 +5,7 @@ import path from 'node:path';
 import http from 'node:http';
 import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { createInterface } from 'node:readline';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const arg = (name, fallback) => { const i = process.argv.indexOf(name); return i < 0 ? fallback : process.argv[i + 1]; };
@@ -82,7 +83,13 @@ async function run(players, scenario) {
     const match = output.match(/server_start \{"port":([1-9]\d{0,4})\}/);
     if (match) ready(Number(match[1]));
   });
-  host.stderr.on('data', b => { output = (output + b).slice(-5000); });
+  const sendClosures = [];
+  const stderr = createInterface({ input: host.stderr });
+  stderr.on('line', line => {
+    output = (output + '\n' + line).slice(-5000);
+    const match = /^ws_send_close (\{.*\})$/.exec(line);
+    if (match) sendClosures.push(JSON.parse(match[1]));
+  });
   const closed = new Promise(resolve => {
     host.once('exit', resolve);
     host.once('error', e => { output += e.message; resolve('error'); });
@@ -159,7 +166,14 @@ async function run(players, scenario) {
     }
     return { players, scenario, durationMs: actualLoadMs, sent, pingSamples: rtts.length,
       pingMs: { p50: percentile(rtts, .5), p95: percentile(rtts, .95), max: rtts.length ? Math.max(...rtts) : null },
-      stopRoundTripMs, safeStop: true, runtime, logBytes: fs.readdirSync(dir).filter(f => f.endsWith('.jsonl')).reduce((n, f) => n + fs.statSync(path.join(dir, f)).size, 0) };
+      stopRoundTripMs, safeStop: true, runtime, sendClosures, logBytes: fs.readdirSync(dir).filter(f => f.endsWith('.jsonl')).reduce((n, f) => n + fs.statSync(path.join(dir, f)).size, 0) };
+  } catch (error) {
+    if (host.exitCode === null && host.stdin.writable) {
+      host.stdin.end('quit\n');
+      await Promise.race([closed, sleep(3000)]);
+    }
+    error.sendClosures = sendClosures;
+    throw error;
   } finally {
     clearInterval(pingTimer);
     slow?.destroy();
@@ -176,7 +190,7 @@ try {
       results.push(result);
       console.log(JSON.stringify(result));
     } catch (error) {
-      failure = { players, scenario, message: error.message };
+      failure = { players, scenario, message: error.message, sendClosures: error.sendClosures };
       throw error;
     }
   }
