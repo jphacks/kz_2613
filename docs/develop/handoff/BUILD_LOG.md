@@ -2585,6 +2585,11 @@
 - Android補助試験に、P1の担当がゲーム選択前は非表示で、Minecraft選択後は表示される確認を追加した。
 - main `d5227aa` のWindows配布版で Android Chrome 1台と模擬参加者1台の実Wi-Fi dry-runを実施し、15/15合格。iPhoneは未確認。
 
+## 2026-11-15 — 分担AI仕様書に実機での受け入れの結果を反映する（#432、Claude Code）
+
+- 青鬼（RPGツクールXP、操作定義なし）で、自動で読み取った操作を独自AIが3人に分担し、Android実機（P1、ホットスポットのWi-Fi）と模擬スマホ2台で6つの操作がすべてゲームに届いた結果を、評価の表に加えた。詳細は #512 のコメント。
+- 「実機での受け入れは未実施」の記述を、確認した範囲（1本・3人）と未実施の範囲（ほかのゲーム・人数、遅延の比較）に分けて書き直した。
+- `python scripts/check-public-docs.py` と `git diff --check` で確かめる。
 ### #457 最新mainを取り込んだ後の検証
 - mainのゲーム未選択時の挙動を保持し、通信契約は版6を採用。
 - Webビルド、静的ページ検証、`phone-lifecycle-test.mjs`（38/38）、`ui-input-test.mjs`（20/20）に合格。Node.js 22.15.0 では `--experimental-strip-types` を指定。
