@@ -79,6 +79,8 @@ export function pcModel(s: PcSnapshot) {
     gameSteps,
     overlayUrl: s.infoPort ? `http://127.0.0.1:${s.infoPort}/overlay` : '',
     view, roleSlots, name, canAdvance,
+    canRecruit: s.online && view === 'roles' && game?.phase === 'lobby'
+      && !!game.title && count > 0 && slots.some(slot => slot.state === 'empty'),
     cards: view === 'paused' ? cards.filter(card => roleSlots.includes(card.slot)) : cards, columns: roleColumns(game, roleSlots, swapPick),
     roleHeading: roleSlots.length < MIN_PLAYERS ? '参加者を待っています' : game?.lineupOk ? `${roleSlots.length}人で決定！` : `${roleSlots.length}人で、操作を分担！`,
     title: {join: '', game: 'ゲーム選択を\nしよう！', roles: game?.lineupOk && game.phase === 'lobby' ? '分担決定！' : '分担しよう！', preparing: '準備中', ready: '準備完了！', coop: '協力プレイ中', paused: '一時停止中'}[view],

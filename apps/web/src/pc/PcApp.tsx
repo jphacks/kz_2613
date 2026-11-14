@@ -57,6 +57,7 @@ function Sidebar({state,model,connection}:{state:PcState;model:PcModel;connectio
       <button id="joinTroubleshootingBtn" aria-haspopup="dialog">開けないとき</button>
     </div>
   </div>
+  <button className="sub-cta" id="recruitBtn" hidden={!model.canRecruit} aria-haspopup="dialog">新たな参加者を受け付ける</button>
   <button className="open-game" id="openGameBtn" hidden={model.openGameHidden}>{model.name}を前面にする</button>
   <p className="action-note" id="actionNote" role="status">{model.actionNote}</p>
 </aside>;
@@ -152,7 +153,16 @@ function ResetDialog() {
 function ConnectionHelpDialog({connection}:{connection:ConnectionModel}) {
   return <dialog id="connectionHelp" aria-labelledby="connectionTitle">
   <h2 id="connectionTitle">スマホを接続する</h2><p>PCと同じWi-Fiへ接続してから、QRを読み取ってください。最初に読み取った人がホスト（P1）になります。2〜4人で遊べます。</p>
-  <div id="helpQr" className="help-qr" dangerouslySetInnerHTML={{__html: connection.qr}} />
+  <div className="connection-qr-pair">
+    {connection.guide.wifiQr && <section>
+      <h3>① Wi-Fiにつなぐ</h3>
+      <div className="help-qr" dangerouslySetInnerHTML={{__html: connection.guide.wifiQr}} />
+    </section>}
+    <section>
+      {connection.guide.wifiQr && <h3>② 参加する</h3>}
+      <div id="helpQr" className="help-qr" dangerouslySetInnerHTML={{__html: connection.qr}} />
+    </section>
+  </div>
   <p className="url" id="url">{connection.url}</p><p id="urlNote">{connection.urlNote}</p><p id="wifi">{connection.wifi}</p>
   <button id="reloadInfo">QRを取得し直す</button><form method="dialog"><button id="closeConnectionHelp">閉じる</button></form>
 </dialog>;
