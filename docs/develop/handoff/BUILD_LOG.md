@@ -2334,6 +2334,10 @@
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
 
+## 2026-11-14 — ボタン押下の遅延区間を分ける（#437、Codex）
+
+- 計測用Webビルドで、ボタンのイベント時刻から送信までが150msを超えた場合に、ハンドラー入口までと入口から送信までを分けて `recooplay:pointer-delay` としてコンソールへ記録する。入力連番でホスト側の計測と照合できる。
+- 計測版・通常版のWebビルドに合格し、計測版だけに診断文字列があることを確認した。スマホ入力ライフサイクル試験34/34と差分検査が合格。iPhone実指での外れ値の再現とSafariタイムラインとの照合が残る。
 ## 2026-11-14 — WebSocket無応答時の受信・タイマー間隔を記録する（#426、Codex）
 
 - 計測用Webビルドで、無応答による張り直し直前に `recooplay:ws-silence` をブラウザーのコンソールへ1件記録する。最後のWS受信からの時間、監視タイマーの実間隔、進行状態、ページの可視性、RTCの開閉を記録する。3秒判定と切断時の停止・全解放は従来どおり。
