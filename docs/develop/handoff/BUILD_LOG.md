@@ -2526,3 +2526,10 @@
 
 - `make_detected`・`make_model_preset` の裏のスレッドの処理を `catch_unwind` で包み、パニックしたら `Event::ModelFailed` を送るようにした。hub は `model_failed` で作業中の印（`model_busy`）を消し、ログ（`model_failed`、ゲーム名なし）に残して待ち行列の次へ進む。失敗したゲームは保存しないので、次の一覧の読み込みでもう一度試す。
 - 試験：`model_thread_panic_clears_busy_and_moves_on`。`cargo fmt --check` 合格。ホスト全体のビルド・試験は CI で確かめる。
+
+## 2026-11-14 — Fallout 4・Starfield の既定の ControlMap を BA2 から読む（#527、Claude Code）
+
+- `engines/ba2.rs`：BA2（GNRL、版 1・7・8・2・3）の目次と名前の表を読み、名前で 1 つのファイルを取り出す。圧縮は zlib だけ（Starfield の一部の LZ4 は読まない）。画像のアーカイブ（DX10）は読まない。
+- `engines/creation.rs`：`ControlMap_Custom.txt` がないとき、Fallout 4・Starfield は Data の「* - Interface.ba2」から `Interface/Controls/PC/ControlMap.txt` を取り出して読む。Skyrim SE の BSA（LZ4）は依存が増えるので、今までどおり既定の割当の表。
+- カタログ（`engines.mjs`）にも同じ読み取り（`ba2Extract`）を足した。
+- 確認：小さなクレートで Rust の単体試験33件・Clippy 合格、`cargo fmt --check` 合格、`profile-engines-test.mjs` 18/18。BA2 の版 2・3 の先頭の長さは知識による（実物で確かめていない）。Fallout 4・Starfield の実物は手元にない。
