@@ -2,7 +2,7 @@ import type {PhoneGame, Slot} from '../contracts.ts';
 import type {ButtonInput, SequencedInput, StoragePort, Welcome} from './messages.ts';
 import {PHONE_PROTOCOL_VERSION} from './version.ts';
 interface SessionOptions {storage:StoragePort;createClientId():string;now():number}
-type Connection = 'connecting'|'connected'|'disconnected'|'replaced'|'reset'|'version'|'token'|'closed'|'full';
+type Connection = 'connecting'|'connected'|'disconnected'|'replaced'|'reset'|'version'|'token'|'closed'|'full'|'left';
 export function createPhoneSession({storage,createClientId,now}:SessionOptions) {
   const read=(key:string)=>{try{return storage.getItem(key)}catch{return null}};
   const write=(key:string,value:string)=>{try{storage.setItem(key,value)}catch{}};
@@ -21,7 +21,7 @@ export function createPhoneSession({storage,createClientId,now}:SessionOptions) 
   function updateGame(next:PhoneGame){const changed=game?.epoch!==next.epoch;game=next;return changed}
   function stop(reason?:Connection){stopped=true;if(reason)connection=reason}
   function disconnected(code:number){
-    const terminal:Record<number,Connection|undefined>={4000:'replaced',4001:'reset',4005:'version',4006:'token',4009:'closed'};
+    const terminal:Record<number,Connection|undefined>={4000:'replaced',4001:'reset',4005:'version',4006:'token',4009:'closed',4010:'left'};
     const reason=terminal[code];if(reason){stop(reason);return null}
     // 満員などで先に止めた接続は、その後の切断で「再接続待ち」に戻さない (#308)
     if(stopped&&!['connecting','connected','disconnected'].includes(connection))return null;
@@ -37,7 +37,7 @@ export function createPhoneSession({storage,createClientId,now}:SessionOptions) 
   function send(message:object){if(stopped||!socket||socket.readyState!==1)return false;socket.send(JSON.stringify(message));return true}
   function view(){return {me,isHost,game}}
   function status():[string,string]{
-    const states:Record<Connection,[string,string]>={connecting:['接続中','warn'],connected:[reconnected?'再接続OK':'接続OK','ok'],disconnected:['切断 — 再接続待ち','ng'],replaced:['別タブで接続中','ng'],reset:['リセットされました','ng'],version:['版が不一致','ng'],token:['参加できません','ng'],closed:['PCアプリが終了しました','ng'],full:['満員で参加できません','ng']};
+    const states:Record<Connection,[string,string]>={connecting:['接続中','warn'],connected:[reconnected?'再接続OK':'接続OK','ok'],disconnected:['切断 — 再接続待ち','ng'],replaced:['別タブで接続中','ng'],reset:['リセットされました','ng'],version:['版が不一致','ng'],token:['参加できません','ng'],closed:['PCアプリが終了しました','ng'],full:['満員で参加できません','ng'],left:['退出しました','ng']};
     return states[connection];
   }
   return {connecting,attach,current,open,received,authenticate,welcome,updateGame,stop,disconnected,detach,resetRetry,isOpen,silent,serverSilenceMs,sequenced,input,send,view,status,

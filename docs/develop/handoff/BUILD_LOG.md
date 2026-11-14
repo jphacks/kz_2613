@@ -2576,6 +2576,14 @@
 - コードの確認：`rtc.rs` は STUN・TURN を使わない（`RtcConfig::new(&[])`）。
 - PoC はしていない。どの接続環境でも未試験、映像を含む一巡の遅れも未測定。判断案は保留（進めるならコードを変えずに VPN＋画面共有で体験を測る）。
 
+## 2026-11-15 — フォントに頼る記号・絵文字を SVG のアイコンにする（#515、Claude Code）
+
+- `apps/web/src/shared/icons.ts` にアイコンをまとめた（矢印4方向・⋯・↶・星・注意・別タブ）。`currentColor`・1em・`aria-hidden`。画面の試験が TSX を1つずつ変換して読む作りなので、JSX を使わず `createElement` で組み立てた。
+- 置き換え：スティックの矢印（`controller-layout.ts` の記号のデータ `mark` を外し、`Controller.tsx` で向きからアイコンを描く）、スマホのメニューの「⋯」、配置の編集の「↶」「⋯」、接続中の「✦」、ホストのリモコンのホイール（「ホイール」＋矢印のアイコン）、PC のタイルの「▶」とキー割当の「◀▶」、診断画面の「⚠」「↗」。CSS の飾り（✦✧✥↔●）は、データ URI の SVG をマスクにして文字の色で塗る（`shared.css` の `--icon-*`）。外部の CDN・アイコンのフォントは使わない。
+- 操作定義から作るホイールのボタンは「ホイール上・下」の文字にした（配置の編集のプルダウンにも同じ文字が出るため）。ホストから届く矢印キーの名前（↑↓←→）は、画面で「上矢印キー」などの文字にする（`keyLabelText`）。
+- 疑似ゲーム画面（開発用）と、文中の「→」（手順の説明）は文字のまま。
+- 試験：`check-static-pages.mjs` に、製品の画面のソース（疑似ゲーム画面とコメントを除く）に対象の記号が残っていないことの検査を足した。`controller-preview-test.mjs` にスティックの矢印が SVG であること。
+- 確認：`npm run build`（型検査を含む）、`check-static-pages`、`controller-preview-test`、`ui-input-test` 20/20、`product-web-test`、`app-view-test` 37/37、`phone-view-test`、`controller-layout-test`、`phone-layout-test` 15/15 が合格。Android・iPhone の実機での見た目は未確認。
 ## 2026-11-15 — README と技術仕様書を Award Day 時点に合わせる（Claude Code）
 
 - 利用者の依頼：README を更新する。今までの書き方を踏襲し、README に書ききらず技術仕様書を増やしてよい。「Ready」ではなく「開始ボタン」、分担のモデルは「BERT風」ではなく「Transformer encoder」と書き、学習させたことを入れる。
@@ -2597,6 +2605,26 @@
 - Android補助試験に、P1の担当がゲーム選択前は非表示で、Minecraft選択後は表示される確認を追加した。
 - main `d5227aa` のWindows配布版で Android Chrome 1台と模擬参加者1台の実Wi-Fi dry-runを実施し、15/15合格。iPhoneは未確認。
 
+## 2026-11-15 — SVGアイコンの作業を引き継いで検証する（#515、Codex）
+
+- ユーザーの依頼で Claude Code の `fc03d99` を引き継ぎ、最新 main `ca8ef79` を統合した。SVG置換・CSS・操作対象の属性と読み上げラベルをレビューした。
+- `controller-preview-test.mjs` を4方向の描画と `aria-hidden`・`focusable` の確認へ拡張し、`app-view-test.mjs` にホストから届く4方向のキー名を担当表示で文字に変換する回帰試験を追加した。
+- 検証成功：`apps/web` で `npm ci`・`npm run build`（型検査含む）、`node scripts/sim/check-static-pages.mjs`、`controller-preview-test.mjs`、`ui-input-test.mjs`（20/20）、`product-web-test.mjs`、`app-view-test.mjs`（追加後38/38）、`phone-view-test.mjs`、`controller-layout-test.mjs`、`phone-layout-test.mjs`（15/15）、`py -3 scripts/verify_overlay.py`、`git diff --check`。nodeの試験はリポジトリルートから実行。
+- ブラウザーでのプレビュー表示を試みたが、Computer Use が `The browser access host is unavailable` を返したため、目視の画面確認は未実施。Android・iPhoneでの撮影も未実施。実機受入を合格扱いせず、#515は自動クローズしない。
+- 追加のユーザー依頼により、READMEの技術仕様書一覧へ Re:Cooplay Preset Model v2 のHugging Face URLを追記した。既存のREADME・LICENSEは保持した。
+## 2026-11-15 — フォントに頼る記号・絵文字を SVG のアイコンにする（#515、Claude Code）
+
+- `apps/web/src/shared/icons.ts` にアイコンをまとめた（矢印4方向・⋯・↶・星・注意・別タブ）。`currentColor`・1em・`aria-hidden`。画面の試験が TSX を1つずつ変換して読む作りなので、JSX を使わず `createElement` で組み立てた。
+- 置き換え：スティックの矢印（`controller-layout.ts` の記号のデータ `mark` を外し、`Controller.tsx` で向きからアイコンを描く）、スマホのメニューの「⋯」、配置の編集の「↶」「⋯」、接続中の「✦」、ホストのリモコンのホイール（「ホイール」＋矢印のアイコン）、PC のタイルの「▶」とキー割当の「◀▶」、診断画面の「⚠」「↗」。CSS の飾り（✦✧✥↔●）は、データ URI の SVG をマスクにして文字の色で塗る（`shared.css` の `--icon-*`）。外部の CDN・アイコンのフォントは使わない。
+- 操作定義から作るホイールのボタンは「ホイール上・下」の文字にした（配置の編集のプルダウンにも同じ文字が出るため）。ホストから届く矢印キーの名前（↑↓←→）は、画面で「上矢印キー」などの文字にする（`keyLabelText`）。
+- 疑似ゲーム画面（開発用）と、文中の「→」（手順の説明）は文字のまま。
+- 試験：`check-static-pages.mjs` に、製品の画面のソース（疑似ゲーム画面とコメントを除く）に対象の記号が残っていないことの検査を足した。`controller-preview-test.mjs` にスティックの矢印が SVG であること。
+- 確認：`npm run build`（型検査を含む）、`check-static-pages`、`controller-preview-test`、`ui-input-test` 20/20、`product-web-test`、`app-view-test` 37/37、`phone-view-test`、`controller-layout-test`、`phone-layout-test` 15/15 が合格。Android・iPhone の実機での見た目は未確認。
+
+### #515 最新mainでの引き継ぎ確認
+- `npm --prefix apps/web run build`、`node scripts/sim/check-static-pages.mjs` に合格。
+- Node.js 22.15.0 で `--experimental-strip-types` を指定し、`controller-preview-test.mjs`、`ui-input-test.mjs`（20/20）、`phone-view-test.mjs`（8観点）に合格。対象は `scripts/sim/`。
+- Android・iPhoneでの画面撮影と位置の確認は未実施。
 ### #516 操作画面から配置編集を開く
 - `npm --prefix apps/web run build` と `node scripts/sim/check-static-pages.mjs` に合格。
 - 画面での配置、押下中の編集開始と編集中の送信停止、Android・iPhone での保存と復帰は未確認。
@@ -2619,6 +2647,14 @@
 - ローカル検証：PyYAMLのBaseLoaderでYAMLと選択肢を確認、全PowerShell手順をASTで構文検査。抽出したdesktop手順へnodeの代替関数を注入し、全成功と3回目だけ終了コード7の2系列で、各5回継続・6〜10の試行番号・全出力ログ・終了コードと失敗判定が保持されることを確認した。Windows PowerShell 5.1の検証側でJSON配列を二重に包んだため初回の検証は失敗し、読み取り側を修正して再実施した（保存JSONには5件が存在していた）。
 - `py -3 scripts/verify_overlay.py`、`py -3 scripts/check-public-docs.py`、`git diff --check` 成功。GitHub Actionsでの実WebView2反復は、同じコミットの配布CI成功後に実施する。ローカルでは実アプリ・OS入力・ネットワーク設定は操作していない。
 
+## 2026-11-15 — ゲームを起動したまま参加者を入れ替える：退出と、終了時のPCアプリの前面化（#546、Claude Code）
+
+- 調査：「協力プレイ終了」（END）はもともとゲームを閉じず、選んだゲームを保ったままロビーへ戻り、決めた参加者・分担を捨てる。PCアプリは終了後も同じゲームの「分担」画面に戻る。足りなかったのは、①参加者が自分で枠を空ける操作（切断後15秒の保持を待つしかなかった）と、②終了時にPCアプリを前面へ戻すこと、の2点。
+- ホスト：`leave`（WS）を追加。ロビーでホスト以外の本人だけが受け付けられ（`session::can_leave`）、本人の出力を離し、枠を消して接続を 4010 で閉じる。決めた参加者・入れ替え（seats）・担当の確認待ちを捨て、epoch を進める。接続と枠の対応で、退出した端末の古い接続の操作は通らない。END の後、PCアプリから起動していれば `open_app` で前面へ戻す（失敗しても終了は成り立ち、ログに残す）。
+- スマホ：「⋯」のメニューに、ロビーのホスト以外だけ「退出する（次の人に交代）」を出す。ページ内で確認してから `leave` を送る。4010 では再接続せず、退出・Wi-Fiを戻す案内・再読み込みを画面全体で示す。
+- 試験：Rust `can_leave`、`leave_slot`（ホストは不可・枠の解放・4010・seats/lineup/role_ack の破棄・閉じた接続が次の人の枠を切断扱いにしない・古い接続の操作が届かない）、開始後は不可、END で同じゲームのまま PCアプリが前面（前面にできなくても終了）。`protocol-sim.mjs` に退出→同じ枠へ次の端末がすぐ入るシナリオ。手元では Rust をビルドできないため、Rust の試験と `protocol-sim` は CI で確認する（`cargo fmt --check` は手元で成功）。
+- 手元で合格：`phone-lifecycle-test`（39/39、退出の確認・送信・開始後の取り消し・4010）、`app-view-test`（37/37、終了後も分担画面と同じゲーム）、`phone-view-test`・`phone-session-test`・`product-web-test`・`product-lifetime-test`・`product-module-graph-test`・`ui-input-test`・`check-static-pages`・`review-terminal-regression`・`protocol-boundary-test`、`npm run typecheck`・`vite build`、`check-public-docs.py`、`git diff --check`。
+- 未実施：実ゲーム（Minecraft など）を起動したままの連続2回以上の試遊（実機）。全画面ゲームからの前面化の実機確認。
 ## 2026-11-15 — ホストのリモコン画面を整理する：不要な文の削除・「ホストに譲る」をEscの下へ・下部の固定（#536、Claude Code）
 
 - #536 のコメント（利用者の判断 2026-11-15）に従い、「タッチパッドでPCのカーソルを動かせます。」、Alt+Tab・担当の入れ替えの案内（`appReturnHint`）、一時停止中の手順の文（「ホストが停止。…押してください。」）を削除した。ホスト以外の理由（緊急停止・切断など）で止まったときは、安全のため理由だけを短く残す（AGENTS.md の安全の決まり）。前面化の失敗などの操作結果（`prepareStatus`）は残す。
@@ -2633,6 +2669,7 @@
 - 持ち方を変えたら、回転時と同じ `stopRemote`（全解放と `release_inputs`）を呼び、旧押下を持ち越さない。端末の傾きから自動で切り替える方式は、回転ロック中にセンサーの許可が要る端末があるため入れていない。
 - `node scripts/sim/ui-input-test.mjs`（21/21、横持ちの前進・後退・視点の右・保存と通知を追加）、`phone-view-test`・`phone-layout-test`・`controller-layout-test`・`controller-preview-test`・`app-view-test`（37/37）・`product-module-graph-test`・`product-lifetime-test`・`product-web-test`・`check-static-pages`、`npm run typecheck`・`vite build` に合格。Stick を静的に描いた撮影で、左右90度の見た目を確認した。
 - 実機（Android・iPhone、回転ロックあり）での横持ちの確認は未実施。
+- 追記：CI の `protocol` で3件失敗した。通信試験は途中から「PCアプリから起動した」扱いになるため、END で PCアプリが前面になり、その後の一時停止中のリモコン入力がゲームではなく PCアプリへ向いた（狙いどおりの挙動）。試験の END の後に、ゲームを前面へ戻してその反映を待つ `refocusGame` を入れ、最初の END では PCアプリが前面になることを確かめるようにした。PR の CI のホスト（`windows-host-build`）で `protocol-sim.mjs` 69/69 合格。
 
 ### #536 PCの確認・案内ダイアログの撮影
 - Webビルドと撮影スクリプトの構文検証に合格。

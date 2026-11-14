@@ -51,6 +51,11 @@ function closeConfirm(){
   flushSync(()=>confirmation.set(null));
   const dialog=byId<HTMLDialogElement>('phoneConfirm');if(dialog.open)dialog.close();
 }
+/** 参加者の退出 (#546)。ロビーで、ホスト以外の人だけ。枠を空けて次の人へ交代する。ホストのPCで受け付けると接続を閉じる */
+export function canLeave(snapshot: PhoneSnapshot) { return !snapshot.isHost && snapshot.game?.phase === 'lobby'; }
+export function leaveRoom() {
+  askConfirm({message:'退出して、次の人に交代しますか？',ok:'退出する',valid:()=>canLeave(display.get().snapshot),run:()=>bindings?.onLeave()});
+}
 // OKは通信中かつ要求がまだ有効なときだけ送る。切断中は閉じずに待たせ、要求を黙って失わない
 export function answerConfirm(ok:boolean){
   const request=confirmation.get();if(!request)return;
