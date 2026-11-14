@@ -73,8 +73,10 @@ function call(method,params={}) {
   });
 }
 const evaluate = async expression => (await call('Runtime.evaluate',{expression,returnByValue:true})).result.value;
+// close-desktop-window.ps1 は呼ぶたびに Add-Type で C# をコンパイルする。CI の新しい実行環境では最初のコンパイルが
+// 10 秒を超えることがあり、ETIMEDOUT で落ちていた (#379)。待ちすぎないよう 60 秒を上限にする
 const powershell = (...args) => execFileSync('pwsh',['-NoProfile','-NonInteractive',...args],
-  {encoding:'utf8',windowsHide:true,timeout:10000}).trim();
+  {encoding:'utf8',windowsHide:true,timeout:60000}).trim();
 try {
   // ホストの起動（ゲーム一覧の読み込みを含む）と画面の表示を分けて待つ。手元でも応答まで10〜20秒かかり、CIではさらに遅い
   await until(async()=>{

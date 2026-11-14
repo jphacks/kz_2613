@@ -2517,6 +2517,11 @@
 - 試験：`reader_group_hint_overrides_the_model_category`（ツクール XP の既定で、1〜4人のどの分担にも決定・キャンセル・移動が配られる）。
 
 
+## 2026-11-14 — WebView2 の画面確認で PowerShell が時間切れになる不安定な失敗（#379、Claude Code）
+
+- `package` の「配布PCアプリのWebView2で参加画面・設定・終了を確認」が、`close-desktop-window.ps1 -MinimumSize` の呼び出しで `spawnSync pwsh ETIMEDOUT` になることがある。#468・#454 の CI と、main（43595522683）で起きた。同じコミットの再実行では通った。
+- 原因の見立て：このスクリプトは呼ぶたびに `Add-Type` で C# をコンパイルし、CI の新しい実行環境では最初のコンパイルが Node 側の上限（10秒）を超えることがある。
+- `desktop-webview2-smoke.mjs` の PowerShell の呼び出しの上限を 60 秒にした（ステップの上限は5分のまま）。CI で落ちなくなるかを見る。
 ## 2026-11-14 — 分担のモデルの裏の処理が落ちても止まらないようにする（#519、Claude Code）
 
 - `make_detected`・`make_model_preset` の裏のスレッドの処理を `catch_unwind` で包み、パニックしたら `Event::ModelFailed` を送るようにした。hub は `model_failed` で作業中の印（`model_busy`）を消し、ログ（`model_failed`、ゲーム名なし）に残して待ち行列の次へ進む。失敗したゲームは保存しないので、次の一覧の読み込みでもう一度試す。
