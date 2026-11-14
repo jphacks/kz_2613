@@ -7,6 +7,7 @@ header #slot,header #role,header .right { display: none; }
 body[data-connection=warn] header .right,body[data-connection=ng] header .right { display: flex; position: absolute; left: max(12px,env(safe-area-inset-left)); top: calc(16px + env(safe-area-inset-top)); }
 header .right #phase { display: none; }
 .phone-settings { position: absolute; right: max(8px,env(safe-area-inset-right)); top: calc(5px + env(safe-area-inset-top)); border: 0; width: 44px; height: 44px; min-height: 44px; padding: 0; box-shadow: none; background: transparent; color: var(--color-logo); font-size: 26px; }
+.phone-edit { right: calc(max(8px,env(safe-area-inset-right)) + 44px); display: grid; place-items: center; }
 main { padding: 14px max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left)); }
 .view { gap: 10px; }
 .host-card { border-radius: 30px; background: var(--color-phone-surface); border-width: 4px; padding: 14px 12px; box-shadow: 0 4px 3px var(--color-shadow); }

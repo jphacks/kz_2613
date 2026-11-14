@@ -2565,3 +2565,7 @@
 
 - Android補助試験に、P1の担当がゲーム選択前は非表示で、Minecraft選択後は表示される確認を追加した。
 - main `d5227aa` のWindows配布版で Android Chrome 1台と模擬参加者1台の実Wi-Fi dry-runを実施し、15/15合格。iPhoneは未確認。
+
+### #516 操作画面から配置編集を開く
+- `npm --prefix apps/web run build` と `node scripts/sim/check-static-pages.mjs` に合格。
+- 画面での配置、押下中の編集開始と編集中の送信停止、Android・iPhone での保存と復帰は未確認。
