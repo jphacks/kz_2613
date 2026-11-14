@@ -358,11 +358,10 @@ pub fn find<'a>(list: &'a [Profile], game_id: &str) -> Option<&'a Profile> {
     })
 }
 
-/// 分担の案の作り方。既定は規則 (rule_assignment_for)。環境変数 RECOOPLAY_PRESETS=model のときだけ
-/// BERT 風のモデル (preset_model) で作る。重みを読めないときは規則に戻る。
-/// モデルの案は人による評価 (10〜20 本) が済むまで既定にしない (#411)
+/// 分担の案の作り方。既定は BERT 風のモデル (preset_model、#474)。環境変数 RECOOPLAY_PRESETS=rule のときと、
+/// 重みを読めないときは規則 (rule_assignment_for) に戻る
 pub fn preset_source() -> &'static str {
-    if std::env::var("RECOOPLAY_PRESETS").as_deref() == Ok("model")
+    if std::env::var("RECOOPLAY_PRESETS").as_deref() != Ok("rule")
         && crate::preset_model::model().is_some()
     {
         "model"
