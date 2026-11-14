@@ -36,7 +36,7 @@
 | 定義データ | JSON、schema 1 |
 | 検証・割当 | Rust、profiles.rs |
 | 設定読取り | keybinds.rs |
-| 画面生成 | React + TypeScript、shared/controller-layout.ts・phone/Controller.tsx |
+| 画面生成 | React + TypeScript、shared/controller-layout.ts・shared/model/layout.ts・phone/LayoutController.tsx |
 | 静的抽出・カタログ | Node.js、scripts/profiles/ |
 
 ---
@@ -195,7 +195,7 @@ sequenceDiagram
 
 ## 操作画面と開始条件
 
-全ゲーム・全人数で`shared/controller-layout.ts`の描画モデルと`phone/Controller.tsx`を使い、ボタン・ホイール・視点パッド・方向キー群のスティックを作ります。ボタンは`keys.actions`の実キーを表示し、`act:<ID>`で送ります。サーバーは現在epoch・確定割当・操作種類・実出力を検証します。視点はその担当者だけが送れます。
+全ゲーム・全人数で`shared/controller-layout.ts`の描画モデルからボタン・ホイール・視点パッド・方向キー群のスティックを作り、スマホでは`shared/model/layout.ts`の個人レイアウト（未編集なら担当の部品で画面を埋める初期配置）として`phone/LayoutController.tsx`で描きます。ボタンは`keys.actions`の実キーを表示し、`act:<ID>`で送ります。サーバーは現在epoch・確定割当・操作種類・実出力を検証します。視点はその担当者だけが送れます。
 
 `template / extracted / unverified`も開始条件が揃えばReadyできます。確認状態を理由に開始を制限しませんが、未検証表示は保持します。分担可能な操作のない定義や、生成画面・出力が扱えない種類を含む定義ではReadyを拒否します。
 

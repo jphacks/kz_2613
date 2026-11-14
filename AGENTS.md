@@ -73,6 +73,6 @@
 - 構造確認：`python scripts/verify_overlay.py`
 - Windowsの構築手順は `docs/develop/handoff/SETUP_WINDOWS.md`、Issue・ブランチ・PRの共通運用は `docs/develop/handoff/DEVELOPMENT_WORKFLOW.md` に従う。
 
-## 2026-10-25の開始手順
+## 2026-11-14の開始手順
 
-開始はP1によるゲーム準備（preparing）と明示Readyの二段階。接続人数とReadyを混同しない。詳細は docs/develop/decisions/2026-10-25-two-stage-ready.md を参照する。
+ホスト（P1）はロビーでゲームを操作し、対象ゲームを前面にしてからスマホの「分担操作開始」を押す。サーバーが分担・接続・入力先・緊急停止などの条件を確認し、全解放とepoch更新を行って協力プレイへ進む。詳細は docs/develop/decisions/2026-11-14-single-coop-start.md を参照する。

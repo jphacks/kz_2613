@@ -32,17 +32,18 @@ const close = (a, b) => assert(Math.abs(a - b) < 1e-9, `${a} ≠ ${b}`);
 
 await test('標準生成: 全操作を部品にし、操作は担当と同じ act:/look: の名前で持つ', () => {
   const s = L.standardLayout(game());
-  assert.equal(s.schema, L.LAYOUT_SCHEMA); assert.equal(s.version, 1); assert.equal(s.game, 'test-game');
+  assert.equal(s.schema, L.LAYOUT_SCHEMA); assert.equal(s.version, 2); assert.equal(s.game, 'test-game');
   assert.deepEqual(ids(s), ['move:stick', 'jump', 'view:look', 'attack', 'use', 'hotbar:up', 'hotbar:down']);
   assert.deepEqual(byId(s, 'move:stick').controls, ['act:forward', 'act:left', 'act:right', 'act:back']);
   assert.deepEqual(byId(s, 'view:look').controls, ['look:look']);
   assert.deepEqual(byId(s, 'hotbar:up').controls, ['act:hotbar:up']);
   for (const p of s.parts) {
     assert(p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1, `本体の範囲内: ${p.id}`);
-    assert(p.size >= L.LIMITS.minSize && p.size <= L.LIMITS.maxSize);
+    assert(p.w >= L.LIMITS.minW && p.w <= L.LIMITS.maxW && p.h >= L.LIMITS.minH && p.h <= L.LIMITS.maxH, `幅・高さの範囲: ${p.id}`);
     assert.equal(p.hidden, false);
   }
-  assert(byId(s, 'move:stick').x < 0.5 && byId(s, 'move:stick').y > 0.5, 'スティックは縦持ちの左下');
+  assert(byId(s, 'move:stick').y > 0.5, 'スティックは縦持ちの下 (親指)');
+  assert(byId(s, 'view:look').y < byId(s, 'jump').y, '視点パッドは上、ボタンはその下');
   assert.equal(L.parseLayout(JSON.parse(JSON.stringify(s)), 'test-game').parts.length, s.parts.length, '標準は検証を通る');
 });
 
@@ -64,38 +65,40 @@ await test('標準生成: 実際の操作定義 (全ゲーム) でも検証を�
 
 await test('検証: 構造・版・ゲームが違えば標準に戻し、不正な部品だけを捨て、数値は範囲に収める', () => {
   const s = L.standardLayout(game());
-  for (const bad of [null, [], 'x', { ...s, schema: 'other' }, { ...s, version: 2 }, { ...s, game: 'other' }, { ...s, parts: {} }]) {
+  for (const bad of [null, [], 'x', { ...s, schema: 'other' }, { ...s, version: 1 }, { ...s, game: 'other' }, { ...s, parts: {} }]) {
     assert.equal(L.parseLayout(bad, 'test-game'), null);
   }
   const parts = [
-    { id: 'jump', kind: 'button', controls: ['act:jump'], x: 5, y: -1, size: 99, hidden: 'yes' },
-    { id: 'jump', kind: 'button', controls: ['act:jump'], x: 0.1, y: 0.1, size: 0.2 }, // 重複ID
-    { id: 'bad id!', kind: 'button', controls: ['act:jump'], x: 0, y: 0, size: 0.2 },
-    { id: 'k', kind: 'dpad', controls: ['act:jump'], x: 0, y: 0, size: 0.2 },
-    { id: 'c', kind: 'button', controls: ['act:jump', 'act:use'], x: 0, y: 0, size: 0.2 }, // ボタンは1操作
-    { id: 'd', kind: 'button', controls: ['look:look'], x: 0, y: 0, size: 0.2 },           // 種類と操作の不一致
-    { id: 'e', kind: 'button', controls: ['javascript:alert(1)'], x: 0, y: 0, size: 0.2 },
-    { id: 'f', kind: 'button', controls: ['act:jump'], x: NaN, y: 0, size: 0.2 },
-    { id: 'g', kind: 'stick', controls: [], x: 0, y: 0, size: 0.2 },
-    { id: '__proto__', kind: 'button', controls: ['act:use'], x: 0.3, y: 0.3, size: 0.2 },
+    { id: 'jump', kind: 'button', controls: ['act:jump'], x: 5, y: -1, w: 99, h: -3, hidden: 'yes' },
+    { id: 'jump', kind: 'button', controls: ['act:jump'], x: 0.1, y: 0.1, w: 0.2, h: 0.1 }, // 重複ID
+    { id: 'bad id!', kind: 'button', controls: ['act:jump'], x: 0, y: 0, w: 0.2, h: 0.1 },
+    { id: 'k', kind: 'dpad', controls: ['act:jump'], x: 0, y: 0, w: 0.2, h: 0.1 },
+    { id: 'c', kind: 'button', controls: ['act:jump', 'act:use'], x: 0, y: 0, w: 0.2, h: 0.1 }, // ボタンは1操作
+    { id: 'd', kind: 'button', controls: ['look:look'], x: 0, y: 0, w: 0.2, h: 0.1 },           // 種類と操作の不一致
+    { id: 'e', kind: 'button', controls: ['javascript:alert(1)'], x: 0, y: 0, w: 0.2, h: 0.1 },
+    { id: 'f', kind: 'button', controls: ['act:jump'], x: NaN, y: 0, w: 0.2, h: 0.1 },
+    { id: 'g', kind: 'stick', controls: [], x: 0, y: 0, w: 0.2, h: 0.1 },
+    { id: '__proto__', kind: 'button', controls: ['act:use'], x: 0.3, y: 0.3, w: 0.2, h: 0.1 },
   ];
   const parsed = L.parseLayout({ ...s, parts }, 'test-game');
   assert.deepEqual(parsed.parts.map(p => p.id), ['jump', '__proto__']);
-  assert.deepEqual(parsed.parts[0], { id: 'jump', kind: 'button', controls: ['act:jump'], x: 1, y: 0, size: L.LIMITS.maxSize, hidden: false });
-  const many = Array.from({ length: 200 }, (_, i) => ({ id: `b${i}`, kind: 'button', controls: ['act:jump'], x: 0, y: 0, size: 0.2 }));
+  assert.deepEqual(parsed.parts[0], { id: 'jump', kind: 'button', controls: ['act:jump'], x: 1, y: 0, w: L.LIMITS.maxW, h: L.LIMITS.minH, hidden: false });
+  // 版1 (正方形の size だけ) は読まずに初期配置へ戻す。保存値は消さない (旧データの移行はP3)
+  assert.equal(L.parseLayout({ ...s, version: 1, parts: [{ id: 'jump', kind: 'button', controls: ['act:jump'], x: 0.5, y: 0.5, size: 0.2 }] }, 'test-game'), null);
+  const many = Array.from({ length: 200 }, (_, i) => ({ id: `b${i}`, kind: 'button', controls: ['act:jump'], x: 0, y: 0, w: 0.2, h: 0.1 }));
   assert.equal(L.parseLayout({ ...s, parts: many }, 'test-game').parts.length, L.LIMITS.parts, '部品数に上限');
 });
 
 await test('定義変更との合成: 編集した位置・非表示・重複割当を保ち、消えた操作は復活させず、新しい操作だけ足す (Q04/Q05)', () => {
   const saved = L.standardLayout(game());
-  Object.assign(byId(saved, 'jump'), { x: 0.1, y: 0.2, size: 0.3 });
+  Object.assign(byId(saved, 'jump'), { x: 0.1, y: 0.2, w: 0.3, h: 0.12 });
   byId(saved, 'attack').hidden = true;                       // 画面上で削除
-  saved.parts.push({ id: 'jump-copy', kind: 'button', controls: ['act:jump'], x: 0.9, y: 0.1, size: 0.15, hidden: false });
+  saved.parts.push({ id: 'jump-copy', kind: 'button', controls: ['act:jump'], x: 0.9, y: 0.1, w: 0.15, h: 0.08, hidden: false });
   Object.assign(byId(saved, 'move:stick'), { x: 0.2, y: 0.6 });
   // ホストの定義: back と use が消え、dash が増えた
   const next = { ...profile, actions: [...profile.actions.filter(a => !['back', 'use'].includes(a.id)), { id: 'dash', type: 'button', group: 'act' }] };
   const merged = L.reconcile(saved, L.standardLayout(game({}, next)));
-  assert.deepEqual({ ...byId(merged, 'jump') }, { id: 'jump', kind: 'button', controls: ['act:jump'], x: 0.1, y: 0.2, size: 0.3, hidden: false });
+  assert.deepEqual({ ...byId(merged, 'jump') }, { id: 'jump', kind: 'button', controls: ['act:jump'], x: 0.1, y: 0.2, w: 0.3, h: 0.12, hidden: false });
   assert.equal(byId(merged, 'attack').hidden, true, '削除した部品を新しい操作として戻さない');
   assert(byId(merged, 'jump-copy'), '同じ操作を複数の部品に割り当てられる');
   assert.equal(byId(merged, 'use'), undefined, '定義から消えた操作の部品は捨てる');
@@ -105,8 +108,8 @@ await test('定義変更との合成: 編集した位置・非表示・重複割
   assert.equal(L.reconcile(null, L.standardLayout(game())).parts.length, 7);
   // 保存値に、定義にない操作や種類の違う操作が混ざっていても通さない
   const forged = L.standardLayout(game());
-  forged.parts.push({ id: 'x', kind: 'button', controls: ['act:not-defined'], x: 0, y: 0, size: 0.2, hidden: false });
-  forged.parts.push({ id: 'y', kind: 'look', controls: ['look:jump'], x: 0, y: 0, size: 0.2, hidden: false });
+  forged.parts.push({ id: 'x', kind: 'button', controls: ['act:not-defined'], x: 0, y: 0, w: 0.2, h: 0.1, hidden: false });
+  forged.parts.push({ id: 'y', kind: 'look', controls: ['look:jump'], x: 0, y: 0, w: 0.2, h: 0.1, hidden: false });
   const cleaned = L.reconcile(forged, L.standardLayout(game()));
   assert.equal(byId(cleaned, 'x'), undefined); assert.equal(byId(cleaned, 'y'), undefined);
 });
@@ -144,28 +147,93 @@ await test('縦横の変換: 端末を回しても同じ本体の場所に留ま
   assert.equal(L.normalizeAngle(-90), 270, 'iOS の window.orientation=-90 は時計回り');
 });
 
-await test('表示位置: 大きさは本体の短辺基準で縦横同じ。safe area と重なりは表示だけ最小限ずらし、保存データは変えない (Q11/Q38)', () => {
+await test('表示位置: 幅は短辺・高さは長辺の比。スティックは正方形。safe area と重なりはプレイの表示だけ最小限ずらし、保存データは変えない (Q11/Q38)', () => {
   const parts = [
-    { id: 'a', kind: 'button', controls: ['act:jump'], x: 0.5, y: 0.5, size: 0.2, hidden: false },
-    { id: 'b', kind: 'button', controls: ['act:use'], x: 0.52, y: 0.5, size: 0.2, hidden: false },
-    { id: 'c', kind: 'button', controls: ['act:attack'], x: 0.98, y: 0.02, size: 0.2, hidden: false },
+    { id: 'a', kind: 'button', controls: ['act:jump'], x: 0.5, y: 0.5, w: 0.2, h: 0.1, hidden: false },
+    { id: 'b', kind: 'button', controls: ['act:use'], x: 0.52, y: 0.5, w: 0.2, h: 0.1, hidden: false },
+    { id: 'c', kind: 'button', controls: ['act:attack'], x: 0.98, y: 0.02, w: 0.2, h: 0.1, hidden: false },
+    { id: 's', kind: 'stick', controls: ['act:forward'], x: 0.5, y: 0.85, w: 0.9, h: 0.2, hidden: false },
   ];
   const before = JSON.stringify(parts);
   const portrait = L.placeParts(parts, { width: 400, height: 800, angle: 0, safe: { top: 40, right: 0, bottom: 20, left: 0 } });
   const landscape = L.placeParts(parts, { width: 800, height: 400, angle: 90 });
-  assert.equal(portrait[0].size, 80); assert.equal(landscape[0].size, 80, '縦横で指に対する大きさが同じ');
+  assert.deepEqual([portrait[0].width, portrait[0].height], [80, 80], '幅は短辺、高さは長辺に対する比');
+  assert.deepEqual([landscape[0].width, landscape[0].height], [80, 80], '縦横で指に対する大きさが同じ');
+  assert.deepEqual([portrait[3].width, portrait[3].height], [160, 160], 'スティックは短い方にそろえた正方形');
   assert.equal(JSON.stringify(parts), before, '補正は保存データに書き戻さない');
   const [a, b, c] = portrait;
   assert(!a.adjusted && b.adjusted, '重なった部品だけを動かす');
-  assert(b.left >= a.left + a.size - 0.5 || b.top >= a.top + a.size - 0.5, '重ならない位置へ押し出す');
-  assert(c.adjusted && c.top >= 40 && c.left + c.size <= 400, 'safe area と画面の外へ出さない');
+  assert(b.left >= a.left + a.width - 0.5 || b.top >= a.top + a.height - 0.5, '重ならない位置へ押し出す');
+  assert(c.adjusted && c.top >= 40 && c.left + c.width <= 400, 'safe area と画面の外へ出さない');
   assert(!portrait.some(p => p.conflict));
-  // 回して戻せば元の位置 (補正が残らない)
   const again = L.placeParts(parts, { width: 400, height: 800, angle: 0, safe: { top: 40, right: 0, bottom: 20, left: 0 } });
-  assert.deepEqual(again, portrait);
-  // 置き場所が足りないときは解消できない衝突として知らせる
-  const crowded = Array.from({ length: 30 }, (_, i) => ({ id: `p${i}`, kind: 'button', controls: ['act:jump'], x: 0.5, y: 0.5, size: 0.6, hidden: false }));
-  assert(L.placeParts(crowded, { width: 300, height: 300, angle: 0 }).some(p => p.conflict));
+  assert.deepEqual(again, portrait, '回して戻せば元の位置 (補正が残らない)');
+  const raw = L.placeParts(parts, { width: 400, height: 800, angle: 0 }, false);
+  assert(!raw[0].adjusted && !raw[1].adjusted && raw[1].conflict, '編集画面は保存した場所のまま描き、重なりは知らせるだけ (ほかの部品を動かさない)');
+  const crowded = Array.from({ length: 30 }, (_, i) => ({ id: `p${i}`, kind: 'button', controls: ['act:jump'], x: 0.5, y: 0.5, w: 0.6, h: 0.6, hidden: false }));
+  assert(L.placeParts(crowded, { width: 300, height: 300, angle: 0 }).some(p => p.conflict), '置き場所が足りなければ衝突として知らせる');
+});
+
+await test('初期配置: 担当の部品だけで操作領域を埋め、重ならず、領域の外へ出ない (全ゲーム・全担当)', () => {
+  const dir = new URL('../../apps/game-profiles/', import.meta.url);
+  const views = [{ width: 374, height: 690, angle: 0 }, { width: 320, height: 480, angle: 0 }, { width: 430, height: 820, angle: 0 }];
+  let checked = 0;
+  for (const name of fs.readdirSync(dir).filter(n => n.endsWith('.json'))) {
+    const p = JSON.parse(fs.readFileSync(new URL(name, dir), 'utf8'));
+    if (!Array.isArray(p.actions) || !Array.isArray(p.groups)) continue;
+    const assigned = {};
+    for (const g of p.groups) if (/^P[1-4]$/.test(g.role)) assigned[g.role] = [...(assigned[g.role] ?? []), ...p.actions.filter(a => a.group === g.id).map(a => a.id)];
+    const g = game(assigned, p);
+    for (const slot of Object.keys(assigned)) {
+      const allowed = L.allowedControls(g, slot);
+      const visible = L.visibleParts(L.standardLayout(g, allowed), allowed);
+      for (const view of views) {
+        const placed = L.placeParts(visible, view, false);
+        for (const r of placed) assert(r.left >= -0.5 && r.top >= -0.5 && r.left + r.width <= view.width + 0.5 && r.top + r.height <= view.height + 0.5, `領域の外: ${name} ${slot} ${r.id}`);
+        for (let i = 0; i < placed.length; i++) for (let j = i + 1; j < placed.length; j++) assert(!L.rectsOverlap(placed[i], placed[j]), `重なり: ${name} ${slot} ${placed[i].id}/${placed[j].id}`);
+      }
+      checked++;
+    }
+  }
+  assert(checked > 100, `担当の数: ${checked}`);
+  // Minecraft の P3 (ボタン6つ) は 2列×3段で、最初の段が大きい。領域の高さの9割以上を使う
+  const mc = JSON.parse(fs.readFileSync(new URL('minecraft-java.json', dir), 'utf8'));
+  const g = game({ P3: ['attack', 'use', 'inventory', 'drop', 'hotbar'] }, mc);
+  const allowed = L.allowedControls(g, 'P3');
+  const placed = L.placeParts(L.visibleParts(L.standardLayout(g, allowed), allowed), { width: 374, height: 690, angle: 0 }, false);
+  assert.equal(new Set(placed.map(r => Math.round(r.left))).size, 2, '2列');
+  assert(placed[0].height > placed[2].height, '最初の段が大きい');
+  const used = Math.max(...placed.map(r => r.top + r.height)) - Math.min(...placed.map(r => r.top));
+  assert(used > 690 * 0.9, `領域の高さを使い切る: ${used}`);
+});
+
+await test('編集の幾何: ほかの部品を固定したまま、いちばん近い空きへ収め、ぶつかる直前で拡大を止める (仕様 1-4)', () => {
+  const bounds = { left: 0, top: 0, width: 300, height: 300 };
+  const stone = { left: 100, top: 100, width: 100, height: 100 };
+  const free = { left: 10, top: 10, width: 50, height: 50 };
+  assert.deepEqual(L.findFreeSpot(free, [stone], bounds, 4), free, '空いていればそのまま');
+  const onTop = { left: 120, top: 110, width: 50, height: 50 };
+  const spot = L.findFreeSpot(onTop, [stone], bounds, 4);
+  assert(spot && !L.rectsOverlap(spot, stone, 4), '重ならない場所へ');
+  assert.deepEqual(spot, { left: 120, top: 46, width: 50, height: 50 }, 'いちばん近いのは石の上');
+  assert.equal(L.findFreeSpot({ left: 0, top: 0, width: 290, height: 290 }, [stone], bounds, 4), null, '置ける場所がなければ null (元の位置に戻す)');
+  // 右へ広げると石の手前で止まる。縦は止まらずに変えられる
+  const from = { left: 10, top: 120, width: 50, height: 40 };
+  const r = L.limitResize(from, { left: 10, top: 110, width: 250, height: 60 }, [stone], bounds, 4);
+  assert(Math.abs(r.left + r.width - 96) < 0.5, `石の手前で止まる: ${r.left + r.width}`);
+  assert.deepEqual([r.top, r.height], [110, 60], '片方が限界でも、もう片方は変えられる');
+  const out = L.limitResize(from, { left: -50, top: 120, width: 110, height: 40 }, [], bounds, 4);
+  assert.deepEqual([out.left, out.width], [0, 60], '領域の端で止まる');
+  // 画面の長方形と本体座標の往復 (4方向)
+  const part = { id: 'a', kind: 'button', controls: ['act:jump'], x: 0.3, y: 0.7, w: 0.2, h: 0.1, hidden: false };
+  for (const angle of [0, 90, 180, 270]) {
+    const view = angle % 180 ? { width: 800, height: 400, angle } : { width: 400, height: 800, angle };
+    const [placed] = L.placeParts([part], view, false);
+    const back = L.rectToPart(part, placed, view);
+    close(back.x, 0.3); close(back.y, 0.7); close(back.w, 0.2); close(back.h, 0.1);
+    const [sx, sy] = L.bodyToScreen(0.3, 0.7, angle), [bx, by] = L.screenToBody(sx, sy, angle);
+    close(bx, 0.3); close(by, 0.7);
+  }
 });
 
 await test('保存: ゲームごとに1件、明示保存だけを書き、破損・読めない保存先では標準に戻す (Q03/Q13/Q33)', () => {
@@ -206,7 +274,7 @@ await test('編集の操作: 画面上のドラッグを本体座標へ戻して
   }
   const far = byId(L.movePart(base, 'jump', 5, 5, 0), 'jump');
   assert.deepEqual([far.x, far.y], [1, 1], '本体の外へは出さない');
-  assert.equal(byId(L.resizePart(base, 'jump', 9), 'jump').size, L.LIMITS.maxSize);
+  assert.deepEqual(byId(L.replacePart(base, { ...byId(base, 'jump'), w: 0.5, h: 0.3 }), 'jump'), { ...byId(base, 'jump'), w: 0.5, h: 0.3 });
   assert.equal(byId(L.setPartHidden(base, 'jump', true), 'jump').hidden, true);
   const twice = L.duplicatePart(L.duplicatePart(base, 'jump'), 'jump');
   assert.deepEqual(ids(twice).slice(-2), ['jump~2', 'jump~3']);
@@ -228,16 +296,20 @@ await test('描画: プレイは担当の部品だけを本体基準の位置で
   assert.match(play, /data-ctl="act:jump"/, '担当のボタンは実入力へつなぐ');
   assert(!play.includes('act:attack'), '担当外の部品は描かない');
   assert(!/inert/.test(play.split('>')[0]), 'プレイ画面は操作できる');
-  const jump = byId(layout, 'jump'), size = jump.size * 400;
-  assert(play.includes(`left:${jump.x * 400 - size / 2}px`) && play.includes(`top:${jump.y * 600 - size / 2}px`), '本体基準の位置に置く');
+  const jump = byId(layout, 'jump'), width = jump.w * 400, height = jump.h * 600;
+  assert(play.includes(`left:${jump.x * 400 - width / 2}px`) && play.includes(`top:${jump.y * 600 - height / 2}px`), '本体基準の位置に置く');
+  assert(play.includes(`width:${width}px`) && play.includes(`height:${height}px`), '幅と高さを別々に持つ');
   const turned = renderToStaticMarkup(createElement(LayoutController, { layout, game: g, slot: 'P1', bindings, viewport: { width: 600, height: 400, angle: 90 } }));
-  assert(turned.includes(`width:${size}px`), '縦横で同じ大きさ');
+  assert(turned.includes(`width:${width}px`), '縦横で同じ大きさ');
   const preview = renderToStaticMarkup(createElement(LayoutController, { layout, game: g, slot: 'P1', viewport }));
   assert(!preview.includes('data-ctl') && /inert/.test(preview.split('>')[0]), 'bindingsなしのプレビューは実入力へつながない');
-  const editor = renderToStaticMarkup(createElement(LayoutEditor, { initial: layout, game: g, slot: 'P1', viewport, onSave: () => true, onCancel() {}, onReset() {} }));
+  const editor = renderToStaticMarkup(createElement(LayoutEditor, { initial: layout, game: g, slot: 'P1', viewport, onSave: () => true, onCancel() {} }));
   assert(!editor.includes('data-ctl'), '編集画面は実入力へつながない');
   assert(editor.includes('data-part="jump"') && !editor.includes('data-part="attack"'), '編集できるのは担当の部品だけ');
-  for (const text of ['保存して適用', '変更を破棄', '初期配置に戻す', 'ゲームに送られません']) assert(editor.includes(text), text);
+  for (const text of ['保存', '破棄', '元に戻す', 'ゲームには送りません']) assert(editor.includes(text), text);
+  // 編集画面は、プレイ画面と同じ場所・大きさで部品を描く (保存の前後で一致させる。仕様 1-1)
+  const style = html => [...html.matchAll(/data-part="([^"]+)"[^>]*style="([^"]+)"/g)].map(m => `${m[1]}:${m[2]}`).sort();
+  assert.deepEqual(style(editor), style(play.replace(/ data-part/g, ' data-part')), '編集とプレイで部品の位置・幅・高さが同じ');
   const empty = renderToStaticMarkup(createElement(LayoutController, { layout, game: game({}), slot: 'P1', bindings, viewport }));
   assert.match(empty, /担当する操作がありません/);
 });
@@ -291,4 +363,4 @@ await test('プレイ: 保存値にスティック・視点パッドが複数あ
   await act(() => root.unmount());
 });
 
-console.log(`${passed}/13 合格（スマホのレイアウトモデルと編集画面、OS入力なし）`);
+console.log(`${passed}/15 合格（スマホのレイアウトモデルと編集画面、OS入力なし）`);

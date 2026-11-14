@@ -1,4 +1,3 @@
-import {Controller} from './Controller';
 import {LayoutController,LayoutEditor} from './LayoutController';
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { createLayoutStore } from '../shared/model/layout.ts';
@@ -55,7 +54,7 @@ function Header({state,status}:{state:PhoneDisplay;status:Status}) {
     <span className={`pill ${status.kind}`} id="status">{status.text}</span>
     <span className={`pill${game ? ` ${game.phase}` : ''}`} id="phase">{game ? PHASE_LABELS[game.phase] : '-'}</span>
   </div>
-  <button className="phone-settings" id="phoneSettingsBtn" aria-label="接続・診断を確認">⋯</button>
+  <button className="phone-settings" id="phoneSettingsBtn" aria-label="メニュー（配置の編集・接続・診断）">⋯</button>
 </header>;
 }
 
@@ -104,36 +103,39 @@ const layouts = createLayoutStore({
   getItem: key => localStorage.getItem(key), setItem: (key, value) => localStorage.setItem(key, value), removeItem: key => localStorage.removeItem(key),
 });
 
+/** 「⋯」の中の「配置を編集」から協力プレイの画面へ編集を頼む。画面どうしで状態を持ち合わないための小さな合図 */
+const EDIT_LAYOUT = 'recooplay-edit-layout';
+
 function GameplayScreen({state}:{state:PhoneDisplay}) {
   const c = state.controller;
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(0);
-  // 担当・定義が変わると key が変わり、保存済みのレイアウトを今の定義と合わせ直す
-  const loaded = useMemo(() => c ? layouts.load(c.game) : null, [c?.key, saved]);
+  // 担当・定義が変わると key が変わり、保存済みのレイアウトを今の定義と合わせ直す。未保存なら担当に合わせた初期配置
+  const loaded = useMemo(() => c ? layouts.load(c.game, c.slot) : null, [c?.key, saved]);
   // 協力プレイの画面を離れたら編集をやめる (未保存の変更は捨てる。下書きの復旧はP3)
   useEffect(() => { if (!c) setEditing(false); }, [c]);
-  // 編集を始めるときは、本人の押下をすべて離す。編集中はゲームへ何も送らない (Q12)。他の参加者には影響しない
-  const startEdit = () => { c?.bindings.releaseAll(); setEditing(true); };
+  // 編集を始めるときは、本人の押下をすべて離す。編集中はゲームへ何も送らない (仕様 2-4)。他の参加者には影響しない
+  useEffect(() => {
+    const start = () => { if (!c) return; c.bindings.releaseAll(); setEditing(true); };
+    addEventListener(EDIT_LAYOUT, start);
+    return () => removeEventListener(EDIT_LAYOUT, start);
+  }, [c]);
   const finish = () => { setSaved(n => n + 1); setEditing(false); };
-  // 保存したレイアウトがあるゲームだけ新しい配置で描く。未編集のゲームは従来の配置のまま
-  const custom = loaded?.source === 'saved';
-  return <section className={`view${state.view === 'v-gen' ? ' show' : ''}`} id="v-gen">
-    <div className="gen-title" id="genTitle">{state.controllerTitle}
-      {c && !editing && <button className="gen-edit" id="genEditLayout" onClick={startEdit}>配置を編集</button>}</div>
-    <div id="genControls" className={!c || editing || custom ? undefined : c.layout || undefined}>{c && (editing && loaded
+  // ゲーム名・担当は普段は表示しない (仕様 1-1)。読み上げ用にだけ残す
+  return <section className={`view${state.view === 'v-gen' ? ' show' : ''}${editing ? ' editing' : ''}`} id="v-gen">
+    <div className="gen-title visually-hidden" id="genTitle">{state.controllerTitle}</div>
+    <div id="genControls">{c && loaded && (editing
       ? <LayoutEditor key={c.key} initial={loaded.layout} game={c.game} slot={c.slot}
-          onSave={layout => { const ok = layouts.save(layout); if (ok) finish(); return ok; }} onCancel={() => setEditing(false)}
-          onReset={() => { layouts.reset(c.game.profile.id); finish(); }} />
-      : custom && loaded
-        ? <LayoutController key={c.key} layout={loaded.layout} game={c.game} slot={c.slot} bindings={c.bindings} />
-        : <Controller key={c.key} groups={c.groups} bindings={c.bindings}/>)}</div>
+          onSave={layout => { const ok = layouts.save(layout); if (ok) finish(); return ok; }} onCancel={() => setEditing(false)} />
+      : <LayoutController key={c.key} layout={loaded.layout} game={c.game} slot={c.slot} bindings={c.bindings} />)}</div>
     <button className="cmd pause" data-cmd="PAUSE" id="genPause" hidden={!state.controllerHost}>一時停止・ホスト操作へ</button>
   </section>;
 }
 
 function DiagnosticsDialog({state,status,selectedSkin}:{state:PhoneDisplay;status:Status;selectedSkin:string}) {
   const game = state.snapshot.game;
-  return <dialog id="phoneDiagnostics" aria-labelledby="phoneDiagnosticsTitle"><h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection">{[status.text,game?PHASE_LABELS[game.phase]:'-',state.snapshot.me??'--'].join('・')}</p><div id="skinPicker" className="skin-picker" role="group" aria-label="画面の色">{SKINS.map(s => <button key={s.id} data-skin={s.id} aria-pressed={selectedSkin === s.id} onClick={() => chooseSkin(s.id)}>{s.label}</button>)}</div><PhoneDiagnostics phase={game?.phase}/><button id="closePhoneDiagnostics">閉じる</button></dialog>;
+  return <dialog id="phoneDiagnostics" aria-labelledby="phoneDiagnosticsTitle">{state.view === 'v-gen' && state.controller && <button className="cmd" id="genEditLayout" onClick={() => {
+    (document.getElementById('phoneDiagnostics') as HTMLDialogElement | null)?.close(); dispatchEvent(new Event(EDIT_LAYOUT)); }}>配置を編集</button>}<h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection">{[status.text,game?PHASE_LABELS[game.phase]:'-',state.snapshot.me??'--'].join('・')}</p><div id="skinPicker" className="skin-picker" role="group" aria-label="画面の色">{SKINS.map(s => <button key={s.id} data-skin={s.id} aria-pressed={selectedSkin === s.id} onClick={() => chooseSkin(s.id)}>{s.label}</button>)}</div><PhoneDiagnostics phase={game?.phase}/><button id="closePhoneDiagnostics">閉じる</button></dialog>;
 }
 
 function PhoneDiagnostics({phase}:{phase:string|undefined}) {
