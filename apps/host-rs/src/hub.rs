@@ -65,6 +65,12 @@ pub enum Out {
 }
 
 pub enum Event {
+    #[cfg(feature = "latency-measure")]
+    WsSendGap {
+        id: u64,
+        gap_ms: u64,
+        send_ms: u64,
+    },
     WsOpen {
         id: u64,
         tx: UnboundedSender<Out>,
@@ -3646,6 +3652,19 @@ impl Hub {
                 }
             }
             Event::WsClosed { id, code } => self.on_ws_closed(id, code),
+            #[cfg(feature = "latency-measure")]
+            Event::WsSendGap {
+                id,
+                gap_ms,
+                send_ms,
+            } => {
+                if let Some(Role::Player { slot }) = self.conns.get(&id).map(|conn| &conn.role) {
+                    self.record(
+                        "ws_send_gap",
+                        json!({ "slot": SLOT_NAMES[*slot], "gapMs": gap_ms, "sendMs": send_ms }),
+                    );
+                }
+            }
             Event::RtcDescription {
                 slot,
                 gen,
