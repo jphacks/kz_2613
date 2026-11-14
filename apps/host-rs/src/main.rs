@@ -117,6 +117,8 @@ async fn main() {
         .unwrap_or_else(|_| root.join("logs"));
     runtime_measure::init(&log_dir);
     input_trace::init(&log_dir);
+    // 分担のモデルの重みは裏で読む (待ち受けの開始を遅らせない、#474)
+    profiles::warm_model();
     let mut hub = match Hub::new(tx.clone(), &config, input, &log_dir) {
         Ok(h) => h,
         Err(e) => {
@@ -632,7 +634,12 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
             },
         }
     }
-    app.send(Event::WsClosed { id, code });
+    app.send(Event::WsClosed {
+        id,
+        code,
+        #[cfg(feature = "latency-measure")]
+        since_last_send_ms: last_text_sent.map(|sent| sent.elapsed().as_millis() as u64),
+    });
 }
 
 async fn send_ws_text(
