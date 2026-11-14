@@ -23,8 +23,7 @@ main { padding: 14px max(14px,env(safe-area-inset-right)) max(14px,env(safe-area
 .cmd:disabled { border-color: var(--color-phone-button); background: var(--color-character); color: var(--color-logo); }
 #remotePad { min-height: 90px; border-style: solid; background: var(--color-pad-surface); border-radius: 30px; color: var(--color-cyan-ink); }
 #remotePad::before { content: none; }
-#remoteRoute, #appReturnHint { font-size: 11px; color: var(--color-logo); }
-#appReturnHint { margin: 0; }
+#remoteRoute { font-size: 11px; color: var(--color-logo); }
 #remoteNote { font-size: 11px; max-height: none; min-height: auto; flex-shrink: 0; overflow: visible; color: var(--color-logo); }
 body[data-view=v-wait] main { padding: 0; }
 #v-wait { position: relative; }
@@ -45,8 +44,6 @@ body[data-slot=P4] .phone-character img { width: 136.769%; height: 107.447%; lef
 .wait-card .dotted { border-bottom: 10px dotted var(--color-phone-dots); padding-bottom: 33px; }
 .role-label { margin-top: 21px; border-radius: 0; padding: 1px 16px; background: var(--color-phone-button); box-shadow: 2px 3px 0 var(--color-button-shadow); font-size: 21px; line-height: 1.5; color: var(--color-paper); text-shadow: 1px 2px var(--color-phone-button-ink); }
 #waitRole { margin: 10px 0 0; font-size: 15px; color: var(--color-logo); }
-.host-transfer:not([hidden]) { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; }
-.host-transfer button { min-height: 44px; padding: 0 10px; font-size: 13px; }
 #waitTitle { margin: auto 0 0; padding-top: 16px; color: var(--color-logo); font-size: clamp(14px,4.3vw,17px); line-height: 1.4; }
 .stick { border-width: 4px; background: var(--color-phone-surface); box-shadow: 0 4px 0 var(--color-shadow); }
 .stick .knob { border-color: var(--color-cyan); background: var(--color-phone-dots); }
