@@ -22,7 +22,7 @@ export function KeyEditor({model, state}: {model: Model; state: PcSnapshot}) {
       <select data-key-action={action.id} disabled={model.locked} value={state.game?.keys?.actions?.[action.id]?.out ?? ''} onChange={event => settingsActions.setKey(action.id, event.currentTarget.value || null)}>
         <option value="">送らない</option>{model.outputs.map(([id, output]) => <option value={id} key={id}>{output.label}</option>)}
       </select>
-      <button type="button" className="key-step" data-key-step="1" aria-label={`${action.label}のキーを次へ`} disabled={model.locked} onClick={() => settingsActions.setKey(action.id, stepKey(model.outputs.map(([id]) => id), state.game?.keys?.actions?.[action.id]?.out ?? null, 1))}>▶</button></td></tr>)}</tbody></table><button id="resetKeysBtn" disabled={model.locked || !model.edited.size}>このゲームのキーを初期値に戻す</button></>;
+      <button type="button" className="key-step" data-key-step="1" aria-label={`${action.label}のキーを次へ`} disabled={model.locked} onClick={() => settingsActions.setKey(action.id, stepKey(model.outputs.map(([id]) => id), state.game?.keys?.actions?.[action.id]?.out ?? null, 1))}>▶</button></td></tr>)}</tbody></table><button id="resetKeysBtn" disabled={model.locked || !model.edited.size} onClick={settingsActions.resetKeys}>このゲームのキーを初期値に戻す</button></>;
 }
 export function NetworkDiagnostics({model, bluetooth}: {model: Model; bluetooth: boolean}) {
   if (!model.diagnostics.length) return <p>つながっているスマホはありません。</p>;

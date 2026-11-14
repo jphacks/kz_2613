@@ -70,6 +70,7 @@ function fakeGames(dir) {
 function startHost(port = PORT) {
   const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-sim-'));
   const optionsFile = path.join(logDir, 'options.txt');
+  const keyOverridesFile = path.join(logDir, 'key-overrides.json');
   fs.copyFileSync(path.join(ROOT, 'scripts', 'sim', 'fixtures', 'minecraft-options.txt'), optionsFile);
   const profilesDir=path.join(logDir,'profiles');
   fs.cpSync(path.join(ROOT,'apps/game-profiles'),profilesDir,{recursive:true});
@@ -81,7 +82,7 @@ function startHost(port = PORT) {
     // 手動登録のファイル選択 (#49。中身に書いた場所を選んだことにする)
     RECOOPLAY_FAKE_PICK: path.join(logDir, 'pick.txt'),
     // Minecraft のキー設定の試験用 (ダッシュ = Q、捨てる = R に変えた options.txt)。#101
-    RECOOPLAY_MINECRAFT_OPTIONS: optionsFile, RECOOPLAY_PROFILES_DIR: profilesDir };
+    RECOOPLAY_MINECRAFT_OPTIONS: optionsFile, RECOOPLAY_PROFILES_DIR: profilesDir, RECOOPLAY_KEY_OVERRIDES: keyOverridesFile };
   const exe = process.platform === 'win32' ? 'recooplay-host.exe' : 'recooplay-host';
   if (port === 0) env.RECOOPLAY_RUNTIME_MEASURE = '1';
   const cmd = opt('--bin', path.join(ROOT, 'apps', 'host-rs', 'target', 'release', exe));
@@ -90,7 +91,7 @@ function startHost(port = PORT) {
   let out = '';
   child.stdout.on('data', (d) => (out += d));
   child.stderr.on('data', (d) => (out += d));
-  return { child, output: () => out, logDir, optionsFile };
+  return { child, output: () => out, logDir, optionsFile, keyOverridesFile };
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -2119,8 +2120,19 @@ async function main() {
       await sleep(200);
       assert(latest().keys.actions[action]?.out === target, '協力プレイ中にキーを変えた');
       a.send({ type: 'command', cmd: 'PAUSE' }); await phaseIs(a, 'paused', 0);
+      const persisted = () => JSON.parse(fs.readFileSync(host.keyOverridesFile, 'utf8')).games;
+      assert(persisted()['minecraft-java']?.[action] === target, '変更が保存されていない');
+      const paused = a.mark();
+      mon.send({ type: 'set_key', action, output: before ?? null });
+      await a.waitFor(m => m.type === 'game' && m.game.keys.actions[action]?.out === before
+        && !m.game.keys.edited.includes(action), { from: paused, what: '個別に初期値に戻す' });
+      assert(!Object.hasOwn(persisted()['minecraft-java'] ?? {}, action), '初期値の上書きが保存に残った');
+      const restored = a.mark();
+      mon.send({ type: 'set_key', action, output: target });
+      await a.waitFor(m => m.type === 'game' && m.game.keys.edited.includes(action), {from: restored});
+      const reset = a.mark();
       mon.send({ type: 'reset_keys' });
-      await a.waitFor((m) => m.type === 'game' && m.game.keys.actions[action]?.out === before && !m.game.keys.edited.length, { what: '初期値に戻す' });
+      await a.waitFor((m) => m.type === 'game' && m.game.keys.actions[action]?.out === before && !m.game.keys.edited.length, { from: reset, what: '初期値に戻す' });
       a.send({ type: 'command', cmd: 'END' }); await sleep(100);
       for (const x of [a, b]) x.close();
     });
