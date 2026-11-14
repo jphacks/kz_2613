@@ -2600,6 +2600,8 @@
 ### #516 操作画面から配置編集を開く
 - `npm --prefix apps/web run build` と `node scripts/sim/check-static-pages.mjs` に合格。
 - 画面での配置、押下中の編集開始と編集中の送信停止、Android・iPhone での保存と復帰は未確認。
+- CI の寸法監査（画面外のボタン）の失敗：旧「⋯」の中のボタン用に残っていた `#genEditLayout { width: 100% }` が上部の編集ボタンにも当たり、透明な当たり判定が画面幅いっぱい（-52〜338px）に広がっていた。この規則を削除し、編集ボタンを「⋯」のすぐ左に置いた。
+- `capture-screens.mjs --assert-layout`（800×560＋390×844、900×1000＋402×874）、`npm run typecheck`、`phone-view-test`・`phone-layout-test`（15/15）・`controller-layout-test`・`ui-input-test`（21/21）・`app-view-test`（37/37）・`check-static-pages` に合格（ホストは main 6e0b7c2 の手元ビルド）。
 ## 2026-11-15 — 分担AI仕様書に実機での受け入れの結果を反映する（#432、Claude Code）
 
 - 青鬼（RPGツクールXP、操作定義なし）で、自動で読み取った操作を独自AIが3人に分担し、Android実機（P1、ホットスポットのWi-Fi）と模擬スマホ2台で6つの操作がすべてゲームに届いた結果を、評価の表に加えた。詳細は #512 のコメント。
