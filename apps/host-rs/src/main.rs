@@ -577,6 +577,8 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
         loopback: is_loopback(&addr),
     });
     let mut code: u16 = 1006;
+    #[cfg(feature = "latency-measure")]
+    let mut last_text_sent: Option<std::time::Instant> = None;
     loop {
         tokio::select! {
             incoming = socket.recv() => match incoming {
@@ -592,7 +594,23 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
                 Some(Out::Text(text)) => {
                     queued.len.fetch_sub(1, Ordering::Relaxed);
                     // 読取りが止まった接続は切断判定と同じ時間で打ち切る。送信待ちが上限に達した接続も切る (#197)
+                    #[cfg(feature = "latency-measure")]
+                    let send_started = std::time::Instant::now();
                     let sent = tokio::time::timeout(WS_SEND_TIMEOUT, send_ws_text(&mut socket, &rx, Message::Text(text.into()))).await;
+                    #[cfg(feature = "latency-measure")]
+                    if matches!(sent, Ok(Ok(()))) {
+                        let now = std::time::Instant::now();
+                        if let Some(previous) = last_text_sent.replace(now) {
+                            let gap_ms = now.duration_since(previous).as_millis() as u64;
+                            if gap_ms >= 3000 {
+                                app.send(Event::WsSendGap {
+                                    id,
+                                    gap_ms,
+                                    send_ms: now.duration_since(send_started).as_millis() as u64,
+                                });
+                            }
+                        }
+                    }
                     let overflow = queued.must_close();
                     if !matches!(sent, Ok(Ok(()))) || overflow {
                         if runtime_measure::enabled() {
