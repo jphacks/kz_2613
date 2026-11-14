@@ -2638,3 +2638,10 @@
 - Webビルドと撮影スクリプトの構文検証に合格。
 - `node scripts/sim/capture-screens.mjs --bin <host.exe> --out data/local/536-dialogs --pc-size 800x560` で23枚を保存。参加トラブル案内と全員リセット確認を撮影し、キャンセル後も通常の遷移と緊急停止試験が完了した。
 - Chrome dry-runでの撮影。Android実機・PCアプリでの追加撮影は未実施。
+
+## 2026-11-15 — ホストのリモコンで入力先の案内が下部パネルに隠れる（#553、Claude Code）
+
+- 原因：#550 で下部（`host-actions`）を sticky で固定し、表示域が低い端末（384×701）ではその上の `#remoteRoute` に重なった。main `14c34de` の CI のホストで 384×701 を撮影して再現した。
+- 修正：入力先の案内を下部の固定領域の先頭の決まった枠（2行分、文の長さで高さを変えず、入力先を失った案内も省略しない）へ移した。高さ760px以下では、タッチパッド・Esc・ホイールを縮める（従来は640px以下）。
+- 監査：`capture-screens.mjs` に、スクロールしていない状態で Esc・ホイール・タッチパッド・入力先の案内が下部の固定領域に隠れないかの判定を追加。修正前の画面で4枚を検出し、修正後は 384×701・390×844・402×874 で合格。CI の compact の大きさを 390×844 → 384×701 にした（低い側を確かめる）。
+- `phone-view-test`・`phone-lifecycle-test`（38/38）・`product-web-test`・`check-static-pages`・`verify-ui-evidence`、`npm run typecheck`・`vite build` に合格。実機の確認は未実施。

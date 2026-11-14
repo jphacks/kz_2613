@@ -115,8 +115,12 @@
 #v-remote .host-notes { height: calc(2 * 1.45em); overflow-y: auto; font-size: 12px; line-height: 1.45; }
 #v-remote .host-notes .note { margin: 0; font-size: inherit; line-height: inherit; }
 #v-remote .host-notes .note:empty { display: none; }
+/* 入力先の案内 (#553)。固定領域の先頭の2行分の枠。文の有無・長さで高さを変えず、入力先を失った案内も省略しない */
+#v-remote .host-actions #remoteRoute { height: 2.4em; margin: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; line-height: 1.2; }
+#v-remote .host-actions #remoteRoute.route-blocked { font-size: 12px; }
 
-@media (max-height: 640px) and (orientation: portrait) {
+/* 低い画面 (例：Android Chrome の表示域 384×701) では、上の部品を縮めて下の固定領域と重ねない (#553) */
+@media (max-height: 760px) and (orientation: portrait) {
   #v-remote .trackpad { min-height: 110px; }
   #v-remote .remote-keys .esc { width: min(100%, 56px); font-size: 15px; }
   #v-remote :is(.pad-clicks, .wheel-pair) .key { min-height: 40px; font-size: 12px; }

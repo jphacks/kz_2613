@@ -277,7 +277,7 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $false
           $hostExe = 'apps/host-rs/target/release/recooplay-host.exe'
           $failed = $false
-          node scripts/sim/capture-screens.mjs --bin $hostExe --pc-size 800x560 --phone-size 390x844 --assert-layout --out data/local/ci-layout/compact
+          node scripts/sim/capture-screens.mjs --bin $hostExe --pc-size 800x560 --phone-size 384x701 --assert-layout --out data/local/ci-layout/compact
           if ($LASTEXITCODE) { $failed = $true }
           node scripts/sim/capture-screens.mjs --bin $hostExe --pc-size 900x1000 --phone-size 402x874 --assert-layout --out data/local/ci-layout/tall
           if ($LASTEXITCODE -or $failed) { exit 1 }
