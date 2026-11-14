@@ -142,9 +142,9 @@ Steam・Epic Gamesの検出情報はゲーム選択と入力先の判定に用�
 
 環境変数`RECOOPLAY_PRESETS=rule`でホストを起動したとき、モデルの重みを読めないとき、ホストが分担の画面で「定型ルール」（規則）を選んだときは、下の規則で2〜4人用の案を作ります。`game.profile.presetSource`は`rule`です。
 
-### 既定：BERT風モデルによるプリセット
+### 既定：独自AI（Transformer encoder）によるプリセット
 
-既定では、検証済みのプリセットがないゲームの2〜4人用の案を、小さなBERT風エンコーダ（`apps/host-rs/src/preset_model.rs`、重みは`apps/host-rs/assets/preset-model.bin`をexeに埋め込み。版2があればそちら）で作ります。`game.profile.presetSource`は`model`です。重みを読めないときは規則に戻ります（#474。#411 までは規則が既定）。
+既定では、検証済みのプリセットがないゲームの2〜4人用の案を、実在のゲームの操作定義で学習させた小さなTransformer encoder（[分担AI仕様書](preset-model-specification.md)、`apps/host-rs/src/preset_model.rs`、重みは`apps/host-rs/assets/preset-model.bin`をexeに埋め込み。版2があればそちら）で作ります。`game.profile.presetSource`は`model`です。重みを読めないときは規則に戻ります（#474。#411 までは規則が既定）。
 
 モデルの入力は各操作の`label`・`id`・`bind`・`default`・`type`だけです。グループ名は入力に使いません。出力は次の3つです。
 
