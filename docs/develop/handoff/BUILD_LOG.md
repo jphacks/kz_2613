@@ -2680,6 +2680,9 @@
 - Webビルド、`node --experimental-strip-types scripts/sim/phone-view-test.mjs`（8観点）に合格。
 - `capture-screens.mjs --phone-size 320x740` で23枚を撮影。ホストの44px SVGボタンとロゴの非重複、参加者への非表示、操作領域内に停止ボタンがないこと、通常Pauseと緊急停止への遷移を確認。既存の操作ラベルに11px未満の報告があり、画面外に出たボタンは0件。
 - Chrome dry-run。Android・iPhoneの実機受入は未実施。
+### #555 分担画面の操作定義に関する注意
+- Webビルドと `node --experimental-strip-types scripts/sim/app-view-test.mjs`（39/39）に合格。
+- `check-static-pages.mjs` は基点からあるPCリモコンの凡例「◀」で停止した。変更前後の撮影と実機受入は未実施。
 ## 2026-11-15 — ホストのリモコンで入力先の案内が下部パネルに隠れる（#553、Claude Code）
 
 - 原因：#550 で下部（`host-actions`）を sticky で固定し、表示域が低い端末（384×701）ではその上の `#remoteRoute` に重なった。main `14c34de` の CI のホストで 384×701 を撮影して再現した。

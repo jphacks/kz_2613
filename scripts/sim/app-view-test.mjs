@@ -45,6 +45,19 @@ test('操作定義: 未検証でも開始できることと、確かめながら
   assert.match(profileNotice({name:'カードゲーム',status:'template',controllerSupported:false}),/マウス操作が中心/);
 });
 
+test('分担画面: 操作定義の注意だけを詳細ダイアログへ移す (#555)',()=>{
+  const base = pcState.get();
+  const profile = {name:'試験ゲーム', status:'extracted', controllerSupported:true, actions:[]};
+  const state = {...base, hostNotice:'PCホストを再起動しました', game:game(['P1','P2'], {profile})};
+  const roles = pcModel({...state, ui:{...base.ui, screen:'roles'}});
+  assert.match(roles.profileNotice,/未検証/);
+  assert(!roles.notices.includes(roles.profileNotice));
+  assert(roles.notices.includes(state.hostNotice));
+  const paused = pcModel({...state, game:{...state.game,phase:'paused'}});
+  assert.equal(paused.profileNotice,'');
+  assert(paused.notices.includes(roles.profileNotice));
+});
+
 test('PC画面: 定期更新で手動移動を戻さず、準備・停止への遷移時だけ分担へ案内する',()=>{
   const ui={screen:'join',game:'minecraft-java'};
   assert.equal(screenOnGameUpdate(ui,'paused',{phase:'paused',title:'minecraft-java'}).screen,'join');
