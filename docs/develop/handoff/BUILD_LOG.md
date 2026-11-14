@@ -2613,3 +2613,12 @@
 - 各回の出力と失敗診断先を分け、終了コード・所要時間を逐次JSONへ保存する。途中で失敗しても残りを実行し、1件でも失敗すればジョブを失敗にする。coreの既定選択・成果物名・20分上限は維持する。判断は `docs/develop/decisions/2026-11-15-desktop-ci-repeat.md`。
 - ローカル検証：PyYAMLのBaseLoaderでYAMLと選択肢を確認、全PowerShell手順をASTで構文検査。抽出したdesktop手順へnodeの代替関数を注入し、全成功と3回目だけ終了コード7の2系列で、各5回継続・6〜10の試行番号・全出力ログ・終了コードと失敗判定が保持されることを確認した。Windows PowerShell 5.1の検証側でJSON配列を二重に包んだため初回の検証は失敗し、読み取り側を修正して再実施した（保存JSONには5件が存在していた）。
 - `py -3 scripts/verify_overlay.py`、`py -3 scripts/check-public-docs.py`、`git diff --check` 成功。GitHub Actionsでの実WebView2反復は、同じコミットの配布CI成功後に実施する。ローカルでは実アプリ・OS入力・ネットワーク設定は操作していない。
+
+## 2026-11-15 — ゲームを起動したまま参加者を入れ替える：退出と、終了時のPCアプリの前面化（#546、Claude Code）
+
+- 調査：「協力プレイ終了」（END）はもともとゲームを閉じず、選んだゲームを保ったままロビーへ戻り、決めた参加者・分担を捨てる。PCアプリは終了後も同じゲームの「分担」画面に戻る。足りなかったのは、①参加者が自分で枠を空ける操作（切断後15秒の保持を待つしかなかった）と、②終了時にPCアプリを前面へ戻すこと、の2点。
+- ホスト：`leave`（WS）を追加。ロビーでホスト以外の本人だけが受け付けられ（`session::can_leave`）、本人の出力を離し、枠を消して接続を 4010 で閉じる。決めた参加者・入れ替え（seats）・担当の確認待ちを捨て、epoch を進める。接続と枠の対応で、退出した端末の古い接続の操作は通らない。END の後、PCアプリから起動していれば `open_app` で前面へ戻す（失敗しても終了は成り立ち、ログに残す）。
+- スマホ：「⋯」のメニューに、ロビーのホスト以外だけ「退出する（次の人に交代）」を出す。ページ内で確認してから `leave` を送る。4010 では再接続せず、退出・Wi-Fiを戻す案内・再読み込みを画面全体で示す。
+- 試験：Rust `can_leave`、`leave_slot`（ホストは不可・枠の解放・4010・seats/lineup/role_ack の破棄・閉じた接続が次の人の枠を切断扱いにしない・古い接続の操作が届かない）、開始後は不可、END で同じゲームのまま PCアプリが前面（前面にできなくても終了）。`protocol-sim.mjs` に退出→同じ枠へ次の端末がすぐ入るシナリオ。手元では Rust をビルドできないため、Rust の試験と `protocol-sim` は CI で確認する（`cargo fmt --check` は手元で成功）。
+- 手元で合格：`phone-lifecycle-test`（39/39、退出の確認・送信・開始後の取り消し・4010）、`app-view-test`（37/37、終了後も分担画面と同じゲーム）、`phone-view-test`・`phone-session-test`・`product-web-test`・`product-lifetime-test`・`product-module-graph-test`・`ui-input-test`・`check-static-pages`・`review-terminal-regression`・`protocol-boundary-test`、`npm run typecheck`・`vite build`、`check-public-docs.py`、`git diff --check`。
+- 未実施：実ゲーム（Minecraft など）を起動したままの連続2回以上の試遊（実機）。全画面ゲームからの前面化の実機確認。

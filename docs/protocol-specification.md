@@ -108,6 +108,7 @@ sequenceDiagram
 | 4006 | 再接続token不一致。PCでリセットして再参加 |
 | 4008 | ホストの交代・譲渡。スマホは同じtokenで再接続し、新しい枠へ戻る |
 | 4009 | PCアプリ（ホスト）の終了。全解放の後に送る。スマホは再接続せず、終了と再読み込みを画面全体で案内する |
+| 4010 | 参加者の退出（`leave`）。枠を空けたので、スマホは再接続せず、退出と再読み込みを案内する（#546） |
 
 読取りが止まった接続は、送信待ちが4096件に達するか、1回の送信が4秒を超えるとホストが切断します。本文は落とさず補わず、切断の通常処理で入力を全解放し、再接続で最新の状態を送ります。
 
@@ -120,7 +121,8 @@ sequenceDiagram
 | `hello` | WS | `protocolVersion`, `clientId`, `token`, `ua`, `nextIseq`。参加・再接続 |
 | `ping` | WS | `t`, `stats`。1秒ごとの生存確認・通信統計 |
 | `transfer_host` | WS | `to`, `epoch`。ロビーの現在のホストだけが、接続中の参加者へ譲る。2つの枠を入れ替える |
-| `command` | WS | `cmd`, `epoch`。P1のみ。PREPARE / READY / PAUSE / RESUME / END / OPEN_GAME / OPEN_APP |
+| `leave` | WS | 項目なし。ロビーで、ホスト以外の本人だけが自分の枠を空ける（#546）。15秒の保持を待たずに次の端末が参加できる。決めた参加者・入れ替えを捨ててepochを進め、4010で閉じる。ホスト・開始後は無視する |
+| `command` | WS | `cmd`, `epoch`。P1のみ。PREPARE / READY / PAUSE / RESUME / END / OPEN_GAME / OPEN_APP。END はゲームを閉じずにロビーへ戻り、PCアプリから起動したときは PCアプリを前面へ戻す（#546。前面にできなくても終了は成り立つ） |
 | `input` | WS＋RTC | `iseq`, `epoch`, `button`, `state:down/up`, `t`。WS版は`seq`も使用 |
 | `look` | RTC、未接続時WS | `lseq`, `epoch`, `cx`, `cy`。30Hzの累積視点移動 |
 | `ka` | RTC | `t`。共同操作中50msごとの生存確認 |

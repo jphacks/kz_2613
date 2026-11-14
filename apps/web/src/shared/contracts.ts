@@ -41,7 +41,7 @@ export interface PhoneGame extends Omit<ControllerGame, 'profile'> {
 export interface LaunchState {id?:string;state:string;title?:string;message?:string}
 export interface PhoneSnapshot { me: Slot | null; isHost: boolean; game: PhoneGame | null }
 export interface PhoneViewBindings extends InputBindings {
-  releaseAll(): void; onDiagnosticsOpen(): void; onRoleOk(): void; onTransferHost(slot: Slot): void;
+  releaseAll(): void; onDiagnosticsOpen(): void; onRoleOk(): void; onTransferHost(slot: Slot): void; onLeave(): void;
 }
 export interface PhoneTelemetry {rtt:string;rttAvg:string;sent:number;unacked:number;path:string;advice:string;inputMetrics:string;burstBusy:boolean}
 export type PhoneView = ((snapshot: PhoneSnapshot) => void) & {

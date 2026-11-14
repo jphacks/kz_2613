@@ -2035,6 +2035,26 @@ async function main() {
       for (const x of [host, old, b]) x.close();
     });
 
+    await check('参加者の退出: ロビーでホスト以外だけが自分の枠を空け、次の端末がすぐ同じ枠に入れる (#546)', async () => {
+      mon.send({ type: 'reset' });
+      await sleep(200);
+      const id = (n) => ({ clientId: `sim-leave-${n}` });
+      const a = await join('L1', id(1)); await welcome(a);
+      const b = await join('L2', id(2)); await welcome(b);
+      a.send({ type: 'leave' }); // ホストは退出しない
+      await sleep(300);
+      assert(a.closed === null, 'ホストの接続を閉じた');
+      const from = a.msgs.length;
+      b.send({ type: 'leave' });
+      assert((await b.waitClose()) === 4010, `close ${b.closed}`);
+      const { game } = await a.waitFor(m => m.type === 'game' && m.game.connected.join(',') === 'P1', { from, what: '退出後の参加者' });
+      assert(game.phase === 'lobby', game.phase);
+      // 15秒の保持を待たずに、別の端末が空いた枠へ入る
+      const next = await join('L3', id(3)); const w = await welcome(next);
+      assert(w.slot === 'P2' && w.reconnected !== true, JSON.stringify({ slot: w.slot, reconnected: w.reconnected }));
+      for (const x of [a, next]) x.close();
+    });
+
     await check('人数の変更: 一時停止中にPC画面から今の接続で分担し直し、全員の確認と明示の再開を求める (#162)', async () => {
       const resetFrom = mon.mark();
       mon.send({ type: 'reset' });

@@ -157,6 +157,12 @@ pub(crate) fn can_transfer_host(phase: Phase, from: usize, to: usize, connected:
         && connected.contains(&to)
 }
 
+/// 参加者が自分で退出できるか (#546)。展示で来場者が入れ替わるとき、ロビーで15秒の保持を待たずに枠を空ける。
+/// ホスト (P1) はそのまま残り、来場者だけが交代する。開始後は枠と分担を保つ
+pub(crate) fn can_leave(phase: Phase, slot: usize) -> bool {
+    phase == Phase::Lobby && !is_host(slot)
+}
+
 /// P1 が空いたロビーで、次のホストになる枠 (接続中で最も若い枠)
 pub(crate) fn next_host(connected: &[usize]) -> Option<usize> {
     connected.iter().copied().filter(|&i| i != 0).min()
@@ -345,6 +351,17 @@ mod tests {
                 at,
                 at + LOBBY_SLOT_HOLD_MS
             ));
+        }
+    }
+
+    #[test]
+    fn only_players_other_than_the_host_can_leave_and_only_in_the_lobby() {
+        for slot in 1..4 {
+            assert!(can_leave(Phase::Lobby, slot));
+        }
+        assert!(!can_leave(Phase::Lobby, 0), "ホストは退出しない");
+        for phase in [Phase::Preparing, Phase::Coop, Phase::Paused] {
+            assert!(!can_leave(phase, 1), "開始後は枠を保つ");
         }
     }
 

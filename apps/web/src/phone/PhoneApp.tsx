@@ -1,7 +1,7 @@
 import {LayoutController,LayoutEditor} from './LayoutController';
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { createLayoutStore } from '../shared/model/layout.ts';
-import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked,liftHint,rotationNotice,confirmation,answerConfirm,offline } from './view';
+import { display, skin, chooseSkin, transferHost, canLeave, leaveRoom,connection,telemetry,blocked,liftHint,rotationNotice,confirmation,answerConfirm,offline } from './view';
 import { SKINS } from '../shared/model/skin.ts';
 
 type PhoneDisplay = ReturnType<typeof display.get>;
@@ -135,7 +135,8 @@ function GameplayScreen({state}:{state:PhoneDisplay}) {
 function DiagnosticsDialog({state,status,selectedSkin}:{state:PhoneDisplay;status:Status;selectedSkin:string}) {
   const game = state.snapshot.game;
   return <dialog id="phoneDiagnostics" aria-labelledby="phoneDiagnosticsTitle">{state.view === 'v-gen' && state.controller && <button className="cmd" id="genEditLayout" onClick={() => {
-    (document.getElementById('phoneDiagnostics') as HTMLDialogElement | null)?.close(); dispatchEvent(new Event(EDIT_LAYOUT)); }}>配置を編集</button>}<h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection">{[status.text,game?PHASE_LABELS[game.phase]:'-',state.snapshot.me??'--'].join('・')}</p><div id="skinPicker" className="skin-picker" role="group" aria-label="画面の色">{SKINS.map(s => <button key={s.id} data-skin={s.id} aria-pressed={selectedSkin === s.id} onClick={() => chooseSkin(s.id)}>{s.label}</button>)}</div><PhoneDiagnostics phase={game?.phase}/><button id="closePhoneDiagnostics">閉じる</button></dialog>;
+    (document.getElementById('phoneDiagnostics') as HTMLDialogElement | null)?.close(); dispatchEvent(new Event(EDIT_LAYOUT)); }}>配置を編集</button>}<h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection">{[status.text,game?PHASE_LABELS[game.phase]:'-',state.snapshot.me??'--'].join('・')}</p><div id="skinPicker" className="skin-picker" role="group" aria-label="画面の色">{SKINS.map(s => <button key={s.id} data-skin={s.id} aria-pressed={selectedSkin === s.id} onClick={() => chooseSkin(s.id)}>{s.label}</button>)}</div><PhoneDiagnostics phase={game?.phase}/>{canLeave(state.snapshot) && <button id="leaveRoom" onClick={() => {
+    (document.getElementById('phoneDiagnostics') as HTMLDialogElement | null)?.close(); leaveRoom(); }}>退出する（次の人に交代）</button>}<button id="closePhoneDiagnostics">閉じる</button></dialog>;
 }
 
 function PhoneDiagnostics({phase}:{phase:string|undefined}) {
