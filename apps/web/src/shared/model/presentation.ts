@@ -193,10 +193,15 @@ export function inputKeyLabel(game: Pick<ControllerGame,"keys"> | null | undefin
   return outputKeyLabel(game?.keys?.actions?.[action.id]);
 }
 
+/** ホストから届くキー名のうち、矢印の記号 (↑↓←→) を文字にする。フォントの記号は端末で形がずれるため (#515) */
+export function keyLabelText(label: string) {
+  return ({ '\u2191': '上矢印', '\u2193': '下矢印', '\u2190': '左矢印', '\u2192': '右矢印' } as Record<string, string>)[label] ?? label;
+}
+
 export function outputKeyLabel(output: {label:string} | null | undefined) {
   if (!output?.label) return '送らない';
-  const label = output.label;
-  return /^[A-Za-z0-9↑↓←→]+$/.test(label) ? `${label}キー` : label;
+  const label = keyLabelText(output.label);
+  return /^([A-Za-z0-9]+|[上下左右]矢印)$/.test(label) ? `${label}キー` : label;
 }
 
 /** 見出しもゲーム内の意味ではなく、割り当てた入力の種類から作る。 */

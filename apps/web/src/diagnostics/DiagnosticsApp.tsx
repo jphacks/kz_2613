@@ -4,6 +4,7 @@ import type {HostState,InjectionState,SlotState,PcInfo,LogEntry} from '../shared
 import {decodePcInfo} from '../shared/transport/pc-info.ts';
 import {createMonitor} from '../shared/transport/monitor.ts';
 import {ago,device,logText} from './model.ts';
+import {Icon} from '../shared/icons.ts';
 
 function SlotCard({slot:s,now}:{slot:SlotState;now:number}){
   const c=s.clientStats;
@@ -52,12 +53,12 @@ export function DiagnosticsApp(){
       <div id="urlqr">{url?<>{!url.hotspot&&<div className="warnbox" style={{marginBottom:8}}>選択中はホットスポット (192.168.137.x) ではありません。ホットスポットを ON にして「IP 再取得」を押してください。</div>}<div className="qrbox"><div className="qr" dangerouslySetInnerHTML={{__html:url.qr}}/><div className="url">{url.url}</div></div></>:<div className="warnbox">ネットワークが見つかりません。モバイル ホットスポットを ON にして「IP 再取得」を押してください。</div>}</div></div>
       <div className="hint">スマホが「インターネットなし」と表示しても Wi-Fi 接続を維持してください。<br/>Android はモバイルデータを OFF にすると確実です（自動でモバイル回線に逃げるのを防ぐ）。</div>
     </div><div><div className="panel" id="ctrl" style={{marginBottom:20}}>
-      <div className="kbbar"><h2 style={{margin:0}}>進行・入力注入</h2><a href="/game" target="_blank" style={{color:'var(--accent)',fontSize:13,marginLeft:'auto'}}>疑似ゲーム画面を開く ↗</a></div>
+      <div className="kbbar"><h2 style={{margin:0}}>進行・入力注入</h2><a href="/game" target="_blank" style={{color:'var(--accent)',fontSize:13,marginLeft:'auto'}}>疑似ゲーム画面を開く <Icon name="external" /></a></div>
       <div className="kbbar"><span style={{fontSize:12,color:'var(--muted)'}}>進行</span><span className={`pill ${game?.phase==='coop'?'ok':game?.phase==='paused'?'warn':''}`} id="phaseState">{game?`${{lobby:'ロビー（ホストのリモコン）',preparing:'準備中',coop:'協力プレイ中',paused:'一時停止中'}[game.phase]}${game.reason?'（'+game.reason+'）':''} / 接続 ${game.connected.length}人`:'-'}</span>
       <div className="seg" id="phaseSeg">{(['lobby','paused'] as const).map(phase=><button key={phase} data-phase={phase} className={game?.phase===phase?'sel':''} onClick={()=>monitor.current?.send({type:'phase',phase})}>{phase==='lobby'?'ロビー':'一時停止'}</button>)}</div>
       <span style={{fontSize:12,color:'var(--muted)'}}>参加人数：2〜4人（Readyの時点の接続人数）</span><label style={{fontSize:12,color:'var(--muted)',display:'flex',gap:4,alignItems:'center'}}><input type="checkbox" id="autoResume" checked={!!game?.autoResume} onChange={e=>monitor.current?.send({type:'auto_resume',on:e.target.checked})}/> 切断から戻ったら自動で再開</label></div>
       <div className="kbbar" style={{marginBottom:0}}><span style={{fontSize:12,color:'var(--muted)'}}>注入</span><div className="seg" id="modeSeg">{modes.map(mode=><button key={mode} data-mode={mode} className={inject?.mode===mode?'sel':''} onClick={()=>{if(mode==='on'&&!confirm('常時ONにすると、スマホの入力が「今選択されているウィンドウ」に送られます。よろしいですか？'))return;monitor.current?.send({type:'inject_mode',mode});}}>{{off:'OFF',test:'テスト（疑似ゲーム画面を選択中のみ）',on:'常時ON（実ゲーム用）'}[mode]}</button>)}</div><span id="injState" title={tgt?`常時ONの入力先: ${tgt.expect}`:''} className={`pill ${inject?.active?'ok':inject?.mode==='off'?'':'warn'}`}>{!inject?'-':!inject.available?`注入不可: ${inject.error}`:inject.active?'注入: 有効':inject.mode==='off'?'注入: OFF':waiting}</span></div>
-      <div style={{fontSize:12,color:inject?.emergencyHotkeyError?'var(--ng)':'var(--muted)',marginTop:8}} id="hotkeyInfo">{inject?.emergencyHotkey?(inject.emergencyHotkeyError?`⚠ 緊急停止 ${inject.emergencyHotkey} を登録できません（${inject.emergencyHotkeyError}）`:`緊急停止：${inject.emergencyHotkey}（どの画面からでも全キーを離して注入をOFF）`):''}</div>
+      <div style={{fontSize:12,color:inject?.emergencyHotkeyError?'var(--ng)':'var(--muted)',marginTop:8}} id="hotkeyInfo">{inject?.emergencyHotkey?(inject.emergencyHotkeyError?<><Icon name="warning" /> {`緊急停止 ${inject.emergencyHotkey} を登録できません（${inject.emergencyHotkeyError}）`}</>:`緊急停止：${inject.emergencyHotkey}（どの画面からでも全キーを離して注入をOFF）`):''}</div>
     </div><div className="slots" id="slots">{state?.slots?.map(slot=><SlotCard key={slot.name} slot={slot} now={state.now??Date.now()}/>)}</div>
     <div className="panel"><div className="toolbar"><h2 style={{margin:0}}>ログ</h2><button id="clear" onClick={()=>setEntries([])}>クリア</button><button id="reset" style={{marginLeft:'auto'}} onClick={()=>{if(confirm('全スロットを解放します。接続中のスマホは切断されます。'))monitor.current?.send({type:'reset'});}}>スロットをリセット</button></div><div id="log" ref={log}>{entries.map((entry,i)=><div key={i} className={entry.kind}>{logText(entry)}</div>)}</div></div>
     </div></div>
