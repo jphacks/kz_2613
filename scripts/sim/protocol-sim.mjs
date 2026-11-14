@@ -67,29 +67,35 @@ function fakeGames(dir) {
 }
 
 // ---------- ホストの起動 (必ず注入なし) ----------
-function startHost() {
-  const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-sim-'));
+function startHost(hotspotState = 'on', port = PORT) {
+  const diagnostics = process.env.RECOOPLAY_PROTOCOL_DIAGNOSTICS;
+  if (diagnostics) fs.mkdirSync(diagnostics, { recursive: true });
+  const logDir = fs.mkdtempSync(path.join(diagnostics || os.tmpdir(), 'recooplay-sim-'));
   const optionsFile = path.join(logDir, 'options.txt');
+  const keyOverridesFile = path.join(logDir, 'key-overrides.json');
   fs.copyFileSync(path.join(ROOT, 'scripts', 'sim', 'fixtures', 'minecraft-options.txt'), optionsFile);
   const profilesDir=path.join(logDir,'profiles');
   fs.cpSync(path.join(ROOT,'apps/game-profiles'),profilesDir,{recursive:true});
   fs.copyFileSync(path.join(ROOT,'scripts/sim/fixtures/profiles/test-pseudo.json'),path.join(profilesDir,'test-pseudo.json'));
   // config.json の影響を受けないよう、画面だけを持つ一時ルートを使う
-  const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_FAKE_GAMES: fakeGames(logDir),
+  const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(port), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_FAKE_GAMES: fakeGames(logDir),
+    // 分担の期待値は規則の分担で書いている。既定のモデル (#474) では操作定義のないゲームの分担が変わるため、規則に固定する
+    RECOOPLAY_PRESETS: 'rule',
     // 模擬のホットスポット (#133。dry-run では本物を読まない)
-    RECOOPLAY_FAKE_HOTSPOT: 'SimSpot|sim-pass-1|on',
+    RECOOPLAY_FAKE_HOTSPOT: `SimSpot|sim-pass-1|${hotspotState}`,
     // 手動登録のファイル選択 (#49。中身に書いた場所を選んだことにする)
     RECOOPLAY_FAKE_PICK: path.join(logDir, 'pick.txt'),
     // Minecraft のキー設定の試験用 (ダッシュ = Q、捨てる = R に変えた options.txt)。#101
-    RECOOPLAY_MINECRAFT_OPTIONS: optionsFile, RECOOPLAY_PROFILES_DIR: profilesDir };
+    RECOOPLAY_MINECRAFT_OPTIONS: optionsFile, RECOOPLAY_PROFILES_DIR: profilesDir, RECOOPLAY_KEY_OVERRIDES: keyOverridesFile };
   const exe = process.platform === 'win32' ? 'recooplay-host.exe' : 'recooplay-host';
+  if (port === 0) env.RECOOPLAY_RUNTIME_MEASURE = '1';
   const cmd = opt('--bin', path.join(ROOT, 'apps', 'host-rs', 'target', 'release', exe));
   // 標準入力: "stop" で緊急停止 (ホットキーと同じ処理) を受け付ける
   const child = spawn(cmd, [], { env, stdio: ['pipe', 'pipe', 'pipe'] });
   let out = '';
   child.stdout.on('data', (d) => (out += d));
   child.stderr.on('data', (d) => (out += d));
-  return { child, output: () => out, logDir, optionsFile };
+  return { child, output: () => out, logDir, optionsFile, keyOverridesFile };
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -107,8 +113,9 @@ async function waitReady() {
 
 // ---------- WebSocket クライアント ----------
 class Client {
-  constructor(name) {
+  constructor(name, port = PORT) {
     this.name = name;
+    this.port = port;
     this.msgs = [];
     this.closed = null;
     this.iseq = 0;
@@ -117,7 +124,7 @@ class Client {
   }
   open() {
     return new Promise((resolve, reject) => {
-      this.ws = new WebSocket(`ws://127.0.0.1:${PORT}/ws`);
+      this.ws = new WebSocket(`ws://127.0.0.1:${this.port}/ws`);
       this.ws.onopen = () => resolve(this);
       this.ws.onerror = () => reject(new Error(`${this.name}: 接続できない`));
       this.ws.onmessage = (ev) => {
@@ -395,6 +402,19 @@ async function main() {
       }
     });
 
+    await check('ゲーム選択: 初回参加では分担案を送らず、選んだゲームに合わせる (#447)', async () => {
+      const initial = await p2.waitFor(m => m.type === 'game' && m.game.connected.length === 3);
+      assert(initial.game.title === '' && initial.game.profile === null && !initial.game.canPrepare);
+      for (const [title, profileId] of [['pseudo-game', 'test-pseudo'], ['minecraft-java', 'minecraft-java']]) {
+        const from = p2.mark();
+        mon.send({type:'select_game', title});
+        const selected = await p2.waitFor(m => m.type === 'game' && m.game.title === title, {from});
+        assert(selected.game.profile?.id === profileId,
+          `${title}の操作定義: 期待値 ${profileId}、受信値 ${selected.game.profile?.id}`);
+        assert(selected.game.profile.assignment?.P2?.length > 0, `${title}のP2の分担がない`);
+      }
+    });
+
     await check('トークン: welcome で枠ごとに 128bit 以上の推測困難な値を発行する', async () => {
       const t = [tokens.P1, tokens.P2, tokens.P3];
       assert(t.every((x) => /^[0-9a-f]{32,}$/.test(x || '')), `トークンの形式: ${t.join(',')}`);
@@ -498,7 +518,9 @@ async function main() {
       const off = await p1.waitFor(m=>m.type==='game' && !m.game.canReady,{from});
       assert(off.game.readyReasons.some(r=>r.includes('入力を再開する')), JSON.stringify(off.game.readyReasons));
       p1.send({type:'command',cmd:'READY'});
-      await p1.waitFor(m=>m.type==='command_result' && m.cmd==='READY' && !m.accepted,{from});
+      const rejected = await p1.waitFor(m=>m.type==='command_result' && m.cmd==='READY' && !m.accepted,{from});
+      assert(decodeServerMessage(JSON.stringify(rejected))?.type === 'command_result',
+        'スマホの受信境界がホストの開始拒否を読み取れない');
       mon.send({type:'inject_mode',mode:'on'});
       await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from});
       let gateFrom=p1.mark();
@@ -600,7 +622,7 @@ async function main() {
     });
 
     await check('キー設定: Minecraft の options.txt に合わせて送る (ダッシュ = Q、捨てる = R)', async () => {
-      const st = await mon.waitFor((m) => m.type === 'state' && m.game?.keys, { what: 'keys' });
+      const st = await mon.waitFor((m) => m.type === 'state' && m.game?.title === 'minecraft-java' && m.game.keys, { what: 'Minecraftのキー設定' });
       const k = st.game.keys;
       assert(k.source === 'options', `source=${k.source}`);
       assert(k.controls.SPRINT?.out === 'KEY_Q' && k.controls.DROP?.out === 'KEY_R' && k.controls.FWD?.out === 'KEY_W', JSON.stringify(k.controls));
@@ -2133,8 +2155,19 @@ async function main() {
       await sleep(200);
       assert(latest().keys.actions[action]?.out === target, '協力プレイ中にキーを変えた');
       a.send({ type: 'command', cmd: 'PAUSE' }); await phaseIs(a, 'paused', 0);
+      const persisted = () => JSON.parse(fs.readFileSync(host.keyOverridesFile, 'utf8')).games;
+      assert(persisted()['minecraft-java']?.[action] === target, '変更が保存されていない');
+      const paused = a.mark();
+      mon.send({ type: 'set_key', action, output: before ?? null });
+      await a.waitFor(m => m.type === 'game' && m.game.keys.actions[action]?.out === before
+        && !m.game.keys.edited.includes(action), { from: paused, what: '個別に初期値に戻す' });
+      assert(!Object.hasOwn(persisted()['minecraft-java'] ?? {}, action), '初期値の上書きが保存に残った');
+      const restored = a.mark();
+      mon.send({ type: 'set_key', action, output: target });
+      await a.waitFor(m => m.type === 'game' && m.game.keys.edited.includes(action), {from: restored});
+      const reset = a.mark();
       mon.send({ type: 'reset_keys' });
-      await a.waitFor((m) => m.type === 'game' && m.game.keys.actions[action]?.out === before && !m.game.keys.edited.length, { what: '初期値に戻す' });
+      await a.waitFor((m) => m.type === 'game' && m.game.keys.actions[action]?.out === before && !m.game.keys.edited.length, { from: reset, what: '初期値に戻す' });
       a.send({ type: 'command', cmd: 'END' }); await sleep(100);
       for (const x of [a, b]) x.close();
     });
@@ -2153,7 +2186,88 @@ async function main() {
       assert(joins.length >= 3 && joins.every((e) => e.slot && e.device), `join の記録: ${JSON.stringify(joins[0])}`);
     });
 
+    await check('参加情報: 別ホストでは新規参加し、元ホストでは元の枠へ再接続できる (#452)', async () => {
+      const second = startHost('on', 0);
+      const clients = [];
+      try {
+        let port;
+        for (let i = 0; i < 100 && second.child.exitCode === null; i++) {
+          const started = second.output().match(/server_start \{"port":([1-9]\d{0,4})\}/);
+          if (started) { port = Number(started[1]); break; }
+          await sleep(50);
+        }
+        assert(port, '別ホストの待ち受けを確認できない');
+        const resetFrom = mon.mark();
+        mon.send({ type: 'reset' });
+        await mon.waitFor(m => m.type === 'state' && m.slots.every(slot => !slot.assigned), { from: resetFrom, what: '元ホストの枠を初期化' });
+        const hello = { type: 'hello', protocolVersion: PROTOCOL_VERSION, clientId: 'sim-client-cross-host' };
+        const first = new Client('元ホストでの初回参加');
+        clients.push(first);
+        await first.open();
+        first.send(hello);
+        const saved = await first.waitFor(m => m.type === 'welcome', { what: '元ホストでの初回参加' });
+        assert(saved.slot === 'P1' && saved.token, '元ホストの参加情報がない');
+        const foreign = new Client('別ホスト', port);
+        clients.push(foreign);
+        await foreign.open();
+        foreign.send({ ...hello, token: saved.token });
+        const fresh = await foreign.waitFor(m => m.type === 'welcome' || m.type === 'error', { what: '別ホストでの新規参加' });
+        assert(fresh.type === 'welcome' && fresh.slot === 'P1' && fresh.reconnected === false && fresh.token && fresh.token !== saved.token,
+          '別ホストが新しい参加情報を発行しなかった');
+
+        const original = new Client('元ホスト');
+        clients.push(original);
+        await original.open();
+        original.send({ ...hello, token: saved.token });
+        const resumed = await original.waitFor(m => m.type === 'welcome' || m.type === 'error', { what: '元ホストでの再接続' });
+        assert(resumed.type === 'welcome' && resumed.slot === saved.slot && resumed.reconnected === true && resumed.token === saved.token,
+          '元ホストで元の枠に再接続できなかった');
+      } finally {
+        for (const client of clients) if (client.ws) client.close();
+        second.child.kill();
+      }
+    });
     for (const c of [p1, p2, p3, mon]) c?.close();
+    await check('終了時にアプリが起動したホットスポットだけを停止する (#415 A)', async () => {
+      async function quitAndCheck(instance, expected, command = 'quit\n') {
+        const exited = new Promise((resolve) => instance.child.once('exit', resolve));
+        instance.child.stdin.end(command);
+        const code = await Promise.race([exited, sleep(3500).then(() => 'timeout')]);
+        assert(code === 0, `安全停止の終了コード: ${code}`);
+        const log = fs.readdirSync(instance.logDir).filter((f) => f.endsWith('.jsonl'))
+          .map((f) => fs.readFileSync(path.join(instance.logDir, f), 'utf8')).join('');
+        assert(!log.includes('sim-pass-1') && !instance.output().includes('sim-pass-1'), 'パスワードをログに残した');
+        const events = log.split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+        const shutdown = events.findIndex((event) => event.kind === 'shutdown' && event.releaseConfirmed);
+        const hotspot = events.findIndex((event) => event.kind === 'hotspotShutdown' && event.result === expected);
+        assert(shutdown >= 0 && hotspot > shutdown, `安全停止後のホットスポット処理の結果が ${expected} でない`);
+      }
+
+      await quitAndCheck(host, 'notOwned');
+      for (const command of ['quit\n', '']) {
+        const owned = startHost('off');
+        try {
+          await waitReady();
+          const readState = async () => (await (await fetch(`${BASE}/api/info`)).json()).hotspot?.on;
+          assert(await readState() === false, '起動前からホットスポットがON');
+          const start = async () => (await (await fetch(`${BASE}/api/hotspot`, {
+            method: 'POST', headers: { Origin: BASE },
+          })).json()).ok;
+          const results = await Promise.all([start(), start()]);
+          assert(results.every(Boolean) && await readState() === true, 'ホットスポットをONにできなかった');
+          const phone = await join('hotspot-shutdown', { clientId: 'sim-client-hotspot-shutdown' });
+          try {
+            assert((await welcome(phone)).type === 'welcome', '終了通知を確認するスマホが参加できなかった');
+            const [closeCode] = await Promise.all([phone.waitClose(), quitAndCheck(owned, 'stopped', command)]);
+            assert(closeCode === 4009, `スマホの終了通知コード: ${closeCode}`);
+          } finally {
+            phone.close();
+          }
+        } finally {
+          owned.child.kill();
+        }
+      }
+    });
     const failed = results.filter((r) => !r.ok);
     console.log(`\n${results.length - failed.length}/${results.length} 合格 (Rust 版、dry-run)`);
     exitCode = failed.length ? 1 : 0;

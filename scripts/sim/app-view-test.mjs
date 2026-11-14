@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-const { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, gameAction, launchView, rolesAction } = await import('../../apps/web/src/shared/model/presentation.ts');
+const { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, isGameDoubleClick, launchView, rolesAction } = await import('../../apps/web/src/shared/model/presentation.ts');
 
 const {logText} = await import('../../apps/web/src/diagnostics/model.ts');
 const {pcModel, pcState, stepKey} = await import('../../apps/web/src/pc/model.ts');
@@ -190,7 +190,9 @@ test('リモコン: 右・Enter で次、左・Esc で前の画面へ。端で�
   let ui = { screen: 'join', game: null };
   ui = navigate(ui, 'RIGHT');
   assert.equal(ui.screen, 'game');
-  assert.ok(ui.game, '次へ進むとゲームが選ばれる');
+  assert.equal(ui.game, null, 'ゲーム選択画面を開いても未選択');
+  assert.equal(navigate(ui, 'ENTER').screen, 'game', '未選択では分担へ進まない');
+  ui = navigate(ui, 'RIGHT');
   ui = navigate(ui, 'ENTER');
   assert.equal(ui.screen, 'roles');
   assert.equal(navigate(ui, 'ENTER').screen, 'roles');
@@ -244,11 +246,12 @@ test('ゲーム一覧: 起動の状態は選んだ項目への要求だけを表
   assert.equal(launchView(null, 'steam:413150'), null);
 });
 
-test('ゲーム一覧: 主ボタンは選ぶだけで起動せず、メンバー・分担の画面へ進む (#109)', () => {
-  const list = gameList(detected), ui = { screen: 'game', game: 'steam:413150' };
-  assert.deepEqual(gameAction(ui, { launch: null }, list), { kind: 'next', label: 'このゲームで遊ぶ' });
-  assert.equal(gameAction({ ...ui, game: 'minecraft-java' }, null, list).kind, 'next');
-  assert.equal(gameAction({ ...ui, game: 'pseudo-game' }, null, list).kind, 'none', '一覧にない選択では前進しない');
+test('ゲーム一覧: 同じタイルを400ms以内に続けて押したときだけ進む (#445)', () => {
+  const first = {id:'minecraft-java',at:100};
+  assert.equal(isGameDoubleClick(null, first.id, 100), false);
+  assert.equal(isGameDoubleClick(first, 'steam:413150', 120), false);
+  assert.equal(isGameDoubleClick(first, first.id, 500), true);
+  assert.equal(isGameDoubleClick(first, first.id, 501), false);
 });
 
 test('分担の画面: 決定 → 起動 → 準備の順に案内し、失敗時は再起動と手動準備を出す (#109)', () => {

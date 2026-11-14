@@ -272,6 +272,16 @@ try{
     for(const slot of ['P2','P3','P4'].slice(0,playerCount-1)){const c=await open(client());c.send({type:'hello',protocolVersion:6,clientId:`acceptance-${slot}`,ua:'simulation'});await until(()=>c.messages.some(m=>m.type==='welcome'),'模擬参加');}
     ping=setInterval(()=>{for(const c of clients)if(c.ws.readyState===1)c.send({type:'ping',t:Date.now()});},1000);
     await until(()=>mon.state().game.connected.length===playerCount,'participants');
+    await check('Androidの担当表示: ゲーム選択前は非表示、選択後は表示 (#447)',async()=>{
+      assert.equal(mon.state().game.title,'');
+      await until(async()=>await evaluate(`document.getElementById('role')?.hidden === true
+        && document.querySelector('#role b')?.textContent.trim() === ''`),'ゲーム選択前の担当非表示');
+      mon.send({type:'select_game',title:'minecraft-java'});
+      await until(()=>mon.state().game.title==='minecraft-java','ゲーム選択');
+      await until(async()=>await evaluate(`document.getElementById('role')?.hidden === false
+        && document.querySelector('#role b').textContent.trim().length > 0`),'ゲーム選択後の担当表示');
+      return {before:'hidden',after:'visible',title:'minecraft-java'};
+    });
     const g=mon.state().game;mon.send({type:'confirm_lineup',title:g.title,members:g.connected,epoch:g.epoch});
     await until(()=>mon.state().game.lineupOk,'分担確定');
     await click('#startBtn');await until(()=>mon.state().game.phase==='coop','coop');

@@ -1,16 +1,66 @@
-/* 個人レイアウト (#271/#50)。部品は本体基準で決めた位置に絶対配置する。部品は回転させない (ラベル正立・方向は画面基準) */
+/* 個人レイアウト (#271/#50) と操作画面 (#376)。部品は本体基準で決めた位置に絶対配置する。部品は回転させない (ラベル正立・方向は画面基準)
+   操作画面の仕様 1-1: 操作領域をできるだけ広く取る。プレイと編集は同じ領域 (#genControls いっぱい) を使い、大きさを変えない */
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+body[data-view=v-gen] main { padding-top: 10px; }
+#v-gen.show { gap: 10px; }
+#genControls { flex: 1; min-height: 0; display: block; overflow: hidden; gap: 0; }
+#genPause { flex-shrink: 0; min-height: 44px; border-radius: 999px; border-width: 3px; font-size: 15px; }
+
 .layout-area { position: relative; width: 100%; height: 100%; min-height: 240px; overflow: hidden; touch-action: none; }
 .layout-part { position: absolute; display: flex; flex-direction: column; box-sizing: border-box; }
-.layout-part > .key, .layout-face > .key { width: 100%; height: 100%; min-height: 0; padding: 4px; font-size: clamp(10px, 3vw, 13px); line-height: 1.2; letter-spacing: 0; white-space: nowrap; overflow: hidden; }
-.layout-part .stick, .layout-face .stick { width: 100%; height: 100%; margin: 0; }
-.layout-part .look-pad, .layout-face .look-pad { flex: 1; min-height: 0; }
 .layout-face { display: flex; flex-direction: column; width: 100%; height: 100%; pointer-events: none; }
-.gen-edit { margin-left: 8px; padding: 4px 10px; border-radius: 14px; font-size: 13px; }
-.layout-editor { display: flex; flex-direction: column; height: 100%; gap: 8px; }
-.layout-editor .layout-area { flex: 1; outline: 2px dashed var(--color-cyan); border-radius: 16px; }
-.layout-editor-note { margin: 0; font-size: 13px; color: var(--color-logo); }
-.layout-area.editing .layout-part { cursor: grab; }
-.layout-area.editing .layout-part.selected { outline: 3px solid var(--color-cyan); outline-offset: 2px; border-radius: 18px; }
+
+/* ぷっくりした部品。枠と影は本人の色 */
+.layout-part .key { width: 100%; height: 100%; min-height: 0; padding: 4px; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  border: 3px solid var(--color-cyan); border-radius: 24px; background: var(--color-phone-surface); color: var(--color-black);
+  box-shadow: 0 6px 0 color-mix(in srgb, var(--color-cyan) 45%, var(--color-fx-shade));
+  font-size: clamp(14px, 5.6vw, 24px); font-weight: 900; line-height: 1.15; letter-spacing: 0; overflow: hidden; white-space: nowrap; }
+.layout-part .key small { display: block; margin: 0; font-size: clamp(10px, 3.2vw, 13px); font-weight: 700; color: var(--color-cyan-ink); }
+.layout-part .key.down { transform: translateY(4px); box-shadow: 0 2px 0 color-mix(in srgb, var(--color-cyan) 45%, var(--color-fx-shade)); background: color-mix(in srgb, var(--color-cyan) 18%, var(--color-phone-surface)); }
+.layout-part .stick { width: 100%; height: 100%; margin: 0; border-width: 5px; box-shadow: 0 7px 0 color-mix(in srgb, var(--color-cyan) 45%, var(--color-fx-shade)); }
+.layout-part .stick .dir { font-size: clamp(14px, 5vw, 22px); color: var(--color-cyan-ink); }
+.layout-part .stick .dir small { font-size: clamp(10px, 3.4vw, 15px); }
+.layout-part .stick .knob { width: 40%; height: 40%; margin: -20% 0 0 -20%; border-width: 4px; }
+/* 視点パッドは部品いっぱい。感度はパッドの下に重ねる (別の部品にしない) */
+.layout-look { position: absolute; }
+.layout-part .look-pad { flex: 1; min-height: 0; height: 100%; border-width: 3px; border-radius: 30px; gap: 8px;
+  box-shadow: 0 7px 0 color-mix(in srgb, var(--color-cyan) 45%, var(--color-fx-shade)); font-size: clamp(14px, 4.6vw, 20px); }
+.layout-part .look-pad::before { font-size: clamp(48px, 22vw, 110px); }
+.layout-part .sens { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; align-items: center; gap: 8px; margin: 0; padding: 5px 12px;
+  font-size: 12px; font-weight: 700; color: var(--color-cyan-ink); background: var(--color-phone-surface);
+  border: 2px solid color-mix(in srgb, var(--color-cyan) 50%, transparent); border-radius: 999px; }
+.layout-part .sens input { flex: 1; min-width: 0; accent-color: var(--color-cyan); }
+
+/* ---- 編集画面 ---- */
+/* 上の帯はヘッダーの真上に重ねる。操作領域は縮めない */
+.layout-editbar { position: fixed; top: 0; left: 0; right: 0; z-index: 20; display: flex; align-items: center; gap: 6px;
+  padding: env(safe-area-inset-top) max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left)); box-sizing: border-box;
+  background: var(--color-cyan); box-shadow: 0 3px 4px var(--color-shadow); }
+.layout-editbar button { height: 36px; min-width: 44px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--color-paper); color: var(--color-cyan-ink); font-size: 14px; font-weight: 800; }
+.layout-editbar button:disabled { opacity: .45; }
+.layout-editbar #layoutUndo, .layout-editbar #layoutMore { font-size: 20px; padding: 0 10px; }
+.layout-editbar button.save { background: var(--color-phone-button); color: var(--color-black); }
+.layout-editbar-note { flex: 1; min-width: 0; margin: 0; text-align: center; color: var(--color-paper); font-size: 14px; font-weight: 900; line-height: 1.15; overflow: hidden; }
+.layout-editbar-note small { display: block; font-size: 10px; font-weight: 700; opacity: .9; }
+.layout-editor { position: relative; width: 100%; height: 100%; }
+.layout-area.editing { outline: 2px dashed color-mix(in srgb, var(--color-cyan) 70%, transparent); outline-offset: 3px; border-radius: 12px; overflow: visible; }
+.layout-area.editing .layout-part { cursor: grab; touch-action: none; }
+.layout-area.editing .layout-part.selected { outline: 3px solid var(--color-cyan-ink); outline-offset: 3px; border-radius: 22px; z-index: 2; }
+.layout-area.editing .layout-part.dragging { opacity: .75; z-index: 3; cursor: grabbing; }
 .layout-area.editing .layout-part.conflict { outline: 3px dashed var(--color-error); }
-.layout-tools, .layout-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; }
-.layout-actions button { min-height: 44px; padding: 0 14px; border-radius: 16px; }
+.layout-snap { position: absolute; z-index: 1; border: 3px dashed var(--color-cyan-ink); border-radius: 22px; background: color-mix(in srgb, var(--color-cyan) 16%, transparent); pointer-events: none; }
+/* PowerPointのような8つのハンドル。見た目は小さく、指でつかむ範囲は広く */
+.layout-handle { position: absolute; z-index: 4; width: 36px; height: 36px; margin: -18px 0 0 -18px; touch-action: none; }
+.layout-handle::after { content: ''; position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%;
+  background: var(--color-paper); border: 3px solid var(--color-cyan-ink); box-sizing: border-box; }
+.layout-handle.nw { left: 0; top: 0; cursor: nwse-resize; } .layout-handle.n { left: 50%; top: 0; cursor: ns-resize; } .layout-handle.ne { left: 100%; top: 0; cursor: nesw-resize; }
+.layout-handle.e { left: 100%; top: 50%; cursor: ew-resize; } .layout-handle.se { left: 100%; top: 100%; cursor: nwse-resize; } .layout-handle.s { left: 50%; top: 100%; cursor: ns-resize; }
+.layout-handle.sw { left: 0; top: 100%; cursor: nesw-resize; } .layout-handle.w { left: 0; top: 50%; cursor: ew-resize; }
+.layout-menu { position: absolute; z-index: 10; display: flex; flex-direction: column; gap: 6px; padding: 10px; box-sizing: border-box;
+  background: var(--color-surface); border: 3px solid var(--color-cyan); border-radius: 18px; box-shadow: 0 8px 24px var(--color-shadow); }
+.layout-menu button, .layout-menu select { min-height: 40px; border-radius: 12px; font-size: 14px; font-weight: 700; }
+.layout-menu label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+.layout-menu select { flex: 1; min-width: 0; }
+.layout-menu .close { background: transparent; border: 0; color: var(--color-logo); }
+.layout-more { position: fixed; top: calc(60px + env(safe-area-inset-top)); right: 10px; z-index: 21; width: min(260px, 80vw); }
+#genEditLayout { display: block; width: 100%; min-height: 48px; margin: 0 0 14px; font-size: 16px; }

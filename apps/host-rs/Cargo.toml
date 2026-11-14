@@ -23,6 +23,8 @@ log = "0.4"
 getrandom = "0.3"
 # 操作名の読み取り (MiniLM 小型版、#430) のトークナイザー。C のライブラリ (onig・esaxx) を使わない純 Rust の機能だけ
 tokenizers = { version = "0.22", default-features = false, features = ["fancy-regex"] }
+# エンジンごとの操作の読み取り (#481) で、ゲームの pak・zip (CryEngine など) の圧縮された項目を読む。純 Rust の実装だけ
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = ["Win32_Foundation", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging", "Win32_System_Threading", "Win32_System_Console", "Win32_Media", "Win32_System_Com", "Win32_System_Registry", "Win32_UI_Shell", "Win32_Graphics_Gdi", "Win32_NetworkManagement_WiFi", "Win32_Media_Audio", "Win32_UI_Shell_PropertiesSystem", "Win32_System_Com_StructuredStorage", "Win32_System_Variant", "Win32_UI_Shell_Common", "Foundation", "Networking_Connectivity", "Networking_NetworkOperators"] }

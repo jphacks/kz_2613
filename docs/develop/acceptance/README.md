@@ -1,6 +1,6 @@
 # Award Day実機受入試験
 
-2026-11-15の実演、11-12のデモ版固定に向けた実施用手順。既存の[検証状況](../../verification.md)と[実機ゲート](../architecture/validation-gates.md)を補完する。過去の観測やIssueの開閉は、そのまま最新版の合格を意味しない。
+2026-11-15の実演、11-12のデモ版固定に向けた実施用手順。一般向けリリースの判定は[リリース判定チェックリスト](release-readiness.md)（#168）を参照する。既存の[検証状況](../../verification.md)と[実機ゲート](../architecture/validation-gates.md)を補完する。過去の観測やIssueの開閉は、そのまま最新版の合格を意味しない。
 
 製品利用・性能受入は[Wi-Fi前提のユーザー判断](../decisions/2026-11-09-wifi-product-baseline.md)に従う。標準の実機性能試験は下記「Androidの実Wi-Fi経路を検証する自動比較」を使い、同じWi-Fi内で旧版/新版、RTC+WS/WS-only、修正前/後を比べる。USB試験は開発・切り分け用の任意の補助で、利用者向けの接続手段や必須比較にはしない。
 

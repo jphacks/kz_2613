@@ -2,7 +2,7 @@ import {createVirtualCursor} from '../shared/input/virtual-cursor.ts';
 import {createLifetime} from '../shared/input/lifetime.ts';
 import {REMOTE_FOCUSABLE,usableControls,moveRemoteFocus,stepRemoteSelect,isRemoteSelect} from '../shared/input/remote-focus.ts';
 import {byId} from '../shared/dom.ts';
-import {GAMES,SCREENS,gameList,navigate,desktopView,rolesAction,gameAction,isRegistered,shownSlots,screenOnGameUpdate,pcEffects,joinGuideView} from '../shared/model/presentation.ts';
+import {SCREENS,gameList,navigate,desktopView,rolesAction,isGameDoubleClick,isRegistered,shownSlots,screenOnGameUpdate,pcEffects,joinGuideView} from '../shared/model/presentation.ts';
 import {decodePcMessage,decodeHotspotResult} from '../shared/transport/pc-messages.ts';
 import {decodePcInfo} from '../shared/transport/pc-info.ts';
 import type {Slot,PhoneGame} from '../shared/contracts.ts';
@@ -14,7 +14,8 @@ export function startDesktopController({renderView,renderInfo}:{renderView(snaps
 const $=byId,lifetime=createLifetime(),abort=new AbortController();
 let disposed=false,infoRequest=0;
 // swap: 一時停止中に担当を入れ替える画面を開いているか (#47)
-let ui:Navigation={screen:'join',game:GAMES[0].id,swap:false},swapPick:Slot|null=null;
+let ui:Navigation={screen:'join',game:null,swap:false},swapPick:Slot|null=null;
+let lastTileClick:{id:string;at:number}|null=null;
 // 起動したら必ず参加画面 (QR) から始める。前回の画面は覚えない (#126)。以前の版が保存した値は消す
 try{localStorage.removeItem('recooplay.app');}catch{}
 let state:HostState|null=null,game:PhoneGame|null=null,inject:InjectionState|null=null,ws:WebSocket|null=null,online=false,shownGame:string|null='';
@@ -27,10 +28,11 @@ const games=()=>gameList(state?.games,state?.minecraft);
 const send=(m:object)=>{if(ws?.readyState===1)ws.send(JSON.stringify(m));};
 function setUi(next:Navigation){
   if(ui.screen==='join'&&next.screen!=='join'&&!joinStatus(state).canAdvance)return;
-  if(next.game!==ui.game)send({type:'select_game',title:next.game});
+  if(next.screen!==ui.screen || next.game!==ui.game)lastTileClick=null;
+  if(next.game && next.game!==ui.game)send({type:'select_game',title:next.game});
   // 分担の画面から戻ったら決定を取り消す (戻った後の古い決定で起動・準備しない、#109)
   if(ui.screen==='roles'&&next.screen!=='roles'&&game?.phase==='lobby'&&(game.lineupOk||game.lineupDisconnected?.length))send({type:'unconfirm_lineup'});
-  ui={...next,game:game?.title||next.game};
+  ui=next;
   render();
 }
 // WebViewのフォーカス通知、epoch照合、OS入力との排他は従来どおりサーバーが判定する。
@@ -54,10 +56,9 @@ lifetime.listenDocument('click',e=>{
   const source=(e.target instanceof Element?e.target:null)?.closest<HTMLElement>('[data-preset]')?.dataset.preset;
   if(source==='rule'||source==='model')send({type:'preset_source',source});
 });
-lifetime.listen($('closeSettings'), 'click',()=>$<HTMLDialogElement>('settings').close());
 lifetime.listen($('connectionHelpBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
+lifetime.listen($('joinTroubleshootingBtn'), 'click',()=>openDialog($<HTMLDialogElement>('joinTroubleshooting')));
 lifetime.listen($('settingsConnectionBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
-lifetime.listen($('closeConnectionHelp'), 'click',()=>$<HTMLDialogElement>('connectionHelp').close());
 // 全員の接続のリセット (#412)。確認してから送る。ホストは全員を切断し、枠とホストを最初から決め直す (#213)
 lifetime.listen($('resetAllBtn'), 'click',()=>openDialog($<HTMLDialogElement>('resetConfirm')));
 lifetime.listen($('resetCancel'), 'click',()=>$<HTMLDialogElement>('resetConfirm').close());
@@ -97,8 +98,8 @@ lifetime.listen($('removeGameBtn'), 'click',()=>{
   send({type:'remove_game',id:g.id});ui={...ui,game:null};manualMessage='';
 });
 // 選択画面の主ボタン・Enter。選ぶだけで起動せず、メンバー・分担の画面へ進む (#109)
-function gameMain(){
-  if(gameAction(ui,game,games()).kind==='next')setUi({...ui,screen:'roles'});
+function gameMain(id=ui.game){
+  if(games().some(game=>game.id===id))setUi({...ui,game:id,screen:'roles'});
 }
 // 分担の画面の主ボタン・補助ボタン・Enter。決定は画面が見ているゲーム・メンバーを添えて送り、ホストが今と照合する。
 // 起動は選んだ項目のIDだけを送る (起動方法はホストが決める)
@@ -138,7 +139,6 @@ lifetime.listen($('nextBtn'), 'click',e=>{
     if(e.isTrusted)send({type:'inject_mode',mode:'on'});
   }
   else if(view==='join')setUi({...ui,screen:'game'});
-  else if(view==='game')gameMain();
   else if(view==='roles')rolesRun(rolesAction(game,games()));
 });
 lifetime.listenDocument('click',e=>{
@@ -151,13 +151,24 @@ lifetime.listenDocument('click',e=>{
     else{send({type:'swap_roles',a:swapPick,b:slot});swapPick=null;}
     render();return;
   }
-  const el=(e.target instanceof Element ? e.target : null)?.closest<HTMLElement>('[data-go],[data-game],[data-mode]');if(!el)return;
+  const el=(e.target instanceof Element ? e.target : null)?.closest<HTMLElement>('[data-go],[data-game],[data-play-game],[data-mode]');if(!el)return;
   const go=SCREENS.find(id=>id===el.dataset.go);
   if(go){
     setUi({...ui,screen:go});
     if (ui.screen === go) $<HTMLDialogElement>('settings').close();
   }
-  if(el.dataset.game)setUi({...ui,game:el.dataset.game});
+  if(desktopView(ui,game)==='game'){
+    if(el.dataset.playGame)gameMain(el.dataset.playGame);
+    const id=el.dataset.game;
+    if(id){
+      const previous=lastTileClick;
+      if(isGameDoubleClick(previous,id,e.timeStamp))gameMain(id);
+      else{
+        setUi({...ui,game:id});
+        lastTileClick={id,at:e.timeStamp};
+      }
+    }
+  }
   // スマホの仮想カーソルが生成したクリックには入力再開を許可しない。
   if(el.dataset.mode&&(el.dataset.mode==='off'||e.isTrusted))send({type:'inject_mode',mode:el.dataset.mode});
 });
@@ -176,6 +187,12 @@ lifetime.listenDocument('keydown',e=>{
   if(document.querySelector<HTMLDialogElement>('dialog[open]'))return;
   const seat=(e.target instanceof Element?e.target:null)?.closest<HTMLElement>('[data-swap]');
   if((e.key==='Enter'||e.key===' ')&&seat){e.preventDefault();seat.click();return;}
+  const tile=(e.target instanceof Element?e.target:null)?.closest<HTMLElement>('[data-game]');
+  if(e.key==='Enter'&&tile&&desktopView(ui,game)==='game'){
+    e.preventDefault();
+    if(!e.repeat)gameMain(tile.dataset.game);
+    return;
+  }
   const controls:Record<string,string>={ArrowLeft:'LEFT',ArrowRight:'RIGHT',ArrowUp:'UP',ArrowDown:'DOWN',Enter:'ENTER',Escape:'ESC'};const control=controls[e.key];
   // 矢印は補助ナビにフォーカスがあっても移動する。Enterはボタン本来の実行を優先する。
   if(control&&(control!=='ENTER'||!(e.target instanceof Element ? e.target : null)?.closest<HTMLElement>('button,a,summary'))){e.preventDefault();remoteControl(control);}
@@ -239,6 +256,7 @@ return {
   setAutoResume: (on:boolean) => send({type:'auto_resume',on}),
   setRotation: (seconds:number) => send({type:'rotation',seconds}),
   setKey: (action:string,output:string|null) => send({type:'set_key',action,output}),
+  resetKeys: () => send({type:'reset_keys'}),
 };
 
 }
