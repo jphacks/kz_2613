@@ -6516,8 +6516,9 @@ mod tests {
         assert!(!queue.must_close());
         h.emergency_stop("test");
         assert!(!queue.must_close());
+        let expected = diagnostic.to_string();
         for _ in 0..MONITOR_INPUT_LOG_LIMIT {
-            assert!(matches!(rx.try_recv(), Ok(Out::Text(text)) if text == diagnostic.to_string()));
+            assert!(matches!(rx.try_recv(), Ok(Out::Text(text)) if text == expected));
         }
         let mut stopped = false;
         while let Ok(Out::Text(text)) = rx.try_recv() {
