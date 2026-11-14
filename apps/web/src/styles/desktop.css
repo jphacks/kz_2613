@@ -584,6 +584,7 @@ body[data-two-qr] .qr-arrow { display: none; }
   right: 12px;
   min-width: 44px;
   min-height: 44px;
+  font-size: 20px;
   cursor: pointer;
 }
 
