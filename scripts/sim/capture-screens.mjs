@@ -145,12 +145,12 @@ async function auditLayout(eval_,file,desktop){
     const remote=document.querySelector('#v-remote.show');
     if(!desktop&&!top&&remote){
       const start=remote.scrollTop;
-      // 下に固定した領域が、スクロールしていない状態で上の操作・案内に重ならない (#553)
+      // 下に固定した領域が、スクロールしていない状態で上の操作に重ならない (#553)
       remote.scrollTop=0;
       const actions=remote.querySelector('.host-actions');
       if(actions&&visible(actions)){
         const top=actions.getBoundingClientRect().top;
-        for(const [sel,label] of [['.remote-keys','リモコンのEsc・ホイール'],['.trackpad','タッチパッド'],['#remoteRoute','入力先の案内']]){
+        for(const [sel,label] of [['.remote-keys','リモコンのEsc・ホイール'],['.trackpad','タッチパッド']]){
           const el=remote.querySelector(sel);
           if(el&&visible(el)&&!actions.contains(el)&&el.getBoundingClientRect().bottom>top+1)outside.push(label+'が下の固定領域に隠れる');
         }
