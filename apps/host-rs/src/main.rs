@@ -634,7 +634,12 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
             },
         }
     }
-    app.send(Event::WsClosed { id, code });
+    app.send(Event::WsClosed {
+        id,
+        code,
+        #[cfg(feature = "latency-measure")]
+        since_last_send_ms: last_text_sent.map(|sent| sent.elapsed().as_millis() as u64),
+    });
 }
 
 async fn send_ws_text(
