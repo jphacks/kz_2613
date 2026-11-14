@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import type {ControlGroup,ControlPart} from '../shared/controller-layout';
 import type { InputBindings } from '../shared/contracts';
+import { Icon, arrowIcon } from '../shared/icons.ts';
 
 export function Stick({ part, bindings }: { part: Extract<ControlPart, { kind: 'stick' }>; bindings?: InputBindings }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -12,7 +13,7 @@ export function Stick({ part, bindings }: { part: Extract<ControlPart, { kind: '
     return () => bindings.bindStick(null, {});
   }, [codes, bindings]);
   return <div className="stick gen-stick" ref={ref}>{part.directions.map(d =>
-    <span key={d.name} className={`dir ${d.name}`} data-d={d.name}>{d.mark}<small>{d.label}</small></span>
+    <span key={d.name} className={`dir ${d.name}`} data-d={d.name}><Icon name={arrowIcon(d.name)} className="dir-mark" /><small>{d.label}</small></span>
   )}<div className="knob" /></div>;
 }
 

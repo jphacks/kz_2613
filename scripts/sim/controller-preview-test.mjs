@@ -28,8 +28,10 @@ assert.match(html, /inert=""/);
 assert.match(html, /class="stick gen-stick"/);
 assert.match(html, /class="look-pad"/);
 assert.match(html, /Spaceキー/);
-assert.match(html, /ホイール↑/);
-assert.match(html, /ホイール↓/);
+assert.match(html, /ホイール上/);
+assert.match(html, /ホイール下/);
+assert.match(html, /data-icon="arrow-up"/, 'スティックの矢印は SVG のアイコン (#515)');
+assert.doesNotMatch(html, /[▲▼◀▶]/, 'スティックの矢印に記号の文字を使わない (#515)');
 assert(!/data-ctl=|data-cmd=|id="(?:pad|sens|sensVal)"/.test(html), 'プレビューに実入力の探索属性や重複IDを出さない');
 assert(!/disabled=""/.test(html), '無効化の既定スタイルでプレイ時の見た目を変えない');
 if (process.argv.includes('--write-preview')) {

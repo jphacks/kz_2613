@@ -3,7 +3,7 @@ import { inputKeyLabel, inputGroupLabel } from './model/presentation.ts';
 
 export type ControlPart =
   | { kind: 'button'; id: string; control: string; label: string }
-  | { kind: 'stick'; id: string; directions: { name: Direction; control: string; label: string; mark: string }[] }
+  | { kind: 'stick'; id: string; directions: { name: Direction; control: string; label: string }[] }
   | { kind: 'look'; id: string };
 export interface ControlGroup { id: string; label: string; parts: ControlPart[] }
 
@@ -13,11 +13,12 @@ export function buttonLayout(groups: ControlGroup[]): string {
   if (!parts.length || parts.length > 6 || parts.some(part => part.kind !== 'button')) return '';
   return parts.length <= 3 ? 'few-buttons single-column' : 'few-buttons';
 }
-const DIRECTIONS: [Direction, RegExp, string][] = [
-  ['up', /(^|[/_ -])(forward|up|moveup|accelerate)$/i, '▲'],
-  ['left', /(^|[/_ -])(left|moveleft|steer_left)$/i, '◀'],
-  ['right', /(^|[/_ -])(right|moveright|steer_right)$/i, '▶'],
-  ['down', /(^|[/_ -])(back|down|movedown|brake)$/i, '▼'],
+// 矢印は記号の文字ではなく SVG のアイコンで描く (#515、phone/Controller.tsx の Stick)
+const DIRECTIONS: [Direction, RegExp][] = [
+  ['up', /(^|[/_ -])(forward|up|moveup|accelerate)$/i],
+  ['left', /(^|[/_ -])(left|moveleft|steer_left)$/i],
+  ['right', /(^|[/_ -])(right|moveright|steer_right)$/i],
+  ['down', /(^|[/_ -])(back|down|movedown|brake)$/i],
 ];
 
 // 編集プレビューも利用する描画モデル。担当IDの集合との積だけを描く。
@@ -33,9 +34,9 @@ export function controllerLayout(game: ControllerGame, slot: Slot): ControlGroup
   let hasStick = false,hasLook=false;
   return [...groups].map(([id, actions]) => {
     const parts: ControlPart[] = [];
-    const directions = DIRECTIONS.flatMap(([name, rx, mark]) => {
+    const directions = DIRECTIONS.flatMap(([name, rx]) => {
       const action = actions.find(a => a.type === 'button' && rx.test(a.id));
-      return action ? [{ name, control: `act:${action.id}`, label: inputKeyLabel(game, action), mark }] : [];
+      return action ? [{ name, control: `act:${action.id}`, label: inputKeyLabel(game, action) }] : [];
     });
     const used = new Set<string>();
     if (directions.length >= 2 && !hasStick) {
@@ -46,7 +47,7 @@ export function controllerLayout(game: ControllerGame, slot: Slot): ControlGroup
     for (const a of actions) {
       if (used.has(a.id)) continue;
       if (a.type === 'button') parts.push({ kind: 'button', id: a.id, control: `act:${a.id}`, label: inputKeyLabel(game, a) });
-      if (a.type === 'wheel') for (const [direction, label] of [['up', 'ホイール↑'], ['down', 'ホイール↓']]) {
+      if (a.type === 'wheel') for (const [direction, label] of [['up', 'ホイール上'], ['down', 'ホイール下']]) {
         parts.push({ kind: 'button', id: `${a.id}:${direction}`, control: `act:${a.id}:${direction}`, label });
       }
     }

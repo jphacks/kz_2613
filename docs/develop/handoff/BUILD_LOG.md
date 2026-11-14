@@ -2552,3 +2552,12 @@
 - 方式の比較（入力の経路：VPN 型・WebRTC＋STUN・TURN・中継サーバー、映像の経路：既存の画面共有・WebRTC 配信・既存の配信機能）、LAN 版との差分、安全面、判断の整理を `docs/develop/decisions/2026-11-15-remote-play-study.md` に記録した。
 - コードの確認：`rtc.rs` は STUN・TURN を使わない（`RtcConfig::new(&[])`）。
 - PoC はしていない。どの接続環境でも未試験、映像を含む一巡の遅れも未測定。判断案は保留（進めるならコードを変えずに VPN＋画面共有で体験を測る）。
+
+## 2026-11-15 — フォントに頼る記号・絵文字を SVG のアイコンにする（#515、Claude Code）
+
+- `apps/web/src/shared/icons.ts` にアイコンをまとめた（矢印4方向・⋯・↶・星・注意・別タブ）。`currentColor`・1em・`aria-hidden`。画面の試験が TSX を1つずつ変換して読む作りなので、JSX を使わず `createElement` で組み立てた。
+- 置き換え：スティックの矢印（`controller-layout.ts` の記号のデータ `mark` を外し、`Controller.tsx` で向きからアイコンを描く）、スマホのメニューの「⋯」、配置の編集の「↶」「⋯」、接続中の「✦」、ホストのリモコンのホイール（「ホイール」＋矢印のアイコン）、PC のタイルの「▶」とキー割当の「◀▶」、診断画面の「⚠」「↗」。CSS の飾り（✦✧✥↔●）は、データ URI の SVG をマスクにして文字の色で塗る（`shared.css` の `--icon-*`）。外部の CDN・アイコンのフォントは使わない。
+- 操作定義から作るホイールのボタンは「ホイール上・下」の文字にした（配置の編集のプルダウンにも同じ文字が出るため）。ホストから届く矢印キーの名前（↑↓←→）は、画面で「上矢印キー」などの文字にする（`keyLabelText`）。
+- 疑似ゲーム画面（開発用）と、文中の「→」（手順の説明）は文字のまま。
+- 試験：`check-static-pages.mjs` に、製品の画面のソース（疑似ゲーム画面とコメントを除く）に対象の記号が残っていないことの検査を足した。`controller-preview-test.mjs` にスティックの矢印が SVG であること。
+- 確認：`npm run build`（型検査を含む）、`check-static-pages`、`controller-preview-test`、`ui-input-test` 20/20、`product-web-test`、`app-view-test` 37/37、`phone-view-test`、`controller-layout-test`、`phone-layout-test` 15/15 が合格。Android・iPhone の実機での見た目は未確認。

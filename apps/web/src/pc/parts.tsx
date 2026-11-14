@@ -1,5 +1,7 @@
 import { Fragment, useState, useSyncExternalStore } from 'react';
 import { settingsActions, stepKey, type PcSnapshot, type pcModel } from './model';
+import { Icon } from '../shared/icons.ts';
+import { keyLabelText } from '../shared/model/presentation.ts';
 type Model = ReturnType<typeof pcModel>;
 type Card = Model['gameCards'][number];
 
@@ -12,17 +14,17 @@ export function GameTile({card}: {card: Card}) {
     <span className="tile-art" aria-hidden="true">{card.image && !failed ? <img src={card.image} alt="" loading="lazy" data-initial={card.initial} onError={() => setFailed(true)} /> : <span className="tile-initial">{card.initial}</span>}</span>
     <span className="tile-name">{card.name}</span><span className="game-badges">{card.badges.map((badge: string) => <span key={badge} className={`badge${badge === '未検証' ? ' badge-unverified' : ''}`}>{badge}</span>)}</span>
     {card.launch && <span className="game-launch" data-state={card.launch.state}>{card.launch.title}</span>}
-  </button>{card.selected && <button className="game-advance" data-play-game={card.id} aria-label={`${card.name}の分担へ進む`}>▶</button>}</div>;
+  </button>{card.selected && <button className="game-advance" data-play-game={card.id} aria-label={`${card.name}の分担へ進む`}><Icon name="arrow-right" /></button>}</div>;
 }
 export function KeyEditor({model, state}: {model: Model; state: PcSnapshot}) {
   if (!model.keyButtons.length) return null;
-  return <><h3>キー割当を変える</h3><p>{model.locked ? '協力プレイ中は変更できません。一時停止すると変更できます。' : '変更はこのPCに保存され、次回も使います。ホストのスマホのリモコンでは、◀▶のボタンを押してキーを切り替えます。'}{state.keyMessage}</p>
+  return <><h3>キー割当を変える</h3><p>{model.locked ? '協力プレイ中は変更できません。一時停止すると変更できます。' : '変更はこのPCに保存され、次回も使います。ホストのスマホのリモコンでは、左右の矢印のボタンを押してキーを切り替えます。'}{state.keyMessage}</p>
     <table className="key-editor"><tbody>{model.keyButtons.map(action => <tr key={action.id}><th>{action.label}{model.edited.has(action.id) ? '（変更済み）' : ''}</th><td>
-      <button type="button" className="key-step" data-key-step="-1" aria-label={`${action.label}のキーを前へ`} disabled={model.locked} onClick={() => settingsActions.setKey(action.id, stepKey(model.outputs.map(([id]) => id), state.game?.keys?.actions?.[action.id]?.out ?? null, -1))}>◀</button>
+      <button type="button" className="key-step" data-key-step="-1" aria-label={`${action.label}のキーを前へ`} disabled={model.locked} onClick={() => settingsActions.setKey(action.id, stepKey(model.outputs.map(([id]) => id), state.game?.keys?.actions?.[action.id]?.out ?? null, -1))}><Icon name="arrow-left" /></button>
       <select data-key-action={action.id} disabled={model.locked} value={state.game?.keys?.actions?.[action.id]?.out ?? ''} onChange={event => settingsActions.setKey(action.id, event.currentTarget.value || null)}>
-        <option value="">送らない</option>{model.outputs.map(([id, output]) => <option value={id} key={id}>{output.label}</option>)}
+        <option value="">送らない</option>{model.outputs.map(([id, output]) => <option value={id} key={id}>{keyLabelText(output.label)}</option>)}
       </select>
-      <button type="button" className="key-step" data-key-step="1" aria-label={`${action.label}のキーを次へ`} disabled={model.locked} onClick={() => settingsActions.setKey(action.id, stepKey(model.outputs.map(([id]) => id), state.game?.keys?.actions?.[action.id]?.out ?? null, 1))}>▶</button></td></tr>)}</tbody></table><button id="resetKeysBtn" disabled={model.locked || !model.edited.size} onClick={settingsActions.resetKeys}>このゲームのキーを初期値に戻す</button></>;
+      <button type="button" className="key-step" data-key-step="1" aria-label={`${action.label}のキーを次へ`} disabled={model.locked} onClick={() => settingsActions.setKey(action.id, stepKey(model.outputs.map(([id]) => id), state.game?.keys?.actions?.[action.id]?.out ?? null, 1))}><Icon name="arrow-right" /></button></td></tr>)}</tbody></table><button id="resetKeysBtn" disabled={model.locked || !model.edited.size} onClick={settingsActions.resetKeys}>このゲームのキーを初期値に戻す</button></>;
 }
 export function NetworkDiagnostics({model, bluetooth}: {model: Model; bluetooth: boolean}) {
   if (!model.diagnostics.length) return <p>つながっているスマホはありません。</p>;
