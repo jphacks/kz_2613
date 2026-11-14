@@ -178,6 +178,10 @@ async function main(){
   await pc.go(`${base}/app`);
   await pc.waitFor(`!!document.querySelector('#qr svg')`,'QR');
   await pc.shot('pc-01-join-waiting.jpg');
+  await pc.click('#joinTroubleshootingBtn');
+  await pc.waitFor("document.getElementById('joinTroubleshooting').open", '参加トラブル案内');
+  await pc.shot('pc-12-join-troubleshooting.jpg');
+  await pc.click('#closeJoinTroubleshooting');
 
   // スマホ3台が参加する (P1 がホスト)
   const phones=[];
@@ -232,6 +236,12 @@ async function main(){
   await pc.click('#settingsBtn');await pc.click('#settingsConnectionBtn');
   await pc.shot('pc-10-connection-help.jpg');
   await pc.click('#closeConnectionHelp');
+  await pc.click('#settingsBtn');
+  await pc.click('#resetAllBtn');
+  await pc.waitFor("document.getElementById('resetConfirm').open", '全員リセット確認');
+  await pc.shot('pc-13-reset-confirmation.jpg');
+  await pc.click('#resetCancel');
+  await pc.waitFor("!document.getElementById('resetConfirm').open", '全員リセットのキャンセル');
   await p2.click('#phoneSettingsBtn');
   await p2.shot('phone-p2-05-diagnostics.jpg');
   await p2.click('#closePhoneDiagnostics');
