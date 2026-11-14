@@ -2546,3 +2546,9 @@
 - `engines/creation.rs`：`ControlMap_Custom.txt` がないとき、Fallout 4・Starfield は Data の「* - Interface.ba2」から `Interface/Controls/PC/ControlMap.txt` を取り出して読む。Skyrim SE の BSA（LZ4）は依存が増えるので、今までどおり既定の割当の表。
 - カタログ（`engines.mjs`）にも同じ読み取り（`ba2Extract`）を足した。
 - 確認：小さなクレートで Rust の単体試験33件・Clippy 合格、`cargo fmt --check` 合格、`profile-engines-test.mjs` 18/18。BA2 の版 2・3 の先頭の長さは知識による（実物で確かめていない）。Fallout 4・Starfield の実物は手元にない。
+
+## 2026-11-15 — インターネット経由の遠隔共同プレイの成立性の調査（#158、Claude Code）
+
+- 方式の比較（入力の経路：VPN 型・WebRTC＋STUN・TURN・中継サーバー、映像の経路：既存の画面共有・WebRTC 配信・既存の配信機能）、LAN 版との差分、安全面、判断の整理を `docs/develop/decisions/2026-11-15-remote-play-study.md` に記録した。
+- コードの確認：`rtc.rs` は STUN・TURN を使わない（`RtcConfig::new(&[])`）。
+- PoC はしていない。どの接続環境でも未試験、映像を含む一巡の遅れも未測定。判断案は保留（進めるならコードを変えずに VPN＋画面共有で体験を測る）。
