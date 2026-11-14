@@ -2494,3 +2494,14 @@
 
 - 明示の `quit` と標準入力のEOFそれぞれで、ホストの安全停止ログ、スマホへの終了コード4009、アプリが起動した模擬ホットスポットの停止、資格情報の非記録を確認した。
 - Windows releaseビルド、Webビルド、通信dry-run 67/67が成功。非管理者での実ホットスポット停止は未実施。
+
+## 2026-11-14 — 主要タイトルで漏れていたエンジンの読み取り（#505〜#509、Claude Code）
+
+- 主要タイトル（`top500-games.json` の上位で分担に向く約150本）のエンジンを照合し、漏れていたもののうちファイルが文字で読めそうなものを実装した（PR #502 の上に重ねた別 PR）。
+  - REDengine（#505）：Cyberpunk 2077 の `inputUserMappings.xml`（`val` の負・正で軸を2つの操作に分ける）、The Witcher 3 の `input.settings` の `[Exploration]`・`[Combat]`。Cyberpunk 2077 の利用者の変更（`UserSettings.json`）は形式を確かめていないので読まない。
+  - Prism3D（#506）：ETS2・ATS のプロファイルの `controls.sii` の `mix` の行。暗号化された `.sii` は読まない。
+  - GIANTS Engine（#507）：Farming Simulator の `inputBinding.xml`。操作が多いので歩き・運転・乗り降りを先に40件まで。
+  - Factorio（#508）：`config.ini` の `[controls]`。書かれていない操作は既定のキー、修飾キー付きは送れないので初期キーなし。
+  - Project Zomboid（#509）：`keys.ini`。Build 42 で GLFW のキーコードになった可能性があるので、`Forward` の値で DirectInput（W = 17）と GLFW（W = 87）を見分ける。
+- RE Engine（#510）は、キー割当の保存先を実物で確かめられないので実装していない（今は汎用定義になる）。
+- 確認：小さなクレートで Rust の単体試験31件・Clippy 合格、`profile-engines-test.mjs` 17/17（Rust と同じ入力・期待値）。どのゲームも手元になく、ファイルの形式は知識による（fixture だけで確認）。実機は未確認。

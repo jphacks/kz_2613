@@ -589,6 +589,202 @@ export function cryengine(dir) {
   return null;
 }
 
+// ---------- REDengine (Cyberpunk 2077・The Witcher 3、#505) ----------
+const documentsDir = () => path.join(os.homedir(), 'Documents');
+const xmlAttr2 = (tag, name) => tag.match(new RegExp(`${name}="([^"]*)"`))?.[1] ?? null;
+export function ikKey(id) {
+  const m = String(id).trim().match(/^IK_(.+)$/); if (!m) return null;
+  const n = m[1].toLowerCase();
+  const t = { leftmouse: 'MOUSE_L', rightmouse: 'MOUSE_R', lshift: 'LSHIFT', shift: 'LSHIFT', rshift: 'RSHIFT', lcontrol: 'LCTRL', control: 'LCTRL', ctrl: 'LCTRL', rcontrol: 'RCTRL', alt: 'LALT', lalt: 'LALT', ralt: 'RALT' };
+  if (t[n]) return t[n];
+  if (n.startsWith('pad_') || n.includes('mouse') || n.startsWith('numpad')) return null;
+  return keyName(n);
+}
+const redClean = (name) => ['_Button', '_Axis', '_Hold', '_Press'].reduce((n, s) => n.replace(new RegExp(`(${s})+$`), ''), name).replace(/_/g, ' ');
+export function actionsFromMappings(xml) {
+  const out = []; let hasLook = false;
+  for (const m of xml.matchAll(/<mapping\b([^>]*?)(\/?)>([\s\S]*?)(?:<\/mapping>|(?=<mapping\b)|$)/g)) {
+    const name = xmlAttr2(m[1], 'name'); if (!name) continue;
+    const body = m[2] === '/' ? '' : m[3];
+    let neg = null, pos = null, axis = false;
+    for (const b of body.matchAll(/<button\b([^>]*)>/g)) {
+      const id = xmlAttr2(b[1], 'id'); if (!id) continue;
+      if (/^IK_Mouse[XY]$/i.test(id)) { hasLook = true; continue; }
+      const k = ikKey(id); if (!k) continue;
+      const v = xmlAttr2(b[1], 'val'), val = v === null ? null : parseFloat(v);
+      if (val !== null && Number.isFinite(val)) axis = true;
+      if (val !== null && val < 0) neg = neg || k; else pos = pos || k;
+    }
+    const label = redClean(name);
+    if (axis && neg) out.push(button(`red/${name}/-`, `${label} -`, neg), button(`red/${name}/+`, `${label} +`, pos));
+    else if (pos && !out.some((a) => a.id === `red/${name}`)) out.push(button(`red/${name}`, label, pos));
+  }
+  if (hasLook) out.push(look('red/look', '視点'));
+  return out;
+}
+export function actionsFromInputSettings(text) {
+  const out = []; let hasLook = false, on = false;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    const sec = line.match(/^\[(.+)\]$/);
+    if (sec) { on = sec[1] === 'Exploration' || sec[1] === 'Combat'; continue; }
+    if (!on) continue;
+    const i = line.indexOf('='); if (i < 0) continue;
+    const key = line.slice(0, i), action = line.slice(i + 1).match(/Action=([^,)]+)/)?.[1]?.trim();
+    if (!action) continue;
+    if (/^IK_Mouse[XY]$/i.test(key)) { hasLook = true; continue; }
+    const k = ikKey(key); if (!k) continue;
+    const a = out.find((x) => x.id === `red/${action}`);
+    if (a) a.def = a.def || k; else out.push(button(`red/${action}`, action, k));
+  }
+  if (hasLook) out.push(look('red/look', '視点'));
+  return out;
+}
+export function redengine(dir, documents = documentsDir()) {
+  const bins = [['bin', 'x64'], ['bin', 'x64_dx12']].map(([a, b]) => { const x = childCi(dir, a); return x && childCi(x, b); }).filter(Boolean);
+  const has = (n) => bins.some((b) => childCi(b, n));
+  if (has('Cyberpunk2077.exe')) {
+    const a = actionsFromMappings(readText(path.join(dir, 'r6', 'config', 'inputUserMappings.xml')) || '');
+    return a.length ? { source: 'Cyberpunk 2077 の inputUserMappings.xml', actions: a } : null;
+  }
+  if (has('witcher3.exe')) {
+    const a = actionsFromInputSettings(readText(path.join(documents, 'The Witcher 3', 'input.settings')) || '');
+    return a.length ? { source: 'The Witcher 3 の input.settings', actions: a } : null;
+  }
+  return null;
+}
+
+// ---------- Prism3D (Euro Truck Simulator 2・American Truck Simulator、#506) ----------
+const SCS_LABEL = { steerleft: '左へハンドル', steerright: '右へハンドル', aforward: 'アクセル', abackward: 'ブレーキ・後退', parkingbrake: '駐車ブレーキ', lblinker: '左ウインカー', rblinker: '右ウインカー', hazard: 'ハザード', light: 'ライト', hblight: 'ハイビーム', wipers: 'ワイパー', horn: 'クラクション', airhorn: 'エアホーン', cruiectrl: 'クルーズコントロール', engine: 'エンジン', trailer: 'トレーラーの連結', activate: '使う・調べる', menu: 'メニュー' };
+const scsKey = (n) => ({ lshift: 'LSHIFT', rshift: 'RSHIFT', lctrl: 'LCTRL', rctrl: 'RCTRL', lalt: 'LALT', ralt: 'RALT', pgup: 'PAGE_UP', pgdn: 'PAGE_DOWN' })[n.toLowerCase()] || (/^num/i.test(n) ? null : keyName(n));
+export function actionsFromControls(text) {
+  if (!text.trimStart().startsWith('SiiNunit')) return [];
+  const out = [];
+  for (const m of text.matchAll(/config_lines\[\d+\]:\s*"mix (\S+) ([^"\n]*)"/g)) {
+    const [, mix, expr] = m;
+    let key = null;
+    for (const tok of expr.replace(/`/g, '').split(/[^A-Za-z0-9._]+/)) {
+      if (tok.startsWith('keyboard.')) key = scsKey(tok.slice(9));
+      else if (tok === 'mouse.button_left') key = 'MOUSE_L';
+      else if (tok === 'mouse.button_right') key = 'MOUSE_R';
+      if (key) break;
+    }
+    if (key && !out.some((a) => a.id === `scs/${mix}`)) out.push(button(`scs/${mix}`, SCS_LABEL[mix] || mix, key));
+  }
+  return out;
+}
+export function prism3d(dir, documents = documentsDir()) {
+  const b = childCi(dir, 'bin'), bin = b && childCi(b, 'win_x64');
+  if (!bin) return null;
+  const folder = childCi(bin, 'eurotrucks2.exe') ? 'Euro Truck Simulator 2' : childCi(bin, 'amtrucks.exe') ? 'American Truck Simulator' : null;
+  if (!folder) return null;
+  let best = null;
+  for (const sub of ['profiles', 'steam_profiles']) {
+    const d = path.join(documents, folder, sub);
+    let names = []; try { names = fs.readdirSync(d); } catch { continue; }
+    for (const n of names) { const f = path.join(d, n, 'controls.sii'); try { const t = fs.statSync(f).mtimeMs; if (!best || t > best.t) best = { f, t }; } catch {} }
+  }
+  const a = best ? actionsFromControls(readText(best.f) || '') : [];
+  return a.length ? { source: 'Prism3D の controls.sii', actions: a } : null;
+}
+
+// ---------- GIANTS Engine (Farming Simulator、#507) ----------
+export function giantsKey(input) {
+  const s = String(input).trim();
+  if (s.includes(' ')) return null;
+  if (s === 'MOUSE_BUTTON_LEFT') return 'MOUSE_L';
+  if (s === 'MOUSE_BUTTON_RIGHT') return 'MOUSE_R';
+  const m = s.match(/^KEY_(.+)$/); if (!m) return null;
+  const k = m[1].toLowerCase();
+  return { lshift: 'LSHIFT', rshift: 'RSHIFT', lctrl: 'LCTRL', rctrl: 'RCTRL', lalt: 'LALT', ralt: 'RALT', return: 'ENTER', esc: 'ESC' }[k] || (k.startsWith('kp_') ? null : keyName(k));
+}
+function giantsPriority(action) {
+  const a = action.toUpperCase();
+  if (a.includes('MOVE') && a.includes('PLAYER')) return 0;
+  if (/ACCELERATE|BRAKE|MOVE_SIDE_VEHICLE|STEER/.test(a)) return 1;
+  if (a === 'ENTER' || /JUMP|RUN|CROUCH|ACTIVATE|INTERACT/.test(a)) return 2;
+  if (a.startsWith('IMPLEMENT') || /LOWER|TOGGLE|ATTACH/.test(a)) return 3;
+  if (a.startsWith('MENU') || /CAMERA|CHAT|PAUSE|SWITCH_VEHICLE/.test(a)) return 9;
+  return 5;
+}
+export function actionsFromInputBinding(xml) {
+  const found = []; let hasLook = false;
+  for (const m of xml.matchAll(/<actionBinding\b([^>]*)>([\s\S]*?)<\/actionBinding>/g)) {
+    const action = xmlAttr2(m[1], 'action'); if (!action) continue;
+    let neg = null, pos = null, axis = false;
+    for (const b of m[2].matchAll(/<binding\b([^>]*)>/g)) {
+      if (xmlAttr2(b[1], 'device') !== 'KB_MOUSE_DEFAULT') continue;
+      const input = xmlAttr2(b[1], 'input'); if (!input) continue;
+      if (input.startsWith('MOUSE_AXIS')) { hasLook = true; continue; }
+      const k = giantsKey(input); if (!k) continue;
+      const c = xmlAttr2(b[1], 'axisComponent');
+      if (c === '-') { axis = true; neg = neg || k; } else if (c === '+') { axis = true; pos = pos || k; } else pos = pos || k;
+    }
+    const p = giantsPriority(action), label = action.replace(/^AXIS_/, '').replace(/_/g, ' ').toLowerCase(), n = found.length;
+    if (axis && neg) found.push([p, n, button(`giants/${action}/-`, `${label} -`, neg)], [p, n + 1, button(`giants/${action}/+`, `${label} +`, pos)]);
+    else if (pos) found.push([p, n, button(`giants/${action}`, label, pos)]);
+  }
+  const out = found.sort((a, b) => a[0] - b[0] || a[1] - b[1]).map((x) => x[2]).slice(0, 40);
+  if (hasLook) out.push(look('giants/look', '視点'));
+  return out;
+}
+export function giants(dir, documents = documentsDir()) {
+  const year = ['2025', '2022', '2019'].find((y) => childCi(dir, `FarmingSimulator${y}.exe`) || (childCi(dir, 'x64') && childCi(childCi(dir, 'x64'), `FarmingSimulator${y}Game.exe`)));
+  if (!year) return null;
+  const a = actionsFromInputBinding(readText(path.join(documents, 'My Games', `FarmingSimulator${year}`, 'inputBinding.xml')) || '');
+  return a.length ? { source: 'GIANTS Engine の inputBinding.xml', actions: a } : null;
+}
+
+// ---------- Factorio (#508) ----------
+const FACTORIO = [['move-up', '上へ移動', 'KEY_W'], ['move-down', '下へ移動', 'KEY_S'], ['move-left', '左へ移動', 'KEY_A'], ['move-right', '右へ移動', 'KEY_D'], ['build', '建設・置く', 'MOUSE_L'],
+  ['mine', '採掘・撤去', 'MOUSE_R'], ['open-character-gui', '持ち物・クラフト', 'KEY_E'], ['rotate', '回転', 'KEY_R'], ['pipette', 'スポイト（同じ物を持つ）', 'KEY_Q'], ['drop-cursor', '手の物を置く', 'KEY_Z'],
+  ['pick-items', '拾う', 'KEY_F'], ['shoot-enemy', '撃つ', 'SPACE'], ['toggle-driving', '乗り降り', 'ENTER'], ['toggle-map', '地図', 'KEY_M']];
+const factorioKey = (v) => { const s = v.trim(); if (!s || s.includes('+')) return null; return { 'mouse-button-1': 'MOUSE_L', 'mouse-button-2': 'MOUSE_R' }[s.toLowerCase()] || keyName(s); };
+export function actionsFromFactorioConfig(ini) {
+  const set = new Map(); let on = false;
+  for (const raw of ini.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (line.startsWith('[')) { on = line === '[controls]'; continue; }
+    if (!on || /^[;#]/.test(line)) continue;
+    const i = line.indexOf('='); if (i >= 0 && !set.has(line.slice(0, i).trim())) set.set(line.slice(0, i).trim(), factorioKey(line.slice(i + 1)));
+  }
+  return FACTORIO.map(([n, l, d]) => button(`factorio/${n}`, l, set.has(n) ? set.get(n) : d));
+}
+export function factorio(dir, appData = process.env.APPDATA) {
+  const b = childCi(dir, 'bin'), x = b && childCi(b, 'x64');
+  if (!x || !childCi(x, 'factorio.exe')) return null;
+  const ini = (appData && readText(path.join(appData, 'Factorio', 'config', 'config.ini'))) || '';
+  return { source: ini.includes('[controls]') ? 'Factorio の config.ini の controls' : 'Factorio の既定のキー', actions: actionsFromFactorioConfig(ini) };
+}
+
+// ---------- Project Zomboid (#509) ----------
+const ZOMBOID_LABEL = { Forward: '前進', Backward: '後退', Left: '左へ移動', Right: '右へ移動', Run: '走る', Sprint: '全力で走る', Crouch: 'しゃがむ・隠れる', Melee: '近接攻撃', Aim: '構える', Interact: '使う・調べる', 'Toggle Inventory': '持ち物', 'Equip/Turn On/Off Light Source': 'ライト', Shout: '叫ぶ', ReloadWeapon: 'リロード', 'Rack Firearm': '弾を込める' };
+const ZOMBOID_SKIP = new Set(['Main Menu', 'Toggle Lua Debugger', 'Toggle UI', 'Take screenshot', 'Zoom in', 'Zoom out', 'Display FPS', 'VERSION']);
+export function glfwKey(code) {
+  const t = { 32: 'space', 256: 'escape', 257: 'enter', 258: 'tab', 259: 'backspace', 262: 'right', 263: 'left', 264: 'down', 265: 'up', 340: 'leftshift', 341: 'leftctrl', 342: 'leftalt' };
+  if (t[code]) return keyName(t[code]);
+  if ((code >= 48 && code <= 57) || (code >= 65 && code <= 90)) return keyName(String.fromCharCode(code).toLowerCase());
+  if (code >= 290 && code <= 301) return keyName(`f${code - 289}`);
+  return null;
+}
+export function actionsFromZomboidKeys(text) {
+  const pairs = text.split(/\r?\n/).map((l) => l.split('=')).filter((p) => p.length >= 2 && /^\d+$/.test(p[1].trim())).map(([k, v]) => [k.trim(), Number(v.trim())]);
+  const forward = pairs.find(([k]) => k === 'Forward')?.[1];
+  const glfw = forward !== undefined && ((forward >= 65 && forward <= 90) || forward === 265);
+  const out = [];
+  for (const [name, code] of pairs) {
+    if (ZOMBOID_SKIP.has(name) || code === 0) continue;
+    if (!out.some((a) => a.id === `zomboid/${name}`)) out.push(button(`zomboid/${name}`, ZOMBOID_LABEL[name] || name, glfw ? glfwKey(code) : dikKey(code)));
+  }
+  if (out.length) out.push(look('zomboid/look', '向き（マウス）'));
+  return out;
+}
+export function zomboid(dir, home = os.homedir()) {
+  if (!childCi(dir, 'ProjectZomboid64.exe') || !childCi(dir, 'media')) return null;
+  const a = actionsFromZomboidKeys(readText(path.join(home, 'Zomboid', 'Lua', 'keys.ini')) || '');
+  return a.length ? { source: 'Project Zomboid の keys.ini', actions: a } : null;
+}
+
 // ---------- 2D 向けの汎用の割当 (GameMaker #490・LÖVE #494・HTML5 系 #495。読み取りなし) ----------
 // 利用者の判断 (2026-11-14「汎用定義メイン」)。XNA・FNA・MonoGame は WASD とマウスの作品が多いので従来の汎用定義 (#493)
 export const generic2dActions = () => [
@@ -703,7 +899,7 @@ export function prefsOverrides(dataDir) {
 /** Unity 以外のエンジンを、見分けのつきやすい順に試す (ホストの engines::read と同じ順)。
  * Unity の旧 Input Manager (unityLegacy) は、extract.mjs が .NET の読み取りとの順番を決めて呼ぶ */
 export function engineActions(dir) {
-  for (const r of [rpgmaker, wolf, source2, creation, godot, unreal, cryengine, quake, generic2d]) {
+  for (const r of [rpgmaker, wolf, source2, creation, redengine, prism3d, giants, factorio, zomboid, godot, unreal, cryengine, quake, generic2d]) {
     let found = null;
     try { found = r(dir); } catch { found = null; }
     if (found?.actions?.length) return { ...found, actions: found.actions.slice(0, 160) };

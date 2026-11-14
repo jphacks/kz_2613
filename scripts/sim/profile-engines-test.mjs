@@ -8,6 +8,8 @@ import {
   keyName, vkKey, dikKey, keyMapper, actionsFromMapper, enabledPlugins, mapperAssignments, rpgmaker, wolf, cfgBindings, actionsFromBindings,
   quake, actionsFromVcfg, source2, actionsFromControlMap, creation, findAxes, actionsFromAxes, hasCustomAxes, unityLegacy, parseOverrides, applyOverrides, engineActions,
   godotKey, actionsFromGodotProject, godot, actionsFromUeIni, unreal, zipEntries, zipRead, actionsFromCryXml, cryengine, generic2d,
+  ikKey, actionsFromMappings, actionsFromInputSettings, redengine, actionsFromControls, prism3d, actionsFromInputBinding, giants,
+  actionsFromFactorioConfig, factorio, actionsFromZomboidKeys, zomboid,
 } from '../profiles/engines.mjs';
 import zlib from 'node:zlib';
 
@@ -320,6 +322,102 @@ test('2D 向けの汎用の割当: GameMaker・LÖVE・HTML5 だけ', () => {
   }
   put('g2d/mv/www/js/rpg_core.js', MV_CORE); put('g2d/mv/nw.dll', 'x');
   assert.match(engineActions(path.join(tmp, 'g2d', 'mv')).source, /MV/, 'ツクール MV (NW.js) はツクールとして読む');
+});
+
+// ---------- #505〜#509 (ホストの各 .rs の試験と同じ入力・期待値) ----------
+const CP_XML = `<?xml version="1.0"?>
+<bindings>
+  <mapping name="LeftX_Axis" type="Axis">
+    <button id="IK_A" val="-1.0" />
+    <button id="IK_D" val="1.0" />
+    <button id="IK_Pad_LeftAxisX" />
+  </mapping>
+  <mapping name="Jump_Button" type="Button">
+    <button id="IK_Space" />
+    <button id="IK_Pad_A_CROSS" />
+  </mapping>
+  <mapping name="Shoot_Button" type="Button">
+    <button id="IK_LeftMouse" />
+  </mapping>
+  <mapping name="MouseX_Axis" type="Axis">
+    <button id="IK_MouseX" />
+  </mapping>
+  <mapping name="PadOnly" type="Button">
+    <button id="IK_Pad_B_CIRCLE" />
+  </mapping>
+</bindings>`;
+const W3_SETTINGS = '[Exploration]\r\nIK_W=(Action=MoveForward)\r\nIK_Up=(Action=MoveForward)\r\nIK_S=(Action=MoveBackward)\r\nIK_Space=(Action=Jump)\r\nIK_LShift=(Action=Sprint)\r\nIK_MouseX=(Action=GI_MouseDampX,State=Axis,IdleTime=0)\r\nIK_Pad_A_CROSS=(Action=Interact)\r\n\r\n[Combat]\r\nIK_LeftMouse=(Action=AttackLight)\r\nIK_W=(Action=MoveForward)\r\n\r\n[Horse]\r\nIK_X=(Action=HorseDismount)\r\n';
+
+test('REDengine: Cyberpunk 2077 の mappings と Witcher 3 の input.settings', () => {
+  assert.deepEqual(actionsFromMappings(CP_XML).map((a) => [a.id, a.label, a.def ?? null]), [
+    ['red/LeftX_Axis/-', 'LeftX -', 'KEY_A'], ['red/LeftX_Axis/+', 'LeftX +', 'KEY_D'], ['red/Jump_Button', 'Jump', 'SPACE'], ['red/Shoot_Button', 'Shoot', 'MOUSE_L'], ['red/look', '視点', null]]);
+  assert.deepEqual(actionsFromInputSettings(W3_SETTINGS).map((a) => [a.id, a.def ?? null]), [
+    ['red/MoveForward', 'KEY_W'], ['red/MoveBackward', 'KEY_S'], ['red/Jump', 'SPACE'], ['red/Sprint', 'LSHIFT'], ['red/AttackLight', 'MOUSE_L'], ['red/look', null]]);
+  assert.equal(ikKey('IK_Pad_A_CROSS'), null); assert.equal(ikKey('IK_Escape'), 'ESC');
+  put('cp/bin/x64/Cyberpunk2077.exe', 'MZ'); put('cp/r6/config/inputUserMappings.xml', CP_XML);
+  assert.match(redengine(path.join(tmp, 'cp'), path.join(tmp, 'docs2')).source, /Cyberpunk/);
+  put('w3/bin/x64_dx12/witcher3.exe', 'MZ'); put('docs2/The Witcher 3/input.settings', W3_SETTINGS);
+  assert.match(redengine(path.join(tmp, 'w3'), path.join(tmp, 'docs2')).source, /Witcher/);
+});
+
+const CONTROLS_SII = 'SiiNunit\n{\ninput_config : .config {\n config_lines: 6\n config_lines[0]: "mix steerleft `keyboard.a?0`"\n config_lines[1]: "mix aforward `keyboard.w?0 | joy.b1?0`"\n config_lines[2]: "mix lblinker `keyboard.leftbracket?0`"\n config_lines[3]: "mix steering `joy.x?0`"\n config_lines[4]: "mix horn `keyboard.h?0`"\n config_lines[5]: "mix activate `mouse.button_left?0`"\n}\n}\n';
+test('Prism3D: controls.sii', () => {
+  assert.deepEqual(actionsFromControls(CONTROLS_SII).map((a) => [a.id, a.label, a.def]), [
+    ['scs/steerleft', '左へハンドル', 'KEY_A'], ['scs/aforward', 'アクセル', 'KEY_W'], ['scs/lblinker', '左ウインカー', 'LBRACKET'], ['scs/horn', 'クラクション', 'KEY_H'], ['scs/activate', '使う・調べる', 'MOUSE_L']]);
+  assert.deepEqual(actionsFromControls('ScsC\u0001\u0002encrypted'), []);
+  put('ets/bin/win_x64/eurotrucks2.exe', 'MZ'); put('docs3/Euro Truck Simulator 2/profiles/4142/controls.sii', CONTROLS_SII);
+  assert.equal(prism3d(path.join(tmp, 'ets'), path.join(tmp, 'docs3')).actions.length, 5);
+});
+
+const INPUT_BINDING = `<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<inputBinding>
+    <actionBinding action="MENU_ACCEPT">
+        <binding device="KB_MOUSE_DEFAULT" input="KEY_return" index="1" />
+    </actionBinding>
+    <actionBinding action="AXIS_MOVE_FORWARD_PLAYER">
+        <binding device="KB_MOUSE_DEFAULT" input="KEY_s" axisComponent="-" neutralInput="0" index="1" />
+        <binding device="KB_MOUSE_DEFAULT" input="KEY_w" axisComponent="+" neutralInput="0" index="1" />
+        <binding device="0_XINPUT_GAMEPAD" input="AXIS_2" axisComponent="+" index="1" />
+    </actionBinding>
+    <actionBinding action="JUMP">
+        <binding device="KB_MOUSE_DEFAULT" input="KEY_space" index="1" />
+    </actionBinding>
+    <actionBinding action="AXIS_LOOK_LEFTRIGHT_PLAYER">
+        <binding device="KB_MOUSE_DEFAULT" input="MOUSE_AXIS_X" axisComponent="+" index="1" />
+    </actionBinding>
+    <actionBinding action="IMPLEMENT_EXTRA">
+        <binding device="KB_MOUSE_DEFAULT" input="KEY_lctrl KEY_v" index="1" />
+    </actionBinding>
+    <actionBinding action="ENTER">
+        <binding device="KB_MOUSE_DEFAULT" input="KEY_e" index="1" />
+    </actionBinding>
+</inputBinding>`;
+test('GIANTS Engine: inputBinding.xml', () => {
+  const a = actionsFromInputBinding(INPUT_BINDING);
+  assert.deepEqual(a.map((x) => [x.id, x.def ?? null]), [
+    ['giants/AXIS_MOVE_FORWARD_PLAYER/-', 'KEY_S'], ['giants/AXIS_MOVE_FORWARD_PLAYER/+', 'KEY_W'], ['giants/JUMP', 'SPACE'], ['giants/ENTER', 'KEY_E'], ['giants/MENU_ACCEPT', 'ENTER'], ['giants/look', null]]);
+  assert.equal(a[0].label, 'move forward player -');
+  put('fs/FarmingSimulator2025.exe', 'MZ'); put('docs4/My Games/FarmingSimulator2025/inputBinding.xml', INPUT_BINDING);
+  assert.match(giants(path.join(tmp, 'fs'), path.join(tmp, 'docs4')).source, /GIANTS/);
+});
+
+test('Factorio: config.ini の controls と既定', () => {
+  const a = actionsFromFactorioConfig('[path]\nread-data=__PATH__executable__/../../data\n\n[controls]\nmove-up=Up\nrotate=SHIFT + R\nmine=mouse-button-2\n');
+  assert.equal(a.length, 14); assert.equal(a[0].def, 'ARROW_UP'); assert.equal(a[1].def, 'KEY_S');
+  assert.equal(a.find((x) => x.id === 'factorio/rotate').def, null); assert.equal(a.find((x) => x.id === 'factorio/mine').def, 'MOUSE_R');
+  assert.equal(actionsFromFactorioConfig('').length, 14);
+  put('fac/bin/x64/factorio.exe', 'MZ');
+  assert.equal(factorio(path.join(tmp, 'fac'), path.join(tmp, 'noappdata')).source, 'Factorio の既定のキー');
+});
+
+test('Project Zomboid: keys.ini (DirectInput と GLFW)', () => {
+  const a = actionsFromZomboidKeys('VERSION=2\nForward=17\nBackward=31\nLeft=30\nRight=32\nRun=42\nMelee=57\nMain Menu=1\nUnbound=0\n');
+  assert.deepEqual(a.map((x) => [x.id, x.def ?? null]), [
+    ['zomboid/Forward', 'KEY_W'], ['zomboid/Backward', 'KEY_S'], ['zomboid/Left', 'KEY_A'], ['zomboid/Right', 'KEY_D'], ['zomboid/Run', 'LSHIFT'], ['zomboid/Melee', 'SPACE'], ['zomboid/look', null]]);
+  const b = actionsFromZomboidKeys('Forward=87\nBackward=83\nRun=340\n');
+  assert.equal(b[0].def, 'KEY_W'); assert.equal(b[2].def, 'LSHIFT');
+  put('pz/ProjectZomboid64.exe', 'MZ'); fs.mkdirSync(path.join(tmp, 'pz/media'), { recursive: true }); put('home/Zomboid/Lua/keys.ini', 'Forward=17\n');
+  assert.equal(zomboid(path.join(tmp, 'pz'), path.join(tmp, 'home')).actions[0].def, 'KEY_W');
 });
 
 try {
