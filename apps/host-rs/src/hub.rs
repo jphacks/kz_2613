@@ -48,6 +48,8 @@ const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 /// 接続ごとの送信待ちの上限。健全な接続は溜まらず、読取りが止まった接続だけが達する (#197)
 pub const WS_QUEUE_LIMIT: usize = 4096;
+// 入力の診断ログは混雑時に抑え、状態更新・操作結果・解放通知の送信待ちに空きを残す。
+const MONITOR_INPUT_LOG_LIMIT: usize = 256;
 const CLOSE_HOST_HANDOVER: u16 = 4008;
 const CLOSE_HOST_SHUTDOWN: u16 = 4009; // PC アプリ (ホスト) の終了。スマホは再接続しない (#302)
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
@@ -212,6 +214,10 @@ impl SendQueue {
 }
 
 impl Conn {
+    fn can_push_input_log(&self) -> bool {
+        self.queued.len.load(Ordering::Relaxed) < MONITOR_INPUT_LOG_LIMIT
+    }
+
     /// 本文を送信待ちへ積む。上限に達した接続は送信側が切断する (#197)。
     /// 切断は通常の経路で全解放し、再接続で最新の状態を受け取るので、落とした本文を補う必要はない
     fn push_text(&self, text: String) {
@@ -822,10 +828,18 @@ impl Hub {
     }
 
     fn broadcast_monitors(&self, msg: &Value) {
+        self.broadcast_monitor_message(msg, false);
+    }
+
+    fn broadcast_monitor_message(&self, msg: &Value, input_log: bool) {
         let start = crate::runtime_measure::start();
         let text = msg.to_string();
         for c in self.conns.values() {
             if matches!(c.role, Role::Monitor { .. }) {
+                if input_log && !c.can_push_input_log() {
+                    crate::runtime_measure::sample("ws_monitor_input_log_skipped", 1);
+                    continue;
+                }
                 c.push_text(text.clone());
             }
         }
@@ -4413,7 +4427,7 @@ impl Hub {
             self.handle_control(idx, &button, &state);
             #[cfg(feature = "latency-measure")]
             self.latency.end();
-            self.broadcast_monitors(&json!({ "type": "log", "entry": entry }));
+            self.broadcast_monitor_message(&json!({ "type": "log", "entry": entry }), true);
         }
         self.push_state_throttled();
     }
@@ -6488,6 +6502,29 @@ mod tests {
                 && h.game.reason.is_none()
                 && h.game.auto_resume_until == 0
         );
+    }
+
+    #[test]
+    fn monitor_input_logs_leave_room_for_stop_messages() {
+        let (mut h, mut rx) = fixture();
+        let diagnostic = json!({"type":"log","entry":{"kind":"input"}});
+        for _ in 0..WS_QUEUE_LIMIT {
+            h.broadcast_monitor_message(&diagnostic, true);
+        }
+        let queue = h.conns[&1].queued.clone();
+        assert_eq!(queue.len.load(Ordering::Relaxed), MONITOR_INPUT_LOG_LIMIT);
+        assert!(!queue.must_close());
+        h.emergency_stop("test");
+        assert!(!queue.must_close());
+        for _ in 0..MONITOR_INPUT_LOG_LIMIT {
+            assert!(matches!(rx.try_recv(), Ok(Out::Text(text)) if text == diagnostic.to_string()));
+        }
+        let mut stopped = false;
+        while let Ok(Out::Text(text)) = rx.try_recv() {
+            let message: Value = serde_json::from_str(&text).unwrap();
+            stopped |= message["type"] == "state" && message["inject"]["mode"] == "off";
+        }
+        assert!(stopped);
     }
 
     #[test]
