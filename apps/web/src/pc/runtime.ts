@@ -58,6 +58,11 @@ lifetime.listenDocument('click',e=>{
   if(source==='rule'||source==='model')send({type:'preset_source',source});
 });
 lifetime.listen($('connectionHelpBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
+lifetime.listen($('recruitBtn'), 'click',()=>{
+  if ($('recruitBtn').hidden) return;
+  openDialog($<HTMLDialogElement>('connectionHelp'));
+  loadInfo();
+});
 lifetime.listen($('joinTroubleshootingBtn'), 'click',()=>openDialog($<HTMLDialogElement>('joinTroubleshooting')));
 lifetime.listen($('settingsConnectionBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
 // 全員の接続のリセット (#412)。確認してから送る。ホストは全員を切断し、枠とホストを最初から決め直す (#213)
