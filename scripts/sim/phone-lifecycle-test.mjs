@@ -164,7 +164,40 @@ if (process.argv.includes('--repro-shared-pointer')) {
     current.receive({ type: 'game', game: h.game({ epoch: 8 }) });
     h.control('act:attack').fire('pointerup'); assert.equal(current.sent.filter(message => message.type === 'input').length, 0);
   });
-  await test('終了コード: 接続置換・版不一致・token不一致では再試行せず保持を失効する', async () => {
+    await test('無応答の診断: 再接続直前の受信空白を計測用ビルドだけで記録する (#426)', async () => {
+      for (const latency of [false, true]) {
+        const entries = [];
+        let socket;
+        const logger = {...console, info: (name, payload) => {
+          if (name === 'recooplay:ws-silence') {
+            entries.push({open: socket.readyState === 1, ...JSON.parse(payload)});
+          }
+        }};
+        const h = controllerHarness({latency, logger});
+        try {
+          await h.ready();
+          socket = h.sockets[0];
+          h.advance(2999);
+          assert.equal(socket.readyState, 1);
+          assert.equal(entries.length, 0);
+          h.advance(1);
+          assert.equal(socket.readyState, 3);
+          h.advance(250);
+          assert.equal(h.sockets.length, 2);
+          assert.equal(entries.length, latency ? 1 : 0);
+          if (latency) {
+            assert.equal(entries[0].open, true);
+            assert.equal(entries[0].silenceMs, 3000);
+            assert.equal(entries[0].phase, 'coop');
+            assert.equal(entries[0].hidden, false);
+            assert(entries[0].watchdogIntervalMs > 0);
+          }
+        } finally {
+          h.dispose();
+        }
+      }
+    });
+    await test('終了コード: 接続置換・版不一致・token不一致では再試行せず保持を失効する', async () => {
     for (const code of [4000, 4001, 4005, 4006]) {
       const h = controllerHarness(); await h.ready(); h.control('act:attack').fire('pointerdown');
       h.sockets[0].close(code); h.advance(6000);
@@ -254,6 +287,32 @@ if (process.argv.includes('--repro-shared-pointer')) {
       const late = h.inputs().find(m => m.button === 'act:attack' && m.state === 'down');
       socket.receive({ type: 'ack', iseq: late.iseq, via: 'ws', stale: true });
       assert.equal(socket.sent.filter(m => m.type === 'latency').length, 1);
+    }
+  });
+  await test('押下診断: 計測用ビルドで150msを超えた押下だけを区間別に記録する (#437)', async () => {
+    for (const latency of [false, true]) {
+      const entries = [];
+      const logger = {...console, info: (name, payload) => {
+        if (name === 'recooplay:pointer-delay') entries.push(JSON.parse(payload));
+      }};
+      const h = controllerHarness({latency, logger});
+      await h.ready();
+      try {
+        const jump = h.control('act:jump');
+        jump.fire('pointerdown', {pointerId: 1, timeStamp: 850});
+        jump.fire('pointerup', {pointerId: 1});
+        assert.equal(entries.length, 0);
+        jump.fire('pointerdown', {pointerId: 2, timeStamp: 849});
+        assert.equal(entries.length, latency ? 1 : 0);
+        if (latency) {
+          const press = h.inputs().findLast(message => message.state === 'down');
+          assert.equal(entries[0].iseq, press.iseq);
+          assert.equal(entries[0].eventToHandlerMs, 151);
+          assert.equal(entries[0].handlerToSendMs, 0);
+        }
+      } finally {
+        h.dispose();
+      }
     }
   });
   await test('遅延破棄: ホストが押下をstaleで返したら押したままの表示を解き、離すまで案内する (#285 Q25/Q27)', async () => {

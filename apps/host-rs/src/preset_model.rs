@@ -653,6 +653,13 @@ pub fn synthesize(
         if actions[i].kind == "mouseDelta" {
             return 1;
         }
+        // 読み取り側が意味を知っている操作は、その分類を使う (ツクールの決定をメニューにしない、#512)
+        if let Some(g) = actions[i]
+            .group
+            .and_then(|g| GROUP_OF_CATEGORY.iter().position(|(id, _, _)| *id == g))
+        {
+            return g;
+        }
         let c = &out.category[i];
         (0..c.len())
             .max_by(|&a, &b| c[a].total_cmp(&c[b]))
@@ -1513,6 +1520,43 @@ mod tests {
                 serde_json::json!({ "id": id, "name": p.name, "status": p.status, "players": players })
             );
         }
+    }
+
+    #[test]
+    fn reader_group_hint_overrides_the_model_category() {
+        // ツクール XP (青鬼など) の既定のキー。モデルだけだと決定・キャンセルをメニューにして配らなかった (#512)
+        let m = model().unwrap();
+        let actions = crate::engines::rpgmaker::rgss_actions(1);
+        let (_, p) = synthesize(m, "manual:test", "ツクール", &actions, "試験").unwrap();
+        let group = |id: &str| p.actions.iter().find(|a| a.id == id).unwrap().group.clone();
+        assert_eq!(group("rpgmaker/ok"), "gameplay");
+        assert_eq!(group("rpgmaker/escape"), "gameplay");
+        assert_eq!(group("rpgmaker/up"), "movement");
+        for n in 1..=4 {
+            let given: Vec<String> = presets(m, &p, n).into_iter().flatten().collect();
+            for id in [
+                "rpgmaker/ok",
+                "rpgmaker/escape",
+                "rpgmaker/up",
+                "rpgmaker/left",
+            ] {
+                assert!(
+                    given.iter().any(|x| x == id),
+                    "{n}人で {id} が配られない: {given:?}"
+                );
+            }
+        }
+        // 手がかりのない操作は、これまでどおりモデルの分類 (手がかりを外すと決定は配られない)
+        let plain: Vec<_> = actions
+            .iter()
+            .cloned()
+            .map(|mut a| {
+                a.group = None;
+                a
+            })
+            .collect();
+        let (_, q) = synthesize(m, "manual:test", "ツクール", &plain, "試験").unwrap();
+        assert_eq!(q.actions.len(), p.actions.len());
     }
 
     #[test]

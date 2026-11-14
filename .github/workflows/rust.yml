@@ -324,7 +324,19 @@ jobs:
         run: |
           $package = @(Get-ChildItem -LiteralPath dist -Directory -Filter 'ReCooplay-*-windows-x64')
           if ($package.Count -ne 1) { throw '配布フォルダーを一意に特定できません' }
-          node scripts/sim/desktop-webview2-smoke.mjs $package[0].FullName
+          $env:RECOOPLAY_SMOKE_DIAGNOSTICS = Join-Path $env:RUNNER_TEMP 'webview2-diagnostics'
+          New-Item -ItemType Directory -Force $env:RECOOPLAY_SMOKE_DIAGNOSTICS | Out-Null
+          $log = Join-Path $env:RECOOPLAY_SMOKE_DIAGNOSTICS 'webview2-smoke.log'
+          $PSNativeCommandUseErrorActionPreference = $false
+          node scripts/sim/desktop-webview2-smoke.mjs $package[0].FullName 2>&1 | Tee-Object -FilePath $log
+          exit $LASTEXITCODE
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        timeout-minutes: 3
+        with:
+          name: windows-webview2-diagnostics
+          path: ${{ runner.temp }}/webview2-diagnostics/
+          if-no-files-found: ignore
       - name: Windowsインストーラーを作成（NSIS、zipと同じ同梱物）
         timeout-minutes: 5
         shell: powershell

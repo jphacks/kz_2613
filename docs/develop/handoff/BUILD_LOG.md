@@ -2469,6 +2469,22 @@
 - 計測用ホストで参加者へのWebSocket本文の送信完了間隔が3秒以上の場合に `ws_send_gap` をセッションJSONLへ記録する。枠、前回の成功からの間隔 `gapMs`、今回のソケット送信処理に要した `sendMs` を含む。通信・停止の閾値に変更はない。
 - Androidの `recooplay:ws-silence` と同じ試行で比較する。送信完了は受信側での到着を示さず、次の送信が成功しなかった場合の空白はこのログでは確定できない。実機での原因切り分けは未実施。
 - Windowsで `cargo clippy --release --offline --locked --all-targets --features latency-measure -- -D warnings`、Rust書式、差分検査が成功。
+## 2026-11-14 — 押下遅延診断の出力を回帰試験で確認する（#437、Codex）
+
+- 150msちょうどでは記録せず、151msでは計測用ビルドだけが押下の連番と2区間の時間を記録することを確認した。
+- `node --experimental-strip-types scripts/sim/phone-lifecycle-test.mjs` は36/36合格。iPhone実指での原因調査は未実施。
+## 2026-11-14 — スマホの受信途絶ログを回帰試験で確認する（#426、Codex）
+
+- 2999msでは接続を維持し、3000msで旧接続を閉じる直前に計測用ビルドだけが診断を1回出すことを確認した。両ビルドで再接続を検証した。
+- `node --experimental-strip-types scripts/sim/phone-lifecycle-test.mjs` は37/37合格。実端末での再現とホストログとの照合は未実施。
+## 2026-11-14 — 配布WebView2の失敗ログを保存する（#379、Codex）
+
+- 配布PCアプリのWebView2スモークの標準出力・標準エラーをCIログに出し、失敗時は `windows-webview2-diagnostics` の成果物にも保存する。試験の終了コードはそのまま必須チェックへ渡す。
+- PowerShellで標準出力・標準エラーを出す模擬試験を実行し、成功と失敗の終了コードおよびログの両方を確認した。GitHub上の成果物の保存は実行結果待ち。
+## 2026-11-14 — 配布WebView2の失敗時に画面とセッションログを採取する（#379、Codex）
+
+- 失敗時にdry-runホストのセッションJSONLを保存し、CDPが応答する場合は画面をPNGで採取する。採取の失敗を記録して、元の例外をそのまま返す。
+- スクリプト構文、構造、差分検査が成功。GitHubでの失敗時成果物は未確認。
 ## 2026-11-14 — WebSocket終了直前の送信空白を記録する（#426、Codex）
 
 - 計測用ホストで、参加者の接続が最後の本文送信成功から3秒以上経って終了した場合に、枠・空白時間・終了コードを `ws_send_gap_at_close` として残す。次の本文送信が成功する前に接続が終了した試行でもホスト側の空白を確認できる。
@@ -2500,3 +2516,14 @@
 - 仮の定義を保存するとき、そのファイルの更新日時を `configModified` として残す（ファイルがなかったことも残す。古い保存には記録がないので今までどおり）。
 - `needs_detect` は、選んでいるゲームについてだけ更新日時を比べ、変わっていれば読み直す（協力プレイ中は読み直さない。一覧の全部のファイルは見ない）。選んだとき・準備のとき（`reload_keybinds`）に読み直しが始まる。
 - 試験：`changed_user_config_makes_the_selected_game_read_again`（hub）、`detected_config_time_round_trips`（model_presets）。エンジン部分は小さなクレートで試験31件・Clippy 合格、`cargo fmt --check` 合格。hub の部分は CI で確かめる。
+## 2026-11-14 — ツクールの「決定」を独自AIがメニューにして配らない問題を直す（#512、Claude Code）
+
+- 事象：RPGツクール XP 製の「青鬼」を #502 の読み取りと独自AI（既定の分担）で試すと、自動取得した9操作のうち、決定・キャンセルなど5つをモデルが menu に分類した。menu は P1 のリモコンに残して配らないため、配られるのは移動の4つだけで、「調べる」を誰も押せなかった。
+- 修正：`ReadAction` に分類の手がかり `group` を足し、`preset_model::synthesize` でモデルの分類より優先する。ツクール（MV・MZ の記号 ok・escape・cancel・menu と、RGSS・2000/2003 の既定）とウディタは決定・キャンセルを gameplay、移動を movement にした。2D 向けの汎用の割当は、移動と Z・X・C に手がかりを付けた。A ボタン・ページ送り・Shift・Enter・Esc は、これまでどおりモデルの分類に任せる。
+- 試験：`reader_group_hint_overrides_the_model_category`（ツクール XP の既定で、1〜4人のどの分担にも決定・キャンセル・移動が配られる）。
+
+
+## 2026-11-14 — 分担のモデルの裏の処理が落ちても止まらないようにする（#519、Claude Code）
+
+- `make_detected`・`make_model_preset` の裏のスレッドの処理を `catch_unwind` で包み、パニックしたら `Event::ModelFailed` を送るようにした。hub は `model_failed` で作業中の印（`model_busy`）を消し、ログ（`model_failed`、ゲーム名なし）に残して待ち行列の次へ進む。失敗したゲームは保存しないので、次の一覧の読み込みでもう一度試す。
+- 試験：`model_thread_panic_clears_busy_and_moves_on`。`cargo fmt --check` 合格。ホスト全体のビルド・試験は CI で確かめる。

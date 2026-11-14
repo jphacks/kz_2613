@@ -4,7 +4,7 @@
 // - VX Ace・VX・XP (RGSS)、2000・2003：キーはエンジンで固定なので、種類を見分けて既定のキーで操作を作る
 use std::path::{Path, PathBuf};
 
-use super::{button, child_ci, read_text, vk_key};
+use super::{button, child_ci, in_group, read_text, vk_key};
 use crate::game_actions::ReadAction;
 
 pub fn read(dir: &Path) -> Option<(Vec<ReadAction>, &'static str)> {
@@ -173,6 +173,16 @@ fn symbol_label(sym: &str) -> Option<String> {
     )
 }
 
+/// 記号の分類の手がかり (#512)。RPG では決定 (調べる・話す) とキャンセル (メニュー) が遊びの中心なので、
+/// モデルがメニューに分類して P1 のリモコンに残さないよう、行動の操作として配る
+fn symbol_group(sym: &str) -> Option<&'static str> {
+    match sym {
+        "ok" | "escape" | "cancel" | "menu" => Some("gameplay"),
+        "up" | "down" | "left" | "right" => Some("movement"),
+        _ => None,
+    }
+}
+
 /// キーコード → 記号の表から、記号ごとに 1 つの操作を作る。初期キーは表で最初に出てくる送れるキー
 pub fn actions_from_mapper(mapper: &[(u32, String)]) -> Vec<ReadAction> {
     let mut out: Vec<ReadAction> = Vec::new();
@@ -188,7 +198,13 @@ pub fn actions_from_mapper(mapper: &[(u32, String)]) -> Vec<ReadAction> {
                     a.default = key;
                 }
             }
-            None => out.push(button(id, label, key)),
+            None => {
+                let a = button(id, label, key);
+                out.push(match symbol_group(sym) {
+                    Some(g) => in_group(a, g),
+                    None => a,
+                });
+            }
         }
     }
     out
@@ -213,7 +229,12 @@ fn moves() -> Vec<ReadAction> {
         ("right", "右へ移動", "ARROW_RIGHT"),
     ]
     .into_iter()
-    .map(|(id, label, key)| button(format!("rpgmaker/{id}"), label, Some(key)))
+    .map(|(id, label, key)| {
+        in_group(
+            button(format!("rpgmaker/{id}"), label, Some(key)),
+            "movement",
+        )
+    })
     .collect()
 }
 
@@ -221,11 +242,13 @@ fn moves() -> Vec<ReadAction> {
 /// X・Y・Z (A・S・D) は既定のスクリプトでは使わないので出さない
 pub fn rgss_actions(version: u8) -> Vec<ReadAction> {
     let mut out = moves();
-    out.push(button("rpgmaker/ok", "決定", Some("ENTER")));
-    out.push(button(
-        "rpgmaker/escape",
-        "キャンセル・メニュー",
-        Some("ESC"),
+    out.push(in_group(
+        button("rpgmaker/ok", "決定", Some("ENTER")),
+        "gameplay",
+    ));
+    out.push(in_group(
+        button("rpgmaker/escape", "キャンセル・メニュー", Some("ESC")),
+        "gameplay",
     ));
     out.push(button(
         "rpgmaker/shift",
@@ -244,11 +267,13 @@ pub fn rgss_actions(version: u8) -> Vec<ReadAction> {
 /// 2000・2003 の既定：矢印で移動、Enter・Space・Z で決定、Esc・X などでキャンセル
 pub fn rpg2k_actions() -> Vec<ReadAction> {
     let mut out = moves();
-    out.push(button("rpgmaker/ok", "決定", Some("ENTER")));
-    out.push(button(
-        "rpgmaker/escape",
-        "キャンセル・メニュー",
-        Some("ESC"),
+    out.push(in_group(
+        button("rpgmaker/ok", "決定", Some("ENTER")),
+        "gameplay",
+    ));
+    out.push(in_group(
+        button("rpgmaker/escape", "キャンセル・メニュー", Some("ESC")),
+        "gameplay",
     ));
     out
 }
