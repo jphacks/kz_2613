@@ -2628,3 +2628,8 @@
 - 持ち方を変えたら、回転時と同じ `stopRemote`（全解放と `release_inputs`）を呼び、旧押下を持ち越さない。端末の傾きから自動で切り替える方式は、回転ロック中にセンサーの許可が要る端末があるため入れていない。
 - `node scripts/sim/ui-input-test.mjs`（21/21、横持ちの前進・後退・視点の右・保存と通知を追加）、`phone-view-test`・`phone-layout-test`・`controller-layout-test`・`controller-preview-test`・`app-view-test`（37/37）・`product-module-graph-test`・`product-lifetime-test`・`product-web-test`・`check-static-pages`、`npm run typecheck`・`vite build` に合格。Stick を静的に描いた撮影で、左右90度の見た目を確認した。
 - 実機（Android・iPhone、回転ロックあり）での横持ちの確認は未実施。
+
+### #536 PCの確認・案内ダイアログの撮影
+- Webビルドと撮影スクリプトの構文検証に合格。
+- `node scripts/sim/capture-screens.mjs --bin <host.exe> --out data/local/536-dialogs --pc-size 800x560` で23枚を保存。参加トラブル案内と全員リセット確認を撮影し、キャンセル後も通常の遷移と緊急停止試験が完了した。
+- Chrome dry-runでの撮影。Android実機・PCアプリでの追加撮影は未実施。
