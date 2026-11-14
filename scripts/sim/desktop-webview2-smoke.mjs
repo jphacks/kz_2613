@@ -144,6 +144,11 @@ try {
     '参加の案内が開きません');
   await evaluate("document.querySelector('#closeJoinTroubleshooting').click()");
   await until(()=>evaluate("!document.querySelector('#joinTroubleshooting').open"), '参加の案内が閉じません');
+  await evaluate("document.querySelector('#connectionHelpBtn').focus(); document.querySelector('#connectionHelpBtn').click()");
+  await until(()=>evaluate("document.querySelector('#connectionHelp').open"), '接続案内が開きません');
+  await evaluate("document.querySelector('#closeConnectionHelp').click()");
+  await until(()=>evaluate("!document.querySelector('#connectionHelp').open && document.activeElement?.id==='connectionHelpBtn'"),
+    '接続案内を閉じた後に起点へフォーカスが戻りません');
   await evaluate("document.querySelector('#settingsBtn').click()");
   await until(()=>evaluate("document.querySelector('#settings').open && !document.querySelector('#desktopOverlaySetting')?.disabled && !!document.querySelector('#desktopOverlaySetting')"),
     'デスクトップの設定が開きません');
