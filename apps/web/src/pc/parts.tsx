@@ -8,11 +8,11 @@ export function Lines({text}: {text: string}) {
 }
 export function GameTile({card}: {card: Card}) {
   const [failed, setFailed] = useState(false);
-  return <button className={`game-choice${card.selected ? ' selected' : ''}${card.unverified ? ' unverified' : ''}`} data-game={card.id} aria-pressed={card.selected} aria-label={`${card.name}を選択${card.unverified ? '（未検証）' : ''}`}>
+  return <div className="game-tile"><button className={`game-choice${card.selected ? ' selected' : ''}${card.unverified ? ' unverified' : ''}`} data-game={card.id} aria-pressed={card.selected} aria-label={`${card.name}を選択${card.unverified ? '（未検証）' : ''}`}>
     <span className="tile-art" aria-hidden="true">{card.image && !failed ? <img src={card.image} alt="" loading="lazy" data-initial={card.initial} onError={() => setFailed(true)} /> : <span className="tile-initial">{card.initial}</span>}</span>
     <span className="tile-name">{card.name}</span><span className="game-badges">{card.badges.map((badge: string) => <span key={badge} className={`badge${badge === '未検証' ? ' badge-unverified' : ''}`}>{badge}</span>)}</span>
     {card.launch && <span className="game-launch" data-state={card.launch.state}>{card.launch.title}</span>}
-  </button>;
+  </button>{card.selected && <button className="game-advance" data-play-game={card.id} aria-label={`${card.name}の分担へ進む`}>▶</button>}</div>;
 }
 export function KeyEditor({model, state}: {model: Model; state: PcSnapshot}) {
   if (!model.keyButtons.length) return null;
