@@ -3902,17 +3902,39 @@ impl Hub {
                     }
                     _ => return,
                 };
-                if !self.profile.as_ref().is_some_and(|p| {
-                    p.actions
-                        .iter()
-                        .any(|a| a.id == action && a.kind == "button")
-                }) {
+                let Some(profile) = self.profile.as_ref() else {
+                    return;
+                };
+                if !profile
+                    .actions
+                    .iter()
+                    .any(|a| a.id == action && a.kind == "button")
+                {
                     return;
                 }
-                self.key_overrides
-                    .entry(self.game.title.clone())
-                    .or_default()
-                    .insert(action.clone(), output.clone());
+                let path = if profile.id == "minecraft-java" {
+                    self.minecraft_options.as_deref()
+                } else {
+                    None
+                };
+                let default = Keybinds::build_with(profile, path, None)
+                    .actions
+                    .into_iter()
+                    .find(|(id, _)| id == &action)
+                    .map(|(_, output)| output);
+                if default == Some(output.as_deref()) {
+                    if let Some(overrides) = self.key_overrides.get_mut(&self.game.title) {
+                        overrides.remove(&action);
+                        if overrides.is_empty() {
+                            self.key_overrides.remove(&self.game.title);
+                        }
+                    }
+                } else {
+                    self.key_overrides
+                        .entry(self.game.title.clone())
+                        .or_default()
+                        .insert(action.clone(), output.clone());
+                }
                 self.log("set_key", json!({ "action": action, "output": output }));
                 self.apply_key_change();
             }
