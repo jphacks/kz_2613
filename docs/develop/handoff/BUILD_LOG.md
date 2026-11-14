@@ -2574,3 +2574,11 @@
 
 - Android補助試験に、P1の担当がゲーム選択前は非表示で、Minecraft選択後は表示される確認を追加した。
 - main `d5227aa` のWindows配布版で Android Chrome 1台と模擬参加者1台の実Wi-Fi dry-runを実施し、15/15合格。iPhoneは未確認。
+
+## 2026-11-15 — SVGアイコンの作業を引き継いで検証する（#515、Codex）
+
+- ユーザーの依頼で Claude Code の `fc03d99` を引き継ぎ、最新 main `ca8ef79` を統合した。SVG置換・CSS・操作対象の属性と読み上げラベルをレビューした。
+- `controller-preview-test.mjs` を4方向の描画と `aria-hidden`・`focusable` の確認へ拡張し、`app-view-test.mjs` にホストから届く4方向のキー名を担当表示で文字に変換する回帰試験を追加した。
+- 検証成功：`apps/web` で `npm ci`・`npm run build`（型検査含む）、`node scripts/sim/check-static-pages.mjs`、`controller-preview-test.mjs`、`ui-input-test.mjs`（20/20）、`product-web-test.mjs`、`app-view-test.mjs`（追加後38/38）、`phone-view-test.mjs`、`controller-layout-test.mjs`、`phone-layout-test.mjs`（15/15）、`py -3 scripts/verify_overlay.py`、`git diff --check`。nodeの試験はリポジトリルートから実行。
+- ブラウザーでのプレビュー表示を試みたが、Computer Use が `The browser access host is unavailable` を返したため、目視の画面確認は未実施。Android・iPhoneでの撮影も未実施。実機受入を合格扱いせず、#515は自動クローズしない。
+- 追加のユーザー依頼により、READMEの技術仕様書一覧へ Re:Cooplay Preset Model v2 のHugging Face URLを追記した。既存のREADME・LICENSEは保持した。
