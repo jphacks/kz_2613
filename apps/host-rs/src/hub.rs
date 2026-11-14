@@ -812,7 +812,7 @@ impl Hub {
         true
     }
 
-    /// hub がパニックしたときの後始末 (#517)。押しっぱなしを離し、スマホへ終了を知らせ、アプリが起動したホットスポットを止める。
+    /// hub がパニックしたときの後始末 (#517)。押しっぱなしを離し、アプリが起動したホットスポットを止める。
     /// 状態が壊れている可能性があるので、後始末の途中のパニックも受け止める。全部離せたら true
     fn recover_from_panic(&mut self, message: String) -> bool {
         eprintln!("hub が異常終了しました（押しっぱなしの入力を離して終了します）: {message}");
@@ -823,7 +823,8 @@ impl Hub {
                 crate::netinfo::block_hotspot_start();
             }
             let ok = self.release_for_shutdown();
-            self.close_players_for_shutdown();
+            // スマホへ「PC アプリの終了」(4009) は送らない。PC アプリはホストを起動し直すので、スマホは通常の切断として
+            // 再接続を続け、新しいホストへ参加し直す (#522)。協力プレイは再接続後も自動では再開しない
             if !cfg!(test) {
                 let hotspot = crate::netinfo::stop_owned_hotspot();
                 self.log("hotspotShutdown", json!({ "result": hotspot }));
@@ -6751,7 +6752,7 @@ mod tests {
     }
 
     #[test]
-    fn panic_recovery_releases_held_inputs_and_tells_players() {
+    fn panic_recovery_releases_held_inputs() {
         let recorder = RecordingInput::with_results([true, true]);
         let (mut h, mut rx) = fixture_with_input(Box::new(recorder.clone()));
         h.set_output(index("KEY_W"), "P1", true);
@@ -6770,8 +6771,10 @@ mod tests {
                 .any(|c| matches!(c.operation, Operation::Key { down: false, .. })),
             "キーを離した"
         );
-        // スマホへ終了を知らせる (参加者の接続がなければ何も送らない)
-        while rx.try_recv().is_ok() {}
+        // スマホへ「PC アプリの終了」(4009) は送らない (PC アプリが起動し直したホストへ再接続させる、#522)
+        while let Ok(out) = rx.try_recv() {
+            assert!(!matches!(out, Out::Close(code, _) if code == CLOSE_HOST_SHUTDOWN));
+        }
         assert_eq!(
             panic_message(&"文字列" as &(dyn std::any::Any + Send)),
             "文字列"
