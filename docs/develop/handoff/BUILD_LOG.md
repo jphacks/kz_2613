@@ -2679,3 +2679,12 @@
 ### #555 分担画面の操作定義に関する注意
 - Webビルドと `node --experimental-strip-types scripts/sim/app-view-test.mjs`（39/39）に合格。
 - `check-static-pages.mjs` は基点からあるPCリモコンの凡例「◀」で停止した。変更前後の撮影と実機受入は未実施。
+## 2026-11-15 — ホストのリモコンで入力先の案内が下部パネルに隠れる（#553、Claude Code）
+
+- 原因：#550 で下部（`host-actions`）を sticky で固定し、表示域が低い端末（384×701）ではその上の `#remoteRoute` に重なった。main `14c34de` の CI のホストで 384×701 を撮影して再現した。
+- 修正：入力先の案内を下部の固定領域の先頭の決まった枠（2行分、文の長さで高さを変えず、入力先を失った案内も省略しない）へ移した。高さ760px以下では、タッチパッド・Esc・ホイールを縮める（従来は640px以下）。
+- 監査：`capture-screens.mjs` に、スクロールしていない状態で Esc・ホイール・タッチパッド・入力先の案内が下部の固定領域に隠れないかの判定を追加。修正前の画面で4枚を検出し、修正後は 384×701・390×844・402×874 で合格。CI の compact の大きさを 390×844 → 384×701 にした（低い側を確かめる）。
+- `phone-view-test`・`phone-lifecycle-test`（38/38）・`product-web-test`・`check-static-pages`・`verify-ui-evidence`、`npm run typecheck`・`vite build` に合格。実機の確認は未実施。
+- 利用者の判断（2026-11-15）：入力先の案内（「PCアプリを操作中」など）はそもそも要らない。案内の行は例外時（実際のマウスとして動く・リモコンが届かない）も含めて全部消し、リモコンを広く取る。不要な領域は設けない。
+  - `#remoteRoute` と、モデルの `route`・`routeBlocked`（`routeText`）を削除。下部の補足欄（`host-notes`）は最大2行にし、文がないときは場所を取らない。空いた高さはタッチパッドに回す。部品を縮める条件は 640px 以下に戻した。
+  - `capture-screens.mjs --assert-layout`（384×701・390×844・402×874）、`npm run typecheck`・`vite build` に合格（ホストは main db4baa2 の手元ビルド）。
