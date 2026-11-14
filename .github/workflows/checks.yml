@@ -21,3 +21,4 @@ jobs:
           python-version: '3.12'
       - run: python scripts/verify_overlay.py
       - run: python scripts/check-public-docs.py
+      - run: python scripts/sync-protocol-version.py --check

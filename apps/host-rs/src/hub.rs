@@ -28,6 +28,7 @@ use crate::keybinds::{self, Keybinds};
 use crate::look::{Look, LOOK_TICK};
 use crate::profiles::{self, Profile};
 use crate::protocol::{self, num, s, CommandMessage, InputMessage, LookMessage, RemoteMessage};
+use crate::protocol_version::PROTOCOL_VERSION;
 use crate::rtc::{Peer, RtcSignal};
 use crate::session::{self, InjectMode, Phase, MIN_PLAYERS, SLOT_NAMES};
 
@@ -42,7 +43,6 @@ const SLOT_ROLES: [&str; MAX_SLOTS] = ["ホスト", "参加者", "参加者", "�
 // "pseudo-game" は診断用の疑似ゲーム画面 (/game) で、PC アプリの一覧には出さない (ゲーム変更の試験にも使う)
 // PC アプリ (apps/desktop) の実行ファイル名。前面になったら PC アプリへの手動復帰とみなす
 const DESKTOP_PROCESS: &str = "recooplay-desktop.exe";
-const PROTOCOL_VERSION: u64 = 6;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 /// 接続ごとの送信待ちの上限。健全な接続は溜まらず、読取りが止まった接続だけが達する (#197)

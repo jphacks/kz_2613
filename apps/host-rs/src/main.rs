@@ -28,6 +28,7 @@ mod netwatch;
 mod preset_model;
 mod profiles;
 mod protocol;
+mod protocol_version;
 mod rtc;
 mod runtime_measure;
 mod session;

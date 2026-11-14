@@ -2365,6 +2365,13 @@
 
 - Android模擬参加、PCブラウザー補助、ホスト負荷計測、終了試験を `PHONE_PROTOCOL_VERSION` の参照にそろえた。通信版6のPR #457をベースにした。
 - Webビルド、変更4スクリプトの構文検査、Android補助CLI 23/23、通信境界 8/8、差分検査が合格。Node 22での実行にはTypeScriptの直接読み込みオプションを指定した。
+
+## 2026-11-14 — RustとWebの通信版を同じ正本から生成する（#272、Codex）
+
+- [設計の記録](../decisions/2026-11-14-protocol-version-source.md)。PR #467 をベースとし、通信版6を維持した。
+- `python scripts/sync-protocol-version.py --check` は正本だけの変更、仕様書の版ずれ、安全な整数範囲外の入力で失敗し、復元後に成功した。構造・公開資料・Rust書式・差分の検査も成功。
+- Windowsの `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml`、Webの `npm ci --offline` と `npm run build` が成功。新しいホストを使った `protocol-sim.mjs` は65/65、`protocol-boundary-test.mjs` は8/8、`phone-session-test.mjs` は7/7。Node.js 22.15.0では `--experimental-strip-types` を指定した。
+- メッセージ本体・設定の型契約の単一化と実Wi-Fi受入は継続する。
 ## 2026-11-14 — ゲーム選択のダブルクリック（#445、Codex）
 
 - 同じタイルへの400ms以内の2回のクリックで分担へ進む。PCのクリックと仮想カーソルのクリックを同じ処理で判定する。選択中のタイルの「▶」とEnterからも進める。
