@@ -2347,3 +2347,4 @@
 - 合格：Web型検査、`node scripts/sim/product-web-test.mjs`（Node 22ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定）、`git diff --check`。欠番補完と本人解放を確認するRust試験を追加した。
 - Rust試験の実行、欠落・乱順・長時間断を組み合わせた通信検証、同一端末・Wi-Fiでの変更前後の分布と破棄件数の計測が残る。
 - 追試（#451）：ACKがない入力は500msを過ぎると同梱せず、その後の解放はWebSocketで送ることを検証した。phone-lifecycle 36/36。
+- 追試（#440）：模擬のランチャー前面を設定し、ロビーのリモコン経路で保持したクリックの全解放を確認した。CI run 43485455002 のホストで通信65/65、Chrome画面検査（PC 800×560、スマホ390×844）21画面が合格。撮影を一段階の開始操作へ更新した。
