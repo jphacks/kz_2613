@@ -4,6 +4,7 @@ const {bindTouchpad, bindTouchpadSensitivity} = await import('../../apps/web/src
 const {createLifetime} = await import('../../apps/web/src/shared/input/lifetime.ts');
 const {bindCooperativeInput: createCooperativeInput} = await import('../../apps/web/src/shared/input/cooperative.ts');
 const {stickDirections} = await import('../../apps/web/src/shared/input/stick.ts');
+const {rotateForHold,createHoldStore,parseHold,holdRotation} = await import('../../apps/web/src/shared/input/hold.ts');
 const {createFastChannel} = await import('../../apps/web/src/shared/transport/fast-channel.ts');
 const {createVirtualCursor}=await import('../../apps/web/src/shared/input/virtual-cursor.ts');
 const {usableControls,moveRemoteFocus,stepRemoteSelect,REMOTE_FOCUSABLE}=await import('../../apps/web/src/shared/input/remote-focus.ts');
@@ -211,6 +212,37 @@ try {
     input.setGeneratedStick(new Element(),{up:'act:forward'}); // 画面の作り直し
     assert.equal(up.at(-1),'act:forward','作り直しで押したままにしない');
     assert.deepEqual([...stickDirections(0,0)],[]);assert.deepEqual([...stickDirections(0.7,-0.7)].sort(),['right','up']);
+  });
+  await test('横持ち (#514): 回転ロックのまま横に持つと、指から見た上下左右でスティック・視点を読む',()=>{
+    // 左に90度 (端末の上端が左): 指から見た上 = 画面の右、指から見た右 = 画面の下
+    assert.deepEqual(rotateForHold(1,0,90),[0,-1]);assert.deepEqual(rotateForHold(0,1,90),[1,0]);
+    assert.deepEqual(rotateForHold(-1,0,270),[0,-1]);assert.deepEqual(rotateForHold(0,-1,270),[1,0]);
+    assert.deepEqual(rotateForHold(0.3,-0.4,0),[0.3,-0.4]);
+    assert.equal(holdRotation(90),90);assert.equal(holdRotation(270),-90);assert.equal(holdRotation(0),0);
+    assert.equal(parseHold('90'),90);assert.equal(parseHold('180'),0);assert.equal(parseHold(null),0);
+    const elements=Object.fromEntries(['pad','sens','sensVal'].map(id=>[id,new Element()]));
+    globalThis.document={getElementById:id=>elements[id]};globalThis.localStorage={getItem:()=>null,setItem(){}};
+    let hold=90;const down=[],up=[],packets=[];
+    const input=bindCooperativeInput({getGame:()=>({phase:'coop',epoch:3}),getRole:()=>'P2',isOpen:()=>true,getHold:()=>hold,ctlDown:c=>down.push(c),ctlUp:c=>up.push(c),sendLook:m=>packets.push(m)});
+    const timer=intervals.at(-1);
+    const stick=new Element();input.setGeneratedStick(stick,{up:'act:forward',down:'act:back',left:'act:left',right:'act:right'});
+    stick.fire('pointerdown',{clientX:195,clientY:100}); // 画面の右端 = 左に90度持った指から見た上
+    assert.deepEqual(down,['act:forward'],'横持ちで指から見て上に倒すと前進');
+    stick.fire('pointerup');
+    hold=270;stick.fire('pointerdown',{clientX:195,clientY:100}); // 右に90度では画面の右は指から見た下
+    assert.equal(down.at(-1),'act:back');stick.fire('pointerup');
+    hold=90;
+    elements.pad.fire('pointerdown');elements.pad.fire('pointermove',{clientY:110});timer.fn(); // 画面の下へ10px = 指から見て右へ
+    assert.equal(packets.at(-1).cx,20);assert.equal(packets.at(-1).cy,0,'横持ちで指から見て右へ動かすと視点が右へ回る');
+    elements.pad.fire('pointerup');
+    // 持ち方を変えると知らせ、保存する。読めない・書けない環境では縦持ち
+    const saved=new Map();const store=createHoldStore({getItem:k=>saved.get(k)??null,setItem:(k,v)=>saved.set(k,v)});
+    let changed=0;const off=store.subscribe(()=>changed++);
+    assert.equal(store.get(),0);store.set(90);store.set(90);assert.equal(changed,1);assert.equal(saved.get('recooplay.hold'),'90');
+    assert.equal(createHoldStore({getItem:k=>saved.get(k)??null,setItem(){}}).get(),90);
+    off();store.set(0);assert.equal(changed,1);
+    assert.equal(createHoldStore({getItem(){throw new Error('blocked');},setItem(){throw new Error('blocked');}}).get(),0);
+    const broken=createHoldStore({getItem:()=>null,setItem(){throw new Error('quota');}});broken.set(270);assert.equal(broken.get(),270);
   });
   await test('WebRTC: 再送なし・STUNなしを維持し、文字列／バイナリ／Blobと旧接続を安全に扱う',async()=>{
     const peers=[],signaled=[],rtts=[];

@@ -1,5 +1,6 @@
 // 認可済みAndroid 1台とRust dry-runホストのUSB smoke。OS入力は送らない。
 // 実行条件・限界は docs/develop/acceptance/README.md を参照。
+import {PHONE_PROTOCOL_VERSION} from '../../apps/web/src/shared/transport/version.ts';
 import {spawn, execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -269,7 +270,7 @@ try{
       await collectWifiProof('initial');return {host:report.networkProof.host,pcEndpoints:statuses,redactedInfo};
     });
     // PC上の模擬参加者を補助として使う。3台の実機受入ではない。
-    for(const slot of ['P2','P3','P4'].slice(0,playerCount-1)){const c=await open(client());c.send({type:'hello',protocolVersion:5,clientId:`acceptance-${slot}`,ua:'simulation'});await until(()=>c.messages.some(m=>m.type==='welcome'),'模擬参加');}
+    for(const slot of ['P2','P3','P4'].slice(0,playerCount-1)){const c=await open(client());c.send({type:'hello',protocolVersion:PHONE_PROTOCOL_VERSION,clientId:`acceptance-${slot}`,ua:'simulation'});await until(()=>c.messages.some(m=>m.type==='welcome'),'模擬参加');}
     ping=setInterval(()=>{for(const c of clients)if(c.ws.readyState===1)c.send({type:'ping',t:Date.now()});},1000);
     await until(()=>mon.state().game.connected.length===playerCount,'participants');
     await check('Androidの担当表示: ゲーム選択前は非表示、選択後は表示 (#447)',async()=>{

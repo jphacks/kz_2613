@@ -1,4 +1,5 @@
 // デスクトップの終了通知・異常終了時のEOFで全解放して終了することを、必ずdry-runで確認する。
+import {PHONE_PROTOCOL_VERSION} from '../../apps/web/src/shared/transport/version.ts';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -8,7 +9,6 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const binArg = process.argv.indexOf('--bin');
 const bin = binArg >= 0 ? process.argv[binArg + 1] : path.join(root, 'apps/host-rs/target/release/recooplay-host.exe');
-const version = Number(fs.readFileSync(path.join(root, 'apps/host-rs/src/hub.rs'), 'utf8').match(/const PROTOCOL_VERSION: u64 = (\d+)/)[1]);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const assert = (ok, why) => { if (!ok) throw new Error(why); };
 
@@ -42,10 +42,10 @@ async function check(mode) {
     mon.sendJson({ type: 'monitor', page: 'host' });
     mon.sendJson({ type: 'inject_mode', mode: 'on' });
     const p1 = await client();
-    p1.sendJson({ type: 'hello', protocolVersion: version, clientId: '終了試験用の端末' });
+    p1.sendJson({ type: 'hello', protocolVersion: PHONE_PROTOCOL_VERSION, clientId: '終了試験用の端末' });
     await until(() => p1.messages.find(m => m.type === 'welcome'), '枠を取得できない');
     for (const name of ['P2', 'P3']) {
-      const player = await client(); player.sendJson({type:'hello',protocolVersion:version,clientId:name});
+      const player = await client(); player.sendJson({type:'hello',protocolVersion:PHONE_PROTOCOL_VERSION,clientId:name});
       await until(()=>player.messages.find(m=>m.type==='welcome'), '追加端末を取得できない');
     }
     const current = () => p1.messages.filter(m=>m.type==='game').at(-1)?.game;

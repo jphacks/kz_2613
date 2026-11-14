@@ -1,4 +1,4 @@
-name: 通信と補助画面の反復試験
+name: 通信・補助画面・PCアプリの反復試験
 on:
   workflow_dispatch:
     inputs:
@@ -6,17 +6,25 @@ on:
         description: 同じコミットのWindows配布物を作成したCI run ID
         required: true
         type: string
+      suite:
+        description: coreは通信と補助画面、desktopは配布WebView2、allは両方
+        required: true
+        type: choice
+        default: core
+        options: [core, desktop, all]
 permissions:
   contents: read
   actions: read
 jobs:
   repeat:
+    name: repeat (${{ matrix.suite }}, ${{ matrix.shard }})
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: ${{ matrix.suite == 'desktop' && 35 || 20 }}
     strategy:
       fail-fast: false
       matrix:
         shard: [1, 2, 3, 4]
+        suite: ${{ fromJSON(inputs.suite == 'all' && '["core","desktop"]' || inputs.suite == 'desktop' && '["desktop"]' || '["core"]') }}
     env:
       RECOOPLAY_DRY_RUN: '1'
       REPEAT_SHARD: ${{ matrix.shard }}
@@ -60,7 +68,9 @@ jobs:
           $root = $manifests[0].DirectoryName
           Copy-Item -LiteralPath (Join-Path $root 'apps/web/dist') -Destination apps/web -Recurse
           "REPEAT_HOST=$(Join-Path $root 'recooplay-host.exe')" >> $env:GITHUB_ENV
+          "REPEAT_PACKAGE=$root" >> $env:GITHUB_ENV
       - name: 各試験を5回実行する
+        if: matrix.suite == 'core'
         shell: pwsh
         run: |
           # runner の値はジョブの env では使えないため、手順の中で決める
@@ -88,8 +98,31 @@ jobs:
             if ($LASTEXITCODE) { $failures++; Write-Host "補助画面 $attempt 回目が失敗" }
           }
           if ($failures) { throw "失敗: $failures / 10" }
+      - name: 配布PCアプリのWebView2試験を5回実行する
+        if: matrix.suite == 'desktop'
+        timeout-minutes: 30
+        shell: pwsh
+        run: |
+          $diagnostics = Join-Path $env:RUNNER_TEMP 'repeat-diagnostics'
+          New-Item -ItemType Directory -Path $diagnostics -Force | Out-Null
+          $results = @()
+          $first = ([int]$env:REPEAT_SHARD - 1) * 5 + 1
+          for ($attempt = $first; $attempt -lt $first + 5; $attempt++) {
+            $env:RECOOPLAY_SMOKE_DIAGNOSTICS = Join-Path $diagnostics "desktop-$attempt"
+            $log = Join-Path $diagnostics "desktop-$attempt.txt"
+            $clock = [Diagnostics.Stopwatch]::StartNew()
+            node scripts/sim/desktop-webview2-smoke.mjs $env:REPEAT_PACKAGE *> $log
+            $status = $LASTEXITCODE
+            $clock.Stop()
+            $results += [pscustomobject]@{ attempt = $attempt; exitCode = $status; durationMs = $clock.ElapsedMilliseconds }
+            # 各回の結果を保存する。後続が成功しても、元の失敗を上書きしない。
+            ConvertTo-Json -InputObject @($results) | Set-Content -LiteralPath (Join-Path $diagnostics 'desktop-results.json') -Encoding utf8
+            Write-Host "配布WebView2 $attempt 回目: 終了コード $status ($($clock.ElapsedMilliseconds)ms)"
+          }
+          $failures = @($results | Where-Object { $_.exitCode -ne 0 }).Count
+          if ($failures) { throw "配布WebView2の失敗: $failures / 5" }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: repeat-diagnostics-${{ matrix.shard }}
+          name: ${{ matrix.suite == 'desktop' && 'repeat-desktop-diagnostics' || 'repeat-diagnostics' }}-${{ matrix.shard }}
           path: ${{ runner.temp }}/repeat-diagnostics

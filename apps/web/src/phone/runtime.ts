@@ -1,4 +1,5 @@
 import { bindCooperativeInput } from '../shared/input/cooperative.ts';
+import { hold } from '../shared/input/hold.ts';
 import { createFastChannel } from '../shared/transport/fast-channel.ts';
 import { createInputOwners } from '../shared/input/owners.ts';
 import { createPhoneSession } from '../shared/transport/session.ts';
@@ -65,6 +66,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
       if (!msg) { releaseAll(); sock.close(); return; }
       if (msg.type === 'rtc-answer' || msg.type === 'rtc-cand') { onRtcSignal(msg); return; }
       if (msg.type === 'welcome') {
+        redundantInputs.clear();
         session.authenticate(msg);
         roleInput.resetEpoch();
         startRtc();
@@ -76,6 +78,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
       } else if (msg.type === 'game') {
         const epochChanged = session.updateGame(msg.game);
         if (epochChanged) {
+          redundantInputs.clear();
           releaseAll();
           roleInput.resetEpoch();
 
@@ -89,6 +92,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
         rtts.push(r); // 視点担当は ACK 付きの入力が少ないので ping の往復も統計に入れる
         if (rtts.length > 500) rtts.shift();
       } else if (msg.type === 'ack') {
+        redundantInputs.delete(msg.iseq);
         const t0 = pending.get(msg.iseq);
         const downControl = downs.get(msg.iseq); downs.delete(msg.iseq);
         // ホストが遅れた押下として実行しなかった (#285 Q25)。押したままの表示を残さず、指を離すよう案内する
@@ -151,6 +155,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   }
 
   function onDisconnected(code: number) {
+    redundantInputs.clear();
     clearInterval(pingTimer);
     releaseAll();
     closeRtc();
@@ -191,9 +196,18 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
 
   // 状態・UIとWebRTCの生成破棄を分離する。速達便の契約は変更しない。
   const rtcRtts: number[] = [], via = {ws:0,rtc:0};
+  const redundantInputs = new Map<number, ReturnType<typeof session.input>>();
+  function recentInputs() {
+    const cutoff = performance.now() - 500;
+    for (const [iseq, message] of redundantInputs) {
+      if (message.t < cutoff || message.epoch !== session.game?.epoch) redundantInputs.delete(iseq);
+    }
+    return [...redundantInputs.values()];
+  }
   const fast = createFastChannel({
     signal: msg => { if (isOpen()) session.send(msg); },
     enabled: isOpen, getPhase: () => session.game?.phase,
+    recentInputs,
     onRtt: value => { rtcRtts.push(value); if (rtcRtts.length > 300) rtcRtts.shift(); },
     onPath: text => { phoneView.telemetry({path:text}); },
   });
@@ -247,7 +261,12 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
     else if (obj.state === 'up') pressing.delete(obj.button);
     lastIseq = msg.iseq;
     sent++;
-    fast.send(msg);
+    if (fast.isOpen() && !obj.burst) {
+      const inputs = recentInputs();
+      if (!fast.send({...msg, inputs: inputs.slice(-63)})) fast.send(msg);
+      if (inputs.length >= 64) redundantInputs.delete(inputs[0].iseq);
+      redundantInputs.set(msg.iseq, msg);
+    } else fast.send(msg);
     sendWs(msg);
     renderStats();
     return true;
@@ -364,12 +383,14 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   lifetime.listenEvent(document, 'contextmenu', (e) => e.preventDefault());
   // iseq: この端末の入力だけを解放し、他の参加者の押下とepochは変えない (#262)。lseq・cx・cy: 解放時点で送り終えた視点。
   // 解放要求より遅れて届く解放前の視点をホストが捨て、新しいタッチをこの累積値から数えるために送る
-  function stopRemote() { releaseAll(); if (isOpen()) session.send({type:'release_inputs',epoch:session.game?.epoch,iseq:lastIseq,...roleInput.lookMark()}); }
+  function stopRemote() { releaseAll(); redundantInputs.clear(); if (isOpen()) session.send({type:'release_inputs',epoch:session.game?.epoch,iseq:lastIseq,...roleInput.lookMark()}); }
   lifetime.listenEvent(document, 'pointercancel', stopRemote);
   // 止めた指が離れたら案内を消す。次の新しいタッチから入力を受け付ける (stopRemote より後に登録する)
   for (const type of ['pointerup', 'pointercancel'] as const) lifetime.listenEvent(document, type, (e) => { if (needLift.delete((e as PointerEvent).pointerId)) showLiftHint(); });
   lifetime.listenEvent(portrait, 'change', stopRemote);
   lifetime.listenEvent(window, 'orientationchange', stopRemote);
+  // 持ち方 (#514) を変えたら、回転時と同じく押していた操作を全部離す。旧押下を新しい向きへ持ち越さない
+  lifetime.own(hold.subscribe(stopRemote));
   lifetime.listenEvent(window, 'pagehide', stopRemote);
   lifetime.listenEvent(window, 'blur', stopRemote);
   lifetime.listenEvent(document, 'visibilitychange', () => {
@@ -379,7 +400,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
 
   let previousLookSent: number | null = null;
   const roleInput = bindCooperativeInput({
-    getGame: () => session.game, getRole: () => session.me, isOpen: () => isOpen() && controlsVisible(), ctlDown, ctlUp, onCancel: stopRemote,
+    getGame: () => session.game, getRole: () => session.me, isOpen: () => isOpen() && controlsVisible(), getHold: hold.get, ctlDown, ctlUp, onCancel: stopRemote,
     // 視点の担当: 操作定義の分担があればそれに従い、なければ P2 (#105)
     // 固定の画面では、担当 (入れ替え後の席、#47) が視点 (P2 の表) の人
     canLook: () => { const acts = myActions(session.game, session.me); return acts ? acts.some((a) => a.type === 'mouseDelta') : ((session.me ? session.game?.roleOf?.[session.me] : undefined) || session.me) === 'P2'; },

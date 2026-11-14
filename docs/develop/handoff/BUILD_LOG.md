@@ -2352,7 +2352,26 @@
 - 合格：`npm --prefix apps/web run build`（型検査込み）、`node scripts/sim/product-web-test.mjs`（`app-view` 37/37、`phone-lifecycle` 35/35、`ui-input` 20/20、`protocol-boundary` 8/8、`phone-view` を含む）、`node scripts/sim/check-static-pages.mjs`、`cargo fmt --manifest-path apps/host-rs/Cargo.toml --check`、`git diff --check`。Node 22.15.0ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定した。
 - Rustは最初の試行でPerlがPATHになく、OpenSSLの構築前に失敗した。再試行でOpenSSLのコンパイルへ進んだ。Rust単体試験・通信シミュレーションの結果は追記する。
 - Minecraft実機では、ロビーのリモコンで起動後のメニューを操作してワールドへ入り、「分担操作開始」1回で協力プレイに入れることを確認する。
+
+## 2026-11-14 — 未確認の入力を速達経路に同梱する（#451、Codex）
+
+- 50ms周期の生存確認と速達入力に、直近500msの未確認入力を同梱する。上限は64件・16KiB。通信契約は版6。#440の版5を前提にするため、PR #453をベースにした。
+- 合格：Web型検査、`node scripts/sim/product-web-test.mjs`（Node 22ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定）、`git diff --check`。欠番補完と本人解放を確認するRust試験を追加した。
+- Rust試験の実行、欠落・乱順・長時間断を組み合わせた通信検証、同一端末・Wi-Fiでの変更前後の分布と破棄件数の計測が残る。
+- 追試（#451）：ACKがない入力は500msを過ぎると同梱せず、その後の解放はWebSocketで送ることを検証した。phone-lifecycle 36/36。
 - 追試（#440）：模擬のランチャー前面を設定し、ロビーのリモコン経路で保持したクリックの全解放を確認した。CI run 43485455002 のホストで通信65/65、Chrome画面検査（PC 800×560、スマホ390×844）21画面が合格。撮影を一段階の開始操作へ更新した。
+
+## 2026-11-14 — 通信試験補助でWebの通信版定数を共有する（#272、Codex）
+
+- Android模擬参加、PCブラウザー補助、ホスト負荷計測、終了試験を `PHONE_PROTOCOL_VERSION` の参照にそろえた。通信版6のPR #457をベースにした。
+- Webビルド、変更4スクリプトの構文検査、Android補助CLI 23/23、通信境界 8/8、差分検査が合格。Node 22での実行にはTypeScriptの直接読み込みオプションを指定した。
+
+## 2026-11-14 — RustとWebの通信版を同じ正本から生成する（#272、Codex）
+
+- [設計の記録](../decisions/2026-11-14-protocol-version-source.md)。PR #467 をベースとし、通信版6を維持した。
+- `python scripts/sync-protocol-version.py --check` は正本だけの変更、仕様書の版ずれ、安全な整数範囲外の入力で失敗し、復元後に成功した。構造・公開資料・Rust書式・差分の検査も成功。
+- Windowsの `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml`、Webの `npm ci --offline` と `npm run build` が成功。新しいホストを使った `protocol-sim.mjs` は65/65、`protocol-boundary-test.mjs` は8/8、`phone-session-test.mjs` は7/7。Node.js 22.15.0では `--experimental-strip-types` を指定した。
+- メッセージ本体・設定の型契約の単一化と実Wi-Fi受入は継続する。
 ## 2026-11-14 — ゲーム選択のダブルクリック（#445、Codex）
 
 - 同じタイルへの400ms以内の2回のクリックで分担へ進む。PCのクリックと仮想カーソルのクリックを同じ処理で判定する。選択中のタイルの「▶」とEnterからも進める。
@@ -2577,6 +2596,10 @@
 - Rustホストが `command_result` に必ず送る `cmd` をWebの型と受信検証に追加した。Webの境界試験で欠落・不正型を拒否し、通信試験でホストの開始拒否をWebのデコーダーに通す。
 - Webの型検査・ビルド、`node scripts/sim/product-web-test.mjs`、構文・差分検査が成功。ホストと通す追加アサーションはCI待ち。
 - 手動の反復試験にも適用し、失敗した試行のJSONLだけを試行番号とホスト別の名前で保存する。
+## 2026-11-15 — Androidの反復計測で押下のstale ACKを数える（#451、Codex）
+
+- 計測区間に送った押下のうち、stale ACKを受けた連番を重複なく集計する。staleには遅延以外の理由も含まれるため、遅延による破棄の内訳はホストのセッションログで確認する。
+- 模擬観測データで重複ACK、解放、区間外のACKが集計を増やさないことを確認。実指の比較は未実施。
 ## 2026-11-15 — Androidでゲーム選択前後の担当表示を確認する（#447、Codex）
 
 - Android補助試験に、P1の担当がゲーム選択前は非表示で、Minecraft選択後は表示される確認を追加した。
@@ -2602,3 +2625,27 @@
 - `npm --prefix apps/web run build`、`node scripts/sim/check-static-pages.mjs` に合格。
 - Node.js 22.15.0 で `--experimental-strip-types` を指定し、`controller-preview-test.mjs`、`ui-input-test.mjs`（20/20）、`phone-view-test.mjs`（8観点）に合格。対象は `scripts/sim/`。
 - Android・iPhoneでの画面撮影と位置の確認は未実施。
+## 2026-11-15 — 分担AI仕様書に実機での受け入れの結果を反映する（#432、Claude Code）
+
+- 青鬼（RPGツクールXP、操作定義なし）で、自動で読み取った操作を独自AIが3人に分担し、Android実機（P1、ホットスポットのWi-Fi）と模擬スマホ2台で6つの操作がすべてゲームに届いた結果を、評価の表に加えた。詳細は #512 のコメント。
+- 「実機での受け入れは未実施」の記述を、確認した範囲（1本・3人）と未実施の範囲（ほかのゲーム・人数、遅延の比較）に分けて書き直した。
+- `python scripts/check-public-docs.py` と `git diff --check` で確かめる。
+### #457 最新mainを取り込んだ後の検証
+- mainのゲーム未選択時の挙動を保持し、通信契約は版6を採用。
+- Webビルド、静的ページ検証、`phone-lifecycle-test.mjs`（38/38）、`ui-input-test.mjs`（20/20）に合格。Node.js 22.15.0 では `--experimental-strip-types` を指定。
+- 更新コミットのRust・通信・配布はGitHub Actionsで確認する。既存のAndroid実Wi-Fi比較は合成タッチで、実指とMinecraftでの受入は未実施。
+
+## 2026-11-15 — 配布WebView2の20回反復を追加する（#379、Codex）
+
+- 手動の `ci-repeat.yml` に `suite=core|desktop|all` を追加した。既存の同一コミット・成功済み配布run・ZIPハッシュとマニフェストの照合を通し、desktopは4ランナーで5回ずつ起動・画面・オーバーレイ・アプリと子ホストの終了を検査する。
+- 各回の出力と失敗診断先を分け、終了コード・所要時間を逐次JSONへ保存する。途中で失敗しても残りを実行し、1件でも失敗すればジョブを失敗にする。coreの既定選択・成果物名・20分上限は維持する。判断は `docs/develop/decisions/2026-11-15-desktop-ci-repeat.md`。
+- ローカル検証：PyYAMLのBaseLoaderでYAMLと選択肢を確認、全PowerShell手順をASTで構文検査。抽出したdesktop手順へnodeの代替関数を注入し、全成功と3回目だけ終了コード7の2系列で、各5回継続・6〜10の試行番号・全出力ログ・終了コードと失敗判定が保持されることを確認した。Windows PowerShell 5.1の検証側でJSON配列を二重に包んだため初回の検証は失敗し、読み取り側を修正して再実施した（保存JSONには5件が存在していた）。
+- `py -3 scripts/verify_overlay.py`、`py -3 scripts/check-public-docs.py`、`git diff --check` 成功。GitHub Actionsでの実WebView2反復は、同じコミットの配布CI成功後に実施する。ローカルでは実アプリ・OS入力・ネットワーク設定は操作していない。
+
+## 2026-11-15 — 回転ロックのまま横持ちで、スティック・視点の向きを90度回す（#514、Claude Code）
+
+- `apps/web/src/shared/input/hold.ts` に持ち方（縦持ち・左に90度・右に90度）を追加し、スティックは指の位置、視点パッドは移動量（dx・dy）を回してから方向・送る量を決める。画面の配置・送る入力の種類・認可・送信経路・感度・視点30Hzは変えない。
+- スティックは要素ごと同じ角度だけ回し、矢印と文字を指から見て正立させる（ノブも指の下に来る）。持ち方は「⋯」のメニューで選び、端末ごとに `localStorage`（`recooplay.hold`）へ保存する。読めない・書けないときは縦持ち。
+- 持ち方を変えたら、回転時と同じ `stopRemote`（全解放と `release_inputs`）を呼び、旧押下を持ち越さない。端末の傾きから自動で切り替える方式は、回転ロック中にセンサーの許可が要る端末があるため入れていない。
+- `node scripts/sim/ui-input-test.mjs`（21/21、横持ちの前進・後退・視点の右・保存と通知を追加）、`phone-view-test`・`phone-layout-test`・`controller-layout-test`・`controller-preview-test`・`app-view-test`（37/37）・`product-module-graph-test`・`product-lifetime-test`・`product-web-test`・`check-static-pages`、`npm run typecheck`・`vite build` に合格。Stick を静的に描いた撮影で、左右90度の見た目を確認した。
+- 実機（Android・iPhone、回転ロックあり）での横持ちの確認は未実施。

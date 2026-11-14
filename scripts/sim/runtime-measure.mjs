@@ -1,4 +1,5 @@
 // 本番イベントループと実WebSocketの非注入計測。リポジトリのルートで実行する。
+import {PHONE_PROTOCOL_VERSION} from '../../apps/web/src/shared/transport/version.ts';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -103,7 +104,7 @@ async function run(players, scenario) {
     const mon = new Client(`ws://127.0.0.1:${port}/ws`); clients.push(mon); await mon.open(); mon.send({ type: 'monitor', page: 'host' }); await mon.wait(m => m.type === 'state');
     const phones = [];
     for (let i = 0; i < players; i++) { const c = new Client(`ws://127.0.0.1:${port}/ws`); clients.push(c); phones.push(c); await c.open();
-      c.send({ type: 'hello', protocolVersion: 5, clientId: `runtime-p${i}`, ua: 'runtime-measure' }); await c.wait(m => m.type === 'welcome'); }
+      c.send({ type: 'hello', protocolVersion: PHONE_PROTOCOL_VERSION, clientId: `runtime-p${i}`, ua: 'runtime-measure' }); await c.wait(m => m.type === 'welcome'); }
     const p1 = phones[0]; await p1.wait(m => m.type === 'game' && m.game.connected.length === players);
     mon.send({ type: 'inject_mode', mode: 'on' });
     mon.send({ type: 'select_game', title: 'minecraft-java' }); await p1.wait(m => m.type === 'game' && m.game.title === 'minecraft-java');
