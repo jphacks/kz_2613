@@ -10,6 +10,8 @@ use std::path::Path;
 const MAX_ENTRY: usize = 16 * 1024 * 1024;
 /// 読むファイル数の上限 (壊れたアーカイブで止まらないように)
 const MAX_FILES: usize = 1_000_000;
+/// 名前の表を読む上限 (1 件あたり 2 バイトの長さ＋名前。数十万件でも数十 MB に収まる)
+const MAX_NAMES: u64 = 64 * 1024 * 1024;
 
 fn u16_le(b: &[u8], o: usize) -> Option<usize> {
     Some(u16::from_le_bytes(b.get(o..o + 2)?.try_into().ok()?) as usize)
@@ -50,7 +52,10 @@ pub fn extract(path: &Path, want: &str) -> Option<Vec<u8>> {
     // 名前の表
     f.seek(SeekFrom::Start(names_at)).ok()?;
     let mut names = Vec::new();
-    f.take(size - names_at).read_to_end(&mut names).ok()?;
+    // 壊れたファイルで巨大な表を読まないよう、上限を付ける
+    f.take((size - names_at).min(MAX_NAMES))
+        .read_to_end(&mut names)
+        .ok()?;
     let want = want.replace('\\', "/").to_ascii_lowercase();
     let mut o = 0;
     for i in 0..count {
@@ -66,7 +71,8 @@ pub fn extract(path: &Path, want: &str) -> Option<Vec<u8>> {
         let offset = u64_le(r, 16)?;
         let packed = u32_le(r, 24)?;
         let unpacked = u32_le(r, 28)?;
-        if unpacked > MAX_ENTRY {
+        // 圧縮後の大きさも確かめる (壊れた記録で数 GB を確保しない。確保の失敗はプロセスごと落ちる)
+        if unpacked > MAX_ENTRY || packed > MAX_ENTRY {
             return None;
         }
         let stored = if packed == 0 { unpacked } else { packed };
