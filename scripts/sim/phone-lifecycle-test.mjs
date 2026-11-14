@@ -256,6 +256,32 @@ if (process.argv.includes('--repro-shared-pointer')) {
       assert.equal(socket.sent.filter(m => m.type === 'latency').length, 1);
     }
   });
+  await test('押下診断: 計測用ビルドで150msを超えた押下だけを区間別に記録する (#437)', async () => {
+    for (const latency of [false, true]) {
+      const entries = [];
+      const logger = {...console, info: (name, payload) => {
+        if (name === 'recooplay:pointer-delay') entries.push(JSON.parse(payload));
+      }};
+      const h = controllerHarness({latency, logger});
+      await h.ready();
+      try {
+        const jump = h.control('act:jump');
+        jump.fire('pointerdown', {pointerId: 1, timeStamp: 850});
+        jump.fire('pointerup', {pointerId: 1});
+        assert.equal(entries.length, 0);
+        jump.fire('pointerdown', {pointerId: 2, timeStamp: 849});
+        assert.equal(entries.length, latency ? 1 : 0);
+        if (latency) {
+          const press = h.inputs().findLast(message => message.state === 'down');
+          assert.equal(entries[0].iseq, press.iseq);
+          assert.equal(entries[0].eventToHandlerMs, 151);
+          assert.equal(entries[0].handlerToSendMs, 0);
+        }
+      } finally {
+        h.dispose();
+      }
+    }
+  });
   await test('遅延破棄: ホストが押下をstaleで返したら押したままの表示を解き、離すまで案内する (#285 Q25/Q27)', async () => {
     const h = controllerHarness(); await h.ready(); const socket = h.sockets[0];
     const attack = h.control('act:attack'), jump = h.control('act:jump');
