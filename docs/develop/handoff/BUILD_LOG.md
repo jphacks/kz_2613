@@ -2334,6 +2334,19 @@
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
 
+## 2026-11-14 — 分担の初期設定をモデルにする（Claude Code）
+
+- 利用者の判断：分担の案の初期設定を規則からモデルに切り替える（#474）。`RECOOPLAY_PRESETS=rule` でなければモデルの分担を使う（`profiles::model_presets_enabled`）。使われなくなった `preset_source()` は消した。規則に戻すときは `RECOOPLAY_PRESETS=rule`。
+- 検証済みのプリセットがあるゲームは `model_presets::needs_model` で対象外のまま。試験の `fixture()` は `presets_model` を明示しているので、既存の試験の前提は変わらない。
+- 版2の重み（約57MB）の読み込みで待ち受けの開始が遅れないよう、起動時に裏のスレッドで読み始める（`profiles::warm_model`）。読み終わる前に分担が要るときは、その処理だけが読み終わりを待つ。
+- 合わせて AGENTS.md・`game-profile-specification.md`・`scripts/preset-model/README.md`・配布物の説明（`package.ps1`）・判断の記録を直した。実機は未確認。
+## 2026-11-14 — ロビーから分担操作を開始する（#440、Codex）
+
+- スマホの開始操作を「分担操作開始」に統合した。対象の前面、確定した分担と接続者、担当の確認、入力ドライバー、緊急停止の条件をホストで確認し、全解放とepoch更新を経て協力プレイへ進む。通信契約は版5。従来の準備経路は互換用に残した。
+- 合格：`npm --prefix apps/web run build`（型検査込み）、`node scripts/sim/product-web-test.mjs`（`app-view` 37/37、`phone-lifecycle` 35/35、`ui-input` 20/20、`protocol-boundary` 8/8、`phone-view` を含む）、`node scripts/sim/check-static-pages.mjs`、`cargo fmt --manifest-path apps/host-rs/Cargo.toml --check`、`git diff --check`。Node 22.15.0ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定した。
+- Rustは最初の試行でPerlがPATHになく、OpenSSLの構築前に失敗した。再試行でOpenSSLのコンパイルへ進んだ。Rust単体試験・通信シミュレーションの結果は追記する。
+- Minecraft実機では、ロビーのリモコンで起動後のメニューを操作してワールドへ入り、「分担操作開始」1回で協力プレイに入れることを確認する。
+- 追試（#440）：模擬のランチャー前面を設定し、ロビーのリモコン経路で保持したクリックの全解放を確認した。CI run 43485455002 のホストで通信65/65、Chrome画面検査（PC 800×560、スマホ390×844）21画面が合格。撮影を一段階の開始操作へ更新した。
 ## 2026-11-14 — ゲーム選択のダブルクリック（#445、Codex）
 
 - 同じタイルへの400ms以内の2回のクリックで分担へ進む。PCのクリックと仮想カーソルのクリックを同じ処理で判定する。選択中のタイルの「▶」とEnterからも進める。
@@ -2349,6 +2362,13 @@
 - 協力プレイを終えてロビーへ戻ったときと、PCアプリの正常終了通知を受けたとき、スマホのWi-Fiを普段のネットワークへ戻す案内を表示する。
 - `npm --prefix apps/web run build`、`node scripts/sim/phone-view-test.mjs`、`node scripts/sim/phone-lifecycle-test.mjs` 34/34、`git diff --check` が合格。
 - 非管理者でのホットスポット停止・設定変更と、停止前の通知到達は、現行配布形態での確認が残る。
+
+## 2026-11-14 — アプリが起動したホットスポットを終了時に停止する（#415 A、Codex）
+
+- [設計の記録](../decisions/2026-11-14-hotspot-shutdown.md)。終了処理は入力解放、スマホへの終了通知、ホットスポットの停止の順とする。停止結果を資格情報なしで記録する。
+- Windowsで `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` が成功。OpenSSLの既知のPDB警告あり。 `npm ci --offline`、`npm run build`、`cargo fmt --manifest-path apps/host-rs/Cargo.toml --all --check`、`python scripts/verify_overlay.py`、`git diff --check` が成功。
+- Node.js 22.15.0の `node --experimental-strip-types scripts/sim/protocol-sim.mjs --bin data/local/hotspot-host.exe` が66/66成功。事前にONの場合の保持、同時の起動要求、スマホへの終了通知コード4009、入力解放後の模擬停止、パスワードの非記録を確認した。
+- 非管理者でのWindows実機停止と、SSID・パスワードを変更・復元するBが残る。
 ## 2026-11-14 — 監視WebSocketの読取停止を60秒の負荷で追試する（#197、Codex）
 
 - `runtime-measure.mjs` で最大60秒を指定できるようにし、WS切断コードと失敗時点までの測定結果を保存する。PR #456 のWindowsホストを使用し、OS入力は無効。
@@ -2409,6 +2429,12 @@
 
 - cargo-auditの実行ファイルだけをOS・アーキテクチャ・ツール版・Rust版でキャッシュする。キャッシュがなければ固定版を従来どおりソースからビルドする。両クレートの必須監査では毎回RustSecのデータベースを更新する。
 - ワークフローのYAML構造、両クレートの監査コマンド、構造検査、差分検査を確認した。CIでのキャッシュ復元と実行時間は未測定。
+
+## 2026-11-14 — スマホの操作画面と配置編集を同じキャンバスにする（#271・#50・#376、Claude Code）
+
+- チームの仕様（操作画面・編集画面、2026-11-13）の確定項目に合わせた。未編集の人も含め、プレイと編集を `#genControls` いっぱいの同じ領域・同じ位置計算で描き、編集の前後で位置・幅・高さが一致する。初期配置は担当の部品だけで領域を埋める。上部はロゴと「⋯」だけにし、「配置を編集」は「⋯」の中、編集中は上の帯を「破棄・↶・保存」にした（2026-11-14 ユーザー判断）。
+- レイアウトのデータを版2（`w`・`h`）にし、8つのハンドル（スティックは正方形で四隅だけ）、長押しメニュー、重なる場所でのいちばん近い空きへのスナップ（なければ元の位置へ）、ぶつかる手前で止まるリサイズ、元に戻すを実装した。ほかの部品は動かさない。版1の保存値は読まずに初期配置へ戻す。
+- `phone-layout-test` 15/15、web の試験一式、`npm run build`、`check-public-docs` が合格。撮影の仕組み（dry-run＋headless Chrome、タッチ再現）で編集〜保存〜再読み込みの位置一致と、編集中の送信0件を確認し、協力プレイ画面の撮影証拠3枚を更新した。実機（iPhone Safari・Android Chrome）の指の操作は未確認。全員の初期配置が変わるため、Award Day の前に入れるなら実機で一度通す。詳細は [判断記録](../decisions/2026-11-14-phone-operation-canvas.md)。
 ## 2026-11-14 — PCの接続案内を標準のダイアログ操作で閉じる（#278、Codex）
 
 - 参加トラブル案内と同じ `method="dialog"` を使い、接続案内の閉じるボタン専用のDOMリスナーを外した。WebView2の試験に閉じた後のフォーカス復帰を追加した。
@@ -2426,3 +2452,16 @@
 - カタログ：`scripts/profiles/engines.mjs` に同じ読み取りを置き、`extract.mjs` から同じ順番で呼ぶ（Rewired は従来どおり JS では読まない）。PlayerPrefs は `reg query` で読み取り専用で読む。
 - 確認：手元ではホスト全体（OpenSSL）を空きメモリ不足でビルドできないため、`engines` と、それが使う `controls.rs`・`keybinds.rs` の一部（Key・name_key・source_cfg・expand をそのまま取り出したもの）だけの小さなクレートで、Rust の単体試験16件・Clippy（`-D warnings`）・`windows` クレートのレジストリ部分のビルドが合格した。`cargo fmt --check` 合格。JS は `profile-engines-test.mjs` 8/8（Rust と同じ入力・期待値）、`profile-extract-test.mjs` 合格。ホスト全体のビルド・試験は CI で確認する。
 - 実ゲームで未確認：ツクール・ウディタ・Source 2・Bethesda・Quake 系（手元に該当するゲームがない）。分担が成り立つかの実機確認も未実施。
+## 2026-11-14 — 分担の作り方の表記を「定型ルール／独自AI」にする（#475、Claude Code）
+
+- 利用者の判断：分担の画面の「規則」を「定型ルール」、「モデル（未検証）」を「独自AI」にする。ルールで割り当てることが、エンジニアでなくても分かる表記にする。各ボタンに説明の title を付けた。値（`rule`・`model`）と通信は変えていない。
+- 同じ判断で、分担の既定をモデルにすること（#474）も利用者が了承した。
+## 2026-11-14 — WebSocket送信間隔を計測用ホストで記録する（#426、Codex）
+
+- 計測用ホストで参加者へのWebSocket本文の送信完了間隔が3秒以上の場合に `ws_send_gap` をセッションJSONLへ記録する。枠、前回の成功からの間隔 `gapMs`、今回のソケット送信処理に要した `sendMs` を含む。通信・停止の閾値に変更はない。
+- Androidの `recooplay:ws-silence` と同じ試行で比較する。送信完了は受信側での到着を示さず、次の送信が成功しなかった場合の空白はこのログでは確定できない。実機での原因切り分けは未実施。
+- Windowsで `cargo clippy --release --offline --locked --all-targets --features latency-measure -- -D warnings`、Rust書式、差分検査が成功。
+## 2026-11-14 — 操作設定を標準ダイアログ操作で閉じる（#278、Codex）
+
+- 閉じるボタンを `method="dialog"` のフォームへ移し、専用のDOMリスナーを削除した。配布試験にフォーカス復帰と再表示を追加した。
+- Webの型検査・ビルド、試験スクリプトの構文、差分検査が成功。配布WebView2試験はCI待ち。

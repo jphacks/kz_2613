@@ -67,7 +67,7 @@ function fakeGames(dir) {
 }
 
 // ---------- ホストの起動 (必ず注入なし) ----------
-function startHost(port = PORT) {
+function startHost(hotspotState = 'on', port = PORT) {
   const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-sim-'));
   const optionsFile = path.join(logDir, 'options.txt');
   const keyOverridesFile = path.join(logDir, 'key-overrides.json');
@@ -77,8 +77,10 @@ function startHost(port = PORT) {
   fs.copyFileSync(path.join(ROOT,'scripts/sim/fixtures/profiles/test-pseudo.json'),path.join(profilesDir,'test-pseudo.json'));
   // config.json の影響を受けないよう、画面だけを持つ一時ルートを使う
   const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(port), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_FAKE_GAMES: fakeGames(logDir),
+    // 分担の期待値は規則の分担で書いている。既定のモデル (#474) では操作定義のないゲームの分担が変わるため、規則に固定する
+    RECOOPLAY_PRESETS: 'rule',
     // 模擬のホットスポット (#133。dry-run では本物を読まない)
-    RECOOPLAY_FAKE_HOTSPOT: 'SimSpot|sim-pass-1|on',
+    RECOOPLAY_FAKE_HOTSPOT: `SimSpot|sim-pass-1|${hotspotState}`,
     // 手動登録のファイル選択 (#49。中身に書いた場所を選んだことにする)
     RECOOPLAY_FAKE_PICK: path.join(logDir, 'pick.txt'),
     // Minecraft のキー設定の試験用 (ダッシュ = Q、捨てる = R に変えた options.txt)。#101
@@ -477,7 +479,7 @@ async function main() {
       app.close();
     });
 
-    await check('進行: P1だけが準備と明示Readyを実行でき、P2・P3・PC画面から迂回できない', async () => {
+    await check('進行: P1だけがロビーから分担操作を開始でき、安全条件を迂回できない (#440)', async () => {
       let from = p1.mark();
       p2.send({type:'command',cmd:'PREPARE'}); p3.send({type:'command',cmd:'READY'});
       mon.send({type:'phase',phase:'coop'});
@@ -485,12 +487,16 @@ async function main() {
       assert(!p1.msgs.slice(from).some(m=>m.type==='game' && m.game.phase==='coop'), '管理画面/P2/P3から開始した');
       p1.send({type:'command',cmd:'READY'});
       await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from});
-      // 入力の初期値は on (#114)。手動で ON にしなくても、準備の後に Ready できる
+      // 入力の初期値は on (#114)。
       const initial=[...mon.msgs].reverse().find(m=>m.type==='state');
       assert(initial.inject.mode==='on', `入力の初期値=${initial.inject.mode}`);
-      await confirmLineup(mon, p1); p1.send({type:'command',cmd:'PREPARE'});
-      const prepared = await phaseIs(p1,'preparing',from);
-      assert(prepared.game.canReady && !prepared.game.hostReady, '入力の初期値でReadyできない');
+      await confirmLineup(mon, p1);
+      const ready = await p1.waitFor(m=>m.type==='game' && m.game.phase==='lobby' && m.game.canReady,{from});
+      assert(!ready.game.hostReady);
+      from = p1.mark();
+      p2.send({type:'command',cmd:'READY'}); p3.send({type:'command',cmd:'READY'});
+      await sleep(100);
+      assert(!p1.msgs.slice(from).some(m=>m.type==='game' && m.game.phase==='coop'), '非ホストが開始した');
       // 入力を止めると (緊急停止・診断) Ready できず、PC 画面で再開すると Ready できる
       from = p1.mark();
       mon.send({type:'inject_mode',mode:'off'});
@@ -502,13 +508,14 @@ async function main() {
       await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from});
       let gateFrom=p1.mark();
       host.child.stdin.write('activate off\ntarget off\n');
-      await p1.waitFor(m=>m.type==='game' && m.game.inputTarget,{from:gateFrom});
+      const unfocused = await p1.waitFor(m=>m.type==='game' && !m.game.canReady,{from:gateFrom});
+      assert(unfocused.game.readyReasons.some(r=>r.includes('前面')));
       p1.send({type:'command',cmd:'READY'});
       await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from:gateFrom});
       gateFrom=p1.mark();host.child.stdin.write('activate on\ntarget on\n');
       await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from:gateFrom});
       // 2人でもReadyできる (#57)。1人ではReadyできず、PC画面から必要人数を減らしても迂回できない
-      // 準備中に参加者が変わったら、決定し直すまで Ready できない (#109)
+      // ロビーで参加者が変わったら、決定し直すまで開始できない (#109)
       gateFrom=p1.mark();p3.close();
       const changed=await p1.waitFor(m=>m.type==='game' && m.game.connected.length===2,{from:gateFrom});
       assert(!changed.game.canReady && !changed.game.lineupOk,'参加者が変わったのに古い決定でReadyできる');
@@ -523,6 +530,9 @@ async function main() {
       await p1.waitFor(m=>m.type==='game' && m.game.connected.length===3,{from:gateFrom});
       await confirmLineup(mon,p1);
       await p1.waitFor(m=>m.type==='game' && m.game.canReady && m.game.required===2 && m.game.connected.length===3,{from:gateFrom});
+      const routeFrom = p1.mark();
+      host.child.stdin.write('launcher focus\n');
+      await p1.waitFor(m=>m.type==='game' && m.game.remoteRoute==='desktop',{from:routeFrom});
       const rm = mon.mark();
       p2.input('FWD','down'); p3.input('ATTACK','down');
       p2.send({type:'remote',kind:'move',dx:15,dy:5,rseq:1,epoch:p2.epoch});
@@ -537,14 +547,22 @@ async function main() {
       p1.send({type:'remote',kind:'scroll',dy:-30,rseq:5,epoch:p1.epoch});
       await mon.waitFor(m=>m.type==='remote_input' && m.entry.kind==='scroll' && m.entry.notches===1,{from:rm});
       p1.input('REMOTE_LEFT','down'); await injected(mon,'MOUSE_L','down',rm);
+      const beforeRelease = p1.epoch;
+      const releaseFrom = p1.mark();
       p1.send({type:'remote',kind:'release',rseq:6,epoch:p1.epoch});
       await injected(mon,'MOUSE_L','up',rm);
-      await p1.waitFor(m=>m.type==='game' && m.game.epoch>prepared.game.epoch,{from});
+      await p1.waitFor(m=>m.type==='game' && m.game.epoch>beforeRelease,{from:releaseFrom});
       from = p1.mark();
       p1.send({type:'command',cmd:'READY',epoch:0});
       await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from});
+      const epoch = p1.epoch;
+      const held = mon.mark();
+      p1.input('REMOTE_LEFT','down'); await injected(mon,'MOUSE_L','down',held);
+      const released = mon.mark();
       p1.send({type:'command',cmd:'READY'});
       const c = await phaseIs(p1,'coop',from);
+      assert(c.game.epoch > epoch, '開始時にepochを更新していない');
+      await injected(mon,'MOUSE_L','up',released);
       assert(c.game.reason === 'host ready', `reason=${c.game.reason}`);
     });
 
@@ -2152,7 +2170,7 @@ async function main() {
     });
 
     await check('参加情報: 別ホストでは新規参加し、元ホストでは元の枠へ再接続できる (#452)', async () => {
-      const second = startHost(0);
+      const second = startHost('on', 0);
       const clients = [];
       try {
         let port;
@@ -2193,6 +2211,44 @@ async function main() {
       }
     });
     for (const c of [p1, p2, p3, mon]) c?.close();
+    await check('終了時にアプリが起動したホットスポットだけを停止する (#415 A)', async () => {
+      async function quitAndCheck(instance, expected) {
+        const exited = new Promise((resolve) => instance.child.once('exit', resolve));
+        instance.child.stdin.end('quit\n');
+        const code = await Promise.race([exited, sleep(3500).then(() => 'timeout')]);
+        assert(code === 0, `安全停止の終了コード: ${code}`);
+        const log = fs.readdirSync(instance.logDir).filter((f) => f.endsWith('.jsonl'))
+          .map((f) => fs.readFileSync(path.join(instance.logDir, f), 'utf8')).join('');
+        assert(!log.includes('sim-pass-1') && !instance.output().includes('sim-pass-1'), 'パスワードをログに残した');
+        const events = log.split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+        const shutdown = events.findIndex((event) => event.kind === 'shutdown' && event.releaseConfirmed);
+        const hotspot = events.findIndex((event) => event.kind === 'hotspotShutdown' && event.result === expected);
+        assert(shutdown >= 0 && hotspot > shutdown, `安全停止後のホットスポット処理の結果が ${expected} でない`);
+      }
+
+      await quitAndCheck(host, 'notOwned');
+      const owned = startHost('off');
+      try {
+        await waitReady();
+        const readState = async () => (await (await fetch(`${BASE}/api/info`)).json()).hotspot?.on;
+        assert(await readState() === false, '起動前からホットスポットがON');
+        const start = async () => (await (await fetch(`${BASE}/api/hotspot`, {
+          method: 'POST', headers: { Origin: BASE },
+        })).json()).ok;
+        const results = await Promise.all([start(), start()]);
+        assert(results.every(Boolean) && await readState() === true, 'ホットスポットをONにできなかった');
+        const phone = await join('hotspot-shutdown', { clientId: 'sim-client-hotspot-shutdown' });
+        try {
+          assert((await welcome(phone)).type === 'welcome', '終了通知を確認するスマホが参加できなかった');
+          const [closeCode] = await Promise.all([phone.waitClose(), quitAndCheck(owned, 'stopped')]);
+          assert(closeCode === 4009, `スマホの終了通知コード: ${closeCode}`);
+        } finally {
+          phone.close();
+        }
+      } finally {
+        owned.child.kill();
+      }
+    });
     const failed = results.filter((r) => !r.ok);
     console.log(`\n${results.length - failed.length}/${results.length} 合格 (Rust 版、dry-run)`);
     exitCode = failed.length ? 1 : 0;
