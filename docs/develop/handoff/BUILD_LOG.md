@@ -2333,6 +2333,12 @@
 - 切り替え：ホストは feature `latency-measure`（`#[cfg]` で囲み、通常のビルドではコンパイルされない）、スマホは `npm run build:latency`（Viteの `define` で `__LATENCY_MEASURE__` を true にする。通常のビルドでは false として取り除かれる）。通常のビルドの成果物に計測の処理が入らないことを、ビルドした結果の文字列の検索で確かめた（通常0件、計測用1件）。
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
+
+## 2026-11-14 — WebSocket無応答時の受信・タイマー間隔を記録する（#426、Codex）
+
+- 計測用Webビルドで、無応答による張り直し直前に `recooplay:ws-silence` をブラウザーのコンソールへ1件記録する。最後のWS受信からの時間、監視タイマーの実間隔、進行状態、ページの可視性、RTCの開閉を記録する。3秒判定と切断時の停止・全解放は従来どおり。
+- `npm --prefix apps/web run build:latency` と通常の `build` に合格し、診断文字列が計測用にだけ含まれることを確認した。`node scripts/sim/phone-lifecycle-test.mjs` 34/34 と `git diff --check` が合格。
+- Androidの次回測定ではコンソールを保存し、同じ再接続の前後でホストの送信記録と照合する。今回の変更で実Wi-Fiの原因は確定していない。
 ## 2026-11-14 — 速達経路の実Wi-Fi比較で押下遅延を集計する（#451、Codex）
 
 - `python scripts/device/summarize-press-latency.py <変更前のsession.jsonl> <変更後のsession.jsonl>` で参加枠別の計測成立数、遅延破棄数、平均・中央値・p95・p99・最大を出力する。各ファイルは同一端末・同一Wi-Fi・同じ操作手順で採取する。端末とホストの値がそろった押下だけが分布に入り、合計時間は片道を往復の半分とする推定値。遅延破棄数のほかに入力試行数は別途記録する。

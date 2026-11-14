@@ -166,10 +166,24 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   }
 
   // サーバーから 3 秒何も届かなければ、OS が切断に気づくのを待たずに張り直す (Wi-Fi が一瞬止まった時の復帰を早める)
+  let previousWatchdogTick = performance.now();
   lifetime.interval(() => {
+    const now = performance.now();
+    const watchdogIntervalMs = now - previousWatchdogTick;
+    previousWatchdogTick = now;
     // 切断が3秒続いたら、押しても届かない操作を画面全体で覆う (#302)。再接続は続ける
     if (lostAt !== null) phoneView.offline(!session.stopped && performance.now() - lostAt >= OFFLINE_NOTICE_MS);
     if (!session.silent()) return;
+    if (measureLatency) {
+      console.info('recooplay:ws-silence', JSON.stringify({
+        atMs: Math.round(now),
+        silenceMs: Math.round(session.serverSilenceMs()),
+        watchdogIntervalMs: Math.round(watchdogIntervalMs),
+        phase: session.game?.phase,
+        hidden: document.hidden,
+        rtcOpen: fast.isOpen(),
+      }));
+    }
     const old = session.detach();
     try { old?.close(); } catch {}
     onDisconnected(1006);
