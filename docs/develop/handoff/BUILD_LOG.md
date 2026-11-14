@@ -2345,6 +2345,12 @@
 - 既存のdry-run計測時に、送信結果と上限超過の有無を接続番号付きで出力する。計測スクリプトは成功・失敗の双方でこの情報を保存し、失敗時にもホストに正常終了を要求する。
 - Windowsの `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml`、`node --check scripts/sim/runtime-measure.mjs`、`git diff --check` が成功。新しいホストのSHA-256は `6ea869f4afd7b0d2bb055918686002e8554835bc1100251ad5c7ccae373e20a6`。
 - `runtime-measure.mjs --players 2 --cases normal,slow-monitor --duration-ms 5000` は2/2合格。 `--players 4 --cases slow-monitor --duration-ms 60000` は停止通知の待機で失敗した。読取り継続側は送信成功かつ上限超過で切断され、ホストログにはキー解放が残った。通知配送の改善と実Wi-Fi受入は未実施。
+
+## 2026-11-14 — 監視キューの混雑時に入力診断ログの転送を抑える（#197、Codex）
+
+- 送信待ちが256件以上の監視接続への入力診断ログの転送を省く。保存ログと制御通知は従来の経路を使う。テストで診断ログによるキュー飽和を防ぎ、緊急停止の状態通知が残ることを確認した。
+- Windowsの `cargo build --release --locked --offline` と `cargo test --release --locked --offline` が成功。ホスト200件、プローブ4件合格、既存の除外5件。Webビルド、構造検査、差分検査も成功。
+- `runtime-measure.mjs --players 4 --cases slow-monitor --duration-ms 60000` が合格。読み続ける監視で停止と全解放、参加者で旧epochの拒否を確認。実Wi-Fi受入は未実施。
 ## 2026-11-14 — 別ホストへの参加を通信回帰で検証する（#452、Codex）
 
 - 2台目のdry-runホストをOS割当ポートで起動し、元ホストの参加情報で新規参加できることと、元ホストで元の枠に再接続できることを確認する。既存の不一致トークン拒否も引き続き実行する。
