@@ -1,1 +1,1 @@
-export const PHONE_PROTOCOL_VERSION = 5;
+export const PHONE_PROTOCOL_VERSION = 6;
