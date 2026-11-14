@@ -2581,3 +2581,8 @@
 - 疑似ゲーム画面（開発用）と、文中の「→」（手順の説明）は文字のまま。
 - 試験：`check-static-pages.mjs` に、製品の画面のソース（疑似ゲーム画面とコメントを除く）に対象の記号が残っていないことの検査を足した。`controller-preview-test.mjs` にスティックの矢印が SVG であること。
 - 確認：`npm run build`（型検査を含む）、`check-static-pages`、`controller-preview-test`、`ui-input-test` 20/20、`product-web-test`、`app-view-test` 37/37、`phone-view-test`、`controller-layout-test`、`phone-layout-test` 15/15 が合格。Android・iPhone の実機での見た目は未確認。
+
+### #515 最新mainでの引き継ぎ確認
+- `npm --prefix apps/web run build`、`node scripts/sim/check-static-pages.mjs` に合格。
+- Node.js 22.15.0 で `--experimental-strip-types` を指定し、`controller-preview-test.mjs`、`ui-input-test.mjs`（20/20）、`phone-view-test.mjs`（8観点）に合格。対象は `scripts/sim/`。
+- Android・iPhoneでの画面撮影と位置の確認は未実施。
