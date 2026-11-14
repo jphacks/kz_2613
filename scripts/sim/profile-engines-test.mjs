@@ -7,7 +7,9 @@ import path from 'node:path';
 import {
   keyName, vkKey, dikKey, keyMapper, actionsFromMapper, enabledPlugins, mapperAssignments, rpgmaker, wolf, cfgBindings, actionsFromBindings,
   quake, actionsFromVcfg, source2, actionsFromControlMap, creation, findAxes, actionsFromAxes, hasCustomAxes, unityLegacy, parseOverrides, applyOverrides, engineActions,
+  godotKey, actionsFromGodotProject, godot, actionsFromUeIni, unreal, zipEntries, zipRead, actionsFromCryXml, cryengine,
 } from '../profiles/engines.mjs';
+import zlib from 'node:zlib';
 
 const MV_CORE = `
 Input.keyMapper = {
@@ -198,6 +200,114 @@ test('Unity の PlayerPrefs: Input System の上書き', () => {
   assert.equal(assets[0].maps[0].bindings[0].path, '<Keyboard>/k');
   assert.equal(assets[0].maps[0].bindings[1].path, '<Gamepad>/a');
   assert.deepEqual(parseOverrides('ja'), []);
+});
+
+// ---------- Godot (ホストの godot.rs の試験と同じ並び) ----------
+const u32 = (v) => { const b = Buffer.alloc(4); b.writeUInt32LE(v >>> 0); return b; };
+function vstr(parts, s) { const b = Buffer.from(s, 'utf8'); parts.push(u32(4), u32(b.length), b, Buffer.alloc((4 - (b.length % 4)) % 4)); }
+function vint(parts, v) { const b = Buffer.alloc(4); b.writeInt32LE(v); parts.push(u32(2), b); }
+function actionValue(events) {
+  const p = [u32(18), u32(2)];
+  vstr(p, 'deadzone'); p.push(u32(3)); const f = Buffer.alloc(4); f.writeFloatLE(0.5); p.push(f);
+  vstr(p, 'events'); p.push(u32(19), u32(events.length));
+  for (const [cls, props] of events) { p.push(u32(24)); vstr(p, cls); p.push(u32(props.length)); for (const [n, v] of props) { vstr(p, n); vint(p, v); } }
+  return Buffer.concat(p);
+}
+function godotProject(entries) {
+  const p = [Buffer.from('GDPC'), Buffer.alloc(92), Buffer.from('ECFG'), u32(entries.length)];
+  for (const [k, v] of entries) { const kb = Buffer.from(k); p.push(u32(kb.length), kb, u32(v.length), v); }
+  return Buffer.concat(p);
+}
+
+test('Godot: project.binary の InputMap (4 と 3)', () => {
+  const name = []; vstr(name, 'Test');
+  const b = godotProject([
+    ['application/config/name', Buffer.concat(name)],
+    ['input/move_left', actionValue([['InputEventKey', [['keycode', 0], ['physical_keycode', 65]]], ['InputEventKey', [['physical_keycode', (1 << 22) | 0x0f]]]])],
+    ['input/jump', actionValue([['InputEventJoypadButton', [['button_index', 0]]], ['InputEventKey', [['physical_keycode', 32]]]])],
+    ['input/shoot', actionValue([['InputEventMouseButton', [['button_index', 1]]]])],
+    ['input/ui_accept', actionValue([['InputEventKey', [['physical_keycode', (1 << 22) | 0x05]]]])],
+    ['input/dash', actionValue([['InputEventKey', [['scancode', (1 << 24) | 0x15]]]])],
+  ]);
+  const a = actionsFromGodotProject(b);
+  assert.deepEqual(a.map((x) => [x.id, x.label, x.def]), [['godot/move_left', 'move left', 'KEY_A'], ['godot/jump', 'jump', 'SPACE'], ['godot/shoot', 'shoot', 'MOUSE_L'], ['godot/dash', 'dash', 'LSHIFT']]);
+  assert.equal(godotKey(87), 'KEY_W'); assert.equal(godotKey((1 << 24) | 0x10), 'ARROW_UP'); assert.equal(godotKey((1 << 22) | 0x1c), 'F1'); assert.equal(godotKey(0x2a), null);
+  assert.deepEqual(actionsFromGodotProject(Buffer.from('GDPC\0\0\0\0random bytes without the config')), []);
+  put('gd/Game.exe', Buffer.concat([Buffer.from('MZ'), godotProject([['input/jump', actionValue([['InputEventKey', [['keycode', 32]]]])]]), Buffer.from('GDPC')]));
+  assert.equal(godot(path.join(tmp, 'gd')).actions[0].def, 'SPACE', 'exe の末尾に埋め込んだ PCK');
+});
+
+// ---------- Unreal ----------
+const DEFAULT_INPUT = '[/Script/Engine.InputSettings]\r\n'
+  + '+ActionMappings=(ActionName="Jump",bShift=False,bCtrl=False,bAlt=False,bCmd=False,Key=SpaceBar)\r\n'
+  + '+ActionMappings=(ActionName="Jump",bShift=False,bCtrl=False,bAlt=False,bCmd=False,Key=Gamepad_FaceButton_Bottom)\r\n'
+  + '+ActionMappings=(ActionName="Fire",bShift=False,bCtrl=False,bAlt=False,bCmd=False,Key=LeftMouseButton)\r\n'
+  + '+AxisMappings=(AxisName="MoveForward",Scale=1.000000,Key=W)\r\n+AxisMappings=(AxisName="MoveForward",Scale=-1.000000,Key=S)\r\n'
+  + '+AxisMappings=(AxisName="MoveRight",Scale=1.000000,Key=D)\r\n+AxisMappings=(AxisName="Turn",Scale=1.000000,Key=MouseX)\r\n'
+  + '+AxisMappings=(AxisName="LookUp",Scale=-1.000000,Key=MouseY)\r\n\r\n[/Script/Engine.Other]\r\nfoo=bar\r\n';
+
+test('Unreal: ActionMappings・AxisMappings と pak の中の DefaultInput.ini', () => {
+  const a = actionsFromUeIni(DEFAULT_INPUT);
+  assert.deepEqual(a.map((x) => [x.id, x.label, x.def ?? null]), [
+    ['unreal/Fire', 'Fire', 'MOUSE_L'], ['unreal/Jump', 'Jump', 'SPACE'], ['unreal/MoveForward/+', 'MoveForward forward', 'KEY_W'],
+    ['unreal/MoveForward/-', 'MoveForward back', 'KEY_S'], ['unreal/MoveRight/+', 'MoveRight right', 'KEY_D'], ['unreal/look', '視点', null],
+  ]);
+  const user = '[/Script/Engine.InputSettings]\n-ActionMappings=(ActionName="Jump",bShift=False,bCtrl=False,bAlt=False,bCmd=False,Key=SpaceBar)\n+ActionMappings=(ActionName="Jump",bShift=False,bCtrl=False,bAlt=False,bCmd=False,Key=J)\n';
+  assert.equal(actionsFromUeIni(`${DEFAULT_INPUT}\n${user}`).find((x) => x.id === 'unreal/Jump').def, 'KEY_J');
+  fs.mkdirSync(path.join(tmp, 'ue/MyGame/Binaries/Win64'), { recursive: true });
+  fs.mkdirSync(path.join(tmp, 'ue/Engine/Binaries/Win64'), { recursive: true });
+  put('ue/MyGame/Content/Paks/MyGame-WindowsNoEditor.pak', Buffer.concat([Buffer.alloc(9 * 1024 * 1024 - 10, 0xcc), Buffer.from(DEFAULT_INPUT), Buffer.from([0]), Buffer.alloc(1000, 0xee)]));
+  const found = unreal(path.join(tmp, 'ue'), path.join(tmp, 'nolocal'));
+  assert.match(found.source, /DefaultInput\.ini/);
+  assert.ok(found.actions.some((x) => x.id === 'unreal/Jump') && !found.actions.some((x) => x.id.includes('foo')), 'チャンクの境界をまたいでも見つける');
+  put('ue/MyGame/Content/Paks/MyGame-WindowsNoEditor.pak', Buffer.alloc(4096, 0xab));
+  assert.equal(unreal(path.join(tmp, 'ue'), path.join(tmp, 'nolocal')), null);
+});
+
+// ---------- CryEngine ----------
+function makeZip(files, deflate) {
+  const out = [], central = []; let off = 0;
+  for (const [name, data] of files) {
+    const body = deflate ? zlib.deflateRawSync(data) : Buffer.from(data), method = deflate ? 8 : 0, nb = Buffer.from(name);
+    const lh = Buffer.alloc(30); lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(method, 8); lh.writeUInt32LE(body.length, 18); lh.writeUInt32LE(data.length, 22); lh.writeUInt16LE(nb.length, 26);
+    const ch = Buffer.alloc(46); ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(20, 4); ch.writeUInt16LE(20, 6); ch.writeUInt16LE(method, 10); ch.writeUInt32LE(body.length, 20); ch.writeUInt32LE(data.length, 24); ch.writeUInt16LE(nb.length, 28); ch.writeUInt32LE(off, 42);
+    out.push(lh, nb, body); central.push(ch, nb); off += 30 + nb.length + body.length;
+  }
+  const cd = Buffer.concat(central), end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(files.length, 8); end.writeUInt16LE(files.length, 10); end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(off, 16);
+  return Buffer.concat([...out, cd, end]);
+}
+const CRY_XML = `<profile version="2">
+ <actionmap name="player" version="22">
+  <action name="moveforward" onPress="1" onRelease="1" keyboard="w" xboxpad="xi_thumbly" />
+  <action name="moveleft" onPress="1" onRelease="1" keyboard="a" />
+  <action name="jump" onPress="1" keyboard="space" />
+  <action name="sprint" onPress="1" keyboard="lshift" />
+  <action name="attack1" onPress="1" keyboard="mouse1" />
+  <action name="rotateyaw" keyboard="maxis_x" />
+  <action name="use">
+   <keyboard input="f" />
+  </action>
+  <action name="voice" keyboard="" />
+ </actionmap>
+</profile>`;
+
+test('CryEngine: zip と actionmaps', () => {
+  for (const deflate of [false, true]) {
+    const z = makeZip([['Libs/Config/a.xml', Buffer.from('<x/>')], ['b.txt', Buffer.from('hello hello hello')]], deflate);
+    for (const b of [z, Buffer.concat([Buffer.from('MZ some exe bytes'), z])]) {
+      const e = zipEntries(b);
+      assert.equal(e.length, 2); assert.equal(e[0].name, 'Libs/Config/a.xml'); assert.equal(zipRead(b, e[1]).toString(), 'hello hello hello');
+    }
+  }
+  assert.deepEqual(zipEntries(Buffer.from('not a zip')), []);
+  const a = actionsFromCryXml(CRY_XML);
+  assert.deepEqual(a.map((x) => [x.id, x.def ?? null]), [['cryengine/moveforward', 'KEY_W'], ['cryengine/moveleft', 'KEY_A'], ['cryengine/jump', 'SPACE'], ['cryengine/sprint', 'LSHIFT'], ['cryengine/attack1', 'MOUSE_L'], ['cryengine/use', 'KEY_F'], ['cryengine/look', null]]);
+  fs.mkdirSync(path.join(tmp, 'cry/Bin64'), { recursive: true });
+  put('cry/GameData/GameData.pak', makeZip([['Libs/Config/defaultProfile.xml', Buffer.from(CRY_XML)]], true));
+  assert.equal(cryengine(path.join(tmp, 'cry')).actions[0].id, 'cryengine/moveforward');
+  put('cry/GameData/GameData.pak', Buffer.alloc(2048, 0x5a));
+  assert.equal(cryengine(path.join(tmp, 'cry')), null);
 });
 
 try {

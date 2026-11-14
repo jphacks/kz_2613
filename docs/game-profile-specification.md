@@ -82,6 +82,9 @@ Steam・Epic Gamesの検出情報はゲーム選択と入力先の判定に用�
 | WOLF RPG エディター | 種類だけを見分け、エンジン固定の既定のキー（#488） | 既定 |
 | Source 2 | Steam の`userdata/<アカウント>/<AppID>/local/cfg/`の`.vcfg`（#487） | 利用者の設定 |
 | Creation Engine（Skyrim SE・Fallout 4・Starfield） | `Documents\My Games\<ゲーム>\ControlMap_Custom.txt`。ない場合は Skyrim だけ既定の割当（#486） | 利用者の設定 |
+| Godot 3・4 | PCK（独立した`.pck`か exe の末尾）の`project.binary`の InputMap。組み込みの`ui_*`は出さない（#485） | あり |
+| Unreal Engine 4・5 | pak の中の`DefaultInput.ini`（暗号化・圧縮されていないもの）と、`%LOCALAPPDATA%\<Project>\Saved\Config\Windows`（UE4 は`WindowsNoEditor`）の`Input.ini`。Enhanced Input は未対応（#482） | あり |
+| CryEngine | pak（zip）の中の`defaultProfile.xml`などの actionmaps（#489） | あり |
 | Quake 系・Source 1 | `id1/config.cfg`・`baseq2/config.cfg`・`baseq3/q3config.cfg`、`<mod>/cfg/config.cfg`（#491） | 利用者の設定 |
 | .NET（Rewired） | `RewiredConsts.Action`の定数 | なし |
 | Unity の旧 Input Manager | `globalgamemanagers`の軸（型情報なしで読む）。作品が足した軸がなければ使わない（#483） | あり |

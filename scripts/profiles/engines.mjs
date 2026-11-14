@@ -5,12 +5,16 @@
 //   - Source 2 の利用者の .vcfg (#487)
 //   - Creation Engine の ControlMap_Custom.txt、Skyrim の既定の割当 (#486)
 //   - Quake 系と Source 1 の cfg (#491)
+//   - Godot 3・4 の project.binary の InputMap (#485)
+//   - Unreal Engine 4・5 の DefaultInput.ini (pak の中) と利用者の Input.ini (#482)
+//   - CryEngine の actionmaps (pak = zip の中、#489)
 //   - Unity の旧 Input Manager の軸 (#483)
 // Unity の PlayerPrefs の上書き (#484) は extract.mjs の unityInputActions で反映する (prefsOverrides)。
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import zlib from 'node:zlib';
 
 const MAX_TEXT = 20e6;
 
@@ -340,6 +344,251 @@ export function creation(dir, documents = path.join(os.homedir(), 'Documents')) 
   return game === 'Skyrim Special Edition' ? { source: 'Skyrim の既定の割当', actions: skyrimDefaults() } : null;
 }
 
+// ---------- zip (CryEngine の pak など。保存と Deflate だけ、暗号化は読まない) ----------
+export function zipEntries(b) {
+  let eocd = -1;
+  for (let i = b.length - 22; i >= Math.max(0, b.length - 65557); i--) if (b[i] === 0x50 && b[i + 1] === 0x4b && b[i + 2] === 5 && b[i + 3] === 6) { eocd = i; break; }
+  if (eocd < 0) return [];
+  const count = b.readUInt16LE(eocd + 10), cdSize = b.readUInt32LE(eocd + 12), cdOffset = b.readUInt32LE(eocd + 16);
+  const cd = eocd - cdSize, base = cd - cdOffset;
+  if (cd < 0 || base < 0) return [];
+  const out = [];
+  for (let i = 0, o = cd; i < count && o + 46 <= b.length && b.readUInt32LE(o) === 0x02014b50; i++) {
+    const nlen = b.readUInt16LE(o + 28), xlen = b.readUInt16LE(o + 30), clen = b.readUInt16LE(o + 32);
+    out.push({ name: b.subarray(o + 46, o + 46 + nlen).toString('utf8').replace(/\\/g, '/'), flags: b.readUInt16LE(o + 8), method: b.readUInt16LE(o + 10),
+      compressed: b.readUInt32LE(o + 20), size: b.readUInt32LE(o + 24), local: base + b.readUInt32LE(o + 42) });
+    o += 46 + nlen + xlen + clen;
+  }
+  return out;
+}
+export function zipRead(b, e) {
+  if (e.flags & 1 || e.size > 16 * 1024 * 1024 || e.local + 30 > b.length || b.readUInt32LE(e.local) !== 0x04034b50) return null;
+  const at = e.local + 30 + b.readUInt16LE(e.local + 26) + b.readUInt16LE(e.local + 28);
+  const data = b.subarray(at, at + e.compressed);
+  try { return e.method === 0 ? Buffer.from(data) : e.method === 8 ? zlib.inflateRawSync(data, { maxOutputLength: 16 * 1024 * 1024 }) : null; } catch { return null; }
+}
+
+// ---------- Godot ----------
+export function godotKey(code) {
+  const special = code & (1 << 24) ? code - (1 << 24) : code & (1 << 22) ? code - (1 << 22) : null;
+  if (special !== null) {
+    const names = { 0x01: 'escape', 0x02: 'tab', 0x04: 'backspace', 0x05: 'enter', 0x07: 'insert', 0x08: 'delete', 0x0d: 'home', 0x0e: 'end', 0x0f: 'left', 0x10: 'up', 0x11: 'right', 0x12: 'down', 0x13: 'pageup', 0x14: 'pagedown', 0x15: 'shift', 0x16: 'ctrl', 0x18: 'alt', 0x19: 'capslock' };
+    if (special >= 0x1c && special <= 0x27) return keyName(`f${special - 0x1b}`);
+    return names[special] ? keyName(names[special]) : null;
+  }
+  const punct = { 32: 'space', 39: 'apostrophe', 44: 'comma', 45: 'minus', 46: 'period', 47: 'slash', 59: 'semicolon', 61: 'equals', 91: 'leftbracket', 92: 'backslash', 93: 'rightbracket', 96: 'grave' };
+  if (punct[code]) return keyName(punct[code]);
+  if ((code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122)) return keyName(String.fromCharCode(code).toLowerCase());
+  return null;
+}
+export function godotProjectEntries(b) {
+  for (let pos = b.indexOf('ECFG'); pos >= 0; pos = b.indexOf('ECFG', pos + 4)) {
+    if (pos + 8 > b.length) break;
+    const count = b.readUInt32LE(pos + 4);
+    if (!count || count > 100000) continue;
+    let o = pos + 8; const out = []; let ok = true;
+    for (let i = 0; i < count; i++) {
+      if (o + 4 > b.length) { ok = false; break; }
+      const kl = b.readUInt32LE(o); if (!kl || kl > 1024 || o + 4 + kl + 4 > b.length) { ok = false; break; }
+      const key = b.subarray(o + 4, o + 4 + kl).toString('utf8'); o += 4 + kl;
+      const vl = b.readUInt32LE(o); if (o + 4 + vl > b.length) { ok = false; break; }
+      out.push([key, b.subarray(o + 4, o + 4 + vl)]); o += 4 + vl;
+    }
+    if (ok && out.some(([k]) => k.includes('/'))) return out;
+  }
+  return [];
+}
+function intAfter(v, at, name) {
+  if (at < 4 || v.readUInt32LE(at - 4) !== name.length) return null;
+  const after = (at + name.length + 3) & ~3;
+  if (after + 8 > v.length) return null;
+  const h = v.readUInt32LE(after);
+  if ((h & 0xffff) !== 2) return null;
+  if (h & (1 << 16)) return after + 12 <= v.length ? Number(v.readBigInt64LE(after + 4)) : null;
+  return v.readInt32LE(after + 4);
+}
+const findAll = (hay, needle) => { const out = []; for (let i = hay.indexOf(needle); i >= 0; i = hay.indexOf(needle, i + 1)) out.push(i); return out; };
+export function godotEvents(v) {
+  const marks = [];
+  for (const cls of ['InputEventKey', 'InputEventMouseButton', 'InputEventJoypadButton', 'InputEventJoypadMotion']) {
+    for (const at of findAll(v, cls)) { const next = v[at + cls.length]; if (next !== undefined && /[A-Za-z]/.test(String.fromCharCode(next))) continue; marks.push([at, cls]); }
+  }
+  marks.sort((a, b) => a[0] - b[0]);
+  const out = [];
+  marks.forEach(([at, cls], i) => {
+    const end = i + 1 < marks.length ? marks[i + 1][0] : v.length;
+    const seg = v.subarray(0, end);
+    const prop = (name) => { for (const p of findAll(seg.subarray(at), name)) { const x = intAfter(seg, at + p, name); if (x !== null) return x || null; } return null; };
+    if (cls === 'InputEventKey') { const c = prop('physical_keycode') ?? prop('keycode') ?? prop('physical_scancode') ?? prop('scancode'); out.push(c ? godotKey(c) : null); }
+    else if (cls === 'InputEventMouseButton') { const bi = prop('button_index'); out.push(bi === 1 ? 'MOUSE_L' : bi === 2 ? 'MOUSE_R' : null); }
+  });
+  return out;
+}
+export function actionsFromGodotProject(b) {
+  const out = [];
+  for (const [key, value] of godotProjectEntries(b)) {
+    if (!key.startsWith('input/')) continue;
+    const name = key.slice(6);
+    if (!name || name.startsWith('ui_')) continue;
+    const evs = godotEvents(value);
+    if (!evs.length) continue;
+    out.push(button(`godot/${name}`, name.replace(/_/g, ' '), evs.find(Boolean) || null));
+  }
+  return out;
+}
+function pckMarker(file) {
+  let fd;
+  try {
+    fd = fs.openSync(file, 'r');
+    const size = fs.fstatSync(fd).size, buf = Buffer.alloc(4);
+    fs.readSync(fd, buf, 0, 4, 0); if (buf.toString('latin1') === 'GDPC') return true;
+    if (size >= 4) { fs.readSync(fd, buf, 0, 4, size - 4); return buf.toString('latin1') === 'GDPC'; }
+    return false;
+  } catch { return false; } finally { if (fd !== undefined) fs.closeSync(fd); }
+}
+export function godot(dir) {
+  let names = []; try { names = fs.readdirSync(dir).sort(); } catch { return null; }
+  const pcks = names.filter((n) => /\.pck$/i.test(n)), exes = names.filter((n) => /\.exe$/i.test(n));
+  for (const n of pcks.length ? pcks : exes) {
+    const f = path.join(dir, n);
+    try { if (fs.statSync(f).size > 300e6 || !pckMarker(f)) continue; } catch { continue; }
+    const a = actionsFromGodotProject(fs.readFileSync(f));
+    if (a.length) return { source: 'Godot の project.binary の InputMap', actions: a };
+  }
+  return null;
+}
+
+// ---------- Unreal Engine ----------
+/** keybinds.rs の ue_input_ini と同じ規則で、ActionMappings・AxisMappings を (名前 → キー) にする */
+export function ueInputIni(text) {
+  const map = new Map(); let active = [];
+  const field = (line, k) => { const i = line.indexOf(`${k}=`); if (i < 0) return null; return line.slice(i + k.length + 1).replace(/^"/, '').match(/^[^",)]*/)[0]; };
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim(), op = line[0] || ' ', l = line.replace(/^[+\-.!]+/, '');
+    const eq = l.indexOf('='); if (eq < 0) continue;
+    const array = l.slice(0, eq), row = l.slice(eq + 1);
+    if (array !== 'ActionMappings' && array !== 'AxisMappings') continue;
+    if (op === '!') { active = active.filter((a) => a.array !== array); map.set(`${array}/*`, 'unbound'); continue; }
+    const key = field(l, 'Key'); if (key === null || /^(Gamepad|MotionController)/.test(key)) continue;
+    let name = null;
+    if (array === 'ActionMappings') name = field(l, 'ActionName');
+    else { const sc = parseFloat(field(l, 'Scale') ?? '1'); const an = field(l, 'AxisName'); name = an === null ? null : `${an}/${(Number.isFinite(sc) ? sc : 1) < 0 ? '-' : '+'}`; }
+    if (name === null) continue;
+    map.set(name, 'unbound');
+    if (op === '-') { active = active.filter((a) => a.array !== array || a.row !== row); continue; }
+    if (op !== '+' && op !== '.') { active = active.filter((a) => a.array !== array); map.set(`${array}/*`, 'unbound'); }
+    const modified = ['bShift', 'bCtrl', 'bAlt', 'bCmd'].some((f) => (field(l, f) || '').toLowerCase() === 'true');
+    const out = modified ? { unsupported: `修飾キー付きの${key}` } : keyName(key) ? { key: keyName(key) } : { unsupported: key };
+    if (op !== '+' || !active.some((a) => a.array === array && a.row === row)) active.push({ array, row, name, out });
+  }
+  for (const a of active) if (map.get(a.name) === 'unbound') map.set(a.name, a.out);
+  return map;
+}
+function axisLabel(name) {
+  const i = name.lastIndexOf('/'); if (i < 0) return name;
+  const axis = name.slice(0, i), sign = name.slice(i + 1), l = axis.toLowerCase();
+  const [minus, plus] = l.includes('forward') ? ['back', 'forward'] : l.includes('right') ? ['left', 'right'] : l.includes('up') ? ['down', 'up'] : ['negative', 'positive'];
+  return `${axis} ${sign === '-' ? minus : plus}`;
+}
+export function actionsFromUeIni(text) {
+  const map = ueInputIni(text), out = []; let hasLook = false;
+  for (const name of [...map.keys()].filter((k) => !k.endsWith('/*')).sort()) {
+    const v = map.get(name);
+    if (v?.key) out.push(button(`unreal/${name}`, axisLabel(name), v.key));
+    else if (v?.unsupported && /^mouse[xy]$/i.test(v.unsupported)) hasLook = true;
+  }
+  if (hasLook) out.push(look('unreal/look', '視点'));
+  return out;
+}
+function ueSection(file) {
+  const SECTION = Buffer.from('[/Script/Engine.InputSettings]');
+  let fd;
+  try {
+    if (fs.statSync(file).size > 1.5e9) return null;
+    fd = fs.openSync(file, 'r');
+    const chunk = Buffer.alloc(8 * 1024 * 1024); let carry = Buffer.alloc(0), pos = 0;
+    for (;;) {
+      const n = fs.readSync(fd, chunk, 0, chunk.length, pos); if (!n) return null; pos += n;
+      carry = Buffer.concat([carry, chunk.subarray(0, n)]);
+      const at = carry.indexOf(SECTION);
+      if (at >= 0) {
+        while (carry.length < at + 65536) { const m = fs.readSync(fd, chunk, 0, chunk.length, pos); if (!m) break; pos += m; carry = Buffer.concat([carry, chunk.subarray(0, m)]); }
+        const lines = []; let first = true;
+        for (const line of carry.subarray(at, at + 65536).toString('utf8').split('\n')) {
+          const l = line.replace(/\r$/, '');
+          if ((!first && l.startsWith('[')) || l.includes('\0')) break;
+          lines.push(l); first = false;
+        }
+        return lines.join('\n') + '\n';
+      }
+      carry = carry.subarray(Math.max(0, carry.length - SECTION.length));
+    }
+  } catch { return null; } finally { if (fd !== undefined) fs.closeSync(fd); }
+}
+export function unreal(dir, localAppData = process.env.LOCALAPPDATA) {
+  let project = null;
+  try { project = fs.readdirSync(dir).sort().map((n) => path.join(dir, n)).find((p) => path.basename(p) !== 'Engine' && isDir(path.join(p, 'Binaries', 'Win64')) && isDir(path.join(p, 'Content', 'Paks'))); } catch {}
+  if (!project) return null;
+  let defaults = null;
+  try {
+    const paks = fs.readdirSync(path.join(project, 'Content', 'Paks')).filter((n) => /\.pak$/i.test(n))
+      .sort((a, b) => (/chunk0/i.test(a) ? 0 : 1) - (/chunk0/i.test(b) ? 0 : 1) || (a.toLowerCase() < b.toLowerCase() ? -1 : 1));
+    for (const p of paks) { defaults = ueSection(path.join(project, 'Content', 'Paks', p)); if (defaults) break; }
+  } catch {}
+  let user = null;
+  if (localAppData) for (const plat of ['Windows', 'WindowsNoEditor']) {
+    const t = readText(path.join(localAppData, path.basename(project), 'Saved', 'Config', plat, 'Input.ini'));
+    if (t && t.includes('Mappings')) { user = t; break; }
+  }
+  if (!defaults && !user) return null;
+  const a = actionsFromUeIni(`${defaults || ''}\n${user || ''}`);
+  const source = defaults && user ? 'Unreal Engine の DefaultInput.ini と利用者の Input.ini' : defaults ? 'Unreal Engine の DefaultInput.ini（pak の中）' : 'Unreal Engine の利用者の Input.ini';
+  return a.length ? { source, actions: a } : null;
+}
+
+// ---------- CryEngine ----------
+const xmlAttr = (tag, name) => tag.match(new RegExp(`(?:^|\\s)${name}\\s*=\\s*(["'])(.*?)\\1`))?.[2] ?? null;
+const cryKey = (n) => ({ lshift: 'LSHIFT', rshift: 'RSHIFT', lctrl: 'LCTRL', rctrl: 'RCTRL', lalt: 'LALT', ralt: 'RALT', enter: 'ENTER', np_enter: 'ENTER' })[n.trim().toLowerCase()] || keyName(n);
+export function actionsFromCryXml(xml) {
+  const out = []; let hasLook = false;
+  const re = /<action\b([^>]*)>/g; let m;
+  while ((m = re.exec(xml))) {
+    const tag = m[1];
+    const name = xmlAttr(tag, 'name'); if (!name) continue;
+    let kb = xmlAttr(tag, 'keyboard');
+    if (kb === null && !tag.trim().endsWith('/')) {
+      const close = xml.indexOf('</action>', re.lastIndex);
+      if (close >= 0) { const inner = xml.slice(re.lastIndex, close); const k = inner.match(/<keyboard\b([^>]*)>/); kb = k ? xmlAttr(k[1], 'input') : null; re.lastIndex = close; }
+    }
+    if (!kb) continue;
+    if (/^maxis_|^mouse_[xy]$/i.test(kb)) { hasLook = true; continue; }
+    const id = `cryengine/${name}`;
+    if (!out.some((a) => a.id === id)) out.push(button(id, name.replace(/_/g, ' '), cryKey(kb)));
+  }
+  if (hasLook) out.push(look('cryengine/look', '視点'));
+  return out;
+}
+export function cryengine(dir) {
+  if (!isDir(path.join(dir, 'Bin64')) && !isDir(path.join(dir, 'bin', 'win_x64'))) return null;
+  const paks = [];
+  for (const sub of [dir, path.join(dir, 'GameData'), path.join(dir, 'Data'), path.join(dir, 'Engine')]) {
+    try { for (const n of fs.readdirSync(sub)) if (/\.pak$/i.test(n)) { const f = path.join(sub, n); paks.push([fs.statSync(f).size, f]); } } catch {}
+  }
+  paks.sort((a, b) => a[0] - b[0] || (a[1] < b[1] ? -1 : 1));
+  for (const [size, f] of paks) {
+    if (size > 300e6) continue;
+    let b; try { b = fs.readFileSync(f); } catch { continue; }
+    for (const e of zipEntries(b)) {
+      const n = e.name.toLowerCase();
+      if (!(n.endsWith('defaultprofile.xml') || (n.includes('actionmap') && n.endsWith('.xml')))) continue;
+      const x = zipRead(b, e); if (!x) continue;
+      const a = actionsFromCryXml(x.toString('utf8'));
+      if (a.length) return { source: 'CryEngine の actionmaps（pak の中）', actions: a };
+    }
+  }
+  return null;
+}
+
 // ---------- Unity の旧 Input Manager ----------
 function parseAxis(b, o) {
   const str = () => {
@@ -436,7 +685,7 @@ export function prefsOverrides(dataDir) {
 /** Unity 以外のエンジンを、見分けのつきやすい順に試す (ホストの engines::read と同じ順)。
  * Unity の旧 Input Manager (unityLegacy) は、extract.mjs が .NET の読み取りとの順番を決めて呼ぶ */
 export function engineActions(dir) {
-  for (const r of [rpgmaker, wolf, source2, creation, quake]) {
+  for (const r of [rpgmaker, wolf, source2, creation, godot, unreal, cryengine, quake]) {
     let found = null;
     try { found = r(dir); } catch { found = null; }
     if (found?.actions?.length) return { ...found, actions: found.actions.slice(0, 160) };

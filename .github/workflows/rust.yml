@@ -138,7 +138,7 @@ jobs:
       - name: 操作定義の静的抽出
         timeout-minutes: 5
         run: node scripts/sim/profile-extract-test.mjs
-      - name: エンジンごとの操作の読み取り（ツクール・ウディタ・Source・Bethesda・Unity の旧方式）
+      - name: エンジンごとの操作の読み取り（ツクール・ウディタ・Source・Bethesda・Godot・Unreal・CryEngine・Unity）
         timeout-minutes: 5
         run: node scripts/sim/profile-engines-test.mjs
       - name: カタログと操作定義の照合

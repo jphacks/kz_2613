@@ -365,7 +365,7 @@ fn unity_overrides(text: &str) -> Option<HashMap<String, Key>> {
 
 /// Unreal Engine 4 の Input.ini: ActionMappings=(ActionName="Jump",...,Key=SpaceBar) / AxisMappings=(AxisName="MoveForward",Scale=1.0,Key=W)。
 /// 軸は "名前/+" "名前/-" に分ける。ゲームパッドのキーは飛ばす
-fn ue_input_ini(text: &str) -> HashMap<String, Key> {
+pub(crate) fn ue_input_ini(text: &str) -> HashMap<String, Key> {
     let mut map = HashMap::new();
     let mut active: Vec<(String, String, String, Key)> = Vec::new();
     let field = |line: &str, k: &str| -> Option<String> {

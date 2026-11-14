@@ -10,12 +10,16 @@ use crate::game_actions::{ReadAction, MAX_ACTIONS};
 use crate::keybinds::{name_key, Key};
 
 pub mod creation;
+pub mod cryengine;
+pub mod godot;
 pub mod quake;
 pub mod rpgmaker;
 pub mod source2;
 pub mod unity_legacy;
 pub mod unity_prefs;
+pub mod unreal;
 pub mod wolf;
+pub mod zip;
 
 /// 読み取りの結果 (操作, 読んだ形式の説明)
 pub type Found = (Vec<ReadAction>, &'static str);
@@ -27,11 +31,14 @@ const MAX_TEXT: u64 = 20_000_000;
 pub fn read(dir: &Path) -> Option<Found> {
     // Unity の旧 Input Manager (unity_legacy) と PlayerPrefs (unity_prefs) は、Rewired との順番があるので
     // game_actions::read から直接呼ぶ
-    let readers: [fn(&Path) -> Option<Found>; 5] = [
+    let readers: [fn(&Path) -> Option<Found>; 8] = [
         rpgmaker::read,
         wolf::read,
         source2::read,
         creation::read,
+        godot::read,
+        unreal::read,
+        cryengine::read,
         quake::read,
     ];
     readers.iter().find_map(|r| {
