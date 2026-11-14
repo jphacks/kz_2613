@@ -139,6 +139,8 @@ pub enum Event {
         Option<crate::model_presets::Stored>,
         u64,
     ),
+    /// 分担のモデルの裏の処理がパニックした (#519)。(何の処理か)
+    ModelFailed(&'static str),
     /// ランチャーへの起動要求が終わった (別スレッドから。Err は理由)
     Launched {
         gen: u64,
@@ -2831,13 +2833,20 @@ impl Hub {
         let spawned = std::thread::Builder::new()
             .name("model-detect".into())
             .spawn(move || {
-                let (d, stored) = work();
-                let _ = tx.send(Event::DetectedMade(
-                    id,
-                    d,
-                    stored,
-                    started.elapsed().as_millis() as u64,
-                ));
+                // パニックしたら作業中の印を消せるよう、失敗を知らせる (#519)
+                match std::panic::catch_unwind(std::panic::AssertUnwindSafe(work)) {
+                    Ok((d, stored)) => {
+                        let _ = tx.send(Event::DetectedMade(
+                            id,
+                            d,
+                            stored,
+                            started.elapsed().as_millis() as u64,
+                        ));
+                    }
+                    Err(_) => {
+                        let _ = tx.send(Event::ModelFailed("detect"));
+                    }
+                }
             });
         if spawned.is_ok() {
             self.model_busy = Some(game_id.to_string());
@@ -2911,17 +2920,32 @@ impl Hub {
         let spawned = std::thread::Builder::new()
             .name("model-preset".into())
             .spawn(move || {
-                let stored = work();
-                let _ = tx.send(Event::ModelPresetMade(
-                    key,
-                    stored,
-                    started.elapsed().as_millis() as u64,
-                ));
+                // パニックしたら作業中の印を消せるよう、失敗を知らせる (#519)
+                match std::panic::catch_unwind(std::panic::AssertUnwindSafe(work)) {
+                    Ok(stored) => {
+                        let _ = tx.send(Event::ModelPresetMade(
+                            key,
+                            stored,
+                            started.elapsed().as_millis() as u64,
+                        ));
+                    }
+                    Err(_) => {
+                        let _ = tx.send(Event::ModelFailed("preset"));
+                    }
+                }
             });
         if spawned.is_ok() {
             self.model_busy = Some(id.to_string());
         }
         spawned.is_ok()
+    }
+
+    /// 裏の処理がパニックした (#519)。作業中の印を消し、保存せずに待ち行列の次へ進む (次の一覧の読み込みでもう一度試す)。
+    /// ゲーム名は残さない
+    fn model_failed(&mut self, kind: &'static str) {
+        self.model_busy = None;
+        self.log("model_failed", json!({ "kind": kind }));
+        self.schedule_model_work();
     }
 
     /// 作った分担を保存する。選んでいるゲームなら画面とスマホへ知らせ、待ち行列の次へ進む
@@ -3828,6 +3852,7 @@ impl Hub {
             Event::GamesDetected(list) => self.on_games_detected(list),
             Event::ModelPresetMade(id, stored, ms) => self.finish_model_preset(id, stored, ms),
             Event::DetectedMade(id, d, stored, ms) => self.finish_detected(id, d, stored, ms),
+            Event::ModelFailed(kind) => self.model_failed(kind),
             Event::Launched { gen, result } => self.on_launched(gen, result),
             Event::Shutdown => {}
         }
@@ -4790,6 +4815,21 @@ mod tests {
         assert_eq!(v["profile"]["modelPresetAvailable"], true);
         assert_eq!(v["profile"]["presetChoosable"], false);
         assert_eq!(v["profile"]["presetSource"], "model");
+    }
+
+    #[test]
+    fn model_thread_panic_clears_busy_and_moves_on() {
+        let (mut h, _rx) = fixture();
+        h.presets_model = true;
+        h.model_busy = Some("steam:1".into());
+        h.model_queue.push_back("steam:2".into());
+        h.on_event(Event::ModelFailed("preset"));
+        assert!(h.model_busy.is_none(), "作業中の印を消す");
+        assert!(h.model_timer, "待ち行列の次へ進む");
+        assert!(
+            !h.model_presets.contains_key("steam:1"),
+            "失敗したゲームは保存しない"
+        );
     }
 
     #[test]
