@@ -67,7 +67,7 @@ function fakeGames(dir) {
 }
 
 // ---------- ホストの起動 (必ず注入なし) ----------
-function startHost() {
+function startHost(port = PORT) {
   const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-sim-'));
   const optionsFile = path.join(logDir, 'options.txt');
   const keyOverridesFile = path.join(logDir, 'key-overrides.json');
@@ -76,7 +76,7 @@ function startHost() {
   fs.cpSync(path.join(ROOT,'apps/game-profiles'),profilesDir,{recursive:true});
   fs.copyFileSync(path.join(ROOT,'scripts/sim/fixtures/profiles/test-pseudo.json'),path.join(profilesDir,'test-pseudo.json'));
   // config.json の影響を受けないよう、画面だけを持つ一時ルートを使う
-  const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_FAKE_GAMES: fakeGames(logDir),
+  const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(port), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_FAKE_GAMES: fakeGames(logDir),
     // 模擬のホットスポット (#133。dry-run では本物を読まない)
     RECOOPLAY_FAKE_HOTSPOT: 'SimSpot|sim-pass-1|on',
     // 手動登録のファイル選択 (#49。中身に書いた場所を選んだことにする)
@@ -84,6 +84,7 @@ function startHost() {
     // Minecraft のキー設定の試験用 (ダッシュ = Q、捨てる = R に変えた options.txt)。#101
     RECOOPLAY_MINECRAFT_OPTIONS: optionsFile, RECOOPLAY_PROFILES_DIR: profilesDir, RECOOPLAY_KEY_OVERRIDES: keyOverridesFile };
   const exe = process.platform === 'win32' ? 'recooplay-host.exe' : 'recooplay-host';
+  if (port === 0) env.RECOOPLAY_RUNTIME_MEASURE = '1';
   const cmd = opt('--bin', path.join(ROOT, 'apps', 'host-rs', 'target', 'release', exe));
   // 標準入力: "stop" で緊急停止 (ホットキーと同じ処理) を受け付ける
   const child = spawn(cmd, [], { env, stdio: ['pipe', 'pipe', 'pipe'] });
@@ -108,8 +109,9 @@ async function waitReady() {
 
 // ---------- WebSocket クライアント ----------
 class Client {
-  constructor(name) {
+  constructor(name, port = PORT) {
     this.name = name;
+    this.port = port;
     this.msgs = [];
     this.closed = null;
     this.iseq = 0;
@@ -118,7 +120,7 @@ class Client {
   }
   open() {
     return new Promise((resolve, reject) => {
-      this.ws = new WebSocket(`ws://127.0.0.1:${PORT}/ws`);
+      this.ws = new WebSocket(`ws://127.0.0.1:${this.port}/ws`);
       this.ws.onopen = () => resolve(this);
       this.ws.onerror = () => reject(new Error(`${this.name}: 接続できない`));
       this.ws.onmessage = (ev) => {
@@ -2149,6 +2151,47 @@ async function main() {
       assert(joins.length >= 3 && joins.every((e) => e.slot && e.device), `join の記録: ${JSON.stringify(joins[0])}`);
     });
 
+    await check('参加情報: 別ホストでは新規参加し、元ホストでは元の枠へ再接続できる (#452)', async () => {
+      const second = startHost(0);
+      const clients = [];
+      try {
+        let port;
+        for (let i = 0; i < 100 && second.child.exitCode === null; i++) {
+          const started = second.output().match(/server_start \{"port":([1-9]\d{0,4})\}/);
+          if (started) { port = Number(started[1]); break; }
+          await sleep(50);
+        }
+        assert(port, '別ホストの待ち受けを確認できない');
+        const resetFrom = mon.mark();
+        mon.send({ type: 'reset' });
+        await mon.waitFor(m => m.type === 'state' && m.slots.every(slot => !slot.assigned), { from: resetFrom, what: '元ホストの枠を初期化' });
+        const hello = { type: 'hello', protocolVersion: PROTOCOL_VERSION, clientId: 'sim-client-cross-host' };
+        const first = new Client('元ホストでの初回参加');
+        clients.push(first);
+        await first.open();
+        first.send(hello);
+        const saved = await first.waitFor(m => m.type === 'welcome', { what: '元ホストでの初回参加' });
+        assert(saved.slot === 'P1' && saved.token, '元ホストの参加情報がない');
+        const foreign = new Client('別ホスト', port);
+        clients.push(foreign);
+        await foreign.open();
+        foreign.send({ ...hello, token: saved.token });
+        const fresh = await foreign.waitFor(m => m.type === 'welcome' || m.type === 'error', { what: '別ホストでの新規参加' });
+        assert(fresh.type === 'welcome' && fresh.slot === 'P1' && fresh.reconnected === false && fresh.token && fresh.token !== saved.token,
+          '別ホストが新しい参加情報を発行しなかった');
+
+        const original = new Client('元ホスト');
+        clients.push(original);
+        await original.open();
+        original.send({ ...hello, token: saved.token });
+        const resumed = await original.waitFor(m => m.type === 'welcome' || m.type === 'error', { what: '元ホストでの再接続' });
+        assert(resumed.type === 'welcome' && resumed.slot === saved.slot && resumed.reconnected === true && resumed.token === saved.token,
+          '元ホストで元の枠に再接続できなかった');
+      } finally {
+        for (const client of clients) if (client.ws) client.close();
+        second.child.kill();
+      }
+    });
     for (const c of [p1, p2, p3, mon]) c?.close();
     const failed = results.filter((r) => !r.ok);
     console.log(`\n${results.length - failed.length}/${results.length} 合格 (Rust 版、dry-run)`);

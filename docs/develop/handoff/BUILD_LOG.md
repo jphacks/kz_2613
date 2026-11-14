@@ -2333,6 +2333,10 @@
 - 切り替え：ホストは feature `latency-measure`（`#[cfg]` で囲み、通常のビルドではコンパイルされない）、スマホは `npm run build:latency`（Viteの `define` で `__LATENCY_MEASURE__` を true にする。通常のビルドでは false として取り除かれる）。通常のビルドの成果物に計測の処理が入らないことを、ビルドした結果の文字列の検索で確かめた（通常0件、計測用1件）。
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
+## 2026-11-14 — 別ホストへの参加を通信回帰で検証する（#452、Codex）
+
+- 2台目のdry-runホストをOS割当ポートで起動し、元ホストの参加情報で新規参加できることと、元ホストで元の枠に再接続できることを確認する。既存の不一致トークン拒否も引き続き実行する。
+- PR #456のWindowsホストを使った `node --experimental-strip-types scripts/sim/protocol-sim.mjs --bin <exe>` は66/66合格。Webビルド、スクリプト構文、差分検査も成功。実スマホのWi-Fi切替・旧タブは未検証。
 
 ## 2026-11-14 — キー割当を初期値に戻す（#438、Codex）
 
