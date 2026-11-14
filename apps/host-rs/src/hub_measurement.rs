@@ -67,7 +67,12 @@ fn producer(tx: Sender<Envelope>, stats: Arc<QueueStats>, scenario: Scenario, du
         let now = Instant::now();
         if !stopped && start.elapsed() >= duration / 2 {
             let work = if matches!(scenario, Scenario::Disconnect) {
-                Work::Event(Event::WsClosed { id:11, code:1006 })
+                Work::Event(Event::WsClosed {
+                    id: 11,
+                    code: 1006,
+                    #[cfg(feature = "latency-measure")]
+                    since_last_send_ms: None,
+                })
             } else { Work::Event(Event::EmergencyStop { source:"measurement", enqueued_at: None }) };
             enqueue(&tx, &stats, work, 0, true);
             stopped = true;

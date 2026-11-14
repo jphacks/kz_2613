@@ -86,6 +86,8 @@ pub enum Event {
     WsClosed {
         id: u64,
         code: u16,
+        #[cfg(feature = "latency-measure")]
+        since_last_send_ms: Option<u64>,
     },
     RtcDescription {
         slot: usize,
@@ -443,7 +445,7 @@ pub struct Hub {
     model_presets: crate::model_presets::Store,
     model_queue: std::collections::VecDeque<String>,
     model_timer: bool,
-    /// モデルの分担を使う設定 (RECOOPLAY_PRESETS=model で、重みを読めたとき)
+    /// モデルの分担を使う設定 (既定。RECOOPLAY_PRESETS=rule のときだけ false)。重みは起動時に裏で読む (#474)
     presets_model: bool,
     /// 裏のスレッドで作っているゲーム (1 本ずつ)
     model_busy: Option<String>,
@@ -589,7 +591,7 @@ impl Hub {
             ),
             model_queue: Default::default(),
             model_timer: false,
-            presets_model: profiles::preset_source() == "model",
+            presets_model: profiles::model_presets_enabled(),
             model_busy: None,
             model_inline: false,
             detected_path: crate::model_presets::detected_path(),
@@ -3666,7 +3668,24 @@ impl Hub {
                     self.on_ws_message(id, msg);
                 }
             }
-            Event::WsClosed { id, code } => self.on_ws_closed(id, code),
+            Event::WsClosed {
+                id,
+                code,
+                #[cfg(feature = "latency-measure")]
+                since_last_send_ms,
+            } => {
+                #[cfg(feature = "latency-measure")]
+                if let Some(gap_ms) = since_last_send_ms.filter(|gap| *gap >= 3000) {
+                    if let Some(Role::Player { slot }) = self.conns.get(&id).map(|conn| &conn.role)
+                    {
+                        self.record(
+                            "ws_send_gap_at_close",
+                            json!({ "slot": SLOT_NAMES[*slot], "gapMs": gap_ms, "closeCode": code }),
+                        );
+                    }
+                }
+                self.on_ws_closed(id, code);
+            }
             #[cfg(feature = "latency-measure")]
             Event::WsSendGap {
                 id,
