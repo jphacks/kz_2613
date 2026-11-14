@@ -400,6 +400,19 @@ async function main() {
       }
     });
 
+    await check('ゲーム選択: 初回参加では分担案を送らず、選んだゲームに合わせる (#447)', async () => {
+      const initial = await p2.waitFor(m => m.type === 'game' && m.game.connected.length === 3);
+      assert(initial.game.title === '' && initial.game.profile === null && !initial.game.canPrepare);
+      for (const [title, profileId] of [['pseudo-game', 'test-pseudo'], ['minecraft-java', 'minecraft-java']]) {
+        const from = p2.mark();
+        mon.send({type:'select_game', title});
+        const selected = await p2.waitFor(m => m.type === 'game' && m.game.title === title, {from});
+        assert(selected.game.profile?.id === profileId,
+          `${title}の操作定義: 期待値 ${profileId}、受信値 ${selected.game.profile?.id}`);
+        assert(selected.game.profile.assignment?.P2?.length > 0, `${title}のP2の分担がない`);
+      }
+    });
+
     await check('トークン: welcome で枠ごとに 128bit 以上の推測困難な値を発行する', async () => {
       const t = [tokens.P1, tokens.P2, tokens.P3];
       assert(t.every((x) => /^[0-9a-f]{32,}$/.test(x || '')), `トークンの形式: ${t.join(',')}`);
@@ -605,7 +618,7 @@ async function main() {
     });
 
     await check('キー設定: Minecraft の options.txt に合わせて送る (ダッシュ = Q、捨てる = R)', async () => {
-      const st = await mon.waitFor((m) => m.type === 'state' && m.game?.keys, { what: 'keys' });
+      const st = await mon.waitFor((m) => m.type === 'state' && m.game?.title === 'minecraft-java' && m.game.keys, { what: 'Minecraftのキー設定' });
       const k = st.game.keys;
       assert(k.source === 'options', `source=${k.source}`);
       assert(k.controls.SPRINT?.out === 'KEY_Q' && k.controls.DROP?.out === 'KEY_R' && k.controls.FWD?.out === 'KEY_W', JSON.stringify(k.controls));

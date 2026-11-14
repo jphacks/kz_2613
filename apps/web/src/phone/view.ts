@@ -107,7 +107,7 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
       wait: waitModel({ me, game, roleTitle: role.title, joined, autoWait }),
       // リモコン画面では上部に警告を出さず、ゲームの検証状況だけを下の状態欄に出す (#291)
       remote: { ...remoteModel({ me, isHost, game, name, autoWait }), notice: view === 'v-remote' ? profileNotice(game.profile) : '' },
-      role: role.title + (isHost ? '（ホスト）' : ''),
+      role: role.title ? role.title + (isHost ? '（ホスト）' : '') : '',
       roleCopy: game.phase === 'coop' ? '確定した分担の操作だけを送信します' : game.phase === 'paused' ? '確定した分担（再開時に確認）' : '分担案（Readyで確定）',
       roleNotice: game.roleAck?.includes(me) ? `${game.reason === 'role rotation' ? '時間で担当が交代しました' : 'ホストが担当を入れ替えました'}。あなたの担当は「${role.title}」です。` : '',
       warning: view === 'v-remote' ? '' : inputWarnText({ isHost, game, name, notice: profileNotice(game.profile) }),

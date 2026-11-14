@@ -2334,6 +2334,12 @@
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
 
+## 2026-11-14 — ゲーム選択前の分担表示を抑える（#447、Codex）
+
+- ホストとPC画面を未選択から始める。既存の文字列型の `game.title` を空にし、既存の `profile: null` を使う。スマホはゲーム選択を待つ表示にし、選択後はホストが配る分担を表示する。参加枠と担当確認の仕組みは従来どおり使う。
+- 合格：`npm --prefix apps/web run build`、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/verify_overlay.py`、`python scripts/check-public-docs.py`、変更したシミュレーションの構文検査、`git diff --check`。Node 22.15.0ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定した。
+- 初回参加・ゲーム選択・再選択を確認する通信試験を追加した。Rustホストの実行を伴う確認はGitHub CIで行い、Android・iPhoneでの表示は実機受入に残す。
+- 追試（#447）：選択IDと操作定義IDを別に照合し、キー設定はMinecraft選択後の通知を参照するようにした。CI run 43485721653 のホストで通信66/66、Chromeの画面検査（PC 800×560・スマホ390×844）23画面が合格。
 ## 2026-11-14 — 分担の初期設定をモデルにする（Claude Code）
 
 - 利用者の判断：分担の案の初期設定を規則からモデルに切り替える（#474）。`RECOOPLAY_PRESETS=rule` でなければモデルの分担を使う（`profiles::model_presets_enabled`）。使われなくなった `preset_source()` は消した。規則に戻すときは `RECOOPLAY_PRESETS=rule`。
