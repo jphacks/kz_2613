@@ -2333,6 +2333,12 @@
 - 切り替え：ホストは feature `latency-measure`（`#[cfg]` で囲み、通常のビルドではコンパイルされない）、スマホは `npm run build:latency`（Viteの `define` で `__LATENCY_MEASURE__` を true にする。通常のビルドでは false として取り除かれる）。通常のビルドの成果物に計測の処理が入らないことを、ビルドした結果の文字列の検索で確かめた（通常0件、計測用1件）。
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
+
+## 2026-11-14 — 監視WebSocketの読取停止を60秒の負荷で追試する（#197、Codex）
+
+- `runtime-measure.mjs` で最大60秒を指定できるようにし、WS切断コードと失敗時点までの測定結果を保存する。PR #456 のWindowsホストを使用し、OS入力は無効。
+- `node scripts/sim/runtime-measure.mjs --bin <exe> --players 2,4 --cases slow-monitor --duration-ms 60000` は2人で合格（送信待ち最大4096件）。4人ではホストで解放を記録したが、監視で停止状態の待機に失敗した。4人の再試行では監視の1006をJSONに記録した。[条件と結果](../decisions/2026-11-06-host-runtime-measurement.md#2026-11-14の60秒追試)。
+- 同スクリプトの `--players 2 --cases normal --duration-ms 1000`、60秒超の拒否、`node --check`、構造・公開資料検査、`git diff --check` が成功。4人時の監視切断の原因と実Wi-Fiでの受入は未確認。
 ## 2026-11-14 — 別ホストへの参加を通信回帰で検証する（#452、Codex）
 
 - 2台目のdry-runホストをOS割当ポートで起動し、元ホストの参加情報で新規参加できることと、元ホストで元の枠に再接続できることを確認する。既存の不一致トークン拒否も引き続き実行する。
