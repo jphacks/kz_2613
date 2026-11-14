@@ -129,18 +129,15 @@ assert.match(view().remote.notice,/未検証.*確かめながら/);
 // 前面の案内はゲームへ入力する段階だけ。ロビーでは出さない (#291)
 const other={...profile,id:'other',status:'template',name:'別のゲーム'};
 update('P1',{inputTarget:true,remoteRoute:'none',titleName:'別のゲーム',profile:other});
-assert.doesNotMatch([view().warning,view().remote.route].join(' '),/別のゲームを前面|別のゲームになっていません/);
-assert.equal(view().remote.route,'PCアプリを前面にすると、リモコンを使えます');
+assert.doesNotMatch(view().warning,/別のゲームを前面|別のゲームになっていません/);
 update('P2',{inputTarget:true,titleName:'別のゲーム',profile:other});
 assert.equal(view().warning,'','ロビーの参加者に前面の警告を出さない');
 // P2以降には、行えない操作を求める案内やホスト向けの情報を出さない (#238)
 update('P1',{phase:'preparing',inputTarget:true,remoteRoute:'none',titleName:'別のゲーム',profile:other});
-assert.equal(view().warning,'');assert.equal(view().remote.route,'別のゲームが前面にないため、リモコンは届きません');assert.equal(view().remote.routeBlocked,true);
+assert.equal(view().warning,'');
 assert.match(view().remote.notice,/確かめながら/);assert.equal(h.document.body.dataset.host,'true');
-update('P1',{phase:'preparing',inputTarget:false,remoteRoute:'game',titleName:'別のゲーム',profile:other});
-assert.doesNotMatch(view().remote.route,/前面/,'前面にあるのに前面にしてくださいと出さない');assert.equal(view().remote.routeBlocked,false);
-update('P1',{phase:'preparing',inputTarget:false,remoteRoute:'none',readyReasons:['入力を再開するとReadyできます'],titleName:'別のゲーム',profile:other});
-assert.equal(view().remote.route,'リモコンは今は届きません（入力を再開するとReadyできます）');
+// 入力先の案内 (「PCアプリを操作中」など) はリモコンを広く取るため出さない (#553 の利用者判断 2026-11-15)
+assert(!('route' in view().remote)&&!('routeBlocked' in view().remote),'入力先の案内を出さない');
 update('P1',{phase:'coop',participants:['P1','P2','P3'],assigned,inputTarget:true,titleName:'別のゲーム',profile:other});
 assert.match(view().warning,/前面に戻すまで/,'協力プレイ中のホストには操作画面の上部に出す');
 assert.doesNotMatch(view().warning,/確かめながら/,'協力プレイ中は未検証の注意で操作画面の上部を占めない (#308)');
@@ -152,8 +149,7 @@ update('P1',{inputTarget:null,profile:other});
 assert.match(view().remote.notice,/確かめながら/);
 // 案内は選んだゲームの名前で出し、Minecraft・ワールドの文言を残さない (#140)
 update('P1',{phase:'preparing',canReady:true,titleName:'Outlast',remoteRoute:'game',inputTarget:true,profile:{id:'steam:238320',name:'Outlast',status:'unverified',controllerSupported:true}});
-const shown=[view().remote.route,view().remote.openGameLabel,view().warning,view().remote.note].join(' ');
-assert.match(shown,/Outlastのメニューを操作中/);
+const shown=[view().remote.openGameLabel,view().warning,view().remote.note].join(' ');
 assert.match(shown,/Outlastを前面にする/);
 assert.doesNotMatch(shown,/Minecraft|ワールド/);
 // 時間制の役割交代: 予告で次の担当、交代の直後に新しい担当を短く示す。止まっている間・参加していない人には出さない (#161)
@@ -168,9 +164,6 @@ update('P2',{phase:'paused',participants:['P1','P2','P3'],assigned:rotated,rotat
 assert.equal(h.rotationNotice.get(),'','一時停止中は出さない');
 update('P4',{phase:'coop',participants:['P1','P2','P3'],connected:['P1','P2','P3','P4'],assigned:rotated,rotationCount:1,rotationSoon:true,rotationNext:assigned});
 assert.equal(h.rotationNotice.get(),'','参加していない人には出さない');
-// PCアプリ以外の前面のウィンドウ (ランチャー等) もリモコンで操作できる (#287・#405)
-update('P1',{phase:'lobby',remoteRoute:'desktop'});
-assert.match(view().remote.route,/PCの画面を操作中/);assert.equal(view().remote.routeBlocked,false);
 // ゲームが前面に残っても、ホストのスマホだけでPCアプリへ戻れる (#292)
 update('P1',{phase:'lobby',remoteRoute:'none',canOpenApp:true});
 assert.equal(view().remote.openAppHidden,false);
