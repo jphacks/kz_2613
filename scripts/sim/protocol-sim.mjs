@@ -525,6 +525,9 @@ async function main() {
       await p1.waitFor(m=>m.type==='game' && m.game.connected.length===3,{from:gateFrom});
       await confirmLineup(mon,p1);
       await p1.waitFor(m=>m.type==='game' && m.game.canReady && m.game.required===2 && m.game.connected.length===3,{from:gateFrom});
+      const routeFrom = p1.mark();
+      host.child.stdin.write('launcher focus\n');
+      await p1.waitFor(m=>m.type==='game' && m.game.remoteRoute==='desktop',{from:routeFrom});
       const rm = mon.mark();
       p2.input('FWD','down'); p3.input('ATTACK','down');
       p2.send({type:'remote',kind:'move',dx:15,dy:5,rseq:1,epoch:p2.epoch});

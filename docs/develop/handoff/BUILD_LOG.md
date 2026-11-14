@@ -2340,3 +2340,4 @@
 - 合格：`npm --prefix apps/web run build`（型検査込み）、`node scripts/sim/product-web-test.mjs`（`app-view` 37/37、`phone-lifecycle` 35/35、`ui-input` 20/20、`protocol-boundary` 8/8、`phone-view` を含む）、`node scripts/sim/check-static-pages.mjs`、`cargo fmt --manifest-path apps/host-rs/Cargo.toml --check`、`git diff --check`。Node 22.15.0ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定した。
 - Rustは最初の試行でPerlがPATHになく、OpenSSLの構築前に失敗した。再試行でOpenSSLのコンパイルへ進んだ。Rust単体試験・通信シミュレーションの結果は追記する。
 - Minecraft実機では、ロビーのリモコンで起動後のメニューを操作してワールドへ入り、「分担操作開始」1回で協力プレイに入れることを確認する。
+- 追試（#440）：模擬のランチャー前面を設定し、ロビーのリモコン経路で保持したクリックの全解放を確認した。CI run 43485455002 のホストで通信65/65、Chrome画面検査（PC 800×560、スマホ390×844）21画面が合格。撮影を一段階の開始操作へ更新した。
