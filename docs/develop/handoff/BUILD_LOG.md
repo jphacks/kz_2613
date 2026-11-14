@@ -2334,6 +2334,10 @@
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
 
+## 2026-11-14 — 開発・検証スクリプトの用途を整理する（#256、Codex）
+
+- 最新mainの参照とCIを照合して、手動ツールとCIの用途を `scripts/README.md` に記録した。旧プレビューの補助で、現行コードから参照されない `mini-ws.mjs` を削除した。Tauriの起動画面とホスト配信用の素材は、各々で使うため同梱を維持する。
+- `python scripts/check-public-docs.py`、`node scripts/sim/verify-ui-evidence.mjs`（104画面）、`python scripts/verify_overlay.py`、`git diff --check` が合格。
 ## 2026-11-14 — 通信版の更新とキャッシュの受入手順（#272、Codex）
 
 - Rust・Web・補助スクリプトの版更新、同一コミットの配布、旧タブからの再接続と再読み込みの受入手順を通信仕様書に追加した。
