@@ -1,7 +1,9 @@
 import type {Direction} from '../contracts.ts';
 import type {InputOwner} from './owners.ts';
 import {createLifetime} from './lifetime.ts';
-export interface StickOptions {codes: Partial<Record<Direction,string>>; isOpen(): boolean; ctlDown(control:string, at:number, owner:InputOwner): void; ctlUp(control:string, owner:InputOwner): void; onCancel?(): void}
+import {rotateForHold, type Hold} from './hold.ts';
+/** hold: 端末の持ち方 (#514)。横持ちでは指の動きを回してから方向を決める。見た目は Stick 側で同じ角度だけ回す */
+export interface StickOptions {codes: Partial<Record<Direction,string>>; isOpen(): boolean; hold?(): Hold; ctlDown(control:string, at:number, owner:InputOwner): void; ctlUp(control:string, owner:InputOwner): void; onCancel?(): void}
 // 移動スティック (#139)。8 方向に倒すと、方向ごとの操作 (W/A/S/D など) を組み合わせて押す。
 // Minecraft の専用画面と、操作定義から作る画面の両方で使う。
 
@@ -21,7 +23,7 @@ export function stickDirections(x: number, y: number) {
  * stick の要素 (.knob と data-d="up|down|left|right" の .dir を持つ) にスティックの操作を付ける。
  * codes: 方向 → 送る操作。ない方向 (前進・後退だけのゲームの左右など) には反応しない
  */
-export function attachStick(stick: HTMLElement, { codes, isOpen, ctlDown, ctlUp, onCancel = () => {} }: StickOptions) {
+export function attachStick(stick: HTMLElement, { codes, isOpen, hold = () => 0, ctlDown, ctlUp, onCancel = () => {} }: StickOptions) {
   const candidate = stick.querySelector<HTMLElement>('.knob');
   if (!candidate) throw new Error('スティックのノブがありません');
   const knob: HTMLElement = candidate;
@@ -31,8 +33,8 @@ export function attachStick(stick: HTMLElement, { codes, isOpen, ctlDown, ctlUp,
   const on = new Set<string>(); // 押している操作
   function update(e: PointerEvent) {
     const r = stick.getBoundingClientRect();
-    let x = (e.clientX - r.left) / r.width * 2 - 1;
-    let y = (e.clientY - r.top) / r.height * 2 - 1;
+    // 回したスティックも外接矩形は同じ正方形。画面座標で測り、指から見た向き (= 回した要素の中の座標) に直す
+    let [x, y] = rotateForHold((e.clientX - r.left) / r.width * 2 - 1, (e.clientY - r.top) / r.height * 2 - 1, hold());
     const len = Math.hypot(x, y);
     if (len > 1) { x /= len; y /= len; }
     knob.style.transform = `translate(${x * 62}%, ${y * 62}%)`;
