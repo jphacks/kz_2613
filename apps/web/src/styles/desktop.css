@@ -364,11 +364,19 @@ body[data-two-qr] .qr-arrow { display: none; }
   top: 1022px;
   width: 369px;
   min-height: 36px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 18px;
+}
+
+.connection-help button {
+  min-height: 36px;
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--color-cyan-ink);
-  font-size: 18px;
+  font-size: inherit;
   box-shadow: none;
   pointer-events: auto;
 }

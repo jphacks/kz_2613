@@ -131,14 +131,19 @@ try {
   }, 'WebView2が最小ウィンドウ付近まで縮みません');
   console.log('WebView2の最小ウィンドウ: '+JSON.stringify({before:beforeResize,after:compact}));
   await until(() => evaluate(`(() => {
-    const nodes = ['#qr svg', '#nextBtn', '#settingsBtn'].map(selector => document.querySelector(selector));
+    const nodes = ['#qr svg', '#nextBtn', '#settingsBtn', '#joinTroubleshootingBtn'].map(selector => document.querySelector(selector));
     return nodes.every(node => {
       if (!node) return false;
       const rect = node.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0 && rect.left >= -1 && rect.top >= -1
         && rect.right <= innerWidth + 1 && rect.bottom <= innerHeight + 1;
-    });
+    }) && nodes[0].getBoundingClientRect().bottom <= nodes[3].getBoundingClientRect().top;
   })()`), '最小ウィンドウで参加画面のQRや操作が表示領域を外れています');
+  await evaluate("document.querySelector('#joinTroubleshootingBtn').click()");
+  await until(()=>evaluate("document.querySelector('#joinTroubleshooting').open && document.activeElement?.id==='closeJoinTroubleshooting'"),
+    '参加の案内が開きません');
+  await evaluate("document.querySelector('#closeJoinTroubleshooting').click()");
+  await until(()=>evaluate("!document.querySelector('#joinTroubleshooting').open"), '参加の案内が閉じません');
   await evaluate("document.querySelector('#settingsBtn').click()");
   await until(()=>evaluate("document.querySelector('#settings').open && !document.querySelector('#desktopOverlaySetting')?.disabled && !!document.querySelector('#desktopOverlaySetting')"),
     'デスクトップの設定が開きません');
