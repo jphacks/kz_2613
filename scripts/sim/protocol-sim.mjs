@@ -2294,6 +2294,21 @@ async function main() {
           assert(!sessionSsids.has(ssid), '前回のセッションとSSIDが同じ');
           sessionSsids.add(ssid);
           assert(await start() && await readSsid() === ssid, '稼働中の再要求でSSIDが変わった');
+          const exhibition = new Client('expo-reset');
+          await exhibition.open();
+          try {
+            exhibition.send({ type: 'monitor', page: 'app' });
+            await exhibition.waitFor(m => m.type === 'state');
+            for (let round = 0; round < 2; round++) {
+              const before = await readSsid();
+              const from = exhibition.mark();
+              exhibition.send({ type: 'reset', rotateWifi: true });
+              await exhibition.waitFor(m => m.type === 'state' && m.expoWifi === 'ready', { from });
+              assert(await readSsid() !== before, '全員リセットでSSIDが更新されなかった');
+            }
+          } finally {
+            exhibition.close();
+          }
           const phone = await join('hotspot-shutdown', { clientId: 'sim-client-hotspot-shutdown' });
           try {
             assert((await welcome(phone)).type === 'welcome', '終了通知を確認するスマホが参加できなかった');

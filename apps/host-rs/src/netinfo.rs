@@ -80,12 +80,14 @@ struct HotspotLifecycle {
     owned: Option<imp::OwnedHotspot>,
     fake_owned: bool,
     session: Option<SessionCredentials>,
+    rotation_failed: bool,
 }
 
 static LIFECYCLE: std::sync::Mutex<HotspotLifecycle> = std::sync::Mutex::new(HotspotLifecycle {
     owned: None,
     fake_owned: false,
     session: None,
+    rotation_failed: false,
 });
 static SHUTTING_DOWN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
@@ -103,6 +105,9 @@ fn fake_hotspot() -> Option<Hotspot> {
 /// 試験 (dry-run) では本物を読まず、RECOOPLAY_FAKE_HOTSPOT="SSID|パスフレーズ|on|off" を使う
 pub fn hotspot() -> Option<Hotspot> {
     let lifecycle = LIFECYCLE.lock().ok()?;
+    if lifecycle.rotation_failed {
+        return None;
+    }
     let dry_run = std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1");
     if let Some(session) = &lifecycle.session {
         let on = if dry_run {
@@ -144,6 +149,32 @@ pub fn start_hotspot() -> Result<(), String> {
         lifecycle.session = Some(session);
         lifecycle.owned = Some(owned);
     }
+    Ok(())
+}
+
+/// 参加枠と入力を無効にしてから、管理下のWi-Fiだけを更新する。
+pub fn rotate_owned_hotspot() -> Result<(), String> {
+    let mut lifecycle = LIFECYCLE
+        .lock()
+        .map_err(|_| "ホットスポットの状態を取得できません")?;
+    if SHUTTING_DOWN.load(std::sync::atomic::Ordering::Relaxed) {
+        return Err("PCアプリは終了中です".into());
+    }
+    let dry_run = std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1");
+    if (dry_run && !lifecycle.fake_owned) || (!dry_run && lifecycle.owned.is_none()) {
+        return Err(
+            "Re:Cooplayが起動したWi-Fiではありません。Windowsの設定で確認してください".into(),
+        );
+    }
+
+    let next = session_credentials()?;
+    // 失敗時に旧セッションの資格情報を案内しない。所有権は再試行・終了に備えて保持する。
+    lifecycle.rotation_failed = true;
+    if !dry_run {
+        imp::restart_hotspot(lifecycle.owned.as_ref().unwrap(), &next)?;
+    }
+    lifecycle.session = Some(next);
+    lifecycle.rotation_failed = false;
     Ok(())
 }
 
@@ -232,6 +263,17 @@ mod imp {
         }
         let owned = AgileReference::new(&m).map_err(|_| "ホットスポットを管理できません")?;
         let session = super::session_credentials()?;
+        if start_session(&m, &session)? {
+            Ok(Some((owned, session)))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn start_session(
+        m: &NetworkOperatorTetheringManager,
+        session: &super::SessionCredentials,
+    ) -> Result<bool, String> {
         let config = NetworkOperatorTetheringSessionAccessPointConfiguration::new()
             .map_err(|_| "一時Wi-Fi設定にはWindows 11 24H2以降が必要です。Windowsの設定で接続を確認してください")?;
         config
@@ -243,10 +285,35 @@ mod imp {
             .and_then(|op| op.join())
             .map_err(|_| "一時Wi-Fiを起動できません。Windowsの設定から確認してください")?;
         match result.Status() {
-            Ok(TetheringOperationStatus::Success) => Ok(Some((owned, session))),
-            Ok(TetheringOperationStatus::AlreadyOn) => Ok(None),
+            Ok(TetheringOperationStatus::Success) => Ok(true),
+            Ok(TetheringOperationStatus::AlreadyOn) => Ok(false),
             _ => Err("一時Wi-Fiを起動できません。Windowsの設定から確認してください".into()),
         }
+    }
+
+    pub fn restart_hotspot(
+        owned: &OwnedHotspot,
+        session: &super::SessionCredentials,
+    ) -> Result<(), String> {
+        unsafe {
+            let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+        }
+        let m = owned
+            .resolve()
+            .map_err(|_| "ホットスポットを管理できません")?;
+        if !stop_manager(&m)
+            || m.TetheringOperationalState().ok() != Some(TetheringOperationalState::Off)
+        {
+            return Err("Wi-Fiを停止できません。Windowsの設定から確認してください".into());
+        }
+        if !start_session(&m, session)?
+            || m.TetheringOperationalState().ok() != Some(TetheringOperationalState::On)
+        {
+            return Err(
+                "新しいWi-Fiの起動を確認できません。Windowsの設定から確認してください".into(),
+            );
+        }
+        Ok(())
     }
 
     pub fn owned_is_on(owned: &OwnedHotspot) -> Option<bool> {
@@ -265,6 +332,10 @@ mod imp {
             let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
         }
         let Ok(m) = owned.resolve() else { return false };
+        stop_manager(&m)
+    }
+
+    fn stop_manager(m: &NetworkOperatorTetheringManager) -> bool {
         match m.TetheringOperationalState() {
             Ok(TetheringOperationalState::Off) => return true,
             Ok(TetheringOperationalState::On) => {}
@@ -286,6 +357,12 @@ mod imp {
     pub fn start_hotspot() -> Result<Option<(OwnedHotspot, super::SessionCredentials)>, String> {
         Err("Windows以外ではホットスポットを扱えません".into())
     }
+    pub fn restart_hotspot(
+        owned: &OwnedHotspot,
+        _: &super::SessionCredentials,
+    ) -> Result<(), String> {
+        match *owned {}
+    }
     pub fn owned_is_on(owned: &OwnedHotspot) -> Option<bool> {
         match *owned {}
     }
@@ -306,6 +383,9 @@ pub fn info(port: u16, wifi: Option<(&str, &str)>, loopback: bool) -> Value {
         .collect();
     if !loopback {
         return json!({ "port": port, "urls": urls, "wifi": null, "hotspot": null });
+    }
+    if LIFECYCLE.lock().map_or(true, |state| state.rotation_failed) {
+        return json!({ "port": port, "urls": [], "wifi": null, "hotspot": null });
     }
     let spot = hotspot();
     let wifi = match &spot {

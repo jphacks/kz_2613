@@ -2680,3 +2680,8 @@
 - Windows 11 24H2のセッション構成を使用し、永続設定の書き換え・バックアップを避ける。管理外の稼働中ホットスポットは起動要求で変更しない。
 - Windows上で変更モジュールを独立ビルドし、SSIDとパスフレーズの長さ・更新の単体試験1件に合格。通信シミュレーターの構文検証に合格。
 - ホスト全体のcargo checkはdatachannel-sysのOpenSSLビルドに必要なperlがPATHになく停止。通信試験・非管理者の実機受入・全員リセット連動は未実施。
+
+### #415・#551 全員リセット後の再受付
+- `npm --prefix apps/web run build` と `node --experimental-strip-types scripts/sim/app-view-test.mjs`（38/38）が合格。Windowsで切替モジュール単体のビルド・試験が合格。
+- 通信試験に2回連続リセットでSSIDが変わる確認を追加し、`node --check scripts/sim/protocol-sim.mjs` が合格。ホスト全体のビルドは前回のOpenSSL用perl不足があり、通信試験は未実行。
+- 稼働中のホットスポットには触れていない。非管理者WindowsとAndroid・iPhoneでの連続試遊、参加URLの実ネットワークでの更新は未確認。

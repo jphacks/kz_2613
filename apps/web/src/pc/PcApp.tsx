@@ -57,8 +57,14 @@ function Sidebar({state,model,connection}:{state:PcState;model:PcModel;connectio
       <button id="joinTroubleshootingBtn" aria-haspopup="dialog">開けないとき</button>
     </div>
   </div>
+  <button className="sub-cta" id="expoRecruitBtn" aria-haspopup="dialog"
+    hidden={model.view !== 'roles' || !state.online || state.state?.expoWifi !== 'ready' || !connection.url || !connection.guide.wifiQr}>
+    新たな参加者を受け付ける
+  </button>
   <button className="open-game" id="openGameBtn" hidden={model.openGameHidden}>{model.name}を前面にする</button>
-  <p className="action-note" id="actionNote" role="status">{model.actionNote}</p>
+  <p className="action-note" id="actionNote" role="status">
+    {state.state?.expoWifi === 'switching' || state.state?.expoWifi === 'failed' ? connection.note : model.actionNote}
+  </p>
 </aside>;
 }
 
@@ -140,7 +146,7 @@ function ResetDialog() {
   return <dialog id="resetConfirm" aria-labelledby="resetTitle">
   <h2 id="resetTitle">接続中のスマホをすべてリセットしますか？</h2>
   <ul>
-    <li>接続中のスマホは、すべて切断されます。</li>
+    <li>接続中のスマホはすべて切断されます。Re:Cooplayが起動したWi-Fiの名前とパスワードを更新します。</li>
     <li>P1〜P4の枠とホストを最初から決め直します。最初に参加し直した人がホスト（P1）になります。</li>
     <li>協力プレイ中なら止まり、分担も消えます。押していたキーはすべて離します。</li>
     <li>スマホは、ページを再読み込みして参加し直してください。</li>
@@ -152,6 +158,11 @@ function ResetDialog() {
 function ConnectionHelpDialog({connection}:{connection:ConnectionModel}) {
   return <dialog id="connectionHelp" aria-labelledby="connectionTitle">
   <h2 id="connectionTitle">スマホを接続する</h2><p>PCと同じWi-Fiへ接続してから、QRを読み取ってください。最初に読み取った人がホスト（P1）になります。2〜4人で遊べます。</p>
+  {connection.guide.wifiQr && <>
+    <h3>① Wi-Fiにつなぐ</h3>
+    <div className="help-qr" dangerouslySetInnerHTML={{__html: connection.guide.wifiQr}} />
+    <h3>② 参加する</h3>
+  </>}
   <div id="helpQr" className="help-qr" dangerouslySetInnerHTML={{__html: connection.qr}} />
   <p className="url" id="url">{connection.url}</p><p id="urlNote">{connection.urlNote}</p><p id="wifi">{connection.wifi}</p>
   <button id="reloadInfo">QRを取得し直す</button><form method="dialog"><button id="closeConnectionHelp">閉じる</button></form>

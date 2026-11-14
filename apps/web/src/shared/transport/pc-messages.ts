@@ -37,7 +37,7 @@ export function decodePcMessage(text:unknown):PcMessage|null {
   if(!object(v)||!string(v.type))return null;
   switch(v.type){
     case 'state':
-      if(!isPhoneGame(v.game)||!inject(v.inject)||!optional(v,'now',finite)||!optional(v,'slots',v=>Array.isArray(v)&&v.every(slot))
+      if(!isPhoneGame(v.game)||!inject(v.inject)||!optional(v,'now',finite)||!optional(v,'expoWifi',x=>x===null||x==='switching'||x==='ready'||x==='failed')||!optional(v,'slots',v=>Array.isArray(v)&&v.every(slot))
         ||!optional(v,'games',v=>Array.isArray(v)&&v.every(v=>object(v)&&string(v.id)&&string(v.source)
           &&optional(v,'name',string)&&['verified','launchable','image'].every(k=>optional(v,k,boolean))))
         ||!optional(v,'minecraft',v=>v===null||object(v)&&['launchable','image'].every(k=>optional(v,k,boolean)))
