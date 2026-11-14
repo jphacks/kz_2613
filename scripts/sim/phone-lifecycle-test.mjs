@@ -21,6 +21,13 @@ export async function reproduceSharedPointerRelease() {
 if (process.argv.includes('--repro-shared-pointer')) {
   await reproduceSharedPointerRelease();
 } else {
+  await test('分担操作開始: ロビーから現在のepochでREADYを1回送る (#440)', async () => {
+    const h = controllerHarness(); await h.ready({ phase: 'lobby', epoch: 7, canReady: true });
+    const socket = h.sockets[0];
+    h.el('startBtn').fire('click');
+    assert.deepEqual(socket.sent.filter(message => message.type === 'command'),
+      [{ type: 'command', cmd: 'READY', epoch: 7 }]);
+  });
   await test('通常ボタン: 同じ指の重複イベントと複数操作はdown/upを各1組だけ送る', async () => {
     const h = controllerHarness(); await h.ready();
     const attack = h.control('act:attack'), jump = h.control('act:jump');

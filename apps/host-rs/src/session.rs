@@ -165,7 +165,7 @@ pub(crate) fn can_prepare(phase: Phase, host_connected: bool, lineup_ok: bool) -
     phase == Phase::Lobby && host_connected && lineup_ok
 }
 pub(crate) fn can_ready(phase: Phase, no_reasons: bool) -> bool {
-    phase == Phase::Preparing && no_reasons
+    matches!(phase, Phase::Lobby | Phase::Preparing) && no_reasons
 }
 pub(crate) fn can_resume(phase: Phase, host_ready: bool, no_reasons: bool) -> bool {
     phase == Phase::Paused && host_ready && no_reasons
@@ -181,7 +181,7 @@ pub(crate) fn command_allowed(
     is_host(slot)
         && match cmd {
             "PREPARE" => phase == Phase::Lobby && prepare,
-            "READY" => phase == Phase::Preparing && ready,
+            "READY" => can_ready(phase, ready),
             "RESUME" => phase == Phase::Paused && resume,
             "PAUSE" => matches!(phase, Phase::Coop | Phase::Paused),
             "OPEN_GAME" => matches!(phase, Phase::Preparing | Phase::Paused),
@@ -461,7 +461,7 @@ mod tests {
     #[test]
     fn commands_require_the_host_and_the_existing_phase_for_every_transition() {
         let cases = [
-            (Phase::Lobby, vec!["PREPARE", "OPEN_APP"]),
+            (Phase::Lobby, vec!["PREPARE", "READY", "OPEN_APP"]),
             (
                 Phase::Preparing,
                 vec!["READY", "OPEN_GAME", "OPEN_APP", "END"],

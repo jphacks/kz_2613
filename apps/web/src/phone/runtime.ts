@@ -351,7 +351,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   }
   document.querySelectorAll<HTMLElement>('[data-ctl]').forEach(bindControl);
   document.querySelectorAll<HTMLElement>('[data-cmd]').forEach((el) => lifetime.listen(el, 'click', () => command(el.dataset.cmd!)));
-  lifetime.listen($('startBtn'), 'click', () => command(session.game?.phase === 'paused' ? 'RESUME' : session.game?.phase === 'preparing' ? 'READY' : 'PREPARE'));
+  lifetime.listen($('startBtn'), 'click', () => command(session.game?.phase === 'paused' ? 'RESUME' : 'READY'));
   lifetime.listen($('endBtn'), 'click', () => {
     // 準備中は協力プレイがまだ始まっていないので、確認の文言を分ける (#427)。確認中に段階が変わったら閉じる
     const preparing = session.game?.phase === 'preparing';
