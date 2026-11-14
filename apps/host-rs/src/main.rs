@@ -117,6 +117,8 @@ async fn main() {
         .unwrap_or_else(|_| root.join("logs"));
     runtime_measure::init(&log_dir);
     input_trace::init(&log_dir);
+    // 分担のモデルの重みは裏で読む (待ち受けの開始を遅らせない、#474)
+    profiles::warm_model();
     let mut hub = match Hub::new(tx.clone(), &config, input, &log_dir) {
         Ok(h) => h,
         Err(e) => {
