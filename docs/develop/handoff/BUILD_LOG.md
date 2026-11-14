@@ -2338,3 +2338,15 @@
 
 - 最新mainの参照とCIを照合して、手動ツールとCIの用途を `scripts/README.md` に記録した。旧プレビューの補助で、現行コードから参照されない `mini-ws.mjs` を削除した。Tauriの起動画面とホスト配信用の素材は、各々で使うため同梱を維持する。
 - `python scripts/check-public-docs.py`、`node scripts/sim/verify-ui-evidence.mjs`（104画面）、`python scripts/verify_overlay.py`、`git diff --check` が合格。
+## 2026-11-14 — 通信版の更新とキャッシュの受入手順（#272、Codex）
+
+- Rust・Web・補助スクリプトの版更新、同一コミットの配布、旧タブからの再接続と再読み込みの受入手順を通信仕様書に追加した。
+- `python scripts/check-public-docs.py`、`python scripts/verify_overlay.py`、`git diff --check` が合格。型契約の正本・CIでの型差分検査と、Android・iPhoneでの実機受入は残る。
+## 2026-11-14 — CIと実機受入の検証範囲を整理する（#379、Codex）
+
+- CIの資料に配布ジョブのWebView2試験を明記し、認可、全解放、入力先の制限、導入でCIと実機が確認する範囲を記録した。
+- `python scripts/check-public-docs.py`、`python scripts/verify_overlay.py`、`git diff --check` が合格。
+## 2026-11-14 — RustSec監査ツールのビルドを再利用する（#379、Codex）
+
+- cargo-auditの実行ファイルだけをOS・アーキテクチャ・ツール版・Rust版でキャッシュする。キャッシュがなければ固定版を従来どおりソースからビルドする。両クレートの必須監査では毎回RustSecのデータベースを更新する。
+- ワークフローのYAML構造、両クレートの監査コマンド、構造検査、差分検査を確認した。CIでのキャッシュ復元と実行時間は未測定。
