@@ -147,10 +147,12 @@ async function auditLayout(eval_,file,desktop){
       const start=remote.scrollTop;
       remote.scrollTop=remote.scrollHeight;
       const panel=remote.getBoundingClientRect();
-      const note=remote.querySelector('#remoteNote');
-      if(note&&visible(note)){
-        const bounds=note.getBoundingClientRect();
-        if(note.scrollHeight>note.clientHeight+1||bounds.bottom>Math.min(panel.bottom,innerHeight)+1)outside.push('リモコンの説明の末尾');
+      // 説明は決まった高さの枠の中でスクロールする (#536)。枠が画面内にあり、末尾までスクロールで読めるかを見る
+      const notes=remote.querySelector('.host-notes');
+      if(notes&&visible(notes)){
+        const bounds=notes.getBoundingClientRect();
+        const scrollable=['auto','scroll'].includes(getComputedStyle(notes).overflowY);
+        if((!scrollable&&notes.scrollHeight>notes.clientHeight+1)||bounds.bottom>Math.min(panel.bottom,innerHeight)+1)outside.push('リモコンの説明の末尾');
       }
       const end=remote.querySelector('#endBtn');
       if(end&&visible(end)){

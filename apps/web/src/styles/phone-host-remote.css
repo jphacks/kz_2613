@@ -35,10 +35,11 @@
 #v-remote :is(.pad-clicks, .wheel-pair) .key + .key { border-left: 3px solid var(--color-cyan); }
 #v-remote :is(.pad-clicks, .wheel-pair) .key.down { background: color-mix(in srgb, var(--color-cyan) 32%, var(--color-surface)); }
 
-/* Esc (丸) とホイール (上下に分けた1つの枠) */
+/* Esc (丸) と「ホストに譲る」を左の列に縦に並べ、右にホイール (上下に分けた1つの枠) (#536) */
 #v-remote .remote-keys { display: grid; grid-template-columns: 1fr 1.6fr; gap: 14px; align-items: center; padding: 0 6px; }
+#v-remote .remote-left { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
 #v-remote .remote-keys .esc {
-  width: min(100%, 92px);
+  width: min(100%, 72px);
   aspect-ratio: 1;
   justify-self: center;
   min-height: 0;
@@ -58,6 +59,37 @@
   box-shadow: 0 5px 0 color-mix(in srgb, var(--color-cyan) 55%, var(--color-fx-shade));
 }
 #v-remote .wheel-pair .key + .key { border-left: 0; border-top: 3px solid var(--color-cyan); }
+#v-remote .host-transfer { position: relative; width: 100%; }
+#v-remote .host-transfer .transfer {
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 6px;
+  border: 3px solid var(--color-cyan);
+  border-radius: 14px;
+  background: var(--color-surface);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--color-cyan) 55%, var(--color-fx-shade));
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+/* 譲る相手のメニューは上へ開き、下の固定領域に重ならない */
+#v-remote .host-transfer-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 100%;
+  padding: 6px;
+  border: 3px solid var(--color-cyan);
+  border-radius: 14px;
+  background: var(--color-surface);
+  box-shadow: 0 4px 0 var(--color-shadow);
+}
+#v-remote .host-transfer-menu button { min-height: 44px; white-space: nowrap; font-size: 14px; font-weight: 800; }
 
 /* 進めるボタンは画面の下に固定する */
 #v-remote .host-actions {
@@ -73,10 +105,19 @@
   border-top: 3px solid var(--color-phone-button);
   border-radius: 20px 20px 0 0;
 }
-#v-remote .host-actions .note:empty { display: none; }
+/* 補助ボタンは3つの決まった枠 (前面化：ゲーム・PCアプリ、終了)。出さないボタンの枠は空けたまま、高さも変えない */
+#v-remote .host-sub { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: 52px; gap: 6px; }
+#v-remote .host-sub .cmd { min-height: 0; height: 100%; margin: 0; padding: 2px 4px; font-size: 12px; line-height: 1.25; }
+#v-remote #openGameBtn { grid-column: 1; }
+#v-remote #openAppBtn { grid-column: 2; }
+#v-remote #endBtn { grid-column: 3; }
+/* 説明は2行の決まった高さの枠の中でスクロールする。文の長さで下の領域を伸ばさない */
+#v-remote .host-notes { height: calc(2 * 1.45em); overflow-y: auto; font-size: 12px; line-height: 1.45; }
+#v-remote .host-notes .note { margin: 0; font-size: inherit; line-height: inherit; }
+#v-remote .host-notes .note:empty { display: none; }
 
 @media (max-height: 640px) and (orientation: portrait) {
   #v-remote .trackpad { min-height: 110px; }
-  #v-remote .remote-keys .esc { width: min(100%, 70px); font-size: 15px; }
+  #v-remote .remote-keys .esc { width: min(100%, 56px); font-size: 15px; }
   #v-remote :is(.pad-clicks, .wheel-pair) .key { min-height: 40px; font-size: 12px; }
 }
