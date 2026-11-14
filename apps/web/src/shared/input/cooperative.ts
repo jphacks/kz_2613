@@ -4,14 +4,15 @@ import {createLifetime} from './lifetime.ts';
 import type {PhoneGame, Direction} from '../contracts.ts';
 import type {InputOwner} from './owners.ts';
 import type {LookInput} from '../transport/messages.ts';
-interface CooperativeOptions {getGame():PhoneGame|null;getRole():string|null;canLook?():boolean;isOpen():boolean;ctlDown(control:string,at:number,owner:InputOwner):void;ctlUp(control:string,owner:InputOwner):void;sendLook(message:LookInput,at:number|null):void;onCancel?():void}
-export function bindCooperativeInput({getGame,getRole,canLook=()=>getRole()==='P2',isOpen,ctlDown,ctlUp,sendLook,onCancel=()=>{}}:CooperativeOptions) {
+import {rotateForHold, type Hold} from './hold.ts';
+interface CooperativeOptions {getGame():PhoneGame|null;getRole():string|null;canLook?():boolean;isOpen():boolean;getHold?():Hold;ctlDown(control:string,at:number,owner:InputOwner):void;ctlUp(control:string,owner:InputOwner):void;sendLook(message:LookInput,at:number|null):void;onCancel?():void}
+export function bindCooperativeInput({getGame,getRole,canLook=()=>getRole()==='P2',isOpen,getHold=()=>0,ctlDown,ctlUp,sendLook,onCancel=()=>{}}:CooperativeOptions) {
   const lifetime = createLifetime();
   // ---- 移動スティック (8 方向 → 前後左右の操作の組み合わせ、#139)。画面を作り直すたびに置き換える ----
   let genStick: ReturnType<typeof attachStick> | null = null;
   function setGeneratedStick(el: HTMLElement | null, codes: Partial<Record<Direction,string>>) {
     genStick?.dispose();
-    genStick = el ? attachStick(el, { codes, isOpen, ctlDown, ctlUp, onCancel }) : null;
+    genStick = el ? attachStick(el, { codes, isOpen, hold: getHold, ctlDown, ctlUp, onCancel }) : null;
   }
   function stickRelease() { genStick?.release(); }
 
@@ -47,8 +48,10 @@ export function bindCooperativeInput({getGame,getRole,canLook=()=>getRole()==='P
   binding.listen(element, 'pointermove', (e) => {
     if (e.pointerId !== padId) return;
     moveAt ??= e.timeStamp;
-    accX += (e.clientX - lastX) * sens();
-    accY += (e.clientY - lastY) * sens();
+    // 横持ち (#514) では、指から見た右が視点の右になるよう移動量を回す。感度・30Hz・補間は変えない
+    const [mx, my] = rotateForHold(e.clientX - lastX, e.clientY - lastY, getHold());
+    accX += mx * sens();
+    accY += my * sens();
     lastX = e.clientX; lastY = e.clientY;
     moveDot(e);
   });

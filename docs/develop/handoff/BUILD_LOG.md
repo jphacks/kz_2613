@@ -2622,3 +2622,10 @@
 - 試験：Rust `can_leave`、`leave_slot`（ホストは不可・枠の解放・4010・seats/lineup/role_ack の破棄・閉じた接続が次の人の枠を切断扱いにしない・古い接続の操作が届かない）、開始後は不可、END で同じゲームのまま PCアプリが前面（前面にできなくても終了）。`protocol-sim.mjs` に退出→同じ枠へ次の端末がすぐ入るシナリオ。手元では Rust をビルドできないため、Rust の試験と `protocol-sim` は CI で確認する（`cargo fmt --check` は手元で成功）。
 - 手元で合格：`phone-lifecycle-test`（39/39、退出の確認・送信・開始後の取り消し・4010）、`app-view-test`（37/37、終了後も分担画面と同じゲーム）、`phone-view-test`・`phone-session-test`・`product-web-test`・`product-lifetime-test`・`product-module-graph-test`・`ui-input-test`・`check-static-pages`・`review-terminal-regression`・`protocol-boundary-test`、`npm run typecheck`・`vite build`、`check-public-docs.py`、`git diff --check`。
 - 未実施：実ゲーム（Minecraft など）を起動したままの連続2回以上の試遊（実機）。全画面ゲームからの前面化の実機確認。
+## 2026-11-15 — 回転ロックのまま横持ちで、スティック・視点の向きを90度回す（#514、Claude Code）
+
+- `apps/web/src/shared/input/hold.ts` に持ち方（縦持ち・左に90度・右に90度）を追加し、スティックは指の位置、視点パッドは移動量（dx・dy）を回してから方向・送る量を決める。画面の配置・送る入力の種類・認可・送信経路・感度・視点30Hzは変えない。
+- スティックは要素ごと同じ角度だけ回し、矢印と文字を指から見て正立させる（ノブも指の下に来る）。持ち方は「⋯」のメニューで選び、端末ごとに `localStorage`（`recooplay.hold`）へ保存する。読めない・書けないときは縦持ち。
+- 持ち方を変えたら、回転時と同じ `stopRemote`（全解放と `release_inputs`）を呼び、旧押下を持ち越さない。端末の傾きから自動で切り替える方式は、回転ロック中にセンサーの許可が要る端末があるため入れていない。
+- `node scripts/sim/ui-input-test.mjs`（21/21、横持ちの前進・後退・視点の右・保存と通知を追加）、`phone-view-test`・`phone-layout-test`・`controller-layout-test`・`controller-preview-test`・`app-view-test`（37/37）・`product-module-graph-test`・`product-lifetime-test`・`product-web-test`・`check-static-pages`、`npm run typecheck`・`vite build` に合格。Stick を静的に描いた撮影で、左右90度の見た目を確認した。
+- 実機（Android・iPhone、回転ロックあり）での横持ちの確認は未実施。

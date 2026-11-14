@@ -1,4 +1,5 @@
 import { bindCooperativeInput } from '../shared/input/cooperative.ts';
+import { hold } from '../shared/input/hold.ts';
 import { createFastChannel } from '../shared/transport/fast-channel.ts';
 import { createInputOwners } from '../shared/input/owners.ts';
 import { createPhoneSession } from '../shared/transport/session.ts';
@@ -395,6 +396,8 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   for (const type of ['pointerup', 'pointercancel'] as const) lifetime.listenEvent(document, type, (e) => { if (needLift.delete((e as PointerEvent).pointerId)) showLiftHint(); });
   lifetime.listenEvent(portrait, 'change', stopRemote);
   lifetime.listenEvent(window, 'orientationchange', stopRemote);
+  // 持ち方 (#514) を変えたら、回転時と同じく押していた操作を全部離す。旧押下を新しい向きへ持ち越さない
+  lifetime.own(hold.subscribe(stopRemote));
   lifetime.listenEvent(window, 'pagehide', stopRemote);
   lifetime.listenEvent(window, 'blur', stopRemote);
   lifetime.listenEvent(document, 'visibilitychange', () => {
@@ -404,7 +407,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
 
   let previousLookSent: number | null = null;
   const roleInput = bindCooperativeInput({
-    getGame: () => session.game, getRole: () => session.me, isOpen: () => isOpen() && controlsVisible(), ctlDown, ctlUp, onCancel: stopRemote,
+    getGame: () => session.game, getRole: () => session.me, isOpen: () => isOpen() && controlsVisible(), getHold: hold.get, ctlDown, ctlUp, onCancel: stopRemote,
     // 視点の担当: 操作定義の分担があればそれに従い、なければ P2 (#105)
     // 固定の画面では、担当 (入れ替え後の席、#47) が視点 (P2 の表) の人
     canLook: () => { const acts = myActions(session.game, session.me); return acts ? acts.some((a) => a.type === 'mouseDelta') : ((session.me ? session.game?.roleOf?.[session.me] : undefined) || session.me) === 'P2'; },
