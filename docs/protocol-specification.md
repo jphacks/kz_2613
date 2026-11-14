@@ -38,7 +38,15 @@
 
 速達経路の `input` と50ms周期の `ka` は、直近500msに送信してACKが届いていない入力を `inputs` 配列に同梱できます。1フレームに現入力と合わせて最大64件、UTF-8で最大16KiBです。ブラウザーが通知する送信上限も守ります。ホストは同梱分を既存の連番・epoch・解放境界・遅延破棄の判定に通します。WebSocketは各入力を従来どおり1件ずつ送ります。
 
-通信版を変更するときは、正本の `apps/host-rs/protocol-version.txt` を更新し、`python scripts/sync-protocol-version.py` でRustとWebの定数を生成します。正本・生成物・この仕様書を同じ変更に含めます。CIは生成差分を検出し、`protocol-sim.mjs` はWebの版でビルド済みホストへ参加して実際に返る `welcome` の版まで照合します。
+### 通信版の更新手順
+
+1. 互換性が変わる場合は、正本の `apps/host-rs/protocol-version.txt` を上げ、`python scripts/sync-protocol-version.py` でRustとWebの定数を生成する。正本・生成物・本仕様書を同じ変更に含める。helloを直接作る試験・計測スクリプトはWebの定数を参照する。
+2. 同じコミットからホストとWebを構築して配布物を作る。`protocol-sim.mjs` で、版が一致する端末の参加と、旧版・新版・版なしのhelloが参加枠を確保せずに拒否されることを確認する。`product-web-test.mjs` でスマホの受信と終了時の表示を確認する。
+3. Wi-Fiの実機受入では、旧配布物のスマホ画面を開いたままPCの配布物を切り替える。旧タブで再接続したときに版不一致の案内が出ること、同じ参加URLを再読み込みすると新しい版で参加できることを確認する。Android ChromeとiPhone Safariそれぞれで記録する。
+
+ホストはHTMLを `Cache-Control: no-store` で配信し、ファイル名にハッシュが付いたWeb資産は長期キャッシュを許可する。すでに開いているタブのJavaScriptは自動で置き換わらないため、版不一致の案内に従ってページを再読み込みする。
+
+CIは生成差分を検出し、`protocol-sim.mjs` はWebの版でビルド済みホストへ参加して実際に返る `welcome` の版まで照合します。
 
 | パス | 用途 | アクセス |
 |:--|:--|:--|
@@ -151,7 +159,7 @@ PREPARE / READY / RESUME / OPEN_GAME / OPEN_APPは現在epochを必須としま�
 | `phase / reason / epoch` | lobby / preparing / coop / paused、遷移理由、入力の世代 |
 | `required / maxPlayers / connected` | 最低2人、最大4枠、接続中の枠 |
 | `canPrepare / canReady / canResume / readyReasons` | 要求可否と拒否理由 |
-| `title / titleName / launch` | 選択ゲーム、表示名、起動要求の状態 |
+| `title / titleName / launch` | 選択ゲーム、表示名、起動要求の状態。未選択の `title` は空文字で、操作定義 `profile` は `null` |
 | `lineup / lineupOk` | 決定したゲームとメンバー、現在との一致。決定済みの枠が保持期限を過ぎた場合は再決定が必要 |
 | `lineupDisconnected` | ロビーで、決定後に切断中または保持期限を過ぎた枠番号。再決定後は空 |
 | `participants / assigned` | Readyで固定した参加者と操作割当 |

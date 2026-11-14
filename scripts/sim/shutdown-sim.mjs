@@ -51,6 +51,8 @@ async function check(mode) {
     const current = () => p1.messages.filter(m=>m.type==='game').at(-1)?.game;
     await until(()=>current()?.connected.length===3, '3人接続を待機');
     // PC画面でメンバーと分担を決定してから準備する (#109)
+    mon.sendJson({type:'select_game',title:'minecraft-java'});
+    await until(()=>current()?.title==='minecraft-java', 'ゲームを選択できない');
     mon.sendJson({type:'confirm_lineup',title:current().title,members:current().connected,epoch:current().epoch});
     await until(()=>current()?.lineupOk, '分担を決定できない');
     p1.sendJson({type:'command',cmd:'PREPARE',epoch:current().epoch});

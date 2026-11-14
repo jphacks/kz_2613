@@ -177,6 +177,8 @@ pub fn save(path: &Path, store: &Store) -> std::io::Result<()> {
 pub struct Detected {
     pub model: String,
     pub profile: Option<Value>,
+    /// 元にした利用者のキー設定のファイルの更新日時 (#524)。Some(None) はファイルがなかったこと、None は記録していない (古い保存)
+    pub config_modified: Option<Option<u64>>,
 }
 
 pub type DetectedStore = HashMap<String, Detected>;
@@ -213,11 +215,13 @@ pub fn parse_detected(text: &str) -> DetectedStore {
             .get("profile")
             .filter(|p| crate::profiles::parse(p).is_ok())
             .cloned();
+        let config_modified = v.get("configModified").map(Value::as_u64);
         out.insert(
             game.clone(),
             Detected {
                 model: model.to_string(),
                 profile,
+                config_modified,
             },
         );
     }
@@ -233,7 +237,13 @@ pub fn load_detected(path: Option<&Path>) -> DetectedStore {
 pub fn save_detected(path: &Path, store: &DetectedStore) -> std::io::Result<()> {
     let games: Map<String, Value> = store
         .iter()
-        .map(|(g, d)| (g.clone(), json!({ "model": d.model, "profile": d.profile })))
+        .map(|(g, d)| {
+            let mut v = json!({ "model": d.model, "profile": d.profile });
+            if let Some(m) = d.config_modified {
+                v["configModified"] = json!(m);
+            }
+            (g.clone(), v)
+        })
         .collect();
     let v = json!({ "note": "Re:Cooplay がゲームのファイルから読んで作った仮の操作定義 (未検証)。消すと次の一覧の読み込みで作り直します", "games": games });
     if let Some(dir) = path.parent() {
@@ -319,6 +329,33 @@ mod tests {
             r#"{"games":{"x":{"fingerprint":"a","model":"v1","byPlayers":[[["ok", 3]]]}}}"#
         )
         .is_empty());
+    }
+
+    #[test]
+    fn detected_config_time_round_trips() {
+        let dir = std::env::temp_dir().join(format!("recooplay-524-store-{}", std::process::id()));
+        let path = dir.join("detected.json");
+        let mut store = DetectedStore::new();
+        for (id, m) in [("a", Some(Some(123u64))), ("b", Some(None)), ("c", None)] {
+            store.insert(
+                id.into(),
+                Detected {
+                    model: "m".into(),
+                    profile: None,
+                    config_modified: m,
+                },
+            );
+        }
+        save_detected(&path, &store).unwrap();
+        let back = load_detected(Some(&path));
+        assert_eq!(back["a"].config_modified, Some(Some(123)));
+        assert_eq!(
+            back["b"].config_modified,
+            Some(None),
+            "ファイルがなかったことも残す"
+        );
+        assert_eq!(back["c"].config_modified, None, "記録していない古い保存");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

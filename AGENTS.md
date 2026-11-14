@@ -56,7 +56,7 @@
 ## 作業手順
 
 - mainへの統合には、対象PRの最新コミットでGitHub Actionsの必須チェック `structure`、`host-rs`、`web`、`desktop`、`protocol`、`package`、`npm-audit`、`cargo-audit (host-rs)`、`cargo-audit (desktop)` がすべて成功していることが必要。資料のみの変更にも適用する。[CIの検証範囲](docs/develop/handoff/CI_VERIFICATION.md) を参照する。
-- 分担のモデルの版2（MiniLM 小型版、約57MB）は Git に入れず、Hugging Face から `scripts/windows/preset-model-v2.json` に固定した版を取得して配布物に同梱する（CC BY-NC-ND 4.0）。既定の分担は規則で、モデルは `RECOOPLAY_PRESETS=model` のときだけ使う。Hugging Face 側を更新したら `python scripts/preset-model/pin_v2.py` で固定し直してからコミットする（しないと `host-rs`・`package` が照合で止まる）。詳細は `scripts/preset-model/README.md` の「版2の配布と更新」。
+- 分担のモデルの版2（MiniLM 小型版、約57MB）は Git に入れず、Hugging Face から `scripts/windows/preset-model-v2.json` に固定した版を取得して配布物に同梱する（CC BY-NC-ND 4.0）。既定の分担はモデルで、`RECOOPLAY_PRESETS=rule` のときと重みを読めないときは規則に戻る（#474）。Hugging Face 側を更新したら `python scripts/preset-model/pin_v2.py` で固定し直してからコミットする（しないと `host-rs`・`package` が照合で止まる）。詳細は `scripts/preset-model/README.md` の「版2の配布と更新」。
 
 1. リポジトリと既存の変更を確認する。他の人の作業を破棄しない。
 2. 複雑な変更では短い計画と未検証の前提を示す。

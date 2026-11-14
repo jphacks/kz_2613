@@ -20,7 +20,7 @@ export interface Profile {
   assignment?: Partial<Record<Slot,string[]>>;
   assignments?: Record<number,Partial<Record<Slot,string[]>>>;
   groups?: {id:string;label?:string}[];
-  /** 分担の作り方 (#432)。model はモデルの分担 (未検証)、rule は規則の分担 */
+  /** 分担の作り方 (#432)。model はモデルの分担 (画面では「独自AI」、未検証)、rule は規則の分担 (画面では「定型ルール」) */
   presetSource?: string; modelPresetAvailable?: boolean; presetChoosable?: boolean;
 }
 export interface ControllerGame {

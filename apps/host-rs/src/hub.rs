@@ -43,11 +43,12 @@ const SLOT_ROLES: [&str; MAX_SLOTS] = ["ホスト", "参加者", "参加者", "�
 // "pseudo-game" は診断用の疑似ゲーム画面 (/game) で、PC アプリの一覧には出さない (ゲーム変更の試験にも使う)
 // PC アプリ (apps/desktop) の実行ファイル名。前面になったら PC アプリへの手動復帰とみなす
 const DESKTOP_PROCESS: &str = "recooplay-desktop.exe";
-const DEFAULT_TITLE: &str = TITLES[0];
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 /// 接続ごとの送信待ちの上限。健全な接続は溜まらず、読取りが止まった接続だけが達する (#197)
 pub const WS_QUEUE_LIMIT: usize = 4096;
+// 入力の診断ログは混雑時に抑え、状態更新・操作結果・解放通知の送信待ちに空きを残す。
+const MONITOR_INPUT_LOG_LIMIT: usize = 256;
 const CLOSE_HOST_HANDOVER: u16 = 4008;
 const CLOSE_HOST_SHUTDOWN: u16 = 4009; // PC アプリ (ホスト) の終了。スマホは再接続しない (#302)
 const HEARTBEAT_TIMEOUT_MS: u64 = 4000; // この時間メッセージが来なければ切断扱い
@@ -63,6 +64,12 @@ pub enum Out {
 }
 
 pub enum Event {
+    #[cfg(feature = "latency-measure")]
+    WsSendGap {
+        id: u64,
+        gap_ms: u64,
+        send_ms: u64,
+    },
     WsOpen {
         id: u64,
         tx: UnboundedSender<Out>,
@@ -78,6 +85,8 @@ pub enum Event {
     WsClosed {
         id: u64,
         code: u16,
+        #[cfg(feature = "latency-measure")]
+        since_last_send_ms: Option<u64>,
     },
     RtcDescription {
         slot: usize,
@@ -130,6 +139,8 @@ pub enum Event {
         Option<crate::model_presets::Stored>,
         u64,
     ),
+    /// 分担のモデルの裏の処理がパニックした (#519)。(何の処理か)
+    ModelFailed(&'static str),
     /// ランチャーへの起動要求が終わった (別スレッドから。Err は理由)
     Launched {
         gen: u64,
@@ -151,6 +162,15 @@ enum Timer {
     ReleaseRetry(u64),
     LaunchWatch(u64), // 起動の世代
     ModelPreset,      // 未知のゲームの分担をモデルで 1 本作る (#431)
+}
+
+/// パニックの内容 (文字列なら取り出す)
+fn panic_message(payload: &(dyn std::any::Any + Send)) -> String {
+    payload
+        .downcast_ref::<&str>()
+        .map(|s| s.to_string())
+        .or_else(|| payload.downcast_ref::<String>().cloned())
+        .unwrap_or_else(|| "（内容不明）".into())
 }
 
 fn now_ms() -> u64 {
@@ -212,6 +232,10 @@ impl SendQueue {
 }
 
 impl Conn {
+    fn can_push_input_log(&self) -> bool {
+        self.queued.len.load(Ordering::Relaxed) < MONITOR_INPUT_LOG_LIMIT
+    }
+
     /// 本文を送信待ちへ積む。上限に達した接続は送信側が切断する (#197)。
     /// 切断は通常の経路で全解放し、再接続で最新の状態を受け取るので、落とした本文を補う必要はない
     fn push_text(&self, text: String) {
@@ -431,7 +455,7 @@ pub struct Hub {
     model_presets: crate::model_presets::Store,
     model_queue: std::collections::VecDeque<String>,
     model_timer: bool,
-    /// モデルの分担を使う設定 (RECOOPLAY_PRESETS=model で、重みを読めたとき)
+    /// モデルの分担を使う設定 (既定。RECOOPLAY_PRESETS=rule のときだけ false)。重みは起動時に裏で読む (#474)
     presets_model: bool,
     /// 裏のスレッドで作っているゲーム (1 本ずつ)
     model_busy: Option<String>,
@@ -522,7 +546,7 @@ impl Hub {
                 auto_resume_ms: config.auto_resume_ms,
                 auto_resume_until: 0,
                 epoch: 1,
-                title: DEFAULT_TITLE.to_string(),
+                title: String::new(),
             },
             inject: InjectMode::parse(&config.inject_mode).unwrap_or(InjectMode::Off),
             game_service: GameService::new(),
@@ -540,7 +564,7 @@ impl Hub {
             timer_seq: 0,
             state_pending: false,
             hotkey: Err("未登録".into()),
-            target: config.target.clone(),
+            target: game_service::target_for(&[], "", &config.target),
             base_target: config.target.clone(),
             games: Vec::new(),
             images: games::Images::default(),
@@ -577,7 +601,7 @@ impl Hub {
             ),
             model_queue: Default::default(),
             model_timer: false,
-            presets_model: profiles::preset_source() == "model",
+            presets_model: profiles::model_presets_enabled(),
             model_busy: None,
             model_inline: false,
             detected_path: crate::model_presets::detected_path(),
@@ -699,74 +723,118 @@ impl Hub {
         self.log("server_start", json!({ "port": port }));
         let mut last_look_tick: Option<Instant> = None;
         loop {
-            let now = Instant::now();
-            while let Some(Reverse((at, _, timer))) = self.timers.peek().copied() {
-                if at > now {
-                    break;
-                }
-                self.timers.pop();
-                if timer == Timer::LookTick {
-                    if let Some(start) = crate::runtime_measure::start() {
-                        if let Some(last) = last_look_tick.replace(start) {
-                            crate::runtime_measure::sample(
-                                "look_tick_interval_us",
-                                start.duration_since(last).as_micros() as u64,
-                            );
-                        }
-                    }
-                }
-                self.on_timer(timer, at);
-            }
-            let wait = self
-                .timers
-                .peek()
-                .map(|Reverse((at, _, _))| at.saturating_duration_since(Instant::now()))
-                .unwrap_or(Duration::from_secs(1));
-            match rx.recv_timeout(wait) {
-                Ok(Event::Shutdown) => {
-                    // 終了時は押しっぱなしを残さない
-                    let confirmed = self.release_for_shutdown();
-                    self.close_players_for_shutdown();
-                    crate::runtime_measure::finish();
-                    crate::input_trace::finish();
-                    std::process::exit(if confirmed { 0 } else { 1 });
-                }
-                Ok(ev) => {
-                    let start = crate::runtime_measure::start();
-                    let metric = if matches!(ev, Event::EmergencyStop { .. }) {
-                        "hub_stop_us"
-                    } else {
-                        "hub_event_us"
-                    };
-                    let (queue_metric, total_metric, enqueued_at) = match &ev {
-                        Event::WsText { enqueued_at, .. } => {
-                            ("hub_ws_queue_us", "hub_ws_enqueue_to_end_us", *enqueued_at)
-                        }
-                        Event::EmergencyStop { enqueued_at, .. } => (
-                            "hub_stop_queue_us",
-                            "hub_stop_enqueue_to_end_us",
-                            *enqueued_at,
-                        ),
-                        _ => ("", "", None),
-                    };
-                    if let (Some(enqueued), Some(start)) = (enqueued_at, start) {
-                        crate::runtime_measure::sample(
-                            queue_metric,
-                            start.duration_since(enqueued).as_micros() as u64,
-                        );
-                    }
-                    self.on_event(ev);
-                    crate::runtime_measure::elapsed(metric, start);
-                    crate::runtime_measure::elapsed(total_metric, enqueued_at);
-                }
-                Err(RecvTimeoutError::Timeout) => {}
-                Err(RecvTimeoutError::Disconnected) => {
-                    self.release_for_shutdown();
-                    self.close_players_for_shutdown();
-                    break;
+            // 1 回分の処理 (タイマーとイベント) をパニックから守る。パニックしたら押しっぱなしを残さずに終える (#517)
+            let step = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                self.step(&rx, &mut last_look_tick)
+            }));
+            match step {
+                Ok(true) => {}
+                Ok(false) => break,
+                Err(payload) => {
+                    let released = self.recover_from_panic(panic_message(payload.as_ref()));
+                    std::process::exit(if released { 2 } else { 3 });
                 }
             }
         }
+    }
+
+    /// hub の 1 回分の処理。チャネルが閉じたら false
+    fn step(&mut self, rx: &Receiver<Event>, last_look_tick: &mut Option<Instant>) -> bool {
+        let now = Instant::now();
+        while let Some(Reverse((at, _, timer))) = self.timers.peek().copied() {
+            if at > now {
+                break;
+            }
+            self.timers.pop();
+            if timer == Timer::LookTick {
+                if let Some(start) = crate::runtime_measure::start() {
+                    if let Some(last) = last_look_tick.replace(start) {
+                        crate::runtime_measure::sample(
+                            "look_tick_interval_us",
+                            start.duration_since(last).as_micros() as u64,
+                        );
+                    }
+                }
+            }
+            self.on_timer(timer, at);
+        }
+        let wait = self
+            .timers
+            .peek()
+            .map(|Reverse((at, _, _))| at.saturating_duration_since(Instant::now()))
+            .unwrap_or(Duration::from_secs(1));
+        match rx.recv_timeout(wait) {
+            Ok(Event::Shutdown) => {
+                // 終了時は押しっぱなしを残さない
+                crate::netinfo::block_hotspot_start();
+                let confirmed = self.release_for_shutdown();
+                self.close_players_for_shutdown();
+                let hotspot = crate::netinfo::stop_owned_hotspot();
+                self.log("hotspotShutdown", json!({ "result": hotspot }));
+                let _ = self.log_file.flush();
+                crate::runtime_measure::finish();
+                crate::input_trace::finish();
+                std::process::exit(if confirmed { 0 } else { 1 });
+            }
+            Ok(ev) => {
+                let start = crate::runtime_measure::start();
+                let metric = if matches!(ev, Event::EmergencyStop { .. }) {
+                    "hub_stop_us"
+                } else {
+                    "hub_event_us"
+                };
+                let (queue_metric, total_metric, enqueued_at) = match &ev {
+                    Event::WsText { enqueued_at, .. } => {
+                        ("hub_ws_queue_us", "hub_ws_enqueue_to_end_us", *enqueued_at)
+                    }
+                    Event::EmergencyStop { enqueued_at, .. } => (
+                        "hub_stop_queue_us",
+                        "hub_stop_enqueue_to_end_us",
+                        *enqueued_at,
+                    ),
+                    _ => ("", "", None),
+                };
+                if let (Some(enqueued), Some(start)) = (enqueued_at, start) {
+                    crate::runtime_measure::sample(
+                        queue_metric,
+                        start.duration_since(enqueued).as_micros() as u64,
+                    );
+                }
+                self.on_event(ev);
+                crate::runtime_measure::elapsed(metric, start);
+                crate::runtime_measure::elapsed(total_metric, enqueued_at);
+            }
+            Err(RecvTimeoutError::Timeout) => {}
+            Err(RecvTimeoutError::Disconnected) => {
+                self.release_for_shutdown();
+                self.close_players_for_shutdown();
+                return false;
+            }
+        }
+        true
+    }
+
+    /// hub がパニックしたときの後始末 (#517)。押しっぱなしを離して終える (スマホへの終了の通知・ホットスポットの停止はしない、#522)。
+    /// 状態が壊れている可能性があるので、後始末の途中のパニックも受け止める。全部離せたら true
+    fn recover_from_panic(&mut self, message: String) -> bool {
+        eprintln!("hub が異常終了しました（押しっぱなしの入力を離して終了します）: {message}");
+        let released = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            self.log("hubPanic", json!({ "message": message }));
+            // 試験ではホットスポットの状態 (プロセス全体で共有) に触れない
+            if !cfg!(test) {
+                crate::netinfo::block_hotspot_start();
+            }
+            let ok = self.release_for_shutdown();
+            // スマホへ「PC アプリの終了」(4009) は送らない。PC アプリはホストを起動し直すので、スマホは通常の切断として
+            // 再接続を続け、新しいホストへ参加し直す (#522)。協力プレイは再接続後も自動では再開しない。
+            // 同じ理由で、アプリが起動したホットスポットも止めない (止めるとスマホの Wi-Fi が切れ、再接続できない)
+            ok
+        }))
+        .unwrap_or(false);
+        let _ = self.log_file.flush();
+        crate::runtime_measure::finish();
+        crate::input_trace::finish();
+        released
     }
 
     fn schedule(&mut self, at: Instant, timer: Timer) {
@@ -822,10 +890,18 @@ impl Hub {
     }
 
     fn broadcast_monitors(&self, msg: &Value) {
+        self.broadcast_monitor_message(msg, false);
+    }
+
+    fn broadcast_monitor_message(&self, msg: &Value, input_log: bool) {
         let start = crate::runtime_measure::start();
         let text = msg.to_string();
         for c in self.conns.values() {
             if matches!(c.role, Role::Monitor { .. }) {
+                if input_log && !c.can_push_input_log() {
+                    crate::runtime_measure::sample("ws_monitor_input_log_skipped", 1);
+                    continue;
+                }
                 c.push_text(text.clone());
             }
         }
@@ -2694,10 +2770,28 @@ impl Hub {
         self.presets_model
             && self.games.iter().any(|g| g.id == game_id)
             && profiles::find(&self.profiles, game_id).is_none()
-            && self
+            && (self
                 .detected
                 .get(game_id)
                 .is_none_or(|d| d.model != crate::preset_model::version())
+                || self.detected_config_changed(game_id))
+    }
+
+    /// 選んでいるゲームについて、仮の定義の元にした利用者のキー設定のファイルが変わったか (#524)。
+    /// ファイルを見るのは選んでいるゲームだけ (一覧の全部は見ない)。読み直すのはロビーと準備中だけで、
+    /// 協力プレイ・一時停止の間に定義を変えない
+    fn detected_config_changed(&self, game_id: &str) -> bool {
+        if game_id != self.game.title || !matches!(self.game.phase, Phase::Lobby | Phase::Preparing)
+        {
+            return false;
+        }
+        let Some(Some(saved)) = self.detected.get(game_id).map(|d| d.config_modified) else {
+            return false;
+        };
+        let Some(entry) = self.games.iter().find(|g| g.id == game_id) else {
+            return false;
+        };
+        crate::engines::config_modified(&entry.install_dir) != saved
     }
 
     /// 操作定義のないゲームのファイルから操作を読み、分類して仮の定義と分担を作り始める (#431)。
@@ -2717,6 +2811,8 @@ impl Hub {
         let started = Instant::now();
         let work = move || {
             let version = crate::preset_model::version().to_string();
+            // 利用者のキー設定のファイルの更新日時 (#524)。変わったら選んだときに読み直す
+            let config_modified = Some(crate::engines::config_modified(&dir));
             let made = crate::preset_model::model().and_then(|m| {
                 let (actions, source) = crate::game_actions::read(&dir)?;
                 crate::preset_model::synthesize(m, &key, &name, &actions, source).ok()
@@ -2729,6 +2825,7 @@ impl Hub {
                         crate::model_presets::Detected {
                             model: version,
                             profile: Some(v),
+                            config_modified,
                         },
                         Some(stored),
                     )
@@ -2737,6 +2834,7 @@ impl Hub {
                     crate::model_presets::Detected {
                         model: version,
                         profile: None,
+                        config_modified,
                     },
                     None,
                 ),
@@ -2757,13 +2855,20 @@ impl Hub {
         let spawned = std::thread::Builder::new()
             .name("model-detect".into())
             .spawn(move || {
-                let (d, stored) = work();
-                let _ = tx.send(Event::DetectedMade(
-                    id,
-                    d,
-                    stored,
-                    started.elapsed().as_millis() as u64,
-                ));
+                // パニックしたら作業中の印を消せるよう、失敗を知らせる (#519)
+                match std::panic::catch_unwind(std::panic::AssertUnwindSafe(work)) {
+                    Ok((d, stored)) => {
+                        let _ = tx.send(Event::DetectedMade(
+                            id,
+                            d,
+                            stored,
+                            started.elapsed().as_millis() as u64,
+                        ));
+                    }
+                    Err(_) => {
+                        let _ = tx.send(Event::ModelFailed("detect"));
+                    }
+                }
             });
         if spawned.is_ok() {
             self.model_busy = Some(game_id.to_string());
@@ -2837,17 +2942,32 @@ impl Hub {
         let spawned = std::thread::Builder::new()
             .name("model-preset".into())
             .spawn(move || {
-                let stored = work();
-                let _ = tx.send(Event::ModelPresetMade(
-                    key,
-                    stored,
-                    started.elapsed().as_millis() as u64,
-                ));
+                // パニックしたら作業中の印を消せるよう、失敗を知らせる (#519)
+                match std::panic::catch_unwind(std::panic::AssertUnwindSafe(work)) {
+                    Ok(stored) => {
+                        let _ = tx.send(Event::ModelPresetMade(
+                            key,
+                            stored,
+                            started.elapsed().as_millis() as u64,
+                        ));
+                    }
+                    Err(_) => {
+                        let _ = tx.send(Event::ModelFailed("preset"));
+                    }
+                }
             });
         if spawned.is_ok() {
             self.model_busy = Some(id.to_string());
         }
         spawned.is_ok()
+    }
+
+    /// 裏の処理がパニックした (#519)。作業中の印を消し、保存せずに待ち行列の次へ進む (次の一覧の読み込みでもう一度試す)。
+    /// ゲーム名は残さない
+    fn model_failed(&mut self, kind: &'static str) {
+        self.model_busy = None;
+        self.log("model_failed", json!({ "kind": kind }));
+        self.schedule_model_work();
     }
 
     /// 作った分担を保存する。選んでいるゲームなら画面とスマホへ知らせ、待ち行列の次へ進む
@@ -3642,7 +3762,37 @@ impl Hub {
                     self.on_ws_message(id, msg);
                 }
             }
-            Event::WsClosed { id, code } => self.on_ws_closed(id, code),
+            Event::WsClosed {
+                id,
+                code,
+                #[cfg(feature = "latency-measure")]
+                since_last_send_ms,
+            } => {
+                #[cfg(feature = "latency-measure")]
+                if let Some(gap_ms) = since_last_send_ms.filter(|gap| *gap >= 3000) {
+                    if let Some(Role::Player { slot }) = self.conns.get(&id).map(|conn| &conn.role)
+                    {
+                        self.record(
+                            "ws_send_gap_at_close",
+                            json!({ "slot": SLOT_NAMES[*slot], "gapMs": gap_ms, "closeCode": code }),
+                        );
+                    }
+                }
+                self.on_ws_closed(id, code);
+            }
+            #[cfg(feature = "latency-measure")]
+            Event::WsSendGap {
+                id,
+                gap_ms,
+                send_ms,
+            } => {
+                if let Some(Role::Player { slot }) = self.conns.get(&id).map(|conn| &conn.role) {
+                    self.record(
+                        "ws_send_gap",
+                        json!({ "slot": SLOT_NAMES[*slot], "gapMs": gap_ms, "sendMs": send_ms }),
+                    );
+                }
+            }
             Event::RtcDescription {
                 slot,
                 gen,
@@ -3723,6 +3873,7 @@ impl Hub {
             Event::GamesDetected(list) => self.on_games_detected(list),
             Event::ModelPresetMade(id, stored, ms) => self.finish_model_preset(id, stored, ms),
             Event::DetectedMade(id, d, stored, ms) => self.finish_detected(id, d, stored, ms),
+            Event::ModelFailed(kind) => self.model_failed(kind),
             Event::Launched { gen, result } => self.on_launched(gen, result),
             Event::Shutdown => {}
         }
@@ -3918,17 +4069,39 @@ impl Hub {
                     }
                     _ => return,
                 };
-                if !self.profile.as_ref().is_some_and(|p| {
-                    p.actions
-                        .iter()
-                        .any(|a| a.id == action && a.kind == "button")
-                }) {
+                let Some(profile) = self.profile.as_ref() else {
+                    return;
+                };
+                if !profile
+                    .actions
+                    .iter()
+                    .any(|a| a.id == action && a.kind == "button")
+                {
                     return;
                 }
-                self.key_overrides
-                    .entry(self.game.title.clone())
-                    .or_default()
-                    .insert(action.clone(), output.clone());
+                let path = if profile.id == "minecraft-java" {
+                    self.minecraft_options.as_deref()
+                } else {
+                    None
+                };
+                let default = Keybinds::build_with(profile, path, None)
+                    .actions
+                    .into_iter()
+                    .find(|(id, _)| id == &action)
+                    .map(|(_, output)| output);
+                if default == Some(output.as_deref()) {
+                    if let Some(overrides) = self.key_overrides.get_mut(&self.game.title) {
+                        overrides.remove(&action);
+                        if overrides.is_empty() {
+                            self.key_overrides.remove(&self.game.title);
+                        }
+                    }
+                } else {
+                    self.key_overrides
+                        .entry(self.game.title.clone())
+                        .or_default()
+                        .insert(action.clone(), output.clone());
+                }
                 self.log("set_key", json!({ "action": action, "output": output }));
                 self.apply_key_change();
             }
@@ -4443,7 +4616,7 @@ impl Hub {
             self.handle_control(idx, &button, &state);
             #[cfg(feature = "latency-measure")]
             self.latency.end();
-            self.broadcast_monitors(&json!({ "type": "log", "entry": entry }));
+            self.broadcast_monitor_message(&json!({ "type": "log", "entry": entry }), true);
         }
         self.push_state_throttled();
     }
@@ -4496,6 +4669,77 @@ mod tests {
     use crate::input::Input;
     use std::collections::VecDeque;
     use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
+
+    #[test]
+    fn changed_user_config_makes_the_selected_game_read_again() {
+        let (mut h, _rx) = fixture();
+        h.presets_model = true;
+        let dir = std::env::temp_dir().join(format!("recooplay-524-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("id1")).unwrap();
+        std::fs::write(
+            dir.join("id1/config.cfg"),
+            "bind w +forward
+",
+        )
+        .unwrap();
+        h.games.push(games::Entry {
+            id: "steam:9001".into(),
+            name: "試験".into(),
+            source: "steam",
+            install_dir: dir.clone(),
+            launch_uri: String::new(),
+            image: None,
+            icon_source: None,
+        });
+        let now = crate::engines::config_modified(&dir);
+        assert!(
+            now.is_some(),
+            "Quake の config.cfg を利用者の設定として見つける"
+        );
+        let stored = |m: Option<Option<u64>>| crate::model_presets::Detected {
+            model: crate::preset_model::version().to_string(),
+            profile: None,
+            config_modified: m,
+        };
+        // 試験の準備は協力プレイ中から始まるので、ロビーにする
+        h.game.phase = Phase::Lobby;
+        h.game.title = "steam:9001".into();
+        h.detected.insert("steam:9001".into(), stored(Some(now)));
+        assert!(
+            !h.needs_detect("steam:9001"),
+            "変わっていなければ読み直さない"
+        );
+        h.detected
+            .insert("steam:9001".into(), stored(Some(now.map(|t| t - 10))));
+        assert!(
+            h.needs_detect("steam:9001"),
+            "更新日時が変わったら読み直す: saved={:?} now={:?} title={} phase={} presets_model={} profile={}",
+            h.detected.get("steam:9001").map(|d| d.config_modified),
+            crate::engines::config_modified(&dir),
+            h.game.title,
+            h.game.phase.name(),
+            h.presets_model,
+            profiles::find(&h.profiles, "steam:9001").is_some()
+        );
+        h.game.phase = Phase::Coop;
+        assert!(!h.needs_detect("steam:9001"), "協力プレイ中は読み直さない");
+        h.game.phase = Phase::Paused;
+        assert!(!h.needs_detect("steam:9001"), "一時停止中も読み直さない");
+        h.game.phase = Phase::Lobby;
+        h.game.title = "other".into();
+        assert!(
+            !h.needs_detect("steam:9001"),
+            "選んでいないゲームのファイルは見ない"
+        );
+        h.game.title = "steam:9001".into();
+        h.detected.insert("steam:9001".into(), stored(None));
+        assert!(
+            !h.needs_detect("steam:9001"),
+            "記録のない古い保存は今までどおり"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     fn unknown_game(h: &mut Hub, id: &str, status: &str) -> Profile {
         let p = crate::model_presets::test_profile(
@@ -4686,6 +4930,21 @@ mod tests {
     }
 
     #[test]
+    fn model_thread_panic_clears_busy_and_moves_on() {
+        let (mut h, _rx) = fixture();
+        h.presets_model = true;
+        h.model_busy = Some("steam:1".into());
+        h.model_queue.push_back("steam:2".into());
+        h.on_event(Event::ModelFailed("preset"));
+        assert!(h.model_busy.is_none(), "作業中の印を消す");
+        assert!(h.model_timer, "待ち行列の次へ進む");
+        assert!(
+            !h.model_presets.contains_key("steam:1"),
+            "失敗したゲームは保存しない"
+        );
+    }
+
+    #[test]
     fn model_presets_wait_during_coop_and_stay_off_without_the_setting() {
         let (mut h, _rx) = fixture();
         let p = unknown_game(&mut h, "steam:44", "extracted");
@@ -4738,7 +4997,7 @@ mod tests {
                 auto_resume_ms: 15000,
                 auto_resume_until: 0,
                 epoch: 1,
-                title: DEFAULT_TITLE.to_string(),
+                title: TITLES[0].to_string(),
             },
             inject: InjectMode::On,
             game_service: GameService::new(),
@@ -6590,6 +6849,30 @@ mod tests {
     }
 
     #[test]
+    fn monitor_input_logs_leave_room_for_stop_messages() {
+        let (mut h, mut rx) = fixture();
+        let diagnostic = json!({"type":"log","entry":{"kind":"input"}});
+        for _ in 0..WS_QUEUE_LIMIT {
+            h.broadcast_monitor_message(&diagnostic, true);
+        }
+        let queue = h.conns[&1].queued.clone();
+        assert_eq!(queue.len.load(Ordering::Relaxed), MONITOR_INPUT_LOG_LIMIT);
+        assert!(!queue.must_close());
+        h.emergency_stop("test");
+        assert!(!queue.must_close());
+        let expected = diagnostic.to_string();
+        for _ in 0..MONITOR_INPUT_LOG_LIMIT {
+            assert!(matches!(rx.try_recv(), Ok(Out::Text(text)) if text == expected));
+        }
+        let mut stopped = false;
+        while let Ok(Out::Text(text)) = rx.try_recv() {
+            let message: Value = serde_json::from_str(&text).unwrap();
+            stopped |= message["type"] == "state" && message["inject"]["mode"] == "off";
+        }
+        assert!(stopped);
+    }
+
+    #[test]
     fn stalled_connection_queue_stops_at_the_limit_but_close_still_goes_out() {
         let (tx, mut rx) = unbounded_channel();
         let conn = Conn {
@@ -6683,6 +6966,44 @@ mod tests {
                     down: false
                 }
             ]
+        );
+    }
+
+    #[test]
+    fn panic_recovery_releases_held_inputs() {
+        let recorder = RecordingInput::with_results([true, true]);
+        let (mut h, mut rx) = fixture_with_input(Box::new(recorder.clone()));
+        h.set_output(index("KEY_W"), "P1", true);
+        h.look.px = 30.0;
+        assert!(
+            h.recover_from_panic("試験のパニック".into()),
+            "押しっぱなしを全部離せた"
+        );
+        assert!(h.release_pending.is_empty());
+        assert_eq!(h.look.px, 0.0);
+        assert!(h.inject == InjectMode::Off, "入力を止める");
+        assert!(
+            recorder
+                .calls()
+                .iter()
+                .any(|c| matches!(c.operation, Operation::Key { down: false, .. })),
+            "キーを離した"
+        );
+        // スマホへ「PC アプリの終了」(4009) は送らない (PC アプリが起動し直したホストへ再接続させる、#522)
+        while let Ok(out) = rx.try_recv() {
+            assert!(!matches!(out, Out::Close(code, _) if code == CLOSE_HOST_SHUTDOWN));
+        }
+        assert_eq!(
+            panic_message(&"文字列" as &(dyn std::any::Any + Send)),
+            "文字列"
+        );
+        assert_eq!(
+            panic_message(&String::from("所有") as &(dyn std::any::Any + Send)),
+            "所有"
+        );
+        assert_eq!(
+            panic_message(&1u8 as &(dyn std::any::Any + Send)),
+            "（内容不明）"
         );
     }
 

@@ -8,11 +8,11 @@ export function Lines({text}: {text: string}) {
 }
 export function GameTile({card}: {card: Card}) {
   const [failed, setFailed] = useState(false);
-  return <button className={`game-choice${card.selected ? ' selected' : ''}${card.unverified ? ' unverified' : ''}`} data-game={card.id} aria-pressed={card.selected} aria-label={`${card.name}を選択${card.unverified ? '（未検証）' : ''}`}>
+  return <div className="game-tile"><button className={`game-choice${card.selected ? ' selected' : ''}${card.unverified ? ' unverified' : ''}`} data-game={card.id} aria-pressed={card.selected} aria-label={`${card.name}を選択${card.unverified ? '（未検証）' : ''}`}>
     <span className="tile-art" aria-hidden="true">{card.image && !failed ? <img src={card.image} alt="" loading="lazy" data-initial={card.initial} onError={() => setFailed(true)} /> : <span className="tile-initial">{card.initial}</span>}</span>
     <span className="tile-name">{card.name}</span><span className="game-badges">{card.badges.map((badge: string) => <span key={badge} className={`badge${badge === '未検証' ? ' badge-unverified' : ''}`}>{badge}</span>)}</span>
     {card.launch && <span className="game-launch" data-state={card.launch.state}>{card.launch.title}</span>}
-  </button>;
+  </button>{card.selected && <button className="game-advance" data-play-game={card.id} aria-label={`${card.name}の分担へ進む`}>▶</button>}</div>;
 }
 export function KeyEditor({model, state}: {model: Model; state: PcSnapshot}) {
   if (!model.keyButtons.length) return null;
@@ -22,7 +22,7 @@ export function KeyEditor({model, state}: {model: Model; state: PcSnapshot}) {
       <select data-key-action={action.id} disabled={model.locked} value={state.game?.keys?.actions?.[action.id]?.out ?? ''} onChange={event => settingsActions.setKey(action.id, event.currentTarget.value || null)}>
         <option value="">送らない</option>{model.outputs.map(([id, output]) => <option value={id} key={id}>{output.label}</option>)}
       </select>
-      <button type="button" className="key-step" data-key-step="1" aria-label={`${action.label}のキーを次へ`} disabled={model.locked} onClick={() => settingsActions.setKey(action.id, stepKey(model.outputs.map(([id]) => id), state.game?.keys?.actions?.[action.id]?.out ?? null, 1))}>▶</button></td></tr>)}</tbody></table><button id="resetKeysBtn" disabled={model.locked || !model.edited.size}>このゲームのキーを初期値に戻す</button></>;
+      <button type="button" className="key-step" data-key-step="1" aria-label={`${action.label}のキーを次へ`} disabled={model.locked} onClick={() => settingsActions.setKey(action.id, stepKey(model.outputs.map(([id]) => id), state.game?.keys?.actions?.[action.id]?.out ?? null, 1))}>▶</button></td></tr>)}</tbody></table><button id="resetKeysBtn" disabled={model.locked || !model.edited.size} onClick={settingsActions.resetKeys}>このゲームのキーを初期値に戻す</button></>;
 }
 export function NetworkDiagnostics({model, bluetooth}: {model: Model; bluetooth: boolean}) {
   if (!model.diagnostics.length) return <p>つながっているスマホはありません。</p>;

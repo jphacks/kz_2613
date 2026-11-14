@@ -82,7 +82,7 @@ Minecraft の公式製品ではありません。Mojang・Microsoft の承認・
 
 ■ 分担のモデル (preset-model-v2 フォルダ)
   操作の定義がないゲームの分担を作るモデル (Re:Cooplay Preset Model v2) です。
-  使うのは、環境変数 RECOOPLAY_PRESETS=model を付けて起動したときだけです (初期値は規則による分担)。
+  初期値ではこのモデルで分担を作ります。規則による分担に戻すときは、環境変数 RECOOPLAY_PRESETS=rule を付けて起動します。
   ライセンスは CC BY-NC-ND 4.0 (非営利・改変禁止) で、Re:Cooplay のソースコード (MIT) とは別です。
   一部は Apache License 2.0 のモデルを改変したもので、表示は preset-model-v2\NOTICE と LICENSE-APACHE-2.0 にあります。
   https://huggingface.co/YOSHI0209/recooplay-preset-model-v2

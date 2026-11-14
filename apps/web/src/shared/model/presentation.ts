@@ -182,7 +182,7 @@ export function desktopWarning(game: PhoneGame | null, inject: InjectionState | 
 
 // 定期スナップショットでは手動ナビゲーションを戻さない。進行の切替時だけ分担・準備へ案内する。
 export function screenOnGameUpdate(ui: Navigation, previousPhase: PhoneGame["phase"] | undefined, game: PhoneGame | null) {
-  return {...ui, game:game?.title || ui.game,
+  return {...ui, game:game?.title === undefined ? ui.game : game.title || null,
     screen:game?.phase && game.phase !== previousPhase && game.phase !== 'lobby' ? 'roles' : ui.screen};
 }
 
@@ -308,10 +308,8 @@ export const GAME_COLUMNS = 3;
 /**
  * 選択画面の主ボタン (クリック・Enter) の動作。選ぶだけで起動せず、メンバー・分担の画面へ進む (#109)
  */
-export function gameAction(ui: Navigation, _game: PhoneGame | null, list: GameEntry[]) {
-  const entry = list.find((g) => g.id === ui.game);
-  if (!entry) return { kind: 'none', label: 'ゲームを選んでください' };
-  return { kind: 'next', label: 'このゲームで遊ぶ' };
+export function isGameDoubleClick(previous: {id:string;at:number}|null, id: string, at: number) {
+  return previous?.id === id && at >= previous.at && at - previous.at <= 400;
 }
 
 /**
@@ -416,7 +414,10 @@ export function navigate(ui: Navigation, control: string, list: {id:string}[] = 
       ? list.length - 1 : j + step;
     return k < 0 || k >= list.length ? ui : { ...ui, game: list[k].id };
   }
-  if (control === 'RIGHT' || control === 'ENTER') return { ...ui, screen: SCREENS[Math.min(i + 1, SCREENS.length - 1)], game: ui.game || list[0].id };
+  if (control === 'RIGHT' || control === 'ENTER') {
+    if (ui.screen === 'game' && !list.some(game => game.id === ui.game)) return ui;
+    return { ...ui, screen: SCREENS[Math.min(i + 1, SCREENS.length - 1)] };
+  }
   if (control === 'LEFT' || control === 'ESC') return { ...ui, screen: SCREENS[Math.max(i - 1, 0)] };
   return ui;
 }

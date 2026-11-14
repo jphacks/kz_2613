@@ -11,6 +11,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import {fileURLToPath} from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { engineActions, unityLegacy, prefsOverrides, applyOverrides, childCi } from './engines.mjs';
 
 const args = process.argv.slice(2);
 const opt = (n) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : null; };
@@ -157,6 +158,16 @@ function engineOf(dir) {
   try { names = fs.readdirSync(dir); } catch { return 'unknown'; }
   const has = (rx) => names.some((n) => rx.test(n));
   if (has(/^UnityPlayer\.dll$/i)) return has(/^GameAssembly\.dll$/i) ? 'unity-il2cpp' : 'unity-mono';
+  if (fs.existsSync(path.join(dir, 'www', 'js', 'rpg_core.js')) || fs.existsSync(path.join(dir, 'js', 'rpg_core.js'))) return 'rpgmaker-mv';
+  if (fs.existsSync(path.join(dir, 'js', 'rmmz_core.js'))) return 'rpgmaker-mz';
+  if (has(/^RPG_RT\.exe$/i)) return 'rpgmaker-2k';
+  const ini = childCi(dir, 'Game.ini');
+  if (ini && (() => { try { return /rgss/i.test(fs.readFileSync(ini, 'latin1')); } catch { return false; } })()) return 'rpgmaker-rgss';
+  if (has(/^Game\.exe$/i) && has(/^Data\.wolf$/i)) return 'wolf';
+  if (fs.existsSync(path.join(dir, 'game', 'bin', 'win64'))) return 'source2';
+  const dataEsm = () => { try { return fs.readdirSync(path.join(dir, 'Data')).some((n) => /\.esm$/i.test(n)); } catch { return false; } };
+  if (has(/\.esm$/i) || dataEsm()) return 'creation';
+  if (has(/^(id1|baseq2|baseq3)$/i)) return 'quake';
   if (has(/-Shipping\.exe$/i) || has(/^Engine$/)) return 'unreal';
   if (has(/\.pck$/i)) return 'godot';
   if (has(/^data\.win$/i)) return 'gamemaker';
@@ -184,6 +195,8 @@ export function unityInputActions(dir) {
     }
   }
   if (!assets.length) return null;
+  // 利用者が変えたキー (PlayerPrefs の上書き、#484) を反映する
+  applyOverrides(assets, prefsOverrides(dd));
   const actions = [];
   for (const a of assets) for (const mp of a.maps) for (const ac of mp.actions || []) {
     const bs = (mp.bindings || []).filter((b) => b.action === ac.name);
@@ -327,6 +340,10 @@ for (const g of games) {
   const engine = engineOf(g.dir);
   let found = null;
   if (engine.startsWith('unity')) found = unityInputActions(g.dir);
+  // エンジンごとの読み取り (#481。ホストの game_actions::read と同じく、Input System の次・.NET の前)
+  if (!found) found = engineActions(g.dir);
+  // キーのある旧 Input Manager の軸を、列挙型からの推定 (キーなし) より先に試す (ホストと同じ順。Rewired はここでは読まない)
+  if (!found && engine.startsWith('unity')) found = unityLegacy(g.dir);
   if (!found && engine === 'unity-mono') {
     const dll = path.join(dataDir(g.dir) || '', 'Managed', 'Assembly-CSharp.dll');
     try {
