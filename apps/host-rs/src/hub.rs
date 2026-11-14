@@ -5143,7 +5143,8 @@ mod tests {
     fn fast_redundancy_fills_a_gap_without_replaying_duplicates_or_released_inputs() {
         let (mut h, _rx) = fixture();
         h.keybinds = Keybinds::build(h.profile.as_ref().unwrap(), None);
-        let input = |iseq: i64, state: &str| json!({"type":"input","iseq":iseq,"epoch":1,"button":"act:forward","state":state,"t":1.0});
+        let sent_at = crate::freshness::mono_ms();
+        let input = |iseq: i64, state: &str| json!({"type":"input","iseq":iseq,"epoch":1,"button":"act:forward","state":state,"t":sent_at});
         h.handle_fast_message(0, input(2, "up"), None);
         assert_eq!(h.slots[0].as_ref().unwrap().next_iseq, 1);
         h.handle_fast_message(
@@ -5151,15 +5152,20 @@ mod tests {
             json!({"type":"ka","t":1,"inputs":[input(1, "down"),input(2, "up")]}),
             None,
         );
-        assert_eq!(h.slots[0].as_ref().unwrap().next_iseq, 3);
+        let slot = h.slots[0].as_ref().unwrap();
+        assert_eq!(slot.next_iseq, 3);
+        assert_eq!((slot.events, slot.via_rtc, slot.via_ws), (2, 2, 0));
+        h.handle_player_message(0, input(1, "down"), Via::Ws);
         h.release_slot_inputs(0, 3, (0, 0.0, 0.0));
         h.handle_fast_message(
             0,
             json!({"type":"ka","t":1,"inputs":[input(1, "down"),input(3, "down")]}),
             None,
         );
-        assert_eq!(h.slots[0].as_ref().unwrap().next_iseq, 4);
-        assert!(!h.slots[0].as_ref().unwrap().pressed.contains("act:forward"));
+        let slot = h.slots[0].as_ref().unwrap();
+        assert_eq!(slot.next_iseq, 4);
+        assert_eq!((slot.events, slot.via_rtc, slot.via_ws), (2, 2, 0));
+        assert!(slot.pressed.is_empty());
     }
 
     #[test]
