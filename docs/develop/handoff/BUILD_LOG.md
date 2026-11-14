@@ -2546,3 +2546,9 @@
 - `engines/creation.rs`：`ControlMap_Custom.txt` がないとき、Fallout 4・Starfield は Data の「* - Interface.ba2」から `Interface/Controls/PC/ControlMap.txt` を取り出して読む。Skyrim SE の BSA（LZ4）は依存が増えるので、今までどおり既定の割当の表。
 - カタログ（`engines.mjs`）にも同じ読み取り（`ba2Extract`）を足した。
 - 確認：小さなクレートで Rust の単体試験33件・Clippy 合格、`cargo fmt --check` 合格、`profile-engines-test.mjs` 18/18。BA2 の版 2・3 の先頭の長さは知識による（実物で確かめていない）。Fallout 4・Starfield の実物は手元にない。
+
+## 2026-11-15 — ローカル接続の方式とワンタップ化・Legacy AP の調査（#63、Claude Code）
+
+- この PC で読み取りだけの確認をした：`netsh wlan show drivers` → MediaTek Wi-Fi 6E MT7922、`Hosted network supported : No`（ホストされたネットワークは非対応）、`Wireless Display Supported: Yes`。`Get-NetAdapter -IncludeHidden` → `Microsoft Wi-Fi Direct Virtual Adapter` が 2 つ（Disconnected）。AP を立てる操作はしていない。
+- 今のホットスポットの実装は `GetInternetConnectionProfile()` から作るので、インターネット接続がないとアプリから使えないことをコードで確認した。
+- 方式の比較・未確認の点・手動の復旧手順・次の Issue の候補を `docs/develop/decisions/2026-11-15-local-connection-options.md` に記録した。Wi-Fi Direct の Legacy AP は回線なしで使える見込みだが、DHCP・同時利用・スマホからの参加は実機で未確認。
