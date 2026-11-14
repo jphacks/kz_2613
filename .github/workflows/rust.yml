@@ -230,6 +230,7 @@ jobs:
         run: |
           $PSNativeCommandUseErrorActionPreference = $false
           $log = Join-Path $env:RUNNER_TEMP protocol-sim.txt
+          $env:RECOOPLAY_PROTOCOL_DIAGNOSTICS = Join-Path $env:RUNNER_TEMP protocol-sessions
           node scripts/sim/protocol-sim.mjs *> $log
           $status = $LASTEXITCODE
           Get-Content -LiteralPath $log
@@ -239,7 +240,9 @@ jobs:
         if: failure() && steps.protocol-sim.outcome == 'failure'
         with:
           name: protocol-sim-diagnostics
-          path: ${{ runner.temp }}/protocol-sim.txt
+          path: |
+            ${{ runner.temp }}/protocol-sim.txt
+            ${{ runner.temp }}/protocol-sessions/*/session-*.jsonl
       - name: 終了通知と親プロセス消失時の全解放
         timeout-minutes: 5
         run: node scripts/sim/shutdown-sim.mjs
