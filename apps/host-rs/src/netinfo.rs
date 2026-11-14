@@ -61,36 +61,105 @@ pub struct Hotspot {
     pub on: bool,
 }
 
+struct HotspotLifecycle {
+    owned: Option<imp::OwnedHotspot>,
+    fake_owned: bool,
+}
+
+static LIFECYCLE: std::sync::Mutex<HotspotLifecycle> = std::sync::Mutex::new(HotspotLifecycle {
+    owned: None,
+    fake_owned: false,
+});
+static SHUTTING_DOWN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+fn fake_hotspot() -> Option<Hotspot> {
+    let fake = std::env::var("RECOOPLAY_FAKE_HOTSPOT").ok()?;
+    let mut parts = fake.splitn(3, '|');
+    Some(Hotspot {
+        ssid: parts.next()?.into(),
+        passphrase: parts.next()?.into(),
+        on: parts.next() == Some("on"),
+    })
+}
+
 /// ホットスポットの設定と ON・OFF を読む。インターネット接続がない・読めない環境では None。
 /// 試験 (dry-run) では本物を読まず、RECOOPLAY_FAKE_HOTSPOT="SSID|パスフレーズ|on|off" を使う
 pub fn hotspot() -> Option<Hotspot> {
     if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
-        let fake = std::env::var("RECOOPLAY_FAKE_HOTSPOT").ok()?;
-        let mut parts = fake.splitn(3, '|');
-        return Some(Hotspot {
-            ssid: parts.next()?.into(),
-            passphrase: parts.next()?.into(),
-            on: parts.next() == Some("on"),
-        });
+        let mut spot = fake_hotspot()?;
+        spot.on |= LIFECYCLE.lock().ok()?.fake_owned;
+        return Some(spot);
     }
     imp::hotspot()
 }
 
-/// ホットスポットを ON にする (PC 画面のボタンを押したときだけ)。dry-run では何もしない
+/// ホットスポットを ON にする (PC 画面のボタンを押したときだけ)。
 pub fn start_hotspot() -> Result<(), String> {
+    let mut lifecycle = LIFECYCLE
+        .lock()
+        .map_err(|_| "ホットスポットの状態を取得できません")?;
+    if SHUTTING_DOWN.load(std::sync::atomic::Ordering::Relaxed) {
+        return Err("PCアプリは終了中です".into());
+    }
     if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
+        lifecycle.fake_owned |= fake_hotspot().is_some_and(|spot| !spot.on);
         return Ok(());
     }
-    imp::start_hotspot()
+    if let Some(owned) = imp::start_hotspot()? {
+        lifecycle.owned = Some(owned);
+    }
+    Ok(())
+}
+
+pub fn block_hotspot_start() {
+    SHUTTING_DOWN.store(true, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Windowsの処理や実行中の起動要求を待ち続けない。終了ログには固定の結果だけを書く。
+pub fn stop_owned_hotspot() -> &'static str {
+    let (tx, rx) = std::sync::mpsc::sync_channel(1);
+    let worker = std::thread::Builder::new()
+        .name("hotspot-stop".into())
+        .spawn(move || {
+            let result = match LIFECYCLE.lock() {
+                Ok(mut lifecycle) if lifecycle.fake_owned => {
+                    lifecycle.fake_owned = false;
+                    "stopped"
+                }
+                Ok(mut lifecycle) => match lifecycle.owned.take() {
+                    Some(owned) => {
+                        if imp::stop_hotspot(owned) {
+                            "stopped"
+                        } else {
+                            "failed"
+                        }
+                    }
+                    None => "notOwned",
+                },
+                Err(_) => "failed",
+            };
+            let _ = tx.send(result);
+        });
+    if worker.is_err() {
+        return "failed";
+    }
+    rx.recv_timeout(std::time::Duration::from_secs(2))
+        .unwrap_or_else(|err| match err {
+            std::sync::mpsc::RecvTimeoutError::Timeout => "timeout",
+            std::sync::mpsc::RecvTimeoutError::Disconnected => "failed",
+        })
 }
 
 #[cfg(windows)]
 mod imp {
+    use windows::core::AgileReference;
     use windows::Networking::Connectivity::NetworkInformation;
     use windows::Networking::NetworkOperators::{
         NetworkOperatorTetheringManager, TetheringOperationStatus, TetheringOperationalState,
     };
     use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
+
+    pub type OwnedHotspot = AgileReference<NetworkOperatorTetheringManager>;
 
     fn manager() -> Option<NetworkOperatorTetheringManager> {
         unsafe {
@@ -111,15 +180,27 @@ mod imp {
         })
     }
 
-    pub fn start_hotspot() -> Result<(), String> {
+    pub fn start_hotspot() -> Result<Option<OwnedHotspot>, String> {
         let m = manager()
             .ok_or("インターネットに接続していないため、ホットスポットをONにできません")?;
+        match m.TetheringOperationalState() {
+            Ok(TetheringOperationalState::On) => return Ok(None),
+            Ok(TetheringOperationalState::Off) => {}
+            _ => {
+                return Err(
+                    "ホットスポットの状態を確認できません。Windowsの設定から確認してください"
+                        .into(),
+                )
+            }
+        }
+        let owned = AgileReference::new(&m).map_err(|e| e.message())?;
         let result = m
             .StartTetheringAsync()
             .and_then(|op| op.join())
             .map_err(|e| e.message())?;
         match result.Status() {
-            Ok(TetheringOperationStatus::Success) => Ok(()),
+            Ok(TetheringOperationStatus::Success) => Ok(Some(owned)),
+            Ok(TetheringOperationStatus::AlreadyOn) => Ok(None),
             _ => Err(result
                 .AdditionalErrorMessage()
                 .map(|m| m.to_string())
@@ -130,15 +211,35 @@ mod imp {
                 })),
         }
     }
+
+    pub fn stop_hotspot(owned: OwnedHotspot) -> bool {
+        unsafe {
+            let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+        }
+        let Ok(m) = owned.resolve() else { return false };
+        match m.TetheringOperationalState() {
+            Ok(TetheringOperationalState::Off) => return true,
+            Ok(TetheringOperationalState::On) => {}
+            _ => return false,
+        }
+        m.StopTetheringAsync()
+            .and_then(|op| op.join())
+            .and_then(|result| result.Status())
+            .is_ok_and(|status| status == TetheringOperationStatus::Success)
+    }
 }
 
 #[cfg(not(windows))]
 mod imp {
+    pub type OwnedHotspot = std::convert::Infallible;
     pub fn hotspot() -> Option<super::Hotspot> {
         None
     }
-    pub fn start_hotspot() -> Result<(), String> {
+    pub fn start_hotspot() -> Result<Option<OwnedHotspot>, String> {
         Err("Windows以外ではホットスポットを扱えません".into())
+    }
+    pub fn stop_hotspot(owned: OwnedHotspot) -> bool {
+        match owned {}
     }
 }
 
