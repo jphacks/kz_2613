@@ -123,7 +123,7 @@ function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;co
     </ul>
   </details>
   <p id="buildInfo" className="legal">{connection.build}</p>
-  <button id="closeSettings">閉じる</button>
+  <form method="dialog"><button id="closeSettings">閉じる</button></form>
 </dialog>;
 }
 
