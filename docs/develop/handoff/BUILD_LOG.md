@@ -2334,6 +2334,12 @@
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
 
+## 2026-11-14 — 分担の初期設定をモデルにする（Claude Code）
+
+- 利用者の判断：分担の案の初期設定を規則からモデルに切り替える（#474）。`RECOOPLAY_PRESETS=rule` でなければモデルの分担を使う（`profiles::model_presets_enabled`）。使われなくなった `preset_source()` は消した。規則に戻すときは `RECOOPLAY_PRESETS=rule`。
+- 検証済みのプリセットがあるゲームは `model_presets::needs_model` で対象外のまま。試験の `fixture()` は `presets_model` を明示しているので、既存の試験の前提は変わらない。
+- 版2の重み（約57MB）の読み込みで待ち受けの開始が遅れないよう、起動時に裏のスレッドで読み始める（`profiles::warm_model`）。読み終わる前に分担が要るときは、その処理だけが読み終わりを待つ。
+- 合わせて AGENTS.md・`game-profile-specification.md`・`scripts/preset-model/README.md`・配布物の説明（`package.ps1`）・判断の記録を直した。実機は未確認。
 ## 2026-11-14 — ロビーから分担操作を開始する（#440、Codex）
 
 - スマホの開始操作を「分担操作開始」に統合した。対象の前面、確定した分担と接続者、担当の確認、入力ドライバー、緊急停止の条件をホストで確認し、全解放とepoch更新を経て協力プレイへ進む。通信契約は版5。従来の準備経路は互換用に残した。
@@ -2434,6 +2440,11 @@
 - 参加トラブル案内と同じ `method="dialog"` を使い、接続案内の閉じるボタン専用のDOMリスナーを外した。WebView2の試験に閉じた後のフォーカス復帰を追加した。
 - Webの型検査とビルドは成功。手元で既存配布のexeと今回のWeb資産を組み合わせたWebView2試験では、参加画面のReact描画待ちでタイムアウトした。変更箇所のWebView2確認はCIの同一コミット配布物に残す。
 今回の追加確認では node scripts/sim/product-web-test.mjs が成功した。
+
+## 2026-11-14 — 分担の作り方の表記を「定型ルール／独自AI」にする（#475、Claude Code）
+
+- 利用者の判断：分担の画面の「規則」を「定型ルール」、「モデル（未検証）」を「独自AI」にする。ルールで割り当てることが、エンジニアでなくても分かる表記にする。各ボタンに説明の title を付けた。値（`rule`・`model`）と通信は変えていない。
+- 同じ判断で、分担の既定をモデルにすること（#474）も利用者が了承した。
 ## 2026-11-14 — WebSocket送信間隔を計測用ホストで記録する（#426、Codex）
 
 - 計測用ホストで参加者へのWebSocket本文の送信完了間隔が3秒以上の場合に `ws_send_gap` をセッションJSONLへ記録する。枠、前回の成功からの間隔 `gapMs`、今回のソケット送信処理に要した `sendMs` を含む。通信・停止の閾値に変更はない。
@@ -2443,3 +2454,7 @@
 
 - 150msちょうどでは記録せず、151msでは計測用ビルドだけが押下の連番と2区間の時間を記録することを確認した。
 - `node --experimental-strip-types scripts/sim/phone-lifecycle-test.mjs` は36/36合格。iPhone実指での原因調査は未実施。
+## 2026-11-14 — 操作設定を標準ダイアログ操作で閉じる（#278、Codex）
+
+- 閉じるボタンを `method="dialog"` のフォームへ移し、専用のDOMリスナーを削除した。配布試験にフォーカス復帰と再表示を追加した。
+- Webの型検査・ビルド、試験スクリプトの構文、差分検査が成功。配布WebView2試験はCI待ち。
