@@ -5,7 +5,7 @@
 // RPGツクール MV・MZ (NW.js) は rpgmaker が先に読むので、ここには来ない。
 use std::path::Path;
 
-use super::{button, child_ci, has_file};
+use super::{button, child_ci, has_file, in_group};
 use crate::game_actions::ReadAction;
 
 pub fn read(dir: &Path) -> Option<(Vec<ReadAction>, &'static str)> {
@@ -34,13 +34,26 @@ fn engine(dir: &Path) -> Option<&'static str> {
 
 pub fn actions() -> Vec<ReadAction> {
     vec![
-        button("2d/up", "上へ移動", Some("ARROW_UP")),
-        button("2d/down", "下へ移動", Some("ARROW_DOWN")),
-        button("2d/left", "左へ移動", Some("ARROW_LEFT")),
-        button("2d/right", "右へ移動", Some("ARROW_RIGHT")),
-        button("2d/z", "Z（決定・行動）", Some("KEY_Z")),
-        button("2d/x", "X（キャンセル・行動）", Some("KEY_X")),
-        button("2d/c", "C（行動）", Some("KEY_C")),
+        in_group(button("2d/up", "上へ移動", Some("ARROW_UP")), "movement"),
+        in_group(
+            button("2d/down", "下へ移動", Some("ARROW_DOWN")),
+            "movement",
+        ),
+        in_group(
+            button("2d/left", "左へ移動", Some("ARROW_LEFT")),
+            "movement",
+        ),
+        in_group(
+            button("2d/right", "右へ移動", Some("ARROW_RIGHT")),
+            "movement",
+        ),
+        // 移動と Z・X・C は意味が決まっているので、モデルの分類より優先する (#512)
+        in_group(button("2d/z", "Z（決定・行動）", Some("KEY_Z")), "gameplay"),
+        in_group(
+            button("2d/x", "X（キャンセル・行動）", Some("KEY_X")),
+            "gameplay",
+        ),
+        in_group(button("2d/c", "C（行動）", Some("KEY_C")), "gameplay"),
         button("2d/shift", "Shift（ダッシュなど）", Some("LSHIFT")),
         button("2d/enter", "Enter（決定・開始）", Some("ENTER")),
         button("2d/esc", "Esc（メニュー・ポーズ）", Some("ESC")),

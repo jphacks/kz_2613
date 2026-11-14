@@ -158,7 +158,14 @@ pub fn button(
         label: label.into(),
         kind: "button",
         default: key,
+        group: None,
     }
+}
+
+/// 読み取り側が意味を知っている操作に、分類の手がかりを付ける (モデルの分類より優先する、#512)
+pub fn in_group(mut a: ReadAction, group: &'static str) -> ReadAction {
+    a.group = Some(group);
+    a
 }
 
 /// マウスの移動 (視点) の操作
@@ -168,6 +175,7 @@ pub fn look(id: impl Into<String>, label: impl Into<String>) -> ReadAction {
         label: label.into(),
         kind: "mouseDelta",
         default: None,
+        group: None,
     }
 }
 

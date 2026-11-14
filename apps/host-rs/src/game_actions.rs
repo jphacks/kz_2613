@@ -18,6 +18,9 @@ pub struct ReadAction {
     /// button または mouseDelta
     pub kind: &'static str,
     pub default: Option<&'static str>,
+    /// 読み取り側が操作の意味を知っているときの分類 (preset_model の GROUP_OF_CATEGORY の ID)。
+    /// モデルの分類より優先する。ツクールの「決定」をメニューに分類して配らない、を防ぐ (#512)
+    pub group: Option<&'static str>,
 }
 
 /// 1 つのゲームから読む操作の上限 (分担のモデルが 1 度に読める数)
@@ -223,6 +226,7 @@ pub fn actions_from_assets(assets: &[Value]) -> Vec<ReadAction> {
                                 label: format!("{name} {part}"),
                                 kind: "button",
                                 default: key_of(b["path"].as_str()),
+                                group: None,
                             });
                         }
                     }
@@ -236,6 +240,7 @@ pub fn actions_from_assets(assets: &[Value]) -> Vec<ReadAction> {
                             label: name.to_string(),
                             kind: "mouseDelta",
                             default: None,
+                            group: None,
                         });
                     }
                 } else {
@@ -244,6 +249,7 @@ pub fn actions_from_assets(assets: &[Value]) -> Vec<ReadAction> {
                         label: name.to_string(),
                         kind: "button",
                         default: key_of(kb.first().and_then(|b| b["path"].as_str())),
+                        group: None,
                     });
                 }
             }
@@ -449,6 +455,7 @@ fn dotnet_actions(dir: &Path) -> Option<(Vec<ReadAction>, &'static str)> {
                     label: n.clone(),
                     kind,
                     default: None,
+                    group: None,
                 }
             })
             .collect()
