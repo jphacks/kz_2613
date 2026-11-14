@@ -38,7 +38,7 @@
 
 速達経路の `input` と50ms周期の `ka` は、直近500msに送信してACKが届いていない入力を `inputs` 配列に同梱できます。1フレームに現入力と合わせて最大64件、UTF-8で最大16KiBです。ブラウザーが通知する送信上限も守ります。ホストは同梱分を既存の連番・epoch・解放境界・遅延破棄の判定に通します。WebSocketは各入力を従来どおり1件ずつ送ります。
 
-通信版を変更するときは、Rustの `hub.rs` とWebの `shared/transport/version.ts` を同じ変更で更新します。CIの `protocol-sim.mjs` はWebの版でビルド済みホストへ参加し、実際に返る `welcome` の版まで照合します。
+通信版を変更するときは、正本の `apps/host-rs/protocol-version.txt` を更新し、`python scripts/sync-protocol-version.py` でRustとWebの定数を生成します。正本・生成物・この仕様書を同じ変更に含めます。CIは生成差分を検出し、`protocol-sim.mjs` はWebの版でビルド済みホストへ参加して実際に返る `welcome` の版まで照合します。
 
 | パス | 用途 | アクセス |
 |:--|:--|:--|
