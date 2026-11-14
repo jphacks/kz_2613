@@ -2516,3 +2516,9 @@
 - 修正：`ReadAction` に分類の手がかり `group` を足し、`preset_model::synthesize` でモデルの分類より優先する。ツクール（MV・MZ の記号 ok・escape・cancel・menu と、RGSS・2000/2003 の既定）とウディタは決定・キャンセルを gameplay、移動を movement にした。2D 向けの汎用の割当は、移動と Z・X・C に手がかりを付けた。A ボタン・ページ送り・Shift・Enter・Esc は、これまでどおりモデルの分類に任せる。
 - 試験：`reader_group_hint_overrides_the_model_category`（ツクール XP の既定で、1〜4人のどの分担にも決定・キャンセル・移動が配られる）。
 
+
+## 2026-11-14 — hub のパニックでも押しっぱなしを残さない（#517、Claude Code）
+
+- hub の1回分の処理（タイマーとイベント）を `step` に分け、`run` で `catch_unwind` で包んだ。パニックしたら `recover_from_panic` で、ログ（`hubPanic`）・全解放（`release_for_shutdown`）・スマホへの終了の通知（4009）・アプリが起動したホットスポットの停止を行い、プロセスを終える（全部離せたら終了コード 2、離せなかったら 3）。後始末の途中のパニックも受け止め、プロセスは必ず終える。PC アプリはホストの終了に気づく。
+- 試験：`panic_recovery_releases_held_inputs_and_tells_players`（押しっぱなしの W と視点の未処理分を離し、入力を止める）。試験ではホットスポットの共有状態に触れない。
+- 確認：`cargo fmt --check` 合格。手元ではホスト全体をビルドできないため、ビルド・試験は CI で確かめる。実際にパニックさせての実機確認は未実施。
