@@ -942,6 +942,14 @@ dialog summary {
   stroke-linejoin: round;
 }
 
+.connection-qr-pair {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0 16px;
+  text-align: center;
+}
+
 .help-qr {
   width: 220px;
   height: 220px;

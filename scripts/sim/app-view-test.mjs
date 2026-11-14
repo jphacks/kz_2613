@@ -45,6 +45,17 @@ test('操作定義: 未検証でも開始できることと、確かめながら
   assert.match(profileNotice({name:'カードゲーム',status:'template',controllerSupported:false}),/マウス操作が中心/);
 });
 
+test('展示の部分交代: 選択済みゲームのロビーで、残留者と空き枠があればQRで募集できる (#551)',()=>{
+  const base = pcState.get();
+  const lobby = game(['P1'], {title:'minecraft-java'});
+  const snapshot = {...base, online:true, ui:{...base.ui,screen:'roles'}, game:lobby, state:{slots:[slot('P1',true)]}};
+  assert.equal(pcModel(snapshot).canRecruit,true);
+  assert.equal(pcModel({...snapshot,online:false}).canRecruit,false);
+  assert.equal(pcModel({...snapshot,game:{...lobby,phase:'paused'}}).canRecruit,false);
+  assert.equal(pcModel({...snapshot,state:{slots:[]}}).canRecruit,false);
+  assert.equal(pcModel({...snapshot,state:{slots:['P1','P2','P3','P4'].map(name=>slot(name,true))}}).canRecruit,false);
+});
+
 test('分担画面: 操作定義の注意だけを詳細ダイアログへ移す (#555)',()=>{
   const base = pcState.get();
   const profile = {name:'試験ゲーム', status:'extracted', controllerSupported:true, actions:[]};
