@@ -76,6 +76,8 @@ function startHost() {
   fs.copyFileSync(path.join(ROOT,'scripts/sim/fixtures/profiles/test-pseudo.json'),path.join(profilesDir,'test-pseudo.json'));
   // config.json の影響を受けないよう、画面だけを持つ一時ルートを使う
   const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(PORT), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_FAKE_GAMES: fakeGames(logDir),
+    // 分担の期待値は規則の分担で書いている。既定のモデル (#474) では操作定義のないゲームの分担が変わるため、規則に固定する
+    RECOOPLAY_PRESETS: 'rule',
     // 模擬のホットスポット (#133。dry-run では本物を読まない)
     RECOOPLAY_FAKE_HOTSPOT: 'SimSpot|sim-pass-1|on',
     // 手動登録のファイル選択 (#49。中身に書いた場所を選んだことにする)
