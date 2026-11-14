@@ -164,7 +164,7 @@ try {
   await until(()=>evaluate("!document.querySelector('#connectionHelp').open && document.activeElement?.id==='connectionHelpBtn'"),
     '接続案内を閉じた後に起点へフォーカスが戻りません');
   console.log('接続案内を閉じた後のフォーカス復帰を確認');
-  await evaluate("document.querySelector('#settingsBtn').click()");
+  await evaluate("document.querySelector('#settingsBtn').focus(); document.querySelector('#settingsBtn').click()");
   await until(()=>evaluate("document.querySelector('#settings').open && !document.querySelector('#desktopOverlaySetting')?.disabled && !!document.querySelector('#desktopOverlaySetting')"),
     'デスクトップの設定が開きません');
   assert(await evaluate(`(() => {
@@ -172,6 +172,11 @@ try {
     return rect.width > 0 && rect.height > 0 && rect.left >= -1 && rect.top >= -1
       && rect.right <= innerWidth + 1 && rect.bottom <= innerHeight + 1;
   })()`),'最小ウィンドウで設定が表示領域を外れています');
+  await evaluate("document.querySelector('#closeSettings').click()");
+  await until(()=>evaluate("!document.querySelector('#settings').open && document.activeElement?.id==='settingsBtn'"),
+    '操作設定を閉じた後に起点へフォーカスが戻りません');
+  await evaluate("document.querySelector('#settingsBtn').click()");
+  await until(()=>evaluate("document.querySelector('#settings').open"), '操作設定を開き直せません');
   // 全員の接続のリセット (#412)：設定から確認の画面を開き、やめると送らず、確かめると送る
   const monitor=new WebSocket(hostOrigin.replace('http','ws')+'/ws');const logs=[];
   monitor.onmessage=event=>{try{const m=JSON.parse(event.data);if(m.type==='log')logs.push(m.entry.kind);}catch{}};

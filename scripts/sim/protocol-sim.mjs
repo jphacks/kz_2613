@@ -477,7 +477,7 @@ async function main() {
       app.close();
     });
 
-    await check('進行: P1だけが準備と明示Readyを実行でき、P2・P3・PC画面から迂回できない', async () => {
+    await check('進行: P1だけがロビーから分担操作を開始でき、安全条件を迂回できない (#440)', async () => {
       let from = p1.mark();
       p2.send({type:'command',cmd:'PREPARE'}); p3.send({type:'command',cmd:'READY'});
       mon.send({type:'phase',phase:'coop'});
@@ -485,12 +485,16 @@ async function main() {
       assert(!p1.msgs.slice(from).some(m=>m.type==='game' && m.game.phase==='coop'), '管理画面/P2/P3から開始した');
       p1.send({type:'command',cmd:'READY'});
       await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from});
-      // 入力の初期値は on (#114)。手動で ON にしなくても、準備の後に Ready できる
+      // 入力の初期値は on (#114)。
       const initial=[...mon.msgs].reverse().find(m=>m.type==='state');
       assert(initial.inject.mode==='on', `入力の初期値=${initial.inject.mode}`);
-      await confirmLineup(mon, p1); p1.send({type:'command',cmd:'PREPARE'});
-      const prepared = await phaseIs(p1,'preparing',from);
-      assert(prepared.game.canReady && !prepared.game.hostReady, '入力の初期値でReadyできない');
+      await confirmLineup(mon, p1);
+      const ready = await p1.waitFor(m=>m.type==='game' && m.game.phase==='lobby' && m.game.canReady,{from});
+      assert(!ready.game.hostReady);
+      from = p1.mark();
+      p2.send({type:'command',cmd:'READY'}); p3.send({type:'command',cmd:'READY'});
+      await sleep(100);
+      assert(!p1.msgs.slice(from).some(m=>m.type==='game' && m.game.phase==='coop'), '非ホストが開始した');
       // 入力を止めると (緊急停止・診断) Ready できず、PC 画面で再開すると Ready できる
       from = p1.mark();
       mon.send({type:'inject_mode',mode:'off'});
@@ -502,13 +506,14 @@ async function main() {
       await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from});
       let gateFrom=p1.mark();
       host.child.stdin.write('activate off\ntarget off\n');
-      await p1.waitFor(m=>m.type==='game' && m.game.inputTarget,{from:gateFrom});
+      const unfocused = await p1.waitFor(m=>m.type==='game' && !m.game.canReady,{from:gateFrom});
+      assert(unfocused.game.readyReasons.some(r=>r.includes('前面')));
       p1.send({type:'command',cmd:'READY'});
       await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from:gateFrom});
       gateFrom=p1.mark();host.child.stdin.write('activate on\ntarget on\n');
       await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from:gateFrom});
       // 2人でもReadyできる (#57)。1人ではReadyできず、PC画面から必要人数を減らしても迂回できない
-      // 準備中に参加者が変わったら、決定し直すまで Ready できない (#109)
+      // ロビーで参加者が変わったら、決定し直すまで開始できない (#109)
       gateFrom=p1.mark();p3.close();
       const changed=await p1.waitFor(m=>m.type==='game' && m.game.connected.length===2,{from:gateFrom});
       assert(!changed.game.canReady && !changed.game.lineupOk,'参加者が変わったのに古い決定でReadyできる');
@@ -523,6 +528,9 @@ async function main() {
       await p1.waitFor(m=>m.type==='game' && m.game.connected.length===3,{from:gateFrom});
       await confirmLineup(mon,p1);
       await p1.waitFor(m=>m.type==='game' && m.game.canReady && m.game.required===2 && m.game.connected.length===3,{from:gateFrom});
+      const routeFrom = p1.mark();
+      host.child.stdin.write('launcher focus\n');
+      await p1.waitFor(m=>m.type==='game' && m.game.remoteRoute==='desktop',{from:routeFrom});
       const rm = mon.mark();
       p2.input('FWD','down'); p3.input('ATTACK','down');
       p2.send({type:'remote',kind:'move',dx:15,dy:5,rseq:1,epoch:p2.epoch});
@@ -537,14 +545,22 @@ async function main() {
       p1.send({type:'remote',kind:'scroll',dy:-30,rseq:5,epoch:p1.epoch});
       await mon.waitFor(m=>m.type==='remote_input' && m.entry.kind==='scroll' && m.entry.notches===1,{from:rm});
       p1.input('REMOTE_LEFT','down'); await injected(mon,'MOUSE_L','down',rm);
+      const beforeRelease = p1.epoch;
+      const releaseFrom = p1.mark();
       p1.send({type:'remote',kind:'release',rseq:6,epoch:p1.epoch});
       await injected(mon,'MOUSE_L','up',rm);
-      await p1.waitFor(m=>m.type==='game' && m.game.epoch>prepared.game.epoch,{from});
+      await p1.waitFor(m=>m.type==='game' && m.game.epoch>beforeRelease,{from:releaseFrom});
       from = p1.mark();
       p1.send({type:'command',cmd:'READY',epoch:0});
       await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from});
+      const epoch = p1.epoch;
+      const held = mon.mark();
+      p1.input('REMOTE_LEFT','down'); await injected(mon,'MOUSE_L','down',held);
+      const released = mon.mark();
       p1.send({type:'command',cmd:'READY'});
       const c = await phaseIs(p1,'coop',from);
+      assert(c.game.epoch > epoch, '開始時にepochを更新していない');
+      await injected(mon,'MOUSE_L','up',released);
       assert(c.game.reason === 'host ready', `reason=${c.game.reason}`);
     });
 

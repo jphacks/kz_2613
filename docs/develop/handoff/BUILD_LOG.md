@@ -2334,6 +2334,13 @@
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
 
+## 2026-11-14 — ロビーから分担操作を開始する（#440、Codex）
+
+- スマホの開始操作を「分担操作開始」に統合した。対象の前面、確定した分担と接続者、担当の確認、入力ドライバー、緊急停止の条件をホストで確認し、全解放とepoch更新を経て協力プレイへ進む。通信契約は版5。従来の準備経路は互換用に残した。
+- 合格：`npm --prefix apps/web run build`（型検査込み）、`node scripts/sim/product-web-test.mjs`（`app-view` 37/37、`phone-lifecycle` 35/35、`ui-input` 20/20、`protocol-boundary` 8/8、`phone-view` を含む）、`node scripts/sim/check-static-pages.mjs`、`cargo fmt --manifest-path apps/host-rs/Cargo.toml --check`、`git diff --check`。Node 22.15.0ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定した。
+- Rustは最初の試行でPerlがPATHになく、OpenSSLの構築前に失敗した。再試行でOpenSSLのコンパイルへ進んだ。Rust単体試験・通信シミュレーションの結果は追記する。
+- Minecraft実機では、ロビーのリモコンで起動後のメニューを操作してワールドへ入り、「分担操作開始」1回で協力プレイに入れることを確認する。
+- 追試（#440）：模擬のランチャー前面を設定し、ロビーのリモコン経路で保持したクリックの全解放を確認した。CI run 43485455002 のホストで通信65/65、Chrome画面検査（PC 800×560、スマホ390×844）21画面が合格。撮影を一段階の開始操作へ更新した。
 ## 2026-11-14 — ゲーム選択のダブルクリック（#445、Codex）
 
 - 同じタイルへの400ms以内の2回のクリックで分担へ進む。PCのクリックと仮想カーソルのクリックを同じ処理で判定する。選択中のタイルの「▶」とEnterからも進める。
@@ -2440,3 +2447,7 @@
 
 - 失敗時にdry-runホストのセッションJSONLを保存し、CDPが応答する場合は画面をPNGで採取する。採取の失敗を記録して、元の例外をそのまま返す。
 - スクリプト構文、構造、差分検査が成功。GitHubでの失敗時成果物は未確認。
+## 2026-11-14 — 操作設定を標準ダイアログ操作で閉じる（#278、Codex）
+
+- 閉じるボタンを `method="dialog"` のフォームへ移し、専用のDOMリスナーを削除した。配布試験にフォーカス復帰と再表示を追加した。
+- Webの型検査・ビルド、試験スクリプトの構文、差分検査が成功。配布WebView2試験はCI待ち。
