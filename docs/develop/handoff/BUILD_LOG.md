@@ -2334,6 +2334,10 @@
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
 
+## 2026-11-14 — 通信版の更新とキャッシュの受入手順（#272、Codex）
+
+- Rust・Web・補助スクリプトの版更新、同一コミットの配布、旧タブからの再接続と再読み込みの受入手順を通信仕様書に追加した。
+- `python scripts/check-public-docs.py`、`python scripts/verify_overlay.py`、`git diff --check` が合格。型契約の正本・CIでの型差分検査と、Android・iPhoneでの実機受入は残る。
 ## 2026-11-14 — CIと実機受入の検証範囲を整理する（#379、Codex）
 
 - CIの資料に配布ジョブのWebView2試験を明記し、認可、全解放、入力先の制限、導入でCIと実機が確認する範囲を記録した。
