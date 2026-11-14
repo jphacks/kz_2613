@@ -63,4 +63,3 @@ body[data-view=v-gen] main { padding-top: 10px; }
 .layout-menu select { flex: 1; min-width: 0; }
 .layout-menu .close { background: transparent; border: 0; color: var(--color-logo); }
 .layout-more { position: fixed; top: calc(60px + env(safe-area-inset-top)); right: 10px; z-index: 21; width: min(260px, 80vw); }
-#genEditLayout { display: block; width: 100%; min-height: 48px; margin: 0 0 14px; font-size: 16px; }
