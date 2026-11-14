@@ -19,7 +19,7 @@ async function add(){
   for(let n=2;n<=3;n++)await new Promise((resolve,reject)=>{
     const ws=new WebSocket(`ws://127.0.0.1:${port}/ws`);clients.push(ws);
     const timer=setTimeout(()=>reject(Error('模擬端末が接続できません')),5000);
-    ws.onopen=()=>ws.send(JSON.stringify({type:'hello',protocolVersion:4,clientId:`fidelity-p${n}`,ua:'表示検証用の模擬端末',nextIseq:1}));
+    ws.onopen=()=>ws.send(JSON.stringify({type:'hello',protocolVersion:5,clientId:`fidelity-p${n}`,ua:'表示検証用の模擬端末',nextIseq:1}));
     ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='welcome'){clearTimeout(timer);console.log(`模擬端末が接続: ${m.slot}`);resolve();}};
     ws.onerror=reject;
   });

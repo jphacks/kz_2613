@@ -204,15 +204,9 @@ async function main(){
   for(const p of phones)await p.click('#roleOkBtn',{optional:true});
   await pc.shot('pc-05-roles-confirmed.jpg');
 
-  // 準備 → Ready 待ち。疑似の入力先は前面になれる (Ready のときにホストが自動で前面にする、#138) ので、すぐ Ready できる
-  await sleep(1000); // 分担の確認の後の状態 (epoch) がスマホに届いてから押す
-  await p1.click('#startBtn');
-  await pc.waitFor(`document.body.dataset.view==='ready'`,'Ready待ち');
-  await pc.shot('pc-06-ready.jpg');
-  await p1.shot('phone-p1-02-host-ready.jpg');
-  await p2.shot('phone-p2-02-preparing.jpg');
-
-  // 協力プレイ
+  // 分担決定後、ロビーから協力プレイへ直接進む (#440)
+  await p1.waitFor(`!document.getElementById('startBtn').disabled`,'分担操作開始が有効');
+  await p1.shot('phone-p1-02-start-available.jpg');
   await p1.click('#startBtn');
   await pc.waitFor(`document.body.dataset.view==='coop'`,'協力プレイ');
   await sleep(800);
