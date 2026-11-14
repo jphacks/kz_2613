@@ -2447,6 +2447,19 @@
 - Webの型検査とビルドは成功。手元で既存配布のexeと今回のWeb資産を組み合わせたWebView2試験では、参加画面のReact描画待ちでタイムアウトした。変更箇所のWebView2確認はCIの同一コミット配布物に残す。
 今回の追加確認では node scripts/sim/product-web-test.mjs が成功した。
 
+## 2026-11-14 — エンジンごとの操作の読み取り（#481、Claude Code）
+
+- 利用者の依頼：ゲームエンジンごとに操作の読み取りを増やす（一覧 #481、各エンジン #480・#482〜#495）。第1弾として、形式が素直で試験用のファイルを作れるものを実装した。
+- ホスト：`apps/host-rs/src/engines/` を足し、`game_actions::read` の順番を「Unity Input System（PlayerPrefs の上書きを反映）→ Unity 以外のエンジン → .NET の Rewired → Unity の旧 Input Manager → .NET の列挙型」にした。Rewired を旧 Input Manager より先にしたのは、手元の Core Keeper（Rewired）で旧 Input Manager の既定の名残が先に当たり、操作が3件しか出なかったため。
+  - RPGツクール MV・MZ の `Input.keyMapper` と有効なプラグインの追加、RGSS・2000/2003 の既定のキー（#480）。ウディタの既定のキー（#488）。
+  - Source 2 の `.vcfg`（#487）、Creation Engine の `ControlMap_Custom.txt` と Skyrim の既定（#486）、Quake 系と Source 1 の cfg（`keybinds::source_cfg` を `pub(crate)` にして使い回す、#491）。
+  - Unity の旧 Input Manager を型情報なしで読む（#483）。手元の Project Winter（IL2CPP）で、移動（Horizontal・Vertical）・Attack・Aim・視点を読めた。最初はゲームパッドの軸の番号（28）を上限27で弾いて並びが途切れ、マウスボタンの軸だけが出ていたので、上限を63にし、途切れた並びもまとめて拾うようにした。Unity の描画機能が足すデバッグ用の軸（`Debug *`）と、同じキーの別名の軸（`MouseButton0`）は出さない。BongoCat（作品が足した軸なし）は読まずに汎用定義へ戻る。
+  - Unity の PlayerPrefs（#484）：手元の BongoCat で、値の名前に `_h<ハッシュ>` が付き、文字列が UTF-8 のバイナリ値であることを確認した。キーを変えた記録のあるゲームは手元になく、上書きの反映は fixture だけで確認した。Rewired の保存（XML）は操作名と結び付けられないので読まない。
+- カタログ：`scripts/profiles/engines.mjs` に同じ読み取りを置き、`extract.mjs` から同じ順番で呼ぶ（Rewired は従来どおり JS では読まない）。PlayerPrefs は `reg query` で読み取り専用で読む。
+- 確認：手元ではホスト全体（OpenSSL）を空きメモリ不足でビルドできないため、`engines` と、それが使う `controls.rs`・`keybinds.rs` の一部（Key・name_key・source_cfg・expand をそのまま取り出したもの）だけの小さなクレートで、Rust の単体試験16件・Clippy（`-D warnings`）・`windows` クレートのレジストリ部分のビルドが合格した。`cargo fmt --check` 合格。JS は `profile-engines-test.mjs` 8/8（Rust と同じ入力・期待値）、`profile-extract-test.mjs` 合格。ホスト全体のビルド・試験は CI で確認する。
+- 実ゲームで未確認：ツクール・ウディタ・Source 2・Bethesda・Quake 系（手元に該当するゲームがない）。分担が成り立つかの実機確認も未実施。
+- 第2弾（同じ PR）：Godot 3・4（#485。PCK の `project.binary` の `input/*` から、イベントのクラス名と `keycode`・`physical_keycode`・`scancode`・`button_index` の整数を拾う。exe に埋め込んだ PCK は末尾の `GDPC` だけ先に確かめ、大きな exe を無駄に読まない）、Unreal Engine 4・5（#482。pak を 8 MB ずつ読んで `[/Script/Engine.InputSettings]` を探し、利用者の `Input.ini` を重ねて `keybinds::ue_input_ini` で読む。`MouseX`・`MouseY` の軸は視点）、CryEngine（#489。pak の zip から actionmaps の XML）。zip の展開のためにホストに `flate2`（`rust_backend`、純 Rust）を足した（PC アプリの依存と同じ版。ロックに adler2・crc32fast・flate2・miniz_oxide・simd-adler32 が増えた）。
+- 第2弾の確認：小さなクレートで Rust の単体試験24件・Clippy 合格、`profile-engines-test.mjs` 11/11。手元の Outlast（Unreal Engine 3）はフォルダの作りが違うので読まない（対象は UE4・UE5）。Godot・UE4/5・CryEngine の実物は手元になく、fixture だけで確認した。
 ## 2026-11-14 — 分担の作り方の表記を「定型ルール／独自AI」にする（#475、Claude Code）
 
 - 利用者の判断：分担の画面の「規則」を「定型ルール」、「モデル（未検証）」を「独自AI」にする。ルールで割り当てることが、エンジニアでなくても分かる表記にする。各ボタンに説明の title を付けた。値（`rule`・`model`）と通信は変えていない。
@@ -2468,6 +2481,7 @@
 
 - 閉じるボタンを `method="dialog"` のフォームへ移し、専用のDOMリスナーを削除した。配布試験にフォーカス復帰と再表示を追加した。
 - Webの型検査・ビルド、試験スクリプトの構文、差分検査が成功。配布WebView2試験はCI待ち。
+- 第3弾（同じ PR）：利用者の判断（2026-11-14「汎用定義メイン」）で、GameMaker・LÖVE・HTML5 系は読み取りを作らず、エンジンだけを見分けて 2D 向けの汎用の割当（矢印・Z・X・C・Shift・Enter・Esc）にした（`engines/generic2d.rs`、ほかのどれにも当たらないときだけ）。XNA・FNA・MonoGame は WASD とマウスの作品が多いので従来の汎用定義のまま。Ren'Py（#492）は推奨人数の Issue（#479）にまとめた。確認：Rust 25件・Clippy、`profile-engines-test.mjs` 12/12。
 ## 2026-11-14 — 親の標準入力が閉じたときのホットスポット停止を確認する（#415、Codex）
 
 - 明示の `quit` と標準入力のEOFそれぞれで、ホストの安全停止ログ、スマホへの終了コード4009、アプリが起動した模擬ホットスポットの停止、資格情報の非記録を確認した。

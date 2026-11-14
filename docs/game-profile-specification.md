@@ -68,6 +68,31 @@ Steam・Epic Gamesの検出情報はゲーム選択と入力先の判定に用�
 | 人数別の割当 | 参加者ごとのアクションID | 定義のグループ・重みを使う |
 | 画面生成 | 担当だけを操作できるコントローラー | ゲーム映像は配信しない |
 
+### 定義のないゲームのファイルからの読み取り
+
+検証済みの定義がないゲームは、インストール先のファイルから操作を読み、分担のモデルで分類した仮の定義（`extracted`・未検証）を作ります（#431）。読めなければ`generic`を使います。ホストは`apps/host-rs/src/game_actions.rs`と`apps/host-rs/src/engines/`、カタログの下書きは`scripts/profiles/extract.mjs`と`scripts/profiles/engines.mjs`で、読む範囲と順番をそろえています。ゲームを起動せず、コードを実行せず、ファイルを書き換えず、暗号化されたデータは読みません。
+
+上から順に試し、最初に読めたものを使います。
+
+| エンジン・形式 | 読むもの | キー |
+|:--|:--|:--|
+| Unity Input System | ゲームに埋め込まれた`.inputactions`。PlayerPrefs（レジストリ `HKCU\Software\<会社名>\<製品名>`）に保存された上書きを反映（#484） | あり |
+| RPGツクール MV・MZ | `rpg_core.js`／`rmmz_core.js`の`Input.keyMapper`と、有効なプラグインの`keyMapper[n] = '...'`（#480） | あり |
+| RPGツクール VX Ace・VX・XP・2000/2003 | 種類だけを見分け、エンジン固定の既定のキー（#480） | 既定 |
+| WOLF RPG エディター | 種類だけを見分け、エンジン固定の既定のキー（#488） | 既定 |
+| Source 2 | Steam の`userdata/<アカウント>/<AppID>/local/cfg/`の`.vcfg`（#487） | 利用者の設定 |
+| Creation Engine（Skyrim SE・Fallout 4・Starfield） | `Documents\My Games\<ゲーム>\ControlMap_Custom.txt`。ない場合は Skyrim だけ既定の割当（#486） | 利用者の設定 |
+| Godot 3・4 | PCK（独立した`.pck`か exe の末尾）の`project.binary`の InputMap。組み込みの`ui_*`は出さない（#485） | あり |
+| Unreal Engine 4・5 | pak の中の`DefaultInput.ini`（暗号化・圧縮されていないもの）と、`%LOCALAPPDATA%\<Project>\Saved\Config\Windows`（UE4 は`WindowsNoEditor`）の`Input.ini`。Enhanced Input は未対応（#482） | あり |
+| CryEngine | pak（zip）の中の`defaultProfile.xml`などの actionmaps（#489） | あり |
+| Quake 系・Source 1 | `id1/config.cfg`・`baseq2/config.cfg`・`baseq3/q3config.cfg`、`<mod>/cfg/config.cfg`（#491） | 利用者の設定 |
+| GameMaker・LÖVE・HTML5 系（NW.js・Electron） | 読み取りなし。エンジンだけを見分けて、2D 向けの汎用の割当（矢印・Z・X・C・Shift・Enter・Esc）。XNA・FNA・MonoGame は従来の`generic`（#490・#494・#495・#493） | 既定 |
+| .NET（Rewired） | `RewiredConsts.Action`の定数 | なし |
+| Unity の旧 Input Manager | `globalgamemanagers`の軸（型情報なしで読む）。作品が足した軸がなければ使わない（#483） | あり |
+| .NET の列挙型 | `Assembly-CSharp.dll`の操作らしい列挙型 | なし |
+
+利用者の設定を読んだ場合は、その時点のキーを初期キーにします。仮の定義は、PCの分担の画面で作り直すと読み直します。
+
 ---
 
 ## JSON形式
