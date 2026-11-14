@@ -2606,3 +2606,10 @@
 - mainのゲーム未選択時の挙動を保持し、通信契約は版6を採用。
 - Webビルド、静的ページ検証、`phone-lifecycle-test.mjs`（38/38）、`ui-input-test.mjs`（20/20）に合格。Node.js 22.15.0 では `--experimental-strip-types` を指定。
 - 更新コミットのRust・通信・配布はGitHub Actionsで確認する。既存のAndroid実Wi-Fi比較は合成タッチで、実指とMinecraftでの受入は未実施。
+
+## 2026-11-15 — 配布WebView2の20回反復を追加する（#379、Codex）
+
+- 手動の `ci-repeat.yml` に `suite=core|desktop|all` を追加した。既存の同一コミット・成功済み配布run・ZIPハッシュとマニフェストの照合を通し、desktopは4ランナーで5回ずつ起動・画面・オーバーレイ・アプリと子ホストの終了を検査する。
+- 各回の出力と失敗診断先を分け、終了コード・所要時間を逐次JSONへ保存する。途中で失敗しても残りを実行し、1件でも失敗すればジョブを失敗にする。coreの既定選択・成果物名・20分上限は維持する。判断は `docs/develop/decisions/2026-11-15-desktop-ci-repeat.md`。
+- ローカル検証：PyYAMLのBaseLoaderでYAMLと選択肢を確認、全PowerShell手順をASTで構文検査。抽出したdesktop手順へnodeの代替関数を注入し、全成功と3回目だけ終了コード7の2系列で、各5回継続・6〜10の試行番号・全出力ログ・終了コードと失敗判定が保持されることを確認した。Windows PowerShell 5.1の検証側でJSON配列を二重に包んだため初回の検証は失敗し、読み取り側を修正して再実施した（保存JSONには5件が存在していた）。
+- `py -3 scripts/verify_overlay.py`、`py -3 scripts/check-public-docs.py`、`git diff --check` 成功。GitHub Actionsでの実WebView2反復は、同じコミットの配布CI成功後に実施する。ローカルでは実アプリ・OS入力・ネットワーク設定は操作していない。
