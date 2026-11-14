@@ -2682,6 +2682,9 @@
 - ホスト：選んだゲームのウィンドウがあるか（`target_window_open`、1秒ごとに確認）を持ち、ゲームが起動していればロビーでも前面を必須にしない（`lobby_requires_focus`）。ロビーの `READY` でも `focus_for_coop` を呼び、前面にできたときだけ開始する。判断の追記：`docs/develop/decisions/2026-11-14-single-coop-start.md`。
 - 試験：Rust（背面から開始・前面にできなければ開始しない・ウィンドウがなければ前面が必要）、`protocol-sim.mjs`（前面にできないときの開始拒否、背面のゲームから開始）。手元では Rust をビルドできないため CI で確認する。`cargo fmt --check` は成功。
 - 未実施：Windows 実機で、PC アプリが前面のまま Minecraft を前面化して開始する確認。
+### #555 分担画面の操作定義に関する注意
+- Webビルドと `node --experimental-strip-types scripts/sim/app-view-test.mjs`（39/39）に合格。
+- `check-static-pages.mjs` は基点からあるPCリモコンの凡例「◀」で停止した。変更前後の撮影と実機受入は未実施。
 ## 2026-11-15 — ホストのリモコンで入力先の案内が下部パネルに隠れる（#553、Claude Code）
 
 - 原因：#550 で下部（`host-actions`）を sticky で固定し、表示域が低い端末（384×701）ではその上の `#remoteRoute` に重なった。main `14c34de` の CI のホストで 384×701 を撮影して再現した。
