@@ -14,6 +14,7 @@ export interface PcActions {
   setAutoResume(on: boolean): void;
   setRotation(seconds: number): void;
   setKey(action: string, output: string | null): void;
+  resetKeys(): void;
 }
 let actions: PcActions | undefined;
 export function setPcActions(next: PcActions|undefined) { actions = next; }
@@ -21,6 +22,7 @@ export const settingsActions: PcActions = {
   setAutoResume: on => actions?.setAutoResume(on),
   setRotation: seconds => actions?.setRotation(seconds),
   setKey: (action, output) => actions?.setKey(action, output),
+  resetKeys: () => actions?.resetKeys(),
 };
 export type {PcInfo} from '../shared/model/domain.ts';
 import type {PcInfo} from '../shared/model/domain.ts';

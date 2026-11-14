@@ -12,7 +12,12 @@ const profile={id:'minecraft-java',name:'Minecraft',status:'device',controllerSu
 const assigned={P1:['forward'],P2:['look'],P3:['attack']};
 const base={phase:'lobby',connected:['P1','P2','P3'],canPrepare:true,canReady:false,canResume:false,readyReasons:[],remoteRoute:'app',profile};
 function update(slot,game){render({me:slot,isHost:slot==='P1',game:{...base,...game}});}
+update('P1',{reason:'host end'});
+assert.match(view().remote.note,/Wi-Fi設定で普段使うネットワークに戻/);
+update('P2',{reason:'host end'});
+assert.match(view().wait.title,/Wi-Fi設定で普段使うネットワークに戻/);
 update('P1',{});
+assert.doesNotMatch(view().remote.note,/普段使うネットワーク/);
 assert.equal((view().view==='v-remote'),true);
 assert.equal(view().remote.startLabel,'分担操作開始');
 assert.equal(view().remote.startDisabled,true);

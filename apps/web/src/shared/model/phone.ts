@@ -3,6 +3,7 @@ import {SLOT_NAMES,MIN_PLAYERS,MAX_PLAYERS,START_COOP_LABEL} from './presentatio
 import type {PhoneGame, Slot} from '../contracts.ts';
 
 const CHARACTERS = { P1: 'blue', P2: 'green', P3: 'purple', P4: 'red' };
+export const LEAVE_WIFI_HINT = '遊び終えたら、スマホのWi-Fi設定で普段使うネットワークに戻してください。';
 
 export function reasonText(r: string | null | undefined, me: Slot) {
   if (r === `${me} disconnected`) return 'あなたの接続が切れました';
@@ -60,7 +61,8 @@ export function waitModel({ me, game, roleTitle, joined, autoWait }: {me:Slot;ga
     character: `/assets/characters/${CHARACTERS[me]}.png`,
     heading: phase === 'paused' ? '一時停止中' : '接続完了!!',
     role: roleTitle,
-    title: !joined ? '次の開始から参加します。'
+    title: phase === 'lobby' && game.reason === 'host end' ? LEAVE_WIFI_HINT
+      : !joined ? '次の開始から参加します。'
       : phase === 'paused' ? (autoWait
         ? `${reasonText(game.reason, me)}。制限時間内に全員が戻ると自動で再開します。再開できない場合はホストの操作をお待ちください。`
         : 'ホストが「再開する」を押すと操作画面に戻ります。')
@@ -107,6 +109,7 @@ export function remoteModel({ me, isHost, game, name, autoWait }: {me:Slot;isHos
     instructions = [`PCアプリの画面でゲームを選び、分担を決めてください（${MIN_PLAYERS}〜${MAX_PLAYERS}人）`,
       'このリモコンでPCの画面を操作できます（PCアプリ以外のウィンドウでは実際のマウスとして動きます）', ...reasons];
   }
+  if (phase === 'lobby' && game.reason === 'host end') instructions.unshift(LEAVE_WIFI_HINT);
   const note = [...new Set(instructions.flatMap(text => text?.trim() ? [text.trim().replace(/[。！？]$/, '')] : []))]
     .map(text => `${text}。`).join('');
   return {
