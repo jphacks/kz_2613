@@ -2340,6 +2340,11 @@
 - 合格：`npm --prefix apps/web run build`、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/verify_overlay.py`、`python scripts/check-public-docs.py`、変更したシミュレーションの構文検査、`git diff --check`。Node 22.15.0ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定した。
 - 初回参加・ゲーム選択・再選択を確認する通信試験を追加した。Rustホストの実行を伴う確認はGitHub CIで行い、Android・iPhoneでの表示は実機受入に残す。
 - 追試（#447）：選択IDと操作定義IDを別に照合し、キー設定はMinecraft選択後の通知を参照するようにした。CI run 43485721653 のホストで通信66/66、Chromeの画面検査（PC 800×560・スマホ390×844）23画面が合格。
+## 2026-11-14 — ゲーム選択のダブルクリック（#445、Codex）
+
+- 同じタイルへの400ms以内の2回のクリックで分担へ進む。PCのクリックと仮想カーソルのクリックを同じ処理で判定する。選択中のタイルの「▶」とEnterからも進める。
+- 合格：`npm --prefix apps/web run build`、`NODE_OPTIONS=--experimental-strip-types` を指定した `node scripts/sim/product-web-test.mjs`（app-view 37/37、ui-input 20/20）、`node scripts/sim/check-static-pages.mjs`、`git diff --check`。
+- Tauri・WebView2での表示と、PCマウス・スマホの仮想カーソルを使った通し操作は実機受入に残す。
 ## 2026-11-14 — 参加ページが開けないときの案内（#414、Codex）
 
 - 参加用QRの近くに「開けないとき」を追加し、同じWi-Fi、ブラウザのローカル通信権限、URLの手入力、VPN等のローカル通信設定を確認できるようにした。
