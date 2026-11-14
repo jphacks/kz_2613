@@ -45,6 +45,9 @@ impl DataChannelHandler for DcHandler {
         });
     }
     fn on_message(&mut self, msg: &[u8]) {
+        if msg.len() > 16 * 1024 {
+            return;
+        }
         if let Ok(text) = std::str::from_utf8(msg) {
             let received_at = crate::input_trace::start();
             let _ = self.tx.send(Event::RtcMessage {
