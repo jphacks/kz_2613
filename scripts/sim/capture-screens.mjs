@@ -196,7 +196,7 @@ async function main(){
   await pc.waitFor(`document.body.dataset.view==='game'`,'ゲーム選択');
   await pc.click('[data-game="minecraft-java"]');
   await pc.shot('pc-03-game-select.jpg');
-  await pc.click('#nextBtn');
+  await pc.click('[data-play-game="minecraft-java"]'); // 選んだタイルの「▶」で分担へ進む (#445)
   await pc.waitFor(`document.body.dataset.view==='roles'`,'分担');
   await pc.shot('pc-04-roles.jpg');
   await pc.click('#nextBtn'); // メンバーと分担を決定

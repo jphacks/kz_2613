@@ -2340,6 +2340,11 @@
 - 検証済みのプリセットがあるゲームは `model_presets::needs_model` で対象外のまま。試験の `fixture()` は `presets_model` を明示しているので、既存の試験の前提は変わらない。
 - 版2の重み（約57MB）の読み込みで待ち受けの開始が遅れないよう、起動時に裏のスレッドで読み始める（`profiles::warm_model`）。読み終わる前に分担が要るときは、その処理だけが読み終わりを待つ。
 - 合わせて AGENTS.md・`game-profile-specification.md`・`scripts/preset-model/README.md`・配布物の説明（`package.ps1`）・判断の記録を直した。実機は未確認。
+## 2026-11-14 — ゲーム選択のダブルクリック（#445、Codex）
+
+- 同じタイルへの400ms以内の2回のクリックで分担へ進む。PCのクリックと仮想カーソルのクリックを同じ処理で判定する。選択中のタイルの「▶」とEnterからも進める。
+- 合格：`npm --prefix apps/web run build`、`NODE_OPTIONS=--experimental-strip-types` を指定した `node scripts/sim/product-web-test.mjs`（app-view 37/37、ui-input 20/20）、`node scripts/sim/check-static-pages.mjs`、`git diff --check`。
+- Tauri・WebView2での表示と、PCマウス・スマホの仮想カーソルを使った通し操作は実機受入に残す。
 ## 2026-11-14 — 参加ページが開けないときの案内（#414、Codex）
 
 - 参加用QRの近くに「開けないとき」を追加し、同じWi-Fi、ブラウザのローカル通信権限、URLの手入力、VPN等のローカル通信設定を確認できるようにした。
@@ -2350,6 +2355,13 @@
 - 協力プレイを終えてロビーへ戻ったときと、PCアプリの正常終了通知を受けたとき、スマホのWi-Fiを普段のネットワークへ戻す案内を表示する。
 - `npm --prefix apps/web run build`、`node scripts/sim/phone-view-test.mjs`、`node scripts/sim/phone-lifecycle-test.mjs` 34/34、`git diff --check` が合格。
 - 非管理者でのホットスポット停止・設定変更と、停止前の通知到達は、現行配布形態での確認が残る。
+
+## 2026-11-14 — アプリが起動したホットスポットを終了時に停止する（#415 A、Codex）
+
+- [設計の記録](../decisions/2026-11-14-hotspot-shutdown.md)。終了処理は入力解放、スマホへの終了通知、ホットスポットの停止の順とする。停止結果を資格情報なしで記録する。
+- Windowsで `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml` が成功。OpenSSLの既知のPDB警告あり。 `npm ci --offline`、`npm run build`、`cargo fmt --manifest-path apps/host-rs/Cargo.toml --all --check`、`python scripts/verify_overlay.py`、`git diff --check` が成功。
+- Node.js 22.15.0の `node --experimental-strip-types scripts/sim/protocol-sim.mjs --bin data/local/hotspot-host.exe` が66/66成功。事前にONの場合の保持、同時の起動要求、スマホへの終了通知コード4009、入力解放後の模擬停止、パスワードの非記録を確認した。
+- 非管理者でのWindows実機停止と、SSID・パスワードを変更・復元するBが残る。
 ## 2026-11-14 — 監視WebSocketの読取停止を60秒の負荷で追試する（#197、Codex）
 
 - `runtime-measure.mjs` で最大60秒を指定できるようにし、WS切断コードと失敗時点までの測定結果を保存する。PR #456 のWindowsホストを使用し、OS入力は無効。
