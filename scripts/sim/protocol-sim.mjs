@@ -67,7 +67,7 @@ function fakeGames(dir) {
 }
 
 // ---------- ホストの起動 (必ず注入なし) ----------
-function startHost(port = PORT) {
+function startHost(hotspotState = 'on', port = PORT) {
   const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-sim-'));
   const optionsFile = path.join(logDir, 'options.txt');
   const keyOverridesFile = path.join(logDir, 'key-overrides.json');
@@ -78,7 +78,7 @@ function startHost(port = PORT) {
   // config.json の影響を受けないよう、画面だけを持つ一時ルートを使う
   const env = { ...process.env, RECOOPLAY_DRY_RUN: '1', PORT: String(port), RECOOPLAY_LOG_DIR: logDir, RECOOPLAY_ROOT: ROOT, RECOOPLAY_NO_CONFIG: '1', RECOOPLAY_STDIN_CONTROL: '1', RECOOPLAY_FAKE_TARGET: '1', RECOOPLAY_FAKE_GAMES: fakeGames(logDir),
     // 模擬のホットスポット (#133。dry-run では本物を読まない)
-    RECOOPLAY_FAKE_HOTSPOT: 'SimSpot|sim-pass-1|on',
+    RECOOPLAY_FAKE_HOTSPOT: `SimSpot|sim-pass-1|${hotspotState}`,
     // 手動登録のファイル選択 (#49。中身に書いた場所を選んだことにする)
     RECOOPLAY_FAKE_PICK: path.join(logDir, 'pick.txt'),
     // Minecraft のキー設定の試験用 (ダッシュ = Q、捨てる = R に変えた options.txt)。#101
@@ -2152,7 +2152,7 @@ async function main() {
     });
 
     await check('参加情報: 別ホストでは新規参加し、元ホストでは元の枠へ再接続できる (#452)', async () => {
-      const second = startHost(0);
+      const second = startHost('on', 0);
       const clients = [];
       try {
         let port;
@@ -2193,6 +2193,44 @@ async function main() {
       }
     });
     for (const c of [p1, p2, p3, mon]) c?.close();
+    await check('終了時にアプリが起動したホットスポットだけを停止する (#415 A)', async () => {
+      async function quitAndCheck(instance, expected) {
+        const exited = new Promise((resolve) => instance.child.once('exit', resolve));
+        instance.child.stdin.end('quit\n');
+        const code = await Promise.race([exited, sleep(3500).then(() => 'timeout')]);
+        assert(code === 0, `安全停止の終了コード: ${code}`);
+        const log = fs.readdirSync(instance.logDir).filter((f) => f.endsWith('.jsonl'))
+          .map((f) => fs.readFileSync(path.join(instance.logDir, f), 'utf8')).join('');
+        assert(!log.includes('sim-pass-1') && !instance.output().includes('sim-pass-1'), 'パスワードをログに残した');
+        const events = log.split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+        const shutdown = events.findIndex((event) => event.kind === 'shutdown' && event.releaseConfirmed);
+        const hotspot = events.findIndex((event) => event.kind === 'hotspotShutdown' && event.result === expected);
+        assert(shutdown >= 0 && hotspot > shutdown, `安全停止後のホットスポット処理の結果が ${expected} でない`);
+      }
+
+      await quitAndCheck(host, 'notOwned');
+      const owned = startHost('off');
+      try {
+        await waitReady();
+        const readState = async () => (await (await fetch(`${BASE}/api/info`)).json()).hotspot?.on;
+        assert(await readState() === false, '起動前からホットスポットがON');
+        const start = async () => (await (await fetch(`${BASE}/api/hotspot`, {
+          method: 'POST', headers: { Origin: BASE },
+        })).json()).ok;
+        const results = await Promise.all([start(), start()]);
+        assert(results.every(Boolean) && await readState() === true, 'ホットスポットをONにできなかった');
+        const phone = await join('hotspot-shutdown', { clientId: 'sim-client-hotspot-shutdown' });
+        try {
+          assert((await welcome(phone)).type === 'welcome', '終了通知を確認するスマホが参加できなかった');
+          const [closeCode] = await Promise.all([phone.waitClose(), quitAndCheck(owned, 'stopped')]);
+          assert(closeCode === 4009, `スマホの終了通知コード: ${closeCode}`);
+        } finally {
+          phone.close();
+        }
+      } finally {
+        owned.child.kill();
+      }
+    });
     const failed = results.filter((r) => !r.ok);
     console.log(`\n${results.length - failed.length}/${results.length} 合格 (Rust 版、dry-run)`);
     exitCode = failed.length ? 1 : 0;

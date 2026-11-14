@@ -731,8 +731,12 @@ impl Hub {
             match rx.recv_timeout(wait) {
                 Ok(Event::Shutdown) => {
                     // 終了時は押しっぱなしを残さない
+                    crate::netinfo::block_hotspot_start();
                     let confirmed = self.release_for_shutdown();
                     self.close_players_for_shutdown();
+                    let hotspot = crate::netinfo::stop_owned_hotspot();
+                    self.log("hotspotShutdown", json!({ "result": hotspot }));
+                    let _ = self.log_file.flush();
                     crate::runtime_measure::finish();
                     crate::input_trace::finish();
                     std::process::exit(if confirmed { 0 } else { 1 });
