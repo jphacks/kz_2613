@@ -439,7 +439,7 @@ fn ue_input_ini(text: &str) -> HashMap<String, Key> {
 }
 
 /// Source エンジンの config.cfg: bind "w" "+forward" → "+forward" の操作は W
-fn source_cfg(text: &str) -> HashMap<String, Key> {
+pub(crate) fn source_cfg(text: &str) -> HashMap<String, Key> {
     let mut map = HashMap::new();
     let mut bound: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
     // 引用符の外のセミコロンと改行だけが命令の区切り。

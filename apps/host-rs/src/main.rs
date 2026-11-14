@@ -5,6 +5,7 @@
 
 mod config;
 mod controls;
+mod engines;
 mod focus;
 mod freshness;
 mod game_actions;
