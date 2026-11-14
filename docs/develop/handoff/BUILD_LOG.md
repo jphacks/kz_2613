@@ -2510,6 +2510,12 @@
 - RE Engine（#510）は、キー割当の保存先を実物で確かめられないので実装していない（今は汎用定義になる）。
 - 確認：小さなクレートで Rust の単体試験31件・Clippy 合格、`profile-engines-test.mjs` 17/17（Rust と同じ入力・期待値）。どのゲームも手元になく、ファイルの形式は知識による（fixture だけで確認）。実機は未確認。
 
+## 2026-11-14 — 利用者がキーを変えたら、ファイルから作った仮の定義を読み直す（#524、Claude Code）
+
+- `engines::user_config` に、仮の定義の元にした利用者のキー設定のファイルの場所を返す処理をまとめた（Source 2 の `.vcfg`、Bethesda の `ControlMap_Custom.txt`、Witcher 3 の `input.settings`、ETS2・ATS の `controls.sii`、Farming Simulator の `inputBinding.xml`、Factorio の `config.ini`、Zomboid の `keys.ini`、Unreal の `Input.ini`、Quake 系・Source 1 の cfg）。ゲーム本体のファイル（ツクールの `rpg_core.js` など）は対象外。
+- 仮の定義を保存するとき、そのファイルの更新日時を `configModified` として残す（ファイルがなかったことも残す。古い保存には記録がないので今までどおり）。
+- `needs_detect` は、選んでいるゲームについてだけ更新日時を比べ、変わっていれば読み直す（協力プレイ中は読み直さない。一覧の全部のファイルは見ない）。選んだとき・準備のとき（`reload_keybinds`）に読み直しが始まる。
+- 試験：`changed_user_config_makes_the_selected_game_read_again`（hub）、`detected_config_time_round_trips`（model_presets）。エンジン部分は小さなクレートで試験31件・Clippy 合格、`cargo fmt --check` 合格。hub の部分は CI で確かめる。
 ## 2026-11-14 — ツクールの「決定」を独自AIがメニューにして配らない問題を直す（#512、Claude Code）
 
 - 事象：RPGツクール XP 製の「青鬼」を #502 の読み取りと独自AI（既定の分担）で試すと、自動取得した9操作のうち、決定・キャンセルなど5つをモデルが menu に分類した。menu は P1 のリモコンに残して配らないため、配られるのは移動の4つだけで、「調べる」を誰も押せなかった。

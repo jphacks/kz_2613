@@ -162,6 +162,23 @@ pub fn actions_from_input_settings(text: &str) -> Vec<ReadAction> {
     out
 }
 
+/// 利用者のキー設定のファイル (#524)。Cyberpunk 2077 は読んでいるのがゲームのファイルなので対象外
+pub fn user_config(dir: &Path) -> Option<std::path::PathBuf> {
+    let bin = child_ci(dir, "bin")?;
+    let w3 = ["x64", "x64_dx12"].iter().any(|b| {
+        child_ci(&bin, b)
+            .and_then(|x| child_ci(&x, "witcher3.exe"))
+            .is_some()
+    });
+    if !w3 {
+        return None;
+    }
+    let p = crate::keybinds::expand("%DOCUMENTS%")?
+        .join("The Witcher 3")
+        .join("input.settings");
+    p.is_file().then_some(p)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

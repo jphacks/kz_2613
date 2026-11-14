@@ -120,6 +120,19 @@ pub fn actions_from_controls(text: &str) -> Vec<ReadAction> {
     out
 }
 
+/// 利用者のキー設定のファイル (#524)
+pub fn user_config(dir: &Path) -> Option<PathBuf> {
+    let bin = child_ci(dir, "bin").and_then(|b| child_ci(&b, "win_x64"))?;
+    let folder = if child_ci(&bin, "eurotrucks2.exe").is_some() {
+        "Euro Truck Simulator 2"
+    } else if child_ci(&bin, "amtrucks.exe").is_some() {
+        "American Truck Simulator"
+    } else {
+        return None;
+    };
+    newest_controls(&crate::keybinds::expand("%DOCUMENTS%")?.join(folder))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

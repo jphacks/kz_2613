@@ -171,6 +171,19 @@ pub fn actions_from_ini(text: &str) -> Vec<ReadAction> {
     out
 }
 
+/// 利用者のキー設定のファイル (#524)
+pub fn user_config(dir: &Path) -> Option<PathBuf> {
+    let name = project_dir(dir)?.file_name()?.to_str()?.to_string();
+    let base = crate::keybinds::expand("%LOCALAPPDATA%")?
+        .join(name)
+        .join("Saved")
+        .join("Config");
+    ["Windows", "WindowsNoEditor"]
+        .iter()
+        .map(|p| base.join(p).join("Input.ini"))
+        .find(|p| p.is_file())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

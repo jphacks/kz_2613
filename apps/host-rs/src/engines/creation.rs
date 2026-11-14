@@ -213,6 +213,11 @@ pub fn skyrim_defaults() -> Vec<ReadAction> {
     ]
 }
 
+/// 利用者のキー設定のファイル (#524)
+pub fn user_config(dir: &Path) -> Option<PathBuf> {
+    custom_file(which(dir)?)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

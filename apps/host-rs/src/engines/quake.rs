@@ -147,6 +147,11 @@ pub fn actions_from_bindings(
     out
 }
 
+/// 利用者のキー設定のファイル (#524)
+pub fn user_config(dir: &Path) -> Option<PathBuf> {
+    find_cfg(dir).map(|(p, _)| p)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

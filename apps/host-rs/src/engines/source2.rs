@@ -168,6 +168,14 @@ pub fn actions_from_vcfg(text: &str) -> Vec<ReadAction> {
     actions_from_bindings(binds, "source2")
 }
 
+/// 利用者のキー設定のファイル (#524)
+pub fn user_config(dir: &Path) -> Option<PathBuf> {
+    if !dir.join("game").join("bin").join("win64").is_dir() {
+        return None;
+    }
+    find_vcfg(dir)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -98,6 +98,18 @@ pub fn actions_from_keys(text: &str) -> Vec<ReadAction> {
     out
 }
 
+/// 利用者のキー設定のファイル (#524)
+pub fn user_config(dir: &Path) -> Option<std::path::PathBuf> {
+    if child_ci(dir, "ProjectZomboid64.exe").is_none() || child_ci(dir, "media").is_none() {
+        return None;
+    }
+    let p = crate::keybinds::expand("%USERPROFILE%")?
+        .join("Zomboid")
+        .join("Lua")
+        .join("keys.ini");
+    p.is_file().then_some(p)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

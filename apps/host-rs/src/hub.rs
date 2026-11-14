@@ -2770,10 +2770,28 @@ impl Hub {
         self.presets_model
             && self.games.iter().any(|g| g.id == game_id)
             && profiles::find(&self.profiles, game_id).is_none()
-            && self
+            && (self
                 .detected
                 .get(game_id)
                 .is_none_or(|d| d.model != crate::preset_model::version())
+                || self.detected_config_changed(game_id))
+    }
+
+    /// 選んでいるゲームについて、仮の定義の元にした利用者のキー設定のファイルが変わったか (#524)。
+    /// ファイルを見るのは選んでいるゲームだけ (一覧の全部は見ない)。読み直すのはロビーと準備中だけで、
+    /// 協力プレイ・一時停止の間に定義を変えない
+    fn detected_config_changed(&self, game_id: &str) -> bool {
+        if game_id != self.game.title || !matches!(self.game.phase, Phase::Lobby | Phase::Preparing)
+        {
+            return false;
+        }
+        let Some(Some(saved)) = self.detected.get(game_id).map(|d| d.config_modified) else {
+            return false;
+        };
+        let Some(entry) = self.games.iter().find(|g| g.id == game_id) else {
+            return false;
+        };
+        crate::engines::config_modified(&entry.install_dir) != saved
     }
 
     /// 操作定義のないゲームのファイルから操作を読み、分類して仮の定義と分担を作り始める (#431)。
@@ -2793,6 +2811,8 @@ impl Hub {
         let started = Instant::now();
         let work = move || {
             let version = crate::preset_model::version().to_string();
+            // 利用者のキー設定のファイルの更新日時 (#524)。変わったら選んだときに読み直す
+            let config_modified = Some(crate::engines::config_modified(&dir));
             let made = crate::preset_model::model().and_then(|m| {
                 let (actions, source) = crate::game_actions::read(&dir)?;
                 crate::preset_model::synthesize(m, &key, &name, &actions, source).ok()
@@ -2805,6 +2825,7 @@ impl Hub {
                         crate::model_presets::Detected {
                             model: version,
                             profile: Some(v),
+                            config_modified,
                         },
                         Some(stored),
                     )
@@ -2813,6 +2834,7 @@ impl Hub {
                     crate::model_presets::Detected {
                         model: version,
                         profile: None,
+                        config_modified,
                     },
                     None,
                 ),
@@ -4628,6 +4650,77 @@ mod tests {
     use crate::input::Input;
     use std::collections::VecDeque;
     use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
+
+    #[test]
+    fn changed_user_config_makes_the_selected_game_read_again() {
+        let (mut h, _rx) = fixture();
+        h.presets_model = true;
+        let dir = std::env::temp_dir().join(format!("recooplay-524-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("id1")).unwrap();
+        std::fs::write(
+            dir.join("id1/config.cfg"),
+            "bind w +forward
+",
+        )
+        .unwrap();
+        h.games.push(games::Entry {
+            id: "steam:9001".into(),
+            name: "試験".into(),
+            source: "steam",
+            install_dir: dir.clone(),
+            launch_uri: String::new(),
+            image: None,
+            icon_source: None,
+        });
+        let now = crate::engines::config_modified(&dir);
+        assert!(
+            now.is_some(),
+            "Quake の config.cfg を利用者の設定として見つける"
+        );
+        let stored = |m: Option<Option<u64>>| crate::model_presets::Detected {
+            model: crate::preset_model::version().to_string(),
+            profile: None,
+            config_modified: m,
+        };
+        // 試験の準備は協力プレイ中から始まるので、ロビーにする
+        h.game.phase = Phase::Lobby;
+        h.game.title = "steam:9001".into();
+        h.detected.insert("steam:9001".into(), stored(Some(now)));
+        assert!(
+            !h.needs_detect("steam:9001"),
+            "変わっていなければ読み直さない"
+        );
+        h.detected
+            .insert("steam:9001".into(), stored(Some(now.map(|t| t - 10))));
+        assert!(
+            h.needs_detect("steam:9001"),
+            "更新日時が変わったら読み直す: saved={:?} now={:?} title={} phase={} presets_model={} profile={}",
+            h.detected.get("steam:9001").map(|d| d.config_modified),
+            crate::engines::config_modified(&dir),
+            h.game.title,
+            h.game.phase.name(),
+            h.presets_model,
+            profiles::find(&h.profiles, "steam:9001").is_some()
+        );
+        h.game.phase = Phase::Coop;
+        assert!(!h.needs_detect("steam:9001"), "協力プレイ中は読み直さない");
+        h.game.phase = Phase::Paused;
+        assert!(!h.needs_detect("steam:9001"), "一時停止中も読み直さない");
+        h.game.phase = Phase::Lobby;
+        h.game.title = "other".into();
+        assert!(
+            !h.needs_detect("steam:9001"),
+            "選んでいないゲームのファイルは見ない"
+        );
+        h.game.title = "steam:9001".into();
+        h.detected.insert("steam:9001".into(), stored(None));
+        assert!(
+            !h.needs_detect("steam:9001"),
+            "記録のない古い保存は今までどおり"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     fn unknown_game(h: &mut Hub, id: &str, status: &str) -> Profile {
         let p = crate::model_presets::test_profile(

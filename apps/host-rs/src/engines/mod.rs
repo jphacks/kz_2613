@@ -203,6 +203,31 @@ pub fn child_ci(dir: &Path, name: &str) -> Option<std::path::PathBuf> {
     })
 }
 
+/// 仮の定義の元にした、利用者のキー設定のファイル (#524)。ゲームの中でキーを変えたら更新日時が変わるので、読み直しの目安にする。
+/// ゲーム本体のファイル (ツクールの rpg_core.js など) は対象外
+pub fn user_config(dir: &Path) -> Option<std::path::PathBuf> {
+    let finders: [fn(&Path) -> Option<std::path::PathBuf>; 9] = [
+        source2::user_config,
+        creation::user_config,
+        redengine::user_config,
+        prism3d::user_config,
+        giants::user_config,
+        factorio::user_config,
+        zomboid::user_config,
+        unreal::user_config,
+        quake::user_config,
+    ];
+    finders.iter().find_map(|f| f(dir))
+}
+
+/// 利用者のキー設定のファイルの更新日時 (UNIX 時刻の秒)。ファイルがなければ None
+pub fn config_modified(dir: &Path) -> Option<u64> {
+    let t = std::fs::metadata(user_config(dir)?).ok()?.modified().ok()?;
+    t.duration_since(std::time::UNIX_EPOCH)
+        .ok()
+        .map(|d| d.as_secs())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
