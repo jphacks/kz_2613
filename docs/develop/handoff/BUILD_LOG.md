@@ -2680,6 +2680,10 @@
 - `npm --prefix apps/web run build` に合格。
 - PR #549 のWindowsホスト成果物（run 43640947083）を使い、`node --experimental-strip-types scripts/sim/protocol-sim.mjs --bin <host.exe>` で69/69合格。終了してもMinecraftの選択を維持し、P1を残してP2を補充し、新しいepochで同じゲームを再開できることを確認。
 - dry-runの模擬通信。Minecraft、Wi-Fi全員交代、実機での前面化は未検証。
+### #554 スマホの一時停止ボタンを上部へ移設
+- Webビルド、`node --experimental-strip-types scripts/sim/phone-view-test.mjs`（8観点）に合格。
+- `capture-screens.mjs --phone-size 320x740` で23枚を撮影。ホストの44px SVGボタンとロゴの非重複、参加者への非表示、操作領域内に停止ボタンがないこと、通常Pauseと緊急停止への遷移を確認。既存の操作ラベルに11px未満の報告があり、画面外に出たボタンは0件。
+- Chrome dry-run。Android・iPhoneの実機受入は未実施。
 ### #415 起動時の一時Wi-Fi設定
 - Windows 11 24H2のセッション構成を使用し、永続設定の書き換え・バックアップを避ける。管理外の稼働中ホットスポットは起動要求で変更しない。
 - Windows上で変更モジュールを独立ビルドし、SSIDとパスフレーズの長さ・更新の単体試験1件に合格。通信シミュレーターの構文検証に合格。

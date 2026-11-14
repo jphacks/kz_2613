@@ -231,6 +231,18 @@ async function main(){
   await p2.shot('phone-p2-03-coop-look.jpg');
   await p3.shot('phone-p3-02-coop-action.jpg');
 
+  await p1.waitFor(`(() => {
+    const pause = document.querySelector('header #genPause');
+    if (!pause || pause.hidden || pause.disabled || !pause.querySelector('svg')) return false;
+    const box = pause.getBoundingClientRect();
+    return box.width >= 44 && box.height >= 44
+      && box.right <= document.querySelector('header .brand-image').getBoundingClientRect().left
+      && !document.querySelector('#v-gen [data-cmd="PAUSE"]');
+  })()`,'上部の一時停止アイコン・44px・操作領域の確保');
+  for (const participant of [p2, p3]) {
+    await participant.waitFor("document.getElementById('genPause').hidden", '参加者には一時停止を表示しない');
+  }
+
   // 一時停止
   await p1.click('#genPause');
   await pc.waitFor(`document.body.dataset.view==='paused'`,'一時停止');
