@@ -2305,6 +2305,7 @@ async function main() {
       }
 
       await quitAndCheck(host, 'notOwned');
+      const sessionSsids = new Set();
       for (const command of ['quit\n', '']) {
         const owned = startHost('off');
         try {
@@ -2316,6 +2317,12 @@ async function main() {
           })).json()).ok;
           const results = await Promise.all([start(), start()]);
           assert(results.every(Boolean) && await readState() === true, 'ホットスポットをONにできなかった');
+          const readSsid = async () => (await (await fetch(`${BASE}/api/info`)).json()).wifi?.ssid;
+          const ssid = await readSsid();
+          assert(/^ReCooplay-[a-f0-9]{12}$/.test(ssid), 'セッション用のSSIDを案内していない');
+          assert(!sessionSsids.has(ssid), '前回のセッションとSSIDが同じ');
+          sessionSsids.add(ssid);
+          assert(await start() && await readSsid() === ssid, '稼働中の再要求でSSIDが変わった');
           const phone = await join('hotspot-shutdown', { clientId: 'sim-client-hotspot-shutdown' });
           try {
             assert((await welcome(phone)).type === 'welcome', '終了通知を確認するスマホが参加できなかった');
