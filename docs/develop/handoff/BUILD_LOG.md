@@ -2421,3 +2421,8 @@
 - 参加トラブル案内と同じ `method="dialog"` を使い、接続案内の閉じるボタン専用のDOMリスナーを外した。WebView2の試験に閉じた後のフォーカス復帰を追加した。
 - Webの型検査とビルドは成功。手元で既存配布のexeと今回のWeb資産を組み合わせたWebView2試験では、参加画面のReact描画待ちでタイムアウトした。変更箇所のWebView2確認はCIの同一コミット配布物に残す。
 今回の追加確認では node scripts/sim/product-web-test.mjs が成功した。
+## 2026-11-14 — WebSocket送信間隔を計測用ホストで記録する（#426、Codex）
+
+- 計測用ホストで参加者へのWebSocket本文の送信完了間隔が3秒以上の場合に `ws_send_gap` をセッションJSONLへ記録する。枠、前回の成功からの間隔 `gapMs`、今回のソケット送信処理に要した `sendMs` を含む。通信・停止の閾値に変更はない。
+- Androidの `recooplay:ws-silence` と同じ試行で比較する。送信完了は受信側での到着を示さず、次の送信が成功しなかった場合の空白はこのログでは確定できない。実機での原因切り分けは未実施。
+- Windowsで `cargo clippy --release --offline --locked --all-targets --features latency-measure -- -D warnings`、Rust書式、差分検査が成功。
