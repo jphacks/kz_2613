@@ -2,8 +2,8 @@
 import {decodeServerMessage} from './protocol.ts';
 import type {ClientSignal,RtcSignal} from './messages.ts';
 import {createLifetime} from '../input/lifetime.ts';
-interface FastOptions {signal(message:ClientSignal):void;enabled():boolean;getPhase():string|undefined;onRtt(value:number):void;onPath(text:string):void}
-export function createFastChannel({signal,enabled,getPhase,onRtt,onPath}:FastOptions) {
+interface FastOptions {signal(message:ClientSignal):void;enabled():boolean;getPhase():string|undefined;onRtt(value:number):void;onPath(text:string):void;recentInputs?():readonly object[]}
+export function createFastChannel({signal,enabled,getPhase,onRtt,onPath,recentInputs}:FastOptions) {
   const lifetime = createLifetime();
   let pc: RTCPeerConnection | null = null, channel: RTCDataChannel | null = null;
   const isOpen = () => channel?.readyState === 'open';
@@ -56,8 +56,18 @@ export function createFastChannel({signal,enabled,getPhase,onRtt,onPath}:FastOpt
   function send(message: object) {
     const current = channel;
     if (current?.readyState !== 'open') return false;
-    try { current.send(JSON.stringify(message)); return true; } catch { return false; }
+    try {
+      const frame = JSON.stringify(message);
+      const limit = Math.min(pc?.sctp?.maxMessageSize || Infinity, 16 * 1024);
+      if (new TextEncoder().encode(frame).byteLength > limit) return false;
+      current.send(frame);
+      return true;
+    } catch { return false; }
   }
-  lifetime.interval(() => { if (getPhase() === 'coop' && enabled()) send({type:'ka',t:performance.now()}); },50);
+  lifetime.interval(() => {
+    if (!enabled() || !isOpen()) return;
+    const inputs = recentInputs?.() ?? [];
+    if (getPhase() === 'coop' || inputs.length) send({type:'ka',t:performance.now(),inputs});
+  },50);
   return {start,close,signal:receive,isOpen,send,dispose(){lifetime.dispose();close();}};
 }
