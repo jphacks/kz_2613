@@ -2340,6 +2340,12 @@
 - 合格：`npm --prefix apps/web run build`、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/verify_overlay.py`、`python scripts/check-public-docs.py`、変更したシミュレーションの構文検査、`git diff --check`。Node 22.15.0ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定した。
 - 初回参加・ゲーム選択・再選択を確認する通信試験を追加した。Rustホストの実行を伴う確認はGitHub CIで行い、Android・iPhoneでの表示は実機受入に残す。
 - 追試（#447）：選択IDと操作定義IDを別に照合し、キー設定はMinecraft選択後の通知を参照するようにした。CI run 43485721653 のホストで通信66/66、Chromeの画面検査（PC 800×560・スマホ390×844）23画面が合格。
+## 2026-11-14 — 分担の初期設定をモデルにする（Claude Code）
+
+- 利用者の判断：分担の案の初期設定を規則からモデルに切り替える（#474）。`RECOOPLAY_PRESETS=rule` でなければモデルの分担を使う（`profiles::model_presets_enabled`）。使われなくなった `preset_source()` は消した。規則に戻すときは `RECOOPLAY_PRESETS=rule`。
+- 検証済みのプリセットがあるゲームは `model_presets::needs_model` で対象外のまま。試験の `fixture()` は `presets_model` を明示しているので、既存の試験の前提は変わらない。
+- 版2の重み（約57MB）の読み込みで待ち受けの開始が遅れないよう、起動時に裏のスレッドで読み始める（`profiles::warm_model`）。読み終わる前に分担が要るときは、その処理だけが読み終わりを待つ。
+- 合わせて AGENTS.md・`game-profile-specification.md`・`scripts/preset-model/README.md`・配布物の説明（`package.ps1`）・判断の記録を直した。実機は未確認。
 ## 2026-11-14 — ロビーから分担操作を開始する（#440、Codex）
 
 - スマホの開始操作を「分担操作開始」に統合した。対象の前面、確定した分担と接続者、担当の確認、入力ドライバー、緊急停止の条件をホストで確認し、全解放とepoch更新を経て協力プレイへ進む。通信契約は版5。従来の準備経路は互換用に残した。
@@ -2440,6 +2446,11 @@
 - 参加トラブル案内と同じ `method="dialog"` を使い、接続案内の閉じるボタン専用のDOMリスナーを外した。WebView2の試験に閉じた後のフォーカス復帰を追加した。
 - Webの型検査とビルドは成功。手元で既存配布のexeと今回のWeb資産を組み合わせたWebView2試験では、参加画面のReact描画待ちでタイムアウトした。変更箇所のWebView2確認はCIの同一コミット配布物に残す。
 今回の追加確認では node scripts/sim/product-web-test.mjs が成功した。
+
+## 2026-11-14 — 分担の作り方の表記を「定型ルール／独自AI」にする（#475、Claude Code）
+
+- 利用者の判断：分担の画面の「規則」を「定型ルール」、「モデル（未検証）」を「独自AI」にする。ルールで割り当てることが、エンジニアでなくても分かる表記にする。各ボタンに説明の title を付けた。値（`rule`・`model`）と通信は変えていない。
+- 同じ判断で、分担の既定をモデルにすること（#474）も利用者が了承した。
 ## 2026-11-14 — WebSocket送信間隔を計測用ホストで記録する（#426、Codex）
 
 - 計測用ホストで参加者へのWebSocket本文の送信完了間隔が3秒以上の場合に `ws_send_gap` をセッションJSONLへ記録する。枠、前回の成功からの間隔 `gapMs`、今回のソケット送信処理に要した `sendMs` を含む。通信・停止の閾値に変更はない。

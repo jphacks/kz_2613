@@ -442,7 +442,7 @@ pub struct Hub {
     model_presets: crate::model_presets::Store,
     model_queue: std::collections::VecDeque<String>,
     model_timer: bool,
-    /// モデルの分担を使う設定 (RECOOPLAY_PRESETS=model で、重みを読めたとき)
+    /// モデルの分担を使う設定 (既定。RECOOPLAY_PRESETS=rule のときだけ false)。重みは起動時に裏で読む (#474)
     presets_model: bool,
     /// 裏のスレッドで作っているゲーム (1 本ずつ)
     model_busy: Option<String>,
@@ -588,7 +588,7 @@ impl Hub {
             ),
             model_queue: Default::default(),
             model_timer: false,
-            presets_model: profiles::preset_source() == "model",
+            presets_model: profiles::model_presets_enabled(),
             model_busy: None,
             model_inline: false,
             detected_path: crate::model_presets::detected_path(),

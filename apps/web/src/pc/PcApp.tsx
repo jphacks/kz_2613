@@ -77,8 +77,8 @@ function Workspace({model}:{model:PcModel}) {
       <button id="keyBindingsBtn" className="role-keys">このPCのキー設定を確認</button>
       <div id="presetChoice" className="preset-choice" role="group" aria-label="分担の作り方" hidden={model.preset.hidden}>
         <span>分担の作り方</span>
-        <button data-preset="rule" aria-pressed={model.preset.source === 'rule'} disabled={model.preset.disabled}>規則</button>
-        <button data-preset="model" aria-pressed={model.preset.source === 'model'} disabled={model.preset.disabled}>モデル（未検証）</button>
+        <button data-preset="rule" aria-pressed={model.preset.source === 'rule'} disabled={model.preset.disabled} title="操作の種類（移動・視点・行動など）ごとに、決まったルールで割り当てます">定型ルール</button>
+        <button data-preset="model" aria-pressed={model.preset.source === 'model'} disabled={model.preset.disabled} title="Re:Cooplay独自のAIが、操作の名前とキーから割り当てを考えます。実機での確認はまだです">独自AI</button>
         <button id="remakePresetBtn" disabled={model.preset.disabled}>割り当てを作り直す</button>
       </div>
     </section>
