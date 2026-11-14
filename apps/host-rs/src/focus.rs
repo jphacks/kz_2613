@@ -116,18 +116,39 @@ pub fn exists(target: &Target) -> bool {
     imp::find(target).is_some()
 }
 
+/// ゲームを終了した結果 (#547)
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CloseOutcome {
+    /// 対象のゲームのウィンドウがもうなかった
+    NotRunning,
+    /// 閉じる要求 (WM_CLOSE) で終了した
+    Closed,
+    /// 閉じる要求で終わらず、強制終了した
+    Terminated,
+}
+
+/// 選んだゲームを終了する (#547)。入力先と一致する本体のウィンドウを持つプロセスだけを対象にする。
+/// まず閉じる要求を送り、grace のあいだに終わらなければ、最初に照合したものと同じ実行ファイルのまま
+/// 動いているプロセスだけを強制終了する。対象を特定できなければ何も終了しない (推測で終了しない)
+pub fn close(target: &Target, grace: std::time::Duration) -> Result<CloseOutcome, String> {
+    imp::close(target, grace)
+}
+
 #[cfg(windows)]
 mod imp {
     use windows::core::{BOOL, PWSTR};
     use windows::Win32::Foundation::{CloseHandle, HWND, LPARAM};
+    use windows::Win32::Foundation::{HANDLE, WPARAM};
     use windows::Win32::System::Threading::{
-        AttachThreadInput, GetCurrentThreadId, OpenProcess, QueryFullProcessImageNameW,
-        PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
+        AttachThreadInput, GetCurrentThreadId, GetExitCodeProcess, OpenProcess,
+        QueryFullProcessImageNameW, TerminateProcess, PROCESS_NAME_WIN32,
+        PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
         BringWindowToTop, EnumWindows, GetForegroundWindow, GetWindow, GetWindowLongW,
-        GetWindowTextW, GetWindowThreadProcessId, IsIconic, IsWindowVisible, SetForegroundWindow,
-        ShowWindow, GWL_EXSTYLE, GW_OWNER, SW_RESTORE, WS_EX_TOOLWINDOW,
+        GetWindowTextW, GetWindowThreadProcessId, IsIconic, IsWindowVisible, PostMessageW,
+        SetForegroundWindow, ShowWindow, GWL_EXSTYLE, GW_OWNER, SW_RESTORE, WM_CLOSE,
+        WS_EX_TOOLWINDOW,
     };
 
     use super::Foreground;
@@ -263,12 +284,146 @@ mod imp {
         }
         Err("Windowsが前面化を許可しませんでした".into())
     }
+
+    // ---- ゲームの終了 (#547) ----
+
+    /// 対象と一致する本体のウィンドウと、そのプロセス (番号・実行ファイルの場所)
+    struct Matched {
+        hwnd: HWND,
+        pid: u32,
+        path: String,
+    }
+    struct All<'a> {
+        target: &'a super::Target,
+        found: Vec<Matched>,
+    }
+    unsafe extern "system" fn visit_all(hwnd: HWND, param: LPARAM) -> BOOL {
+        let all = unsafe { &mut *(param.0 as *mut All<'_>) };
+        if unsafe { IsWindowVisible(hwnd) }.as_bool() && is_main(hwnd) {
+            if let Some(f) = describe(hwnd).filter(|f| all.target.matches(f)) {
+                let mut pid = 0u32;
+                unsafe { GetWindowThreadProcessId(hwnd, Some(&mut pid)) };
+                if pid != 0 {
+                    all.found.push(Matched {
+                        hwnd,
+                        pid,
+                        path: f.path,
+                    });
+                }
+            }
+        }
+        BOOL(1)
+    }
+    fn find_all(target: &super::Target) -> Vec<Matched> {
+        let mut all = All {
+            target,
+            found: Vec::new(),
+        };
+        unsafe {
+            let _ = EnumWindows(Some(visit_all), LPARAM(&mut all as *mut _ as isize));
+        }
+        all.found
+    }
+
+    /// プロセスの実行ファイルの場所 (小文字)。終わっていれば None
+    fn running_path(pid: u32) -> Option<String> {
+        const STILL_ACTIVE: u32 = 259;
+        unsafe {
+            let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;
+            let mut code = 0u32;
+            let alive = GetExitCodeProcess(handle, &mut code).is_ok() && code == STILL_ACTIVE;
+            let path = alive.then(|| image_path(handle)).flatten();
+            let _ = CloseHandle(handle);
+            path
+        }
+    }
+    fn image_path(handle: HANDLE) -> Option<String> {
+        let mut path = [0u16; 1024];
+        let mut len = path.len() as u32;
+        unsafe {
+            QueryFullProcessImageNameW(
+                handle,
+                PROCESS_NAME_WIN32,
+                PWSTR(path.as_mut_ptr()),
+                &mut len,
+            )
+        }
+        .ok()?;
+        Some(String::from_utf16_lossy(&path[..len as usize]).to_lowercase())
+    }
+
+    /// 最初に照合したプロセスが、同じ実行ファイルのまま動いているもの
+    fn still_running(matched: &[(u32, String)]) -> Vec<u32> {
+        matched
+            .iter()
+            .filter(|(pid, path)| running_path(*pid).is_some_and(|now| now == *path))
+            .map(|(pid, _)| *pid)
+            .collect()
+    }
+
+    fn wait_exit(matched: &[(u32, String)], limit: std::time::Duration) -> bool {
+        let start = std::time::Instant::now();
+        loop {
+            if still_running(matched).is_empty() {
+                return true;
+            }
+            if start.elapsed() >= limit {
+                return false;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(200));
+        }
+    }
+
+    pub fn close(
+        target: &super::Target,
+        grace: std::time::Duration,
+    ) -> Result<super::CloseOutcome, String> {
+        let windows = find_all(target);
+        if windows.is_empty() {
+            return Ok(super::CloseOutcome::NotRunning);
+        }
+        let me = std::process::id();
+        let mut matched: Vec<(u32, String)> = windows
+            .iter()
+            .filter(|w| w.pid != me)
+            .map(|w| (w.pid, w.path.clone()))
+            .collect();
+        matched.sort();
+        matched.dedup();
+        if matched.is_empty() {
+            return Err("終了するゲームを特定できませんでした".into());
+        }
+        for w in windows.iter().filter(|w| w.pid != me) {
+            let _ = unsafe { PostMessageW(Some(w.hwnd), WM_CLOSE, WPARAM(0), LPARAM(0)) };
+        }
+        if wait_exit(&matched, grace) {
+            return Ok(super::CloseOutcome::Closed);
+        }
+        // 閉じる要求で終わらなければ、同じ実行ファイルのまま動いているプロセスだけを強制終了する
+        for pid in still_running(&matched) {
+            unsafe {
+                let handle = OpenProcess(PROCESS_TERMINATE, false, pid)
+                    .map_err(|_| "ゲームを終了する権限がありません".to_string())?;
+                let result = TerminateProcess(handle, 1);
+                let _ = CloseHandle(handle);
+                result.map_err(|_| "ゲームを強制終了できませんでした".to_string())?;
+            }
+        }
+        if wait_exit(&matched, std::time::Duration::from_secs(3)) {
+            Ok(super::CloseOutcome::Terminated)
+        } else {
+            Err("ゲームが終了しませんでした".into())
+        }
+    }
 }
 
 #[cfg(not(windows))]
 mod imp {
     pub fn activate(_: &super::Target) -> Result<(), String> {
         Err("Windows以外では前面化できません".into())
+    }
+    pub fn close(_: &super::Target, _: std::time::Duration) -> Result<super::CloseOutcome, String> {
+        Err("Windows以外ではゲームを終了できません".into())
     }
     pub fn find(_: &super::Target) -> Option<()> {
         None

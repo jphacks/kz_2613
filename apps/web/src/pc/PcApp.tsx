@@ -26,6 +26,7 @@ export function PcApp() {
 <ConnectionHelpDialog connection={connection}/>
 <JoinTroubleshootingDialog/>
 <ResetDialog/>
+<QuitGameDialog name={model.name}/>
 </>;
 }
 
@@ -58,6 +59,7 @@ function Sidebar({state,model,connection}:{state:PcState;model:PcModel;connectio
     </div>
   </div>
   <button className="open-game" id="openGameBtn" hidden={model.openGameHidden}>{model.name}を前面にする</button>
+  <button className="quit-game danger-action" id="quitGameBtn" hidden={model.quit.hidden} disabled={model.quit.disabled}>{model.quit.busy ? `${model.name}を終了しています…` : `${model.name}を終了する`}</button>
   <p className="action-note" id="actionNote" role="status">{model.actionNote}</p>
 </aside>;
 }
@@ -132,6 +134,19 @@ function RenameDialog() {
   <h2 id="renameTitle">名前を変更</h2>
   <form id="renameForm" method="dialog"><input id="renameInput" maxLength={60} aria-label="ゲームの名前" required />
   <p><button id="renameSave" value="save">保存</button><button id="renameCancel" type="button">キャンセル</button></p></form>
+</dialog>;
+}
+
+// ゲームの終了 (#547)。confirm() ではなく画面内の確認にする (#289)
+function QuitGameDialog({name}:{name:string}) {
+  return <dialog id="quitConfirm" aria-labelledby="quitTitle">
+  <h2 id="quitTitle">{name}を終了しますか？</h2>
+  <ul>
+    <li>ゲームを閉じます。閉じなければ強制終了します。<b>保存していない進行は失われることがあります。</b></li>
+    <li>押していたキーはすべて離し、分担は消えます。終了後はゲーム選択の画面に戻ります。</li>
+    <li>スマホの接続とRe:Cooplay・Wi-Fiはそのままです。</li>
+  </ul>
+  <p><button id="quitCancel" autoFocus>やめる</button><button id="quitConfirmBtn" className="danger-action">終了する</button></p>
 </dialog>;
 }
 

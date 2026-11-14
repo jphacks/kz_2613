@@ -89,9 +89,13 @@ export function pcModel(s: PcSnapshot) {
     next: {hidden: !stopped && !['join','roles'].includes(view), stopped, label: stopped ? '入力を再開する' : {join: 'OK', game: '', roles: roleAction.label, preparing: '', ready: '', coop: '', paused: ''}[view], disabled: !stopped && ((view === 'join' && !canAdvance) || (view === 'roles' && !!roleAction.disabled))},
     sub: {hidden: !(swapEntry || (view === 'roles' && roleAction.alt)), label: swapEntry ? '担当を入れ替える' : roleAction.alt?.label || '', disabled: !swapEntry && !!roleAction.alt?.disabled},
     blockedStart: view !== 'preparing' || stopped, readyInstruction: view !== 'ready' || stopped,
-    openGameHidden: !['preparing','ready','paused'].includes(view) || !game?.inputTarget,
+    // 協力プレイの終了後の分担画面 (ロビー) でも、起動中のゲームを前面にできる (#547・#556)
+    openGameHidden: !['roles','preparing','ready','paused'].includes(view) || !game?.title || !game?.inputTarget,
+    // 「ゲームを終了する」(#547)。ゲームを選んだあとの分担・準備・一時停止の画面に出す。協力プレイ中は出さない
+    quit: {hidden: !['roles','preparing','ready','paused'].includes(view) || !game?.title, disabled: !game?.quit?.can, busy: !!game?.quit?.busy, message: game?.quit?.message ?? ''},
     actionNote: view === 'roles' ? swapPick ? swapHint : (roleAction.note || (game?.lineupOk ? '' : swapHint)) : view === 'preparing' ? `${name}をプレイ中の画面まで進めてください。` : '',
-    notices: [lineupNotice, s.hostNotice, warning, networkNotice(state?.network, state?.slots), profileNotice(game?.profile)].filter(Boolean),
+    // ゲームの終了の結果 (#547)。終了後はゲーム選択の画面に移るので、画面の上のお知らせに出す
+    notices: [lineupNotice, game?.quit?.message ?? '', s.hostNotice, warning, networkNotice(state?.network, state?.slots), profileNotice(game?.profile)].filter(Boolean),
     comm: commSettingsView(game, s.infoPort),
     gameCards: list.map(g => gameCard(g, ui.game, game?.launch)),
     gamesCount: s.manualMessage || gamesCountText(list, !!state?.gamesScanning), scanning: !!state?.gamesScanning,

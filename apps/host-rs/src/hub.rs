@@ -130,6 +130,8 @@ pub enum Event {
     FakeLauncher(bool),
     /// インストール済みのゲームを探し終えた (別スレッドから)
     GamesDetected(games::Detected),
+    // ゲームの終了の結果 (#547)。終了は別スレッドで行う
+    GameQuit(Result<crate::focus::CloseOutcome, String>),
     /// 裏のスレッドで作ったモデルの分担 (#431)。(ゲームの定義の ID, 作った分担)
     ModelPresetMade(String, crate::model_presets::Stored, u64),
     /// 操作定義のないゲームのファイルから作った仮の定義と分担 (#431)。(ゲームの ID, 仮の定義, 分担, かかった時間)
@@ -417,6 +419,9 @@ pub struct Hub {
     games_scanning: bool,
     launch: Option<Launch>,
     launch_gen: u64,
+    // ゲームの終了中か、と最後の結果の案内 (#547)
+    quitting: bool,
+    quit_message: String,
     target_fg: Option<Foreground>,
     // PC アプリ以外のウィンドウ (ランチャー・ダイアログ等) が前面か (#287、#405)
     launcher_fg: bool,
@@ -579,6 +584,8 @@ impl Hub {
             games_scanning: false,
             launch: None,
             launch_gen: 0,
+            quitting: false,
+            quit_message: String::new(),
             target_fg: None,
             launcher_fg: false,
             launcher_raise: None,
@@ -1103,6 +1110,8 @@ impl Hub {
             // 入力が PC に届く状態か (注入モード・入力先のウィンドウ)。スマホに「届いていない」ことを知らせる
             "inputActive": self.can_inject(),
             "inputTarget": self.inject == InjectMode::On && !self.target_ok,
+            // ゲームの終了 (#547)。終了中か・PC アプリから終了できるか・最後の結果
+            "quit": { "busy": self.quitting, "can": self.can_quit_game(), "message": self.quit_message },
         })
     }
 
@@ -1492,7 +1501,7 @@ impl Hub {
             .then(|| "入力先が変わりました。前面を確認して、もう一度押してください".into());
         let accepted = allowed
             && match (cmd, self.game.phase) {
-                ("OPEN_GAME", Phase::Preparing | Phase::Paused) => {
+                ("OPEN_GAME", Phase::Lobby | Phase::Preparing | Phase::Paused) => {
                     self.game.prepare_status =
                         if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
                             "dry-run：実ウィンドウは操作しません".into()
@@ -2505,6 +2514,117 @@ impl Hub {
 
     fn game_name(&self) -> String {
         game_service::game_name(&self.games, &self.game.title)
+    }
+
+    /// 「ゲームを終了する」を受け付けられるか (#547)。協力プレイ中は先に一時停止・終了してから
+    fn can_quit_game(&self) -> bool {
+        !self.quitting && !self.game.title.is_empty() && self.game.phase != Phase::Coop
+    }
+
+    /// 選んだゲームを終了してゲーム選択へ戻す (#547)。PC アプリの操作だけで受け付ける。
+    /// 先に全員の入力を離してロビーへ戻し (参加者・ホスト・ネットワークは保つ)、終了は別スレッドで行う。
+    /// 対象のウィンドウを特定できなければ何も終了しない
+    fn quit_game(&mut self, title: Option<String>, epoch: Option<u64>) {
+        if !self.can_quit_game()
+            || epoch != Some(self.game.epoch)
+            || title.as_deref() != Some(self.game.title.as_str())
+        {
+            self.log("quit_game", json!({ "accepted": false }));
+            self.push_game();
+            return;
+        }
+        self.release_outputs(None);
+        self.reset_look();
+        self.game.host_ready = false;
+        self.game.auto_resume_until = 0;
+        if self.game.phase != Phase::Lobby {
+            self.set_phase(Phase::Lobby, "game quit");
+        } else {
+            self.advance_epoch();
+        }
+        self.quitting = true;
+        self.quit_message = format!("{}を終了しています…", self.game_name());
+        self.log(
+            "quit_game",
+            json!({ "accepted": true, "title": self.game.title }),
+        );
+        let tx = self.tx.clone();
+        if self.fake_target.is_some() {
+            // 試験 (疑似の入力先) では実際のプロセスに触れず、閉じた扱いにする
+            let _ = tx.send(Event::GameQuit(Ok(crate::focus::CloseOutcome::Closed)));
+        } else if dry_run() {
+            let _ = tx.send(Event::GameQuit(Err(
+                "dry-run：実際のゲームは終了しません".into()
+            )));
+        } else {
+            let service = self.game_service.clone();
+            let target = self.target.clone();
+            let spawned = std::thread::Builder::new()
+                .name("quit-game".into())
+                .spawn(move || {
+                    let _ = tx.send(Event::GameQuit(service.close(&target)));
+                });
+            if spawned.is_err() {
+                self.quitting = false;
+                self.quit_message =
+                    "ゲームを終了できませんでした。ゲームの画面から終了してください".into();
+            }
+        }
+        self.push_game();
+        self.push_state();
+    }
+
+    /// 終了の結果 (#547)。終わったら選択・分担を消してゲーム選択へ戻す。失敗したら選択を残し、手で終了する案内を出す
+    fn finish_quit_game(&mut self, result: Result<crate::focus::CloseOutcome, String>) {
+        use crate::focus::CloseOutcome;
+        if !self.quitting {
+            return;
+        }
+        self.quitting = false;
+        let name = self.game_name();
+        self.log(
+            "quit_game_result",
+            json!({ "ok": result.is_ok(), "outcome": format!("{:?}", result.as_ref().ok()) }),
+        );
+        match result {
+            Ok(outcome) => {
+                self.quit_message = match outcome {
+                    CloseOutcome::NotRunning => format!("{name}はすでに終了していました"),
+                    CloseOutcome::Closed => format!("{name}を終了しました"),
+                    CloseOutcome::Terminated => {
+                        format!("{name}が閉じなかったため、強制終了しました")
+                    }
+                };
+                self.clear_game_selection();
+            }
+            Err(reason) => {
+                self.quit_message = format!("{reason}。{name}の画面から終了してください");
+                self.push_game();
+                self.push_state();
+            }
+        }
+    }
+
+    /// 選んだゲームを外す (#547)。前のゲームの分担・決定・起動の見届け・入力先を残さない
+    fn clear_game_selection(&mut self) {
+        self.release_outputs(None);
+        self.reset_look();
+        self.game.title = String::new();
+        self.game.host_ready = false;
+        self.launch = None;
+        self.assigned.clear();
+        self.participants.clear();
+        self.lineup = None;
+        self.seats = [0, 1, 2, 3];
+        self.role_ack.clear();
+        self.reload_keybinds();
+        self.apply_target();
+        if self.game.phase != Phase::Lobby {
+            self.set_phase(Phase::Lobby, "game quit");
+        } else {
+            self.advance_epoch();
+            self.push_game();
+        }
     }
 
     fn select_title(&mut self, title: String) {
@@ -3871,6 +3991,7 @@ impl Hub {
                 }
             }
             Event::GamesDetected(list) => self.on_games_detected(list),
+            Event::GameQuit(result) => self.finish_quit_game(result),
             Event::ModelPresetMade(id, stored, ms) => self.finish_model_preset(id, stored, ms),
             Event::DetectedMade(id, d, stored, ms) => self.finish_detected(id, d, stored, ms),
             Event::ModelFailed(kind) => self.model_failed(kind),
@@ -4045,6 +4166,11 @@ impl Hub {
                 if let Some(id) = s(msg, "id") {
                     self.launch_game(&id);
                 }
+            }
+            // PC アプリの「ゲームを終了する」(#547)。画面内の確認のあと、見ていた epoch とゲームを添えて送る
+            "quit_game" if matches!(page, Page::App | Page::Host) => {
+                let epoch = msg.get("epoch").and_then(Value::as_u64);
+                self.quit_game(s(msg, "title"), epoch);
             }
             "rotation" => {
                 let secs = msg.get("seconds").and_then(Value::as_u64).unwrap_or(0);
@@ -5030,6 +5156,8 @@ mod tests {
             games_scanning: false,
             launch: None,
             launch_gen: 0,
+            quitting: false,
+            quit_message: String::new(),
             target_fg: None,
             launcher_fg: false,
             launcher_raise: None,
@@ -6520,6 +6648,48 @@ mod tests {
         h.confirm_lineup(Some(h.game.title.clone()), members, Some(h.game.epoch));
         assert!(h.can_prepare());
         assert_eq!(h.game_snapshot()["lineupDisconnected"], json!([]));
+    }
+
+    #[test]
+    fn quitting_the_game_returns_to_game_selection_only_for_a_valid_request() {
+        use crate::focus::CloseOutcome;
+        let mut h = lobby_with(&[(0, true), (1, true)], 1_000);
+        h.confirm_lineup(
+            Some(h.game.title.clone()),
+            vec!["P1".into(), "P2".into()],
+            Some(h.game.epoch),
+        );
+        let title = h.game.title.clone();
+        // 古い epoch・違うゲーム・協力プレイ中は受け付けない
+        h.quit_game(Some(title.clone()), Some(h.game.epoch - 1));
+        h.quit_game(Some("other".into()), Some(h.game.epoch));
+        h.game.phase = Phase::Coop;
+        h.quit_game(Some(title.clone()), Some(h.game.epoch));
+        assert!(!h.quitting && h.lineup.is_some());
+        h.game.phase = Phase::Lobby;
+        let epoch = h.game.epoch;
+        h.quit_game(Some(title.clone()), Some(epoch));
+        assert!(
+            h.quitting && h.game.epoch > epoch,
+            "終了の前に全解放して epoch を進める"
+        );
+        assert!(!h.can_quit_game(), "終了中は重ねて受け付けない");
+        // 終了できなければ選択を残し、手で終了する案内を出す
+        h.finish_quit_game(Err("ゲームが終了しませんでした".into()));
+        assert!(!h.quitting);
+        assert_eq!(h.game.title, title);
+        assert!(h.quit_message.contains("画面から終了"));
+        // 終了したら、選択・分担・決定を消してゲーム選択へ戻る。参加者はそのまま
+        h.quit_game(Some(title.clone()), Some(h.game.epoch));
+        h.finish_quit_game(Ok(CloseOutcome::Terminated));
+        assert!(h.game.title.is_empty() && h.lineup.is_none() && h.assigned.is_empty());
+        assert!(h.quit_message.contains("強制終了"));
+        assert!(h.slots[0].is_some() && h.slots[1].is_some());
+        assert!(h.game.phase == Phase::Lobby);
+        // 遅れて届いた結果は、終了中でなければ無視する
+        h.select_title(title.clone());
+        h.finish_quit_game(Ok(CloseOutcome::Closed));
+        assert_eq!(h.game.title, title);
     }
 
     #[test]

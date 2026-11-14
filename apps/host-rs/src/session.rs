@@ -184,7 +184,8 @@ pub(crate) fn command_allowed(
             "READY" => can_ready(phase, ready),
             "RESUME" => phase == Phase::Paused && resume,
             "PAUSE" => matches!(phase, Phase::Coop | Phase::Paused),
-            "OPEN_GAME" => matches!(phase, Phase::Preparing | Phase::Paused),
+            // ロビー (協力プレイの終了後の分担画面) でも、起動中のゲームを前面にできる (#547・#556)
+            "OPEN_GAME" => matches!(phase, Phase::Lobby | Phase::Preparing | Phase::Paused),
             "OPEN_APP" => phase != Phase::Coop,
             "END" => phase != Phase::Lobby,
             _ => false,
@@ -461,7 +462,10 @@ mod tests {
     #[test]
     fn commands_require_the_host_and_the_existing_phase_for_every_transition() {
         let cases = [
-            (Phase::Lobby, vec!["PREPARE", "READY", "OPEN_APP"]),
+            (
+                Phase::Lobby,
+                vec!["PREPARE", "READY", "OPEN_GAME", "OPEN_APP"],
+            ),
             (
                 Phase::Preparing,
                 vec!["READY", "OPEN_GAME", "OPEN_APP", "END"],

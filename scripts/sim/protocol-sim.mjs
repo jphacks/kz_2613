@@ -2035,6 +2035,48 @@ async function main() {
       for (const x of [host, old, b]) x.close();
     });
 
+    await check('ゲームの終了: PC アプリの操作だけで、全解放してゲームを終了し、参加者を保ったままゲーム選択へ戻る (#547)', async () => {
+      const resetFrom = mon.mark();
+      mon.send({ type: 'reset' });
+      await mon.waitFor(m => m.type === 'game' && m.game.phase === 'lobby' && m.game.connected.length === 0,
+        { from: resetFrom, what: '終了の試験前リセット' });
+      mon.send({ type: 'select_game', title: 'minecraft-java' });
+      const id = (n) => ({ clientId: `sim-quit-${n}` });
+      const a = await join('Q1', id(1)); await welcome(a);
+      const b = await join('Q2', id(2)); await welcome(b);
+      const { game } = await a.waitFor(m => m.type === 'game' && m.game.title === 'minecraft-java'
+        && m.game.connected.join(',') === 'P1,P2', { what: '2枠' });
+      await confirmLineup(mon, a, game);
+      a.send({ type: 'command', cmd: 'READY' });
+      const coop = await phaseIs(a, 'coop', 0);
+      assert(coop.game.quit && coop.game.quit.can === false, '協力プレイ中に終了できる');
+      // 協力プレイ中・古い epoch・違うゲームの要求は受け付けない
+      mon.send({ type: 'quit_game', title: 'minecraft-java', epoch: coop.game.epoch });
+      await sleep(150);
+      const latest = () => [...a.msgs].reverse().find((m) => m.type === 'game').game;
+      assert(latest().phase === 'coop' && latest().title === 'minecraft-java', '協力プレイ中に終了した');
+      let from = a.mark();
+      a.send({ type: 'command', cmd: 'END' });
+      const lobby = await phaseIs(a, 'lobby', from);
+      assert(lobby.game.quit.can === true, JSON.stringify(lobby.game.quit));
+      mon.send({ type: 'quit_game', title: 'minecraft-java', epoch: lobby.game.epoch - 1 });
+      mon.send({ type: 'quit_game', title: 'pseudo-game', epoch: lobby.game.epoch });
+      await sleep(150);
+      assert(latest().title === 'minecraft-java', '古い・違う要求で終了した');
+      // スマホからは終了できない
+      a.send({ type: 'quit_game', title: 'minecraft-java', epoch: latest().epoch });
+      await sleep(150);
+      assert(latest().title === 'minecraft-java', 'スマホから終了した');
+      from = a.mark();
+      mon.send({ type: 'quit_game', title: 'minecraft-java', epoch: latest().epoch });
+      const done = await a.waitFor(m => m.type === 'game' && m.game.title === '' && !m.game.quit.busy, { from, what: 'ゲーム選択へ戻る' });
+      assert(done.game.phase === 'lobby' && done.game.lineup === null && !done.game.lineupOk, JSON.stringify({ phase: done.game.phase }));
+      assert(done.game.connected.join(',') === 'P1,P2', '参加者を切断した');
+      assert(/終了しました/.test(done.game.quit.message), done.game.quit.message);
+      assert(!done.game.canReady, 'ゲームがないのに開始できる');
+      for (const x of [a, b]) x.close();
+    });
+
     await check('人数の変更: 一時停止中にPC画面から今の接続で分担し直し、全員の確認と明示の再開を求める (#162)', async () => {
       const resetFrom = mon.mark();
       mon.send({ type: 'reset' });
