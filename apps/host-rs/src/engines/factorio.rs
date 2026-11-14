@@ -81,6 +81,18 @@ pub fn actions_from_config(ini: &str) -> Vec<ReadAction> {
         .collect()
 }
 
+/// 利用者のキー設定のファイル (#524)
+pub fn user_config(dir: &Path) -> Option<std::path::PathBuf> {
+    child_ci(dir, "bin")
+        .and_then(|b| child_ci(&b, "x64"))
+        .and_then(|x| child_ci(&x, "factorio.exe"))?;
+    let p = crate::keybinds::expand("%APPDATA%")?
+        .join("Factorio")
+        .join("config")
+        .join("config.ini");
+    p.is_file().then_some(p)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

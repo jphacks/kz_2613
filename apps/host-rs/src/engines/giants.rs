@@ -11,6 +11,17 @@ use crate::game_actions::ReadAction;
 const LIMIT: usize = 40;
 
 pub fn read(dir: &Path) -> Option<(Vec<ReadAction>, &'static str)> {
+    let text = read_text(&user_config_path(dir)?)?;
+    let a = actions_from_bindings(&text);
+    (!a.is_empty()).then_some((a, "GIANTS Engine の inputBinding.xml"))
+}
+
+/// 利用者のキー設定のファイル (#524)
+pub fn user_config(dir: &Path) -> Option<std::path::PathBuf> {
+    user_config_path(dir).filter(|p| p.is_file())
+}
+
+fn user_config_path(dir: &Path) -> Option<std::path::PathBuf> {
     let year = ["2025", "2022", "2019"].into_iter().find(|y| {
         let exe = format!("FarmingSimulator{y}.exe");
         child_ci(dir, &exe).is_some()
@@ -19,14 +30,11 @@ pub fn read(dir: &Path) -> Option<(Vec<ReadAction>, &'static str)> {
                 .is_some()
     })?;
     let docs = crate::keybinds::expand("%DOCUMENTS%")?;
-    let text = read_text(
-        &docs
-            .join("My Games")
+    Some(
+        docs.join("My Games")
             .join(format!("FarmingSimulator{year}"))
             .join("inputBinding.xml"),
-    )?;
-    let a = actions_from_bindings(&text);
-    (!a.is_empty()).then_some((a, "GIANTS Engine の inputBinding.xml"))
+    )
 }
 
 fn attr(tag: &str, name: &str) -> Option<String> {
