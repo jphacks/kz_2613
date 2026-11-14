@@ -5163,6 +5163,46 @@ mod tests {
     }
 
     #[test]
+    fn fast_redundancy_rejects_old_presses_after_stall_and_epoch_change() {
+        use crate::freshness::mono_ms;
+        let (mut h, _rx) = fixture();
+        h.keybinds = Keybinds::build(h.profile.as_ref().unwrap(), None);
+        let now = mono_ms();
+        let phone_now = now + 10_000.0;
+        h.slots[0]
+            .as_mut()
+            .unwrap()
+            .clock
+            .observe(now, Some(phone_now));
+        let epoch = h.game.epoch;
+        let input = |iseq, epoch, t| {
+            json!({
+                "type":"input","iseq":iseq,"epoch":epoch,"button":"act:forward","state":"down","t":t
+            })
+        };
+        h.handle_fast_message(
+            0,
+            json!({
+                "type":"ka","t":phone_now,"inputs":[input(1, epoch, phone_now - 2_000.0)]
+            }),
+            None,
+        );
+        assert_eq!(h.slots[0].as_ref().unwrap().stale_downs, 1);
+        h.advance_epoch();
+        h.handle_fast_message(
+            0,
+            json!({
+                "type":"ka","t":phone_now,"inputs":[input(2, epoch, phone_now)]
+            }),
+            None,
+        );
+        let slot = h.slots[0].as_ref().unwrap();
+        assert_eq!(slot.next_iseq, 3);
+        assert!(slot.pressed.is_empty());
+        assert!(!h.outputs[index("KEY_W")].physical);
+    }
+
+    #[test]
     fn late_own_release_keeps_a_press_that_overtook_it_and_releases_older_ones() {
         // P2 (レビュー指摘): 新しいタッチの押下 (RTC) が、それより前に送った解放要求 (WS) を追い越しても消さない
         let (mut h, _rx) = fixture();
