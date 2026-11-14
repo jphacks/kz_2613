@@ -55,10 +55,11 @@ async function targets() {
   } catch {return [];}
 }
 let sequence=0;
+class CdpTimeout extends Error {}
 function call(method,params={}) {
   return new Promise((resolve,reject) => {
     const id=++sequence;
-    const timer=setTimeout(()=>{socket.removeEventListener('message',receive);reject(Error('CDP応答なし'));},3000);
+    const timer=setTimeout(()=>{socket.removeEventListener('message',receive);reject(new CdpTimeout(`CDP応答なし: ${method} (${params.expression ?? ''})`));},3000);
     function receive(event) {
       const message=JSON.parse(event.data);
       if(message.id!==id)return;
@@ -112,8 +113,21 @@ try {
   console.log(`WebView2の参加画面を確認 (${Math.round(performance.now()-started)}ms)`);
   socket=new WebSocket(main.webSocketDebuggerUrl);
   await until(()=>socket.readyState===WebSocket.OPEN,'WebView2のCDPへ接続できません');
-  await until(()=>evaluate("document.body.dataset.view==='join' && !!document.querySelector('#nextBtn')"),
-    '参加画面のReact描画が完了しません');
+  let initialCdpTimeout;
+  try {
+    await until(async()=>{
+      try {
+        return await evaluate("document.body.dataset.view==='join' && !!document.querySelector('#nextBtn')");
+      } catch (error) {
+        if (!(error instanceof CdpTimeout) || socket.readyState !== WebSocket.OPEN) throw error;
+        initialCdpTimeout = error;
+        return false;
+      }
+    }, '参加画面のReact描画が完了しません');
+  } catch (error) {
+    throw new Error(initialCdpTimeout ? `${error.message} / ${initialCdpTimeout.message}` : error.message, {cause: error});
+  }
+  console.log('参加画面のReact描画を確認');
   // 待ち受けのソケットは、Windowsの一覧（Get-NetTCPConnection・netstat）に出ないことがあるため、
   // PCアプリが起動した子プロセスとしてホストを特定する
   const hostId=Number(powershell('-Command',
@@ -144,6 +158,12 @@ try {
     '参加の案内が開きません');
   await evaluate("document.querySelector('#closeJoinTroubleshooting').click()");
   await until(()=>evaluate("!document.querySelector('#joinTroubleshooting').open"), '参加の案内が閉じません');
+  await evaluate("document.querySelector('#connectionHelpBtn').focus(); document.querySelector('#connectionHelpBtn').click()");
+  await until(()=>evaluate("document.querySelector('#connectionHelp').open"), '接続案内が開きません');
+  await evaluate("document.querySelector('#closeConnectionHelp').click()");
+  await until(()=>evaluate("!document.querySelector('#connectionHelp').open && document.activeElement?.id==='connectionHelpBtn'"),
+    '接続案内を閉じた後に起点へフォーカスが戻りません');
+  console.log('接続案内を閉じた後のフォーカス復帰を確認');
   await evaluate("document.querySelector('#settingsBtn').click()");
   await until(()=>evaluate("document.querySelector('#settings').open && !document.querySelector('#desktopOverlaySetting')?.disabled && !!document.querySelector('#desktopOverlaySetting')"),
     'デスクトップの設定が開きません');
