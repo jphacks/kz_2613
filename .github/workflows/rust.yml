@@ -360,6 +360,8 @@ jobs:
   cargo-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      CARGO_AUDIT_VERSION: '0.22.1'
     strategy:
       fail-fast: false
       matrix:
@@ -376,9 +378,17 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           rustc --version
           cargo --version
+      - name: RustSecの監査ツールを復元する
+        id: audit-tool-cache
+        uses: actions/cache@v4
+        timeout-minutes: 2
+        with:
+          path: ~/.cargo/bin/cargo-audit
+          key: cargo-audit-bin-${{ runner.os }}-${{ runner.arch }}-${{ env.CARGO_AUDIT_VERSION }}-${{ hashFiles('rust-toolchain.toml') }}
       - name: RustSecの監査ツールを用意する
+        if: steps.audit-tool-cache.outputs.cache-hit != 'true'
         timeout-minutes: 20
-        run: cargo install --locked --version 0.22.1 cargo-audit
+        run: cargo install --locked --version "=$CARGO_AUDIT_VERSION" cargo-audit
       - name: 使用したツールの版を表示する
         timeout-minutes: 1
         run: cargo audit --version

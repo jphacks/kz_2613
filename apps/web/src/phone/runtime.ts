@@ -166,10 +166,24 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   }
 
   // サーバーから 3 秒何も届かなければ、OS が切断に気づくのを待たずに張り直す (Wi-Fi が一瞬止まった時の復帰を早める)
+  let previousWatchdogTick = performance.now();
   lifetime.interval(() => {
+    const now = performance.now();
+    const watchdogIntervalMs = now - previousWatchdogTick;
+    previousWatchdogTick = now;
     // 切断が3秒続いたら、押しても届かない操作を画面全体で覆う (#302)。再接続は続ける
     if (lostAt !== null) phoneView.offline(!session.stopped && performance.now() - lostAt >= OFFLINE_NOTICE_MS);
     if (!session.silent()) return;
+    if (measureLatency) {
+      console.info('recooplay:ws-silence', JSON.stringify({
+        atMs: Math.round(now),
+        silenceMs: Math.round(session.serverSilenceMs()),
+        watchdogIntervalMs: Math.round(watchdogIntervalMs),
+        phase: session.game?.phase,
+        hidden: document.hidden,
+        rtcOpen: fast.isOpen(),
+      }));
+    }
     const old = session.detach();
     try { old?.close(); } catch {}
     onDisconnected(1006);
@@ -306,12 +320,28 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
     if(!control)throw new Error('Control ID is missing');
     const binding=createLifetime();
     binding.listen(el, 'pointerdown', (e) => {
+      const handlerAt = measureLatency ? performance.now() : 0;
       e.preventDefault();
       el.setPointerCapture?.(e.pointerId);
       if (held.has(e.pointerId)) return;
       held.set(e.pointerId, {element:el,control});
       el.classList.add('down');
+      const previousIseq = lastIseq;
       ctlDown(control, e.timeStamp, e.pointerId);
+      if (measureLatency && previousIseq !== lastIseq) {
+        const eventAt = touchAt.get(lastIseq);
+        const sendAt = pending.get(lastIseq);
+        if (eventAt != null && sendAt != null && sendAt - eventAt > 150) {
+          console.info('recooplay:pointer-delay', JSON.stringify({
+            iseq: lastIseq,
+            atMs: handlerAt,
+            eventToHandlerMs: handlerAt - eventAt,
+            handlerToSendMs: sendAt - handlerAt,
+            trusted: e.isTrusted,
+            hidden: document.hidden,
+          }));
+        }
+      }
     });
     binding.listen(el, 'pointerup', (e) => releasePointer(e.pointerId));
     binding.listen(el, 'pointercancel', (e) => releasePointer(e.pointerId));

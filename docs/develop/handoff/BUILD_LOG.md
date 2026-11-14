@@ -2345,3 +2345,46 @@
 - 既存のdry-run計測時に、送信結果と上限超過の有無を接続番号付きで出力する。計測スクリプトは成功・失敗の双方でこの情報を保存し、失敗時にもホストに正常終了を要求する。
 - Windowsの `cargo build --release --locked --offline --manifest-path apps/host-rs/Cargo.toml`、`node --check scripts/sim/runtime-measure.mjs`、`git diff --check` が成功。新しいホストのSHA-256は `6ea869f4afd7b0d2bb055918686002e8554835bc1100251ad5c7ccae373e20a6`。
 - `runtime-measure.mjs --players 2 --cases normal,slow-monitor --duration-ms 5000` は2/2合格。 `--players 4 --cases slow-monitor --duration-ms 60000` は停止通知の待機で失敗した。読取り継続側は送信成功かつ上限超過で切断され、ホストログにはキー解放が残った。通知配送の改善と実Wi-Fi受入は未実施。
+## 2026-11-14 — 別ホストへの参加を通信回帰で検証する（#452、Codex）
+
+- 2台目のdry-runホストをOS割当ポートで起動し、元ホストの参加情報で新規参加できることと、元ホストで元の枠に再接続できることを確認する。既存の不一致トークン拒否も引き続き実行する。
+- PR #456のWindowsホストを使った `node --experimental-strip-types scripts/sim/protocol-sim.mjs --bin <exe>` は66/66合格。Webビルド、スクリプト構文、差分検査も成功。実スマホのWi-Fi切替・旧タブは未検証。
+
+## 2026-11-14 — キー割当を初期値に戻す（#438、Codex）
+
+- ゲーム自身のキー設定を反映した初期値と比較し、一致する場合はRe:Cooplayの上書きを削除する。操作を送らない設定も同じ規則で扱う。
+- 通信シミュレーションに、個別に戻したときの変更済み表示と保存ファイルの確認を追加した。構文検査、Rustの整形、差分検査を実施。Rustホストでの実行はCIで確認する。
+## 2026-11-14 — PCのキー割当リセットを型付き操作に接続する（#278、Codex）
+
+- PCの「このゲームのキーを初期値に戻す」ボタンから、型付きの `settingsActions.resetKeys` を経由して既存の `reset_keys` を送る。従来の無効化条件とホストの認可・全解放処理を維持する。
+- Webビルドと `node scripts/sim/product-web-test.mjs` が合格。Node 22でTypeScriptを直接読むため `NODE_OPTIONS=--experimental-strip-types` を指定。Tauriでのマウス・仮想カーソルの押下は未確認。
+## 2026-11-14 — ボタン押下の遅延区間を分ける（#437、Codex）
+
+- 計測用Webビルドで、ボタンのイベント時刻から送信までが150msを超えた場合に、ハンドラー入口までと入口から送信までを分けて `recooplay:pointer-delay` としてコンソールへ記録する。入力連番でホスト側の計測と照合できる。
+- 計測版・通常版のWebビルドに合格し、計測版だけに診断文字列があることを確認した。スマホ入力ライフサイクル試験34/34と差分検査が合格。iPhone実指での外れ値の再現とSafariタイムラインとの照合が残る。
+## 2026-11-14 — WebSocket無応答時の受信・タイマー間隔を記録する（#426、Codex）
+
+- 計測用Webビルドで、無応答による張り直し直前に `recooplay:ws-silence` をブラウザーのコンソールへ1件記録する。最後のWS受信からの時間、監視タイマーの実間隔、進行状態、ページの可視性、RTCの開閉を記録する。3秒判定と切断時の停止・全解放は従来どおり。
+- `npm --prefix apps/web run build:latency` と通常の `build` に合格し、診断文字列が計測用にだけ含まれることを確認した。`node scripts/sim/phone-lifecycle-test.mjs` 34/34 と `git diff --check` が合格。
+- Androidの次回測定ではコンソールを保存し、同じ再接続の前後でホストの送信記録と照合する。今回の変更で実Wi-Fiの原因は確定していない。
+## 2026-11-14 — 速達経路の実Wi-Fi比較で押下遅延を集計する（#451、Codex）
+
+- `python scripts/device/summarize-press-latency.py <変更前のsession.jsonl> <変更後のsession.jsonl>` で参加枠別の計測成立数、遅延破棄数、平均・中央値・p95・p99・最大を出力する。各ファイルは同一端末・同一Wi-Fi・同じ操作手順で採取する。端末とホストの値がそろった押下だけが分布に入り、合計時間は片道を往復の半分とする推定値。遅延破棄数のほかに入力試行数は別途記録する。
+- 模擬JSONLで統計、遅延破棄だけがある参加枠、解放・別の破棄理由の除外、計測値なし・不正値の拒否を確認。実端末での比較は未実施。
+
+## 2026-11-14 — 開発・検証スクリプトの用途を整理する（#256、Codex）
+
+- 最新mainの参照とCIを照合して、手動ツールとCIの用途を `scripts/README.md` に記録した。旧プレビューの補助で、現行コードから参照されない `mini-ws.mjs` を削除した。Tauriの起動画面とホスト配信用の素材は、各々で使うため同梱を維持する。
+- `python scripts/check-public-docs.py`、`node scripts/sim/verify-ui-evidence.mjs`（104画面）、`python scripts/verify_overlay.py`、`git diff --check` が合格。
+## 2026-11-14 — 通信版の更新とキャッシュの受入手順（#272、Codex）
+
+- Rust・Web・補助スクリプトの版更新、同一コミットの配布、旧タブからの再接続と再読み込みの受入手順を通信仕様書に追加した。
+- `python scripts/check-public-docs.py`、`python scripts/verify_overlay.py`、`git diff --check` が合格。型契約の正本・CIでの型差分検査と、Android・iPhoneでの実機受入は残る。
+## 2026-11-14 — CIと実機受入の検証範囲を整理する（#379、Codex）
+
+- CIの資料に配布ジョブのWebView2試験を明記し、認可、全解放、入力先の制限、導入でCIと実機が確認する範囲を記録した。
+- `python scripts/check-public-docs.py`、`python scripts/verify_overlay.py`、`git diff --check` が合格。
+## 2026-11-14 — RustSec監査ツールのビルドを再利用する（#379、Codex）
+
+- cargo-auditの実行ファイルだけをOS・アーキテクチャ・ツール版・Rust版でキャッシュする。キャッシュがなければ固定版を従来どおりソースからビルドする。両クレートの必須監査では毎回RustSecのデータベースを更新する。
+- ワークフローのYAML構造、両クレートの監査コマンド、構造検査、差分検査を確認した。CIでのキャッシュ復元と実行時間は未測定。
