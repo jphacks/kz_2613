@@ -499,5 +499,27 @@ if (process.argv.includes('--repro-shared-pointer')) {
     assert(!h.el('phoneConfirm').open);
     assert.deepEqual(transfers().map(({ to, epoch }) => ({ to, epoch })), [{ to: 'P2', epoch: 19 }]);
   });
+  await test('参加者の退出 (#546): ロビーでホスト以外だけが確認して送り、4010 では再接続せず再読み込みを案内する', async () => {
+    const lobby = { phase: 'lobby', connected: ['P1', 'P2'] };
+    // ホストは退出できない (来場者だけが交代する)
+    const host = controllerHarness(); await host.ready(lobby);
+    host.leaveRoom(); assert.equal(host.el('phoneConfirm').open, false);
+    host.dispose();
+    const h = controllerHarness(); await h.ready(lobby, { slot: 'P2', isHost: false, role: '参加者' });
+    const leaves = () => h.messages().filter(message => message.type === 'leave');
+    h.leaveRoom(); assert(h.el('phoneConfirm').open); assert.equal(leaves().length, 0, '確認するまで送らない');
+    h.answerConfirm(false); assert.equal(leaves().length, 0);
+    // 協力プレイが始まったら確認を閉じ、送らない
+    h.leaveRoom(); h.sockets[0].receive({ type: 'game', game: h.game({ phase: 'coop', connected: ['P1', 'P2'], epoch: 9 }) });
+    assert.equal(h.el('phoneConfirm').open, false); h.answerConfirm(true); assert.equal(leaves().length, 0);
+    h.sockets[0].receive({ type: 'game', game: h.game({ ...lobby, epoch: 10 }) });
+    h.leaveRoom(); h.answerConfirm(true); assert.equal(leaves().length, 1);
+    h.sockets[0].close(4010); h.advance(10000);
+    assert.equal(h.sockets.length, 1, '空けた枠へ再接続しない'); assert(h.peers[0].closed);
+    assert.equal(h.el('full').style.display, 'flex'); assert.match(h.el('fullMessage').textContent, /退出しました.*再読み込み/);
+    assert.match(h.el('fullMessage').textContent, /Wi-Fi設定で普段使うネットワークに戻/);
+    assert.equal(h.el('status').textContent, '退出しました');
+    h.dispose();
+  });
   console.log(`${passed}/${passed} 合格（スマホ入力ライフサイクル、複数保持元の回帰を含む、OS入力なし）`);
 }
