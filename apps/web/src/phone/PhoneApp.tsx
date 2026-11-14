@@ -94,7 +94,6 @@ function HostRemoteScreen({state}:{state:PhoneDisplay}) {
       </div>
       <div className="wheel-pair"><button className="key" data-ctl="REMOTE_WHEEL_UP" aria-label="ホイール上">ホイール<Icon name="arrow-up" /></button><button className="key" data-ctl="REMOTE_WHEEL_DOWN" aria-label="ホイール下">ホイール<Icon name="arrow-down" /></button></div>
     </div>
-    <div id="remoteRoute" className={`note${state.remote.routeBlocked ? ' route-blocked' : ''}`} role="status">{state.remote.route}</div>
     <div className="host-actions">
       <button className="cmd" id="startBtn" disabled={state.remote.startDisabled}>{state.remote.startLabel}</button>
       <div className="host-sub">

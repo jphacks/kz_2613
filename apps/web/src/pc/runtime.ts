@@ -49,6 +49,7 @@ function openSettings(showKeys: boolean) {
   else $('settingsTitle').focus();
 }
 lifetime.listen($('settingsBtn'), 'click',()=>openSettings(false));
+lifetime.listen($('profileNoticeBtn'), 'click',()=>openDialog($<HTMLDialogElement>('profileNoticeDialog')));
 lifetime.listen($('keyBindingsBtn'), 'click',()=>openSettings(true));
 // 分担の作り方 (#432)。規則とモデルの分担を切り替え、モデルの分担を作り直す。可否はホストが判定する (ロビーで決める前だけ)
 lifetime.listen($('remakePresetBtn'), 'click',()=>send({type:'remake_preset'}));
@@ -202,6 +203,9 @@ function render(){
   if(swapPick&&!shownSlots(game).includes(swapPick))swapPick=null;
   renderView({ui,state,game,inject,online,swapPick,hostNotice,infoPort,manualMessage,keyMessage});
   const view=desktopView(ui,game);document.body.dataset.view=view;document.body.dataset.phase=game?.phase||'lobby';
+  if ($('profileNoticeBtn').hidden && $<HTMLDialogElement>('profileNoticeDialog').open) {
+    $<HTMLDialogElement>('profileNoticeDialog').close();
+  }
   const selected=document.querySelector<HTMLElement>('.game-choice.selected');
   if(shownGame!==ui.game){const first=shownGame==='';shownGame=ui.game;if(!first)fx(selected);selected?.scrollIntoView({block:'nearest'});}
   playEffects(view);
