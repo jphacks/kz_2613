@@ -82,6 +82,11 @@ Steam・Epic Gamesの検出情報はゲーム選択と入力先の判定に用�
 | WOLF RPG エディター | 種類だけを見分け、エンジン固定の既定のキー（#488） | 既定 |
 | Source 2 | Steam の`userdata/<アカウント>/<AppID>/local/cfg/`の`.vcfg`（#487） | 利用者の設定 |
 | Creation Engine（Skyrim SE・Fallout 4・Starfield） | `Documents\My Games\<ゲーム>\ControlMap_Custom.txt`。ない場合は Skyrim だけ既定の割当（#486） | 利用者の設定 |
+| REDengine（Cyberpunk 2077・The Witcher 3） | Cyberpunk 2077 は`r6/config/inputUserMappings.xml`、The Witcher 3 は`Documents\The Witcher 3\input.settings`の遊びの節（#505） | あり |
+| Prism3D（Euro Truck Simulator 2・American Truck Simulator） | プロファイルの`controls.sii`の`mix`の行（暗号化されたものは読まない、#506） | 利用者の設定 |
+| GIANTS Engine（Farming Simulator） | `Documents\My Games\FarmingSimulator20xx\inputBinding.xml`。歩き・運転などを先に40件まで（#507） | 利用者の設定 |
+| Factorio | `%APPDATA%\Factorio\config\config.ini`の`[controls]`。書かれていない操作は既定のキー（#508） | あり |
+| Project Zomboid | `%USERPROFILE%\Zomboid\Lua\keys.ini`（DirectInput と GLFW のキーコードを見分ける、#509） | 利用者の設定 |
 | Godot 3・4 | PCK（独立した`.pck`か exe の末尾）の`project.binary`の InputMap。組み込みの`ui_*`は出さない（#485） | あり |
 | Unreal Engine 4・5 | pak の中の`DefaultInput.ini`（暗号化・圧縮されていないもの）と、`%LOCALAPPDATA%\<Project>\Saved\Config\Windows`（UE4 は`WindowsNoEditor`）の`Input.ini`。Enhanced Input は未対応（#482） | あり |
 | CryEngine | pak（zip）の中の`defaultProfile.xml`などの actionmaps（#489） | あり |
