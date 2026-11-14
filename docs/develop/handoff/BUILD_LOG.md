@@ -2516,3 +2516,9 @@
 - 修正：`ReadAction` に分類の手がかり `group` を足し、`preset_model::synthesize` でモデルの分類より優先する。ツクール（MV・MZ の記号 ok・escape・cancel・menu と、RGSS・2000/2003 の既定）とウディタは決定・キャンセルを gameplay、移動を movement にした。2D 向けの汎用の割当は、移動と Z・X・C に手がかりを付けた。A ボタン・ページ送り・Shift・Enter・Esc は、これまでどおりモデルの分類に任せる。
 - 試験：`reader_group_hint_overrides_the_model_category`（ツクール XP の既定で、1〜4人のどの分担にも決定・キャンセル・移動が配られる）。
 
+
+## 2026-11-14 — WebView2 の画面確認で PowerShell が時間切れになる不安定な失敗（#379、Claude Code）
+
+- `package` の「配布PCアプリのWebView2で参加画面・設定・終了を確認」が、`close-desktop-window.ps1 -MinimumSize` の呼び出しで `spawnSync pwsh ETIMEDOUT` になることがある。#468・#454 の CI と、main（43595522683）で起きた。同じコミットの再実行では通った。
+- 原因の見立て：このスクリプトは呼ぶたびに `Add-Type` で C# をコンパイルし、CI の新しい実行環境では最初のコンパイルが Node 側の上限（10秒）を超えることがある。
+- `desktop-webview2-smoke.mjs` の PowerShell の呼び出しの上限を 60 秒にした（ステップの上限は5分のまま）。CI で落ちなくなるかを見る。
