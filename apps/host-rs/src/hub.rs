@@ -43,7 +43,7 @@ const SLOT_ROLES: [&str; MAX_SLOTS] = ["ホスト", "参加者", "参加者", "�
 // PC アプリ (apps/desktop) の実行ファイル名。前面になったら PC アプリへの手動復帰とみなす
 const DESKTOP_PROCESS: &str = "recooplay-desktop.exe";
 const DEFAULT_TITLE: &str = TITLES[0];
-const PROTOCOL_VERSION: u64 = 4;
+const PROTOCOL_VERSION: u64 = 5;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
 /// 接続ごとの送信待ちの上限。健全な接続は溜まらず、読取りが止まった接続だけが達する (#197)
@@ -445,7 +445,7 @@ pub struct Hub {
     model_presets: crate::model_presets::Store,
     model_queue: std::collections::VecDeque<String>,
     model_timer: bool,
-    /// モデルの分担を使う設定 (RECOOPLAY_PRESETS=model で、重みを読めたとき)
+    /// モデルの分担を使う設定 (既定。RECOOPLAY_PRESETS=rule のときだけ false)。重みは起動時に裏で読む (#474)
     presets_model: bool,
     /// 裏のスレッドで作っているゲーム (1 本ずつ)
     model_busy: Option<String>,
@@ -591,7 +591,7 @@ impl Hub {
             ),
             model_queue: Default::default(),
             model_timer: false,
-            presets_model: profiles::preset_source() == "model",
+            presets_model: profiles::model_presets_enabled(),
             model_busy: None,
             model_inline: false,
             detected_path: crate::model_presets::detected_path(),
@@ -961,7 +961,11 @@ impl Hub {
     }
 
     fn can_ready(&self) -> bool {
-        session::can_ready(self.game.phase, self.ready_reasons(false).is_empty())
+        session::can_ready(
+            self.game.phase,
+            self.ready_reasons(self.game.phase == Phase::Lobby)
+                .is_empty(),
+        )
     }
 
     fn can_resume(&self) -> bool {
@@ -1039,7 +1043,7 @@ impl Hub {
             "canReady": self.can_ready(),
             "canResume": self.can_resume(),
             "hostReady": self.game.host_ready,
-            "readyReasons": self.ready_reasons(false),
+            "readyReasons": self.ready_reasons(self.game.phase == Phase::Lobby),
             "prepareStatus": self.game.prepare_status,
             "titleName": self.game_name(),
             "launch": self.launch.as_ref().map(|l| json!({ "id": l.id, "state": l.state, "message": l.message })),
@@ -1422,15 +1426,20 @@ impl Hub {
             return;
         }
         let name = self.game_name();
+        let epoch = self.game.epoch;
+        if cmd == "READY" && self.game.phase == Phase::Lobby && self.inject == InjectMode::On {
+            self.check_target();
+        }
         let allowed = session::command_allowed(
             slot,
             cmd,
             self.game.phase,
             cmd == "PREPARE" && self.game.phase == Phase::Lobby && self.can_prepare(),
-            cmd == "READY" && self.game.phase == Phase::Preparing && self.can_ready(),
+            cmd == "READY" && epoch == self.game.epoch && self.can_ready(),
             cmd == "RESUME" && self.game.phase == Phase::Paused && self.can_resume(),
         );
-        let mut rejected: Option<String> = None;
+        let mut rejected = (epoch != self.game.epoch)
+            .then(|| "入力先が変わりました。前面を確認して、もう一度押してください".into());
         let accepted = allowed
             && match (cmd, self.game.phase) {
                 ("OPEN_GAME", Phase::Preparing | Phase::Paused) => {
@@ -1470,7 +1479,9 @@ impl Hub {
                     self.set_phase(Phase::Preparing, "host prepare");
                     true
                 }
-                ("READY", Phase::Preparing) if self.focus_for_coop() => {
+                ("READY", Phase::Lobby | Phase::Preparing)
+                    if self.game.phase == Phase::Lobby || self.focus_for_coop() =>
+                {
                     self.reload_keybinds();
                     self.fix_assignment();
                     self.game.host_ready = true;

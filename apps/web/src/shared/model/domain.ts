@@ -20,7 +20,7 @@ export interface HostState {
 export type ScreenId='join'|'game'|'roles';
 export interface Navigation {screen:ScreenId;game:string|null;swap:boolean}
 export interface EffectState {view:string;connected:Slot[];lineupOk:boolean}
-export type UiActionKind='none'|'next'|'back'|'confirm'|'prepare'|'launch'|'wait'|'swap';
+export type UiActionKind='none'|'next'|'back'|'confirm'|'launch'|'wait'|'swap';
 export interface UiAction {kind:UiActionKind;label:string;disabled?:boolean;note?:string;id?:string;alt?:UiAction}
 
 export interface PcInfo {
