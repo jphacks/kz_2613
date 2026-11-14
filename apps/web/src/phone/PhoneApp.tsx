@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { createLayoutStore } from '../shared/model/layout.ts';
 import { display, skin, chooseSkin, transferHost,connection,telemetry,blocked,liftHint,rotationNotice,confirmation,answerConfirm,offline } from './view';
 import { SKINS } from '../shared/model/skin.ts';
+import { hold, HOLDS } from '../shared/input/hold.ts';
 
 type PhoneDisplay = ReturnType<typeof display.get>;
 type Status = ReturnType<typeof connection.get>;
@@ -154,7 +155,14 @@ function GameplayScreen({state}:{state:PhoneDisplay}) {
 function DiagnosticsDialog({state,status,selectedSkin}:{state:PhoneDisplay;status:Status;selectedSkin:string}) {
   const game = state.snapshot.game;
   return <dialog id="phoneDiagnostics" aria-labelledby="phoneDiagnosticsTitle">{state.view === 'v-gen' && state.controller && <button className="cmd" id="genEditLayout" onClick={() => {
-    (document.getElementById('phoneDiagnostics') as HTMLDialogElement | null)?.close(); dispatchEvent(new Event(EDIT_LAYOUT)); }}>配置を編集</button>}<h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection">{[status.text,game?PHASE_LABELS[game.phase]:'-',state.snapshot.me??'--'].join('・')}</p><div id="skinPicker" className="skin-picker" role="group" aria-label="画面の色">{SKINS.map(s => <button key={s.id} data-skin={s.id} aria-pressed={selectedSkin === s.id} onClick={() => chooseSkin(s.id)}>{s.label}</button>)}</div><PhoneDiagnostics phase={game?.phase}/><button id="closePhoneDiagnostics">閉じる</button></dialog>;
+    (document.getElementById('phoneDiagnostics') as HTMLDialogElement | null)?.close(); dispatchEvent(new Event(EDIT_LAYOUT)); }}>配置を編集</button>}<h2 id="phoneDiagnosticsTitle">接続・診断</h2><p id="phoneConnection">{[status.text,game?PHASE_LABELS[game.phase]:'-',state.snapshot.me??'--'].join('・')}</p><div id="skinPicker" className="skin-picker" role="group" aria-label="画面の色">{SKINS.map(s => <button key={s.id} data-skin={s.id} aria-pressed={selectedSkin === s.id} onClick={() => chooseSkin(s.id)}>{s.label}</button>)}</div><HoldPicker/><PhoneDiagnostics phase={game?.phase}/><button id="closePhoneDiagnostics">閉じる</button></dialog>;
+}
+
+// 回転ロックのまま横に持つときの、スティック・視点の向き (#514)。端末ごとに保存する。変えると本人の押下をすべて離す
+function HoldPicker() {
+  const current = useSyncExternalStore(hold.subscribe, hold.get, hold.get);
+  return <div id="holdPicker" className="skin-picker" role="group" aria-label="持ち方（スティック・視点の向き）">{HOLDS.map(h =>
+    <button key={h.id} data-hold={h.id} aria-pressed={current === h.id} onClick={() => hold.set(h.id)}>{h.label}</button>)}</div>;
 }
 
 function PhoneDiagnostics({phase}:{phase:string|undefined}) {

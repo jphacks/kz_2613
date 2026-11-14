@@ -2621,3 +2621,10 @@
 - 下部（`host-actions`）を固定：主ボタン1行、補助ボタンは3つの決まった枠（ゲームの前面化・PCアプリの前面化・終了）で出さない枠は空けたまま、説明は2行の高さの枠の中でスクロールする。
 - 試験：`phone-view-test`（文の削除・緊急停止の理由は残る）、`phone-lifecycle-test`（38/38）、`review-terminal-regression`、`product-web-test`、`product-lifetime-test`、`app-view-test`、`ui-input-test`、`check-static-pages`、`verify-ui-evidence`、`product-module-graph-test`、`npm run typecheck`・`vite build` に合格。main `14c34de` のCIのホストで `capture-screens.mjs --assert-layout` を CI と同じ2つの大きさで実行し合格（PC側の11px未満1件は既存）。説明の監査は、枠が画面内にあり枠内スクロールで読めるかの判定に改めた。
 - 未実施：実機（Android・iPhone）でのEscと譲渡ボタンの収まり・タップ領域の確認。一時停止を上のバーのアイコンにする案（#536 のコメント、候補）は未着手。
+## 2026-11-15 — 回転ロックのまま横持ちで、スティック・視点の向きを90度回す（#514、Claude Code）
+
+- `apps/web/src/shared/input/hold.ts` に持ち方（縦持ち・左に90度・右に90度）を追加し、スティックは指の位置、視点パッドは移動量（dx・dy）を回してから方向・送る量を決める。画面の配置・送る入力の種類・認可・送信経路・感度・視点30Hzは変えない。
+- スティックは要素ごと同じ角度だけ回し、矢印と文字を指から見て正立させる（ノブも指の下に来る）。持ち方は「⋯」のメニューで選び、端末ごとに `localStorage`（`recooplay.hold`）へ保存する。読めない・書けないときは縦持ち。
+- 持ち方を変えたら、回転時と同じ `stopRemote`（全解放と `release_inputs`）を呼び、旧押下を持ち越さない。端末の傾きから自動で切り替える方式は、回転ロック中にセンサーの許可が要る端末があるため入れていない。
+- `node scripts/sim/ui-input-test.mjs`（21/21、横持ちの前進・後退・視点の右・保存と通知を追加）、`phone-view-test`・`phone-layout-test`・`controller-layout-test`・`controller-preview-test`・`app-view-test`（37/37）・`product-module-graph-test`・`product-lifetime-test`・`product-web-test`・`check-static-pages`、`npm run typecheck`・`vite build` に合格。Stick を静的に描いた撮影で、左右90度の見た目を確認した。
+- 実機（Android・iPhone、回転ロックあり）での横持ちの確認は未実施。
