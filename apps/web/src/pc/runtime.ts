@@ -56,6 +56,7 @@ lifetime.listenDocument('click',e=>{
 });
 lifetime.listen($('closeSettings'), 'click',()=>$<HTMLDialogElement>('settings').close());
 lifetime.listen($('connectionHelpBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
+lifetime.listen($('joinTroubleshootingBtn'), 'click',()=>openDialog($<HTMLDialogElement>('joinTroubleshooting')));
 lifetime.listen($('settingsConnectionBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
 lifetime.listen($('closeConnectionHelp'), 'click',()=>$<HTMLDialogElement>('connectionHelp').close());
 // 全員の接続のリセット (#412)。確認してから送る。ホストは全員を切断し、枠とホストを最初から決め直す (#213)
@@ -240,6 +241,7 @@ return {
   setAutoResume: (on:boolean) => send({type:'auto_resume',on}),
   setRotation: (seconds:number) => send({type:'rotation',seconds}),
   setKey: (action:string,output:string|null) => send({type:'set_key',action,output}),
+  resetKeys: () => send({type:'reset_keys'}),
 };
 
 }
