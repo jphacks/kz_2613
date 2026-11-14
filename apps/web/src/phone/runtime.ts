@@ -148,6 +148,12 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
     phoneView.blocked(`PCのアプリが終了しました。${LEAVE_WIFI_HINT} また遊ぶときは、PCでRe:Cooplayを起動してから、このページを再読み込みしてください。`);
   }
 
+  // 本人が退出した (#546)。枠は次の人のために空いたので、自動で再接続しない。もう一度参加する人だけが再読み込みする
+  function showLeft() {
+    setStatus(...session.status());
+    phoneView.blocked(`退出しました。${LEAVE_WIFI_HINT} もう一度参加するときは、このページを再読み込みしてください。`);
+  }
+
   // PC でリセットすると全員が切断される。自動で再接続せず、参加し直す人だけが再読み込みする (#213)
   function showReset() {
     setStatus(...session.status());
@@ -164,6 +170,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
     if (code === 4009) { showHostClosed(); return; }
     if (code === 4000) { setStatus(...session.status()); return; }
     if (code === 4001) { showReset(); return; }
+    if (code === 4010) { showLeft(); return; }
     if (code === 4005) { showVersionMismatch(); return; }
     if (code === 4006) { showBadToken(); return; }
     setStatus(...session.status());
@@ -415,7 +422,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   });
 
   // ---- 画面の切り替え ----
-  const phoneView = createView({releaseAll,onDiagnosticsOpen:stopRemote,bindControl,bindStick:roleInput.setGeneratedStick,bindLook:roleInput.bindLook,onTransferHost:to=>sendWs({type:'transfer_host',to,epoch:session.game?.epoch}),onRoleOk:()=>sendWs({type:'role_ok',epoch:session.game?.epoch})});
+  const phoneView = createView({releaseAll,onDiagnosticsOpen:stopRemote,bindControl,bindStick:roleInput.setGeneratedStick,bindLook:roleInput.bindLook,onTransferHost:to=>sendWs({type:'transfer_host',to,epoch:session.game?.epoch}),onLeave:()=>sendWs({type:'leave'}),onRoleOk:()=>sendWs({type:'role_ok',epoch:session.game?.epoch})});
   function render() { phoneView(session.view()); }
 
   // ---- 通信テスト: 20Hz で 10 秒送る (注入はされない) ----
