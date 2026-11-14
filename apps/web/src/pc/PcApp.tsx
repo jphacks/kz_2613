@@ -1,3 +1,4 @@
+import { Icon } from '../shared/icons';
 import { Fragment, useSyncExternalStore, type CSSProperties } from 'react';
 import type { PlayerCardModel, RoleColumnModel } from '../shared/contracts';
 import { PlayerCard, RoleColumn } from './PlayerCards';
@@ -34,6 +35,11 @@ export function PcApp() {
     <button id="confirmCloseGame" type="button" className="danger-action">ゲームを終了する</button>
   </form>
 </dialog>
+<dialog id="profileNoticeDialog" aria-labelledby="profileNoticeTitle">
+  <h2 id="profileNoticeTitle">ゲームの操作定義について</h2>
+  <p>{model.profileNotice}</p>
+  <form method="dialog"><button id="closeProfileNotice" autoFocus>閉じる</button></form>
+</dialog>
 </>;
 }
 
@@ -65,6 +71,7 @@ function Sidebar({state,model,connection}:{state:PcState;model:PcModel;connectio
       <button id="joinTroubleshootingBtn" aria-haspopup="dialog">開けないとき</button>
     </div>
   </div>
+  <button className="sub-cta" id="recruitBtn" hidden={!model.canRecruit} aria-haspopup="dialog">新たな参加者を受け付ける</button>
   <button className="open-game" id="openGameBtn" hidden={model.openGameHidden}>{model.name}を前面にする</button>
   <button className="sub-cta" id="closeGameBtn" aria-haspopup="dialog"
     hidden={!game?.title || !['roles','paused'].includes(model.view) || !['lobby','paused'].includes(game.phase)}>
@@ -84,7 +91,12 @@ function Workspace({model}:{model:PcModel}) {
       <div id="gameList" className="game-list">{model.gameCards.map(card => <GameTile key={card.id} card={card} />)}</div>
     </div></section>
     <section id="roleStage" className="role-stage" aria-label="操作の分担" hidden={model.view !== 'roles'}>
-      <div className="role-band"><h2 id="roleHeading">{model.roleHeading}</h2></div>
+      <div className="role-band"><h2 id="roleHeading">{model.roleHeading}</h2>
+        <button id="profileNoticeBtn" className="profile-notice-button" hidden={!model.profileNotice}
+          aria-label="ゲームの操作定義に関する注意" aria-haspopup="dialog" aria-controls="profileNoticeDialog">
+          <Icon name="warning" />
+        </button>
+      </div>
       <div id="roles" className="role-columns" style={{'--role-count': model.roleSlots.length} as CSSProperties}>{model.columns.map((c: RoleColumnModel) => <RoleColumn key={c.slot} c={c} />)}</div>
       <button id="keyBindingsBtn" className="role-keys">このPCのキー設定を確認</button>
       <div id="presetChoice" className="preset-choice" role="group" aria-label="分担の作り方" hidden={model.preset.hidden}>
@@ -164,7 +176,16 @@ function ResetDialog() {
 function ConnectionHelpDialog({connection}:{connection:ConnectionModel}) {
   return <dialog id="connectionHelp" aria-labelledby="connectionTitle">
   <h2 id="connectionTitle">スマホを接続する</h2><p>PCと同じWi-Fiへ接続してから、QRを読み取ってください。最初に読み取った人がホスト（P1）になります。2〜4人で遊べます。</p>
-  <div id="helpQr" className="help-qr" dangerouslySetInnerHTML={{__html: connection.qr}} />
+  <div className="connection-qr-pair">
+    {connection.guide.wifiQr && <section>
+      <h3>① Wi-Fiにつなぐ</h3>
+      <div className="help-qr" dangerouslySetInnerHTML={{__html: connection.guide.wifiQr}} />
+    </section>}
+    <section>
+      {connection.guide.wifiQr && <h3>② 参加する</h3>}
+      <div id="helpQr" className="help-qr" dangerouslySetInnerHTML={{__html: connection.qr}} />
+    </section>
+  </div>
   <p className="url" id="url">{connection.url}</p><p id="urlNote">{connection.urlNote}</p><p id="wifi">{connection.wifi}</p>
   <button id="reloadInfo">QRを取得し直す</button><form method="dialog"><button id="closeConnectionHelp">閉じる</button></form>
 </dialog>;

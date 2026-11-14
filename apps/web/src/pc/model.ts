@@ -64,6 +64,7 @@ export function pcModel(s: PcSnapshot) {
   const lineupNotice = disconnected.length
     ? `${disconnected.join('・')}が切断したため、分担を確認してください。メンバーが変わった場合は決め直してください。`
     : '';
+  const gameProfileNotice = profileNotice(game?.profile);
   const cards = playerCards(slots, view, game);
   const pauseResumeHint = stopped
     ? '安全を確かめてから\n「入力を再開する」を押します。'
@@ -79,6 +80,8 @@ export function pcModel(s: PcSnapshot) {
     gameSteps,
     overlayUrl: s.infoPort ? `http://127.0.0.1:${s.infoPort}/overlay` : '',
     view, roleSlots, name, canAdvance,
+    canRecruit: s.online && view === 'roles' && game?.phase === 'lobby'
+      && !!game.title && count > 0 && slots.some(slot => slot.state === 'empty'),
     cards: view === 'paused' ? cards.filter(card => roleSlots.includes(card.slot)) : cards, columns: roleColumns(game, roleSlots, swapPick),
     roleHeading: roleSlots.length < MIN_PLAYERS ? '参加者を待っています' : game?.lineupOk ? `${roleSlots.length}人で決定！` : `${roleSlots.length}人で、操作を分担！`,
     title: {join: '', game: 'ゲーム選択を\nしよう！', roles: game?.lineupOk && game.phase === 'lobby' ? '分担決定！' : '分担しよう！', preparing: '準備中', ready: '準備完了！', coop: '協力プレイ中', paused: '一時停止中'}[view],
@@ -91,7 +94,8 @@ export function pcModel(s: PcSnapshot) {
     blockedStart: view !== 'preparing' || stopped, readyInstruction: view !== 'ready' || stopped,
     openGameHidden: !['preparing','ready','paused'].includes(view) || !game?.inputTarget,
     actionNote: view === 'roles' ? swapPick ? swapHint : (roleAction.note || (game?.lineupOk ? '' : swapHint)) : view === 'preparing' ? `${name}をプレイ中の画面まで進めてください。` : '',
-    notices: [lineupNotice, s.hostNotice, warning, networkNotice(state?.network, state?.slots), profileNotice(game?.profile)].filter(Boolean),
+    profileNotice: view === 'roles' ? gameProfileNotice : '',
+    notices: [lineupNotice, s.hostNotice, warning, networkNotice(state?.network, state?.slots), view === 'roles' ? '' : gameProfileNotice].filter(Boolean),
     comm: commSettingsView(game, s.infoPort),
     gameCards: list.map(g => gameCard(g, ui.game, game?.launch)),
     gamesCount: s.manualMessage || gamesCountText(list, !!state?.gamesScanning), scanning: !!state?.gamesScanning,

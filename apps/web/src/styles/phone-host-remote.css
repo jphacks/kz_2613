@@ -111,11 +111,13 @@
 #v-remote #openGameBtn { grid-column: 1; }
 #v-remote #openAppBtn { grid-column: 2; }
 #v-remote #endBtn { grid-column: 3; }
-/* 説明は2行の決まった高さの枠の中でスクロールする。文の長さで下の領域を伸ばさない */
-#v-remote .host-notes { height: calc(2 * 1.45em); overflow-y: auto; font-size: 12px; line-height: 1.45; }
+/* 説明は最大2行の枠の中でスクロールする。文がないときは場所を取らず、空いた高さはタッチパッドに回す (#553) */
+#v-remote .host-notes { max-height: calc(2 * 1.45em); overflow-y: auto; font-size: 12px; line-height: 1.45; }
 #v-remote .host-notes .note { margin: 0; font-size: inherit; line-height: inherit; }
 #v-remote .host-notes .note:empty { display: none; }
+#v-remote .host-notes:not(:has(.note:not(:empty):not([hidden]))) { display: none; }
 
+/* 低い画面では、上の部品を縮めて下の固定領域と重ねない */
 @media (max-height: 640px) and (orientation: portrait) {
   #v-remote .trackpad { min-height: 110px; }
   #v-remote .remote-keys .esc { width: min(100%, 56px); font-size: 15px; }

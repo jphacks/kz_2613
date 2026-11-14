@@ -61,6 +61,7 @@ lifetime.listen($('confirmCloseGame'), 'click',()=>{
   send({type:'close_game',...closeRequest});
   closeRequest=null;
 });
+lifetime.listen($('profileNoticeBtn'), 'click',()=>openDialog($<HTMLDialogElement>('profileNoticeDialog')));
 lifetime.listen($('keyBindingsBtn'), 'click',()=>openSettings(true));
 // 分担の作り方 (#432)。規則とモデルの分担を切り替え、モデルの分担を作り直す。可否はホストが判定する (ロビーで決める前だけ)
 lifetime.listen($('remakePresetBtn'), 'click',()=>send({type:'remake_preset'}));
@@ -69,6 +70,11 @@ lifetime.listenDocument('click',e=>{
   if(source==='rule'||source==='model')send({type:'preset_source',source});
 });
 lifetime.listen($('connectionHelpBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
+lifetime.listen($('recruitBtn'), 'click',()=>{
+  if ($('recruitBtn').hidden) return;
+  openDialog($<HTMLDialogElement>('connectionHelp'));
+  loadInfo();
+});
 lifetime.listen($('joinTroubleshootingBtn'), 'click',()=>openDialog($<HTMLDialogElement>('joinTroubleshooting')));
 lifetime.listen($('settingsConnectionBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
 // 全員の接続のリセット (#412)。確認してから送る。ホストは全員を切断し、枠とホストを最初から決め直す (#213)
@@ -214,6 +220,9 @@ function render(){
   if(swapPick&&!shownSlots(game).includes(swapPick))swapPick=null;
   renderView({ui,state,game,inject,online,swapPick,hostNotice,infoPort,manualMessage,keyMessage});
   const view=desktopView(ui,game);document.body.dataset.view=view;document.body.dataset.phase=game?.phase||'lobby';
+  if ($('profileNoticeBtn').hidden && $<HTMLDialogElement>('profileNoticeDialog').open) {
+    $<HTMLDialogElement>('profileNoticeDialog').close();
+  }
   const selected=document.querySelector<HTMLElement>('.game-choice.selected');
   if(shownGame!==ui.game){const first=shownGame==='';shownGame=ui.game;if(!first)fx(selected);selected?.scrollIntoView({block:'nearest'});}
   playEffects(view);
