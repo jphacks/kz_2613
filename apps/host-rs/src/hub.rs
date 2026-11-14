@@ -812,7 +812,7 @@ impl Hub {
         true
     }
 
-    /// hub がパニックしたときの後始末 (#517)。押しっぱなしを離し、アプリが起動したホットスポットを止める。
+    /// hub がパニックしたときの後始末 (#517)。押しっぱなしを離して終える (スマホへの終了の通知・ホットスポットの停止はしない、#522)。
     /// 状態が壊れている可能性があるので、後始末の途中のパニックも受け止める。全部離せたら true
     fn recover_from_panic(&mut self, message: String) -> bool {
         eprintln!("hub が異常終了しました（押しっぱなしの入力を離して終了します）: {message}");
@@ -824,11 +824,8 @@ impl Hub {
             }
             let ok = self.release_for_shutdown();
             // スマホへ「PC アプリの終了」(4009) は送らない。PC アプリはホストを起動し直すので、スマホは通常の切断として
-            // 再接続を続け、新しいホストへ参加し直す (#522)。協力プレイは再接続後も自動では再開しない
-            if !cfg!(test) {
-                let hotspot = crate::netinfo::stop_owned_hotspot();
-                self.log("hotspotShutdown", json!({ "result": hotspot }));
-            }
+            // 再接続を続け、新しいホストへ参加し直す (#522)。協力プレイは再接続後も自動では再開しない。
+            // 同じ理由で、アプリが起動したホットスポットも止めない (止めるとスマホの Wi-Fi が切れ、再接続できない)
             ok
         }))
         .unwrap_or(false);
