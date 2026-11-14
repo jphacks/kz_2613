@@ -2552,3 +2552,11 @@
 - 方式の比較（入力の経路：VPN 型・WebRTC＋STUN・TURN・中継サーバー、映像の経路：既存の画面共有・WebRTC 配信・既存の配信機能）、LAN 版との差分、安全面、判断の整理を `docs/develop/decisions/2026-11-15-remote-play-study.md` に記録した。
 - コードの確認：`rtc.rs` は STUN・TURN を使わない（`RtcConfig::new(&[])`）。
 - PoC はしていない。どの接続環境でも未試験、映像を含む一巡の遅れも未測定。判断案は保留（進めるならコードを変えずに VPN＋画面共有で体験を測る）。
+
+## 2026-11-15 — README と技術仕様書を Award Day 時点に合わせる（Claude Code）
+
+- 利用者の依頼：README を更新する。今までの書き方を踏襲し、README に書ききらず技術仕様書を増やしてよい。「Ready」ではなく「開始ボタン」、分担のモデルは「BERT風」ではなく「Transformer encoder」と書き、学習させたことを入れる。
+- README：遊び方の手順（開始ボタン・独自AIの分担）、特長に1文ずつ（時間での交代・ファイルからの読み取り）、技術仕様書の一覧に分担AI仕様書、活用した技術（React・TypeScript、Transformer encoder、多言語MiniLM）、「Award Dayまでに追加した機能・技術」（既存の「独自技術」と同じ形で3項目）。Hack Day の内容は残した。
+- 新しい `docs/preset-model-specification.md`（分担AI仕様書）：構成・学習・推論と組み立て・評価・定義のないゲームの読み取り・配布と設定・適用範囲。
+- 総合仕様書・ゲーム操作定義仕様書・技術選定の理由・動作確認の範囲の古い記述（BERT風、静的HTML、2人・4人の実機は未確認、操作画面のカスタマイズは今後）を直した。
+- 確認：`python scripts/check-public-docs.py` 合格（18 ファイル、351 参照）。
