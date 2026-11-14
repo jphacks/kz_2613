@@ -190,7 +190,9 @@ test('リモコン: 右・Enter で次、左・Esc で前の画面へ。端で�
   let ui = { screen: 'join', game: null };
   ui = navigate(ui, 'RIGHT');
   assert.equal(ui.screen, 'game');
-  assert.ok(ui.game, '次へ進むとゲームが選ばれる');
+  assert.equal(ui.game, null, 'ゲーム選択画面を開いても未選択');
+  assert.equal(navigate(ui, 'ENTER').screen, 'game', '未選択では分担へ進まない');
+  ui = navigate(ui, 'RIGHT');
   ui = navigate(ui, 'ENTER');
   assert.equal(ui.screen, 'roles');
   assert.equal(navigate(ui, 'ENTER').screen, 'roles');

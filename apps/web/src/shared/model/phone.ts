@@ -62,6 +62,7 @@ export function waitModel({ me, game, roleTitle, joined, autoWait }: {me:Slot;ga
     heading: phase === 'paused' ? '一時停止中' : '接続完了!!',
     role: roleTitle,
     title: phase === 'lobby' && game.reason === 'host end' ? LEAVE_WIFI_HINT
+      : game.title === '' ? 'ホストがゲームを選んでいます。'
       : !joined ? '次の開始から参加します。'
       : phase === 'paused' ? (autoWait
         ? `${reasonText(game.reason, me)}。制限時間内に全員が戻ると自動で再開します。再開できない場合はホストの操作をお待ちください。`

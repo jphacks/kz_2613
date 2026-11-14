@@ -2334,6 +2334,12 @@
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
 
+## 2026-11-14 — ゲーム選択前の分担表示を抑える（#447、Codex）
+
+- ホストとPC画面を未選択から始める。既存の文字列型の `game.title` を空にし、既存の `profile: null` を使う。スマホはゲーム選択を待つ表示にし、選択後はホストが配る分担を表示する。参加枠と担当確認の仕組みは従来どおり使う。
+- 合格：`npm --prefix apps/web run build`、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/verify_overlay.py`、`python scripts/check-public-docs.py`、変更したシミュレーションの構文検査、`git diff --check`。Node 22.15.0ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定した。
+- 初回参加・ゲーム選択・再選択を確認する通信試験を追加した。Rustホストの実行を伴う確認はGitHub CIで行い、Android・iPhoneでの表示は実機受入に残す。
+- 追試（#447）：選択IDと操作定義IDを別に照合し、キー設定はMinecraft選択後の通知を参照するようにした。CI run 43485721653 のホストで通信66/66、Chromeの画面検査（PC 800×560・スマホ390×844）23画面が合格。
 ## 2026-11-14 — 分担の初期設定をモデルにする（Claude Code）
 
 - 利用者の判断：分担の案の初期設定を規則からモデルに切り替える（#474）。`RECOOPLAY_PRESETS=rule` でなければモデルの分担を使う（`profiles::model_presets_enabled`）。使われなくなった `preset_source()` は消した。規則に戻すときは `RECOOPLAY_PRESETS=rule`。
@@ -2454,6 +2460,10 @@
 
 - 150msちょうどでは記録せず、151msでは計測用ビルドだけが押下の連番と2区間の時間を記録することを確認した。
 - `node --experimental-strip-types scripts/sim/phone-lifecycle-test.mjs` は36/36合格。iPhone実指での原因調査は未実施。
+## 2026-11-14 — 配布WebView2の失敗ログを保存する（#379、Codex）
+
+- 配布PCアプリのWebView2スモークの標準出力・標準エラーをCIログに出し、失敗時は `windows-webview2-diagnostics` の成果物にも保存する。試験の終了コードはそのまま必須チェックへ渡す。
+- PowerShellで標準出力・標準エラーを出す模擬試験を実行し、成功と失敗の終了コードおよびログの両方を確認した。GitHub上の成果物の保存は実行結果待ち。
 ## 2026-11-14 — WebSocket終了直前の送信空白を記録する（#426、Codex）
 
 - 計測用ホストで、参加者の接続が最後の本文送信成功から3秒以上経って終了した場合に、枠・空白時間・終了コードを `ws_send_gap_at_close` として残す。次の本文送信が成功する前に接続が終了した試行でもホスト側の空白を確認できる。
@@ -2462,3 +2472,7 @@
 
 - 閉じるボタンを `method="dialog"` のフォームへ移し、専用のDOMリスナーを削除した。配布試験にフォーカス復帰と再表示を追加した。
 - Webの型検査・ビルド、試験スクリプトの構文、差分検査が成功。配布WebView2試験はCI待ち。
+## 2026-11-14 — 親の標準入力が閉じたときのホットスポット停止を確認する（#415、Codex）
+
+- 明示の `quit` と標準入力のEOFそれぞれで、ホストの安全停止ログ、スマホへの終了コード4009、アプリが起動した模擬ホットスポットの停止、資格情報の非記録を確認した。
+- Windows releaseビルド、Webビルド、通信dry-run 67/67が成功。非管理者での実ホットスポット停止は未実施。
