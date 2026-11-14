@@ -32,6 +32,7 @@ export function PcApp() {
   <form method="dialog">
     <button autoFocus>やめる</button>
     <button id="confirmCloseGame" type="button" className="danger-action">ゲームを終了する</button>
+    <button id="returnAfterManualClose" type="button">手動で終了済み・ゲーム選択へ戻る</button>
   </form>
 </dialog>
 </>;

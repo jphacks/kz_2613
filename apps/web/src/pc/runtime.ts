@@ -55,12 +55,14 @@ lifetime.listen($('closeGameBtn'), 'click',()=>{
   closeRequest={title:game.title,epoch:game.epoch};
   openDialog($<HTMLDialogElement>('closeGameDialog'));
 });
-lifetime.listen($('confirmCloseGame'), 'click',()=>{
+function finishCloseRequest(manual:boolean){
   $<HTMLDialogElement>('closeGameDialog').close();
   if (!closeRequest || !game || closeRequest.title!==game.title || closeRequest.epoch!==game.epoch) return;
-  send({type:'close_game',...closeRequest});
+  send({type:'close_game',...closeRequest,manual});
   closeRequest=null;
-});
+}
+lifetime.listen($('confirmCloseGame'), 'click',()=>finishCloseRequest(false));
+lifetime.listen($('returnAfterManualClose'), 'click',()=>finishCloseRequest(true));
 lifetime.listen($('keyBindingsBtn'), 'click',()=>openSettings(true));
 // 分担の作り方 (#432)。規則とモデルの分担を切り替え、モデルの分担を作り直す。可否はホストが判定する (ロビーで決める前だけ)
 lifetime.listen($('remakePresetBtn'), 'click',()=>send({type:'remake_preset'}));

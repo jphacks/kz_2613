@@ -4144,6 +4144,11 @@ impl Hub {
                     )));
                     return;
                 }
+                if msg.get("manual").and_then(Value::as_bool) == Some(true) {
+                    // スタッフが手動終了を確認した場合は、OSのプロセス操作をせず選択だけを解除する。
+                    self.on_event(Event::GameClosed(Ok(())));
+                    return;
+                }
                 let tx = self.tx.clone();
                 let target = self.target.clone();
                 if std::thread::Builder::new()
