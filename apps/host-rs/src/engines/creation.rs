@@ -1,8 +1,9 @@
 // Creation Engine (Bethesda：Skyrim・Fallout 4・Starfield など) の ControlMap (#486)。
 // 利用者の割当 `Documents\My Games\<ゲーム>\ControlMap_Custom.txt` (タブ区切り：操作名、キーボード (DirectInput の
 // キーコード、16 進)、マウス、ゲームパッド…) の最初のまとまり (遊びの操作) を読む。
-// ControlMap_Custom.txt がないとき (キーを変えたことがない) は、Skyrim だけ既定の割当の表を使う。
-// 既定の ControlMap.txt はアーカイブ (.bsa・.ba2) の中にあり、圧縮の形式が作品で違うので、まだ読まない。
+// ControlMap_Custom.txt がないとき (キーを変えたことがない) は、Fallout 4・Starfield は Data の
+// 「* - Interface.ba2」の中の既定の Interface/Controls/PC/ControlMap.txt を読む (#527、zlib の BA2 だけ)。
+// Skyrim SE の BSA (LZ4) は依存が増えるので読まず、既定の割当の表を使う。
 use std::path::{Path, PathBuf};
 
 use super::{button, child_ci, dik_key, has_file, look, read_text};
@@ -16,7 +17,35 @@ pub fn read(dir: &Path) -> Option<(Vec<ReadAction>, &'static str)> {
             return Some((actions, "Creation Engine の ControlMap_Custom.txt"));
         }
     }
-    (game == Game::Skyrim).then(|| (skyrim_defaults(), "Skyrim の既定の割当"))
+    if game == Game::Skyrim {
+        return Some((skyrim_defaults(), "Skyrim の既定の割当"));
+    }
+    let text = default_control_map(dir)?;
+    let actions = actions_from_control_map(&String::from_utf8_lossy(&text));
+    (!actions.is_empty()).then_some((
+        actions,
+        "Creation Engine の既定の ControlMap.txt（BA2 の中）",
+    ))
+}
+
+/// Data の「* - Interface.ba2」から、既定の ControlMap.txt を取り出す
+fn default_control_map(dir: &Path) -> Option<Vec<u8>> {
+    let data = child_ci(dir, "Data").unwrap_or_else(|| dir.to_path_buf());
+    let mut archives: Vec<PathBuf> = std::fs::read_dir(&data)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .map(|n| n.to_ascii_lowercase())
+                .is_some_and(|n| n.ends_with(".ba2") && n.contains("interface"))
+        })
+        .collect();
+    archives.sort();
+    archives
+        .iter()
+        .find_map(|a| super::ba2::extract(a, "Interface/Controls/PC/ControlMap.txt"))
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -220,6 +249,32 @@ Accept\t0x1c\t0xff\t0x1000\t0\t0\t0\t0x8\n";
         assert_eq!(a[3].default, Some("MOUSE_L"), "キーボードがなければマウス");
         assert_eq!(a[4].default, Some("SPACE"));
         assert_eq!(a[5].default, Some("KEY_E"), "複数のキーは最初のもの");
+    }
+
+    #[test]
+    fn fallout4_reads_default_control_map_from_ba2() {
+        let dir = std::env::temp_dir().join(format!("recooplay-fo4-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("Data")).unwrap();
+        std::fs::write(dir.join("Fallout4.exe"), b"MZ").unwrap();
+        std::fs::write(dir.join("Data/Fallout4.esm"), b"").unwrap();
+        let map = b"// Main Gameplay
+Forward	0x11	0xff	0x0001	1	1	0	0x8
+Jump	0x39	0xff	0x8000	1	1	0	0x8
+";
+        let ba2 = super::super::ba2::tests::make_ba2(
+            &[(r"Interface\Controls\PC\ControlMap.txt", &map[..])],
+            true,
+        );
+        std::fs::write(dir.join("Data/Fallout4 - Interface.ba2"), ba2).unwrap();
+        // 利用者の ControlMap_Custom.txt がこの PC にあれば、そちらが先に読まれる
+        if custom_file(Game::Fallout4).is_none() {
+            let (a, src) = read(&dir).unwrap();
+            assert!(src.contains("BA2"), "{src}");
+            assert_eq!(a[0].default, Some("KEY_W"));
+            assert_eq!(a[1].default, Some("SPACE"));
+        }
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   keyName, vkKey, dikKey, keyMapper, actionsFromMapper, enabledPlugins, mapperAssignments, rpgmaker, wolf, cfgBindings, actionsFromBindings,
-  quake, actionsFromVcfg, source2, actionsFromControlMap, creation, findAxes, actionsFromAxes, hasCustomAxes, unityLegacy, parseOverrides, applyOverrides, engineActions,
+  quake, actionsFromVcfg, source2, actionsFromControlMap, creation, ba2Extract, findAxes, actionsFromAxes, hasCustomAxes, unityLegacy, parseOverrides, applyOverrides, engineActions,
   godotKey, actionsFromGodotProject, godot, actionsFromUeIni, unreal, zipEntries, zipRead, actionsFromCryXml, cryengine, generic2d,
   ikKey, actionsFromMappings, actionsFromInputSettings, redengine, actionsFromControls, prism3d, actionsFromInputBinding, giants,
   actionsFromFactorioConfig, factorio, actionsFromZomboidKeys, zomboid,
@@ -418,6 +418,31 @@ test('Project Zomboid: keys.ini (DirectInput と GLFW)', () => {
   assert.equal(b[0].def, 'KEY_W'); assert.equal(b[2].def, 'LSHIFT');
   put('pz/ProjectZomboid64.exe', 'MZ'); fs.mkdirSync(path.join(tmp, 'pz/media'), { recursive: true }); put('home/Zomboid/Lua/keys.ini', 'Forward=17\n');
   assert.equal(zomboid(path.join(tmp, 'pz'), path.join(tmp, 'home')).actions[0].def, 'KEY_W');
+});
+
+// ---------- BA2 (ホストの engines/ba2.rs の試験と同じ作り) ----------
+function makeBa2(files, compress) {
+  const bodies = files.map(([, d]) => [compress ? zlib.deflateSync(d) : Buffer.from(d), d.length]);
+  let offset = 24 + files.length * 36; const recs = [];
+  for (const [body, unpacked] of bodies) {
+    const r = Buffer.alloc(36); r.write('txt\0', 4, 'latin1'); r.writeBigUInt64LE(BigInt(offset), 16); r.writeUInt32LE(compress ? body.length : 0, 24); r.writeUInt32LE(unpacked, 28); r.writeUInt32LE(0xbaadf00d, 32);
+    recs.push(r); offset += body.length;
+  }
+  const head = Buffer.alloc(24); head.write('BTDX', 0, 'latin1'); head.writeUInt32LE(1, 4); head.write('GNRL', 8, 'latin1'); head.writeUInt32LE(files.length, 12); head.writeBigUInt64LE(BigInt(offset), 16);
+  const names = files.map(([n]) => { const nb = Buffer.from(n); const l = Buffer.alloc(2); l.writeUInt16LE(nb.length); return Buffer.concat([l, nb]); });
+  return Buffer.concat([head, ...recs, ...bodies.map(([b]) => b), ...names]);
+}
+test('BA2: Fallout 4 の既定の ControlMap.txt', () => {
+  for (const compress of [false, true]) {
+    const f = put(`ba2/t${compress}.ba2`, makeBa2([['Interface\\Other.txt', Buffer.from('x')], ['Interface\\Controls\\PC\\ControlMap.txt', Buffer.from('Forward\t0x11')]], compress));
+    assert.equal(ba2Extract(f, 'interface/controls/pc/controlmap.txt').toString(), 'Forward\t0x11');
+    assert.equal(ba2Extract(f, 'missing.txt'), null);
+  }
+  const map = '// Main Gameplay\nForward\t0x11\t0xff\t0x0001\t1\t1\t0\t0x8\nJump\t0x39\t0xff\t0x8000\t1\t1\t0\t0x8\n';
+  put('fo2/Fallout4.exe', 'MZ'); put('fo2/Data/Fallout4.esm', '');
+  put('fo2/Data/Fallout4 - Interface.ba2', makeBa2([['Interface\\Controls\\PC\\ControlMap.txt', Buffer.from(map)]], true));
+  const found = creation(path.join(tmp, 'fo2'), path.join(tmp, 'nodocs'));
+  assert.match(found.source, /BA2/); assert.equal(found.actions[0].def, 'KEY_W'); assert.equal(found.actions[1].def, 'SPACE');
 });
 
 try {

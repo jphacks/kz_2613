@@ -9,6 +9,7 @@ use std::path::Path;
 use crate::game_actions::{ReadAction, MAX_ACTIONS};
 use crate::keybinds::{name_key, Key};
 
+pub mod ba2;
 pub mod creation;
 pub mod cryengine;
 pub mod factorio;

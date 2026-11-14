@@ -341,7 +341,44 @@ export function creation(dir, documents = path.join(os.homedir(), 'Documents')) 
   const text = readText(path.join(documents, 'My Games', game, 'ControlMap_Custom.txt'));
   const a = text ? actionsFromControlMap(text) : [];
   if (a.length) return { source: 'Creation Engine の ControlMap_Custom.txt', actions: a };
-  return game === 'Skyrim Special Edition' ? { source: 'Skyrim の既定の割当', actions: skyrimDefaults() } : null;
+  if (game === 'Skyrim Special Edition') return { source: 'Skyrim の既定の割当', actions: skyrimDefaults() };
+  // Fallout 4・Starfield は Data の「* - Interface.ba2」の中の既定の ControlMap.txt (#527)
+  let archives = [];
+  try { archives = fs.readdirSync(data).filter((n) => /\.ba2$/i.test(n) && /interface/i.test(n)).sort(); } catch {}
+  for (const n of archives) {
+    const t = ba2Extract(path.join(data, n), 'Interface/Controls/PC/ControlMap.txt');
+    const d = t ? actionsFromControlMap(t.toString('utf8')) : [];
+    if (d.length) return { source: 'Creation Engine の既定の ControlMap.txt（BA2 の中）', actions: d };
+  }
+  return null;
+}
+
+/** BA2 (GNRL) から名前で 1 つのファイルを取り出す (ホストの engines/ba2.rs と同じ。zlib だけ) */
+export function ba2Extract(file, want) {
+  let b; try { if (fs.statSync(file).size > 3e9) return null; } catch { return null; }
+  let fd;
+  try {
+    fd = fs.openSync(file, 'r');
+    const size = fs.fstatSync(fd).size;
+    const head = Buffer.alloc(24); fs.readSync(fd, head, 0, 24, 0);
+    if (head.toString('latin1', 0, 4) !== 'BTDX' || head.toString('latin1', 8, 12) !== 'GNRL') return null;
+    const count = head.readUInt32LE(12), namesAt = Number(head.readBigUInt64LE(16)), version = head.readUInt32LE(4);
+    const recordsAt = { 1: 24, 7: 24, 8: 24, 2: 32, 3: 36 }[version];
+    if (!recordsAt || !count || count > 1e6 || namesAt >= size) return null;
+    const records = Buffer.alloc(count * 36); fs.readSync(fd, records, 0, records.length, recordsAt);
+    const names = Buffer.alloc(size - namesAt); fs.readSync(fd, names, 0, names.length, namesAt);
+    const w = want.replace(/\\/g, '/').toLowerCase();
+    for (let i = 0, o = 0; i < count; i++) {
+      if (o + 2 > names.length) return null;
+      const len = names.readUInt16LE(o), name = names.toString('utf8', o + 2, o + 2 + len).replace(/\\/g, '/').toLowerCase(); o += 2 + len;
+      if (name !== w) continue;
+      const r = records.subarray(i * 36, i * 36 + 36), offset = Number(r.readBigUInt64LE(16)), packed = r.readUInt32LE(24), unpacked = r.readUInt32LE(28);
+      if (unpacked > 16 * 1024 * 1024) return null;
+      b = Buffer.alloc(packed || unpacked); fs.readSync(fd, b, 0, b.length, offset);
+      return packed ? zlib.inflateSync(b, { maxOutputLength: 16 * 1024 * 1024 }) : b;
+    }
+    return null;
+  } catch { return null; } finally { if (fd !== undefined) fs.closeSync(fd); }
 }
 
 // ---------- zip (CryEngine の pak など。保存と Deflate だけ、暗号化は読まない) ----------
