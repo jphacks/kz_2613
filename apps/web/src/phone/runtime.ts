@@ -8,7 +8,7 @@ import { recordInputMetric, inputMetrics } from '../shared/input/metrics.ts';
 import { bindTouchpad, bindTouchpadSensitivity } from '../shared/input/touchpad.ts';
 import { myActions } from '../shared/model/actions.ts';
 import { phoneAdvice } from '../shared/model/presentation.ts';
-import { fullText, END_PREPARING_LABEL } from '../shared/model/phone.ts';
+import { fullText, END_PREPARING_LABEL, LEAVE_WIFI_HINT } from '../shared/model/phone.ts';
 import {createLifetime} from '../shared/input/lifetime.ts';
 import {byId} from '../shared/dom.ts';
 import {createBurstRecorder,formatBurstResult} from './burst-stats.ts';
@@ -141,7 +141,7 @@ export function startPhoneController({createView}:{createView(bindings:PhoneView
   function showHostClosed() {
     lostAt = null; phoneView.offline(false);
     setStatus(...session.status());
-    phoneView.blocked('PCのアプリが終了しました。また遊ぶときは、PCでRe:Cooplayを起動してから、このページを再読み込みしてください。');
+    phoneView.blocked(`PCのアプリが終了しました。${LEAVE_WIFI_HINT} また遊ぶときは、PCでRe:Cooplayを起動してから、このページを再読み込みしてください。`);
   }
 
   // PC でリセットすると全員が切断される。自動で再接続せず、参加し直す人だけが再読み込みする (#213)
