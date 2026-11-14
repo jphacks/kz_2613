@@ -525,10 +525,12 @@ async function main() {
       await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from});
       let gateFrom=p1.mark();
       host.child.stdin.write('activate off\ntarget off\n');
-      const unfocused = await p1.waitFor(m=>m.type==='game' && !m.game.canReady,{from:gateFrom});
-      assert(unfocused.game.readyReasons.some(r=>r.includes('前面')));
+      await sleep(200);
+      // 起動済みのゲームが背面でも「分担操作開始」は押せる。押した瞬間に前面へ出せなければ開始せず、理由を返す (#556)
       p1.send({type:'command',cmd:'READY'});
-      await p1.waitFor(m=>m.type==='command_result' && !m.accepted,{from:gateFrom});
+      const refused = await p1.waitFor(m=>m.type==='command_result' && m.cmd==='READY' && !m.accepted,{from:gateFrom});
+      assert(refused.reasons.some(r=>r.includes('前面')), JSON.stringify(refused.reasons));
+      assert(!p1.msgs.slice(gateFrom).some(m=>m.type==='game' && m.game.phase==='coop'), '前面にできないのに開始した');
       gateFrom=p1.mark();host.child.stdin.write('activate on\ntarget on\n');
       await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from:gateFrom});
       // 2人でもReadyできる (#57)。1人ではReadyできず、PC画面から必要人数を減らしても迂回できない
@@ -2033,6 +2035,33 @@ async function main() {
       const old = await join('T1', id(1)); const o = await welcome(old);
       assert(o.slot === 'P3' && o.isHost === false, JSON.stringify({ slot: o.slot, isHost: o.isHost }));
       for (const x of [host, old, b]) x.close();
+    });
+
+    await check('連続試遊: ロビーで背面になったゲームも「分担操作開始」で前面へ出して開始する (#556)', async () => {
+      const resetFrom = mon.mark();
+      mon.send({ type: 'reset' });
+      await mon.waitFor(m => m.type === 'game' && m.game.phase === 'lobby' && m.game.connected.length === 0,
+        { from: resetFrom, what: '背面開始の試験前リセット' });
+      mon.send({ type: 'select_game', title: 'minecraft-java' });
+      const id = (n) => ({ clientId: `sim-behind-${n}` });
+      const a = await join('B1', id(1)); await welcome(a);
+      const b = await join('B2', id(2)); await welcome(b);
+      const { game } = await a.waitFor(m => m.type === 'game' && m.game.phase === 'lobby'
+        && m.game.title === 'minecraft-java' && m.game.connected.join(',') === 'P1,P2', { what: '2枠の分担状態' });
+      await confirmLineup(mon, a, game);
+      // PC アプリが前面 (ゲームは起動したまま背面) でも開始できる
+      const from = a.mark();
+      host.child.stdin.write('activate on\ntarget off\n');
+      await sleep(200);
+      const behind = await a.waitFor(m => m.type === 'game' && m.game.phase === 'lobby' && m.game.canReady, { from, what: '背面でも開始可' });
+      assert(!behind.game.readyReasons.some(r => r.includes('前面')), JSON.stringify(behind.game.readyReasons));
+      a.send({ type: 'command', cmd: 'READY' });
+      const coop = await phaseIs(a, 'coop', from);
+      assert(coop.game.reason === 'host ready', coop.game.reason);
+      const endFrom = a.mark();
+      a.send({ type: 'command', cmd: 'END' });
+      await phaseIs(a, 'lobby', endFrom);
+      for (const x of [a, b]) x.close();
     });
 
     await check('人数の変更: 一時停止中にPC画面から今の接続で分担し直し、全員の確認と明示の再開を求める (#162)', async () => {
