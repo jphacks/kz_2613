@@ -582,9 +582,10 @@ body[data-two-qr] .qr-arrow { display: none; }
   position: absolute;
   top: 12px;
   right: 12px;
-  min-width: 44px;
-  min-height: 44px;
-  font-size: 20px;
+  min-width: 56px;
+  min-height: 56px;
+  /* PC画面は --pc-scale で縮むため、800x560 でも 11px 以上に見える大きさにする */
+  font-size: 28px;
   cursor: pointer;
 }
 
