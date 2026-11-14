@@ -154,7 +154,7 @@ function ConnectionHelpDialog({connection}:{connection:ConnectionModel}) {
   <h2 id="connectionTitle">スマホを接続する</h2><p>PCと同じWi-Fiへ接続してから、QRを読み取ってください。最初に読み取った人がホスト（P1）になります。2〜4人で遊べます。</p>
   <div id="helpQr" className="help-qr" dangerouslySetInnerHTML={{__html: connection.qr}} />
   <p className="url" id="url">{connection.url}</p><p id="urlNote">{connection.urlNote}</p><p id="wifi">{connection.wifi}</p>
-  <button id="reloadInfo">QRを取得し直す</button><button id="closeConnectionHelp">閉じる</button>
+  <button id="reloadInfo">QRを取得し直す</button><form method="dialog"><button id="closeConnectionHelp">閉じる</button></form>
 </dialog>;
 }
 

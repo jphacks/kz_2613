@@ -58,7 +58,6 @@ lifetime.listen($('closeSettings'), 'click',()=>$<HTMLDialogElement>('settings')
 lifetime.listen($('connectionHelpBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
 lifetime.listen($('joinTroubleshootingBtn'), 'click',()=>openDialog($<HTMLDialogElement>('joinTroubleshooting')));
 lifetime.listen($('settingsConnectionBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
-lifetime.listen($('closeConnectionHelp'), 'click',()=>$<HTMLDialogElement>('connectionHelp').close());
 // 全員の接続のリセット (#412)。確認してから送る。ホストは全員を切断し、枠とホストを最初から決め直す (#213)
 lifetime.listen($('resetAllBtn'), 'click',()=>openDialog($<HTMLDialogElement>('resetConfirm')));
 lifetime.listen($('resetCancel'), 'click',()=>$<HTMLDialogElement>('resetConfirm').close());
