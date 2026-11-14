@@ -2685,3 +2685,12 @@
 - `npm --prefix apps/web run build` と `node --experimental-strip-types scripts/sim/app-view-test.mjs`（38/38）が合格。Windowsで切替モジュール単体のビルド・試験が合格。
 - 通信試験に2回連続リセットでSSIDが変わる確認を追加し、`node --check scripts/sim/protocol-sim.mjs` が合格。ホスト全体のビルドは前回のOpenSSL用perl不足があり、通信試験は未実行。
 - 稼働中のホットスポットには触れていない。非管理者WindowsとAndroid・iPhoneでの連続試遊、参加URLの実ネットワークでの更新は未確認。
+### #562 レビュー対応
+- セッションAPIが存在しない旧Windowsに限り、永続設定を変更せず従来の起動APIへ戻す。WinRTが返したエラーコード・状態コードを資格情報を含まない固定文言で案内。
+- 情報取得は起動処理中のロックを待たず、取得した状態のCOM照会はロックの外で行う。遷移中は旧Wi-Fi QRを表示しない。
+- Windowsでnetinfo単体ビルド・単体試験に合格。実機は未実施。
+
+### #563 起動互換性のレビュー修正を反映
+- #562の旧Windows起動互換と、Wi-Fi情報取得で起動完了を待たない修正を取り込んだ。
+- セッションAPIを使って起動した場合だけ再設定できる。従来APIで起動したホットスポットは停止せず、自動切り替えに未対応として扱う。
+- Windowsでnetinfo単体のコンパイル・単体試験1件に合格。実機連続試遊とホスト全体の再検証は未実施。
