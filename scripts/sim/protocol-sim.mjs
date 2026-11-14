@@ -68,7 +68,9 @@ function fakeGames(dir) {
 
 // ---------- ホストの起動 (必ず注入なし) ----------
 function startHost(hotspotState = 'on', port = PORT) {
-  const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-sim-'));
+  const diagnostics = process.env.RECOOPLAY_PROTOCOL_DIAGNOSTICS;
+  if (diagnostics) fs.mkdirSync(diagnostics, { recursive: true });
+  const logDir = fs.mkdtempSync(path.join(diagnostics || os.tmpdir(), 'recooplay-sim-'));
   const optionsFile = path.join(logDir, 'options.txt');
   const keyOverridesFile = path.join(logDir, 'key-overrides.json');
   fs.copyFileSync(path.join(ROOT, 'scripts', 'sim', 'fixtures', 'minecraft-options.txt'), optionsFile);

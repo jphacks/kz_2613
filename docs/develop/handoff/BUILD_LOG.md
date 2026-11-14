@@ -2546,6 +2546,10 @@
 - `engines/creation.rs`：`ControlMap_Custom.txt` がないとき、Fallout 4・Starfield は Data の「* - Interface.ba2」から `Interface/Controls/PC/ControlMap.txt` を取り出して読む。Skyrim SE の BSA（LZ4）は依存が増えるので、今までどおり既定の割当の表。
 - カタログ（`engines.mjs`）にも同じ読み取り（`ba2Extract`）を足した。
 - 確認：小さなクレートで Rust の単体試験33件・Clippy 合格、`cargo fmt --check` 合格、`profile-engines-test.mjs` 18/18。BA2 の版 2・3 の先頭の長さは知識による（実物で確かめていない）。Fallout 4・Starfield の実物は手元にない。
+## 2026-11-14 — 通信回帰試験のセッションログを保存する（#379、Codex）
+
+- 通信試験が失敗した場合、既存の標準出力ログと、dry-runホストごとのセッションJSONLを同じ成果物に保存する。模擬ゲームや設定のファイルは成果物の対象外。
+- WindowsでWebをビルドした後、通信試験が67/67合格し、指定先に3プロセス分のセッションJSONLを確認した。Web資産が未生成だった初回のHTTP試験失敗時にも3件のJSONLが残った。GitHub上の成果物アップロードは未確認。
 
 ## 2026-11-15 — インターネット経由の遠隔共同プレイの成立性の調査（#158、Claude Code）
 
@@ -2556,3 +2560,4 @@
 
 - Rustホストが `command_result` に必ず送る `cmd` をWebの型と受信検証に追加した。Webの境界試験で欠落・不正型を拒否し、通信試験でホストの開始拒否をWebのデコーダーに通す。
 - Webの型検査・ビルド、`node scripts/sim/product-web-test.mjs`、構文・差分検査が成功。ホストと通す追加アサーションはCI待ち。
+- 手動の反復試験にも適用し、失敗した試行のJSONLだけを試行番号とホスト別の名前で保存する。
