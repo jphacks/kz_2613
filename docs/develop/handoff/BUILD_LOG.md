@@ -2467,3 +2467,4 @@
 
 - 閉じるボタンを `method="dialog"` のフォームへ移し、専用のDOMリスナーを削除した。配布試験にフォーカス復帰と再表示を追加した。
 - Webの型検査・ビルド、試験スクリプトの構文、差分検査が成功。配布WebView2試験はCI待ち。
+- 第3弾（同じ PR）：利用者の判断（2026-11-14「汎用定義メイン」）で、GameMaker・LÖVE・HTML5 系は読み取りを作らず、エンジンだけを見分けて 2D 向けの汎用の割当（矢印・Z・X・C・Shift・Enter・Esc）にした（`engines/generic2d.rs`、ほかのどれにも当たらないときだけ）。XNA・FNA・MonoGame は WASD とマウスの作品が多いので従来の汎用定義のまま。Ren'Py（#492）は推奨人数の Issue（#479）にまとめた。確認：Rust 25件・Clippy、`profile-engines-test.mjs` 12/12。

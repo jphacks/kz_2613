@@ -7,7 +7,7 @@ import path from 'node:path';
 import {
   keyName, vkKey, dikKey, keyMapper, actionsFromMapper, enabledPlugins, mapperAssignments, rpgmaker, wolf, cfgBindings, actionsFromBindings,
   quake, actionsFromVcfg, source2, actionsFromControlMap, creation, findAxes, actionsFromAxes, hasCustomAxes, unityLegacy, parseOverrides, applyOverrides, engineActions,
-  godotKey, actionsFromGodotProject, godot, actionsFromUeIni, unreal, zipEntries, zipRead, actionsFromCryXml, cryengine,
+  godotKey, actionsFromGodotProject, godot, actionsFromUeIni, unreal, zipEntries, zipRead, actionsFromCryXml, cryengine, generic2d,
 } from '../profiles/engines.mjs';
 import zlib from 'node:zlib';
 
@@ -308,6 +308,18 @@ test('CryEngine: zip と actionmaps', () => {
   assert.equal(cryengine(path.join(tmp, 'cry')).actions[0].id, 'cryengine/moveforward');
   put('cry/GameData/GameData.pak', Buffer.alloc(2048, 0x5a));
   assert.equal(cryengine(path.join(tmp, 'cry')), null);
+});
+
+test('2D 向けの汎用の割当: GameMaker・LÖVE・HTML5 だけ', () => {
+  for (const [sub, files, want] of [['gm', ['data.win'], 'GameMaker'], ['love', ['love.dll', 'lua51.dll'], 'LÖVE'], ['love-only', ['love.dll'], null],
+    ['nw', ['nw.dll'], 'HTML5'], ['electron', ['resources/app.asar'], 'HTML5'], ['xna', ['MonoGame.Framework.dll'], null]]) {
+    for (const f of files) put(`g2d/${sub}/${f}`, 'x');
+    const got = generic2d(path.join(tmp, 'g2d', sub));
+    if (want) { assert.ok(got.source.startsWith(want), sub); assert.equal(got.actions.length, 10); assert.ok(got.actions.every((a) => a.def)); }
+    else assert.equal(got, null, sub);
+  }
+  put('g2d/mv/www/js/rpg_core.js', MV_CORE); put('g2d/mv/nw.dll', 'x');
+  assert.match(engineActions(path.join(tmp, 'g2d', 'mv')).source, /MV/, 'ツクール MV (NW.js) はツクールとして読む');
 });
 
 try {

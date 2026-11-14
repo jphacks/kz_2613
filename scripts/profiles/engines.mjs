@@ -589,6 +589,24 @@ export function cryengine(dir) {
   return null;
 }
 
+// ---------- 2D 向けの汎用の割当 (GameMaker #490・LÖVE #494・HTML5 系 #495。読み取りなし) ----------
+// 利用者の判断 (2026-11-14「汎用定義メイン」)。XNA・FNA・MonoGame は WASD とマウスの作品が多いので従来の汎用定義 (#493)
+export const generic2dActions = () => [
+  button('2d/up', '上へ移動', 'ARROW_UP', 'movement'), button('2d/down', '下へ移動', 'ARROW_DOWN', 'movement'),
+  button('2d/left', '左へ移動', 'ARROW_LEFT', 'movement'), button('2d/right', '右へ移動', 'ARROW_RIGHT', 'movement'),
+  button('2d/z', 'Z（決定・行動）', 'KEY_Z', 'action'), button('2d/x', 'X（キャンセル・行動）', 'KEY_X', 'action'), button('2d/c', 'C（行動）', 'KEY_C', 'action'),
+  button('2d/shift', 'Shift（ダッシュなど）', 'LSHIFT', 'movement'), button('2d/enter', 'Enter（決定・開始）', 'ENTER', 'menu'), button('2d/esc', 'Esc（メニュー・ポーズ）', 'ESC', 'menu'),
+];
+export function generic2d(dir) {
+  let names = []; try { names = fs.readdirSync(dir); } catch { return null; }
+  const has = (rx) => names.some((n) => rx.test(n));
+  const res = childCi(dir, 'resources');
+  const source = has(/^data\.win$/i) ? 'GameMaker（読み取りなし・2D 向けの汎用の割当）'
+    : has(/^love\.dll$/i) && has(/^lua5.*\.dll$/i) ? 'LÖVE（読み取りなし・2D 向けの汎用の割当）'
+      : has(/^nw\.dll$/i) || has(/^package\.nw$/i) || (res && childCi(res, 'app.asar')) ? 'HTML5（NW.js・Electron、読み取りなし・2D 向けの汎用の割当）' : null;
+  return source ? { source, actions: generic2dActions() } : null;
+}
+
 // ---------- Unity の旧 Input Manager ----------
 function parseAxis(b, o) {
   const str = () => {
@@ -685,7 +703,7 @@ export function prefsOverrides(dataDir) {
 /** Unity 以外のエンジンを、見分けのつきやすい順に試す (ホストの engines::read と同じ順)。
  * Unity の旧 Input Manager (unityLegacy) は、extract.mjs が .NET の読み取りとの順番を決めて呼ぶ */
 export function engineActions(dir) {
-  for (const r of [rpgmaker, wolf, source2, creation, godot, unreal, cryengine, quake]) {
+  for (const r of [rpgmaker, wolf, source2, creation, godot, unreal, cryengine, quake, generic2d]) {
     let found = null;
     try { found = r(dir); } catch { found = null; }
     if (found?.actions?.length) return { ...found, actions: found.actions.slice(0, 160) };

@@ -11,6 +11,7 @@ use crate::keybinds::{name_key, Key};
 
 pub mod creation;
 pub mod cryengine;
+pub mod generic2d;
 pub mod godot;
 pub mod quake;
 pub mod rpgmaker;
@@ -31,7 +32,8 @@ const MAX_TEXT: u64 = 20_000_000;
 pub fn read(dir: &Path) -> Option<Found> {
     // Unity の旧 Input Manager (unity_legacy) と PlayerPrefs (unity_prefs) は、Rewired との順番があるので
     // game_actions::read から直接呼ぶ
-    let readers: [fn(&Path) -> Option<Found>; 8] = [
+    // generic2d (読み取りなしの 2D 向けの割当) は、ほかのどれにも当たらないときだけ
+    let readers: [fn(&Path) -> Option<Found>; 9] = [
         rpgmaker::read,
         wolf::read,
         source2::read,
@@ -40,6 +42,7 @@ pub fn read(dir: &Path) -> Option<Found> {
         unreal::read,
         cryengine::read,
         quake::read,
+        generic2d::read,
     ];
     readers.iter().find_map(|r| {
         r(dir)

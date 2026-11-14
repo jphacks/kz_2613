@@ -86,6 +86,7 @@ Steam・Epic Gamesの検出情報はゲーム選択と入力先の判定に用�
 | Unreal Engine 4・5 | pak の中の`DefaultInput.ini`（暗号化・圧縮されていないもの）と、`%LOCALAPPDATA%\<Project>\Saved\Config\Windows`（UE4 は`WindowsNoEditor`）の`Input.ini`。Enhanced Input は未対応（#482） | あり |
 | CryEngine | pak（zip）の中の`defaultProfile.xml`などの actionmaps（#489） | あり |
 | Quake 系・Source 1 | `id1/config.cfg`・`baseq2/config.cfg`・`baseq3/q3config.cfg`、`<mod>/cfg/config.cfg`（#491） | 利用者の設定 |
+| GameMaker・LÖVE・HTML5 系（NW.js・Electron） | 読み取りなし。エンジンだけを見分けて、2D 向けの汎用の割当（矢印・Z・X・C・Shift・Enter・Esc）。XNA・FNA・MonoGame は従来の`generic`（#490・#494・#495・#493） | 既定 |
 | .NET（Rewired） | `RewiredConsts.Action`の定数 | なし |
 | Unity の旧 Input Manager | `globalgamemanagers`の軸（型情報なしで読む）。作品が足した軸がなければ使わない（#483） | あり |
 | .NET の列挙型 | `Assembly-CSharp.dll`の操作らしい列挙型 | なし |
