@@ -400,6 +400,19 @@ async function main() {
       }
     });
 
+    await check('ゲーム選択: 初回参加では分担案を送らず、選んだゲームに合わせる (#447)', async () => {
+      const initial = await p2.waitFor(m => m.type === 'game' && m.game.connected.length === 3);
+      assert(initial.game.title === '' && initial.game.profile === null && !initial.game.canPrepare);
+      for (const [title, profileId] of [['pseudo-game', 'test-pseudo'], ['minecraft-java', 'minecraft-java']]) {
+        const from = p2.mark();
+        mon.send({type:'select_game', title});
+        const selected = await p2.waitFor(m => m.type === 'game' && m.game.title === title, {from});
+        assert(selected.game.profile?.id === profileId,
+          `${title}の操作定義: 期待値 ${profileId}、受信値 ${selected.game.profile?.id}`);
+        assert(selected.game.profile.assignment?.P2?.length > 0, `${title}のP2の分担がない`);
+      }
+    });
+
     await check('トークン: welcome で枠ごとに 128bit 以上の推測困難な値を発行する', async () => {
       const t = [tokens.P1, tokens.P2, tokens.P3];
       assert(t.every((x) => /^[0-9a-f]{32,}$/.test(x || '')), `トークンの形式: ${t.join(',')}`);
@@ -605,7 +618,7 @@ async function main() {
     });
 
     await check('キー設定: Minecraft の options.txt に合わせて送る (ダッシュ = Q、捨てる = R)', async () => {
-      const st = await mon.waitFor((m) => m.type === 'state' && m.game?.keys, { what: 'keys' });
+      const st = await mon.waitFor((m) => m.type === 'state' && m.game?.title === 'minecraft-java' && m.game.keys, { what: 'Minecraftのキー設定' });
       const k = st.game.keys;
       assert(k.source === 'options', `source=${k.source}`);
       assert(k.controls.SPRINT?.out === 'KEY_Q' && k.controls.DROP?.out === 'KEY_R' && k.controls.FWD?.out === 'KEY_W', JSON.stringify(k.controls));
@@ -2212,9 +2225,9 @@ async function main() {
     });
     for (const c of [p1, p2, p3, mon]) c?.close();
     await check('終了時にアプリが起動したホットスポットだけを停止する (#415 A)', async () => {
-      async function quitAndCheck(instance, expected) {
+      async function quitAndCheck(instance, expected, command = 'quit\n') {
         const exited = new Promise((resolve) => instance.child.once('exit', resolve));
-        instance.child.stdin.end('quit\n');
+        instance.child.stdin.end(command);
         const code = await Promise.race([exited, sleep(3500).then(() => 'timeout')]);
         assert(code === 0, `安全停止の終了コード: ${code}`);
         const log = fs.readdirSync(instance.logDir).filter((f) => f.endsWith('.jsonl'))
@@ -2227,26 +2240,28 @@ async function main() {
       }
 
       await quitAndCheck(host, 'notOwned');
-      const owned = startHost('off');
-      try {
-        await waitReady();
-        const readState = async () => (await (await fetch(`${BASE}/api/info`)).json()).hotspot?.on;
-        assert(await readState() === false, '起動前からホットスポットがON');
-        const start = async () => (await (await fetch(`${BASE}/api/hotspot`, {
-          method: 'POST', headers: { Origin: BASE },
-        })).json()).ok;
-        const results = await Promise.all([start(), start()]);
-        assert(results.every(Boolean) && await readState() === true, 'ホットスポットをONにできなかった');
-        const phone = await join('hotspot-shutdown', { clientId: 'sim-client-hotspot-shutdown' });
+      for (const command of ['quit\n', '']) {
+        const owned = startHost('off');
         try {
-          assert((await welcome(phone)).type === 'welcome', '終了通知を確認するスマホが参加できなかった');
-          const [closeCode] = await Promise.all([phone.waitClose(), quitAndCheck(owned, 'stopped')]);
-          assert(closeCode === 4009, `スマホの終了通知コード: ${closeCode}`);
+          await waitReady();
+          const readState = async () => (await (await fetch(`${BASE}/api/info`)).json()).hotspot?.on;
+          assert(await readState() === false, '起動前からホットスポットがON');
+          const start = async () => (await (await fetch(`${BASE}/api/hotspot`, {
+            method: 'POST', headers: { Origin: BASE },
+          })).json()).ok;
+          const results = await Promise.all([start(), start()]);
+          assert(results.every(Boolean) && await readState() === true, 'ホットスポットをONにできなかった');
+          const phone = await join('hotspot-shutdown', { clientId: 'sim-client-hotspot-shutdown' });
+          try {
+            assert((await welcome(phone)).type === 'welcome', '終了通知を確認するスマホが参加できなかった');
+            const [closeCode] = await Promise.all([phone.waitClose(), quitAndCheck(owned, 'stopped', command)]);
+            assert(closeCode === 4009, `スマホの終了通知コード: ${closeCode}`);
+          } finally {
+            phone.close();
+          }
         } finally {
-          phone.close();
+          owned.child.kill();
         }
-      } finally {
-        owned.child.kill();
       }
     });
     const failed = results.filter((r) => !r.ok);

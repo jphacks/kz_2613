@@ -2334,6 +2334,12 @@
 - CI：必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験を行う。計測用の配布zipは、手動で起動する `latency-measure.yml` で作る（`-latency-measure` 付きの名前）。
 - 確認：手元で型検査、`npm run build` と `npm run build:latency`、`phone-lifecycle` 34/34（計測の送信の有無の試験を追加）、`phone-view`、`ui-input` 20/20、`phone-session` 7/7、`protocol-boundary` 8/8、`verify_overlay.py`、`check-public-docs.py`、`rustfmt --check` が合格。Rustのビルドと試験（`latency.rs` の単体試験2件を含む）は、手元でOpenSSLのビルド（Perl）ができないためCIで確かめる。
 
+## 2026-11-14 — ゲーム選択前の分担表示を抑える（#447、Codex）
+
+- ホストとPC画面を未選択から始める。既存の文字列型の `game.title` を空にし、既存の `profile: null` を使う。スマホはゲーム選択を待つ表示にし、選択後はホストが配る分担を表示する。参加枠と担当確認の仕組みは従来どおり使う。
+- 合格：`npm --prefix apps/web run build`、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/verify_overlay.py`、`python scripts/check-public-docs.py`、変更したシミュレーションの構文検査、`git diff --check`。Node 22.15.0ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定した。
+- 初回参加・ゲーム選択・再選択を確認する通信試験を追加した。Rustホストの実行を伴う確認はGitHub CIで行い、Android・iPhoneでの表示は実機受入に残す。
+- 追試（#447）：選択IDと操作定義IDを別に照合し、キー設定はMinecraft選択後の通知を参照するようにした。CI run 43485721653 のホストで通信66/66、Chromeの画面検査（PC 800×560・スマホ390×844）23画面が合格。
 ## 2026-11-14 — 分担の初期設定をモデルにする（Claude Code）
 
 - 利用者の判断：分担の案の初期設定を規則からモデルに切り替える（#474）。`RECOOPLAY_PRESETS=rule` でなければモデルの分担を使う（`profiles::model_presets_enabled`）。使われなくなった `preset_source()` は消した。規則に戻すときは `RECOOPLAY_PRESETS=rule`。
@@ -2441,6 +2447,19 @@
 - Webの型検査とビルドは成功。手元で既存配布のexeと今回のWeb資産を組み合わせたWebView2試験では、参加画面のReact描画待ちでタイムアウトした。変更箇所のWebView2確認はCIの同一コミット配布物に残す。
 今回の追加確認では node scripts/sim/product-web-test.mjs が成功した。
 
+## 2026-11-14 — エンジンごとの操作の読み取り（#481、Claude Code）
+
+- 利用者の依頼：ゲームエンジンごとに操作の読み取りを増やす（一覧 #481、各エンジン #480・#482〜#495）。第1弾として、形式が素直で試験用のファイルを作れるものを実装した。
+- ホスト：`apps/host-rs/src/engines/` を足し、`game_actions::read` の順番を「Unity Input System（PlayerPrefs の上書きを反映）→ Unity 以外のエンジン → .NET の Rewired → Unity の旧 Input Manager → .NET の列挙型」にした。Rewired を旧 Input Manager より先にしたのは、手元の Core Keeper（Rewired）で旧 Input Manager の既定の名残が先に当たり、操作が3件しか出なかったため。
+  - RPGツクール MV・MZ の `Input.keyMapper` と有効なプラグインの追加、RGSS・2000/2003 の既定のキー（#480）。ウディタの既定のキー（#488）。
+  - Source 2 の `.vcfg`（#487）、Creation Engine の `ControlMap_Custom.txt` と Skyrim の既定（#486）、Quake 系と Source 1 の cfg（`keybinds::source_cfg` を `pub(crate)` にして使い回す、#491）。
+  - Unity の旧 Input Manager を型情報なしで読む（#483）。手元の Project Winter（IL2CPP）で、移動（Horizontal・Vertical）・Attack・Aim・視点を読めた。最初はゲームパッドの軸の番号（28）を上限27で弾いて並びが途切れ、マウスボタンの軸だけが出ていたので、上限を63にし、途切れた並びもまとめて拾うようにした。Unity の描画機能が足すデバッグ用の軸（`Debug *`）と、同じキーの別名の軸（`MouseButton0`）は出さない。BongoCat（作品が足した軸なし）は読まずに汎用定義へ戻る。
+  - Unity の PlayerPrefs（#484）：手元の BongoCat で、値の名前に `_h<ハッシュ>` が付き、文字列が UTF-8 のバイナリ値であることを確認した。キーを変えた記録のあるゲームは手元になく、上書きの反映は fixture だけで確認した。Rewired の保存（XML）は操作名と結び付けられないので読まない。
+- カタログ：`scripts/profiles/engines.mjs` に同じ読み取りを置き、`extract.mjs` から同じ順番で呼ぶ（Rewired は従来どおり JS では読まない）。PlayerPrefs は `reg query` で読み取り専用で読む。
+- 確認：手元ではホスト全体（OpenSSL）を空きメモリ不足でビルドできないため、`engines` と、それが使う `controls.rs`・`keybinds.rs` の一部（Key・name_key・source_cfg・expand をそのまま取り出したもの）だけの小さなクレートで、Rust の単体試験16件・Clippy（`-D warnings`）・`windows` クレートのレジストリ部分のビルドが合格した。`cargo fmt --check` 合格。JS は `profile-engines-test.mjs` 8/8（Rust と同じ入力・期待値）、`profile-extract-test.mjs` 合格。ホスト全体のビルド・試験は CI で確認する。
+- 実ゲームで未確認：ツクール・ウディタ・Source 2・Bethesda・Quake 系（手元に該当するゲームがない）。分担が成り立つかの実機確認も未実施。
+- 第2弾（同じ PR）：Godot 3・4（#485。PCK の `project.binary` の `input/*` から、イベントのクラス名と `keycode`・`physical_keycode`・`scancode`・`button_index` の整数を拾う。exe に埋め込んだ PCK は末尾の `GDPC` だけ先に確かめ、大きな exe を無駄に読まない）、Unreal Engine 4・5（#482。pak を 8 MB ずつ読んで `[/Script/Engine.InputSettings]` を探し、利用者の `Input.ini` を重ねて `keybinds::ue_input_ini` で読む。`MouseX`・`MouseY` の軸は視点）、CryEngine（#489。pak の zip から actionmaps の XML）。zip の展開のためにホストに `flate2`（`rust_backend`、純 Rust）を足した（PC アプリの依存と同じ版。ロックに adler2・crc32fast・flate2・miniz_oxide・simd-adler32 が増えた）。
+- 第2弾の確認：小さなクレートで Rust の単体試験24件・Clippy 合格、`profile-engines-test.mjs` 11/11。手元の Outlast（Unreal Engine 3）はフォルダの作りが違うので読まない（対象は UE4・UE5）。Godot・UE4/5・CryEngine の実物は手元になく、fixture だけで確認した。
 ## 2026-11-14 — 分担の作り方の表記を「定型ルール／独自AI」にする（#475、Claude Code）
 
 - 利用者の判断：分担の画面の「規則」を「定型ルール」、「モデル（未検証）」を「独自AI」にする。ルールで割り当てることが、エンジニアでなくても分かる表記にする。各ボタンに説明の title を付けた。値（`rule`・`model`）と通信は変えていない。
@@ -2458,7 +2477,35 @@
 
 - 2999msでは接続を維持し、3000msで旧接続を閉じる直前に計測用ビルドだけが診断を1回出すことを確認した。両ビルドで再接続を検証した。
 - `node --experimental-strip-types scripts/sim/phone-lifecycle-test.mjs` は37/37合格。実端末での再現とホストログとの照合は未実施。
+## 2026-11-14 — 配布WebView2の失敗ログを保存する（#379、Codex）
+
+- 配布PCアプリのWebView2スモークの標準出力・標準エラーをCIログに出し、失敗時は `windows-webview2-diagnostics` の成果物にも保存する。試験の終了コードはそのまま必須チェックへ渡す。
+- PowerShellで標準出力・標準エラーを出す模擬試験を実行し、成功と失敗の終了コードおよびログの両方を確認した。GitHub上の成果物の保存は実行結果待ち。
+## 2026-11-14 — 配布WebView2の失敗時に画面とセッションログを採取する（#379、Codex）
+
+- 失敗時にdry-runホストのセッションJSONLを保存し、CDPが応答する場合は画面をPNGで採取する。採取の失敗を記録して、元の例外をそのまま返す。
+- スクリプト構文、構造、差分検査が成功。GitHubでの失敗時成果物は未確認。
+## 2026-11-14 — WebSocket終了直前の送信空白を記録する（#426、Codex）
+
+- 計測用ホストで、参加者の接続が最後の本文送信成功から3秒以上経って終了した場合に、枠・空白時間・終了コードを `ws_send_gap_at_close` として残す。次の本文送信が成功する前に接続が終了した試行でもホスト側の空白を確認できる。
+- Windowsの計測機能付きClippyが成功。Android実機での再現と受信ログの照合は未実施。
 ## 2026-11-14 — 操作設定を標準ダイアログ操作で閉じる（#278、Codex）
 
 - 閉じるボタンを `method="dialog"` のフォームへ移し、専用のDOMリスナーを削除した。配布試験にフォーカス復帰と再表示を追加した。
 - Webの型検査・ビルド、試験スクリプトの構文、差分検査が成功。配布WebView2試験はCI待ち。
+- 第3弾（同じ PR）：利用者の判断（2026-11-14「汎用定義メイン」）で、GameMaker・LÖVE・HTML5 系は読み取りを作らず、エンジンだけを見分けて 2D 向けの汎用の割当（矢印・Z・X・C・Shift・Enter・Esc）にした（`engines/generic2d.rs`、ほかのどれにも当たらないときだけ）。XNA・FNA・MonoGame は WASD とマウスの作品が多いので従来の汎用定義のまま。Ren'Py（#492）は推奨人数の Issue（#479）にまとめた。確認：Rust 25件・Clippy、`profile-engines-test.mjs` 12/12。
+## 2026-11-14 — 親の標準入力が閉じたときのホットスポット停止を確認する（#415、Codex）
+
+- 明示の `quit` と標準入力のEOFそれぞれで、ホストの安全停止ログ、スマホへの終了コード4009、アプリが起動した模擬ホットスポットの停止、資格情報の非記録を確認した。
+- Windows releaseビルド、Webビルド、通信dry-run 67/67が成功。非管理者での実ホットスポット停止は未実施。
+
+## 2026-11-14 — 主要タイトルで漏れていたエンジンの読み取り（#505〜#509、Claude Code）
+
+- 主要タイトル（`top500-games.json` の上位で分担に向く約150本）のエンジンを照合し、漏れていたもののうちファイルが文字で読めそうなものを実装した（PR #502 の上に重ねた別 PR）。
+  - REDengine（#505）：Cyberpunk 2077 の `inputUserMappings.xml`（`val` の負・正で軸を2つの操作に分ける）、The Witcher 3 の `input.settings` の `[Exploration]`・`[Combat]`。Cyberpunk 2077 の利用者の変更（`UserSettings.json`）は形式を確かめていないので読まない。
+  - Prism3D（#506）：ETS2・ATS のプロファイルの `controls.sii` の `mix` の行。暗号化された `.sii` は読まない。
+  - GIANTS Engine（#507）：Farming Simulator の `inputBinding.xml`。操作が多いので歩き・運転・乗り降りを先に40件まで。
+  - Factorio（#508）：`config.ini` の `[controls]`。書かれていない操作は既定のキー、修飾キー付きは送れないので初期キーなし。
+  - Project Zomboid（#509）：`keys.ini`。Build 42 で GLFW のキーコードになった可能性があるので、`Forward` の値で DirectInput（W = 17）と GLFW（W = 87）を見分ける。
+- RE Engine（#510）は、キー割当の保存先を実物で確かめられないので実装していない（今は汎用定義になる）。
+- 確認：小さなクレートで Rust の単体試験31件・Clippy 合格、`profile-engines-test.mjs` 17/17（Rust と同じ入力・期待値）。どのゲームも手元になく、ファイルの形式は知識による（fixture だけで確認）。実機は未確認。

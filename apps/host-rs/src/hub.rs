@@ -42,7 +42,6 @@ const SLOT_ROLES: [&str; MAX_SLOTS] = ["ホスト", "参加者", "参加者", "�
 // "pseudo-game" は診断用の疑似ゲーム画面 (/game) で、PC アプリの一覧には出さない (ゲーム変更の試験にも使う)
 // PC アプリ (apps/desktop) の実行ファイル名。前面になったら PC アプリへの手動復帰とみなす
 const DESKTOP_PROCESS: &str = "recooplay-desktop.exe";
-const DEFAULT_TITLE: &str = TITLES[0];
 const PROTOCOL_VERSION: u64 = 5;
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
@@ -86,6 +85,8 @@ pub enum Event {
     WsClosed {
         id: u64,
         code: u16,
+        #[cfg(feature = "latency-measure")]
+        since_last_send_ms: Option<u64>,
     },
     RtcDescription {
         slot: usize,
@@ -534,7 +535,7 @@ impl Hub {
                 auto_resume_ms: config.auto_resume_ms,
                 auto_resume_until: 0,
                 epoch: 1,
-                title: DEFAULT_TITLE.to_string(),
+                title: String::new(),
             },
             inject: InjectMode::parse(&config.inject_mode).unwrap_or(InjectMode::Off),
             game_service: GameService::new(),
@@ -552,7 +553,7 @@ impl Hub {
             timer_seq: 0,
             state_pending: false,
             hotkey: Err("未登録".into()),
-            target: config.target.clone(),
+            target: game_service::target_for(&[], "", &config.target),
             base_target: config.target.clone(),
             games: Vec::new(),
             images: games::Images::default(),
@@ -3666,7 +3667,24 @@ impl Hub {
                     self.on_ws_message(id, msg);
                 }
             }
-            Event::WsClosed { id, code } => self.on_ws_closed(id, code),
+            Event::WsClosed {
+                id,
+                code,
+                #[cfg(feature = "latency-measure")]
+                since_last_send_ms,
+            } => {
+                #[cfg(feature = "latency-measure")]
+                if let Some(gap_ms) = since_last_send_ms.filter(|gap| *gap >= 3000) {
+                    if let Some(Role::Player { slot }) = self.conns.get(&id).map(|conn| &conn.role)
+                    {
+                        self.record(
+                            "ws_send_gap_at_close",
+                            json!({ "slot": SLOT_NAMES[*slot], "gapMs": gap_ms, "closeCode": code }),
+                        );
+                    }
+                }
+                self.on_ws_closed(id, code);
+            }
             #[cfg(feature = "latency-measure")]
             Event::WsSendGap {
                 id,
@@ -4778,7 +4796,7 @@ mod tests {
                 auto_resume_ms: 15000,
                 auto_resume_until: 0,
                 epoch: 1,
-                title: DEFAULT_TITLE.to_string(),
+                title: TITLES[0].to_string(),
             },
             inject: InjectMode::On,
             game_service: GameService::new(),

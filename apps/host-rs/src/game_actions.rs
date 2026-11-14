@@ -1,6 +1,8 @@
 // 操作定義のないゲームのファイルから、操作 (名前・初期キー・種類) を読む (#431)。
 // 読む範囲は scripts/profiles/extract.mjs と同じ。ゲームを起動しない・ファイルを書き換えない・外部へ送らない。
-// 読める形式: Unity Input System (ゲームに埋め込まれた .inputactions の JSON)、.NET の DLL にある操作名 (Rewired の定数・列挙型。キーなし)。
+// 読める形式: Unity Input System (ゲームに埋め込まれた .inputactions の JSON。PlayerPrefs に保存した上書きを反映)、
+// エンジンごとの読み取り (engines：RPGツクール・ウディタ・Source 2・Creation Engine・Quake 系と Source 1)、
+// .NET の DLL にある Rewired の操作名 (キーなし)、Unity の旧 Input Manager の軸、.NET の列挙型 (キーなし) の順に試す。
 // ほかの形式は読めないので None を返す。
 use std::path::{Path, PathBuf};
 
@@ -28,7 +30,24 @@ pub fn read(install_dir: &Path) -> Option<(Vec<ReadAction>, &'static str)> {
     if let Some(actions) = unity_input_actions(install_dir).filter(|a| !a.is_empty()) {
         return Some((actions, "Unity Input System の埋め込み定義"));
     }
-    dotnet_actions(install_dir).filter(|(a, _)| !a.is_empty())
+    if let Some(found) = crate::engines::read(install_dir) {
+        return Some(found);
+    }
+    // Rewired の操作名 (作品が定義した操作) を、旧 Input Manager の軸 (既定の名残が多い) より優先する。
+    // 列挙型からの推定 (キーなし) より、キーのある旧 Input Manager を優先する
+    let dotnet = dotnet_actions(install_dir).filter(|(a, _)| !a.is_empty());
+    if dotnet
+        .as_ref()
+        .is_some_and(|(_, s)| s.starts_with("Rewired"))
+    {
+        return dotnet;
+    }
+    crate::engines::unity_legacy::read(install_dir)
+        .map(|(mut a, s)| {
+            a.truncate(MAX_ACTIONS);
+            (a, s)
+        })
+        .or(dotnet)
 }
 
 /// <ゲーム>_Data フォルダ
@@ -246,7 +265,12 @@ fn unity_input_actions(dir: &Path) -> Option<Vec<ReadAction>> {
         };
         assets.extend(find_input_assets(&bytes));
     }
-    (!assets.is_empty()).then(|| actions_from_assets(&assets))
+    if assets.is_empty() {
+        return None;
+    }
+    // 利用者が変えたキー (PlayerPrefs の上書き、#484) を反映する
+    crate::engines::unity_prefs::apply(&mut assets, &crate::engines::unity_prefs::overrides(&dd));
+    Some(actions_from_assets(&assets))
 }
 
 // ---------- .NET のメタデータ (ECMA-335) から、型の定数・列挙の名前を読む。コードは実行しない ----------
