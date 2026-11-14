@@ -117,19 +117,30 @@ pub fn exists(target: &Target) -> bool {
 }
 
 /// 一意に照合したゲームだけを閉じ、プロセス終了をOSで確認する。
-pub fn close_game(target: &Target) -> Result<(), String> {
-    imp::close_game(target)
+#[derive(Clone)]
+pub struct PlayedProcess {
+    pid: u32,
+    created: u64,
+    path: String,
+}
+
+pub fn played_process(target: &Target) -> Option<PlayedProcess> {
+    imp::played_process(target)
+}
+
+pub fn close_game(target: &Target, played: Option<&PlayedProcess>) -> Result<(), String> {
+    imp::close_game(target, played)
 }
 
 #[cfg(windows)]
 mod imp {
     use windows::core::{BOOL, PWSTR};
     use windows::Win32::Foundation::{
-        CloseHandle, HANDLE, HWND, LPARAM, WAIT_OBJECT_0, WAIT_TIMEOUT, WPARAM,
+        CloseHandle, FILETIME, HANDLE, HWND, LPARAM, WAIT_OBJECT_0, WAIT_TIMEOUT, WPARAM,
     };
     use windows::Win32::System::Threading::{
-        AttachThreadInput, GetCurrentThreadId, OpenProcess, QueryFullProcessImageNameW,
-        TerminateProcess, WaitForSingleObject, PROCESS_NAME_WIN32,
+        AttachThreadInput, GetCurrentThreadId, GetProcessTimes, OpenProcess,
+        QueryFullProcessImageNameW, TerminateProcess, WaitForSingleObject, PROCESS_NAME_WIN32,
         PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_SYNCHRONIZE, PROCESS_TERMINATE,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
@@ -234,9 +245,50 @@ mod imp {
         }
     }
 
+    fn process_created(handle: HANDLE) -> Option<u64> {
+        let (mut created, mut exited, mut kernel, mut user) = (
+            FILETIME::default(),
+            FILETIME::default(),
+            FILETIME::default(),
+            FILETIME::default(),
+        );
+        unsafe { GetProcessTimes(handle, &mut created, &mut exited, &mut kernel, &mut user) }
+            .ok()?;
+        Some((u64::from(created.dwHighDateTime) << 32) | u64::from(created.dwLowDateTime))
+    }
+
+    pub fn played_process(target: &super::Target) -> Option<super::PlayedProcess> {
+        let hwnd = unsafe { GetForegroundWindow() };
+        let mut pid = 0;
+        unsafe {
+            GetWindowThreadProcessId(hwnd, Some(&mut pid));
+        }
+        if pid == 0 || !is_main(hwnd) {
+            return None;
+        }
+        let handle = ProcessHandle(
+            unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) }.ok()?,
+        );
+        let info = describe(hwnd).filter(|info| target.matches(info))?;
+        let created = process_created(handle.0)?;
+        let mut current_pid = 0;
+        unsafe {
+            GetWindowThreadProcessId(hwnd, Some(&mut current_pid));
+        }
+        if pid != current_pid {
+            return None;
+        }
+        Some(super::PlayedProcess {
+            pid,
+            created,
+            path: info.path,
+        })
+    }
+
     struct CloseCandidates<'a> {
         target: &'a super::Target,
         windows: Vec<(HWND, u32, Foreground)>,
+        played: Option<&'a super::PlayedProcess>,
     }
 
     unsafe extern "system" fn visit_close(hwnd: HWND, param: LPARAM) -> BOOL {
@@ -252,6 +304,9 @@ mod imp {
                 GetWindowThreadProcessId(hwnd, Some(&mut pid));
             }
             if pid != 0
+                && candidates
+                    .played
+                    .is_none_or(|played| pid == played.pid && info.path == played.path)
                 && !candidates
                     .windows
                     .iter()
@@ -263,17 +318,22 @@ mod imp {
         BOOL(1)
     }
 
-    pub fn close_game(target: &super::Target) -> Result<(), String> {
+    pub fn close_game(
+        target: &super::Target,
+        played: Option<&super::PlayedProcess>,
+    ) -> Result<(), String> {
         let unknown = "対象ゲームを特定できません。ゲームを手動で終了してください";
-        if target.dir.is_some()
-            || (target.executable.is_none()
-                && (target.processes.is_empty() || target.title_contains.is_empty()))
+        if played.is_none()
+            && (target.dir.is_some()
+                || (target.executable.is_none()
+                    && (target.processes.is_empty() || target.title_contains.is_empty())))
         {
             return Err(unknown.into());
         }
         let mut candidates = CloseCandidates {
             target,
             windows: Vec::new(),
+            played,
         };
         unsafe {
             EnumWindows(
@@ -306,6 +366,9 @@ mod imp {
             }
             .map_err(|_| "ゲームを終了する権限を取得できません")?,
         );
+        if played.is_some_and(|played| process_created(handle.0) != Some(played.created)) {
+            return Err(unknown.into());
+        }
         let mut path = [0u16; 1024];
         let mut len = path.len() as u32;
         unsafe {
@@ -393,7 +456,10 @@ mod imp {
 
 #[cfg(not(windows))]
 mod imp {
-    pub fn close_game(_: &super::Target) -> Result<(), String> {
+    pub fn played_process(_: &super::Target) -> Option<super::PlayedProcess> {
+        None
+    }
+    pub fn close_game(_: &super::Target, _: Option<&super::PlayedProcess>) -> Result<(), String> {
         Err("Windows以外ではゲームを終了できません".into())
     }
     pub fn activate(_: &super::Target) -> Result<(), String> {

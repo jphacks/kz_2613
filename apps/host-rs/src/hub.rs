@@ -419,6 +419,7 @@ pub struct Hub {
     games_scanning: bool,
     launch: Option<Launch>,
     closing_game: bool,
+    played_process: Option<crate::focus::PlayedProcess>,
     launch_gen: u64,
     target_fg: Option<Foreground>,
     // PC アプリ以外のウィンドウ (ランチャー・ダイアログ等) が前面か (#287、#405)
@@ -582,6 +583,7 @@ impl Hub {
             games_scanning: false,
             launch: None,
             closing_game: false,
+            played_process: None,
             launch_gen: 0,
             target_fg: None,
             launcher_fg: false,
@@ -1292,6 +1294,9 @@ impl Hub {
         if phase == Phase::Coop && self.input_fault {
             self.stop_input_failure();
             return;
+        }
+        if phase == Phase::Coop && self.fake_target.is_none() && !dry_run() {
+            self.played_process = crate::focus::played_process(&self.target);
         }
         self.game.phase = phase;
         // 枠の外へ出たリモコンのカーソルは、協力プレイに入ったら終える。戻ったら PC アプリの中から始める
@@ -2537,6 +2542,7 @@ impl Hub {
         if title == self.game.title {
             return;
         }
+        self.played_process = None;
         self.game.title = title;
         self.game.host_ready = false;
         self.launch = None;
@@ -4151,13 +4157,14 @@ impl Hub {
                 }
                 let tx = self.tx.clone();
                 let target = self.target.clone();
+                let played_process = self.played_process.clone();
                 if std::thread::Builder::new()
                     .name("close-game".into())
                     .spawn(move || {
                         let result = if dry_run() {
                             Err("試験モードではゲームを終了できません".into())
                         } else {
-                            crate::focus::close_game(&target)
+                            crate::focus::close_game(&target, played_process.as_ref())
                         };
                         let _ = tx.send(Event::GameClosed(result));
                     })
@@ -5165,6 +5172,7 @@ mod tests {
             games_scanning: false,
             launch: None,
             closing_game: false,
+            played_process: None,
             launch_gen: 0,
             target_fg: None,
             launcher_fg: false,
