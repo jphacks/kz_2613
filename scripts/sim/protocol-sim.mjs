@@ -68,7 +68,9 @@ function fakeGames(dir) {
 
 // ---------- ホストの起動 (必ず注入なし) ----------
 function startHost(hotspotState = 'on', port = PORT) {
-  const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recooplay-sim-'));
+  const diagnostics = process.env.RECOOPLAY_PROTOCOL_DIAGNOSTICS;
+  if (diagnostics) fs.mkdirSync(diagnostics, { recursive: true });
+  const logDir = fs.mkdtempSync(path.join(diagnostics || os.tmpdir(), 'recooplay-sim-'));
   const optionsFile = path.join(logDir, 'options.txt');
   const keyOverridesFile = path.join(logDir, 'key-overrides.json');
   fs.copyFileSync(path.join(ROOT, 'scripts', 'sim', 'fixtures', 'minecraft-options.txt'), optionsFile);
@@ -516,7 +518,9 @@ async function main() {
       const off = await p1.waitFor(m=>m.type==='game' && !m.game.canReady,{from});
       assert(off.game.readyReasons.some(r=>r.includes('入力を再開する')), JSON.stringify(off.game.readyReasons));
       p1.send({type:'command',cmd:'READY'});
-      await p1.waitFor(m=>m.type==='command_result' && m.cmd==='READY' && !m.accepted,{from});
+      const rejected = await p1.waitFor(m=>m.type==='command_result' && m.cmd==='READY' && !m.accepted,{from});
+      assert(decodeServerMessage(JSON.stringify(rejected))?.type === 'command_result',
+        'スマホの受信境界がホストの開始拒否を読み取れない');
       mon.send({type:'inject_mode',mode:'on'});
       await p1.waitFor(m=>m.type==='game' && m.game.canReady,{from});
       let gateFrom=p1.mark();

@@ -6,7 +6,7 @@ export type RtcSignal = {type:'rtc-answer';sdp:string} | {type:'rtc-cand';cand:s
 export type ClientSignal = {type:'rtc-offer';sdp:string} | {type:'rtc-cand';cand:string;mid:string|null};
 export type ServerMessage = Welcome | RtcSignal
   | {type:'game';game:PhoneGame}
-  | {type:'command_result';accepted:boolean;reasons?:string[]}
+  | {type:'command_result';cmd:string;accepted:boolean;reasons?:string[]}
   | {type:'pong'|'kpong';t:number}
   | {type:'ack';iseq:number;via:'ws'|'rtc';stale?:boolean}
   | {type:'full';retryMs?:number|null} | {type:'error';code:string}
