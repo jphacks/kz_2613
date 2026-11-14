@@ -61,14 +61,31 @@ pub struct Hotspot {
     pub on: bool,
 }
 
+struct SessionCredentials {
+    ssid: String,
+    passphrase: String,
+}
+
+fn session_credentials() -> Result<SessionCredentials, String> {
+    let mut bytes = [0u8; 22];
+    getrandom::fill(&mut bytes).map_err(|_| "Wi-Fiの設定を生成できません")?;
+    let hex = |part: &[u8]| part.iter().map(|b| format!("{b:02x}")).collect::<String>();
+    Ok(SessionCredentials {
+        ssid: format!("ReCooplay-{}", hex(&bytes[..6])),
+        passphrase: hex(&bytes[6..]),
+    })
+}
+
 struct HotspotLifecycle {
     owned: Option<imp::OwnedHotspot>,
     fake_owned: bool,
+    session: Option<SessionCredentials>,
 }
 
 static LIFECYCLE: std::sync::Mutex<HotspotLifecycle> = std::sync::Mutex::new(HotspotLifecycle {
     owned: None,
     fake_owned: false,
+    session: None,
 });
 static SHUTTING_DOWN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
@@ -85,12 +102,27 @@ fn fake_hotspot() -> Option<Hotspot> {
 /// ホットスポットの設定と ON・OFF を読む。インターネット接続がない・読めない環境では None。
 /// 試験 (dry-run) では本物を読まず、RECOOPLAY_FAKE_HOTSPOT="SSID|パスフレーズ|on|off" を使う
 pub fn hotspot() -> Option<Hotspot> {
-    if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
-        let mut spot = fake_hotspot()?;
-        spot.on |= LIFECYCLE.lock().ok()?.fake_owned;
-        return Some(spot);
+    let lifecycle = LIFECYCLE.lock().ok()?;
+    let dry_run = std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1");
+    if let Some(session) = &lifecycle.session {
+        let on = if dry_run {
+            lifecycle.fake_owned
+        } else {
+            imp::owned_is_on(lifecycle.owned.as_ref()?)?
+        };
+        if on {
+            return Some(Hotspot {
+                ssid: session.ssid.clone(),
+                passphrase: session.passphrase.clone(),
+                on,
+            });
+        }
     }
-    imp::hotspot()
+    if dry_run {
+        fake_hotspot()
+    } else {
+        imp::hotspot()
+    }
 }
 
 /// ホットスポットを ON にする (PC 画面のボタンを押したときだけ)。
@@ -102,10 +134,14 @@ pub fn start_hotspot() -> Result<(), String> {
         return Err("PCアプリは終了中です".into());
     }
     if std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1") {
-        lifecycle.fake_owned |= fake_hotspot().is_some_and(|spot| !spot.on);
+        if !lifecycle.fake_owned && fake_hotspot().is_some_and(|spot| !spot.on) {
+            lifecycle.session = Some(session_credentials()?);
+            lifecycle.fake_owned = true;
+        }
         return Ok(());
     }
-    if let Some(owned) = imp::start_hotspot()? {
+    if let Some((owned, session)) = imp::start_hotspot()? {
+        lifecycle.session = Some(session);
         lifecycle.owned = Some(owned);
     }
     Ok(())
@@ -152,10 +188,11 @@ pub fn stop_owned_hotspot() -> &'static str {
 
 #[cfg(windows)]
 mod imp {
-    use windows::core::AgileReference;
+    use windows::core::{AgileReference, HSTRING};
     use windows::Networking::Connectivity::NetworkInformation;
     use windows::Networking::NetworkOperators::{
-        NetworkOperatorTetheringManager, TetheringOperationStatus, TetheringOperationalState,
+        NetworkOperatorTetheringManager, NetworkOperatorTetheringSessionAccessPointConfiguration,
+        TetheringOperationStatus, TetheringOperationalState,
     };
     use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
 
@@ -180,7 +217,7 @@ mod imp {
         })
     }
 
-    pub fn start_hotspot() -> Result<Option<OwnedHotspot>, String> {
+    pub fn start_hotspot() -> Result<Option<(OwnedHotspot, super::SessionCredentials)>, String> {
         let m = manager()
             .ok_or("インターネットに接続していないため、ホットスポットをONにできません")?;
         match m.TetheringOperationalState() {
@@ -193,22 +230,33 @@ mod imp {
                 )
             }
         }
-        let owned = AgileReference::new(&m).map_err(|e| e.message())?;
+        let owned = AgileReference::new(&m).map_err(|_| "ホットスポットを管理できません")?;
+        let session = super::session_credentials()?;
+        let config = NetworkOperatorTetheringSessionAccessPointConfiguration::new()
+            .map_err(|_| "一時Wi-Fi設定にはWindows 11 24H2以降が必要です。Windowsの設定で接続を確認してください")?;
+        config
+            .SetSsid(&HSTRING::from(session.ssid.as_str()))
+            .and_then(|_| config.SetPassphrase(&HSTRING::from(session.passphrase.as_str())))
+            .map_err(|_| "一時Wi-Fi設定を作成できません")?;
         let result = m
-            .StartTetheringAsync()
+            .StartTetheringAsync2(&config)
             .and_then(|op| op.join())
-            .map_err(|e| e.message())?;
+            .map_err(|_| "一時Wi-Fiを起動できません。Windowsの設定から確認してください")?;
         match result.Status() {
-            Ok(TetheringOperationStatus::Success) => Ok(Some(owned)),
+            Ok(TetheringOperationStatus::Success) => Ok(Some((owned, session))),
             Ok(TetheringOperationStatus::AlreadyOn) => Ok(None),
-            _ => Err(result
-                .AdditionalErrorMessage()
-                .map(|m| m.to_string())
-                .ok()
-                .filter(|m| !m.is_empty())
-                .unwrap_or_else(|| {
-                    "ホットスポットをONにできませんでした。Windowsの設定から確認してください".into()
-                })),
+            _ => Err("一時Wi-Fiを起動できません。Windowsの設定から確認してください".into()),
+        }
+    }
+
+    pub fn owned_is_on(owned: &OwnedHotspot) -> Option<bool> {
+        unsafe {
+            let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+        }
+        match owned.resolve().ok()?.TetheringOperationalState().ok()? {
+            TetheringOperationalState::On => Some(true),
+            TetheringOperationalState::Off => Some(false),
+            _ => None,
         }
     }
 
@@ -235,8 +283,11 @@ mod imp {
     pub fn hotspot() -> Option<super::Hotspot> {
         None
     }
-    pub fn start_hotspot() -> Result<Option<OwnedHotspot>, String> {
+    pub fn start_hotspot() -> Result<Option<(OwnedHotspot, super::SessionCredentials)>, String> {
         Err("Windows以外ではホットスポットを扱えません".into())
+    }
+    pub fn owned_is_on(owned: &OwnedHotspot) -> Option<bool> {
+        match *owned {}
     }
     pub fn stop_hotspot(owned: OwnedHotspot) -> bool {
         match owned {}
@@ -271,4 +322,20 @@ pub fn info(port: u16, wifi: Option<(&str, &str)>, loopback: bool) -> Value {
     });
     let hotspot = spot.map(|h| json!({ "on": h.on }));
     json!({ "port": port, "urls": urls, "wifi": wifi, "hotspot": hotspot })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn session_credentials_change_both_values_and_fit_wifi_limits() {
+        let first = session_credentials().unwrap();
+        let second = session_credentials().unwrap();
+        assert!(first.ssid.starts_with("ReCooplay-"));
+        assert!(first.ssid.len() <= 32);
+        assert!((8..=63).contains(&first.passphrase.len()));
+        assert_ne!(first.ssid, second.ssid);
+        assert!(first.passphrase != second.passphrase);
+    }
 }

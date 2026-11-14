@@ -2675,3 +2675,8 @@
 - Webビルドと撮影スクリプトの構文検証に合格。
 - `node scripts/sim/capture-screens.mjs --bin <host.exe> --out data/local/536-dialogs --pc-size 800x560` で23枚を保存。参加トラブル案内と全員リセット確認を撮影し、キャンセル後も通常の遷移と緊急停止試験が完了した。
 - Chrome dry-runでの撮影。Android実機・PCアプリでの追加撮影は未実施。
+
+### #415 起動時の一時Wi-Fi設定
+- Windows 11 24H2のセッション構成を使用し、永続設定の書き換え・バックアップを避ける。管理外の稼働中ホットスポットは起動要求で変更しない。
+- Windows上で変更モジュールを独立ビルドし、SSIDとパスフレーズの長さ・更新の単体試験1件に合格。通信シミュレーターの構文検証に合格。
+- ホスト全体のcargo checkはdatachannel-sysのOpenSSLビルドに必要なperlがPATHになく停止。通信試験・非管理者の実機受入・全員リセット連動は未実施。
