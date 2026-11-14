@@ -2473,6 +2473,10 @@
 
 - 150msちょうどでは記録せず、151msでは計測用ビルドだけが押下の連番と2区間の時間を記録することを確認した。
 - `node --experimental-strip-types scripts/sim/phone-lifecycle-test.mjs` は36/36合格。iPhone実指での原因調査は未実施。
+## 2026-11-14 — スマホの受信途絶ログを回帰試験で確認する（#426、Codex）
+
+- 2999msでは接続を維持し、3000msで旧接続を閉じる直前に計測用ビルドだけが診断を1回出すことを確認した。両ビルドで再接続を検証した。
+- `node --experimental-strip-types scripts/sim/phone-lifecycle-test.mjs` は37/37合格。実端末での再現とホストログとの照合は未実施。
 ## 2026-11-14 — 配布WebView2の失敗ログを保存する（#379、Codex）
 
 - 配布PCアプリのWebView2スモークの標準出力・標準エラーをCIログに出し、失敗時は `windows-webview2-diagnostics` の成果物にも保存する。試験の終了コードはそのまま必須チェックへ渡す。
