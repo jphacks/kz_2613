@@ -2516,3 +2516,8 @@
 - 修正：`ReadAction` に分類の手がかり `group` を足し、`preset_model::synthesize` でモデルの分類より優先する。ツクール（MV・MZ の記号 ok・escape・cancel・menu と、RGSS・2000/2003 の既定）とウディタは決定・キャンセルを gameplay、移動を movement にした。2D 向けの汎用の割当は、移動と Z・X・C に手がかりを付けた。A ボタン・ページ送り・Shift・Enter・Esc は、これまでどおりモデルの分類に任せる。
 - 試験：`reader_group_hint_overrides_the_model_category`（ツクール XP の既定で、1〜4人のどの分担にも決定・キャンセル・移動が配られる）。
 
+
+## 2026-11-14 — 分担のモデルの裏の処理が落ちても止まらないようにする（#519、Claude Code）
+
+- `make_detected`・`make_model_preset` の裏のスレッドの処理を `catch_unwind` で包み、パニックしたら `Event::ModelFailed` を送るようにした。hub は `model_failed` で作業中の印（`model_busy`）を消し、ログ（`model_failed`、ゲーム名なし）に残して待ち行列の次へ進む。失敗したゲームは保存しないので、次の一覧の読み込みでもう一度試す。
+- 試験：`model_thread_panic_clears_busy_and_moves_on`。`cargo fmt --check` 合格。ホスト全体のビルド・試験は CI で確かめる。
