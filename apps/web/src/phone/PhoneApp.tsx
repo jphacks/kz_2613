@@ -80,8 +80,9 @@ function HostRemoteScreen({state}:{state:PhoneDisplay}) {
       </div>
       <div className="wheel-pair"><button className="key" data-ctl="REMOTE_WHEEL_UP">ホイール↑</button><button className="key" data-ctl="REMOTE_WHEEL_DOWN">ホイール↓</button></div>
     </div>
-    <div id="remoteRoute" className={`note${state.remote.routeBlocked ? ' route-blocked' : ''}`} role="status">{state.remote.route}</div>
     <div className="host-actions">
+      {/* 入力先の案内は下の固定領域の中の決まった1行に置き、パネルに隠れないようにする (#553) */}
+      <div id="remoteRoute" className={`note${state.remote.routeBlocked ? ' route-blocked' : ''}`} role="status">{state.remote.route}</div>
       <button className="cmd" id="startBtn" disabled={state.remote.startDisabled}>{state.remote.startLabel}</button>
       <div className="host-sub">
         <button className="cmd sub" id="openGameBtn" data-cmd="OPEN_GAME" hidden={state.remote.openGameHidden}>{state.remote.openGameLabel}</button>

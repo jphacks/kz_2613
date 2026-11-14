@@ -145,6 +145,16 @@ async function auditLayout(eval_,file,desktop){
     const remote=document.querySelector('#v-remote.show');
     if(!desktop&&!top&&remote){
       const start=remote.scrollTop;
+      // 下に固定した領域が、スクロールしていない状態で上の操作・案内に重ならない (#553)
+      remote.scrollTop=0;
+      const actions=remote.querySelector('.host-actions');
+      if(actions&&visible(actions)){
+        const top=actions.getBoundingClientRect().top;
+        for(const [sel,label] of [['.remote-keys','リモコンのEsc・ホイール'],['.trackpad','タッチパッド'],['#remoteRoute','入力先の案内']]){
+          const el=remote.querySelector(sel);
+          if(el&&visible(el)&&!actions.contains(el)&&el.getBoundingClientRect().bottom>top+1)outside.push(label+'が下の固定領域に隠れる');
+        }
+      }
       remote.scrollTop=remote.scrollHeight;
       const panel=remote.getBoundingClientRect();
       // 説明は決まった高さの枠の中でスクロールする (#536)。枠が画面内にあり、末尾までスクロールで読めるかを見る
