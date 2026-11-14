@@ -285,6 +285,12 @@ const phaseIs = (c, phase, from, timeout = 2000) =>
 async function main() {
   console.log(`protocol-sim: port=${PORT} (RECOOPLAY_DRY_RUN=1)`);
   const host = startHost();
+  // 協力プレイの終了 (END) で PC アプリが前面になる (#546)。続けて遊ぶ試験は、ゲームを前面へ戻し、その反映を待ってから進める
+  async function refocusGame(player) {
+    const from = player.mark();
+    host.child.stdin.write('app blur\n');
+    await player.waitFor((m) => m.type === 'game' && m.game.remoteRoute !== 'app', { from, what: 'ゲームを前面に戻す' });
+  }
   let exitCode = 1;
   try {
     await waitReady();
@@ -1197,6 +1203,9 @@ async function main() {
       let from = p1.mark();
       p1.send({ type: 'command', cmd: 'END' });
       const lobby3 = await phaseIs(p1, 'lobby', from);
+      // ゲームは閉じずに、PC アプリから起動したホストは PC アプリを前面へ戻す (#546)
+      await p1.waitFor((m) => m.type === 'game' && m.game.phase === 'lobby' && m.game.remoteRoute === 'app', { from, what: '終了でPCアプリが前面' });
+      await refocusGame(p1); // 終了でPCアプリが前面になる (#546)。後続はゲームを前面に戻してから進める
       assert(!('fixedControls' in lobby3.game) && lobby3.game.profile.assignment.P3, '3人のMinecraftも操作定義の分担');
       // 2人: P1 移動 / P2 視点＋攻撃・持ち物
       from = p1.mark();
@@ -1243,6 +1252,7 @@ async function main() {
       from = p1.mark();
       p1.send({ type: 'command', cmd: 'END' });
       await phaseIs(p1, 'lobby', from);
+      await refocusGame(p1); // 終了でPCアプリが前面になる (#546)。後続はゲームを前面に戻してから進める
       p3 = await join('P3'); await welcome(p3);
       const p4 = await join('P4'); await welcome(p4);
       await p1.waitFor((m) => m.type === 'game' && m.game.connected.length === 4, { from, what: '4人' });
@@ -1261,6 +1271,7 @@ async function main() {
       from = p1.mark();
       p1.send({ type: 'command', cmd: 'END' });
       await phaseIs(p1, 'lobby', from);
+      await refocusGame(p1); // 終了でPCアプリが前面になる (#546)。後続はゲームを前面に戻してから進める
       p4.close();
       await p1.waitFor((m) => m.type === 'game' && m.game.connected.length === 3, { from, what: '3人に戻す' });
       await confirmLineup(mon, p1); p1.send({ type: 'command', cmd: 'PREPARE' });
@@ -1332,6 +1343,7 @@ async function main() {
       from = p1.mark();
       p1.send({ type: 'command', cmd: 'END' });
       const lobby = await phaseIs(p1, 'lobby', from);
+      await refocusGame(p1); // 終了でPCアプリが前面になる (#546)。後続はゲームを前面に戻してから進める
       assert(lobby.game.roleOf.P2 === 'P3', '終了で入れ替えが消えた');
       await confirmLineup(mon, p1);
       from = p1.mark();

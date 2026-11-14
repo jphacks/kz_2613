@@ -2629,3 +2629,4 @@
 - 持ち方を変えたら、回転時と同じ `stopRemote`（全解放と `release_inputs`）を呼び、旧押下を持ち越さない。端末の傾きから自動で切り替える方式は、回転ロック中にセンサーの許可が要る端末があるため入れていない。
 - `node scripts/sim/ui-input-test.mjs`（21/21、横持ちの前進・後退・視点の右・保存と通知を追加）、`phone-view-test`・`phone-layout-test`・`controller-layout-test`・`controller-preview-test`・`app-view-test`（37/37）・`product-module-graph-test`・`product-lifetime-test`・`product-web-test`・`check-static-pages`、`npm run typecheck`・`vite build` に合格。Stick を静的に描いた撮影で、左右90度の見た目を確認した。
 - 実機（Android・iPhone、回転ロックあり）での横持ちの確認は未実施。
+- 追記：CI の `protocol` で3件失敗した。通信試験は途中から「PCアプリから起動した」扱いになるため、END で PCアプリが前面になり、その後の一時停止中のリモコン入力がゲームではなく PCアプリへ向いた（狙いどおりの挙動）。試験の END の後に、ゲームを前面へ戻してその反映を待つ `refocusGame` を入れ、最初の END では PCアプリが前面になることを確かめるようにした。PR の CI のホスト（`windows-host-build`）で `protocol-sim.mjs` 69/69 合格。
