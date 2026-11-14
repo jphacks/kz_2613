@@ -2561,3 +2561,7 @@
 - Rustホストが `command_result` に必ず送る `cmd` をWebの型と受信検証に追加した。Webの境界試験で欠落・不正型を拒否し、通信試験でホストの開始拒否をWebのデコーダーに通す。
 - Webの型検査・ビルド、`node scripts/sim/product-web-test.mjs`、構文・差分検査が成功。ホストと通す追加アサーションはCI待ち。
 - 手動の反復試験にも適用し、失敗した試行のJSONLだけを試行番号とホスト別の名前で保存する。
+## 2026-11-15 — Androidでゲーム選択前後の担当表示を確認する（#447、Codex）
+
+- Android補助試験に、P1の担当がゲーム選択前は非表示で、Minecraft選択後は表示される確認を追加した。
+- main `d5227aa` のWindows配布版で Android Chrome 1台と模擬参加者1台の実Wi-Fi dry-runを実施し、15/15合格。iPhoneは未確認。
