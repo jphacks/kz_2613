@@ -591,7 +591,16 @@ async fn ws_session(mut socket: WebSocket, addr: SocketAddr, app: App) {
                     queued.len.fetch_sub(1, Ordering::Relaxed);
                     // 読取りが止まった接続は切断判定と同じ時間で打ち切る。送信待ちが上限に達した接続も切る (#197)
                     let sent = tokio::time::timeout(WS_SEND_TIMEOUT, send_ws_text(&mut socket, &rx, Message::Text(text.into()))).await;
-                    if !matches!(sent, Ok(Ok(()))) || queued.must_close() {
+                    let overflow = queued.must_close();
+                    if !matches!(sent, Ok(Ok(()))) || overflow {
+                        if runtime_measure::enabled() {
+                            let send = match sent {
+                                Err(_) => "timeout",
+                                Ok(Err(_)) => "error",
+                                Ok(Ok(())) => "ok",
+                            };
+                            eprintln!("ws_send_close {{\"connection\":{id},\"send\":\"{send}\",\"overflow\":{overflow}}}");
+                        }
                         break;
                     }
                 }

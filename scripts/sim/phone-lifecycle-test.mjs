@@ -170,6 +170,7 @@ if (process.argv.includes('--repro-shared-pointer')) {
     h.sockets[0].close(4009); h.advance(10000);
     assert.equal(h.sockets.length, 1, '終了したPCアプリへ再接続しない'); assert(h.peers[0].closed);
     assert.equal(h.el('full').style.display, 'flex'); assert.match(h.el('fullMessage').textContent, /PCのアプリが終了しました.*再読み込み/);
+    assert.match(h.el('fullMessage').textContent, /Wi-Fi設定で普段使うネットワークに戻/);
     assert.equal(h.el('status').textContent, 'PCアプリが終了しました'); assert(h.el('offline').hidden, '終了の案内と再接続中の表示を重ねない');
     h.control('act:attack').fire('pointerup'); assert.equal(h.inputs().length, 1);
   });

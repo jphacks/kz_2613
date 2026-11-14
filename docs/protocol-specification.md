@@ -36,6 +36,14 @@
 
 **通信契約**: `protocolVersion = 4`。版がない・一致しないhelloは枠を割り当てず拒否します。DataChannelは`fast`、`ordered:false`、`maxRetransmits:0`です。待ち受けは既定`0.0.0.0:8080`、`PORT`で変更できます。STUN/TURNは使いません。
 
+### 通信版の更新手順
+
+1. 互換性が変わる場合は、Rustの `apps/host-rs/src/hub.rs` の `PROTOCOL_VERSION` と、Webの `apps/web/src/shared/transport/version.ts` の `PHONE_PROTOCOL_VERSION` を同じ版に上げる。本仕様書と、helloを直接作る試験・計測スクリプトの固定値も照合する。
+2. 同じコミットからホストとWebを構築して配布物を作る。`protocol-sim.mjs` で、版が一致する端末の参加と、旧版・新版・版なしのhelloが参加枠を確保せずに拒否されることを確認する。`product-web-test.mjs` でスマホの受信と終了時の表示を確認する。
+3. Wi-Fiの実機受入では、旧配布物のスマホ画面を開いたままPCの配布物を切り替える。旧タブで再接続したときに版不一致の案内が出ること、同じ参加URLを再読み込みすると新しい版で参加できることを確認する。Android ChromeとiPhone Safariそれぞれで記録する。
+
+ホストはHTMLを `Cache-Control: no-store` で配信し、ファイル名にハッシュが付いたWeb資産は長期キャッシュを許可する。すでに開いているタブのJavaScriptは自動で置き換わらないため、版不一致の案内に従ってページを再読み込みする。
+
 通信版を変更するときは、Rustの `hub.rs` とWebの `shared/transport/version.ts` を同じ変更で更新します。CIの `protocol-sim.mjs` はWebの版でビルド済みホストへ参加し、実際に返る `welcome` の版まで照合します。
 
 | パス | 用途 | アクセス |
