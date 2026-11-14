@@ -1,3 +1,4 @@
+import { Icon } from '../shared/icons';
 import { Fragment, useSyncExternalStore, type CSSProperties } from 'react';
 import type { PlayerCardModel, RoleColumnModel } from '../shared/contracts';
 import { PlayerCard, RoleColumn } from './PlayerCards';
@@ -26,6 +27,11 @@ export function PcApp() {
 <ConnectionHelpDialog connection={connection}/>
 <JoinTroubleshootingDialog/>
 <ResetDialog/>
+<dialog id="profileNoticeDialog" aria-labelledby="profileNoticeTitle">
+  <h2 id="profileNoticeTitle">ゲームの操作定義について</h2>
+  <p>{model.profileNotice}</p>
+  <form method="dialog"><button id="closeProfileNotice" autoFocus>閉じる</button></form>
+</dialog>
 </>;
 }
 
@@ -72,7 +78,12 @@ function Workspace({model}:{model:PcModel}) {
       <div id="gameList" className="game-list">{model.gameCards.map(card => <GameTile key={card.id} card={card} />)}</div>
     </div></section>
     <section id="roleStage" className="role-stage" aria-label="操作の分担" hidden={model.view !== 'roles'}>
-      <div className="role-band"><h2 id="roleHeading">{model.roleHeading}</h2></div>
+      <div className="role-band"><h2 id="roleHeading">{model.roleHeading}</h2>
+        <button id="profileNoticeBtn" className="profile-notice-button" hidden={!model.profileNotice}
+          aria-label="ゲームの操作定義に関する注意" aria-haspopup="dialog" aria-controls="profileNoticeDialog">
+          <Icon name="warning" />
+        </button>
+      </div>
       <div id="roles" className="role-columns" style={{'--role-count': model.roleSlots.length} as CSSProperties}>{model.columns.map((c: RoleColumnModel) => <RoleColumn key={c.slot} c={c} />)}</div>
       <button id="keyBindingsBtn" className="role-keys">このPCのキー設定を確認</button>
       <div id="presetChoice" className="preset-choice" role="group" aria-label="分担の作り方" hidden={model.preset.hidden}>

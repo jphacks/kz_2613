@@ -2675,3 +2675,7 @@
 - Webビルドと撮影スクリプトの構文検証に合格。
 - `node scripts/sim/capture-screens.mjs --bin <host.exe> --out data/local/536-dialogs --pc-size 800x560` で23枚を保存。参加トラブル案内と全員リセット確認を撮影し、キャンセル後も通常の遷移と緊急停止試験が完了した。
 - Chrome dry-runでの撮影。Android実機・PCアプリでの追加撮影は未実施。
+
+### #555 分担画面の操作定義に関する注意
+- Webビルドと `node --experimental-strip-types scripts/sim/app-view-test.mjs`（39/39）に合格。
+- `check-static-pages.mjs` は基点からあるPCリモコンの凡例「◀」で停止した。変更前後の撮影と実機受入は未実施。
