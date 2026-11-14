@@ -439,14 +439,14 @@ export function assignButton(layout: PhoneLayout, id: string, control: string, s
 
 // ---- 表示用の名前 ------------------------------------------------------------
 
-export interface ControlFace { label: string; name?: string; direction?: 'up' | 'left' | 'right' | 'down'; mark?: string }
+export interface ControlFace { label: string; name?: string; direction?: 'up' | 'left' | 'right' | 'down' }
 /** 操作 (act:...) ごとの表示名。スティックの方向も持つ。標準の描画 (controllerLayout) と同じ名前を使う */
 export function controlFaces(game: ControllerGame): Map<string, ControlFace> {
   const all = game.profile.actions.map(a => a.id);
   const faces = new Map<string, ControlFace>();
   for (const group of controllerLayout({ ...game, assigned: { P1: all } }, 'P1')) for (const part of group.parts) {
     if (part.kind === 'button') faces.set(part.control, { label: part.label, name: actionName(game, part.control) });
-    else if (part.kind === 'stick') for (const d of part.directions) faces.set(d.control, { label: d.label, direction: d.name, mark: d.mark });
+    else if (part.kind === 'stick') for (const d of part.directions) faces.set(d.control, { label: d.label, direction: d.name });
   }
   return faces;
 }

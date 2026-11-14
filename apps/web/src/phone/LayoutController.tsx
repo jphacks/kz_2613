@@ -6,6 +6,7 @@ import {
   type ControlFace, type LayoutPart, type PhoneLayout, type PlacedPart, type Rect, type Viewport,
 } from '../shared/model/layout.ts';
 import { Look, Stick } from './Controller';
+import { Icon } from '../shared/icons.ts';
 
 // 個人レイアウト (#271) で描くコントローラーと、その編集画面 (#50)。
 // プレイと編集は同じ操作領域 (#genControls いっぱい) に、同じ計算 (placeParts) で部品を置く。
@@ -47,7 +48,7 @@ function PartFace({ part, faces, bindings }: { part: LayoutPart; faces: Map<stri
   if (part.kind === 'stick') {
     const directions = part.controls.flatMap(control => {
       const face = faces.get(control);
-      return face?.direction ? [{ name: face.direction, control, label: face.label, mark: face.mark ?? '' }] : [];
+      return face?.direction ? [{ name: face.direction, control, label: face.label }] : [];
     });
     return <Stick part={{ kind: 'stick', id: part.id, directions }} bindings={bindings} />;
   }
@@ -274,9 +275,9 @@ export function LayoutEditor({ initial, game, slot, viewport, onSave, onCancel }
   return <div className="layout-editor" id="layoutEditor">
     <div className="layout-editbar" style={{ height: barHeight }} role="toolbar" aria-label="配置の編集">
       <button id="layoutCancel" onClick={onCancel}>破棄</button>
-      <button id="layoutUndo" onClick={undo} disabled={!history.length} aria-label="元に戻す">↶</button>
+      <button id="layoutUndo" onClick={undo} disabled={!history.length} aria-label="元に戻す"><Icon name="undo" /></button>
       <p className="layout-editbar-note" role="status">{message || <>編集中<small>ゲームには送りません</small></>}</p>
-      <button id="layoutMore" onClick={() => { setMore(m => !m); setMenu(null); }} aria-expanded={more} aria-label="そのほかの操作">⋯</button>
+      <button id="layoutMore" onClick={() => { setMore(m => !m); setMenu(null); }} aria-expanded={more} aria-label="そのほかの操作"><Icon name="more" /></button>
       <button className="save" id="layoutSave" onClick={() => { if (!onSave(draft)) setMessage('この端末に保存できませんでした'); }}>保存</button>
     </div>
     {more && <div className="layout-menu layout-more" role="menu">

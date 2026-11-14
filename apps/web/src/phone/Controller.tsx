@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { hold, holdRotation } from '../shared/input/hold.ts';
 import type {ControlGroup,ControlPart} from '../shared/controller-layout';
 import type { InputBindings } from '../shared/contracts';
+import { Icon, arrowIcon } from '../shared/icons.ts';
 
 export function Stick({ part, bindings }: { part: Extract<ControlPart, { kind: 'stick' }>; bindings?: InputBindings }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -15,7 +16,7 @@ export function Stick({ part, bindings }: { part: Extract<ControlPart, { kind: '
   // 横持ち (#514) では、矢印と文字が指から見て正立するよう、スティック全体を回す。入力側も同じ角度で読み替える
   const angle = holdRotation(useSyncExternalStore(hold.subscribe, hold.get, hold.get));
   return <div className="stick gen-stick" ref={ref} style={angle ? { transform: `rotate(${angle}deg)` } : undefined}>{part.directions.map(d =>
-    <span key={d.name} className={`dir ${d.name}`} data-d={d.name}>{d.mark}<small>{d.label}</small></span>
+    <span key={d.name} className={`dir ${d.name}`} data-d={d.name}><Icon name={arrowIcon(d.name)} className="dir-mark" /><small>{d.label}</small></span>
   )}<div className="knob" /></div>;
 }
 

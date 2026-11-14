@@ -171,6 +171,15 @@ test('キー表示: 担当の操作にはホストの keys (ゲームのキー�
   assert.match(lines, /送らない/);
 });
 
+test('方向キーの表示: ホストの矢印キー名を文字にし、担当表示にも反映する (#515)', () => {
+  for (const [label, expected] of [['\u2191','上矢印キー'],['\u2193','下矢印キー'],['\u2190','左矢印キー'],['\u2192','右矢印キー']]) {
+    const g = {profile:{...mc, assignment:{P1:['forward']}}, keys:{actions:{forward:{label}}}};
+    const lines = roleView(g, 'P1').lines.join();
+    assert(lines.includes(expected), `${label}: ${expected}`);
+    assert(!lines.includes(label), 'フォントの矢印を担当表示に残さない');
+  }
+});
+
 test('分担の確認: 操作定義があれば分担の案 (協力プレイ中は決まった分担) を、グループと実際のキーで出す', () => {
   const profile = { id: 'test-pseudo', groups: [{ id: 'movement', label: '移動' }, { id: 'gameplay', label: 'アクション' }],
     actions: [{ id: 'left', label: '左', group: 'movement', type: 'button' }, { id: 'aim', label: '狙い', group: 'gameplay', type: 'mouseDelta' }, { id: 'zoom', label: 'ズーム', group: 'gameplay', type: 'wheel' }],

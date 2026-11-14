@@ -27,7 +27,7 @@ main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .cmd.pause { border-color: var(--color-warning); color: var(--color-warning); }
 .note { font-size: 12px; line-height: 1.5; }
 #remotePad { flex: 1; min-height: 80px; border: 3px dashed var(--color-cyan); border-radius: 24px; touch-action: none; display: grid; place-items: center; text-align: center; padding: 12px; background: color-mix(in srgb,var(--color-paper) 88%,transparent); color: var(--color-purple); font-size: 14px; font-weight: 700; }
-#remotePad::before { content: '✧'; display: block; font-size: 34px; }
+#remotePad::before { content: ''; display: block; width: 34px; height: 34px; margin: 0 auto; background: currentColor; -webkit-mask: var(--icon-sparkle-outline) center / contain no-repeat; mask: var(--icon-sparkle-outline) center / contain no-repeat; }
 #remotePad.down { background: var(--color-ice); }
 #remoteRoute { text-align: center; font-size: 11px; flex-shrink: 0; }
 #remoteNote { max-height: 72px; overflow-y: auto; flex-shrink: 1; min-height: 30px; padding: 0 4px; }
@@ -51,7 +51,7 @@ main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 /* 操作定義から作る画面のスティック (#139) */
 .gen-stick { margin: 0 auto; }
 :is(#pad, .look-pad) { touch-action: none; flex: 1; min-height: 120px; position: relative; overflow: hidden; border: 3px dashed var(--color-cyan); border-radius: 28px; background: color-mix(in srgb,var(--color-paper) 90%,transparent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; color: var(--color-purple); font-size: 18px; font-weight: 800; }
-:is(#pad, .look-pad)::before { content: '✥'; font-size: 68px; }
+:is(#pad, .look-pad)::before { content: ''; width: 68px; height: 68px; background: currentColor; -webkit-mask: var(--icon-move) center / contain no-repeat; mask: var(--icon-move) center / contain no-repeat; }
 :is(#pad, .look-pad).active { border-style: solid; }
 :is(#pad, .look-pad) .dot { display: none; pointer-events: none; position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; background: var(--color-cyan); opacity: .6; }
 .sens { display: flex; gap: 10px; align-items: center; background: var(--color-surface); border-radius: 16px; padding: 8px 12px; min-height: 52px; font-size: 13px; }

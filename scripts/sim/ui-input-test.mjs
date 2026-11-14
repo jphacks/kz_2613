@@ -69,7 +69,7 @@ try {
       assert.deepEqual(groups.flatMap(g=>g.parts).map(p=>p.control),['act:use','act:inventory','act:wheel:up','act:wheel:down']);
       assert.match(html,/act:use">右クリック<\/button>/);
       assert.match(html,/act:inventory">Rキー<\/button>/);
-      assert.match(html,/ホイール↑/);assert.match(html,/ホイール↓/);
+      assert.match(html,/ホイール上/);assert.match(html,/ホイール下/);
       assert.doesNotMatch(html,/攻撃|持ち物|置く|インベントリ/);
     }
   });
