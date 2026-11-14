@@ -17,11 +17,15 @@ await test('参加・RTT・ACK・RTC信号: 副作用前に識別子と値の型
     { type: 'welcome', slot: 'P1', isHost: 'true', role: 'ホスト' },
     { type: 'welcome', slot: 'P1', isHost: true, role: 'ホスト', token: {} },
     { type: 'pong', t: 'NaN' }, { type: 'kpong', t: null }, { type: 'ack', iseq: 1, via: 'other' },
-    { type: 'command_result', accepted: false, reasons: {} }, { type: 'rtc-answer', sdp: {} },
+    { type: 'command_result', cmd: 'READY', accepted: false, reasons: {} },
+    { type: 'command_result', accepted: false }, { type: 'command_result', cmd: 1, accepted: true },
+    { type: 'rtc-answer', sdp: {} },
     { type: 'rtc-cand', cand: 'candidate', mid: [] },
     { type: 'full', retryMs: -1 }, { type: 'full', retryMs: '5000' },
   ]) assert.equal(decode(value), null);
   for (const value of [{ type: 'ack', iseq: 1, via: 'ws', stale: true }, { type: 'pong', t: 12.5 },
+    { type: 'command_result', cmd: 'READY', accepted: true },
+    { type: 'command_result', cmd: 'READY', accepted: false, reasons: ['準備中'] },
     { type: 'welcome', slot: 'P1', isHost: true, role: 'ホスト', token: 'test', protocolVersion: PHONE_PROTOCOL_VERSION },
     { type: 'full' }, { type: 'full', retryMs: null }, { type: 'full', retryMs: 1200 }, { type: 'error', code: 'bad_token' }]) assert.deepEqual(decode(value), value);
 });

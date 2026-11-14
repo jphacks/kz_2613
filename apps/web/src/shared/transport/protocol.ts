@@ -63,7 +63,7 @@ export function decodeServerMessage(text: unknown): ServerMessage | null {
       break;
     case 'game': if (!isPhoneGame(message.game)) return null; break;
     case 'command_result':
-      if (typeof message.accepted !== 'boolean' || !optional(message, 'reasons', strings)) return null;
+      if (typeof message.cmd !== 'string' || typeof message.accepted !== 'boolean' || !optional(message, 'reasons', strings)) return null;
       break;
     case 'pong': case 'kpong': if (!finite(message.t)) return null; break;
     case 'ack':
