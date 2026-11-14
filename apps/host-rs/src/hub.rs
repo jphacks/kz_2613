@@ -2729,9 +2729,11 @@ impl Hub {
     }
 
     /// 選んでいるゲームについて、仮の定義の元にした利用者のキー設定のファイルが変わったか (#524)。
-    /// ファイルを見るのは選んでいるゲームだけ (一覧の全部は見ない)。協力プレイ中は読み直さない
+    /// ファイルを見るのは選んでいるゲームだけ (一覧の全部は見ない)。読み直すのはロビーと準備中だけで、
+    /// 協力プレイ・一時停止の間に定義を変えない
     fn detected_config_changed(&self, game_id: &str) -> bool {
-        if game_id != self.game.title || self.game.phase == Phase::Coop {
+        if game_id != self.game.title || !matches!(self.game.phase, Phase::Lobby | Phase::Preparing)
+        {
             return false;
         }
         let Some(Some(saved)) = self.detected.get(game_id).map(|d| d.config_modified) else {
@@ -4632,6 +4634,8 @@ mod tests {
             profile: None,
             config_modified: m,
         };
+        // 試験の準備は協力プレイ中から始まるので、ロビーにする
+        h.game.phase = Phase::Lobby;
         h.game.title = "steam:9001".into();
         h.detected.insert("steam:9001".into(), stored(Some(now)));
         assert!(
@@ -4652,6 +4656,8 @@ mod tests {
         );
         h.game.phase = Phase::Coop;
         assert!(!h.needs_detect("steam:9001"), "協力プレイ中は読み直さない");
+        h.game.phase = Phase::Paused;
+        assert!(!h.needs_detect("steam:9001"), "一時停止中も読み直さない");
         h.game.phase = Phase::Lobby;
         h.game.title = "other".into();
         assert!(
