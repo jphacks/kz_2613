@@ -56,7 +56,6 @@ lifetime.listenDocument('click',e=>{
   const source=(e.target instanceof Element?e.target:null)?.closest<HTMLElement>('[data-preset]')?.dataset.preset;
   if(source==='rule'||source==='model')send({type:'preset_source',source});
 });
-lifetime.listen($('closeSettings'), 'click',()=>$<HTMLDialogElement>('settings').close());
 lifetime.listen($('connectionHelpBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
 lifetime.listen($('joinTroubleshootingBtn'), 'click',()=>openDialog($<HTMLDialogElement>('joinTroubleshooting')));
 lifetime.listen($('settingsConnectionBtn'), 'click',()=>openDialog($<HTMLDialogElement>('connectionHelp')));
