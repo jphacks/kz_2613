@@ -1,7 +1,7 @@
 // Windowsの配布アプリをdry-runで起動し、WebView2と終了経路を確認する。OS入力は送らない。
 import assert from 'node:assert/strict';
 import {spawn, execFileSync} from 'node:child_process';
-import {mkdtempSync} from 'node:fs';
+import {copyFileSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync} from 'node:fs';
 import {createServer} from 'node:net';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
@@ -208,6 +208,25 @@ try {
   assert.equal(powershell('-Command',`[bool](Get-Process -Id ${hostId} -ErrorAction SilentlyContinue)`),'False',
     'Tauri終了後もホストプロセスが残っています');
   console.log('合格: WebView2参加画面、オーバーレイ、アプリとホストの終了');
+} catch (error) {
+  const destination = process.env.RECOOPLAY_SMOKE_DIAGNOSTICS;
+  if (destination) {
+    try {
+      mkdirSync(destination,{recursive:true});
+      for (const name of readdirSync(temp)) {
+        if (/^session-.*\.jsonl$/.test(name)) {
+          copyFileSync(path.join(temp,name),path.join(destination,name));
+        }
+      }
+      if (socket?.readyState === WebSocket.OPEN) {
+        const {data} = await call('Page.captureScreenshot',{format:'png'});
+        writeFileSync(path.join(destination,'webview2.png'),Buffer.from(data,'base64'));
+      }
+    } catch (captureError) {
+      console.error('WebView2の診断採取に失敗:',captureError.message);
+    }
+  }
+  throw error;
 } finally {
   socket?.close();
   if(!exited&&app.pid)app.kill();
