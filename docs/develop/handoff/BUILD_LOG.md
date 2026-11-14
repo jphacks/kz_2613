@@ -2339,3 +2339,4 @@
 - ホストとPC画面を未選択から始める。既存の文字列型の `game.title` を空にし、既存の `profile: null` を使う。スマホはゲーム選択を待つ表示にし、選択後はホストが配る分担を表示する。参加枠と担当確認の仕組みは従来どおり使う。
 - 合格：`npm --prefix apps/web run build`、`node scripts/sim/product-web-test.mjs`、`node scripts/sim/check-static-pages.mjs`、`python scripts/verify_overlay.py`、`python scripts/check-public-docs.py`、変更したシミュレーションの構文検査、`git diff --check`。Node 22.15.0ではTypeScriptの直接読み込みに `NODE_OPTIONS=--experimental-strip-types` を指定した。
 - 初回参加・ゲーム選択・再選択を確認する通信試験を追加した。Rustホストの実行を伴う確認はGitHub CIで行い、Android・iPhoneでの表示は実機受入に残す。
+- 追試（#447）：選択IDと操作定義IDを別に照合し、キー設定はMinecraft選択後の通知を参照するようにした。CI run 43485721653 のホストで通信66/66、Chromeの画面検査（PC 800×560・スマホ390×844）23画面が合格。
