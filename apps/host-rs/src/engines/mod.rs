@@ -23,16 +23,16 @@ pub type Found = (Vec<ReadAction>, &'static str);
 /// これより大きいテキストのファイルは読まない (設定・スクリプトは数 MB 以内)
 const MAX_TEXT: u64 = 20_000_000;
 
-/// 読めたら (操作, 読んだ形式の説明)。見分けのつきやすい順に試す
+/// Unity 以外のエンジンを、見分けのつきやすい順に試す。読めたら (操作, 読んだ形式の説明)
 pub fn read(dir: &Path) -> Option<Found> {
-    // unity_prefs は Unity Input System の読み取り (game_actions) の中で使う
-    let readers: [fn(&Path) -> Option<Found>; 6] = [
+    // Unity の旧 Input Manager (unity_legacy) と PlayerPrefs (unity_prefs) は、Rewired との順番があるので
+    // game_actions::read から直接呼ぶ
+    let readers: [fn(&Path) -> Option<Found>; 5] = [
         rpgmaker::read,
         wolf::read,
         source2::read,
         creation::read,
         quake::read,
-        unity_legacy::read,
     ];
     readers.iter().find_map(|r| {
         r(dir)
