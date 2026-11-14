@@ -116,18 +116,27 @@ pub fn exists(target: &Target) -> bool {
     imp::find(target).is_some()
 }
 
+/// 一意に照合したゲームだけを閉じ、プロセス終了をOSで確認する。
+pub fn close_game(target: &Target) -> Result<(), String> {
+    imp::close_game(target)
+}
+
 #[cfg(windows)]
 mod imp {
     use windows::core::{BOOL, PWSTR};
-    use windows::Win32::Foundation::{CloseHandle, HWND, LPARAM};
+    use windows::Win32::Foundation::{
+        CloseHandle, HANDLE, HWND, LPARAM, WAIT_OBJECT_0, WAIT_TIMEOUT, WPARAM,
+    };
     use windows::Win32::System::Threading::{
         AttachThreadInput, GetCurrentThreadId, OpenProcess, QueryFullProcessImageNameW,
-        PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
+        TerminateProcess, WaitForSingleObject, PROCESS_NAME_WIN32,
+        PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_SYNCHRONIZE, PROCESS_TERMINATE,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
         BringWindowToTop, EnumWindows, GetForegroundWindow, GetWindow, GetWindowLongW,
-        GetWindowTextW, GetWindowThreadProcessId, IsIconic, IsWindowVisible, SetForegroundWindow,
-        ShowWindow, GWL_EXSTYLE, GW_OWNER, SW_RESTORE, WS_EX_TOOLWINDOW,
+        GetWindowTextW, GetWindowThreadProcessId, IsIconic, IsWindowVisible, PostMessageW,
+        SetForegroundWindow, ShowWindow, GWL_EXSTYLE, GW_OWNER, SW_RESTORE, WM_CLOSE,
+        WS_EX_TOOLWINDOW,
     };
 
     use super::Foreground;
@@ -216,6 +225,123 @@ mod imp {
         search.found.or(search.fallback)
     }
 
+    struct ProcessHandle(HANDLE);
+    impl Drop for ProcessHandle {
+        fn drop(&mut self) {
+            unsafe {
+                let _ = CloseHandle(self.0);
+            }
+        }
+    }
+
+    struct CloseCandidates<'a> {
+        target: &'a super::Target,
+        windows: Vec<(HWND, u32, Foreground)>,
+    }
+
+    unsafe extern "system" fn visit_close(hwnd: HWND, param: LPARAM) -> BOOL {
+        let candidates = unsafe { &mut *(param.0 as *mut CloseCandidates<'_>) };
+        if !unsafe { IsWindowVisible(hwnd) }.as_bool() || !is_main(hwnd) {
+            return BOOL(1);
+        }
+        if let Some(info) =
+            describe(hwnd).filter(|f| !f.title.is_empty() && candidates.target.matches(f))
+        {
+            let mut pid = 0;
+            unsafe {
+                GetWindowThreadProcessId(hwnd, Some(&mut pid));
+            }
+            if pid != 0
+                && !candidates
+                    .windows
+                    .iter()
+                    .any(|(_, existing, _)| *existing == pid)
+            {
+                candidates.windows.push((hwnd, pid, info));
+            }
+        }
+        BOOL(1)
+    }
+
+    pub fn close_game(target: &super::Target) -> Result<(), String> {
+        let unknown = "対象ゲームを特定できません。ゲームを手動で終了してください";
+        if target.dir.is_some()
+            || (target.executable.is_none()
+                && (target.processes.is_empty() || target.title_contains.is_empty()))
+        {
+            return Err(unknown.into());
+        }
+        let mut candidates = CloseCandidates {
+            target,
+            windows: Vec::new(),
+        };
+        unsafe {
+            EnumWindows(
+                Some(visit_close),
+                LPARAM(&mut candidates as *mut _ as isize),
+            )
+        }
+        .map_err(|_| unknown)?;
+        let [(hwnd, pid, candidate)] = candidates.windows.as_slice() else {
+            return Err(unknown.into());
+        };
+        if [
+            "recooplay-desktop.exe",
+            "recooplay-host.exe",
+            "minecraft.exe",
+            "minecraftlauncher.exe",
+            "steam.exe",
+        ]
+        .contains(&candidate.process.as_str())
+        {
+            return Err(unknown.into());
+        }
+        let handle = ProcessHandle(
+            unsafe {
+                OpenProcess(
+                    PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_SYNCHRONIZE | PROCESS_TERMINATE,
+                    false,
+                    *pid,
+                )
+            }
+            .map_err(|_| "ゲームを終了する権限を取得できません")?,
+        );
+        let mut path = [0u16; 1024];
+        let mut len = path.len() as u32;
+        unsafe {
+            QueryFullProcessImageNameW(
+                handle.0,
+                PROCESS_NAME_WIN32,
+                PWSTR(path.as_mut_ptr()),
+                &mut len,
+            )
+        }
+        .map_err(|_| unknown)?;
+        let mut current_pid = 0;
+        unsafe {
+            GetWindowThreadProcessId(*hwnd, Some(&mut current_pid));
+        }
+        if current_pid != *pid
+            || super::norm(&String::from_utf16_lossy(&path[..len as usize]))
+                != super::norm(&candidate.path)
+            || !describe(*hwnd).is_some_and(|info| target.matches(&info))
+        {
+            return Err(unknown.into());
+        }
+        unsafe { PostMessageW(Some(*hwnd), WM_CLOSE, WPARAM(0), LPARAM(0)) }
+            .map_err(|_| "ゲームに終了を要求できません")?;
+        match unsafe { WaitForSingleObject(handle.0, 3000) } {
+            WAIT_OBJECT_0 => return Ok(()),
+            WAIT_TIMEOUT => {}
+            _ => return Err("ゲームの終了を確認できません".into()),
+        }
+        unsafe { TerminateProcess(handle.0, 1) }.map_err(|_| "ゲームを強制終了できません")?;
+        if unsafe { WaitForSingleObject(handle.0, 2000) } != WAIT_OBJECT_0 {
+            return Err("ゲームの終了を確認できません".into());
+        }
+        Ok(())
+    }
+
     /// 前面にする。ホストは裏で動くので、Windows は SetForegroundWindow だけでは拒むことがある
     /// (PC アプリやブラウザーが前面のとき)。いまの前面のウィンドウの入力に一時的につないでから切り替える
     fn bring_to_front(hwnd: HWND) {
@@ -267,6 +393,9 @@ mod imp {
 
 #[cfg(not(windows))]
 mod imp {
+    pub fn close_game(_: &super::Target) -> Result<(), String> {
+        Err("Windows以外ではゲームを終了できません".into())
+    }
     pub fn activate(_: &super::Target) -> Result<(), String> {
         Err("Windows以外では前面化できません".into())
     }

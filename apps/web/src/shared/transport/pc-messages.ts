@@ -7,6 +7,7 @@ export type RemoteInput = {type:'remote';route:string;epoch:number} & (
   | {kind?:undefined;control:string;state:'down'|'up'});
 export type PcMessage = {type:'state';game:PhoneGame;inject:InjectionState} & HostState
   | {type:'game';game:PhoneGame} | {type:'key_result';ok:boolean}
+  | {type:'game_closed'} | {type:'game_close_failed';message:string}
   | {type:'manual_result';message:string} | RemoteInput | {type:'inject';entry:InjectionNotice} | {type:'look';entry:LookNotice} | {type:'log';entry:LogEntry} | {type:'unknown'};
 const object=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 const optional=(v:Record<string,unknown>,key:string,valid:(v:unknown)=>boolean)=>!(key in v)||valid(v[key]);
@@ -48,6 +49,8 @@ export function decodePcMessage(text:unknown):PcMessage|null {
     case 'log':if(!object(v.entry)||!finite(v.entry.t)||!string(v.entry.kind)||!optional(v.entry,'burst',boolean)||!['slot','cmd','reason','mode'].every(k=>optional(v.entry as Record<string,unknown>,k,string)))return null;break;
     case 'game':if(!isPhoneGame(v.game))return null;break;
     case 'key_result':if(!boolean(v.ok))return null;break;
+    case 'game_closed':break;
+    case 'game_close_failed':
     case 'manual_result':if(!string(v.message))return null;break;
     case 'remote':
       if(!finite(v.epoch)||!string(v.route))return null;

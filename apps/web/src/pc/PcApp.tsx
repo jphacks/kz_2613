@@ -26,6 +26,14 @@ export function PcApp() {
 <ConnectionHelpDialog connection={connection}/>
 <JoinTroubleshootingDialog/>
 <ResetDialog/>
+<dialog id="closeGameDialog" aria-labelledby="closeGameTitle">
+  <h2 id="closeGameTitle">{model.name}を終了しますか？</h2>
+  <p>通常の終了が完了しない場合は強制終了します。保存していない進行状況は失われることがあります。</p>
+  <form method="dialog">
+    <button autoFocus>やめる</button>
+    <button id="confirmCloseGame" type="button" className="danger-action">ゲームを終了する</button>
+  </form>
+</dialog>
 </>;
 }
 
@@ -58,6 +66,10 @@ function Sidebar({state,model,connection}:{state:PcState;model:PcModel;connectio
     </div>
   </div>
   <button className="open-game" id="openGameBtn" hidden={model.openGameHidden}>{model.name}を前面にする</button>
+  <button className="sub-cta" id="closeGameBtn" aria-haspopup="dialog"
+    hidden={!game?.title || !['roles','paused'].includes(model.view) || !['lobby','paused'].includes(game.phase)}>
+    ゲームを終了する
+  </button>
   <p className="action-note" id="actionNote" role="status">{model.actionNote}</p>
 </aside>;
 }

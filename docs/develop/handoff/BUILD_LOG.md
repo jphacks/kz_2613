@@ -2675,3 +2675,8 @@
 - Webビルドと撮影スクリプトの構文検証に合格。
 - `node scripts/sim/capture-screens.mjs --bin <host.exe> --out data/local/536-dialogs --pc-size 800x560` で23枚を保存。参加トラブル案内と全員リセット確認を撮影し、キャンセル後も通常の遷移と緊急停止試験が完了した。
 - Chrome dry-runでの撮影。Android実機・PCアプリでの追加撮影は未実施。
+
+### #547 展示でのゲーム切り替え
+- Webビルド、PC表示38/38、Windowsでのfocusモジュール単体ビルド・既存4試験に合格。
+- ホスト全体はOpenSSLのビルドでGit同梱PerlにLocale::Maketext::Simpleがないため未検証。終了処理のOS実行と追加のHub試験も未実施。
+- 対象がインストールフォルダーでしか特定できない場合、候補が曖昧な場合、すでにウィンドウがない場合は手動終了を案内する。

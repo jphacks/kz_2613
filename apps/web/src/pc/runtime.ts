@@ -49,6 +49,18 @@ function openSettings(showKeys: boolean) {
   else $('settingsTitle').focus();
 }
 lifetime.listen($('settingsBtn'), 'click',()=>openSettings(false));
+let closeRequest: {title:string;epoch:number}|null=null;
+lifetime.listen($('closeGameBtn'), 'click',()=>{
+  if (!game?.title || $('closeGameBtn').hidden) return;
+  closeRequest={title:game.title,epoch:game.epoch};
+  openDialog($<HTMLDialogElement>('closeGameDialog'));
+});
+lifetime.listen($('confirmCloseGame'), 'click',()=>{
+  $<HTMLDialogElement>('closeGameDialog').close();
+  if (!closeRequest || !game || closeRequest.title!==game.title || closeRequest.epoch!==game.epoch) return;
+  send({type:'close_game',...closeRequest});
+  closeRequest=null;
+});
 lifetime.listen($('keyBindingsBtn'), 'click',()=>openSettings(true));
 // 分担の作り方 (#432)。規則とモデルの分担を切り替え、モデルの分担を作り直す。可否はホストが判定する (ロビーで決める前だけ)
 lifetime.listen($('remakePresetBtn'), 'click',()=>send({type:'remake_preset'}));
@@ -240,6 +252,10 @@ function connect(){
     if(!m){ws?.close();return;}
     if(m.type==='state'){state=m;game=m.game;inject=m.inject;}
     else if(m.type==='game')game=m.game;
+    else if(m.type==='game_closed'){
+      ui={screen:'game',game:null,swap:false};swapPick=null;render();
+    }
+    else if(m.type==='game_close_failed'){window.showHostNotice?.(m.message);}
     else if(m.type==='key_result'){keyMessage=m.ok?'':'（保存できませんでした。この実行の間だけ使います）';render();}
     else if(m.type==='manual_result'){manualMessage=m.message||'';renderGames();lifetime.timeout(()=>{if(manualMessage===m.message){manualMessage='';renderGames();}},6000);}
     if(m.type==='state'||m.type==='game'){ui=screenOnGameUpdate(ui,previousPhase,game);render();}

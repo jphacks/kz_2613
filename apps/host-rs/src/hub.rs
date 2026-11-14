@@ -65,6 +65,7 @@ pub enum Out {
 }
 
 pub enum Event {
+    GameClosed(Result<(), String>),
     #[cfg(feature = "latency-measure")]
     WsSendGap {
         id: u64,
@@ -417,6 +418,7 @@ pub struct Hub {
     net_tick: u64,
     games_scanning: bool,
     launch: Option<Launch>,
+    closing_game: bool,
     launch_gen: u64,
     target_fg: Option<Foreground>,
     // PC アプリ以外のウィンドウ (ランチャー・ダイアログ等) が前面か (#287、#405)
@@ -579,6 +581,7 @@ impl Hub {
             minecraft_launch: None,
             games_scanning: false,
             launch: None,
+            closing_game: false,
             launch_gen: 0,
             target_fg: None,
             launcher_fg: false,
@@ -1159,6 +1162,9 @@ impl Hub {
     }
 
     fn can_inject(&self) -> bool {
+        if self.closing_game {
+            return false;
+        }
         self.title_known(&self.game.title)
             && self.input.available()
             && !self.input_fault
@@ -1473,6 +1479,9 @@ impl Hub {
     }
 
     fn command(&mut self, slot: usize, cmd: &str) {
+        if self.closing_game {
+            return;
+        }
         if !session::is_host(slot) {
             return;
         }
@@ -2208,6 +2217,9 @@ impl Hub {
     }
 
     fn remote_app_active(&self) -> bool {
+        if self.closing_game {
+            return false;
+        }
         if self.input_fault {
             return false;
         }
@@ -2327,6 +2339,9 @@ impl Hub {
     /// 以前は Minecraft の公式ランチャーだけだった。PC のマウスに触らずに先へ進めるよう、協力プレイ以外では前面のウィンドウを問わない。
     /// PC アプリの枠を越えてカーソルを出したとき (remote_outside) も、この経路で OS のカーソルを動かす
     fn remote_desktop_active(&self) -> bool {
+        if self.closing_game {
+            return false;
+        }
         (self.launcher_fg || self.remote_outside)
             && self.remote_desktop_input_ok()
             && !self.remote_app_active()
@@ -2364,6 +2379,9 @@ impl Hub {
     }
 
     fn remote_game_active(&self) -> bool {
+        if self.closing_game {
+            return false;
+        }
         matches!(self.game.phase, Phase::Preparing | Phase::Paused)
             && !self.remote_app_active()
             && self.can_inject()
@@ -3762,6 +3780,21 @@ impl Hub {
 
     fn on_event(&mut self, ev: Event) {
         match ev {
+            Event::GameClosed(result) => {
+                self.closing_game = false;
+                match result {
+                    Ok(()) => {
+                        self.role_ack.clear();
+                        self.game.reason = None;
+                        self.game.auto_resume_until = 0;
+                        self.select_title(String::new());
+                        self.broadcast_monitors(&json!({"type":"game_closed"}));
+                    }
+                    Err(message) => self
+                        .broadcast_monitors(&json!({"type":"game_close_failed","message":message})),
+                }
+                self.push_state();
+            }
             Event::WsOpen {
                 id,
                 tx,
@@ -4024,6 +4057,20 @@ impl Hub {
     }
 
     fn on_monitor_message(&mut self, id: u64, page: Page, focused: bool, kind: &str, msg: &Value) {
+        if self.closing_game
+            && matches!(
+                kind,
+                "select_game"
+                    | "launch_game"
+                    | "prepare"
+                    | "confirm_lineup"
+                    | "phase"
+                    | "inject_mode"
+                    | "reset"
+            )
+        {
+            return;
+        }
         match kind {
             "inject_mode" => {
                 if let Some(mode) = s(msg, "mode").as_deref().and_then(InjectMode::parse) {
@@ -4067,6 +4114,53 @@ impl Hub {
             "open_game" => {
                 if self.connected_slots().contains(&0) {
                     self.command(0, "OPEN_GAME");
+                }
+            }
+            "close_game" if page == Page::App => {
+                if self.closing_game
+                    || self.game.title.is_empty()
+                    || !matches!(self.game.phase, Phase::Lobby | Phase::Paused)
+                    || s(msg, "title").as_deref() != Some(self.game.title.as_str())
+                    || msg.get("epoch").and_then(Value::as_u64) != Some(self.game.epoch)
+                {
+                    return;
+                }
+                if self
+                    .launch
+                    .as_ref()
+                    .is_some_and(|launch| launch.state == "launching")
+                {
+                    self.send(Some(id), &json!({"type":"game_close_failed","message":"ゲームの起動が終わってから終了してください"}));
+                    return;
+                }
+                self.closing_game = true;
+                self.release_outputs(None);
+                self.reset_look();
+                self.advance_epoch();
+                self.push_game();
+                if !self.release_pending.is_empty() {
+                    self.on_event(Event::GameClosed(Err(
+                        "入力の解放を確認できません。ゲームは終了していません".into(),
+                    )));
+                    return;
+                }
+                let tx = self.tx.clone();
+                let target = self.target.clone();
+                if std::thread::Builder::new()
+                    .name("close-game".into())
+                    .spawn(move || {
+                        let result = if dry_run() {
+                            Err("試験モードではゲームを終了できません".into())
+                        } else {
+                            crate::focus::close_game(&target)
+                        };
+                        let _ = tx.send(Event::GameClosed(result));
+                    })
+                    .is_err()
+                {
+                    self.on_event(Event::GameClosed(Err(
+                        "ゲームの終了処理を開始できません".into()
+                    )));
                 }
             }
             "select_game" => {
@@ -5065,6 +5159,7 @@ mod tests {
             minecraft_launch: None,
             games_scanning: false,
             launch: None,
+            closing_game: false,
             launch_gen: 0,
             target_fg: None,
             launcher_fg: false,
@@ -6955,6 +7050,20 @@ mod tests {
         let epoch = h.game.epoch;
         h.rotate_roles_if_due(u64::MAX);
         assert!(!h.rotation_soon && h.game.epoch == epoch);
+    }
+
+    #[test]
+    fn confirmed_game_close_keeps_players_and_clears_the_selection() {
+        let (mut h, _rx) = fixture();
+        h.game.title = "minecraft-java".into();
+        h.game.phase = Phase::Paused;
+        h.closing_game = true;
+        let players = h.connected_slots();
+        h.on_event(Event::GameClosed(Ok(())));
+        assert!(!h.closing_game);
+        assert_eq!(h.game.phase, Phase::Lobby);
+        assert!(h.game.title.is_empty());
+        assert_eq!(h.connected_slots(), players);
     }
 
     #[test]
