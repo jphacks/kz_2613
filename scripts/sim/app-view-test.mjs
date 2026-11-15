@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-const { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, isGameDoubleClick, launchView, rolesAction } = await import('../../apps/web/src/shared/model/presentation.ts');
+const { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, hotspotPending, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, isGameDoubleClick, launchView, rolesAction } = await import('../../apps/web/src/shared/model/presentation.ts');
 
 const {logText} = await import('../../apps/web/src/diagnostics/model.ts');
 const {pcModel, pcState, stepKey} = await import('../../apps/web/src/pc/model.ts');
@@ -370,6 +370,14 @@ test('参加 URL: ホットスポットを優先する', () => {
   const info = { urls: [{ url: 'http://10.0.0.2:8080/', hotspot: false }, { url: 'http://192.168.137.1:8080/', hotspot: true }] };
   assert.equal(joinUrl(info).url, 'http://192.168.137.1:8080/');
   assert.equal(joinUrl({ urls: [] }), null);
+});
+
+test('参加 URL: PC 画面で ON にした直後、アドレスが付くまでは準備中にする', () => {
+  const other = { url: 'http://192.168.56.1:8080/', hotspot: false }, spot = { url: 'http://192.168.137.1:8080/', hotspot: true };
+  assert.equal(hotspotPending({ hotspot: { on: true }, urls: [other] }, true), true, 'VirtualBox などのアドレスを QR にしない');
+  assert.equal(hotspotPending({ hotspot: { on: true }, urls: [other, spot] }, true), false, 'アドレスが付いたら出す');
+  assert.equal(hotspotPending({ hotspot: { on: true }, urls: [other] }, false), false, '前から ON のホットスポット (模擬を含む) は従来どおり');
+  assert.equal(hotspotPending({ hotspot: { on: false }, urls: [other] }, true), false, 'OFF になったら同じWi-Fi向けの URL を出す');
 });
 
 test('端末の種類', () => {

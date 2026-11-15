@@ -369,6 +369,14 @@ export function joinGuideView(info: PcInfo | null) {
   return { two: false, wifiQr: null, button: false, bubble: 'みんなのスマホで<br>読み取ろう！', note: '' };
 }
 
+/**
+ * PC 画面のボタンでホットスポットを ON にしたが、まだ 192.168.137.x が付いていない。
+ * 一時 SSID (#415) で ON にすると数十秒かかることがあり、その間はほかのアダプター (VirtualBox など) の届かない URL になる
+ */
+export function hotspotPending(info: PcInfo | null, started: boolean) {
+  return started && !!info?.hotspot?.on && !(info.urls || []).some((u) => u.hotspot);
+}
+
 /** 参加用 URL: ホットスポット (192.168.137.x) を優先する */
 export function joinUrl(info: PcInfo | null) {
   const urls = info?.urls || [];

@@ -26,15 +26,16 @@ export const settingsActions: PcActions = {
 };
 export type {PcInfo} from '../shared/model/domain.ts';
 import type {PcInfo} from '../shared/model/domain.ts';
-export const connectionState = createStore<{info: PcInfo | null; message: string; busy: boolean; loaded: boolean}>({info: null, message: '', busy: false, loaded: false});
+export const connectionState = createStore<{info: PcInfo | null; message: string; busy: boolean; loaded: boolean; pending: boolean}>({info: null, message: '', busy: false, loaded: false, pending: false});
 export function connectionModel() {
-  const {info, message, busy, loaded} = connectionState.get();
-  const url = joinUrl(info), guide = joinGuideView(info);
+  const {info, message, busy, loaded, pending} = connectionState.get();
+  // ホットスポットの準備中は、届かないほかのアダプターの URL を出さない
+  const url = pending ? null : joinUrl(info), guide = joinGuideView(info);
   return {
     guide, note: message || guide.note, busy,
-    qr: info ? url?.qr || '<span>接続先が見つかりません</span>' : loaded ? '<span>QRを取得できません<br>接続方法をご確認ください</span>' : '<span>QRを読み込み中…</span>',
+    qr: pending ? '<span>ホットスポットの準備中…<br>1分ほどかかることがあります</span>' : info ? url?.qr || '<span>接続先が見つかりません</span>' : loaded ? '<span>QRを取得できません<br>接続方法をご確認ください</span>' : '<span>QRを読み込み中…</span>',
     url: url?.url || '',
-    urlNote: !info ? 'PCホストとネットワークを確認し、QRを取得し直してください。' : !url ? 'PCのWi-Fiとモバイルホットスポットを確認してください。' : url.hotspot ? 'PCのモバイルホットスポットへ接続してください。' : 'PCと同じWi-Fiへ接続してください。',
+    urlNote: pending ? 'ホットスポットの準備中です。参加用のQRが出るまでお待ちください。' : !info ? 'PCホストとネットワークを確認し、QRを取得し直してください。' : !url ? 'PCのWi-Fiとモバイルホットスポットを確認してください。' : url.hotspot ? 'PCのモバイルホットスポットへ接続してください。' : 'PCと同じWi-Fiへ接続してください。',
     wifi: info?.wifi ? `Wi-Fi：${info.wifi.ssid}` : '',
     build: info?.build ? `Re:Cooplay ${info.build.version}${info.build.commit ? `（${info.build.commit}）` : '（開発版）'}` : '',
   };
