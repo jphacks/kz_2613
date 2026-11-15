@@ -24,10 +24,10 @@ export const sendsToGame = (game: PhoneGame) => game.phase !== 'lobby';
  * ホストのリモコン画面では上部に出さず、remoteModel の alert として下の状態欄に出す。
  * 警告の有無でリモコンのボタン位置を動かさないため (#291)
  */
-export function inputWarnText({ isHost, game, name, notice }: {isHost:boolean;game:PhoneGame;name:string;notice:string}) {
+export function inputWarnText({ isHost, game, notice }: {isHost:boolean;game:PhoneGame;notice:string}) {
   const target = !game.inputTarget || !sendsToGame(game) ? '' : isHost
-    ? `PCの画面が${name}になっていません。${name}を前面に戻すまで操作は届きません。`
-    : `PCの画面が${name}になっていません。ホストが戻すまでお待ちください。`;
+    ? 'PCの画面がゲームになっていません。ゲームを前面に戻すまで操作は届きません。'
+    : 'PCの画面がゲームになっていません。ホストが戻すまでお待ちください。';
   // 「未検証」の注意は準備の段階で伝える。協力プレイ中は操作画面の上部を占めないよう出さない (#308)
   return [target, isHost && game.phase !== 'coop' ? notice : ''].filter(Boolean).join(' ');
 }
