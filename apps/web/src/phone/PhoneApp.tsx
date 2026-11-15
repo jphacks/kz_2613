@@ -82,7 +82,8 @@ function Header({state,status,showPause,pauseDisabled,onEdit}:{state:PhoneDispla
 // ホストのリモコン (リモコン型)。PCアプリはタッチパッドのカーソルとクリックで操作する。
 // 矢印・Enter・Eキーは置かない (ユーザー判断 2026-11-13)。進めるボタンは画面の下に固定する。
 // 下の領域は、出すボタン・文の有無で高さを変えない (#536 の利用者判断 2026-11-15)。
-// 補助ボタンは3つの決まった枠に置き、出さないボタンの枠は空けたままにする。説明は2行の枠の中でスクロールする
+// 補助ボタンは3つの決まった枠に置き、出さないボタンの枠は空けたままにする。
+// 説明の文は出さず、その高さはタッチパッドに回す (利用者判断 2026-11-15)
 function HostRemoteScreen({state}:{state:PhoneDisplay}) {
   return <section className={`view${state.view === 'v-remote' ? ' show' : ''}`} id="v-remote">
     <div className="host-card"><h1>あなたがホストです！</h1>
@@ -107,21 +108,17 @@ function HostRemoteScreen({state}:{state:PhoneDisplay}) {
         <button className="cmd sub" id="openAppBtn" data-cmd="OPEN_APP" hidden={state.remote.openAppHidden}>PCアプリを前面にする</button>
         <button className="cmd sub" id="endBtn" style={{display: state.remote.endVisible ? 'block' : 'none'}}>{state.remote.endLabel}</button>
       </div>
-      <div className="host-notes" role="status">
-        <div className="note" id="remoteNote">{state.remote.note}</div>
-        <div className="note" id="remoteNotice" hidden={!state.remote.notice}>{state.remote.notice}</div>
-      </div>
     </div>
   </section>;
 }
 
-// 「ホストに譲る」(#233・#536)。リモコンの中、Esc の下に置き、押すと譲る相手を選ぶメニューを開く。
+// 「ホストを移譲」(#233・#536)。リモコンの中、Esc の下に置き、押すと譲る相手を選ぶメニューを開く。
 // 譲れないとき (ロビー以外・ほかに誰もいない) も枠は残し、まわりのボタンを動かさない。決める前にページ内で確認する
 function HostTransfer({to}:{to:PhoneDisplay['remote']['transferTo']}) {
   const [open, setOpen] = useState(false);
   useEffect(() => { if (!to.length) setOpen(false); }, [to.length]);
   return <div id="hostTransfer" className="host-transfer" style={to.length ? undefined : {visibility: 'hidden'}}>
-    <button className="key transfer" id="hostTransferBtn" aria-haspopup="menu" aria-expanded={open} disabled={!to.length} onClick={() => setOpen(o => !o)}>ホストに譲る</button>
+    <button className="key transfer" id="hostTransferBtn" aria-haspopup="menu" aria-expanded={open} disabled={!to.length} onClick={() => setOpen(o => !o)}>ホストを移譲</button>
     {open && <div className="host-transfer-menu" role="menu" aria-label="ホストを譲る相手">{to.map(p =>
       <button key={p} role="menuitem" onClick={() => { setOpen(false); transferHost(p); }}>{p}に譲る</button>)}</div>}
   </div>;

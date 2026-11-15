@@ -35,7 +35,7 @@
 #v-remote :is(.pad-clicks, .wheel-pair) .key + .key { border-left: 3px solid var(--color-cyan); }
 #v-remote :is(.pad-clicks, .wheel-pair) .key.down { background: color-mix(in srgb, var(--color-cyan) 32%, var(--color-surface)); }
 
-/* Esc (丸) と「ホストに譲る」を左の列に縦に並べ、右にホイール (上下に分けた1つの枠) (#536) */
+/* Esc (丸) と「ホストを移譲」を左の列に縦に並べ、右にホイール (上下に分けた1つの枠) (#536) */
 #v-remote .remote-keys { display: grid; grid-template-columns: 1fr 1.6fr; gap: 14px; align-items: center; padding: 0 6px; }
 #v-remote .remote-left { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
 #v-remote .remote-keys .esc {
@@ -111,11 +111,6 @@
 #v-remote #openGameBtn { grid-column: 1; }
 #v-remote #openAppBtn { grid-column: 2; }
 #v-remote #endBtn { grid-column: 3; }
-/* 説明は最大2行の枠の中でスクロールする。文がないときは場所を取らず、空いた高さはタッチパッドに回す (#553) */
-#v-remote .host-notes { max-height: calc(2 * 1.45em); overflow-y: auto; font-size: 12px; line-height: 1.45; }
-#v-remote .host-notes .note { margin: 0; font-size: inherit; line-height: inherit; }
-#v-remote .host-notes .note:empty { display: none; }
-#v-remote .host-notes:not(:has(.note:not(:empty):not([hidden]))) { display: none; }
 
 /* 低い画面では、上の部品を縮めて下の固定領域と重ねない */
 @media (max-height: 640px) and (orientation: portrait) {
