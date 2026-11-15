@@ -2714,3 +2714,10 @@
 - 利用者の判断（2026-11-15）：入力先の案内（「PCアプリを操作中」など）はそもそも要らない。案内の行は例外時（実際のマウスとして動く・リモコンが届かない）も含めて全部消し、リモコンを広く取る。不要な領域は設けない。
   - `#remoteRoute` と、モデルの `route`・`routeBlocked`（`routeText`）を削除。下部の補足欄（`host-notes`）は最大2行にし、文がないときは場所を取らない。空いた高さはタッチパッドに回す。部品を縮める条件は 640px 以下に戻した。
   - `capture-screens.mjs --assert-layout`（384×701・390×844・402×874）、`npm run typecheck`・`vite build` に合格（ホストは main db4baa2 の手元ビルド）。
+
+## 2026-11-15 — ホストのリモコン画面の説明文をなくし、「ホストを移譲」にする（Claude Code）
+
+- 利用者の判断（2026-11-15）：リモコン画面の下（「PCアプリを前面にする」などの下）の小さな説明文の領域は丸ごと要らない。文はどこにも出さず、その高さはリモコンに回す。「ホストに譲る」は「ホストを移譲」にする。
+- `PhoneApp.tsx` から `.host-notes`（`#remoteNote`・`#remoteNotice`）を削除し、関係する CSS（`phone-host-remote.css`・`mobile.css`・`improved-mobile.css`）を消した。タッチパッドは `flex: 1` なので、空いた高さはタッチパッドに回る。モデルの `remote.note` は残す（表示はしない）。
+- `capture-screens.mjs` の説明欄の監査を削除。
+- `npm run build`、`app-view-test` 40/40、`phone-view-test`、`phone-lifecycle-test` 39/39、`product-web-test`、`check-static-pages`、`verify-ui-evidence`、`capture-screens.mjs --assert-layout`（800x560＋384x701、900x1000＋402x874。ホストは main 03f49a0 の手元ビルド）に合格。実機での確認はこのあと行う。

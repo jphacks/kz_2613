@@ -26,7 +26,6 @@ main { padding: 14px max(14px,env(safe-area-inset-right)) max(14px,env(safe-area
 .cmd:disabled { border-color: var(--color-phone-button); background: var(--color-character); color: var(--color-logo); }
 #remotePad { min-height: 90px; border-style: solid; background: var(--color-pad-surface); border-radius: 30px; color: var(--color-cyan-ink); }
 #remotePad::before { content: none; }
-#remoteNote { font-size: 11px; max-height: none; min-height: auto; flex-shrink: 0; overflow: visible; color: var(--color-logo); }
 body[data-view=v-wait] main { padding: 0; }
 #v-wait { position: relative; }
 .wait-scene { position: relative; display: block; width: 100%; height: 100%; }
