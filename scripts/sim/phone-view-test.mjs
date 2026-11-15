@@ -147,7 +147,7 @@ update('P2',{phase:'preparing',inputTarget:null,profile:other});
 assert.equal(view().warning,'');
 update('P1',{inputTarget:null,profile:other});
 assert.match(view().remote.notice,/確かめながら/);
-// 案内は選んだゲームの名前で出し、Minecraft・ワールドの文言を残さない (#140)
+// 前面にする表記はゲームごとに変えず「ゲーム」とし、Minecraft・ワールドの文言を残さない (#140)
 update('P1',{phase:'preparing',canReady:true,titleName:'Outlast',remoteRoute:'game',inputTarget:true,profile:{id:'steam:238320',name:'Outlast',status:'unverified',controllerSupported:true}});
 const shown=[view().remote.openGameLabel,view().warning,view().remote.note].join(' ');
 assert.equal(view().remote.openGameLabel,'ゲームを前面にする','前面にするボタンはゲームごとに変えない');

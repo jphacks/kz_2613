@@ -2741,3 +2741,4 @@
 - `node --experimental-strip-types scripts/sim/phone-view-test.mjs`：合格（8観点）
 - `node --experimental-strip-types scripts/sim/app-view-test.mjs`：41/41 合格
 - `node scripts/sim/check-static-pages.mjs`：合格
+- 追加：PC 画面の警告（`desktopWarning`）、Minecraft の手順、`#inputSafety` の「（ゲーム名）を前面に」も「ゲーム」にした。build・phone-view・app-view 41/41・check-static-pages を再実行して合格。
