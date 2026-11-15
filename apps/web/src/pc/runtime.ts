@@ -85,6 +85,10 @@ lifetime.listen($('hotspotBtn'), 'click',async()=>{
   if(!disposed)loadInfo();
 });
 lifetime.listen($('openGameBtn'), 'click',()=>send({type:'open_game'}));
+// ゲームの終了 (#547)。確認した時点のゲームと epoch を添え、ホストで今の状態と照合する
+lifetime.listen($('quitGameBtn'), 'click',()=>openDialog($<HTMLDialogElement>('quitConfirm')));
+lifetime.listen($('quitCancel'), 'click',()=>$<HTMLDialogElement>('quitConfirm').close());
+lifetime.listen($('quitConfirmBtn'), 'click',()=>{if(game?.title)send({type:'quit_game',title:game.title,epoch:game.epoch});$<HTMLDialogElement>('quitConfirm').close();});
 lifetime.listen($('refreshGamesBtn'), 'click',()=>send({type:'refresh_games'}));
 // 手動で登録するゲーム (#49・#56)。実行ファイルは PC の前の人が Windows のファイル選択の画面で選ぶ
 let manualMessage='';

@@ -33,6 +33,8 @@ export interface PhoneGame extends Omit<ControllerGame, 'profile'> {
   phase: 'lobby' | 'preparing' | 'coop' | 'paused'; epoch: number; title?: string; titleName?:string;
   connected: Slot[]; participants?: Slot[]; roleAck?: Slot[]; roleOf?: Partial<Record<Slot, Slot>>;
   reason?: string | null; autoResume?: boolean; inputTarget?: boolean; prepareStatus?: string;
+  /** ゲームの終了 (#547)。終了中か・PCアプリから終了できるか・最後の結果 */
+  quit?: { busy: boolean; can: boolean; message: string };
   canReady?: boolean; canPrepare?: boolean; canResume?: boolean; lineupOk?: boolean; lineupDisconnected?: Slot[];
   readyReasons?: string[]; remoteRoute?: string; remoteLeave?: boolean;
   canSwap?: boolean; canChangePlayers?: boolean; canLaunch?:boolean; canOpenApp?: boolean; rotationSeconds?: number; rotationSoon?: boolean; rotationNext?: Partial<Record<Slot, string[]>> | null; rotationCount?: number; launch?: LaunchState|null;

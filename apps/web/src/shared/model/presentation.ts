@@ -182,8 +182,10 @@ export function desktopWarning(game: PhoneGame | null, inject: InjectionState | 
 
 // 定期スナップショットでは手動ナビゲーションを戻さない。進行の切替時だけ分担・準備へ案内する。
 export function screenOnGameUpdate(ui: Navigation, previousPhase: PhoneGame["phase"] | undefined, game: PhoneGame | null) {
+  // ゲームを終了して選択が外れたら (#547)、分担の画面に留まらずゲーム選択へ戻す
+  const quit = !!ui.game && game?.title === '' && ui.screen === 'roles';
   return {...ui, game:game?.title === undefined ? ui.game : game.title || null,
-    screen:game?.phase && game.phase !== previousPhase && game.phase !== 'lobby' ? 'roles' : ui.screen};
+    screen:game?.phase && game.phase !== previousPhase && game.phase !== 'lobby' ? 'roles' : quit ? 'game' : ui.screen};
 }
 
 /** 実際に送る入力の表示。ゲーム内の操作名から用途を推測しない (#150)。 */

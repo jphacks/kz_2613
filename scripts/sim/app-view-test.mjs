@@ -23,6 +23,25 @@ function test(name, fn) {
 const slot = (name, connected, ua = '') => ({ name, assigned: true, connected, ua });
 const game = (connected, extra = {}) => ({ phase: 'lobby', required: 3, connected, canReady: connected.includes('P1') && connected.length >= 2, ...extra });
 
+test('ゲームの終了 (#547): 分担・一時停止の画面に出し、協力プレイ中は押せない。前面化はロビーでも出す。終了したらゲーム選択へ戻る',()=>{
+  const base = pcState.get();
+  const at = (screen, extra) => pcModel({...base, ui:{...base.ui, screen, game:'steam:1'}, state:{slots:[slot('P1',true),slot('P2',true)]}, game:game(['P1','P2'], {title:'steam:1', ...extra})});
+  const roles = at('roles', {quit:{busy:false,can:true,message:''}, inputTarget:true});
+  assert.deepEqual(roles.quit, {hidden:false, disabled:false, busy:false, message:''});
+  assert.equal(roles.openGameHidden, false, 'ロビーの分担画面でもゲームを前面にできる (#556)');
+  assert.equal(at('roles', {quit:{busy:false,can:true,message:''}, inputTarget:false}).openGameHidden, true, '前面なら出さない');
+  assert.equal(at('roles', {phase:'coop', quit:{busy:false,can:false,message:''}}).quit.hidden, true, '協力プレイ中は出さない');
+  assert.equal(at('game', {quit:{busy:false,can:true,message:''}}).quit.hidden, true, 'ゲーム選択の画面には出さない');
+  const busy = at('roles', {quit:{busy:true,can:false,message:'終了しています…'}}).quit;
+  assert.equal(busy.disabled && busy.busy, true, '終了中は重ねて押せない');
+  assert.equal(at('roles', {title:'', quit:{busy:false,can:false,message:''}}).quit.hidden, true, 'ゲームを選んでいなければ出さない');
+  // 終了して選択が外れたら、分担の画面からゲーム選択へ戻る。外れていなければ留まる
+  const ui = {screen:'roles', game:'steam:1', swap:false};
+  assert.deepEqual(screenOnGameUpdate(ui, 'lobby', {phase:'lobby', title:''}), {screen:'game', game:null, swap:false});
+  assert.equal(screenOnGameUpdate(ui, 'lobby', {phase:'lobby', title:'steam:1'}).screen, 'roles');
+  assert.equal(screenOnGameUpdate({...ui, screen:'join', game:null}, 'lobby', {phase:'lobby', title:''}).screen, 'join', '最初からゲームがないときは動かさない');
+});
+
 test('分担の作り方: モデルの分担があるゲームの分担の画面だけに出し、ロビーで決める前だけ押せる (#432)',()=>{
   const base = pcState.get();
   const roles = profile => pcModel({...base, ui:{...base.ui, screen:'roles'}, state:{slots:[slot('P1',true),slot('P2',true)]}, game:game(['P1','P2'], {title:'steam:1', profile})});

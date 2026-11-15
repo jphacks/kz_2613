@@ -1,5 +1,5 @@
 // ゲーム管理の外部境界。Hubのセッション・認可・入力解放・epoch・通知には依存しない。
-use crate::focus::{self, Foreground, Target};
+use crate::focus::{self, CloseOutcome, Foreground, Target};
 use crate::games::{self, Entry};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -8,6 +8,8 @@ use std::time::{Duration, Instant};
 pub(crate) const TITLES: [&str; 2] = ["minecraft-java", "pseudo-game"];
 pub(crate) const LAUNCH_POLL: Duration = Duration::from_millis(500);
 const FOCUS_WAIT: Duration = Duration::from_secs(5);
+/// ゲームの終了 (#547)。閉じる要求のあと、終わるのを待つ時間。過ぎても強制終了はしない
+const CLOSE_GRACE: Duration = Duration::from_secs(15);
 pub(crate) fn launch_timeout(minecraft: bool) -> Duration {
     Duration::from_secs(if minecraft { 300 } else { 90 })
 }
@@ -21,6 +23,7 @@ pub(crate) trait GameBackend: Send + Sync {
     fn foreground(&self) -> Option<Foreground>;
     fn exists(&self, target: &Target) -> bool;
     fn activate(&self, target: &Target) -> Result<(), String>;
+    fn close(&self, target: &Target) -> Result<CloseOutcome, String>;
     fn launch(&self, entry: &Entry) -> Result<(), String>;
     fn pick_exe(&self) -> Option<PathBuf>;
 }
@@ -43,6 +46,9 @@ impl GameBackend for SystemBackend {
     }
     fn activate(&self, target: &Target) -> Result<(), String> {
         focus::activate(target)
+    }
+    fn close(&self, target: &Target) -> Result<CloseOutcome, String> {
+        focus::close(target, CLOSE_GRACE)
     }
     fn launch(&self, entry: &Entry) -> Result<(), String> {
         games::launch(entry)
@@ -80,6 +86,10 @@ impl GameService {
     }
     pub(crate) fn activate(&self, target: &Target) -> Result<(), String> {
         self.backend.activate(target)
+    }
+    /// 選んだゲームを終了する (#547)。時間がかかる (最大で約15秒) ので、hub の外のスレッドで呼ぶ
+    pub(crate) fn close(&self, target: &Target) -> Result<CloseOutcome, String> {
+        self.backend.close(target)
     }
     pub(crate) fn launch(&self, entry: &Entry) -> Result<(), String> {
         self.backend.launch(entry)
@@ -289,6 +299,10 @@ mod tests {
         fn activate(&self, _: &Target) -> Result<(), String> {
             self.note("activate");
             Err("前面化の拒否".into())
+        }
+        fn close(&self, _: &Target) -> Result<CloseOutcome, String> {
+            self.note("close");
+            Ok(CloseOutcome::Closed)
         }
         fn launch(&self, entry: &Entry) -> Result<(), String> {
             self.note(&entry.id);
