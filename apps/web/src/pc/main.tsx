@@ -14,7 +14,7 @@ flushSync(() => root.render(<PcApp />));
 const { startDesktopController } = await import('./runtime.ts');
 const actions = startDesktopController({
   renderView: (snapshot: PcSnapshot) => flushSync(() => pcState.set(snapshot)),
-  renderInfo: (info, message, busy) => flushSync(() => connectionState.set({info: info === undefined ? connectionState.get().info : info, message, busy, loaded: true})),
+  renderInfo: (info, message, busy, pending = false) => flushSync(() => connectionState.set({info: info === undefined ? connectionState.get().info : info, message, busy, loaded: true, pending})),
 });
 
 setPcActions(actions);

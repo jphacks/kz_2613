@@ -370,17 +370,16 @@ export function joinGuideView(info: PcInfo | null) {
 }
 
 /**
- * ホットスポットを ON にしたが、まだ 192.168.137.x が付いていない。
- * 一時 SSID (#415) で ON にすると数十秒かかり、その間はほかのアダプター (VirtualBox など) の届かない URL になる
+ * PC 画面のボタンでホットスポットを ON にしたが、まだ 192.168.137.x が付いていない。
+ * 一時 SSID (#415) で ON にすると数十秒かかることがあり、その間はほかのアダプター (VirtualBox など) の届かない URL になる
  */
-export function hotspotPending(info: PcInfo | null) {
-  return !!info?.hotspot?.on && !(info.urls || []).some((u) => u.hotspot);
+export function hotspotPending(info: PcInfo | null, started: boolean) {
+  return started && !!info?.hotspot?.on && !(info.urls || []).some((u) => u.hotspot);
 }
 
-/** 参加用 URL: ホットスポット (192.168.137.x) を優先する。準備中はほかの URL を出さない */
+/** 参加用 URL: ホットスポット (192.168.137.x) を優先する */
 export function joinUrl(info: PcInfo | null) {
   const urls = info?.urls || [];
-  if (hotspotPending(info)) return null;
   return urls.find((u) => u.hotspot) || urls[0] || null;
 }
 

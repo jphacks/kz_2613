@@ -372,14 +372,12 @@ test('参加 URL: ホットスポットを優先する', () => {
   assert.equal(joinUrl({ urls: [] }), null);
 });
 
-test('参加 URL: ホットスポットを ON にした直後は、届かないほかのアダプターの URL を出さない', () => {
+test('参加 URL: PC 画面で ON にした直後、アドレスが付くまでは準備中にする', () => {
   const other = { url: 'http://192.168.56.1:8080/', hotspot: false }, spot = { url: 'http://192.168.137.1:8080/', hotspot: true };
-  assert.equal(joinUrl({ hotspot: { on: true }, urls: [other] }), null, 'VirtualBox などのアドレスを QR にしない');
-  assert.equal(hotspotPending({ hotspot: { on: true }, urls: [other] }), true);
-  assert.equal(joinUrl({ hotspot: { on: true }, urls: [other, spot] }).url, spot.url, 'アドレスが付いたら出す');
-  assert.equal(hotspotPending({ hotspot: { on: true }, urls: [other, spot] }), false);
-  assert.equal(joinUrl({ hotspot: { on: false }, urls: [other] }).url, other.url, 'OFF のときは同じWi-Fi向けの URL を出す');
-  assert.equal(joinUrl({ hotspot: null, urls: [other] }).url, other.url, 'ホットスポットを使わない PC');
+  assert.equal(hotspotPending({ hotspot: { on: true }, urls: [other] }, true), true, 'VirtualBox などのアドレスを QR にしない');
+  assert.equal(hotspotPending({ hotspot: { on: true }, urls: [other, spot] }, true), false, 'アドレスが付いたら出す');
+  assert.equal(hotspotPending({ hotspot: { on: true }, urls: [other] }, false), false, '前から ON のホットスポット (模擬を含む) は従来どおり');
+  assert.equal(hotspotPending({ hotspot: { on: false }, urls: [other] }, true), false, 'OFF になったら同じWi-Fi向けの URL を出す');
 });
 
 test('端末の種類', () => {
