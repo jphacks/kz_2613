@@ -2733,3 +2733,11 @@
 - `PhoneApp.tsx` から `.host-notes`（`#remoteNote`・`#remoteNotice`）を削除し、関係する CSS（`phone-host-remote.css`・`mobile.css`・`improved-mobile.css`）を消した。タッチパッドは `flex: 1` なので、空いた高さはタッチパッドに回る。モデルの `remote.note` は残す（表示はしない）。
 - `capture-screens.mjs` の説明欄の監査を削除。
 - `npm run build`、`app-view-test` 40/40、`phone-view-test`、`phone-lifecycle-test` 39/39、`product-web-test`、`check-static-pages`、`verify-ui-evidence`、`capture-screens.mjs --assert-layout`（800x560＋384x701、900x1000＋402x874。ホストは main 03f49a0 の手元ビルド）に合格。実機での確認はこのあと行う。
+
+## 2026-11-15 前面にするボタンの表記をゲームごとに変えない
+
+- 変更：PC アプリの `#openGameBtn` と、ホストのリモコンの `openGameLabel` を「ゲームを前面にする」に固定した（ユーザー判断）。使わなくなった `remoteModel` の `name` 引数を外した。
+- `cd apps/web && npm run build`：成功
+- `node --experimental-strip-types scripts/sim/phone-view-test.mjs`：合格（8観点）
+- `node --experimental-strip-types scripts/sim/app-view-test.mjs`：41/41 合格
+- `node scripts/sim/check-static-pages.mjs`：合格

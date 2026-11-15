@@ -65,7 +65,7 @@ function Sidebar({state,model,connection}:{state:PcState;model:PcModel;connectio
     </div>
   </div>
   <button className="sub-cta" id="recruitBtn" hidden={!model.canRecruit} aria-haspopup="dialog">新たな参加者を受け付ける</button>
-  <button className="open-game" id="openGameBtn" hidden={model.openGameHidden}>{model.name}を前面にする</button>
+  <button className="open-game" id="openGameBtn" hidden={model.openGameHidden}>ゲームを前面にする</button>
   <button className="quit-game danger-action" id="quitGameBtn" hidden={model.quit.hidden} disabled={model.quit.disabled}>{model.quit.busy ? `${model.name}を終了しています…` : `${model.name}を終了する`}</button>
   <p className="action-note" id="actionNote" role="status">{model.actionNote}</p>
 </aside>;

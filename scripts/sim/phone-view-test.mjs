@@ -150,7 +150,7 @@ assert.match(view().remote.notice,/確かめながら/);
 // 案内は選んだゲームの名前で出し、Minecraft・ワールドの文言を残さない (#140)
 update('P1',{phase:'preparing',canReady:true,titleName:'Outlast',remoteRoute:'game',inputTarget:true,profile:{id:'steam:238320',name:'Outlast',status:'unverified',controllerSupported:true}});
 const shown=[view().remote.openGameLabel,view().warning,view().remote.note].join(' ');
-assert.match(shown,/Outlastを前面にする/);
+assert.equal(view().remote.openGameLabel,'ゲームを前面にする','前面にするボタンはゲームごとに変えない');
 assert.doesNotMatch(shown,/Minecraft|ワールド/);
 // 時間制の役割交代: 予告で次の担当、交代の直後に新しい担当を短く示す。止まっている間・参加していない人には出さない (#161)
 update('P2',{phase:'coop',participants:['P1','P2','P3'],assigned,rotationCount:0});
