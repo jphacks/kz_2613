@@ -2,7 +2,7 @@ import {createVirtualCursor} from '../shared/input/virtual-cursor.ts';
 import {createLifetime} from '../shared/input/lifetime.ts';
 import {REMOTE_FOCUSABLE,usableControls,moveRemoteFocus,stepRemoteSelect,isRemoteSelect} from '../shared/input/remote-focus.ts';
 import {byId} from '../shared/dom.ts';
-import {SCREENS,gameList,navigate,desktopView,rolesAction,isGameDoubleClick,isRegistered,shownSlots,screenOnGameUpdate,pcEffects,joinGuideView} from '../shared/model/presentation.ts';
+import {SCREENS,gameList,navigate,desktopView,rolesAction,isGameDoubleClick,isRegistered,shownSlots,screenOnGameUpdate,pcEffects,joinGuideView,hotspotPending} from '../shared/model/presentation.ts';
 import {decodePcMessage,decodeHotspotResult} from '../shared/transport/pc-messages.ts';
 import {decodePcInfo} from '../shared/transport/pc-info.ts';
 import type {Slot,PhoneGame} from '../shared/contracts.ts';
@@ -237,6 +237,7 @@ async function loadInfo(){
     const info=decodePcInfo(await response.json());if(!info)throw Error('Invalid host info');
     if(disposed||request!==infoRequest)return;
     infoPort=info.port;renderInfo(info,hotspotMessage,false);document.body.toggleAttribute('data-two-qr',joinGuideView(info).two);render();
+    if(hotspotPending(info))lifetime.timeout(loadInfo,1000); // 準備中は参加用のアドレスが付いたらすぐ出す
   }catch{if(!disposed&&request===infoRequest)renderInfo(null,'',false);}
 }
 const cursor=createVirtualCursor({canLeave:()=>game?.remoteLeave===true,leave:at=>send({type:'remote_leave',...at})});

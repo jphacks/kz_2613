@@ -1,6 +1,6 @@
 import type { PhoneGame, Slot } from '../shared/contracts';
 import { createStore } from '../shared/store.ts';
-import { desktopView, slotViews, shownSlots, playerCards, roleColumns, gameList, gameCard, rolesAction, gameLabel, desktopWarning, networkNotice, profileNotice, commSettingsView, gamesCountText, isRegistered, roleView, slotDiagnosis, joinUrl, joinGuideView, MIN_PLAYERS, MAX_PLAYERS, GAMES } from '../shared/model/presentation.ts';
+import { desktopView, slotViews, shownSlots, playerCards, roleColumns, gameList, gameCard, rolesAction, gameLabel, desktopWarning, networkNotice, profileNotice, commSettingsView, gamesCountText, isRegistered, roleView, slotDiagnosis, joinUrl, joinGuideView, hotspotPending, MIN_PLAYERS, MAX_PLAYERS, GAMES } from '../shared/model/presentation.ts';
 
 import type {InjectionState,HostState,Navigation} from '../shared/model/domain.ts';
 export interface PcSnapshot {
@@ -29,12 +29,12 @@ import type {PcInfo} from '../shared/model/domain.ts';
 export const connectionState = createStore<{info: PcInfo | null; message: string; busy: boolean; loaded: boolean}>({info: null, message: '', busy: false, loaded: false});
 export function connectionModel() {
   const {info, message, busy, loaded} = connectionState.get();
-  const url = joinUrl(info), guide = joinGuideView(info);
+  const url = joinUrl(info), guide = joinGuideView(info), pending = hotspotPending(info);
   return {
     guide, note: message || guide.note, busy,
-    qr: info ? url?.qr || '<span>接続先が見つかりません</span>' : loaded ? '<span>QRを取得できません<br>接続方法をご確認ください</span>' : '<span>QRを読み込み中…</span>',
+    qr: pending ? '<span>ホットスポットの準備中…<br>1分ほどかかることがあります</span>' : info ? url?.qr || '<span>接続先が見つかりません</span>' : loaded ? '<span>QRを取得できません<br>接続方法をご確認ください</span>' : '<span>QRを読み込み中…</span>',
     url: url?.url || '',
-    urlNote: !info ? 'PCホストとネットワークを確認し、QRを取得し直してください。' : !url ? 'PCのWi-Fiとモバイルホットスポットを確認してください。' : url.hotspot ? 'PCのモバイルホットスポットへ接続してください。' : 'PCと同じWi-Fiへ接続してください。',
+    urlNote: pending ? 'ホットスポットの準備中です。参加用のQRが出るまでお待ちください。' : !info ? 'PCホストとネットワークを確認し、QRを取得し直してください。' : !url ? 'PCのWi-Fiとモバイルホットスポットを確認してください。' : url.hotspot ? 'PCのモバイルホットスポットへ接続してください。' : 'PCと同じWi-Fiへ接続してください。',
     wifi: info?.wifi ? `Wi-Fi：${info.wifi.ssid}` : '',
     build: info?.build ? `Re:Cooplay ${info.build.version}${info.build.commit ? `（${info.build.commit}）` : '（開発版）'}` : '',
   };

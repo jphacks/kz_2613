@@ -2733,3 +2733,11 @@
 - `PhoneApp.tsx` から `.host-notes`（`#remoteNote`・`#remoteNotice`）を削除し、関係する CSS（`phone-host-remote.css`・`mobile.css`・`improved-mobile.css`）を消した。タッチパッドは `flex: 1` なので、空いた高さはタッチパッドに回る。モデルの `remote.note` は残す（表示はしない）。
 - `capture-screens.mjs` の説明欄の監査を削除。
 - `npm run build`、`app-view-test` 40/40、`phone-view-test`、`phone-lifecycle-test` 39/39、`product-web-test`、`check-static-pages`、`verify-ui-evidence`、`capture-screens.mjs --assert-layout`（800x560＋384x701、900x1000＋402x874。ホストは main 03f49a0 の手元ビルド）に合格。実機での確認はこのあと行う。
+
+## 2026-11-15 — ホットスポットのアドレスが付くまで、届かない参加QRを出さない（Claude Code）
+
+- 利用者の報告：一時SSID（#415）でホットスポットをONにすると、スマホはWi-Fiにつながるが参加ページが読み込み続ける。
+- 再現（展示用 600c3a8、Windows 11・Android実機）：PC画面と同じ `/api/hotspot` でONにすると、ONの完了から `192.168.137.1` が付くまで約50秒かかった回があった。その間の `/api/info` はホットスポットのアドレスを含まず、参加QRは先頭の別アダプター（VirtualBoxのホスト専用アダプター）のURLを指していた。スマホからは届かない。別の回ではONの完了時点で付いており、時間は一定しない。
+- 否定した仮説：Androidは一時SSIDを「インターネットあり（VALIDATED）」と判定し、既定の通信先もWi-Fiだった。PC側のIP・転送・ファイアウォール（`recooplay-host.exe` の許可）は既定SSIDと一時SSIDで差がなかった。アドレスが付いたあとは、スマホのChromeで `http://192.168.137.1:8080/` が開けた。
+- 修正：`hotspotPending`（ホットスポットはONだが `192.168.137.x` がまだない）のあいだは `joinUrl` を返さず、参加QRの場所に「ホットスポットの準備中…」を出す。準備中は `/api/info` を1秒ごとに取り直す。
+- `npm run typecheck`・`vite build`、`app-view-test` 42/42、`phone-view-test`、`check-static-pages` に合格。修正版の画面で実際にONにした回は、ONの完了時点でアドレスが付いていたため、準備中の表示は実画面では確かめていない（単体試験で確認）。
