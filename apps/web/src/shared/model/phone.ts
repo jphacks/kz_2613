@@ -24,10 +24,10 @@ export const sendsToGame = (game: PhoneGame) => game.phase !== 'lobby';
  * ホストのリモコン画面では上部に出さず、remoteModel の alert として下の状態欄に出す。
  * 警告の有無でリモコンのボタン位置を動かさないため (#291)
  */
-export function inputWarnText({ isHost, game, name, notice }: {isHost:boolean;game:PhoneGame;name:string;notice:string}) {
+export function inputWarnText({ isHost, game, notice }: {isHost:boolean;game:PhoneGame;notice:string}) {
   const target = !game.inputTarget || !sendsToGame(game) ? '' : isHost
-    ? `PCの画面が${name}になっていません。${name}を前面に戻すまで操作は届きません。`
-    : `PCの画面が${name}になっていません。ホストが戻すまでお待ちください。`;
+    ? 'PCの画面がゲームになっていません。ゲームを前面に戻すまで操作は届きません。'
+    : 'PCの画面がゲームになっていません。ホストが戻すまでお待ちください。';
   // 「未検証」の注意は準備の段階で伝える。協力プレイ中は操作画面の上部を占めないよう出さない (#308)
   return [target, isHost && game.phase !== 'coop' ? notice : ''].filter(Boolean).join(' ');
 }
@@ -66,7 +66,7 @@ export function waitModel({ me, game, roleTitle, joined, autoWait }: {me:Slot;ga
 export const END_PREPARING_LABEL = '準備をやめて分担に戻る';
 
 /** ホストのリモコン画面の内容。入力の要素 (タッチパッド・キー) は含まない */
-export function remoteModel({ me, isHost, game, name }: {me:Slot;isHost:boolean;game:PhoneGame;name:string;autoWait?:boolean}) {
+export function remoteModel({ me, isHost, game }: {me:Slot;isHost:boolean;game:PhoneGame;autoWait?:boolean}) {
   const phase = game.phase;
   const reasons = game.readyReasons ?? [];
   const appInFront = game.remoteRoute === 'app';
@@ -100,7 +100,8 @@ export function remoteModel({ me, isHost, game, name }: {me:Slot;isHost:boolean;
     openAppHidden,
     startLabel: phase === 'paused' ? '再開する' : START_COOP_LABEL,
     startDisabled: !(phase === 'paused' ? game.canResume : game.canReady),
-    openGameLabel: `${name}を前面にする`,
+    // ゲームごとに変えず、どのゲームでも同じ表記にする (ユーザー判断 2026-11-15)
+    openGameLabel: 'ゲームを前面にする',
     // 前面にするボタンは、ゲームが前面でないときだけ (協力プレイに入るときはホストが自動で前面にする、#138)
     openGameHidden: !['preparing', 'paused'].includes(phase) || !game.inputTarget,
     // 準備中も分担の画面へ戻れる (#427)。協力プレイはまだ始まっていないので、表記を分ける
