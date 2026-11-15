@@ -1396,9 +1396,8 @@ impl Hub {
             "対象ゲームを前面にしました".into()
         } else {
             format!(
-                "{}。{}を手動で前面にしてください",
-                result.err().unwrap_or("前面を確認できませんでした".into()),
-                self.game_name()
+                "{}。ゲームを手動で前面にしてください",
+                result.err().unwrap_or("前面を確認できませんでした".into())
             )
         };
         self.push_game();
@@ -1531,7 +1530,7 @@ impl Hub {
                             match self.game_service.activate(&self.target) {
                                 Ok(()) => "対象ゲームを前面にしました".into(),
                                 Err(reason) => {
-                                    format!("{}。{}を手動で前面にしてください", reason, name)
+                                    format!("{}。ゲームを手動で前面にしてください", reason)
                                 }
                             }
                         };
@@ -2626,7 +2625,7 @@ impl Hub {
             Err(reason) => {
                 // 閉じたあとでもう一度押せば、ウィンドウがないので「すでに終了」としてゲーム選択へ戻る
                 self.quit_message = format!(
-                    "{reason}。{name}の画面から終了してから、もう一度「{name}を終了する」を押してください"
+                    "{reason}。{name}の画面から終了してから、もう一度「ゲームを終了する」を押してください"
                 );
                 self.push_game();
                 self.push_state();
@@ -3298,13 +3297,13 @@ impl Hub {
         // すでに起動している (ウィンドウがある) ときは、起動し直さず前面にする
         if !dry_run() && (self.target_ok || self.game_service.exists(&self.target)) {
             let message = match self.game_service.activate(&self.target) {
-                Ok(()) => format!(
-                    "{}はすでに起動しています。前面にしました。準備してReadyを押すと開始します",
-                    entry.name
-                ),
+                Ok(()) => {
+                    "ゲームはすでに起動しています。前面にしました。準備してReadyを押すと開始します"
+                        .to_string()
+                }
                 Err(reason) => format!(
-                    "{}はすでに起動しています（{}）。手動で前面にしてください",
-                    entry.name, reason
+                    "ゲームはすでに起動しています（{}）。手動で前面にしてください",
+                    reason
                 ),
             };
             self.log(

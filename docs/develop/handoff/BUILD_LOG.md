@@ -2741,3 +2741,11 @@
 - 否定した仮説：Androidは一時SSIDを「インターネットあり（VALIDATED）」と判定し、既定の通信先もWi-Fiだった。PC側のIP・転送・ファイアウォール（`recooplay-host.exe` の許可）は既定SSIDと一時SSIDで差がなかった。アドレスが付いたあとは、スマホのChromeで `http://192.168.137.1:8080/` が開けた。
 - 修正：`hotspotPending`（PC画面のボタンでONにした直後で、`192.168.137.x` がまだない）のあいだは参加QRを出さず、「ホットスポットの準備中…」を出す。準備中は `/api/info` を1秒ごとに取り直す。前からONのホットスポット（dry-runの模擬を含む）は従来どおり。最初は「ONでアドレスなし」をすべて準備中にしたが、模擬ホットスポットでQRを待つ `capture-screens.mjs` がCIで止まったため、再現した条件に絞った。
 - `npm run typecheck`・`vite build`、`app-view-test` 42/42、`phone-view-test`、`check-static-pages`、`capture-screens.mjs --assert-layout`（800x560＋384x701、900x1000＋402x874）に合格。修正版の画面で実際にONにした回は、ONの完了時点でアドレスが付いていたため、準備中の表示は実画面では確かめていない（単体試験で確認）。
+## 2026-11-15 前面にするボタンの表記をゲームごとに変えない
+
+- 変更：PC アプリの `#openGameBtn` と、ホストのリモコンの `openGameLabel` を「ゲームを前面にする」に固定した（ユーザー判断）。使わなくなった `remoteModel` の `name` 引数を外した。
+- `cd apps/web && npm run build`：成功
+- `node --experimental-strip-types scripts/sim/phone-view-test.mjs`：合格（8観点）
+- `node --experimental-strip-types scripts/sim/app-view-test.mjs`：41/41 合格
+- `node scripts/sim/check-static-pages.mjs`：合格
+- 追加：PC 画面の警告（`desktopWarning`）、Minecraft の手順、`#inputSafety` の「（ゲーム名）を前面に」も「ゲーム」にした。build・phone-view・app-view 41/41・check-static-pages を再実行して合格。

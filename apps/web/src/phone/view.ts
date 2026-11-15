@@ -5,7 +5,7 @@ import { createStore } from '../shared/store';
 import { byId } from '../shared/dom';
 import { generatedKey } from '../shared/model/actions.ts';
 import { inputWarnText, waitModel, remoteModel, rotationText } from '../shared/model/phone.ts';
-import { profileNotice, roleView, gameLabel } from '../shared/model/presentation.ts';
+import { profileNotice, roleView } from '../shared/model/presentation.ts';
 import { createViewTransition } from './transition.ts';
 import { createSkinStore, applySkin } from '../shared/model/skin.ts';
 import {controllerLayout,buttonLayout,type ControlGroup} from '../shared/controller-layout';
@@ -103,7 +103,6 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
     rotationCount = game.rotationCount ?? 0;
     const rotation = rotationText({ game, joined, rotated: performance.now() < rotatedUntil, title: g => roleView(g, me).title });
     if (rotation !== rotationNotice.get()) flushSync(() => rotationNotice.set(rotation));
-    const name = gameLabel(game);
     const next: PhoneDisplay = {
       snapshot, view: display.get().view,
       controller: view==='v-gen'&&game.profile ? changed ? (controllerGame => (groups => ({key,groups,layout:buttonLayout(groups),bindings:input,game:controllerGame,slot:me}))(controllerLayout(controllerGame,me)))({...game,profile:game.profile}) : display.get().controller : null,
@@ -111,11 +110,11 @@ export function createReactPhoneView(input: PhoneViewBindings): PhoneView {
       controllerTitle: view === 'v-gen' ? `${game.profile?.name}（${me}${isHost ? '・ホスト' : ''}）` : display.get().controllerTitle,
       wait: waitModel({ me, game, roleTitle: role.title, joined, autoWait }),
       // リモコン画面では上部に警告を出さず、ゲームの検証状況だけを下の状態欄に出す (#291)
-      remote: { ...remoteModel({ me, isHost, game, name, autoWait }), notice: view === 'v-remote' ? profileNotice(game.profile) : '' },
+      remote: { ...remoteModel({ me, isHost, game, autoWait }), notice: view === 'v-remote' ? profileNotice(game.profile) : '' },
       role: role.title ? role.title + (isHost ? '（ホスト）' : '') : '',
       roleCopy: game.phase === 'coop' ? '確定した分担の操作だけを送信します' : game.phase === 'paused' ? '確定した分担（再開時に確認）' : '分担案（Readyで確定）',
       roleNotice: game.roleAck?.includes(me) ? `${game.reason === 'role rotation' ? '時間で担当が交代しました' : 'ホストが担当を入れ替えました'}。あなたの担当は「${role.title}」です。` : '',
-      warning: view === 'v-remote' ? '' : inputWarnText({ isHost, game, name, notice: profileNotice(game.profile) }),
+      warning: view === 'v-remote' ? '' : inputWarnText({ isHost, game, notice: profileNotice(game.profile) }),
     };
     document.body.dataset.phase = game.phase; document.body.dataset.slot = me; document.body.dataset.host = String(isHost);
     flushSync(() => display.set(next));

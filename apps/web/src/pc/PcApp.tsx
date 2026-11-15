@@ -65,8 +65,8 @@ function Sidebar({state,model,connection}:{state:PcState;model:PcModel;connectio
     </div>
   </div>
   <button className="sub-cta" id="recruitBtn" hidden={!model.canRecruit} aria-haspopup="dialog">新たな参加者を受け付ける</button>
-  <button className="open-game" id="openGameBtn" hidden={model.openGameHidden}>{model.name}を前面にする</button>
-  <button className="quit-game danger-action" id="quitGameBtn" hidden={model.quit.hidden} disabled={model.quit.disabled}>{model.quit.busy ? `${model.name}を終了しています…` : `${model.name}を終了する`}</button>
+  <button className="open-game" id="openGameBtn" hidden={model.openGameHidden}>ゲームを前面にする</button>
+  <button className="quit-game danger-action" id="quitGameBtn" hidden={model.quit.hidden} disabled={model.quit.disabled}>{model.quit.busy ? 'ゲームを終了しています…' : 'ゲームを終了する'}</button>
   <p className="action-note" id="actionNote" role="status">{model.actionNote}</p>
 </aside>;
 }
@@ -109,7 +109,7 @@ function SettingsDialog({state,model,connection}:{state:PcState;model:PcModel;co
   <nav id="steps" aria-label="画面の移動" hidden={!['join','game','roles'].includes(model.view)}>{SCREENS.map(screen => <button key={screen} data-go={screen} disabled={model.view === 'join' && screen !== 'join' && !model.canAdvance} aria-label={SCREEN_TITLES[screen as keyof typeof SCREEN_TITLES]} aria-current={screen === state.ui.screen ? 'page' : 'false'}>{{join: '参加',game: '選択',roles: '分担'}[screen as 'join'|'game'|'roles']}</button>)}</nav>
   </details>
   <details id="keyDetails"><summary>担当と実際に送るキー</summary><p id="keyWarnings" role="status">{model.warnings}</p><div id="keyBindings">{model.bindings.map(b => <Fragment key={b.slot}><h3>{b.slot}：{b.title}</h3><ul>{b.lines.map((line: string, i: number) => <li key={i}>{line}</li>)}</ul></Fragment>)}</div><div id="keyEditor"><KeyEditor model={model} state={state} /></div></details>
-  <p id="inputSafety">協力プレイ中は、{model.name}が前面のときだけ担当の操作を送ります。協力プレイの前・一時停止中は、ホストのスマホのリモコンでPCの画面全体（ランチャーなどほかのウィンドウを含む）を操作できます。入力を止めたときや緊急停止のときは、すべてのキーとボタンを離します。</p>
+  <p id="inputSafety">協力プレイ中は、ゲームが前面のときだけ担当の操作を送ります。協力プレイの前・一時停止中は、ホストのスマホのリモコンでPCの画面全体（ランチャーなどほかのウィンドウを含む）を操作できます。入力を止めたときや緊急停止のときは、すべてのキーとボタンを離します。</p>
 
   <details id="commDetails"><summary>通信の設定</summary>
     <label className="comm-setting"><input type="checkbox" id="autoResumeSetting" checked={model.comm.checked} disabled={model.comm.locked} onChange={event => settingsActions.setAutoResume(event.currentTarget.checked)} /> 切断から戻ったら自動で再開する</label>

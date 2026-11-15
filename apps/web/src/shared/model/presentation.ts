@@ -174,8 +174,8 @@ export function desktopWarning(game: PhoneGame | null, inject: InjectionState | 
     const missing = (game?.participants || []).filter((p) => !game?.connected?.includes(p));
     if (missing.length) return `${missing.join('・')}の再接続を待っています。`;
     if ((game?.connected?.length || 0) < (game?.required || MIN_PLAYERS)) return `${MIN_PLAYERS}人以上の接続を待っています。`;
-    if (game?.phase === 'preparing' && !inject?.active) return `${gameLabel(game)}を前面にして、プレイ中の画面まで進めてください。`;
-    if (game?.phase === 'coop' && !inject?.active) return `操作を停止しています。${gameLabel(game)}を前面にしてください。`;
+    if (game?.phase === 'preparing' && !inject?.active) return 'ゲームを前面にして、プレイ中の画面まで進めてください。';
+    if (game?.phase === 'coop' && !inject?.active) return '操作を停止しています。ゲームを前面にしてください。';
   }
   return '';
 }
@@ -257,7 +257,7 @@ export const GAMES = [
       'PCの画面でゲームを選び、メンバーと分担を決定する',
       '「ゲームを起動する」で公式ランチャーを開き、「プレイ」を押してワールドに入る（ランチャーが見つからないときは手動で起動する）',
       'ホットバーに使うアイテムを並べておく（インベントリ操作はホストのリモコンでは限られます）',
-      `Minecraftを前面にして、ホストのスマホで「${START_COOP_LABEL}」を押す`,
+      `ゲームを前面にして、ホストのスマホで「${START_COOP_LABEL}」を押す`,
     ],
   },
 ];

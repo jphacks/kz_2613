@@ -242,17 +242,15 @@ impl Launch {
             match activation {
                 Ok(()) => Watch::Complete {
                     state: "started",
-                    message: format!(
-                        "{}を前面にしました。ホストが準備してReadyを押すと開始します",
-                        self.name
-                    ),
+                    message: "ゲームを前面にしました。ホストが準備してReadyを押すと開始します"
+                        .to_string(),
                 },
                 Err(_) if now.saturating_duration_since(seen) < FOCUS_WAIT => Watch::Wait,
                 Err(reason) => Watch::Complete {
                     state: "started",
                     message: format!(
-                        "{}は起動しましたが、{}。手動で前面にしてください",
-                        self.name, reason
+                        "ゲームは起動しましたが、{}。手動で前面にしてください",
+                        reason
                     ),
                 },
             }
