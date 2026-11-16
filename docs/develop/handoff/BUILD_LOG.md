@@ -2799,3 +2799,17 @@
 - 試験の追加：`protocol-sim.mjs` に「張り直し中にリセット → 旧トークン・`reconnect` の hello は 4001、再読み込みなら参加できる」、`phone-session-test.mjs` に「一度参加したページの hello にだけ `reconnect` を付ける」。
 - 手元の結果：`phone-session-test.mjs` 8/8、`phone-lifecycle-test.mjs` 39/39、`npm run typecheck`、`cargo fmt --check` は合格。ホストのビルドは、PCのメモリー不足でビルドが止められたため手元では実行できず、`cargo test` と `protocol-sim.mjs` はCIで確かめる。
 - 未確認：Androidの実機で張り直しとリセットを重ねる再現（5回中1回の頻度のため、通信試験で順序を作って代えた）。協力プレイ開始直後の `close 1005` は別の現象として扱う。
+
+## 2026-11-16 — #576 のAndroid実機受入（Claude Code）
+- 対象：PR #577 のCIで作ったホストとWeb画面（`ee39489`。main `94abdd8` と同じ内容）。試験用ホストは dry-run・模擬の入力先。Android 16（Chrome）1台。adb はUSBで操作にだけ使い、通信はホットスポットのWi-Fi。
+- 重なる順序の作り方：自然には5回に1回ほどしか起きないため、Androidのページ内の WebSocket に試験用の仕掛けを入れて強制した。手順は次のとおり。
+  1. 旧接続への受信を止め、無通信の監視に張り直させる。
+  2. 新しい接続の hello（`reconnect: true` 付きであることを確認）を止める。
+  3. その間に全員リセット（Wi-Fiは切り替えない）を送り、約1秒後に hello を送る。
+- 修正後：3回とも合格。
+  - ホストは `reject_reset_rejoin` で 4001 を返し、Androidは「PCでリセットされました」で止まった。
+  - その後4秒、参加し直しはなく、接続中の枠は0。
+  - 再読み込みすると、毎回P1として新しく参加できた。
+  - JavaScriptの例外はなかった。
+- 修正前のホスト（2026-11-15のビルド）で同じ順序を作ると再現した。ログの順は `disconnect close 1005` → `reset` → 2秒後に `join {"device":"Android","slot":"P1"}`。
+- 未確認：仕掛けを使わない自然な重なり、iPhone、Wi-Fiを切り替える全員リセット（#563）との組み合わせ。
