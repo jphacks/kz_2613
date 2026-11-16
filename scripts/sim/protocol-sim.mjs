@@ -2004,6 +2004,28 @@ async function main() {
       for (const k of ['P1', 'P2', 'P3']) assert(!log.includes(tokens[k]), `${k} のトークンがログに出た`);
     });
 
+    await check('全員リセット: 張り直し中にリセットされた旧スマホは、同じページのままでは参加し直さず、再読み込みすれば参加できる (#576)', async () => {
+      const resetFrom = mon.mark();
+      mon.send({ type: 'reset' });
+      await mon.waitFor(m => m.type === 'game' && m.game.phase === 'lobby' && m.game.connected.length === 0,
+        { from: resetFrom, what: '試験前リセット' });
+      const id = { clientId: 'sim-rejoin-1' };
+      const old = await join('J1', id); const first = await welcome(old);
+      const oldToken = tokens.J1;
+      // スマホの無通信の監視が旧接続を切り離し、新しい接続を開いた。hello を送る前にリセットが届く
+      const next = new Client('J1'); await next.open();
+      mon.send({ type: 'reset' });
+      assert((await old.waitClose()) === 4001, `旧接続 close ${old.closed}`);
+      next.send({ type: 'hello', clientId: id.clientId, ua: 'protocol-sim', protocolVersion: PROTOCOL_VERSION, token: oldToken, nextIseq: 1, reconnect: true });
+      assert((await next.waitClose()) === 4001, `張り直し close ${next.closed}`);
+      assert(!next.msgs.some(m => m.type === 'welcome'), 'リセット後に旧スマホを参加させた');
+      // 再読み込みしたページ (reconnect なし) は、保存したトークンを送っても新しい参加として受け付ける
+      const reloaded = await join('J1', id); const w = await welcome(reloaded);
+      assert(w.type === 'welcome' && w.slot === first.slot && w.reconnected !== true && w.token !== oldToken,
+        JSON.stringify({ type: w.type, slot: w.slot, reconnected: w.reconnected }));
+      reloaded.close();
+    });
+
     await check('ロビー: 戻らないホストの枠は15秒で解放し、接続中の最も若い枠がホストになる。元のホストは参加者で戻る (#223)', async () => {
       mon.send({ type: 'reset' });
       await sleep(200);

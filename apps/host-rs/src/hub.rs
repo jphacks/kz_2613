@@ -45,6 +45,8 @@ const SLOT_ROLES: [&str; MAX_SLOTS] = ["ホスト", "参加者", "参加者", "�
 const DESKTOP_PROCESS: &str = "recooplay-desktop.exe";
 const CLOSE_PROTOCOL_VERSION: u16 = 4005;
 const CLOSE_BAD_TOKEN: u16 = 4006;
+/// 全員リセットで外したトークンを覚えておく数 (#576)。4 枠 × 数回分あれば、張り直し中の旧スマホに足りる
+const RESET_TOKENS_KEPT: usize = 32;
 /// 接続ごとの送信待ちの上限。健全な接続は溜まらず、読取りが止まった接続だけが達する (#197)
 pub const WS_QUEUE_LIMIT: usize = 4096;
 // 入力の診断ログは混雑時に抑え、状態更新・操作結果・解放通知の送信待ちに空きを残す。
@@ -382,6 +384,8 @@ pub struct Hub {
     log_file: BufWriter<File>,
     conns: HashMap<u64, Conn>,
     slots: [Option<Slot>; MAX_SLOTS],
+    // 全員リセットで外した参加のトークン (#576)。同じページのまま張り直した旧スマホを新しい参加にしない
+    reset_tokens: std::collections::VecDeque<String>,
     game: Game,
     inject: InjectMode,
     outputs: Vec<OutputState>,
@@ -546,6 +550,7 @@ impl Hub {
             log_file,
             conns: HashMap::new(),
             slots: [None, None, None, None],
+            reset_tokens: Default::default(),
             game: Game {
                 phase: Phase::Lobby,
                 host_ready: false,
@@ -4402,6 +4407,10 @@ impl Hub {
                 for i in 0..MAX_SLOTS {
                     if let Some(slot) = self.slots[i].take() {
                         self.close(slot.conn, 4001, "reset");
+                        if self.reset_tokens.len() >= RESET_TOKENS_KEPT {
+                            self.reset_tokens.pop_front();
+                        }
+                        self.reset_tokens.push_back(slot.token);
                     }
                 }
                 for c in self.conns.values_mut() {
@@ -4489,6 +4498,15 @@ impl Hub {
                 self.send(Some(id), &json!({ "type": "error", "code": "bad_token" }));
                 self.log("reject_token", json!({ "slot": SLOT_NAMES[i] }));
                 return self.close(Some(id), CLOSE_BAD_TOKEN, "bad token");
+            }
+        }
+        // 張り直しの途中で全員リセットされ、4001 を受け取れなかった旧スマホ (#576)。
+        // 同じページのまま張り直した hello は、リセット前の参加の続きとして扱い、新しい参加にしない
+        if existing.is_none() && msg.get("reconnect").and_then(Value::as_bool) == Some(true) {
+            let token = s(msg, "token").unwrap_or_default();
+            if self.reset_tokens.iter().any(|t| token_eq(&token, t)) {
+                self.log("reject_reset_rejoin", json!({}));
+                return self.close(Some(id), 4001, "reset");
             }
         }
         let reconnected = existing.is_some();
@@ -5202,6 +5220,7 @@ mod tests {
             log_file,
             conns: HashMap::new(),
             slots: [None, None, None, None],
+            reset_tokens: Default::default(),
             game: Game {
                 phase: Phase::Lobby,
                 host_ready: false,

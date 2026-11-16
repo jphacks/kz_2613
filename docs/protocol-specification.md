@@ -118,7 +118,7 @@ sequenceDiagram
 
 | type | 経路 | 主な項目・処理 |
 |:--|:--|:--|
-| `hello` | WS | `protocolVersion`, `clientId`, `token`, `ua`, `nextIseq`。参加・再接続 |
+| `hello` | WS | `protocolVersion`, `clientId`, `token`, `ua`, `nextIseq`、任意の `reconnect`。参加・再接続。`reconnect: true` は同じページのまま張り直したことを示し、全員リセットで外したトークンなら新しい参加にせず `4001` で閉じる（#576） |
 | `ping` | WS | `t`, `stats`。1秒ごとの生存確認・通信統計 |
 | `transfer_host` | WS | `to`, `epoch`。ロビーの現在のホストだけが、接続中の参加者へ譲る。2つの枠を入れ替える |
 | `leave` | WS | 項目なし。ロビーで、ホスト以外の本人だけが自分の枠を空ける（#546）。15秒の保持を待たずに次の端末が参加できる。決めた参加者・入れ替えを捨ててepochを進め、4010で閉じる。ホスト・開始後は無視する |

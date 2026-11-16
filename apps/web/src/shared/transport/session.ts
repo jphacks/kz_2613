@@ -11,13 +11,14 @@ export function createPhoneSession({storage,createClientId,now}:SessionOptions) 
   let token=read('recooplay.token');
   let socket:WebSocket|null=null,seq=0,iseq=0,retry=0,stopped=false,lastServerMsg=0;
   let me:Slot|null=null,isHost=false,game:PhoneGame|null=null,connection:Connection='connecting',reconnected=false;
+  let joined=false; // このページで一度参加できたか。張り直しの hello に付け、全員リセット後に新しい参加として扱われないようにする (#576)
   function connecting(){connection='connecting'}
   function attach(next:WebSocket){socket=next}
   function current(candidate:WebSocket){return socket===candidate}
-  function open(ua:string){retry=0;seq=0;lastServerMsg=now();return {type:'hello',protocolVersion:PHONE_PROTOCOL_VERSION,clientId,token,ua,nextIseq:iseq+1}}
+  function open(ua:string){retry=0;seq=0;lastServerMsg=now();return {type:'hello',protocolVersion:PHONE_PROTOCOL_VERSION,clientId,token,ua,nextIseq:iseq+1,...(joined?{reconnect:true}:{})}}
   function received(){lastServerMsg=now()}
   function authenticate(message:Welcome){if(message.token&&message.token!==token){token=message.token;write('recooplay.token',token)}}
-  function welcome(message:Welcome){me=message.slot;isHost=message.isHost;reconnected=message.reconnected===true;connection='connected'}
+  function welcome(message:Welcome){joined=true;me=message.slot;isHost=message.isHost;reconnected=message.reconnected===true;connection='connected'}
   function updateGame(next:PhoneGame){const changed=game?.epoch!==next.epoch;game=next;return changed}
   function stop(reason?:Connection){stopped=true;if(reason)connection=reason}
   function disconnected(code:number){
