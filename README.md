@@ -29,8 +29,15 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
   ---
 
   [![JPHACKS 2026](https://img.shields.io/badge/JPHACKS%202026-Hack%20Day%20Audience%20Award-gold?style=for-the-badge&logo=trophy)](https://github.com/jphacks/kz_2613)
+  [![JPHACKS 2026 Award Day](https://img.shields.io/badge/JPHACKS%202026-Award%20Day-8A2BE2?style=for-the-badge&logo=trophy)](https://jphacks.com/2026/detail/)
 
-  <p>🏆 <strong>JPHACKS 2026 金沢会場 Hack Day Audience Award 受賞</strong></p>
+  <p>🏆 <strong>JPHACKS 2026 受賞・認定実績</strong></p>
+  <p>
+    <strong>Hack Day（金沢会場）</strong>：Audience Award<br>
+    <strong>Award Day</strong>：審査委員特別賞<br>
+    <strong>Award Day</strong>：JPHACKS Innovator認定<br>
+    <strong>Award Day</strong>：合同会社DMM.com賞
+  </p>
 </div>
 
 ---

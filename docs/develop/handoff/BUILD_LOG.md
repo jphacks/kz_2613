@@ -2676,6 +2676,26 @@
 - `node scripts/sim/capture-screens.mjs --bin <host.exe> --out data/local/536-dialogs --pc-size 800x560` で23枚を保存。参加トラブル案内と全員リセット確認を撮影し、キャンセル後も通常の遷移と緊急停止試験が完了した。
 - Chrome dry-runでの撮影。Android実機・PCアプリでの追加撮影は未実施。
 
+## 2026-11-15 — ゲームを終了してゲーム選択へ戻る（#547、Claude Code）
+
+- ホスト：PC アプリから `quit_game`（見ていたゲームと epoch）を受け付ける。協力プレイ中・終了中・古い epoch・違うゲーム・スマホからは受け付けない。全員の入力を離してロビーへ戻し（参加者・ホスト・Wi-Fi は保つ）、別スレッドで終了する。終わったら選択・分担・決定・入れ替えを消し、ゲーム選択へ戻す。失敗したら選択を残し、ゲームの画面から終了する案内を出す。`game.quit`（busy・can・message）で知らせる。
+- 終了の仕方（`focus::close`）：入力先と一致する本体のウィンドウを持つプロセスだけを対象にし、まず WM_CLOSE を送る。5秒で終わらなければ、最初に照合したときと同じ実行ファイルのまま動いているプロセスだけを強制終了し、3秒で終了を確かめる。対象のウィンドウがなければ何も終了しない（すでに終了として扱う）。Re:Cooplay 自身は対象にしない。
+- ロビーでも `OPEN_GAME` を受け付ける（#556 の指摘：協力プレイの終了後の分担画面で前面化できなかった）。
+- PC：分担・準備・一時停止の画面のサイドバーの下に「（ゲーム名）を終了する」。押すと画面内の確認（保存していない進行が失われることがある）。分担の画面では「前面にする」と横並び。結果は画面上部のお知らせに出し、選択が外れたら分担の画面からゲーム選択へ戻る。
+- 試験：Rust（受け付ける条件・失敗時は選択を残す・成功時は選択と分担を消す・遅れた結果を無視）、`protocol-sim.mjs`（協力プレイ中・古い epoch・違うゲーム・スマホからは終了しない、終了後はゲーム選択で参加者は残る）、`app-view-test`（38/38、ボタンの表示条件と画面の遷移）。`focus.rs` は単体のクレートで `cargo clippy -D warnings` が通ることを確かめた（実際のプロセスの終了は手元で動かしていない）。ホストの試験と `protocol-sim` は CI で確認する。`capture-screens.mjs --assert-layout` は CI と同じ2つの大きさで合格。
+- 未実施：Windows 実機で Minecraft などを実際に終了する確認（通常の終了・強制終了）、連続展示の通し確認。
+- 利用者の判断（2026-11-15）：#547 は本 PR に一本化（#564・#567・#568 は閉じた）。**強制終了はしない**。Minecraft は閉じるときにワールドを保存するので、途中で `TerminateProcess` すると壊れるおそれがある。
+  - `focus::close` は WM_CLOSE を送って15秒待つだけにし、`CloseOutcome::Terminated` を削除。時間内に閉じなければ選択を残し、「ゲームの画面から終了してから、もう一度『終了する』を押してください」と案内する。閉じたあとで押し直すと、ウィンドウがないので「すでに終了していました」としてゲーム選択へ戻る（#567 の手動の経路の代わり）。
+  - main（#558・#566 など）を取り込み、`protocol-sim.mjs` と hub の試験の衝突を解消。`game` の `json!` が再帰の上限を超えたので、`quit` は後から足す。main で増えた試験用の `GameBackend` に `close` を足した。
+  - `cargo fmt --check`・`cargo clippy --all-targets -D warnings`・`cargo test --release --locked`（248件）、`npm run build`、`app-view-test` 41/41、`protocol-sim.mjs` 71/71（dry-run）に合格。実ゲームを閉じる確認は未実施。
+### #546 展示で一部の参加者を交代して再開する試験
+- `npm --prefix apps/web run build` に合格。
+- PR #549 のWindowsホスト成果物（run 43640947083）を使い、`node --experimental-strip-types scripts/sim/protocol-sim.mjs --bin <host.exe>` で69/69合格。終了してもMinecraftの選択を維持し、P1を残してP2を補充し、新しいepochで同じゲームを再開できることを確認。
+- dry-runの模擬通信。Minecraft、Wi-Fi全員交代、実機での前面化は未検証。
+### #554 スマホの一時停止ボタンを上部へ移設
+- Webビルド、`node --experimental-strip-types scripts/sim/phone-view-test.mjs`（8観点）に合格。
+- `capture-screens.mjs --phone-size 320x740` で23枚を撮影。ホストの44px SVGボタンとロゴの非重複、参加者への非表示、操作領域内に停止ボタンがないこと、通常Pauseと緊急停止への遷移を確認。既存の操作ラベルに11px未満の報告があり、画面外に出たボタンは0件。
+- Chrome dry-run。Android・iPhoneの実機受入は未実施。
 ### #415 起動時の一時Wi-Fi設定
 - Windows 11 24H2のセッション構成を使用し、永続設定の書き換え・バックアップを避ける。管理外の稼働中ホットスポットは起動要求で変更しない。
 - Windows上で変更モジュールを独立ビルドし、SSIDとパスフレーズの長さ・更新の単体試験1件に合格。通信シミュレーターの構文検証に合格。
@@ -2719,3 +2739,25 @@
 ### #563 Draft解除に向けた検証
 - 親の更新による競合を解消しました。mainに入った部分交代の受付を再利用し、全員切り替え時は新しいQRが揃ってから受付を表示します。WebビルドとPC表示試験40/40に合格しました。
 - 実機受入は未実施。
+## 2026-11-15 — ホストのリモコン画面の説明文をなくし、「ホストを移譲」にする（Claude Code）
+
+- 利用者の判断（2026-11-15）：リモコン画面の下（「PCアプリを前面にする」などの下）の小さな説明文の領域は丸ごと要らない。文はどこにも出さず、その高さはリモコンに回す。「ホストに譲る」は「ホストを移譲」にする。
+- `PhoneApp.tsx` から `.host-notes`（`#remoteNote`・`#remoteNotice`）を削除し、関係する CSS（`phone-host-remote.css`・`mobile.css`・`improved-mobile.css`）を消した。タッチパッドは `flex: 1` なので、空いた高さはタッチパッドに回る。モデルの `remote.note` は残す（表示はしない）。
+- `capture-screens.mjs` の説明欄の監査を削除。
+- `npm run build`、`app-view-test` 40/40、`phone-view-test`、`phone-lifecycle-test` 39/39、`product-web-test`、`check-static-pages`、`verify-ui-evidence`、`capture-screens.mjs --assert-layout`（800x560＋384x701、900x1000＋402x874。ホストは main 03f49a0 の手元ビルド）に合格。実機での確認はこのあと行う。
+
+## 2026-11-15 — ホットスポットのアドレスが付くまで、届かない参加QRを出さない（Claude Code）
+
+- 利用者の報告：一時SSID（#415）でホットスポットをONにすると、スマホはWi-Fiにつながるが参加ページが読み込み続ける。
+- 再現（展示用 600c3a8、Windows 11・Android実機）：PC画面と同じ `/api/hotspot` でONにすると、ONの完了から `192.168.137.1` が付くまで約50秒かかった回があった。その間の `/api/info` はホットスポットのアドレスを含まず、参加QRは先頭の別アダプター（VirtualBoxのホスト専用アダプター）のURLを指していた。スマホからは届かない。別の回ではONの完了時点で付いており、時間は一定しない。
+- 否定した仮説：Androidは一時SSIDを「インターネットあり（VALIDATED）」と判定し、既定の通信先もWi-Fiだった。PC側のIP・転送・ファイアウォール（`recooplay-host.exe` の許可）は既定SSIDと一時SSIDで差がなかった。アドレスが付いたあとは、スマホのChromeで `http://192.168.137.1:8080/` が開けた。
+- 修正：`hotspotPending`（PC画面のボタンでONにした直後で、`192.168.137.x` がまだない）のあいだは参加QRを出さず、「ホットスポットの準備中…」を出す。準備中は `/api/info` を1秒ごとに取り直す。前からONのホットスポット（dry-runの模擬を含む）は従来どおり。最初は「ONでアドレスなし」をすべて準備中にしたが、模擬ホットスポットでQRを待つ `capture-screens.mjs` がCIで止まったため、再現した条件に絞った。
+- `npm run typecheck`・`vite build`、`app-view-test` 42/42、`phone-view-test`、`check-static-pages`、`capture-screens.mjs --assert-layout`（800x560＋384x701、900x1000＋402x874）に合格。修正版の画面で実際にONにした回は、ONの完了時点でアドレスが付いていたため、準備中の表示は実画面では確かめていない（単体試験で確認）。
+## 2026-11-15 前面にするボタンの表記をゲームごとに変えない
+
+- 変更：PC アプリの `#openGameBtn` と、ホストのリモコンの `openGameLabel` を「ゲームを前面にする」に固定した（ユーザー判断）。使わなくなった `remoteModel` の `name` 引数を外した。
+- `cd apps/web && npm run build`：成功
+- `node --experimental-strip-types scripts/sim/phone-view-test.mjs`：合格（8観点）
+- `node --experimental-strip-types scripts/sim/app-view-test.mjs`：41/41 合格
+- `node scripts/sim/check-static-pages.mjs`：合格
+- 追加：PC 画面の警告（`desktopWarning`）、Minecraft の手順、`#inputSafety` の「（ゲーム名）を前面に」も「ゲーム」にした。build・phone-view・app-view 41/41・check-static-pages を再実行して合格。

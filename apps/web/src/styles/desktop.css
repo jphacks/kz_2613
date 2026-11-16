@@ -391,6 +391,35 @@ body[data-two-qr] .qr-arrow { display: none; }
   border-width: 2px;
 }
 
+/* ゲームの終了 (#547)。ゲームを選んだあとの画面で、サイドバーの下に置く */
+.quit-game {
+  position: absolute;
+  left: 95px;
+  top: 994px;
+  width: 370px;
+  min-height: 56px;
+  border: 2px solid var(--color-error);
+  border-radius: 40px;
+  background: var(--color-paper);
+  color: var(--color-error);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.quit-game:disabled { opacity: .55; }
+/* 分担の画面 (ロビー) では、前面化と終了を下に横並びにする (開始の決定ボタンと重ねない、#547・#556) */
+[data-view=roles] .open-game,
+[data-view=roles] .quit-game {
+  top: 984px;
+  width: 215px;
+  min-height: 76px;
+  padding: 4px 8px;
+  font-size: 28px;
+  line-height: 1.15;
+}
+[data-view=roles] .open-game { left: 60px; }
+[data-view=roles] .quit-game { left: 285px; }
+
 .action-note {
   position: absolute;
   left: 45px;

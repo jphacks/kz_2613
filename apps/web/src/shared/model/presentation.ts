@@ -174,16 +174,18 @@ export function desktopWarning(game: PhoneGame | null, inject: InjectionState | 
     const missing = (game?.participants || []).filter((p) => !game?.connected?.includes(p));
     if (missing.length) return `${missing.join('・')}の再接続を待っています。`;
     if ((game?.connected?.length || 0) < (game?.required || MIN_PLAYERS)) return `${MIN_PLAYERS}人以上の接続を待っています。`;
-    if (game?.phase === 'preparing' && !inject?.active) return `${gameLabel(game)}を前面にして、プレイ中の画面まで進めてください。`;
-    if (game?.phase === 'coop' && !inject?.active) return `操作を停止しています。${gameLabel(game)}を前面にしてください。`;
+    if (game?.phase === 'preparing' && !inject?.active) return 'ゲームを前面にして、プレイ中の画面まで進めてください。';
+    if (game?.phase === 'coop' && !inject?.active) return '操作を停止しています。ゲームを前面にしてください。';
   }
   return '';
 }
 
 // 定期スナップショットでは手動ナビゲーションを戻さない。進行の切替時だけ分担・準備へ案内する。
 export function screenOnGameUpdate(ui: Navigation, previousPhase: PhoneGame["phase"] | undefined, game: PhoneGame | null) {
+  // ゲームを終了して選択が外れたら (#547)、分担の画面に留まらずゲーム選択へ戻す
+  const quit = !!ui.game && game?.title === '' && ui.screen === 'roles';
   return {...ui, game:game?.title === undefined ? ui.game : game.title || null,
-    screen:game?.phase && game.phase !== previousPhase && game.phase !== 'lobby' ? 'roles' : ui.screen};
+    screen:game?.phase && game.phase !== previousPhase && game.phase !== 'lobby' ? 'roles' : quit ? 'game' : ui.screen};
 }
 
 /** 実際に送る入力の表示。ゲーム内の操作名から用途を推測しない (#150)。 */
@@ -255,7 +257,7 @@ export const GAMES = [
       'PCの画面でゲームを選び、メンバーと分担を決定する',
       '「ゲームを起動する」で公式ランチャーを開き、「プレイ」を押してワールドに入る（ランチャーが見つからないときは手動で起動する）',
       'ホットバーに使うアイテムを並べておく（インベントリ操作はホストのリモコンでは限られます）',
-      `Minecraftを前面にして、ホストのスマホで「${START_COOP_LABEL}」を押す`,
+      `ゲームを前面にして、ホストのスマホで「${START_COOP_LABEL}」を押す`,
     ],
   },
 ];
@@ -365,6 +367,14 @@ export function joinGuideView(info: PcInfo | null) {
   }
   if (wifi) return { two: true, wifiQr: wifi.qr, button: false, bubble: '①→②の順に<br>読み取ろう！', note: `Wi-Fi：${wifi.ssid}` };
   return { two: false, wifiQr: null, button: false, bubble: 'みんなのスマホで<br>読み取ろう！', note: '' };
+}
+
+/**
+ * PC 画面のボタンでホットスポットを ON にしたが、まだ 192.168.137.x が付いていない。
+ * 一時 SSID (#415) で ON にすると数十秒かかることがあり、その間はほかのアダプター (VirtualBox など) の届かない URL になる
+ */
+export function hotspotPending(info: PcInfo | null, started: boolean) {
+  return started && !!info?.hotspot?.on && !(info.urls || []).some((u) => u.hotspot);
 }
 
 /** 参加用 URL: ホットスポット (192.168.137.x) を優先する */

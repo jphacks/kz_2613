@@ -29,7 +29,7 @@ export function PhoneApp() {
   };
   return <>
 <div className="phone-bg" aria-hidden="true"><i className="phone-bg-stars"></i></div>
-<Header state={state} status={status} onEdit={controller && !stopped && !editing ? startEdit : undefined}/>
+<Header state={state} status={status} showPause={state.view === 'v-gen' && state.controllerHost && !stopped} pauseDisabled={editing || status.kind !== 'ok'} onEdit={controller && !stopped && !editing ? startEdit : undefined}/>
 
 <div id="inputWarn" style={{display: state.warning ? 'block' : 'none'}}>{state.warning}</div>
 
@@ -54,7 +54,7 @@ export function PhoneApp() {
 </>;
 }
 
-function Header({state,status,onEdit}:{state:PhoneDisplay;status:Status;onEdit?:()=>void}) {
+function Header({state,status,showPause,pauseDisabled,onEdit}:{state:PhoneDisplay;status:Status;showPause:boolean;pauseDisabled:boolean;onEdit?:()=>void}) {
   const game = state.snapshot.game;
   return <header>
   <span className="brand"><img className="brand-image" src="/assets/logo.png" width="960" height="720" alt="Re:Cooplay" /></span>
@@ -64,6 +64,12 @@ function Header({state,status,onEdit}:{state:PhoneDisplay;status:Status;onEdit?:
     <span className={`pill ${status.kind}`} id="status">{status.text}</span>
     <span className={`pill${game ? ` ${game.phase}` : ''}`} id="phase">{game ? PHASE_LABELS[game.phase] : '-'}</span>
   </div>
+  <button type="button" className="phone-settings phone-pause" id="genPause" data-cmd="PAUSE"
+    aria-label="一時停止してホスト操作へ戻る" hidden={!showPause} disabled={pauseDisabled}>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+    </svg>
+  </button>
   {onEdit && <button type="button" className="phone-settings phone-edit" id="genEditLayout" aria-label="配置を編集" onClick={onEdit}>
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
       <path d="m4 16-1 5 5-1L21 7l-4-4L4 16Z M14 6l4 4"/>
@@ -76,7 +82,8 @@ function Header({state,status,onEdit}:{state:PhoneDisplay;status:Status;onEdit?:
 // ホストのリモコン (リモコン型)。PCアプリはタッチパッドのカーソルとクリックで操作する。
 // 矢印・Enter・Eキーは置かない (ユーザー判断 2026-11-13)。進めるボタンは画面の下に固定する。
 // 下の領域は、出すボタン・文の有無で高さを変えない (#536 の利用者判断 2026-11-15)。
-// 補助ボタンは3つの決まった枠に置き、出さないボタンの枠は空けたままにする。説明は2行の枠の中でスクロールする
+// 補助ボタンは3つの決まった枠に置き、出さないボタンの枠は空けたままにする。
+// 説明の文は出さず、その高さはタッチパッドに回す (利用者判断 2026-11-15)
 function HostRemoteScreen({state}:{state:PhoneDisplay}) {
   return <section className={`view${state.view === 'v-remote' ? ' show' : ''}`} id="v-remote">
     <div className="host-card"><h1>あなたがホストです！</h1>
@@ -101,21 +108,17 @@ function HostRemoteScreen({state}:{state:PhoneDisplay}) {
         <button className="cmd sub" id="openAppBtn" data-cmd="OPEN_APP" hidden={state.remote.openAppHidden}>PCアプリを前面にする</button>
         <button className="cmd sub" id="endBtn" style={{display: state.remote.endVisible ? 'block' : 'none'}}>{state.remote.endLabel}</button>
       </div>
-      <div className="host-notes" role="status">
-        <div className="note" id="remoteNote">{state.remote.note}</div>
-        <div className="note" id="remoteNotice" hidden={!state.remote.notice}>{state.remote.notice}</div>
-      </div>
     </div>
   </section>;
 }
 
-// 「ホストに譲る」(#233・#536)。リモコンの中、Esc の下に置き、押すと譲る相手を選ぶメニューを開く。
+// 「ホストを移譲」(#233・#536)。リモコンの中、Esc の下に置き、押すと譲る相手を選ぶメニューを開く。
 // 譲れないとき (ロビー以外・ほかに誰もいない) も枠は残し、まわりのボタンを動かさない。決める前にページ内で確認する
 function HostTransfer({to}:{to:PhoneDisplay['remote']['transferTo']}) {
   const [open, setOpen] = useState(false);
   useEffect(() => { if (!to.length) setOpen(false); }, [to.length]);
   return <div id="hostTransfer" className="host-transfer" style={to.length ? undefined : {visibility: 'hidden'}}>
-    <button className="key transfer" id="hostTransferBtn" aria-haspopup="menu" aria-expanded={open} disabled={!to.length} onClick={() => setOpen(o => !o)}>ホストに譲る</button>
+    <button className="key transfer" id="hostTransferBtn" aria-haspopup="menu" aria-expanded={open} disabled={!to.length} onClick={() => setOpen(o => !o)}>ホストを移譲</button>
     {open && <div className="host-transfer-menu" role="menu" aria-label="ホストを譲る相手">{to.map(p =>
       <button key={p} role="menuitem" onClick={() => { setOpen(false); transferHost(p); }}>{p}に譲る</button>)}</div>}
   </div>;
@@ -149,7 +152,6 @@ function GameplayScreen({state,editing,stopEditing}:{state:PhoneDisplay;editing:
       ? <LayoutEditor key={c.key} initial={loaded.layout} game={c.game} slot={c.slot}
           onSave={layout => { const ok = layouts.save(layout); if (ok) finish(); return ok; }} onCancel={stopEditing} />
       : <LayoutController key={c.key} layout={loaded.layout} game={c.game} slot={c.slot} bindings={c.bindings} />)}</div>
-    <button className="cmd pause" data-cmd="PAUSE" id="genPause" hidden={!state.controllerHost}>一時停止・ホスト操作へ</button>
   </section>;
 }
 

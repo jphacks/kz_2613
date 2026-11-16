@@ -2,7 +2,7 @@ import {createVirtualCursor} from '../shared/input/virtual-cursor.ts';
 import {createLifetime} from '../shared/input/lifetime.ts';
 import {REMOTE_FOCUSABLE,usableControls,moveRemoteFocus,stepRemoteSelect,isRemoteSelect} from '../shared/input/remote-focus.ts';
 import {byId} from '../shared/dom.ts';
-import {SCREENS,gameList,navigate,desktopView,rolesAction,isGameDoubleClick,isRegistered,shownSlots,screenOnGameUpdate,pcEffects,joinGuideView} from '../shared/model/presentation.ts';
+import {SCREENS,gameList,navigate,desktopView,rolesAction,isGameDoubleClick,isRegistered,shownSlots,screenOnGameUpdate,pcEffects,joinGuideView,hotspotPending} from '../shared/model/presentation.ts';
 import {decodePcMessage,decodeHotspotResult} from '../shared/transport/pc-messages.ts';
 import {decodePcInfo} from '../shared/transport/pc-info.ts';
 import type {Slot,PhoneGame} from '../shared/contracts.ts';
@@ -10,7 +10,7 @@ import type {Navigation,HostState,InjectionState,UiAction,EffectState} from '../
 import {joinStatus, type PcSnapshot, type PcInfo} from './model';
 declare global {interface Window {showHostNotice?:(text:string)=>void}}
 const isSlot=(slot:string|undefined):slot is Slot=>!!slot&&['P1','P2','P3','P4'].includes(slot);
-export function startDesktopController({renderView,renderInfo}:{renderView(snapshot:PcSnapshot):void;renderInfo(info:PcInfo|null|undefined,message:string,busy:boolean):void}) {
+export function startDesktopController({renderView,renderInfo}:{renderView(snapshot:PcSnapshot):void;renderInfo(info:PcInfo|null|undefined,message:string,busy:boolean,pending?:boolean):void}) {
 const $=byId,lifetime=createLifetime(),abort=new AbortController();
 let disposed=false,infoRequest=0;
 // swap: 一時停止中に担当を入れ替える画面を開いているか (#47)
@@ -72,7 +72,7 @@ lifetime.listen($('resetConfirmBtn'), 'click',()=>{hideJoinInfo('Wi-Fiを切り�
 lifetime.listen($('reloadInfo'), 'click',loadInfo);
 // ホットスポットを ON にする (#133)。押したときだけ。PC 本体の画面からだけ受け付ける
 // 結果は QR の下の案内に出す (失敗したときは、次に成功するまで出し続ける)
-let hotspotMessage='';
+let hotspotMessage='',hotspotStarted=false;
 lifetime.listen($('hotspotBtn'), 'click',async()=>{
   renderInfo(undefined,'ホットスポットをONにしています…',true);
   try{
@@ -80,11 +80,15 @@ lifetime.listen($('hotspotBtn'), 'click',async()=>{
     if(!response.ok)throw new Error('ホットスポット操作の応答がありません');
     const r=decodeHotspotResult(await response.json());
     if(!r)throw new Error('ホットスポット操作の応答形式が違います');
-    hotspotMessage=r.ok?'':r.error||'ホットスポットをONにできませんでした';
+    hotspotMessage=r.ok?'':r.error||'ホットスポットをONにできませんでした';hotspotStarted=r.ok;
   }catch{hotspotMessage='ホットスポットをONにできませんでした';}
   if(!disposed)loadInfo();
 });
 lifetime.listen($('openGameBtn'), 'click',()=>send({type:'open_game'}));
+// ゲームの終了 (#547)。確認した時点のゲームと epoch を添え、ホストで今の状態と照合する
+lifetime.listen($('quitGameBtn'), 'click',()=>openDialog($<HTMLDialogElement>('quitConfirm')));
+lifetime.listen($('quitCancel'), 'click',()=>$<HTMLDialogElement>('quitConfirm').close());
+lifetime.listen($('quitConfirmBtn'), 'click',()=>{if(game?.title)send({type:'quit_game',title:game.title,epoch:game.epoch});$<HTMLDialogElement>('quitConfirm').close();});
 lifetime.listen($('refreshGamesBtn'), 'click',()=>send({type:'refresh_games'}));
 // 手動で登録するゲーム (#49・#56)。実行ファイルは PC の前の人が Windows のファイル選択の画面で選ぶ
 let manualMessage='';
@@ -238,7 +242,9 @@ async function loadInfo(){
     const response=await fetch('/api/info',{signal:abort.signal});if(!response.ok)throw Error('Info request failed');
     const info=decodePcInfo(await response.json());if(!info)throw Error('Invalid host info');
     if(disposed||request!==infoRequest)return;
-    infoPort=info.port;renderInfo(info,hotspotMessage,false);document.body.toggleAttribute('data-two-qr',joinGuideView(info).two);render();
+    const pending=hotspotPending(info,hotspotStarted);if(!pending)hotspotStarted=false;
+    infoPort=info.port;renderInfo(info,hotspotMessage,false,pending);document.body.toggleAttribute('data-two-qr',joinGuideView(info).two);render();
+    if(pending)lifetime.timeout(loadInfo,1000); // 準備中は参加用のアドレスが付いたらすぐ出す
   }catch{if(!disposed&&request===infoRequest)renderInfo(null,'',false);}
 }
 const cursor=createVirtualCursor({canLeave:()=>game?.remoteLeave===true,leave:at=>send({type:'remote_leave',...at})});
@@ -258,7 +264,7 @@ function connect(){
       state=m;game=m.game;inject=m.inject;
       if(m.expoWifi==='switching')hideJoinInfo('Wi-Fiを切り替えています…');
       if(m.expoWifi==='failed')hideJoinInfo('Wi-Fiを切り替えられませんでした。Windowsの設定を確認してからリセットを再試行してください。');
-      if(m.expoWifi==='ready'&&previousWifi!=='ready')loadInfo();
+      if(m.expoWifi==='ready'&&previousWifi!=='ready'){hotspotStarted=true;loadInfo();} // 起動し直したWi-Fiもアドレスが付くまでQRを出さない (#573)
     }
     else if(m.type==='game')game=m.game;
     else if(m.type==='key_result'){keyMessage=m.ok?'':'（保存できませんでした。この実行の間だけ使います）';render();}

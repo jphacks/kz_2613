@@ -3,7 +3,7 @@
 //   node scripts/sim/app-view-test.mjs
 
 import assert from 'node:assert/strict';
-const { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, isGameDoubleClick, launchView, rolesAction } = await import('../../apps/web/src/shared/model/presentation.ts');
+const { overlayModel, pcEffects, commSettingsView, playerHint, SCREENS, slotViews, navigate, joinUrl, device, screenOnGameUpdate, desktopView, desktopWarning, profileNotice, roleView, networkNotice, joinGuideView, hotspotPending, isRegistered, gamesCountText, slotDiagnosis, phoneAdvice, shownSlots, gameList, gameCard, isGameDoubleClick, launchView, rolesAction } = await import('../../apps/web/src/shared/model/presentation.ts');
 
 const {logText} = await import('../../apps/web/src/diagnostics/model.ts');
 const {pcModel, pcState, stepKey} = await import('../../apps/web/src/pc/model.ts');
@@ -22,6 +22,25 @@ function test(name, fn) {
 
 const slot = (name, connected, ua = '') => ({ name, assigned: true, connected, ua });
 const game = (connected, extra = {}) => ({ phase: 'lobby', required: 3, connected, canReady: connected.includes('P1') && connected.length >= 2, ...extra });
+
+test('ゲームの終了 (#547): 分担・一時停止の画面に出し、協力プレイ中は押せない。前面化はロビーでも出す。終了したらゲーム選択へ戻る',()=>{
+  const base = pcState.get();
+  const at = (screen, extra) => pcModel({...base, ui:{...base.ui, screen, game:'steam:1'}, state:{slots:[slot('P1',true),slot('P2',true)]}, game:game(['P1','P2'], {title:'steam:1', ...extra})});
+  const roles = at('roles', {quit:{busy:false,can:true,message:''}, inputTarget:true});
+  assert.deepEqual(roles.quit, {hidden:false, disabled:false, busy:false, message:''});
+  assert.equal(roles.openGameHidden, false, 'ロビーの分担画面でもゲームを前面にできる (#556)');
+  assert.equal(at('roles', {quit:{busy:false,can:true,message:''}, inputTarget:false}).openGameHidden, true, '前面なら出さない');
+  assert.equal(at('roles', {phase:'coop', quit:{busy:false,can:false,message:''}}).quit.hidden, true, '協力プレイ中は出さない');
+  assert.equal(at('game', {quit:{busy:false,can:true,message:''}}).quit.hidden, true, 'ゲーム選択の画面には出さない');
+  const busy = at('roles', {quit:{busy:true,can:false,message:'終了しています…'}}).quit;
+  assert.equal(busy.disabled && busy.busy, true, '終了中は重ねて押せない');
+  assert.equal(at('roles', {title:'', quit:{busy:false,can:false,message:''}}).quit.hidden, true, 'ゲームを選んでいなければ出さない');
+  // 終了して選択が外れたら、分担の画面からゲーム選択へ戻る。外れていなければ留まる
+  const ui = {screen:'roles', game:'steam:1', swap:false};
+  assert.deepEqual(screenOnGameUpdate(ui, 'lobby', {phase:'lobby', title:''}), {screen:'game', game:null, swap:false});
+  assert.equal(screenOnGameUpdate(ui, 'lobby', {phase:'lobby', title:'steam:1'}).screen, 'roles');
+  assert.equal(screenOnGameUpdate({...ui, screen:'join', game:null}, 'lobby', {phase:'lobby', title:''}).screen, 'join', '最初からゲームがないときは動かさない');
+});
 
 test('分担の作り方: モデルの分担があるゲームの分担の画面だけに出し、ロビーで決める前だけ押せる (#432)',()=>{
   const base = pcState.get();
@@ -357,6 +376,14 @@ test('参加 URL: ホットスポットを優先する', () => {
   assert.equal(joinUrl({ urls: [] }), null);
 });
 
+test('参加 URL: PC 画面で ON にした直後、アドレスが付くまでは準備中にする', () => {
+  const other = { url: 'http://192.168.56.1:8080/', hotspot: false }, spot = { url: 'http://192.168.137.1:8080/', hotspot: true };
+  assert.equal(hotspotPending({ hotspot: { on: true }, urls: [other] }, true), true, 'VirtualBox などのアドレスを QR にしない');
+  assert.equal(hotspotPending({ hotspot: { on: true }, urls: [other, spot] }, true), false, 'アドレスが付いたら出す');
+  assert.equal(hotspotPending({ hotspot: { on: true }, urls: [other] }, false), false, '前から ON のホットスポット (模擬を含む) は従来どおり');
+  assert.equal(hotspotPending({ hotspot: { on: false }, urls: [other] }, true), false, 'OFF になったら同じWi-Fi向けの URL を出す');
+});
+
 test('端末の種類', () => {
   assert.equal(device('Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X)'), 'iPhone');
   assert.equal(device('Mozilla/5.0 (Linux; Android 10; K)'), 'Android');
@@ -378,9 +405,9 @@ test('進行の変化: 準備・Ready・協力・Pause・Endで古い状態を�
 test('本番の安全案内: 切断・緊急停止・入力OFF・前面喪失とテストを隠さない',()=>{
   const g={phase:'coop',connected:['P1','P2','P3']};
   assert.match(desktopWarning(g,{mode:'on',active:false,target:{process:'secret.exe'}}),/ゲームを前面/);
-  // 選んだゲームの名前で案内する (#140)
-  assert.equal(desktopWarning({...g,titleName:'Outlast'},{mode:'on',active:false}),'操作を停止しています。Outlastを前面にしてください。');
-  assert.equal(desktopWarning({...g,phase:'preparing',titleName:'Outlast'},{mode:'on',active:false}),'Outlastを前面にして、プレイ中の画面まで進めてください。');
+  // 前面にする案内はゲームごとに変えない (ユーザー判断 2026-11-15)
+  assert.equal(desktopWarning({...g,titleName:'Outlast'},{mode:'on',active:false}),'操作を停止しています。ゲームを前面にしてください。');
+  assert.equal(desktopWarning({...g,phase:'preparing',titleName:'Outlast'},{mode:'on',active:false}),'ゲームを前面にして、プレイ中の画面まで進めてください。');
   assert.doesNotMatch(desktopWarning(g,{mode:'on',active:false,target:{process:'secret.exe'}}),/secret\.exe/);
   assert.match(desktopWarning(g,{mode:'off'}),/入力が止まっています.*入力を再開する/);
   assert.match(desktopWarning(g,{mode:'test'}),/確認用/);

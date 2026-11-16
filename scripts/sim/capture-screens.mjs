@@ -109,7 +109,7 @@ async function page(name,size,ua){
     go:async url=>{await s('Page.navigate',{url});await sleep(1500);},
     click:async(sel,{optional=false}={})=>{const ok=await eval_(`(()=>{const e=document.querySelector(${JSON.stringify(sel)});if(!e||e.disabled||!e.getClientRects().length)return false;e.click();return true;})()`);if(!ok&&!optional)throw Error(`${name}: ${sel} を押せません`);await sleep(600);return ok;},
     waitFor:async(expr,what)=>{for(let i=0;i<50;i++){if(await eval_(expr))return;await sleep(200);}
-      const now=await eval_(`JSON.stringify({view:document.body.dataset.view,phase:document.body.dataset.phase,status:document.getElementById('gameStatus')?.textContent||document.getElementById('remoteNote')?.textContent})`);
+      const now=await eval_(`JSON.stringify({view:document.body.dataset.view,phase:document.body.dataset.phase,status:document.getElementById('gameStatus')?.textContent})`);
       throw Error(`${name}: 待機タイムアウト ${what} ${now}`);},
     shot:async(file)=>{
       await sleep(500);
@@ -157,13 +157,6 @@ async function auditLayout(eval_,file,desktop){
       }
       remote.scrollTop=remote.scrollHeight;
       const panel=remote.getBoundingClientRect();
-      // 説明は決まった高さの枠の中でスクロールする (#536)。枠が画面内にあり、末尾までスクロールで読めるかを見る
-      const notes=remote.querySelector('.host-notes');
-      if(notes&&visible(notes)){
-        const bounds=notes.getBoundingClientRect();
-        const scrollable=['auto','scroll'].includes(getComputedStyle(notes).overflowY);
-        if((!scrollable&&notes.scrollHeight>notes.clientHeight+1)||bounds.bottom>Math.min(panel.bottom,innerHeight)+1)outside.push('リモコンの説明の末尾');
-      }
       const end=remote.querySelector('#endBtn');
       if(end&&visible(end)){
         end.scrollIntoView({block:'nearest'});
@@ -230,6 +223,18 @@ async function main(){
   await p1.shot('phone-p1-03-coop-move.jpg');
   await p2.shot('phone-p2-03-coop-look.jpg');
   await p3.shot('phone-p3-02-coop-action.jpg');
+
+  await p1.waitFor(`(() => {
+    const pause = document.querySelector('header #genPause');
+    if (!pause || pause.hidden || pause.disabled || !pause.querySelector('svg')) return false;
+    const box = pause.getBoundingClientRect();
+    return box.width >= 44 && box.height >= 44
+      && box.right <= document.querySelector('header .brand-image').getBoundingClientRect().left
+      && !document.querySelector('#v-gen [data-cmd="PAUSE"]');
+  })()`,'上部の一時停止アイコン・44px・操作領域の確保');
+  for (const participant of [p2, p3]) {
+    await participant.waitFor("document.getElementById('genPause').hidden", '参加者には一時停止を表示しない');
+  }
 
   // 一時停止
   await p1.click('#genPause');
