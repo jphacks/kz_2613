@@ -45,6 +45,12 @@ if (process.argv.includes('--repro-stale-open')) {
     f.session.authenticate({ token: 'updated-token' }); assert.equal(f.values.get('recooplay.token'), 'updated-token');
     assert.equal(f.session.open('test-agent').token, 'updated-token');
   });
+  await test('張り直し: 一度参加したページの hello にだけ reconnect を付ける (#576)', () => {
+    const { session } = fixture({ 'recooplay.clientId': 'saved-client', 'recooplay.token': 'saved-token' });
+    assert.equal('reconnect' in session.open('agent'), false, '読み込み直後の hello は新しい参加');
+    session.welcome({ slot: 'P1', isHost: true });
+    assert.equal(session.open('agent').reconnect, true);
+  });
   await test('保存拒否: storageが読書きとも拒否しても生成したidentityを同じセッションで保つ', () => {
     let created = 0;
     const session = createPhoneSession({ storage: { getItem() { throw new Error('denied'); }, setItem() { throw new Error('denied'); } },
