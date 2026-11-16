@@ -2813,3 +2813,12 @@
   - JavaScriptの例外はなかった。
 - 修正前のホスト（2026-11-15のビルド）で同じ順序を作ると再現した。ログの順は `disconnect close 1005` → `reset` → 2秒後に `join {"device":"Android","slot":"P1"}`。
 - 未確認：仕掛けを使わない自然な重なり、iPhone、Wi-Fiを切り替える全員リセット（#563）との組み合わせ。
+
+## 2026-11-16 — 最新 main の遊ぶ流れの通し確認（Claude Code）
+- 対象：main `c2901ea`。ホストは PR #577 のCIで作ったもの（`ee39489`。`c2901ea` との差は資料だけ。SHA-256 `3712e3f4…5a76`）、Web画面は同じCIの配信物。試験用ホストは dry-run・模擬の入力先で、OSの入力は送らない。
+- 端末：Android 16（Chrome）1台＋ヘッドレスChromeの模擬スマホ・PC画面。adb はUSBで操作だけに使い、通信は実機モードのホストが立てたホットスポットのWi-Fi（セッション単位のSSID）。
+- 結果：3つの試験の32項目すべて合格。
+  - `scripts/device/android-dry-run.mjs --players 3 --wifi-network`：15/15。参加、Wi-Fiの HTTP/WS/ICE 経路、担当の表示、ボタン・2本指の保持・スティック、一時停止での全解放、回転・背面化での全解放、切断と同じ枠への再接続、再読み込み、視点パッド、JavaScriptの例外なし（`data/local/device-acceptance/run-EKoOvl`）。
+  - 展示の全員交代（scratchpad の `expo-accept.mjs`）：11/11。ホットスポットの起動、参加QRからの参加、ゲーム選択→分担、背面のゲームでの開始・終了、全員リセット、Wi-Fiを切り替えての再募集、2組目、ゲームの終了と別のゲームの選択、終了時のホットスポットOFF。
+  - 操作画面とリモコン（`phone-accept.mjs`）：6/6。リモコンのダブルタップ（#445）、SVGのアイコン（#515）、配置の編集（#516）、横持ちのスティックと視点（#514）。
+- 未確認：iPhone、Minecraftなど実ゲームへの実入力、PCアプリ（Tauri）からの起動、実際の指での操作、別のPC。
