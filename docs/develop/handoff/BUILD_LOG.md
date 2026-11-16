@@ -2772,3 +2772,15 @@
 - `node --experimental-strip-types scripts/sim/app-view-test.mjs`：41/41 合格
 - `node scripts/sim/check-static-pages.mjs`：合格
 - 追加：PC 画面の警告（`desktopWarning`）、Minecraft の手順、`#inputSafety` の「（ゲーム名）を前面に」も「ゲーム」にした。build・phone-view・app-view 41/41・check-static-pages を再実行して合格。
+
+## 2026-11-16 — 展示の連続試遊とホットスポットの自動受入（Claude Code）
+- 対象：main `e0ef8d0`（#563 を含む）のホスト。非管理者のWindows 11、Android 16（Chrome）1台＋ヘッドレスChromeの模擬スマホ・PC画面。adbはUSBで操作だけに使い、アプリの通信はホットスポットのWi-Fi。#450 の緩めた受入基準による。
+- Wi-Fi：実機モードのホストがホットスポットを起動（開始前はOFF）。終了の指示で `hotspotShutdown: stopped`、OFFに戻った。利用者が先にONにしていた場合は `notOwned` で、終了後もONのまま（その後、手でOFFに戻した）。
+- 展示の流れ：試験用ホストはdry-run・模擬の入力先。PC画面は実際のボタン・本物のマウスのダブルクリックで操作した。
+  - 参加QR（ホットスポットのアドレス）からAndroidがP1で参加 → タイルのダブルクリックで分担へ（「このゲームで遊ぶ」はない）
+  - ゲームを背面にしたまま、Androidの「分担操作開始」で協力プレイ → 一時停止 → 終了でPC画面の分担へ戻る（ゲームの選択は残る）
+  - 全員リセット → 0人 → 「新たな参加者を受け付ける」でWi-FiのQRと参加QR → 新しいQRから参加し、ゲーム選択に戻らず分担から2組目を開始・終了。旧模擬スマホは「リセットされました」
+  - 「ゲームを終了する」→ ゲーム選択へ戻り、別のゲームを選んで分担へ進めた（dry-runなので実際のプロセスは終了しない）
+  - PC画面・AndroidのJavaScript例外なし
+- 5回実行し、11項目すべて合格が4回。1回はリセット直後に旧P1のAndroidが参加し直して不合格、別の1回は協力プレイ開始直後にAndroidの接続が一度切れた（close 1005、再接続して一時停止）。どちらもスマホの無通信監視による張り直し（#426）と推測する。
+- 未確認：iPhone、Minecraftなど実ゲームでの通し・実プロセスの終了、複数の実機、PC画面を目で見る確認。
