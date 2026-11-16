@@ -72,6 +72,10 @@ test('展示の部分交代: 選択済みゲームのロビーで、残留者と
   assert.equal(pcModel({...snapshot,online:false}).canRecruit,false);
   assert.equal(pcModel({...snapshot,game:{...lobby,phase:'paused'}}).canRecruit,false);
   assert.equal(pcModel({...snapshot,state:{slots:[]}}).canRecruit,false);
+  assert.equal(pcModel({...snapshot,game:game([], {title:lobby.title}),state:{slots:[],expoWifi:'ready'}}).canRecruit,true);
+  for (const expoWifi of ['switching','failed']) {
+    assert.equal(pcModel({...snapshot,state:{...snapshot.state,expoWifi}}).canRecruit,false);
+  }
   assert.equal(pcModel({...snapshot,state:{slots:['P1','P2','P3','P4'].map(name=>slot(name,true))}}).canRecruit,false);
 });
 

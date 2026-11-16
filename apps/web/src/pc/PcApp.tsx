@@ -64,10 +64,12 @@ function Sidebar({state,model,connection}:{state:PcState;model:PcModel;connectio
       <button id="joinTroubleshootingBtn" aria-haspopup="dialog">開けないとき</button>
     </div>
   </div>
-  <button className="sub-cta" id="recruitBtn" hidden={!model.canRecruit} aria-haspopup="dialog">新たな参加者を受け付ける</button>
+  <button className="sub-cta" id="recruitBtn" hidden={!model.canRecruit || !connection.url || (state.state?.expoWifi === 'ready' && !connection.guide.wifiQr)} aria-haspopup="dialog">新たな参加者を受け付ける</button>
   <button className="open-game" id="openGameBtn" hidden={model.openGameHidden}>ゲームを前面にする</button>
   <button className="quit-game danger-action" id="quitGameBtn" hidden={model.quit.hidden} disabled={model.quit.disabled}>{model.quit.busy ? 'ゲームを終了しています…' : 'ゲームを終了する'}</button>
-  <p className="action-note" id="actionNote" role="status">{model.actionNote}</p>
+  <p className="action-note" id="actionNote" role="status">
+    {state.state?.expoWifi === 'switching' || state.state?.expoWifi === 'failed' ? connection.note : model.actionNote}
+  </p>
 </aside>;
 }
 
@@ -167,7 +169,7 @@ function ResetDialog() {
   return <dialog id="resetConfirm" aria-labelledby="resetTitle">
   <h2 id="resetTitle">接続中のスマホをすべてリセットしますか？</h2>
   <ul>
-    <li>接続中のスマホは、すべて切断されます。</li>
+    <li>接続中のスマホはすべて切断されます。Re:Cooplayが起動したWi-Fiの名前とパスワードを更新します。</li>
     <li>P1〜P4の枠とホストを最初から決め直します。最初に参加し直した人がホスト（P1）になります。</li>
     <li>協力プレイ中なら止まり、分担も消えます。押していたキーはすべて離します。</li>
     <li>スマホは、ページを再読み込みして参加し直してください。</li>

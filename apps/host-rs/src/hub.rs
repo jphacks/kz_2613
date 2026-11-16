@@ -65,6 +65,7 @@ pub enum Out {
 }
 
 pub enum Event {
+    HotspotRotated(Result<(), String>),
     #[cfg(feature = "latency-measure")]
     WsSendGap {
         id: u64,
@@ -450,6 +451,7 @@ pub struct Hub {
     participants: Vec<usize>,
     // PC 画面でホストが決定したメンバーと分担 (#109)。今の選択・接続と一致するときだけ起動・準備・Ready を受け付ける
     lineup: Option<Lineup>,
+    expo_wifi: Option<&'static str>,
     // 枠ごとの席順 (#47・#62)。分担の束 (移動・視点…) を席順の早い人から配る。初期値は枠の順。
     // ホストが入れ替えると束ごと交換される。終了してもリセットするまで保つ (入れ替えたまま再挑戦できる)
     seats: [usize; MAX_SLOTS],
@@ -604,6 +606,7 @@ impl Hub {
             assigned: Vec::new(),
             participants: Vec::new(),
             lineup: None,
+            expo_wifi: None,
             seats: [0, 1, 2, 3],
             model_presets_path: crate::model_presets::default_path(),
             model_presets: crate::model_presets::load(
@@ -1239,6 +1242,7 @@ impl Hub {
     fn push_state(&self) {
         self.broadcast_monitors(&json!({
             "type": "state",
+            "expoWifi": self.expo_wifi,
             "slots": self.slot_snapshot(),
             "now": now_ms(),
             "game": self.game_snapshot(),
@@ -3903,6 +3907,10 @@ impl Hub {
 
     fn on_event(&mut self, ev: Event) {
         match ev {
+            Event::HotspotRotated(result) => {
+                self.expo_wifi = Some(if result.is_ok() { "ready" } else { "failed" });
+                self.push_state();
+            }
             Event::WsOpen {
                 id,
                 tx,
@@ -4383,6 +4391,13 @@ impl Hub {
                 }
             }
             "reset" => {
+                if self.expo_wifi == Some("switching") {
+                    return;
+                }
+                let rotate_wifi = msg.get("rotateWifi").and_then(Value::as_bool) == Some(true);
+                if rotate_wifi && page != Page::App {
+                    return;
+                }
                 self.release_outputs(None);
                 for i in 0..MAX_SLOTS {
                     if let Some(slot) = self.slots[i].take() {
@@ -4407,6 +4422,20 @@ impl Hub {
                 self.role_ack.clear();
                 self.advance_epoch();
                 self.update_low_latency();
+                if rotate_wifi {
+                    self.expo_wifi = Some("switching");
+                    let tx = self.tx.clone();
+                    if std::thread::Builder::new()
+                        .name("expo-wifi".into())
+                        .spawn(move || {
+                            let result = crate::netinfo::rotate_owned_hotspot();
+                            let _ = tx.send(Event::HotspotRotated(result));
+                        })
+                        .is_err()
+                    {
+                        self.expo_wifi = Some("failed");
+                    }
+                }
                 self.log("reset", json!({}));
                 self.push_game();
                 self.push_state();
@@ -4418,6 +4447,9 @@ impl Hub {
     fn on_hello(&mut self, id: u64, msg: &Value) {
         if !matches!(self.conns[&id].role, Role::Unknown) {
             return self.close(Some(id), 4007, "already identified");
+        }
+        if matches!(self.expo_wifi, Some("switching" | "failed")) {
+            return self.close(Some(id), 4001, "reset");
         }
         // 版が合わない画面 (古いキャッシュなど) は理由を返して閉じる。枠は割り当てない
         let version = msg.get("protocolVersion").and_then(Value::as_u64);
@@ -5230,6 +5262,7 @@ mod tests {
             assigned: Vec::new(),
             participants: Vec::new(),
             lineup: None,
+            expo_wifi: None,
             seats: [0, 1, 2, 3],
             key_overrides_path: None,
             key_overrides: Default::default(),

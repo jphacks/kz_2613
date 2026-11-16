@@ -81,12 +81,14 @@ struct HotspotLifecycle {
     owned: Option<imp::OwnedHotspot>,
     fake_owned: bool,
     session: Option<SessionCredentials>,
+    rotation_failed: bool,
 }
 
 static LIFECYCLE: std::sync::Mutex<HotspotLifecycle> = std::sync::Mutex::new(HotspotLifecycle {
     owned: None,
     fake_owned: false,
     session: None,
+    rotation_failed: false,
 });
 static SHUTTING_DOWN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
@@ -105,6 +107,9 @@ fn fake_hotspot() -> Option<Hotspot> {
 fn hotspot() -> Result<Option<Hotspot>, ()> {
     let (session, owned, fake_owned) = {
         let lifecycle = LIFECYCLE.try_lock().map_err(|_| ())?;
+        if lifecycle.rotation_failed {
+            return Err(());
+        }
         (
             lifecycle.session.clone(),
             lifecycle.owned.clone(),
@@ -152,6 +157,35 @@ pub fn start_hotspot() -> Result<(), String> {
         lifecycle.session = session;
         lifecycle.owned = Some(owned);
     }
+    Ok(())
+}
+
+/// 参加枠と入力を無効にしてから、管理下のWi-Fiだけを更新する。
+pub fn rotate_owned_hotspot() -> Result<(), String> {
+    let mut lifecycle = LIFECYCLE
+        .lock()
+        .map_err(|_| "ホットスポットの状態を取得できません")?;
+    if SHUTTING_DOWN.load(std::sync::atomic::Ordering::Relaxed) {
+        return Err("PCアプリは終了中です".into());
+    }
+    let dry_run = std::env::var("RECOOPLAY_DRY_RUN").as_deref() == Ok("1");
+    if (dry_run && !lifecycle.fake_owned) || (!dry_run && lifecycle.owned.is_none()) {
+        return Err(
+            "Re:Cooplayが起動したWi-Fiではありません。Windowsの設定で確認してください".into(),
+        );
+    }
+
+    if lifecycle.session.is_none() {
+        return Err("このWindowsではWi-Fiの自動切り替えに対応していません".into());
+    }
+    let next = session_credentials()?;
+    // 失敗時に旧セッションの資格情報を案内しない。所有権は再試行・終了に備えて保持する。
+    lifecycle.rotation_failed = true;
+    if !dry_run {
+        imp::restart_hotspot(lifecycle.owned.as_ref().unwrap(), &next)?;
+    }
+    lifecycle.session = Some(next);
+    lifecycle.rotation_failed = false;
     Ok(())
 }
 
@@ -241,6 +275,14 @@ mod imp {
         }
         let owned = AgileReference::new(&m).map_err(|_| "ホットスポットを管理できません")?;
         let session = super::session_credentials()?;
+        Ok(start_on_manager(&m, session, true)?.map(|session| (owned, session)))
+    }
+
+    fn start_on_manager(
+        m: &NetworkOperatorTetheringManager,
+        session: super::SessionCredentials,
+        legacy: bool,
+    ) -> Result<Option<Option<super::SessionCredentials>>, String> {
         let (operation, session) =
             match NetworkOperatorTetheringSessionAccessPointConfiguration::new() {
                 Ok(config) => {
@@ -251,20 +293,22 @@ mod imp {
                         })
                         .map_err(|e| error_message("一時Wi-Fi設定を作成できません", e.code().0))?;
                     match m.StartTetheringAsync2(&config) {
-                        Err(e) if session_api_unavailable(e.code().0) => {
+                        Err(e) if legacy && session_api_unavailable(e.code().0) => {
                             (m.StartTetheringAsync(), None)
                         }
                         operation => (operation, Some(session)),
                     }
                 }
-                Err(e) if session_api_unavailable(e.code().0) => (m.StartTetheringAsync(), None),
+                Err(e) if legacy && session_api_unavailable(e.code().0) => {
+                    (m.StartTetheringAsync(), None)
+                }
                 Err(e) => return Err(error_message("一時Wi-Fi設定を作成できません", e.code().0)),
             };
         let result = operation
             .and_then(|op| op.join())
             .map_err(|e| error_message("ホットスポットを起動できません", e.code().0))?;
         match result.Status() {
-            Ok(TetheringOperationStatus::Success) => Ok(Some((owned, session))),
+            Ok(TetheringOperationStatus::Success) => Ok(Some(session)),
             Ok(TetheringOperationStatus::AlreadyOn) => Ok(None),
             Ok(status) => Err(error_message("ホットスポットを起動できません", status.0)),
             Err(e) => Err(error_message(
@@ -285,6 +329,33 @@ mod imp {
         )
     }
 
+    pub fn restart_hotspot(
+        owned: &OwnedHotspot,
+        session: &super::SessionCredentials,
+    ) -> Result<(), String> {
+        unsafe {
+            let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+        }
+        let m = owned
+            .resolve()
+            .map_err(|_| "ホットスポットを管理できません")?;
+        if !stop_manager(&m)
+            || m.TetheringOperationalState().ok() != Some(TetheringOperationalState::Off)
+        {
+            return Err("Wi-Fiを停止できません。Windowsの設定から確認してください".into());
+        }
+        if start_on_manager(&m, session.clone(), false)?
+            .flatten()
+            .is_none()
+            || m.TetheringOperationalState().ok() != Some(TetheringOperationalState::On)
+        {
+            return Err(
+                "新しいWi-Fiの起動を確認できません。Windowsの設定から確認してください".into(),
+            );
+        }
+        Ok(())
+    }
+
     pub fn owned_is_on(owned: &OwnedHotspot) -> Option<bool> {
         unsafe {
             let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
@@ -301,6 +372,10 @@ mod imp {
             let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
         }
         let Ok(m) = owned.resolve() else { return false };
+        stop_manager(&m)
+    }
+
+    fn stop_manager(m: &NetworkOperatorTetheringManager) -> bool {
         match m.TetheringOperationalState() {
             Ok(TetheringOperationalState::Off) => return true,
             Ok(TetheringOperationalState::On) => {}
@@ -322,6 +397,12 @@ mod imp {
     pub fn start_hotspot(
     ) -> Result<Option<(OwnedHotspot, Option<super::SessionCredentials>)>, String> {
         Err("Windows以外ではホットスポットを扱えません".into())
+    }
+    pub fn restart_hotspot(
+        owned: &OwnedHotspot,
+        _: &super::SessionCredentials,
+    ) -> Result<(), String> {
+        match *owned {}
     }
     pub fn owned_is_on(owned: &OwnedHotspot) -> Option<bool> {
         match *owned {}
@@ -345,7 +426,7 @@ pub fn info(port: u16, wifi: Option<(&str, &str)>, loopback: bool) -> Value {
         return json!({ "port": port, "urls": urls, "wifi": null, "hotspot": null });
     }
     let Ok(spot) = hotspot() else {
-        return json!({ "port": port, "urls": urls, "wifi": null, "hotspot": null });
+        return json!({ "port": port, "urls": [], "wifi": null, "hotspot": null });
     };
     let wifi = match &spot {
         Some(h) => Some((h.ssid.as_str(), h.passphrase.as_str())),

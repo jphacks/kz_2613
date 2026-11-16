@@ -13,6 +13,7 @@ export interface InjectionState {
 export interface DetectedGame {id:string;name?:string;source:string;verified?:boolean;launchable?:boolean;image?:boolean}
 export interface GameEntry extends DetectedGame {name:string;verified:boolean;launchable:boolean;image:boolean}
 export interface HostState {
+  expoWifi?: 'switching' | 'ready' | 'failed' | null;
   now?:number;
   slots?:SlotState[];games?:DetectedGame[];minecraft?:{launchable?:boolean;image?:boolean}|null;
   network?:{bluetoothAudio?:boolean};gamesScanning?:boolean;game?:PhoneGame;inject?:InjectionState;

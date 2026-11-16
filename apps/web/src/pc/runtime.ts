@@ -68,7 +68,7 @@ lifetime.listen($('settingsConnectionBtn'), 'click',()=>openDialog($<HTMLDialogE
 // 全員の接続のリセット (#412)。確認してから送る。ホストは全員を切断し、枠とホストを最初から決め直す (#213)
 lifetime.listen($('resetAllBtn'), 'click',()=>openDialog($<HTMLDialogElement>('resetConfirm')));
 lifetime.listen($('resetCancel'), 'click',()=>$<HTMLDialogElement>('resetConfirm').close());
-lifetime.listen($('resetConfirmBtn'), 'click',()=>{send({type:'reset'});$<HTMLDialogElement>('resetConfirm').close();});
+lifetime.listen($('resetConfirmBtn'), 'click',()=>{hideJoinInfo('Wi-Fiを切り替えています…');send({type:'reset',rotateWifi:true});$<HTMLDialogElement>('resetConfirm').close();});
 lifetime.listen($('reloadInfo'), 'click',loadInfo);
 // ホットスポットを ON にする (#133)。押したときだけ。PC 本体の画面からだけ受け付ける
 // 結果は QR の下の案内に出す (失敗したときは、次に成功するまで出し続ける)
@@ -230,7 +230,13 @@ function playEffects(view:string){
 }
 let keyMessage='';
 function renderGames(){render();}
+function hideJoinInfo(message:string) {
+  infoRequest++;
+  renderInfo(null,message,false);
+  document.body.removeAttribute('data-two-qr');
+}
 async function loadInfo(){
+  if (state?.expoWifi==='switching'||state?.expoWifi==='failed') return;
   const request=++infoRequest;
   try{
     const response=await fetch('/api/info',{signal:abort.signal});if(!response.ok)throw Error('Info request failed');
@@ -253,7 +259,13 @@ function connect(){
     try{
     const m=decodePcMessage(ev.data),previousPhase=game?.phase;
     if(!m){ws?.close();return;}
-    if(m.type==='state'){state=m;game=m.game;inject=m.inject;}
+    if(m.type==='state'){
+      const previousWifi=state?.expoWifi;
+      state=m;game=m.game;inject=m.inject;
+      if(m.expoWifi==='switching')hideJoinInfo('Wi-Fiを切り替えています…');
+      if(m.expoWifi==='failed')hideJoinInfo('Wi-Fiを切り替えられませんでした。Windowsの設定を確認してからリセットを再試行してください。');
+      if(m.expoWifi==='ready'&&previousWifi!=='ready'){hotspotStarted=true;loadInfo();} // 起動し直したWi-Fiもアドレスが付くまでQRを出さない (#573)
+    }
     else if(m.type==='game')game=m.game;
     else if(m.type==='key_result'){keyMessage=m.ok?'':'（保存できませんでした。この実行の間だけ使います）';render();}
     else if(m.type==='manual_result'){manualMessage=m.message||'';renderGames();lifetime.timeout(()=>{if(manualMessage===m.message){manualMessage='';renderGames();}},6000);}
