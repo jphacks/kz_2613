@@ -2838,3 +2838,13 @@
 - 既存のIssueへの観測：#449・#442・#444・#446・#308 にコメントした。
 - 未確認：カメラでのQRの読み取り、iPhone、2台目の実機、Windowsの初回の許可ダイアログ（このPCでは出なかった）、SmartScreen（ブラウザーで落としたzipではないため）、インストーラー版。
 - 後片付け：試験でAndroidに保存された `ReCooplay-…` のWi-Fiを削除し、試験用のChromeを止めた。展開した `ドキュメント\ReCooplay-tsushi-20261116` は残している。
+
+## 2026-11-19 — npm-audit の失敗と picomatch の勧告の除外（Claude Code）
+- 観測：2026-11-18 以降、main への push 5回（`fc4136c`〜`3ff5c85`）で `npm-audit` が毎回失敗した。原因は picomatch の ReDoS の勧告 GHSA-fc5q-39xc-vjpf（high、4.0.7 以下が対象）。GitHub の確認日は 2026-11-17 で、11-16 までは成功していた。
+- 修正版はない（npm の最新は 4.0.7）。`npm audit fix --force` は vite を 8.3.6 から 6.2.7 へ戻すため使わない。経路は `vite → tinyglobby → fdir → picomatch` の開発・ビルド時だけの依存で、`npm audit --package-lock-only --omit=dev` は0件。
+- 対応：`scripts/check-npm-audit.mjs` を追加し、`apps/web/npm-audit-exceptions.json` に理由と期限（2026-12-19）を書いた勧告だけを除外する。開発用の依存も含めた監査は続ける。
+- 確認（Windows、Node 24）：
+  - `node scripts/check-npm-audit.mjs`：成功（5件中、除外1件の勧告）。
+  - 期限を過去日にすると「除外の期限切れ」で終了コード1。
+  - 除外のIDを別の値にすると「未対応の勧告」で終了コード1。
+- 同じ期間の `protocol` の失敗1回（`3ff5c85`）は、`auxiliary-pages-smoke.mjs` で Chrome のデバッグポートを30秒待って起動できなかったもの。ほかの4回は成功しており、#379 の不安定な失敗として扱う。
