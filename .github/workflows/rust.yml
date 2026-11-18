@@ -373,8 +373,7 @@ jobs:
           node-version: '24'
       - name: Webのロックファイルを監査する
         timeout-minutes: 3
-        working-directory: apps/web
-        run: npm audit --package-lock-only
+        run: node scripts/check-npm-audit.mjs
   cargo-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 25
