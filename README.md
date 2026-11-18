@@ -215,7 +215,7 @@ Windows API（`SendInput`・ウィンドウ前面制御・モバイルホット�
 
 - **PCホスト・デスクトップアプリ：** Rust（Tokio・axum・`windows`・`datachannel`・`tokenizers`）、Tauri 2／WebView2
 - **フロントエンド・UI：** React・TypeScript strict（Vite）、Pointer Events API
-- **独自AI（操作分担生成）：** 事前学習済み多言語BERT系モデル（`paraphrase-multilingual-MiniLM-L12-v2` を語彙削減・8bit量子化）＋ 独自学習2層Transformer encoder（PyTorchで自己教師あり＋教師あり学習、Python不要のRustネイティブ推論）
+- **独自AI（操作分担生成）：** [Re:Cooplay Preset Model v2](https://huggingface.co/YOSHI0209/recooplay-preset-model-v2#recooplay-preset-model-v2) — 事前学習済み多言語エンコーダ（`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` を語彙43,691語へ削減・行ごと8bit量子化、約40MB）＋ 分担判断用2層Transformerエンコーダ（104,136パラメータ、約410KB、教師あり＋自己教師あり学習、Python不要のRustネイティブ推論）
 - **検証・シミュレーション：** Node.js（通信境界・画面・入力プローブの自動検証）
 
 #### デバイス
@@ -249,17 +249,19 @@ flowchart LR
   Steam・Epic Games・GOG・Ubisoft Connect・EA app・Battle.net・Xboxのインストール済みゲーム検出に加え、各ゲームのインストール先ファイルやユーザー設定（Unity Input System / 旧Input Manager、Unreal Engine 4・5、Godot 3・4、RPGツクール2000〜MZ、WOLF RPGエディター、Source 1・2、Creation Engine、REDengine、CryEngine、Factorio、Project Zomboidなど計19系統）を直接解析します。ゲーム本体を起動・改造せず、設定変更済みのキーも含めて操作定義を自動抽出します。  
   [読み取りの対応表](docs/game-profile-specification.md#定義のないゲームのファイルからの読み取り) ／ [操作抽出の入口](apps/host-rs/src/game_actions.rs) ／ [エンジン別パーサー群](apps/host-rs/src/engines/) ／ [キー設定の取得](apps/host-rs/src/keybinds.rs)
 
-- **② 事前学習済みBERT系モデル×独自学習Transformerによる、2〜4人への操作分担AI：**  
-  抽出した「操作名・キー・種類」から、事前学習済みの多言語BERT系モデル（小型化・8bit量子化MiniLM、[Re:Cooplay Preset Model v2](https://huggingface.co/YOSHI0209/recooplay-preset-model-v2#recooplay-preset-model-v2)）で操作名の意味ベクトルを取得し、独自学習した2層Transformer encoderで「操作カテゴリ」「同じ人が持つべき操作ペア（例：前後左右、照準と攻撃）」「方向操作の縦横軸」を同時推定します。Python環境に依存せずRustホスト内のバックグラウンドスレッドで推論（14操作で約80ms）し、未知のゲームでも2〜4人への自然な役割分担を自動生成します。
+- **② 事前学習済みBERT系モデル×独自学習Transformerによる、2〜4人への操作分担AI（[Re:Cooplay Preset Model v2](https://huggingface.co/YOSHI0209/recooplay-preset-model-v2#recooplay-preset-model-v2)）：**  
+  抽出した「操作名・キー・種類」から、事前学習済みの多言語BERT系モデル（`paraphrase-multilingual-MiniLM-L12-v2` の語彙を約4.4万語に絞り8ビット量子化したエンコーダ、約40MB）で、`IA_Jump`・`+attack`・`MoveForward` のような説明のない英語識別子や日本語名を384次元の意味ベクトルに変換します。そのベクトルと初期キー・入力種類を入力として、教師あり＋自己教師あり（伏せたキーを当てる）で独自学習させた2層Transformerエンコーダ（約410KB、104,136パラメータ）が「操作カテゴリ（6種）」「同じ人が持つべき操作の組」「同じまとまり内の方向軸（縦・横）」を同時推定します。Pythonや外部通信に依存せずRustホスト内で直接推論（14操作で約80ms）し、未知のゲームでも2〜4人への自然な役割分担を自動生成します。
 
-  **未知のゲームに対する汎化性能（未学習ゲームの生の操作名による評価）**
+  **未知のゲームに対する評価（学習に未使用のゲームでの測定、ゲームごとの平均）**
 
-  | 評価データ | 操作分類精度 | 振分判定精度 |
-  |---|---|---|
-  | Unity・Godot（57本） | **88.1%** | **94.5%** |
-  | 実ゲーム（30本） | **87.4%** | **89.3%** |
+  | 評価に使ったゲーム | カテゴリの正解率 | 同じ人の判定 | 同じまとまりの再現率 | 同じ軸の判定 |
+  |:--|--:|--:|--:|--:|
+  | GitHub の Unity・Godot の操作定義 57本（生の名前、4組に分けた評価） | **88.1%** | **94.5%** | **91.8%** | **94.6%** |
+  | ゲームのファイルから読んだ操作 6本（生の名前、1本ずつ外した評価） | **76.0%** | **89.3%** | **75.9%** | **91.5%** |
 
-  [分担AI仕様書](docs/preset-model-specification.md) ／ [推論・クラスタリング](apps/host-rs/src/preset_model.rs) ／ [MiniLMトークナイザー・埋め込み](apps/host-rs/src/text_encoder.rs) ／ [定型ルールとの切替・管理](apps/host-rs/src/profiles.rs)
+  また、人が正解を確かめた30本（246操作）でのカテゴリの正解率は **87.4%** です。
+
+  [分担AI仕様書](docs/preset-model-specification.md) ／ [Re:Cooplay Preset Model v2（Hugging Face）](https://huggingface.co/YOSHI0209/recooplay-preset-model-v2#recooplay-preset-model-v2) ／ [推論・クラスタリング](apps/host-rs/src/preset_model.rs) ／ [MiniLMトークナイザー・埋め込み](apps/host-rs/src/text_encoder.rs) ／ [定型ルールとの切替・管理](apps/host-rs/src/profiles.rs)
 
 - **③ WebSocket×WebRTCの2経路通信と、Rust＋SendInputによる低遅延・安全な入力統合：**  
   参加・役割・停止などの確実性が必要な制御はWebSocket、視点移動や連打など低遅延が求められる操作はWebRTC DataChannel（順序保証・再送なし）で送信し、Rustホストの単一hubスレッドで入力番号による重複排除と4ms周期の視点補間を行ってWin32 `SendInput` へ統合します。実機測定で**Wi-Fi往復遅延中央値 9.0ms**、**スマホ操作からPC入力実行までの推定遅延中央値 26.0ms** を実現しました。また、対象ゲームが前面のときだけ入力を許可し、一時停止・切断・緊急停止（`Ctrl+Alt+F12`）・ホスト異常終了時には合成中の全キー・マウスボタンを即時解放して暴走を防ぎます。  
