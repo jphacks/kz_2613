@@ -1,0 +1,10 @@
+{
+  "exceptions": [
+    {
+      "id": "GHSA-fc5q-39xc-vjpf",
+      "package": "picomatch",
+      "expires": "2026-12-19",
+      "reason": "修正版がない（4.0.7まで対象）。vite→tinyglobby→fdirの開発・ビルド時だけの依存で、配信物に含まれない。npm audit fix --forceはviteを6.2.7へ戻すため使わない。"
+    }
+  ]
+}

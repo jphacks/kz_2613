@@ -14,6 +14,8 @@
 
 押してから実入力までの遅延の計測用ビルド（ホストの feature `latency-measure`、スマホの `npm run build:latency`）は、通常の配布物に入れない。必須の `host-rs` は、配布物を保存した後に、featureを付けたClippyと試験で壊れていないことだけを確かめる。計測用の配布zip（`-latency-measure` 付き）は、手動で起動する `latency-measure.yml` で作る。
 
+`npm-audit` は `scripts/check-npm-audit.mjs` で `apps/web` のロックファイルを監査する。修正版のない勧告だけを、`apps/web/npm-audit-exceptions.json` に理由と期限を書いて除外する。期限を過ぎた除外、修正版が出た除外、書いていない勧告は失敗にする。期限を延ばすときは、修正版の有無と影響範囲を確かめ直してから専用のPRで変える。
+
 Rustの版はリポジトリ直下の `rust-toolchain.toml` で固定する（#379）。新しいRustでClippyの検査項目が増えた日に、変更と無関係なPRが失敗しないようにするため。`host-rs`・`desktop`・`cargo-audit` のジョブは最初にその版を入れ、`rustc --version` をログに出す。版を上げるときは、`channel` の行だけを変える専用のPRで、整形・Clippy・試験が通ることを確かめる。
 
 | 安全条件 | CIで確認する範囲 | 実機で確認する範囲 |
