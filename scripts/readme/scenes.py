@@ -499,9 +499,9 @@ def main():
         svg = art.svg(W, H, "".join(sc.svg), T, f"{title}：{desc}", COMMON + "".join(sc.css))
         (OUT / name).write_text(svg + "\n", encoding="utf-8", newline="\n")
         rows.append((i, title, desc, name, sc.dur))
-    lines = ["# キャラクターのアニメーション（候補）", "",
-             "READMEにところどころ置く、4色のキャラクターが遊ぶ小さなアニメーションの候補です。背景は透明で、ライト・ダークのどちらにも置けます。"
-             "OSで視差効果を減らす設定にしている閲覧者には、動きが止まります。", "",
+    lines = ["# キャラクターのアニメーション", "",
+             "製品READMEの各項目の終わりに1つずつ置いている、4色のキャラクターが遊ぶ小さなアニメーションです。"
+             "背景は透明で、ライト・ダークのどちらにも置けます。OSで視差効果を減らす設定にしている閲覧者には、動きが止まります。", "",
              "生成：`python scripts/readme/scenes.py`", ""]
     for i, title, desc, name, dur in rows:
         lines += [f"## {i}. {title}", "", f"{desc}（{dur:g}秒で1周）", "", f'<img src="{name}" width="560" alt="{title}：{desc}">', ""]

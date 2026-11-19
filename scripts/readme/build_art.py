@@ -116,7 +116,7 @@ def font_faces():
         if not local.exists():
             FONT_CACHE.mkdir(parents=True, exist_ok=True)
             urllib.request.urlretrieve(GOOGLE_FONTS + path, local)
-        font = TTFont(local)
+        font = TTFont(local, recalcTimestamp=False)  # 生成のたびに中身が変わらないよう、更新日時を元のまま保つ
         opts = subset.Options()
         opts.flavor = "woff"
         opts.name_IDs = ["*"]  # 著作権とライセンスの表記を残す
@@ -414,34 +414,6 @@ def pipeline(t, narrow=False):
 
 
 # ---------- 区切りとフッター ----------
-def divider():
-    """章の区切り。4色のカプセルが波打ちながら中央のキャラクターへ流れ込む。"""
-    import math
-    W, H = 1280, 64
-    t = THEMES["light"]
-    css = ("@keyframes sig{0%,100%{opacity:.35}50%{opacity:1}}"
-           ".sig{animation:sig 2.4s ease-in-out infinite}"
-           "@media (prefers-reduced-motion:reduce){.sig{animation:none}}")
-    b = []
-    cx, half, pitch = 640, 104, 20  # 中央、キャラクター列の半幅、カプセルの間隔
-    n = (cx - half - 40) // pitch
-    for side in (-1, 1):
-        for k in range(n):
-            d = k + 1  # 中央からの順番
-            x = cx + side * (half + 8 + k * pitch)
-            y = 34 + 5 * math.sin(d * 0.55)
-            fade = max(0.08, 1 - k / n) ** 1.2
-            color = CHARS[ORDER[(k if side > 0 else 3 - k % 4) % 4]]["body"]
-            b.append(f'<g opacity="{fade:.2f}"><rect class="sig" style="animation-delay:{-k * .12:.2f}s" '
-                     f'x="{x - 6:.1f}" y="{y - 2.5:.1f}" width="12" height="5" rx="2.5" fill="{color}" '
-                     f'transform="rotate({side * 18 * math.cos(d * 0.55):.1f} {x:.1f} {y:.1f})"/></g>')
-        sx = cx + side * (half - 2)
-        b.append(star(sx, 22, 6, "#FFC93C"))
-    for i, name in enumerate(ORDER):
-        b.append(char(name, cx - 96 + i * 48, 9, .34, t, delay=i * .3))
-    return svg(W, H, "".join(b), t, "", css)
-
-
 def footer(t):
     W, H = 1280, 250
     b = [f'<rect width="{W}" height="{H}" rx="28" fill="url(#bg)"/>',
@@ -469,7 +441,6 @@ def main():
             files[f"{kind}-{mode}.svg"] = draw(t)
             files[f"{kind}-narrow-{mode}.svg"] = draw(t, narrow=True)
         files[f"footer-{mode}.svg"] = footer(t)
-    files["divider.svg"] = divider()
     for n in ORDER:
         files[f"char-{n}.svg"] = avatar(n)
     for name, body in files.items():

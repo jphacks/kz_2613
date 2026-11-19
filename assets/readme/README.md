@@ -10,7 +10,7 @@
 | `flow-*.svg` | 遊ぶまでの4ステップ |
 | `pipeline-*.svg` | 操作の自動検出から分担AI、スマホ画面への配分までの流れ |
 | `footer-*.svg` | 末尾の締めの画像 |
-| `divider.svg` | 章の区切り（4色のカプセルが中央のキャラクターへ流れ込む） |
+| [`scenes/`](scenes/README.md) | 各項目の終わりに置く、キャラクターが遊ぶ10種類のアニメーション |
 | `char-*.svg` | キャラクター単体（表・試遊者の声で使用） |
 | `system-architecture.webp` | [システム構成図](../images/recooplay-system-architecture.webp) の余白を詰めたもの |
 
@@ -33,6 +33,7 @@ SVGは手で編集せず、生成スクリプトを直してから書き出し�
 
 ```
 python scripts/readme/build_art.py
+python scripts/readme/scenes.py
 ```
 
 数値や受賞名を変えるときは、README本文と画像の代替テキスト（`alt`）も合わせて直します。
