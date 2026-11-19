@@ -400,8 +400,8 @@ def volley():
            '<path d="M164.5 24q7.5-6 15 0M172 16.5v15" fill="none" stroke="#E08E0B" stroke-width="1.4"/></g></g></g>',
            kf("k-bx", [(0, "translateX(0px)"), (50, "translateX(216px)"), (100, "translateX(0px)")])
            + ".bx,.vbs{animation:k-bx 2.6s linear infinite}"
-           + kf("k-by", [(0, "translateY(0px)", OUT_), (25, "translateY(-18px)", IN), (50, "translateY(0px)", OUT_),
-                         (75, "translateY(-18px)", IN), (100, "translateY(0px)")])
+           + kf("k-by", [(0, "translateY(0px)", OUT_), (25, "translateY(-12px)", IN), (50, "translateY(0px)", OUT_),
+                         (75, "translateY(-12px)", IN), (100, "translateY(0px)")])
            + ".by{animation:k-by 2.6s linear infinite}"
            + ".br{animation:spin .8s linear infinite;transform-box:fill-box;transform-origin:50% 50%}")
     return sc, "ボールのパス", "青と赤がジャンプしてボールを打ち合い、緑と紫が跳びはねて応援する。"
@@ -539,7 +539,8 @@ def band(sc, accent, wide=True):
     else:
         deco += [halftone(14, y0 + 22, 4, 5, 11, a), halftone(bw - 14, y0 + 22, 4, 5, 11, "#22C4FA", flip=True)]
         sparks = [(64, 30, GOLD, 0), (538, 32, GOLD, -1.3)]
-    deco += [f'<path class="tw" style="animation-delay:{d}s" transform="translate({x} {y})" d="{SPARK}" fill="{c}"/>'
+    # 位置は外側の g に持たせる（アニメーションの transform が位置を上書きしないように）
+    deco += [f'<g transform="translate({x} {y})"><path class="tw" style="animation-delay:{d}s" d="{SPARK}" fill="{c}"/></g>'
              for x, y, c, d in sparks]
     # 足もと（場面の G）が帯の下の縫い目に乗るように置く
     stage = (f'<g mask="url(#stage)"><svg x="{ox}" y="{y1 - 5 - G}" width="{W}" height="{H}" '
