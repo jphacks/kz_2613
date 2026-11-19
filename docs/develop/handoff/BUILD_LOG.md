@@ -2848,3 +2848,13 @@
   - 期限を過去日にすると「除外の期限切れ」で終了コード1。
   - 除外のIDを別の値にすると「未対応の勧告」で終了コード1。
 - 同じ期間の `protocol` の失敗1回（`3ff5c85`）は、`auxiliary-pages-smoke.mjs` で Chrome のデバッグポートを30秒待って起動できなかったもの。ほかの4回は成功しており、#379 の不安定な失敗として扱う。
+
+## 2026-11-19 — READMEの作品紹介ページ化（Claude Code）
+- 依頼：JPHACKSの見出し（製品概要〜独自技術・ハッカソンで開発した独自機能・技術）と動画へのリンク画像を保ったまま、READMEを全面的に作り直す。4色のスマホ型キャラクターを使う。
+- 追加：`scripts/readme/build_art.py`（依存なし）で `assets/readme/` にSVGを生成する。ヒーロー・受賞・数値・4ステップ・分担AIの流れ・締め・区切り・キャラクター単体。ライト/ダーク版と、幅700px以下用の縦積み版を `<picture>` で切り替える。構成図は余白を詰めた `assets/readme/system-architecture.webp` を使う（元画像は残す）。
+- 本文の事実（受賞名、試遊26名・95.2%・84.6%、9.0ms・26.0ms、19系統、評価表の数値）は前の版から変えていない。Mermaid 2図はSVGに置き換えた（資料全体では25図・8シーケンスで、検査の下限を満たす）。
+- 確認（Windows）：
+  - `python scripts/check-public-docs.py`：PASS（464件のローカル参照）。`python scripts/verify_overlay.py`：PASS。
+  - GitHubの `POST /markdown`（gfm）で変換し、`<picture>`・`<source media>`（`max-width` と `prefers-color-scheme` の組み合わせ）・`align` が残ることを確認した。
+  - 変換結果に github-markdown-css 5.8.1 を当て、ヘッドレスChromeで幅1012px・390pxのライト/ダークを撮影し、文字のはみ出しと切り替えを目視で確認した。
+- 未確認：github.com 上の実表示（pushしていない）、GitHubモバイルアプリでの表示、日本語フォントのない環境でのSVGの文字。

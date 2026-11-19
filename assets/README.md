@@ -5,6 +5,7 @@
 この場所は**製品を紹介するために参照する公開用素材**をまとめるための入口です。
 
 - [images/](images/README.md)：README等で使用する実プレイ写真と、その用途の説明
+- [readme/](readme/README.md)：製品READMEの図版（4色のキャラクターを使ったSVG）と生成方法
 - [写真・UIギャラリー](../docs/gallery.md)：製品写真とUIを閲覧するページ
 
 **実装が読み込むロゴ・キャラクター画像・背景**は、既存の`apps/web/public/assets/`や`apps/desktop/`にあります。アプリの動作に関わるため、このディレクトリに複製・移動しません。
