@@ -1,13 +1,30 @@
-"""README用のSVG素材を生成する（依存なし）。
+"""README用のSVG素材を生成する（fontTools が必要）。
 
 4色のスマホ型キャラクター（P1青・P2緑・P3紫・P4赤）を描き、ライト・ダーク両方の版を
 assets/readme/ に書き出す。README の <picture> が GitHub のテーマに合わせて切り替える。
 
+<img> で表示したSVGは外部のフォントを読めないため、ヒーローと締めの文字は使う字だけに
+絞ったフォント（OFL）をSVGに埋め込む。フォントは google/fonts の固定した版から取得し、
+data/local/readme-fonts/ に置いて再利用する。
+
     python scripts/readme/build_art.py
 """
+import base64
+import io
+import urllib.request
 from pathlib import Path
 
-OUT = Path(__file__).resolve().parents[2] / "assets" / "readme"
+ROOT = Path(__file__).resolve().parents[2]
+OUT = ROOT / "assets" / "readme"
+FONT_CACHE = ROOT / "data" / "local" / "readme-fonts"
+GOOGLE_FONTS = "https://raw.githubusercontent.com/google/fonts/5bd87dfc525c8a0d1d8529d3684716e00c3fc59a/ofl/"
+# (クラス名, 太さ) → フォントファイル。rnd は丸ゴシック、hand は手書き風。
+EMBED = {
+    ("rnd", 700): ("RcRounded", "mplusrounded1c/MPLUSRounded1c-Bold.ttf"),
+    ("rnd", 800): ("RcRounded", "mplusrounded1c/MPLUSRounded1c-ExtraBold.ttf"),
+    ("hand", 400): ("RcHand", "yuseimagic/YuseiMagic-Regular.ttf"),
+}
+USED = {}  # 描画中の図で、埋め込むフォントごとに使った文字
 
 # アプリの colors.css と同じキャラクター色。目は少し明るい発光色にする。
 CHARS = {
@@ -36,6 +53,8 @@ THEMES = {
 FONTS = """
 .jp{font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic UI','Yu Gothic','Meiryo','Noto Sans JP','Noto Sans CJK JP',sans-serif}
 .disp{font-family:Impact,Haettenschweiler,'Anton','Arial Narrow Bold','Arial Black',sans-serif}
+.rnd{font-family:RcRounded,'Hiragino Maru Gothic ProN','Yu Gothic UI','Noto Sans JP',sans-serif}
+.hand{font-family:RcHand,'Hiragino Maru Gothic ProN','Yu Gothic UI','Noto Sans JP',sans-serif}
 .mono{font-family:ui-monospace,SFMono-Regular,'Cascadia Mono',Consolas,'Liberation Mono',monospace}
 """
 
@@ -86,7 +105,37 @@ def char(name, x, y, s=1.0, t=None, delay=0.0, animate=True):
             f'<g filter="url(#glow)" transform="translate(0 6)"><g{blink}>{eyes}</g>{mouth}</g></g></g>')
 
 
+def font_faces():
+    """USED に集めた文字だけを含むフォントを @font-face として返し、USED を空にする。"""
+    from fontTools import subset
+    from fontTools.ttLib import TTFont
+    css = []
+    for (cls, weight), chars in sorted(USED.items()):
+        family, path = EMBED[(cls, weight)]
+        local = FONT_CACHE / Path(path).name
+        if not local.exists():
+            FONT_CACHE.mkdir(parents=True, exist_ok=True)
+            urllib.request.urlretrieve(GOOGLE_FONTS + path, local)
+        font = TTFont(local)
+        opts = subset.Options()
+        opts.flavor = "woff"
+        opts.name_IDs = ["*"]  # 著作権とライセンスの表記を残す
+        opts.hinting = False
+        sub = subset.Subsetter(opts)
+        sub.populate(text="".join(sorted(chars)))
+        sub.subset(font)
+        buf = io.BytesIO()
+        font.flavor = "woff"
+        font.save(buf)
+        data = base64.b64encode(buf.getvalue()).decode()
+        css.append(f"@font-face{{font-family:{family};font-weight:{weight};"
+                   f"src:url(data:font/woff;base64,{data}) format('woff')}}")
+    USED.clear()
+    return "".join(css)
+
+
 def svg(w, h, body, t, title, extra_css=""):
+    faces = font_faces()
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img">'
             f'<title>{title}</title><defs>'
             '<filter id="glow" x="-30%" y="-30%" width="160%" height="160%">'
@@ -97,10 +146,13 @@ def svg(w, h, body, t, title, extra_css=""):
             '<stop offset="1" stop-color="#22C4FA"/></linearGradient>'
             f'<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{t["bg1"]}"/>'
             f'<stop offset="1" stop-color="{t["bg2"]}"/></linearGradient>'
-            f'<style>{FONTS}{MOTION}{extra_css}</style></defs>{body}</svg>')
+            f'<style>{faces}{FONTS}{MOTION}{extra_css}</style></defs>{body}</svg>')
 
 
 def text(x, y, s, size, fill, cls="jp", weight=700, anchor="start", length=None, extra=""):
+    if cls in ("rnd", "hand"):
+        key = (cls, 400 if cls == "hand" else (800 if weight >= 800 else 700))
+        USED.setdefault(key, set()).update(s)
     fit = f' textLength="{length}" lengthAdjust="spacingAndGlyphs"' if length else ""
     return (f'<text x="{x}" y="{y}" class="{cls}" font-size="{size}" font-weight="{weight}" '
             f'fill="{fill}" text-anchor="{anchor}"{fit}{extra}>{s}</text>')
@@ -141,17 +193,17 @@ def hero(t, narrow=False):
     # 左：ロゴ文字とキャッチコピー
     b += [f'<rect x="64" y="50" width="436" height="38" rx="19" fill="{t["chip"]}" stroke="{t["line"]}"/>',
           star(88, 69, 9, "#FFB800"),
-          text(106, 76, "JPHACKS 2026　審査委員特別賞・Innovator認定", 17, t["ink"], length=376),
-          text(70, 124, "リコープレイ", 20, t["muted"], weight=700),
+          text(106, 76, "JPHACKS 2026　審査委員特別賞・Innovator認定", 17, t["ink"], cls="rnd", weight=700, length=376),
+          text(70, 124, "リコープレイ", 20, t["muted"], cls="rnd", weight=700),
           text(76, 236, "Re:Cooplay", 124, t["shadow"], cls="disp", weight=900, length=560),
           text(68, 228, "Re:Cooplay", 124, "url(#brand)", cls="disp", weight=900, length=560,
                extra=f' stroke="{t["panel"]}" stroke-width="7" paint-order="stroke" stroke-linejoin="round"'),
-          text(68, 300, "ゲームはそのまま。", 42, t["ink"], weight=800, length=378),
+          text(68, 300, "ゲームはそのまま。", 42, t["ink"], cls="rnd", weight=800, length=378),
           f'<rect x="289" y="333" width="172" height="20" rx="4" fill="{t["stripe"]}" opacity=".9"/>',
-          text(68, 352, "1キャラを、", 42, t["ink"], weight=800, length=221),
-          text(291, 352, "みんなで", 42, t["ink"], weight=800, length=168),
-          text(461, 352, "操作。", 42, t["ink"], weight=800, length=126),
-          text(70, 404, "既存のPCゲームに、スマホで協力プレイを後付けする", 21, t["muted"], weight=600, length=504)]
+          text(68, 352, "1キャラを、", 42, t["ink"], cls="rnd", weight=800, length=221),
+          text(291, 352, "みんなで", 42, t["ink"], cls="rnd", weight=800, length=168),
+          text(461, 352, "操作。", 42, t["ink"], cls="rnd", weight=800, length=126),
+          text(70, 404, "既存のPCゲームに、スマホで協力プレイを後付けする", 21, t["muted"], cls="rnd", weight=700, length=504)]
     # 右：1台の画面と4体のキャラクター
     b.append('<g transform="translate(-685 410)">' if narrow else "<g>")
     mx, my, mw, mh = 830, 34, 340, 176
@@ -178,7 +230,7 @@ def hero(t, narrow=False):
           f'<rect x="{hx + 4}" y="{hy + 22}" width="28" height="22" fill="#22B8C9"/>'
           f'<rect x="{hx + 6}" y="{hy + 44}" width="11" height="12" fill="#3B3BA8"/><rect x="{hx + 19}" y="{hy + 44}" width="11" height="12" fill="#3B3BA8"/></g>',
           f'<rect x="{mx + 18}" y="{my + 18}" width="78" height="26" rx="13" fill="#FFFFFF" opacity=".92"/>',
-          text(mx + 57, my + 37, "1キャラ", 15, "#2E2B48", weight=800, anchor="middle"),
+          text(mx + 57, my + 37, "1キャラ", 15, "#2E2B48", cls="rnd", weight=800, anchor="middle"),
           "</g>"]
     cx0, gap, cy, s = 846, 100, 318, 0.78
     tip = (mx + mw / 2, my + mh + 32)
@@ -195,82 +247,12 @@ def hero(t, narrow=False):
         sx = x + 50 * s
         b += [f'<rect x="{sx - 20:.0f}" y="{cy - 30}" width="40" height="22" rx="11" fill="{c}"/>',
               text(sx, cy - 13, f"P{i + 1}", 15, "#FFFFFF" if name != "green" else "#103B10",
-                   cls="jp", weight=900, anchor="middle"),
+                   cls="rnd", weight=800, anchor="middle"),
               char(name, x, cy, s, t, delay=i * .35)]
-    b.append(text(cx0 + 1.5 * gap + 50 * s, 446, "スマホ2〜4台で、1人分の操作を分け合う", 15, t["muted"],
-                  weight=600, anchor="middle"))
+    b.append(text(cx0 + 1.5 * gap + 50 * s, 446, "スマホ2〜4台で、1人分の操作を分け合う", 17, t["muted"],
+                  cls="rnd", weight=700, anchor="middle"))
     b.append("</g>")
     return svg(W, H, "".join(b), t, "Re:Cooplay — ゲームはそのまま。1キャラをみんなで操作。")
-
-
-# ---------- 受賞 ----------
-def awards(t, narrow=False):
-    W, H = (640, 560) if narrow else (1280, 300)
-    gold = "#F5B400"
-    cards = [("Hack Day", "Audience Award", gold, None),
-             ("Award Day", "Finalist", CHARS["blue"]["body"], "blue"),
-             ("審査委員特別賞", None, CHARS["green"]["body"], "green"),
-             ("Innovator認定", None, CHARS["purple"]["body"], "purple"),
-             ("企業賞", "合同会社DMM.com賞", CHARS["red"]["body"], "red")]
-    b = [f'<rect width="{W}" height="{H}" rx="24" fill="{t["panel2"]}" stroke="{t["line"]}"/>']
-    # グループ見出し
-    ch = 180
-    if narrow:  # 会場ごとに2段：Hack Dayの2枚、Award Dayの3枚
-        boxes = [(24 + k * 302, 92, 290) for k in range(2)] + [(24 + k * 200, 360, 192) for k in range(3)]
-        spans = [("Hack Day（金沢会場）", 0, 1, 50), ("Award Day", 2, 4, 318)]
-    else:
-        boxes = [(40 + k * 243, 92, 228) for k in range(5)]
-        spans = [("Hack Day（金沢会場）", 0, 1, 50), ("Award Day", 2, 4, 50)]
-    for label, a, z, gy in spans:
-        xa, xz = boxes[a][0], boxes[z][0] + boxes[z][2]
-        b += [f'<path d="M{xa + 4} {gy + 26}V{gy + 16}H{xz - 4}V{gy + 26}" fill="none" stroke="{t["muted"]}" stroke-width="1.6" opacity=".6"/>',
-              f'<rect x="{(xa + xz) / 2 - 110}" y="{gy}" width="220" height="30" fill="{t["panel2"]}"/>',
-              text((xa + xz) / 2, gy + 22, label, 19, t["ink"], weight=800, anchor="middle")]
-    b.append(text(40, 36, "JPHACKS 2026", 22, t["muted"], cls="disp", weight=400))
-    b.append(text(W - 40, 36, "5つの賞・認定", 16, t["muted"], weight=700, anchor="end"))
-    for i, (l1, l2, color, who) in enumerate(cards):
-        x, y0, cw = boxes[i]
-        b += [f'<rect x="{x}" y="{y0}" width="{cw}" height="{ch}" rx="18" fill="{t["panel"]}" stroke="{color}" stroke-width="2.5"/>',
-              f'<rect x="{x + 18}" y="{y0}" width="{cw - 36}" height="6" rx="3" fill="{color}"/>']
-        if who:
-            b.append(char(who, x + cw / 2 - 30, y0 + 18, .48, t, delay=i * .4))
-            b.append(star(x + cw / 2 + 34, y0 + 28, 11, gold))
-        else:  # 観客賞は4体そろって
-            for k, n in enumerate(ORDER):
-                b.append(char(n, x + cw / 2 - 74 + k * 38, y0 + 30, .32, t, delay=k * .3))
-            b.append(star(x + cw / 2, y0 + 22, 11, gold))
-        if l2:
-            b += [text(x + cw / 2, y0 + 120, l1, 19, t["muted"], weight=700, anchor="middle"),
-                  text(x + cw / 2, y0 + 150, l2, 21 if len(l2) < 16 else (18 if cw > 200 else 15.5), t["ink"], weight=900, anchor="middle")]
-        else:
-            b.append(text(x + cw / 2, y0 + 138, l1, 24 if cw > 200 else 21, t["ink"], weight=900, anchor="middle"))
-    return svg(W, H, "".join(b), t, "JPHACKS 2026 受賞：Hack Day Audience Award、Award Day Finalist、審査委員特別賞、Innovator認定、企業賞（合同会社DMM.com賞）")
-
-
-# ---------- 数値 ----------
-def stats(t, narrow=False):
-    W, H = (640, 400) if narrow else (1280, 200)
-    tiles = [("100", "%", "楽しかった・また遊びたい", "試遊アンケート26名全員"),
-             ("26.0", "ms", "スマホの操作からPC入力まで", "推定遅延の中央値（実測）"),
-             ("19", "系統", "ゲームのファイルから", "操作とキーを自動で読み取り"),
-             ("2〜4", "人", "1つのキャラクターを", "スマホで分担して操作")]
-    tw, gap, x0 = 295, 20, 20
-    b = []
-    for i, (num, unit, l1, l2) in enumerate(tiles):
-        name = ORDER[i]
-        c = CHARS[name]["body"]
-        x = x0 + (i % 2 if narrow else i) * (tw + gap)
-        b.append(f'<g transform="translate(0 {(i // 2) * 200 if narrow else 0})">')
-        b += [f'<rect x="{x}" y="8" width="{tw}" height="184" rx="20" fill="{t["panel"]}" stroke="{t["line"]}"/>',
-              f'<path d="M{x + 20} 8h{tw - 40}" stroke="{c}" stroke-width="6" stroke-linecap="round"/>',
-              char(name, x + 18, 50, .62, t, delay=i * .45)]
-        nl = len(num)
-        nw = {1: 30, 2: 58, 3: 86, 4: 92}.get(nl, 92)
-        b += [text(x + 100, 100, num, 56, t["ink"], cls="disp", weight=400, length=nw * 1.0 if nl > 2 else None),
-              text(x + 104 + nw, 100, unit, 22, c if name != "green" else "#2FB52E", weight=900),
-              text(x + 100, 134, l1, 15, t["ink"], weight=700),
-              text(x + 100, 158, l2, 13.5, t["muted"], weight=600), "</g>"]
-    return svg(W, H, "".join(b), t, "数字で見るRe:Cooplay：試遊者26名全員が楽しかった、推定入力遅延26.0ms、19系統の自動検出、2〜4人で分担")
 
 
 # ---------- 遊ぶまでの流れ ----------
@@ -304,34 +286,37 @@ def icon(kind, x, y, c, t):
 
 
 def flow(t, narrow=False):
-    W, H = (640, 580) if narrow else (1280, 290)
+    W, H = (312, 1180) if narrow else (1280, 290)
     steps = [("qr", "スマホでQR参加", "ブラウザで読み取るだけ。", "P1のスマホはPCリモコンに"),
              ("list", "ゲームを選ぶ", "インストール済みから選択。", "操作とキーを自動で読み取り"),
              ("split", "AIが操作を分担", "独自AIが2〜4人へ配分。", "担当を確かめて起動"),
              ("play", "開始ボタンでプレイ", "ホストが「分担操作開始」。", "各スマホが担当の操作画面に")]
     cw, x0 = 272, 20
-    gap = 56 if narrow else 51.3
+    gap = 51.3
     b = []
     for i, (kind, title, d1, d2) in enumerate(steps):
         name = ORDER[i]
         c = CHARS[name]["body"]
-        x = x0 + (i % 2 if narrow else i) * (cw + gap)
-        b.append(f'<g transform="translate(0 {(i // 2) * 290 if narrow else 0})">')
+        x = x0 if narrow else x0 + i * (cw + gap)
+        b.append(f'<g transform="translate(0 {i * 300 if narrow else 0})">')
         b += [f'<rect x="{x}" y="10" width="{cw}" height="270" rx="22" fill="{t["panel"]}" stroke="{t["line"]}"/>',
               f'<circle cx="{x + 36}" cy="44" r="18" fill="{c}"/>',
               text(x + 36, 51, str(i + 1), 20, "#FFFFFF" if name != "green" else "#103B10", cls="disp", weight=400, anchor="middle"),
-              text(x + 64, 51, f"STEP {i + 1}", 14, t["muted"], cls="mono", weight=700),
+              text(x + 64, 51, f"STEP {i + 1}", 16, t["muted"], cls="mono", weight=700),
               char(name, x + cw / 2 - 74, 76, .74, t, delay=i * .4),
               icon(kind, x + cw / 2 + 14, 104, c, t),
-              text(x + cw / 2, 212, title, 22, t["ink"], weight=900, anchor="middle"),
-              text(x + cw / 2, 240, d1, 14.5, t["muted"], weight=600, anchor="middle"),
-              text(x + cw / 2, 262, d2, 14.5, t["muted"], weight=600, anchor="middle")]
+              text(x + cw / 2, 210, title, 25, t["ink"], weight=900, anchor="middle"),
+              text(x + cw / 2, 241, d1, 16.5, t["muted"], weight=700, anchor="middle"),
+              text(x + cw / 2, 265, d2, 16.5, t["muted"], weight=700, anchor="middle")]
         b.append("</g>")
-        if (i % 2 == 0) if narrow else i < 3:
+        if i < 3 and narrow:
+            ay = i * 300 + 290
+            b.append(f'<path d="M{W / 2 - 9} {ay - 5}l9 9 9-9" fill="none" stroke="url(#brand)" stroke-width="5" '
+                     'stroke-linecap="round" stroke-linejoin="round"/>')
+        elif i < 3:
             ax = x + cw + gap / 2
-            b.append(f'<g transform="translate(0 {(i // 2) * 290 if narrow else 0})">')
             b.append(f'<path d="M{ax - 9} 128l12 12-12 12" fill="none" stroke="url(#brand)" stroke-width="5" '
-                     'stroke-linecap="round" stroke-linejoin="round"/></g>')
+                     'stroke-linecap="round" stroke-linejoin="round"/>')
     return svg(W, H, "".join(b), t, "遊ぶまでの4ステップ：スマホでQR参加、ゲームを選ぶ、AIが操作を分担、開始ボタンでプレイ")
 
 
@@ -356,7 +341,7 @@ def pipeline(t, narrow=False):
         b += [at(i), f'<rect x="{x}" y="10" width="{pw}" height="{PH}" rx="22" fill="{t["panel"]}" stroke="{t["line"]}"/>',
               text(x + 24, 52, n, 26, "url(#brand)", weight=900),
               text(x + 58, 50, h1, 20, t["ink"], weight=900),
-              text(x + 58, 74, h2, 14, t["muted"], weight=600), "</g>"]
+              text(x + 58, 76, h2, 16, t["muted"], weight=700), "</g>"]
         if i < 2 and narrow:
             ay = i * D + PH + 30
             b.append(f'<path d="M{W / 2} {ay - 12}V{ay + 8}M{W / 2 - 9} {ay}l9 9 9-9" fill="none" stroke="url(#brand)" '
@@ -387,14 +372,14 @@ def pipeline(t, narrow=False):
     for k, tk in enumerate(toks):
         tx = x + 40 + k * 76
         b += [f'<rect x="{tx}" y="100" width="68" height="28" rx="14" fill="{t["code"]}" stroke="{t["line"]}"/>',
-              text(tx + 34, 119, tk, 13, t["ink"], cls="mono", weight=700, anchor="middle")]
+              text(tx + 34, 119, tk, 14, t["ink"], cls="mono", weight=700, anchor="middle")]
     layers = [(150, "多言語エンコーダ（MiniLM・約40MB）", "操作名 → 384次元の意味ベクトル"),
               (236, "分担判断（2層Transformer・約410KB）", "教師あり＋伏せたキーを当てる学習")]
     for (y, l1, l2) in layers:
         b += [f'<rect x="{x + 30}" y="{y}" width="{pw - 60}" height="66" rx="14" fill="url(#brand)" opacity=".14"/>',
               f'<rect x="{x + 30}" y="{y}" width="{pw - 60}" height="66" rx="14" fill="none" stroke="url(#brand)" stroke-width="2"/>',
-              text(cx, y + 28, l1, 16, t["ink"], weight=900, anchor="middle"),
-              text(cx, y + 50, l2, 13, t["muted"], weight=600, anchor="middle")]
+              text(cx, y + 28, l1, 17, t["ink"], weight=900, anchor="middle"),
+              text(cx, y + 52, l2, 15, t["muted"], weight=700, anchor="middle")]
     for k in range(5):  # 層をつなぐ線
         lx = x + 70 + k * 58
         b.append(f'<path d="M{lx} 216V236" stroke="url(#brand)" stroke-width="2.5" class="flow" style="animation-delay:{k * .15:.2f}s"/>')
@@ -402,11 +387,11 @@ def pipeline(t, narrow=False):
     for k, (o1, o2) in enumerate(outs):
         ox = x + 30 + k * 108
         b += [f'<rect x="{ox}" y="324" width="96" height="58" rx="12" fill="{t["code"]}" stroke="{t["line"]}"/>',
-              text(ox + 48, 348, o1, 14, t["ink"], weight=800, anchor="middle"),
-              text(ox + 48, 370, o2, 13, t["muted"], weight=600, anchor="middle")]
+              text(ox + 48, 349, o1, 16, t["ink"], weight=800, anchor="middle"),
+              text(ox + 48, 372, o2, 15, t["muted"], weight=700, anchor="middle")]
     b += [f'<rect x="{cx - 120}" y="400" width="240" height="34" rx="17" fill="{t["stripe"]}" opacity=".9"/>',
-          text(cx, 423, "Rustでオフライン推論・約80ms", 15, "#2E2B48", weight=900, anchor="middle")]
-    b.append(text(cx, PH, "※14操作のゲームで2〜4人分の分担を作る時間", 11.5, t["muted"], weight=500, anchor="middle"))
+          text(cx, 423, "Rustでオフライン推論・約80ms", 16, "#2E2B48", weight=900, anchor="middle")]
+    b.append(text(cx, PH, "※14操作のゲームで2〜4人分の分担を作る時間", 13, t["muted"], weight=600, anchor="middle"))
     b.append("</g>")
     # ③ 3人の画面
     b.append(at(2))
@@ -422,20 +407,39 @@ def pipeline(t, narrow=False):
               f'<rect x="{x + 112}" y="{y + 16}" width="38" height="22" rx="11" fill="{c}"/>',
               text(x + 131, y + 32, p, 14, "#FFFFFF" if name != "green" else "#103B10", weight=900, anchor="middle"),
               text(x + 160, y + 33, role, 19, t["ink"], weight=900),
-              text(x + 112, y + 64, l1, 14.5, t["ink"], weight=700),
-              text(x + 112, y + 86, l2, 13.5, t["muted"], weight=600)]
+              text(x + 112, y + 65, l1, 16, t["ink"], weight=700),
+              text(x + 112, y + 88, l2, 15, t["muted"], weight=700)]
     b.append("</g>")
     return svg(W, H, "".join(b), t, "分担AIの流れ：ゲームのファイルから操作を検出し、MiniLMと2層Transformerで推論して、3人のスマホ画面へ配分する")
 
 
 # ---------- 区切りとフッター ----------
 def divider():
-    W, H = 1280, 60
+    """章の区切り。4色のカプセルが波打ちながら中央のキャラクターへ流れ込む。"""
+    import math
+    W, H = 1280, 64
     t = THEMES["light"]
-    b = [f'<path d="M20 34H520M760 34H1260" stroke="#9AA3B5" stroke-width="2" stroke-dasharray="2 10" stroke-linecap="round"/>']
-    for i, n in enumerate(ORDER):
-        b.append(char(n, 548 + i * 50, 8, .34, t, delay=i * .3))
-    return svg(W, H, "".join(b), t, "")
+    css = ("@keyframes sig{0%,100%{opacity:.35}50%{opacity:1}}"
+           ".sig{animation:sig 2.4s ease-in-out infinite}"
+           "@media (prefers-reduced-motion:reduce){.sig{animation:none}}")
+    b = []
+    cx, half, pitch = 640, 104, 20  # 中央、キャラクター列の半幅、カプセルの間隔
+    n = (cx - half - 40) // pitch
+    for side in (-1, 1):
+        for k in range(n):
+            d = k + 1  # 中央からの順番
+            x = cx + side * (half + 8 + k * pitch)
+            y = 34 + 5 * math.sin(d * 0.55)
+            fade = max(0.08, 1 - k / n) ** 1.2
+            color = CHARS[ORDER[(k if side > 0 else 3 - k % 4) % 4]]["body"]
+            b.append(f'<g opacity="{fade:.2f}"><rect class="sig" style="animation-delay:{-k * .12:.2f}s" '
+                     f'x="{x - 6:.1f}" y="{y - 2.5:.1f}" width="12" height="5" rx="2.5" fill="{color}" '
+                     f'transform="rotate({side * 18 * math.cos(d * 0.55):.1f} {x:.1f} {y:.1f})"/></g>')
+        sx = cx + side * (half - 2)
+        b.append(star(sx, 22, 6, "#FFC93C"))
+    for i, name in enumerate(ORDER):
+        b.append(char(name, cx - 96 + i * 48, 9, .34, t, delay=i * .3))
+    return svg(W, H, "".join(b), t, "", css)
 
 
 def footer(t):
@@ -444,8 +448,8 @@ def footer(t):
          '<clipPath id="card"><rect width="1280" height="250" rx="28"/></clipPath><g clip-path="url(#card)">',
          dots(24, 24, 10, 6, 16, 3, t["dot"]),
          f'<g transform="translate(1280 250) scale(-1 -1)">{dots(24, 24, 10, 6, 16, 3, t["dot2"])}</g></g>',
-         text(640, 92, "さあ、みんなで遊ぼう！", 40, t["ink"], weight=900, anchor="middle", length=440),
-         text(640, 126, "PCのゲームはそのままに、友達と集まったその場で協力プレイ", 17, t["muted"], weight=600, anchor="middle")]
+         text(640, 94, "さあ、みんなで遊ぼう！", 46, t["ink"], cls="hand", weight=400, anchor="middle"),
+         text(640, 130, "PCのゲームはそのままに、友達と集まったその場で協力プレイ", 18, t["muted"], cls="rnd", weight=700, anchor="middle")]
     for i, n in enumerate(ORDER):
         b.append(char(n, 440 + i * 110, 150, .62, t, delay=i * .3))
         b.append(f'<ellipse cx="{440 + i * 110 + 31}" cy="234" rx="26" ry="5" fill="{t["shadow"]}" opacity=".12"/>')
@@ -461,7 +465,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     files = {}
     for mode, t in THEMES.items():
-        for kind, draw in (("hero", hero), ("awards", awards), ("stats", stats), ("flow", flow), ("pipeline", pipeline)):
+        for kind, draw in (("hero", hero), ("flow", flow), ("pipeline", pipeline)):
             files[f"{kind}-{mode}.svg"] = draw(t)
             files[f"{kind}-narrow-{mode}.svg"] = draw(t, narrow=True)
         files[f"footer-{mode}.svg"] = footer(t)

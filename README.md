@@ -37,12 +37,22 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
 <br>
 
-<picture>
-  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/awards-narrow-dark.svg">
-  <source media="(max-width: 700px)" srcset="assets/readme/awards-narrow-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/awards-dark.svg">
-  <img src="assets/readme/awards-light.svg" width="100%" alt="JPHACKS 2026 受賞結果。Hack Day（金沢会場）：Hack Day Audience Award、Award Day Finalist。Award Day：審査委員特別賞、Innovator認定、企業賞（合同会社DMM.com賞）">
-</picture>
+  [![JPHACKS 2026](https://img.shields.io/badge/JPHACKS%202026-Hack%20Day%20Audience%20Award-gold?style=for-the-badge&logo=trophy)](https://github.com/jphacks/kz_2613)
+  [![JPHACKS 2026](https://img.shields.io/badge/JPHACKS%202026-Award%20Day%20Finalist-blue?style=for-the-badge&logo=star)](https://jphacks.com/2026/detail/)
+
+  [![JPHACKS 2026](https://img.shields.io/badge/JPHACKS%202026-審査委員特別賞-silver?style=for-the-badge&logo=award)](https://jphacks.com/2026/detail/)
+  [![JPHACKS 2026](https://img.shields.io/badge/JPHACKS%202026-Innovator認定-purple?style=for-the-badge&logo=lightbulb)](https://jphacks.com/2026/detail/)
+
+  ## 🎉 JPHACKS 2026 受賞結果 🎉
+  ### **🏆 Hack Day (金沢会場)**
+  **🥇 Hack Day Audience Award**  
+  **🎯 Award Day Finalist**
+
+  ---
+  ### **🏆 Award Day**
+  **🏅 審査委員特別賞**    **💡 Innovator認定**<br>
+  **🎁 企業賞受賞**  
+  合同会社DMM.com賞
 
 </div>
 
@@ -51,13 +61,6 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシステム**です。
 
 1台のPC画面を友達と囲み、普段は1人で操作するキャラクターを2〜4人で分担して動かします。コントローラーは各自のスマートフォンのブラウザなので、専用の機器もアプリも要りません。ゲームの操作名とキー割り当てを自動で読み取り、独自AIが参加人数に合わせて分担とスマホの操作画面を作ります。
-
-<picture>
-  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/stats-narrow-dark.svg">
-  <source media="(max-width: 700px)" srcset="assets/readme/stats-narrow-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/stats-dark.svg">
-  <img src="assets/readme/stats-light.svg" width="100%" alt="数字で見るRe:Cooplay。試遊アンケート26名全員が「楽しかった・また遊びたい」、スマホの操作からPC入力までの推定遅延は中央値26.0ms、ゲームのファイルから19系統で操作とキーを自動で読み取り、1つのキャラクターを2〜4人で分担">
-</picture>
 
 <p align="center"><img src="assets/readme/divider.svg" width="100%" alt=""></p>
 
@@ -100,11 +103,11 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 
 3人で『Minecraft』を遊ぶ場合の分担例です。
 
-| | プレイヤー | 担当する操作 | スマホに表示されるUI |
-|:-:|---|---|---|
-| <img src="assets/readme/char-blue.svg" width="26" alt="P1のキャラクター（青）"> | **P1**（ホスト） | 移動・ジャンプ・スニーク・ダッシュ | 8方向スティック＋アクションボタン |
-| <img src="assets/readme/char-green.svg" width="26" alt="P2のキャラクター（緑）"> | **P2** | 視点・カメラ操作 | 感度調整つきドラッグパッド |
-| <img src="assets/readme/char-purple.svg" width="26" alt="P3のキャラクター（紫）"> | **P3** | 攻撃・ブロック設置・持ち物切替・インベントリ | 左右クリック・ホイール・キーボタン |
+| プレイヤー | 担当する操作 | スマホに表示されるUI |
+|---|---|---|
+| <img src="assets/readme/char-blue.svg" height="28" align="absmiddle" alt="P1のキャラクター（青）">&nbsp;**P1**（ホスト） | 移動・ジャンプ・スニーク・ダッシュ | 8方向スティック＋アクションボタン |
+| <img src="assets/readme/char-green.svg" height="28" align="absmiddle" alt="P2のキャラクター（緑）">&nbsp;**P2** | 視点・カメラ操作 | 感度調整つきドラッグパッド |
+| <img src="assets/readme/char-purple.svg" height="28" align="absmiddle" alt="P3のキャラクター（紫）">&nbsp;**P3** | 攻撃・ブロック設置・持ち物切替・インベントリ | 左右クリック・ホイール・キーボタン |
 
 <div align="center">
   <a href="assets/images/recooplay-role-controllers.webp"><img src="assets/images/recooplay-role-controllers.webp" width="880" alt="3人プレイの役割分担例。左から移動・視点・アクション"></a>
