@@ -490,21 +490,84 @@ def nap():
 SCENES = [daruma, chase, train, rope, domino, hide, volley, seesaw, tug, nap]
 
 
+# ---------- 帯 ----------
+# 場面は帯の中央の舞台に置き、両端に向かって溶けるように消える。帯の色は半透明なので、
+# ライト・ダークのどちらの背景にもなじむ。幅の広い版（README本文用）と狭い版（スマホ用）を作る。
+BH = 120  # 帯の高さ
+SPARK = "M0-7Q1-1 7 0Q1 1 0 7Q-1 1-7 0Q-1-1 0-7Z"
+BAND_CSS = ("@keyframes tw{0%,100%{transform:scale(.35);opacity:.25}50%{transform:scale(1);opacity:1}}"
+            ".tw{animation:tw 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}")
+
+
+def halftone(x0, y0, cols, rows, gap, color, flip=False):
+    """網点。内側（場面の側）へ向かって小さくなる。"""
+    out = []
+    for j in range(rows):
+        for i in range(cols):
+            t = i / max(cols - 1, 1)
+            r = 3.1 * (1 - t) + .5
+            x = x0 - i * gap if flip else x0 + i * gap
+            out.append(f'<circle cx="{x:.1f}" cy="{y0 + j * gap:.1f}" r="{r:.2f}" fill="{color}"/>')
+    return f'<g opacity=".38">{"".join(out)}</g>'
+
+
+def band(sc, accent, wide=True):
+    bw = 960 if wide else 600
+    ox = (bw - W) / 2
+    y0, y1 = 12, BH - 12
+    a = art.CHARS[accent]["body"]
+    defs = (f'<linearGradient id="bandfill" x1="0" y1="0" x2="{bw}" y2="0" gradientUnits="userSpaceOnUse">'
+            '<stop offset="0" stop-color="#C03BFF" stop-opacity="0"/><stop offset=".2" stop-color="#C03BFF" stop-opacity=".11"/>'
+            '<stop offset=".5" stop-color="#6F86FF" stop-opacity=".13"/><stop offset=".8" stop-color="#22C4FA" stop-opacity=".11"/>'
+            '<stop offset="1" stop-color="#22C4FA" stop-opacity="0"/></linearGradient>'
+            f'<linearGradient id="bandline" x1="0" y1="0" x2="{bw}" y2="0" gradientUnits="userSpaceOnUse">'
+            '<stop offset="0" stop-color="#C03BFF" stop-opacity="0"/><stop offset=".22" stop-color="#C03BFF" stop-opacity=".55"/>'
+            '<stop offset=".5" stop-color="#6F86FF" stop-opacity=".6"/><stop offset=".78" stop-color="#22C4FA" stop-opacity=".55"/>'
+            '<stop offset="1" stop-color="#22C4FA" stop-opacity="0"/></linearGradient>'
+            f'<linearGradient id="stagefade" x1="{ox - 6}" y1="0" x2="{ox + W + 6}" y2="0" gradientUnits="userSpaceOnUse">'
+            '<stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".09" stop-color="#fff"/>'
+            '<stop offset=".91" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>'
+            f'<mask id="stage" maskUnits="userSpaceOnUse" x="0" y="0" width="{bw}" height="{BH}">'
+            f'<rect width="{bw}" height="{BH}" fill="url(#stagefade)"/></mask>')
+    deco = [f'<defs>{defs}</defs>',
+            f'<rect x="0" y="{y0}" width="{bw}" height="{y1 - y0}" fill="url(#bandfill)"/>',
+            f'<path d="M0 {y0 + 5}H{bw}M0 {y1 - 5}H{bw}" stroke="url(#bandline)" stroke-width="1.6" '
+            'stroke-dasharray="7 6" stroke-linecap="round" fill="none"/>']
+    if wide:
+        deco += [halftone(26, y0 + 20, 9, 5, 13, a), halftone(bw - 26, y0 + 20, 9, 5, 13, "#22C4FA", flip=True)]
+        sparks = [(150, 34, GOLD, 0), (118, 82, a, -.9), (812, 30, GOLD, -1.6), (846, 80, a, -.4), (178, 62, "#22C4FA", -2)]
+    else:
+        deco += [halftone(14, y0 + 22, 4, 5, 11, a), halftone(bw - 14, y0 + 22, 4, 5, 11, "#22C4FA", flip=True)]
+        sparks = [(64, 30, GOLD, 0), (538, 32, GOLD, -1.3)]
+    deco += [f'<path class="tw" style="animation-delay:{d}s" transform="translate({x} {y})" d="{SPARK}" fill="{c}"/>'
+             for x, y, c, d in sparks]
+    # 足もと（場面の G）が帯の下の縫い目に乗るように置く
+    stage = (f'<g mask="url(#stage)"><svg x="{ox}" y="{y1 - 5 - G}" width="{W}" height="{H}" '
+             f'viewBox="0 0 {W} {H}" overflow="visible">{"".join(sc.svg)}</svg></g>')
+    return bw, "".join(deco) + stage
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     rows = []
     for i, make in enumerate(SCENES, 1):
         sc, title, desc = make()
-        name = f"scene-{i:02d}-{make.__name__}.svg"
-        svg = art.svg(W, H, "".join(sc.svg), T, f"{title}：{desc}", COMMON + "".join(sc.css))
-        (OUT / name).write_text(svg + "\n", encoding="utf-8", newline="\n")
-        rows.append((i, title, desc, name, sc.dur))
+        accent = art.ORDER[(i - 1) % 4]
+        base = f"scene-{i:02d}-{make.__name__}"
+        for suffix, wide in (("", True), ("-narrow", False)):
+            bw, body = band(sc, accent, wide)
+            svg = art.svg(bw, BH, body, T, f"{title}：{desc}", COMMON + BAND_CSS + "".join(sc.css))
+            (OUT / f"{base}{suffix}.svg").write_text(svg + "\n", encoding="utf-8", newline="\n")
+        rows.append((i, title, desc, base, sc.dur))
     lines = ["# キャラクターのアニメーション", "",
-             "製品READMEの各項目の終わりに1つずつ置いている、4色のキャラクターが遊ぶ小さなアニメーションです。"
-             "背景は透明で、ライト・ダークのどちらにも置けます。OSで視差効果を減らす設定にしている閲覧者には、動きが止まります。", "",
+             "製品READMEの各項目の終わりに区切りの帯として1つずつ置いている、4色のキャラクターが遊ぶ小さなアニメーションです。"
+             "帯の色は半透明で、ライト・ダークのどちらの背景にもなじみます。幅700px以下の画面では `-narrow` の版を使います。"
+             "OSで視差効果を減らす設定にしている閲覧者には、動きが止まります。", "",
              "生成：`python scripts/readme/scenes.py`", ""]
-    for i, title, desc, name, dur in rows:
-        lines += [f"## {i}. {title}", "", f"{desc}（{dur:g}秒で1周）", "", f'<img src="{name}" width="560" alt="{title}：{desc}">', ""]
+    for i, title, desc, base, dur in rows:
+        lines += [f"## {i}. {title}", "", f"{desc}（{dur:g}秒で1周）", "",
+                  "<picture>", f'  <source media="(max-width: 700px)" srcset="{base}-narrow.svg">',
+                  f'  <img src="{base}.svg" width="100%" alt="{title}：{desc}">', "</picture>", ""]
     (OUT / "README.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
     print(f"wrote {len(rows)} scenes to {OUT}")
 

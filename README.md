@@ -62,7 +62,10 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 
 1台のPC画面を友達と囲み、普段は1人で操作するキャラクターを2〜4人で分担して動かします。コントローラーは各自のスマートフォンのブラウザなので、専用の機器もアプリも要りません。ゲームの操作名とキー割り当てを自動で読み取り、独自AIが参加人数に合わせて分担とスマホの操作画面を作ります。
 
-<p align="center"><img src="assets/readme/scenes/scene-01-daruma.svg" width="560" alt=""></p>
+<picture>
+  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-01-daruma-narrow.svg">
+  <img src="assets/readme/scenes/scene-01-daruma.svg" width="100%" alt="">
+</picture>
 
 ## 製品概要
 
@@ -78,7 +81,10 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 > **操作を分担する不自由さが、そのまま新しい面白さになる。**
 > ゲーム自体は変えずに、操作する人と協力の仕方を変える。遊び慣れたゲームを、友達と集まったその場で新しい協力ゲームにします。
 
-<p align="center"><img src="assets/readme/scenes/scene-02-chase.svg" width="560" alt=""></p>
+<picture>
+  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-02-chase-narrow.svg">
+  <img src="assets/readme/scenes/scene-02-chase.svg" width="100%" alt="">
+</picture>
 
 ### 製品説明（具体的な製品の説明）
 
@@ -120,7 +126,10 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 
 実際の画面遷移は[PC・スマホの画面一覧](docs/screenshots.md)で確認できます。
 
-<p align="center"><img src="assets/readme/scenes/scene-03-train.svg" width="560" alt=""></p>
+<picture>
+  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-03-train-narrow.svg">
+  <img src="assets/readme/scenes/scene-03-train.svg" width="100%" alt="">
+</picture>
 
 ### 特長
 
@@ -136,7 +145,10 @@ PCに入っているゲームを選ぶだけで、その操作に合った分担
 
 Android・iPhoneの標準ブラウザでQRコードを読み取れば参加できます。ホストのスマホがリモコンになるので、PCのキーボードとマウスに触らずに、ゲーム選びから開始まで進められます。
 
-<p align="center"><img src="assets/readme/scenes/scene-04-rope.svg" width="560" alt=""></p>
+<picture>
+  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-04-rope-narrow.svg">
+  <img src="assets/readme/scenes/scene-04-rope.svg" width="100%" alt="">
+</picture>
 
 ### 解決出来ること
 
@@ -157,7 +169,10 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
 
 すべての操作を1人でこなす必要はなく、「移動だけ」「ジャンプと攻撃だけ」のような単純な役割から参加できます。PCゲームに慣れた人と初めての人が、同じキャラクターを動かしてクリアする喜びを対等に分かち合えます。
 
-<p align="center"><img src="assets/readme/scenes/scene-08-seesaw.svg" width="560" alt=""></p>
+<picture>
+  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-08-seesaw-narrow.svg">
+  <img src="assets/readme/scenes/scene-08-seesaw.svg" width="100%" alt="">
+</picture>
 
 ### 試遊での反応
 
@@ -210,7 +225,10 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
   </tr>
 </table>
 
-<p align="center"><img src="assets/readme/scenes/scene-09-tug.svg" width="560" alt=""></p>
+<picture>
+  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-09-tug-narrow.svg">
+  <img src="assets/readme/scenes/scene-09-tug.svg" width="100%" alt="">
+</picture>
 
 ### 今後の展望
 
@@ -219,7 +237,10 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
 | **まず** | 初めての人でも迷わず導入・参加できるように仕上げ、**誰もが手元のPCで遊べるサービスとして公開する** |
 | **その先** | 対応するゲームと設定形式を増やし、PCゲーム以外のプラットフォームや、離れた場所の友達と同じキャラクターを操作するオンライン対応へ広げる |
 
-<p align="center"><img src="assets/readme/scenes/scene-06-hide.svg" width="560" alt=""></p>
+<picture>
+  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-06-hide-narrow.svg">
+  <img src="assets/readme/scenes/scene-06-hide.svg" width="100%" alt="">
+</picture>
 
 ### 注力したこと（こだわり等）
 
@@ -232,7 +253,10 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
 3. **違和感のない低遅延**  
    PCのWindowsモバイルホットスポットでスマホと直接つなぎ、WebSocketとWebRTC DataChannelの2経路で送ります。実機の測定では、Wi-Fiの往復遅延が中央値9.0ms、スマホの操作からPCで入力するまでの推定遅延が中央値26.0msでした。電波が混み合う展示会場でも「ラグなく動かせる」「感度が変えられて快適」と評価されました。
 
-<p align="center"><img src="assets/readme/scenes/scene-07-volley.svg" width="560" alt=""></p>
+<picture>
+  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-07-volley-narrow.svg">
+  <img src="assets/readme/scenes/scene-07-volley.svg" width="100%" alt="">
+</picture>
 
 ## 技術仕様書
 
@@ -247,7 +271,10 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
 
 詳細：[フロントエンド](docs/frontend-specification.md) ／ [ホスト](docs/host-specification.md) ／ [通信](docs/protocol-specification.md) ／ [動作確認の範囲](docs/verification.md)
 
-<p align="center"><img src="assets/readme/scenes/scene-05-domino.svg" width="560" alt=""></p>
+<picture>
+  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-05-domino-narrow.svg">
+  <img src="assets/readme/scenes/scene-05-domino.svg" width="100%" alt="">
+</picture>
 
 ## 開発技術
 
@@ -345,7 +372,10 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
 
 🔗 [コントローラー生成](apps/web/src/shared/controller-layout.ts) ／ [個人レイアウト設計](apps/web/src/shared/model/layout.ts) ／ [コントローラー編集UI](apps/web/src/phone/LayoutController.tsx) ／ [動作確認の範囲](docs/verification.md)
 
-<p align="center"><img src="assets/readme/scenes/scene-10-nap.svg" width="560" alt=""></p>
+<picture>
+  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-10-nap-narrow.svg">
+  <img src="assets/readme/scenes/scene-10-nap.svg" width="100%" alt="">
+</picture>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/readme/footer-dark.svg">

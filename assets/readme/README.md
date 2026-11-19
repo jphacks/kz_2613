@@ -10,7 +10,7 @@
 | `flow-*.svg` | 遊ぶまでの4ステップ |
 | `pipeline-*.svg` | 操作の自動検出から分担AI、スマホ画面への配分までの流れ |
 | `footer-*.svg` | 末尾の締めの画像 |
-| [`scenes/`](scenes/README.md) | 各項目の終わりに置く、キャラクターが遊ぶ10種類のアニメーション |
+| [`scenes/`](scenes/README.md) | 各項目の終わりに置く区切りの帯（キャラクターが遊ぶ10種類のアニメーション） |
 | `char-*.svg` | キャラクター単体（表・試遊者の声で使用） |
 | `system-architecture.webp` | [システム構成図](../images/recooplay-system-architecture.webp) の余白を詰めたもの |
 
