@@ -752,7 +752,7 @@ def medal(kind, x, y):
 
 
 def award_panel(x, y, w, h, title, sub, items, t):
-    b = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="14" fill="{t["panel"]}" stroke="{t["line"]}"/>',
+    b = [f'<rect x="{x + .5}" y="{y + .5}" width="{w - 1}" height="{h - 1}" rx="14" fill="none" stroke="{t["line"]}"/>',
          text(x + 20, y + 32, title.upper(), 13, t["muted"], cls="gh", weight=700, extra=' letter-spacing="3"')]
     if sub:
         b.append(text(x + w - 20, y + 32, sub, 13, t["muted"], cls="gh", weight=600, anchor="end"))
@@ -769,20 +769,17 @@ def award_panel(x, y, w, h, title, sub, items, t):
 
 
 def awards(t, narrow=False):
-    """受賞結果のカード。フッターと同じ背景で、Hack Day と Award Day のパネルを並べる（スマホは縦に積む）。"""
+    """受賞結果。背景の色は付けず、Hack Day と Award Day の枠を並べる（スマホは縦に積む）。"""
     rows = max(len(items) for _, _, items in AWARDS)
     ph = 76 + rows * 46
     if narrow:
-        W, pad, top = PHONE_W, 12, 66
+        W, pad, top = PHONE_W, 0, 66
         hs = [76 + len(items) * 46 for _, _, items in AWARDS]
-        H = top + sum(hs) + 12 + pad
+        H = top + sum(hs) + 12
     else:
-        W, pad, top = PC_W, 20, 70
-        H = top + ph + pad
-    b = [f'<rect width="{W}" height="{H}" rx="20" fill="url(#bg)"/>',
-         f'<clipPath id="card"><rect width="{W}" height="{H}" rx="20"/></clipPath><g clip-path="url(#card)">',
-         dots(16, 16, *((4, 3) if narrow else (7, 4)), 12, 2.4, t["dot"]),
-         f'<g transform="translate({W} {H}) scale(-1 -1)">{dots(16, 16, 7, 4, 12, 2.4, t["dot2"])}</g></g>']
+        W, pad, top = PC_W, 0, 70
+        H = top + ph
+    b = []
     cx = W / 2
     b += [text(cx, 26, "JPHACKS 2026", 13, t["muted"], cls="gh", weight=700, anchor="middle", extra=' letter-spacing="4"'),
           text(cx, 54, "受賞結果", 24, t["ink"], cls="gh", weight=700, anchor="middle"),
