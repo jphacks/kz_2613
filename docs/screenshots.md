@@ -129,6 +129,16 @@ PCに入っているゲームを自動で見つけて並べます。この PC �
 | <a href="screenshots/device/phone-11-coop-move.jpg"><img src="screenshots/device/phone-11-coop-move.jpg" width="220" alt="移動の担当。Space・Shift・Ctrlのボタンと、WASDのスティック"></a> | <a href="screenshots/device/phone-12-coop-look.jpg"><img src="screenshots/device/phone-12-coop-look.jpg" width="220" alt="視点の担当。ドラッグでマウスを動かすパッドと感度"></a> | <a href="screenshots/device/phone-13-coop-action.jpg"><img src="screenshots/device/phone-13-coop-action.jpg" width="220" alt="アクションの担当。左右クリック・E・Q・ホイールのボタン"></a> |
 | スティックで WASD、ボタンでジャンプ・スニーク・ダッシュ | 画面をドラッグして視点（マウス）を動かします | クリックで攻撃・使う、ホイールで持ち物の切り替え |
 
+画面の色は枠ごとに決まり、P1 は青、P2 は緑、P3 は紫、P4 は赤です。上の3枚は P1 の色です。P2〜P4 の色の待機画面と操作画面も、Android 実機をその枠に入れて撮りました（ホストの移譲と、退出して入り直すことで枠を変え、担当は入れ替えで回しています）。P4 は、P3 が退出した3人（P1・P2・P4）で遊んだときの画面です。
+
+| 枠 | 待機 | 移動 | 視点 | アクション |
+|:--:|:--:|:--:|:--:|:--:|
+| P2 | <a href="screenshots/device/phone-30-p2-wait.jpg"><img src="screenshots/device/phone-30-p2-wait.jpg" width="150" alt="P2の待機画面。緑の色"></a> | <a href="screenshots/device/phone-31-p2-move.jpg"><img src="screenshots/device/phone-31-p2-move.jpg" width="150" alt="P2の色の移動の担当"></a> | <a href="screenshots/device/phone-32-p2-look.jpg"><img src="screenshots/device/phone-32-p2-look.jpg" width="150" alt="P2の色の視点の担当"></a> | <a href="screenshots/device/phone-33-p2-action.jpg"><img src="screenshots/device/phone-33-p2-action.jpg" width="150" alt="P2の色のアクションの担当"></a> |
+| P3 | <a href="screenshots/device/phone-34-p3-wait.jpg"><img src="screenshots/device/phone-34-p3-wait.jpg" width="150" alt="P3の待機画面。紫の色"></a> | <a href="screenshots/device/phone-35-p3-move.jpg"><img src="screenshots/device/phone-35-p3-move.jpg" width="150" alt="P3の色の移動の担当"></a> | <a href="screenshots/device/phone-36-p3-look.jpg"><img src="screenshots/device/phone-36-p3-look.jpg" width="150" alt="P3の色の視点の担当"></a> | <a href="screenshots/device/phone-37-p3-action.jpg"><img src="screenshots/device/phone-37-p3-action.jpg" width="150" alt="P3の色のアクションの担当"></a> |
+| P4 | <a href="screenshots/device/phone-38-p4-wait.jpg"><img src="screenshots/device/phone-38-p4-wait.jpg" width="150" alt="P4の待機画面。赤の色"></a> | <a href="screenshots/device/phone-39-p4-move.jpg"><img src="screenshots/device/phone-39-p4-move.jpg" width="150" alt="P4の色の移動の担当"></a> | <a href="screenshots/device/phone-40-p4-look.jpg"><img src="screenshots/device/phone-40-p4-look.jpg" width="150" alt="P4の色の視点の担当"></a> | <a href="screenshots/device/phone-41-p4-action.jpg"><img src="screenshots/device/phone-41-p4-action.jpg" width="150" alt="P4の色のアクションの担当"></a> |
+
+<sub>待機画面の下の文は、そのときの状況で変わります。P2 は分担を決めた後、P3・P4 は協力プレイを一度終えた後（Wi-Fi を戻す案内）の表示です。</sub>
+
 鉛筆のボタンを押すと、ボタンの位置と大きさを自分用に変えられます。編集中の操作はゲームに送りません。部品を押すと選ばれ、長押しで操作の付け替え・複製・外すを選べます。「…」から初期配置に戻せます。
 
 | 編集（初期配置に戻した直後） | 部品を選んだところ | 長押しのメニュー |
@@ -215,6 +225,12 @@ PC画面の右下の「操作設定」から、担当と実際に送るキーの
 |:--:|:--:|:--:|:--:|
 | <a href="screenshots/device/pc-31-reset-confirm.jpg"><img src="screenshots/device/pc-31-reset-confirm.jpg" width="300" alt="接続中のスマホをすべてリセットしますかという確認"></a> | <a href="screenshots/device/phone-28-reset.jpg"><img src="screenshots/device/phone-28-reset.jpg" width="150" alt="PCでリセットされましたという案内"></a> | <a href="screenshots/device/pc-32-after-reset.jpg"><img src="screenshots/device/pc-32-after-reset.jpg" width="300" alt="リセット後の分担画面。参加者を待っています"></a> | <a href="screenshots/device/pc-33-recruit.jpg"><img src="screenshots/device/pc-33-recruit.jpg" width="300" alt="スマホを接続するダイアログ。新しいQR"></a> |
 
+ロビーでホスト以外の人が「退出する（次の人に交代）」を選ぶと、枠が空き、スマホには退出の案内が出ます。
+
+<a href="screenshots/device/phone-42-left.jpg"><img src="screenshots/device/phone-42-left.jpg" width="190" alt="退出しましたという案内"></a>
+
+<sub>スマホ：退出した後</sub>
+
 PCアプリを閉じると、スマホには終了の案内が出ます。PCアプリが ON にしたホットスポットは OFF に戻ります。
 
 <a href="screenshots/device/phone-29-app-closed.jpg"><img src="screenshots/device/phone-29-app-closed.jpg" width="190" alt="PCのアプリが終了しましたという案内"></a>
@@ -234,7 +250,7 @@ PCだけで開ける画面です。観客向け表示は OBS などのブラウ�
 画面のコード（`apps/web/src/` と `apps/desktop/ui/`）から洗い出した状態のうち、次は今回撮っていません。
 
 - 実機・環境が必要なもの：iPhone の実機、ホットスポットの準備中の表示（ON にしてから数秒で消えたため）、Windows のファイル選択（ゲームの手動登録）。
-- 設定や条件が必要なもの：切断から自動で再開する設定が ON のときの待機、時間による担当の交代の予告と案内、協力プレイ中にゲームが前面から外れたときの警告、ゲームの起動の失敗、通信の版の不一致・参加情報の確認の失敗・退出した後の案内、「指を離して操作を再開」の案内、キー割当の保存の失敗、緊急停止キーを登録できないとき。
+- 設定や条件が必要なもの：切断から自動で再開する設定が ON のときの待機、時間による担当の交代の予告と案内、協力プレイ中にゲームが前面から外れたときの警告、ゲームの起動の失敗、通信の版の不一致・参加情報の確認の失敗の案内、「指を離して操作を再開」の案内、キー割当の保存の失敗、緊急停止キーを登録できないとき。
 - 途中の段階や見た目の切り替え：画面の色（ダーク・ポップ）、横持ちの操作画面、画面が切り替わるときの演出、仮想カーソルでPCアプリを操作しているところ。
 
 ---
