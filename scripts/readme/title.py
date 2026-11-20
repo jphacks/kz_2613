@@ -263,11 +263,11 @@ def climb(path, p, x, row):
     return path
 
 
-def descend(path, p, x, ground=False):
-    """文字の上から段を下りて、いちばん下の行の文字の上（ground なら地面）へ降りる。"""
+def descend(path, p, x):
+    """文字の上から段を1段ずつ下りて、地面（画像の一番下）へ降りる。"""
     t = path.t
-    rows = list(range(cur_row(path) + 1, len(t.rows))) + ([None] if ground else [])
-    if not rows:
+    rows = list(range(cur_row(path) + 1, len(t.rows))) + [None]
+    if path.y == t.H:
         return path.walk(p, x)
     d = (p - path.p) / len(rows)
     for k, r in enumerate(rows):
@@ -299,7 +299,6 @@ def kick_ball(t):
     end = t.g[BALL][1] + t.g[BALL][3]
     red = Path(t, t.W + 24)
     red.wait(16).walk(26, min(end + 12, t.W - 10)).lean(27, -14).lean(28.5, 18).lean(30, 0)
-    red.hop(33, end - 12, plat(t, len(t.rows) - 1), 10)  # 文字の上へ跳び乗る（地面は文字と重なるので歩かない）
     return red
 
 
@@ -324,35 +323,28 @@ def setup(kind, mode, dur=14):
 
 
 def floor(t):
-    """いちばん下の行の文字の上。左の外から出入りするときはここを歩く（地面は文字と重なる）。"""
-    return plat(t, len(t.rows) - 1)
+    """キャラクターがふだんいる地面（画像の一番下＝一番下の段の下）。"""
+    return t.H
 
 
 def enter(t, x_stop, row, p_in, p_up, start=-30):
-    """左の外から、いちばん下の行の文字の上を歩いてきて、文字の段を上がる。"""
+    """左の外から地面を歩いてきて、文字の段を上がる。"""
     path = Path(t, start, floor(t))
     path.wait(p_in).walk(p_in + 8, max(x_stop - 14, 4))
     return climb(path, p_up, x_stop, row)
 
 
 def arrive(t, x_stop, p_in, p_walk, p_up, start):
-    """右の外から地面（文字のない所）を歩いてきて、いちばん下の行の文字の端に跳び乗り、x_stop まで歩く。"""
-    end = row_end(t, len(t.rows) - 1)
+    """右の外から地面を歩いてきて、x_stop まで行く。"""
     path = Path(t, start)
-    path.wait(p_in).walk(p_walk, min(end + 16, t.W - 12))
-    path.hop(p_walk + 3, end - 10, floor(t), 10)
+    path.wait(p_in).walk(p_walk, (path.x + x_stop) / 2)
     return path.walk(p_up, x_stop)
 
 
 def leave(path, p_down, p_out, side="left"):
-    """文字の段を下りて、いちばん下の行の文字の上を歩いて外へ出ていく。右へ出るときは文字の端で地面へ降りる。"""
-    t = path.t
+    """文字の段を下りて、地面を歩いて外へ出ていく。"""
     descend(path, p_down, path.x)
-    if side == "left":
-        return path.walk(p_out, -40)
-    end = row_end(t, len(t.rows) - 1)
-    path.walk(p_down + (p_out - p_down) * .5, end - 6).hop(p_down + (p_out - p_down) * .65, min(end + 16, t.W - 12), t.H, 6)
-    return path.walk(p_out, t.W + 40)
+    return path.walk(p_out, -40 if side == "left" else path.t.W + 40)
 
 
 # ---------- 案C1：みんなで担いで戻す ----------
@@ -386,7 +378,7 @@ def carry(kind, mode):
 def gather(kind, mode):
     """赤がためてから「。」を蹴り、当たった「:」が上下2つの点に割れて一番下の行まで落ちる。
     やってしまった赤のもとへ3体が来て、青と緑が点を頭に載せて運び、下の点は緑から受け取った赤が自分で戻す。
-    3体はふだん一番下の段にいて、点を戻すときだけ上る。最後は一番下の段でみんなで喜んで、左へ去っていく。"""
+    キャラクターはふだん画像の一番下（一番下の段の下）にいて、点を戻すときだけ段を上る。最後はみんなで喜んで、左へ去っていく。"""
     t = Title(kind, mode, 16)
     kick, hit = 31, 37
     ball_flight(t, kick, hit)
@@ -398,12 +390,7 @@ def gather(kind, mode):
     rad = size * .07
     homes = (b0 - size * .42, b0 - size * .06)  # 上の点・下の点の中心の高さ
     up = row0 + 1  # 「:」の真下の行。ここに乗って点を戻す
-    # 落ちた点が止まる所。スマホは一番下の行の文字の上。PCは行が2つで一段しか落ちないので、画像の一番下
-    # （真下の「ゲーム」の「ー」の下は空いている）まで落とす
-    if kind == "wide":
-        rest, low = (cx - 8, cx + 4), t.H - rad
-    else:
-        rest, low = (cx + 40, cx + 10), fl - rad
+    rest, low = (cx - 8, cx + 4), fl - rad  # 落ちた点は画像の一番下（キャラクターのいる地面）で止まる
 
     def fall(n):
         """点が段で跳ねながら、一番下の行の文字の上まで落ちる。"""
@@ -434,7 +421,7 @@ def gather(kind, mode):
     red.wait(hit).jump(hit + 2.5, 12).put(hit + 3.5, r=-8, sx=1.06, sy=.88).put(46, r=-8, sx=1.06, sy=.88)
     red.p = 46
     mark_x, mark_y = red.x, red.y - 124 * .2 - 6
-    red.hop(48, end - 12, fl, 10)
+    red.wait(48)
     meet = min((rest[0] + end) / 2 + 20, end - 12)
     red.walk(52, meet).put(53, sx=1.04, sy=.92).put(54)  # 紫に励まされて、うなずく
     red.p = 54
@@ -444,14 +431,14 @@ def gather(kind, mode):
     blue.wait(40).walk(48, rest[0] - 2).put(49, sx=1.12, sy=.84).put(50)
     blue.p = 50
     climb(blue, 56, cx - 14, up).wait(58).jump(60, 8)
-    descend(blue, 64, blue.x)  # 戻したら一番下の段へ
+    descend(blue, 64, blue.x)  # 戻したら一番下へ
     # 緑：下の点を拾って運び、赤へトスする
     green = Path(t, -56, fl)
     green.wait(41).walk(50, rest[1]).put(51, sx=1.12, sy=.84).put(52)
     green.p = 52
     climb(green, 59, cx + 36, up).wait(61.5).jump(63.5, 8)
     descend(green, 66.5, green.x)
-    # 紫：赤を励ます（跳ねる）。点は運ばないので、一番下の段で見守る
+    # 紫：赤を励ます（跳ねる）。点は運ばないので、一番下で見守る
     purple = Path(t, -82, fl)
     purple.wait(42).walk(51, meet - 24).jump(53, 10)
     purple.walk(59, cx + 60)
