@@ -679,21 +679,21 @@ def part_banner(part, jp, en, first, last, t, narrow=False):
     W, H = (PHONE_W, 96) if narrow else (PC_W, 104)
     b = [f'<rect width="{W}" height="{H}" rx="18" fill="url(#bg)"/>',
          f'<clipPath id="card"><rect width="{W}" height="{H}" rx="18"/></clipPath><g clip-path="url(#card)">',
-         f'<g transform="translate({W - (110 if narrow else 230)} {H}) scale(-1 -1)">{dots(14, 14, 8, 5, 12, 2.4, t["dot2"])}</g>',
+         f'<g transform="translate({W if narrow else W - 230} {H}) scale(-1 -1)">{dots(14, 14, 8, 5, 12, 2.4, t["dot2"])}</g>',
          f'<rect width="7" height="{H}" fill="url(#brand)"/></g>',
-         f'<rect x="{58 if narrow else 72}" y="22" width="1.5" height="{H - 44}" fill="{t["line"]}"/>']
+         f'<rect x="{66 if narrow else 80}" y="22" width="1.5" height="{H - 44}" fill="{t["line"]}"/>']
     if narrow:
-        b += [text(24, 34, "PART", 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
+        b += [text(20, 34, "PART", 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="1"'),
               text(24, 80, part, 48, "url(#brand)", cls="disp", weight=400),
-              text(74, 34, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
-              text(74, 70, jp, 30, t["ink"], cls="gh", weight=700),
+              text(82, 34, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
+              text(82, 70, jp, 30, t["ink"], cls="gh", weight=700),
               text(W - 18, 34, f"{first}–{last}", 15, "url(#brand)", cls="disp", weight=400, anchor="end",
                    extra=' letter-spacing="1"')]
     else:
         b += [text(32, 40, "PART", 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
               text(32, 86, part, 52, "url(#brand)", cls="disp", weight=400),
-              text(92, 40, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="4"'),
-              text(92, 78, jp, 34, t["ink"], cls="gh", weight=700),
+              text(100, 40, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="4"'),
+              text(100, 78, jp, 34, t["ink"], cls="gh", weight=700),
               text(W - 32, 40, "SECTIONS", 13, t["muted"], cls="gh", weight=600, anchor="end",
                    extra=' letter-spacing="3"'),
               text(W - 32, 80, f"{first} – {last}", 32, "url(#brand)", cls="disp", weight=400, anchor="end",
@@ -765,7 +765,7 @@ def awards(t, narrow=False):
         H = top + ph + pad
     b = [f'<rect width="{W}" height="{H}" rx="20" fill="url(#bg)"/>',
          f'<clipPath id="card"><rect width="{W}" height="{H}" rx="20"/></clipPath><g clip-path="url(#card)">',
-         dots(16, 16, 7, 4, 12, 2.4, t["dot"]),
+         dots(16, 16, *((4, 3) if narrow else (7, 4)), 12, 2.4, t["dot"]),
          f'<g transform="translate({W} {H}) scale(-1 -1)">{dots(16, 16, 7, 4, 12, 2.4, t["dot2"])}</g></g>']
     cx = W / 2
     b += [text(cx, 26, "JPHACKS 2026", 13, t["muted"], cls="gh", weight=700, anchor="middle", extra=' letter-spacing="4"'),
