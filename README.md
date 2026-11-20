@@ -29,14 +29,9 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 <a href="#注力したことこだわり等"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-07-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-07-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-07-dark.svg"><img src="assets/readme/heads/toc-07-light.svg" width="49%" alt="07 注力したこと"></picture></a>
 </p>
 
-<picture>
-  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-01-daruma-narrow.svg">
-  <img src="assets/readme/scenes/scene-01-daruma.svg" width="100%" alt="">
-</picture>
-
 ## <a id="製品概要"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/part-1-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/part-1-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/part-1-dark.svg"><img src="assets/readme/heads/part-1-light.svg" alt="製品概要"></picture>
 
-### <a id="背景製品開発のきっかけ課題等"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-01-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-01-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-01-dark.svg"><img src="assets/readme/heads/head-01-light.svg" alt="背景(製品開発のきっかけ、課題等）"></picture>
+### <a id="背景製品開発のきっかけ課題等"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-01-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-01-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-01-dark.svg"><img src="assets/readme/heads/play-01-light.svg" alt="背景(製品開発のきっかけ、課題等）"></picture>
 
 クリアした、遊び尽くした、なんとなく飽きた。そうして遊ばなくなったゲームが、PCの中に眠っていませんか？
 
@@ -48,12 +43,7 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 > **操作を分担する不自由さが、そのまま新しい面白さになる。**
 > ゲーム自体は変えずに、操作する人と協力の仕方を変える。手元のゲームを、友達と集まったその場で新しい協力ゲームにします。
 
-<picture>
-  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-02-chase-narrow.svg">
-  <img src="assets/readme/scenes/scene-02-chase.svg" width="100%" alt="">
-</picture>
-
-### <a id="製品説明具体的な製品の説明"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-02-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-02-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-02-dark.svg"><img src="assets/readme/heads/head-02-light.svg" alt="製品説明（具体的な製品の説明）"></picture>
+### <a id="製品説明具体的な製品の説明"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-02-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-02-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-02-dark.svg"><img src="assets/readme/heads/play-02-light.svg" alt="製品説明（具体的な製品の説明）"></picture>
 
 > **既存ゲーム × Tech：1つのキャラクターを、みんなで動かす**
 
@@ -86,12 +76,7 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
   <a href="assets/images/recooplay-role-controllers.webp"><img src="assets/images/recooplay-role-controllers.webp" width="49%" alt="3人プレイの役割分担例。左から移動・視点・アクション"></a>
 </p>
 
-<picture>
-  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-03-train-narrow.svg">
-  <img src="assets/readme/scenes/scene-03-train.svg" width="100%" alt="">
-</picture>
-
-### <a id="特長"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-03-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-03-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-03-dark.svg"><img src="assets/readme/heads/head-03-light.svg" alt="特長"></picture>
+### <a id="特長"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-03-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-03-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-03-dark.svg"><img src="assets/readme/heads/play-03-light.svg" alt="特長"></picture>
 
 #### 1. 1つのキャラクターを2〜4人で分担する
 
@@ -105,12 +90,7 @@ PCに入っているゲームを選ぶだけで、その操作に合った分担
 
 Android・iPhoneの標準ブラウザでQRコードを読み取れば参加できます。ホストのスマホがリモコンになるので、PCのキーボードとマウスに触らずに、ゲーム選びから開始まで進められます。
 
-<picture>
-  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-04-rope-narrow.svg">
-  <img src="assets/readme/scenes/scene-04-rope.svg" width="100%" alt="">
-</picture>
-
-### <a id="解決出来ること"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-04-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-04-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-04-dark.svg"><img src="assets/readme/heads/head-04-light.svg" alt="解決出来ること"></picture>
+### <a id="解決出来ること"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-04-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-04-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-04-dark.svg"><img src="assets/readme/heads/play-04-light.svg" alt="解決出来ること"></picture>
 
 Re:Cooplayは、手元のPCゲームに、全く新しい協力プレイの体験を後付けします。眠っていたゲームも、遊び慣れたゲームも、1人では手を出しにくかったゲームも、操作を分け合うだけで新しい協力ゲームとして遊べます。試遊では、そのゲームを遊んだことのある21名のうち20名（95.2%）が「1人で遊んだときと違うプレイ体験だった」と答えました。
 
@@ -129,12 +109,7 @@ Re:Cooplayは、手元のPCゲームに、全く新しい協力プレイの体�
 
 友達と集まったら、1人用のゲームも全員で一緒に遊べます。ゲームが苦手な人も、すべての操作を1人でこなす必要はありません。「移動だけ」「ジャンプと攻撃だけ」のように一部の操作に集中でき、ほかの操作は友達が受け持ってくれるので、気軽に遊べます。PCゲームに慣れた人と初めての人が、同じキャラクターを動かしてクリアする喜びを対等に分かち合えます。
 
-<picture>
-  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-08-seesaw-narrow.svg">
-  <img src="assets/readme/scenes/scene-08-seesaw.svg" width="100%" alt="">
-</picture>
-
-### <a id="試遊での反応"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-05-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-05-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-05-dark.svg"><img src="assets/readme/heads/head-05-light.svg" alt="試遊での反応"></picture>
+### <a id="試遊での反応"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-05-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-05-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-05-dark.svg"><img src="assets/readme/heads/play-05-light.svg" alt="試遊での反応"></picture>
 
 <details>
 <summary><b>実プレイ映像</b></summary>
@@ -172,24 +147,14 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 > 「FPSゲーム（Outlast）を複数人で遊ぶのが非常に面白かった」<br>
 > <sub>Outlast・2人プレイ・初プレイ</sub>
 
-<picture>
-  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-09-tug-narrow.svg">
-  <img src="assets/readme/scenes/scene-09-tug.svg" width="100%" alt="">
-</picture>
-
-### <a id="今後の展望"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-06-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-06-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-06-dark.svg"><img src="assets/readme/heads/head-06-light.svg" alt="今後の展望"></picture>
+### <a id="今後の展望"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-06-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-06-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-06-dark.svg"><img src="assets/readme/heads/play-06-light.svg" alt="今後の展望"></picture>
 
 | 段階 | 目指すこと |
 |---|---|
 | **まず** | 初めての人でも迷わず導入・参加できるように仕上げ、**誰もが手元のPCで遊べるサービスとして公開する** |
 | **その先** | 対応するゲームと設定形式を増やし、PCゲーム以外のプラットフォームや、離れた場所の友達と同じキャラクターを操作するオンライン対応へ広げる |
 
-<picture>
-  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-06-hide-narrow.svg">
-  <img src="assets/readme/scenes/scene-06-hide.svg" width="100%" alt="">
-</picture>
-
-### <a id="注力したことこだわり等"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-07-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-07-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-07-dark.svg"><img src="assets/readme/heads/head-07-light.svg" alt="注力したこと（こだわり等）"></picture>
+### <a id="注力したことこだわり等"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-07-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-07-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-07-dark.svg"><img src="assets/readme/heads/play-07-light.svg" alt="注力したこと（こだわり等）"></picture>
 
 「友達と集まったその場で、いつものPCゲームをすぐにみんなで遊べること」を目指し、3つの点に注力しました。
 
@@ -200,14 +165,9 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 3. **違和感のない低遅延**  
    PCのWindowsモバイルホットスポットでスマホと直接つなぎ、WebSocketとWebRTC DataChannelの2経路で送ります。実機の測定では、Wi-Fiの往復遅延が中央値9.0ms、スマホの操作からPCで入力するまでの推定遅延が中央値26.0msでした。電波が混み合う展示会場でも「ラグなく動かせる」「感度が変えられて快適」と評価されました。
 
-<picture>
-  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-07-volley-narrow.svg">
-  <img src="assets/readme/scenes/scene-07-volley.svg" width="100%" alt="">
-</picture>
-
 ## <a id="開発技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/part-2-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/part-2-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/part-2-dark.svg"><img src="assets/readme/heads/part-2-light.svg" alt="開発技術"></picture>
 
-### <a id="技術仕様書"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-08-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-08-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-08-dark.svg"><img src="assets/readme/heads/head-08-light.svg" alt="技術仕様書"></picture>
+### <a id="技術仕様書"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-08-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-08-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-08-dark.svg"><img src="assets/readme/heads/play-08-light.svg" alt="技術仕様書"></picture>
 
 | 資料 | 内容 |
 |---|---|
@@ -220,12 +180,7 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
 詳細：[フロントエンド](docs/frontend-specification.md) ／ [ホスト](docs/host-specification.md) ／ [通信](docs/protocol-specification.md) ／ [動作確認の範囲](docs/verification.md)
 
-<picture>
-  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-05-domino-narrow.svg">
-  <img src="assets/readme/scenes/scene-05-domino.svg" width="100%" alt="">
-</picture>
-
-### <a id="システム構成"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-09-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-09-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-09-dark.svg"><img src="assets/readme/heads/head-09-light.svg" alt="システム構成"></picture>
+### <a id="システム構成"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-09-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-09-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-09-dark.svg"><img src="assets/readme/heads/play-09-light.svg" alt="システム構成"></picture>
 
 各スマートフォンのブラウザで行った操作を、ローカルWi-Fi経由でPC上のRustホストが受け取ります。ホストは参加者ごとの担当・入力の順序・入力先のウィンドウを確かめて1つの入力にまとめ、Windows標準の`SendInput` APIでPCゲームへ送ります。
 
@@ -233,7 +188,7 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
   <a href="assets/images/recooplay-system-architecture.webp"><img src="assets/readme/system-architecture.webp" width="880" alt="スマートフォンの操作をRustホストで統合し、既存PCゲームへ送るシステム構成図"></a>
 </div>
 
-### <a id="活用した技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-10-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-10-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-10-dark.svg"><img src="assets/readme/heads/head-10-light.svg" alt="活用した技術"></picture>
+### <a id="活用した技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-10-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-10-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-10-dark.svg"><img src="assets/readme/heads/play-10-light.svg" alt="活用した技術"></picture>
 
 #### API・データ
 
@@ -267,7 +222,7 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
   <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?style=flat-square&logo=huggingface&logoColor=000" alt="Hugging Face">
 </p>
 
-### <a id="独自技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-11-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-11-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-11-dark.svg"><img src="assets/readme/heads/head-11-light.svg" alt="独自技術"></picture>
+### <a id="独自技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-11-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-11-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-11-dark.svg"><img src="assets/readme/heads/play-11-light.svg" alt="独自技術"></picture>
 
 #### ハッカソンで開発した独自機能・技術
 
@@ -318,11 +273,6 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 | ② 操作分担AI（Re:Cooplay Preset Model v2） | [分担AI仕様書](docs/preset-model-specification.md)<br>[Hugging Faceモデルカード](https://huggingface.co/YOSHI0209/recooplay-preset-model-v2#recooplay-preset-model-v2)<br>[推論・クラスタリング](apps/host-rs/src/preset_model.rs)<br>[MiniLMトークナイザー・埋め込み](apps/host-rs/src/text_encoder.rs) |
 | ③ 2経路の通信と、安全な入力の統合 | [通信処理](apps/host-rs/src/rtc.rs)<br>[入力統合・順序制御](apps/host-rs/src/hub.rs)<br>[入力先の制御](apps/host-rs/src/focus.rs)<br>[Windows入力](apps/host-rs/src/input.rs) |
 | ④ 担当と持ち方に合わせるスマホUIとPCリモコン | [コントローラー生成](apps/web/src/shared/controller-layout.ts)<br>[個人レイアウト設計](apps/web/src/shared/model/layout.ts)<br>[コントローラー編集UI](apps/web/src/phone/LayoutController.tsx)<br>[動作確認の範囲](docs/verification.md) |
-
-<picture>
-  <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-10-nap-narrow.svg">
-  <img src="assets/readme/scenes/scene-10-nap.svg" width="100%" alt="">
-</picture>
 
 <picture>
   <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/footer-narrow-dark.svg">

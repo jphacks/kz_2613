@@ -625,6 +625,11 @@ def wrap(s, size, avail):
 
 
 def head_banner(num, jp, en, name, t, narrow=False):
+    W, H, body = head_parts(num, jp, en, t, narrow)
+    return svg(W, H, body, t, jp)
+
+
+def head_parts(num, jp, en, t, narrow=False):
     """案D：見出しそのものを画像にする。番号だけ表示用の書体にし、英字ラベルと見出しはGitHub本体と同じ
     フォント指定（閲覧者の端末の標準フォント）で描く。
     スマホ版はPC版と同じ文字の大きさのまま幅360で描き、番号とラベルの下に見出しを置いて折り返す。"""
@@ -641,7 +646,7 @@ def head_banner(num, jp, en, name, t, narrow=False):
         b = [text(0, 52, num, 42, "url(#brand)", cls="disp", weight=400, length=44),
              text(60, 26, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
              text(58, 55, jp, 27, t["ink"], cls="gh", weight=600, length=fit(jp, 27, W - 58 - 8))]
-    return svg(W, H, "".join(b), t, jp)
+    return W, H, "".join(b)
 
 
 # 目次の項目（番号＋項目名）。番号と項目名の間で折り返さないよう1枚の画像にする。

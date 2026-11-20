@@ -22,6 +22,8 @@ FIXED = ("assets/readme/pipeline-",)
 def svg_info(path):
     s = (ROOT / path).read_text(encoding="utf-8")
     width = float(re.search(r'viewBox="0 0 ([\d.]+) ', s).group(1))
+    # 見出しの横の舞台（入れ子の svg）は区切りの帯と同じ飾りとして除く。吹き出しの大きさは head_play.py が確かめる
+    s = re.sub(r"<svg x=.*?</svg>", "", s, flags=re.S)
     sizes = []
     for m in re.finditer(r'<text[^>]*font-size="([\d.]+)"[^>]*>([^<]*)</text>', s):
         sizes.append((float(m.group(1)), m.group(2)))
