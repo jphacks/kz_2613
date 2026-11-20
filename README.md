@@ -1,4 +1,4 @@
-<h1><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/title-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/title-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/title-dark.svg"><img src="assets/readme/title-light.svg" align="absbottom" alt="※JPHACKS 2026 Award Dayでの内容です Re:Cooplay（リコープレイ）ゲームはそのまま。1キャラを、みんなで操作。"></picture></h1>
+<h1><picture><source media="(max-width: 1100px) and (prefers-color-scheme: dark)" srcset="assets/readme/title-narrow-dark.svg"><source media="(max-width: 1100px)" srcset="assets/readme/title-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/title-dark.svg"><img src="assets/readme/title-light.svg" align="absbottom" alt="※JPHACKS 2026 Award Dayでの内容です Re:Cooplay（リコープレイ）ゲームはそのまま。1キャラを、みんなで操作。"></picture></h1>
 
 <div align="center">
 
