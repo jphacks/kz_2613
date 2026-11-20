@@ -1,6 +1,6 @@
 # Re:Cooplay 分担AI仕様書
 
-**バージョン**: 0.2.0　**更新日**: 2026-11-18
+**バージョン**: 0.2.0　**更新日**: 2026-11-20
 
 [総合仕様](README.md) ／ [ゲーム操作定義](game-profile-specification.md) ／ [動作確認](verification.md)
 
@@ -144,8 +144,8 @@ flowchart TB
 | **実機（操作定義のないゲーム、2026-11-15）** | RPGツクールXP製の『青鬼』で、ファイルから自動で読み取った6操作（上下左右・決定・キャンセル）を独自AIが3人に分担し、Android実機と模擬スマホ2台で全操作がゲームに届くことを確認（#432・#512） |
 
 <div align="center">
-  <a href="screenshots/pc-04-roles.jpg"><img src="screenshots/pc-04-roles.jpg" width="720" alt="PC画面での操作分担の確認"></a>
-  <p><sub>PC画面の分担確認ビュー。画面下部で「独自AI」と「定型ルール」の切り替えや再生成を行えます。</sub></p>
+  <a href="screenshots/device/pc-14-roles-unverified.jpg"><img src="screenshots/device/pc-14-roles-unverified.jpg" width="720" alt="Among Usの分担画面。画面下部に分担の作り方（定型ルール・独自AI）と割り当てを作り直すボタン"></a>
+  <p><sub>PC画面の分担確認ビュー（未検証のゲーム Among Us を独自AIで3人に分担した例）。画面下部で「独自AI」と「定型ルール」の切り替えや再生成を行えます。</sub></p>
 </div>
 
 ---

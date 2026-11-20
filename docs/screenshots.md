@@ -108,7 +108,7 @@ PCに入っているゲームを自動で見つけて並べます。この PC �
 |:--:|:--:|
 | <a href="screenshots/device/pc-16-launching.jpg"><img src="screenshots/device/pc-16-launching.jpg" width="440" alt="PCの分担画面。起動中のボタンと、ランチャーでプレイを押す案内"></a> | <a href="screenshots/device/phone-08-host-launching.jpg"><img src="screenshots/device/phone-08-host-launching.jpg" width="190" alt="ホストのスマホ。分担操作開始はまだ押せない"></a> |
 
-ゲームが起動し、ゲームが前面にあると、ホストのスマホの「分担操作開始」を押せるようになります。押せるのはホストだけです。
+ゲームのウィンドウが開くと、ホストのスマホの「分担操作開始」を押せるようになります。押せるのはホストだけです。押すと、ゲームが背面にあっても前面に切り替えてから始めます。
 
 | PC：起動した後 | ホスト：開始できる | 参加者（模擬） |
 |:--:|:--:|:--:|

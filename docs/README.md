@@ -1,6 +1,6 @@
 # Re:Cooplay システム仕様書
 
-**バージョン**: 0.2.0　**更新日**: 2026-11-18
+**バージョン**: 0.2.0　**更新日**: 2026-11-20
 
 [製品紹介](../README.md) ／ [利用手順](usage.md) ／ [動作確認](verification.md)
 
@@ -216,7 +216,7 @@ powershell -ExecutionPolicy Bypass -File scripts/windows/build-installer.ps1
 
 ## 関連ドキュメント
 
-- [PC・スマホの画面一覧](screenshots.md)：参加からゲーム選択、分担確認、共同操作、一時停止、緊急停止までの画面
+- [PC・スマホの画面一覧](screenshots.md)：起動・参加からゲーム選択、分担、共同操作、一時停止、緊急停止、終了、操作設定までの画面（2026-11-20 にPCアプリと Android 実機で撮影）
 - [動画・ギャラリー](gallery.md)：製品紹介動画、説明画像、Hack Day実プレイ記録
 - [導入・接続](getting-started.md)：必要環境、入手・展開、起動、QR参加
 - [使い方](usage.md)：ゲーム選択、分担確認、開始・一時停止・役割交換・終了

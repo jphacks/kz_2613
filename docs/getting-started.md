@@ -1,6 +1,6 @@
 # Re:Cooplayの導入・接続
 
-**更新日**: 2026-11-18
+**更新日**: 2026-11-20
 
 [使い方](usage.md) ／ [困ったとき](troubleshooting.md) ／ [動作確認](verification.md) ／ [総合仕様](README.md)
 
@@ -56,8 +56,8 @@ flowchart LR
 ## ネットワークとQR参加
 
 <div align="center">
-  <a href="screenshots/pc-01-join-waiting.jpg"><img src="screenshots/pc-01-join-waiting.jpg" width="680" alt="PCの参加待ち画面と2段階QRコード"></a>
-  <p><sub>PCアプリの参加画面。「① Wi-Fiにつなぐ」と「② 参加する」の2つのQRコードが表示されます。</sub></p>
+  <a href="screenshots/device/pc-02-join-0.jpg"><img src="screenshots/device/pc-02-join-0.jpg" width="680" alt="PCの参加画面。Wi-Fiと参加のQRが2つ並ぶ"></a>
+  <p><sub>ホットスポットをONにした後の参加画面。「① Wi-Fiにつなぐ」と「② 参加する」の2つのQRコードが表示されます（画像のQRとWi-Fi名は説明用に差し替えています）。</sub></p>
 </div>
 
 1. **モバイルホットスポットを使う場合（推奨）**：

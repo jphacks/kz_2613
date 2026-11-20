@@ -1,6 +1,6 @@
 # Re:Cooplay ゲーム操作定義仕様書
 
-**バージョン**: 0.2.0　**更新日**: 2026-11-18
+**バージョン**: 0.2.0　**更新日**: 2026-11-20
 
 [総合仕様](README.md) ／ [利用手順](usage.md) ／ [動作確認](verification.md)
 
@@ -74,7 +74,7 @@ flowchart LR
 
 | PC：ゲーム自動検出と選択（`/app`） | PC：2〜4人の操作分担とAI/定型切替（`/app`） |
 |:--:|:--:|
-| <a href="screenshots/pc-03-game-select.jpg"><img src="screenshots/pc-03-game-select.jpg" width="460" alt="PCゲーム選択画面"></a> | <a href="screenshots/pc-04-roles.jpg"><img src="screenshots/pc-04-roles.jpg" width="460" alt="PC操作分担画面"></a> |
+| <a href="screenshots/device/pc-07-game-list.jpg"><img src="screenshots/device/pc-07-game-list.jpg" width="460" alt="PCのゲーム一覧。Minecraft、Among Usなどのタイル"></a> | <a href="screenshots/device/pc-14-roles-unverified.jpg"><img src="screenshots/device/pc-14-roles-unverified.jpg" width="460" alt="Among Usの分担画面。注意のマークと、分担の作り方の切り替え"></a> |
 
 ### 定義のないゲームのファイルからの読み取り
 
@@ -226,7 +226,7 @@ sequenceDiagram
 ゲーム側で独自のキー設定変更を行っていて自動読取り対象外の場合でも、PC画面の「操作設定」→「担当と実際に送るキー」から、各操作に送る物理キーを `◀` `▶` ボタンやドロップダウンで即座に切り替え（または「送らない」に設定）できます。変更は全出力解放と `epoch` 更新を伴って即時反映され、`%LOCALAPPDATA%\Re-Cooplay\key-overrides.json` にゲームごとに保存されます。
 
 <div align="center">
-  <a href="screenshots/pc-09-settings.jpg"><img src="screenshots/pc-09-settings.jpg" width="680" alt="PC画面の操作設定とキー割当確認"></a>
+  <a href="screenshots/device/pc-27-settings-keys.jpg"><img src="screenshots/device/pc-27-settings-keys.jpg" width="680" alt="担当ごとの送るキーと、キー割当を変える欄"></a>
   <p><sub>PC画面の「操作設定」から、各プレイヤーの担当操作と実際にPCへ送るキーを確認・変更できます。</sub></p>
 </div>
 

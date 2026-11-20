@@ -1,6 +1,6 @@
 # Re:Cooplay フロントエンド仕様書
 
-**バージョン**: 0.2.0　**更新日**: 2026-11-18
+**バージョン**: 0.2.0　**更新日**: 2026-11-20
 
 [総合仕様](README.md) ／ [利用手順](usage.md) ／ [動作確認](verification.md)
 
@@ -138,23 +138,23 @@ flowchart LR
   - 最初の接続端末が **P1（ホスト）** となり、即座にタッチパッド付きのPCリモコン画面（`#v-remote`）が開きます。
   - 2台目以降（P2〜P4）は待機画面（`#v-wait`）となり、現在の接続メンバーと自分のキャラクター・担当が表示されます。
 
-| PC：参加待ち画面 | PC：3人が参加した画面 |
+| PC：ホットスポットON・参加待ち | PC：3人が参加した画面 |
 |:--:|:--:|
-| <a href="screenshots/pc-01-join-waiting.jpg"><img src="screenshots/pc-01-join-waiting.jpg" width="460" alt="PC参加待ち画面"></a> | <a href="screenshots/pc-02-join-ready.jpg"><img src="screenshots/pc-02-join-ready.jpg" width="460" alt="PCに3人が参加した画面"></a> |
+| <a href="screenshots/device/pc-02-join-0.jpg"><img src="screenshots/device/pc-02-join-0.jpg" width="460" alt="PCの参加画面。Wi-Fiと参加のQRが2つ並ぶ"></a> | <a href="screenshots/device/pc-04-join-3.jpg"><img src="screenshots/device/pc-04-join-3.jpg" width="460" alt="PCの参加画面。3人参加中で、OKを押せる"></a> |
 
 | P1（ホスト）：PCリモコン画面 | P2：参加・待機画面 | P3：参加・待機画面 |
 |:--:|:--:|:--:|
-| <a href="screenshots/phone-p1-01-host-lobby.jpg"><img src="screenshots/phone-p1-01-host-lobby.jpg" width="220" alt="P1ホストのリモコン画面"></a> | <a href="screenshots/phone-p2-01-waiting.jpg"><img src="screenshots/phone-p2-01-waiting.jpg" width="220" alt="P2待機画面"></a> | <a href="screenshots/phone-p3-01-waiting.jpg"><img src="screenshots/phone-p3-01-waiting.jpg" width="220" alt="P3待機画面"></a> |
+| <a href="screenshots/device/phone-02-host-lobby-3.jpg"><img src="screenshots/device/phone-02-host-lobby-3.jpg" width="220" alt="ホストのスマホ。タッチパッドのリモコンと、ホストを移譲・分担操作開始のボタン"></a> | <a href="screenshots/device/phone-05-wait.jpg"><img src="screenshots/device/phone-05-wait.jpg" width="220" alt="P2のスマホ。接続完了と、ホストを待つ案内"></a> | <a href="screenshots/device/phone-34-p3-wait.jpg"><img src="screenshots/device/phone-34-p3-wait.jpg" width="220" alt="P3の待機画面。紫の色"></a> |
 
 ### 2. ゲーム選択画面（PC `/app` ゲーム選択ビュー）
 
 **目的**: 共同操作する対象のPCゲームを選択します。
 
 - **自動検出とタイル表示**：Minecraft（公式ランチャー連携）に加え、Steam・Epic Games・GOG・Ubisoft Connect・EA app・Battle.net・Xbox・Steamショートカットから検出したゲームと、PCのファイル選択（`＋ 追加`）で手動登録したゲームを画像つきタイルで一覧表示します。
-- **スマホリモコンからの操作**：ホスト（P1）のスマホのタッチパッドで仮想カーソルを動かし、タイルを1回タップで選択、**2回タップ（ダブルクリック）または左サイドバーの「このゲームで分担へ」で分担画面へ進みます**（#445）。手動登録ゲームは名前の変更・登録解除も可能です。
+- **スマホリモコンからの操作**：ホスト（P1）のスマホのタッチパッドで仮想カーソルを動かし、タイルを1回タップで選択、**2回タップ（ダブルクリック）または選んだタイルの右上に出る「▶」で分担画面へ進みます**（#445）。操作が届くか未確認のゲームには「未検証」の札を付けます。手動登録ゲームは名前の変更・登録解除も可能です。
 
 <div align="center">
-  <a href="screenshots/pc-03-game-select.jpg"><img src="screenshots/pc-03-game-select.jpg" width="760" alt="PCのゲーム選択画面"></a>
+  <a href="screenshots/device/pc-08-game-selected.jpg"><img src="screenshots/device/pc-08-game-selected.jpg" width="760" alt="PCのゲーム一覧。Minecraftのタイルが選ばれ、右上に▶が出ている"></a>
   <p><sub>PC：自動検出されたインストール済みゲームのタイル一覧</sub></p>
 </div>
 
@@ -175,7 +175,11 @@ flowchart LR
 
 | PC：分担の確認画面 | PC：分担決定・ゲーム起動案内 |
 |:--:|:--:|
-| <a href="screenshots/pc-04-roles.jpg"><img src="screenshots/pc-04-roles.jpg" width="460" alt="PCの分担確認画面"></a> | <a href="screenshots/pc-05-roles-confirmed.jpg"><img src="screenshots/pc-05-roles-confirmed.jpg" width="460" alt="PCの分担決定後の画面"></a> |
+| <a href="screenshots/device/pc-10-roles.jpg"><img src="screenshots/device/pc-10-roles.jpg" width="460" alt="PCの分担画面。プレイヤー1がキー、2がマウス移動、3がクリック・キー・ホイール"></a> | <a href="screenshots/device/pc-12-roles-confirmed.jpg"><img src="screenshots/device/pc-12-roles-confirmed.jpg" width="460" alt="分担決定の画面。ゲームを起動するボタン"></a> |
+
+| PC：未検証のゲームの分担（独自AI／定型ルール） | PC：4人のときの分担 |
+|:--:|:--:|
+| <a href="screenshots/device/pc-14-roles-unverified.jpg"><img src="screenshots/device/pc-14-roles-unverified.jpg" width="460" alt="Among Usの分担画面。注意のマークと、分担の作り方の切り替え"></a> | <a href="screenshots/device/pc-13-roles-four.jpg"><img src="screenshots/device/pc-13-roles-four.jpg" width="460" alt="4人で操作を分担する画面"></a> |
 
 ### 4. 共同操作・個人レイアウト編集・一時停止画面
 
@@ -189,13 +193,15 @@ flowchart LR
   - 一時停止すると全員の合成入力を即時解放し、P1のスマホはPCリモコン画面に戻ります。参加者が増減した場合はPC画面の「今のN人で分担し直す」（`change_players`）で組み直せます。
   - PCで `Ctrl+Alt+F12` を押すと緊急停止（入力OFF＋一時停止）となり、PC画面で安全を確認して「入力を再開する」を押すまで再開できません。
 
-| P1：移動コントローラー | P2：視点コントローラー | P3：アクションコントローラー |
-|:--:|:--:|:--:|
-| <a href="screenshots/phone-p1-03-coop-move.jpg"><img src="screenshots/phone-p1-03-coop-move.jpg" width="220" alt="P1移動コントローラー"></a> | <a href="screenshots/phone-p2-03-coop-look.jpg"><img src="screenshots/phone-p2-03-coop-look.jpg" width="220" alt="P2視点コントローラー"></a> | <a href="screenshots/phone-p3-02-coop-action.jpg"><img src="screenshots/phone-p3-02-coop-action.jpg" width="220" alt="P3アクションコントローラー"></a> |
+| 移動コントローラー | 視点コントローラー | アクションコントローラー | 個人レイアウト編集 |
+|:--:|:--:|:--:|:--:|
+| <a href="screenshots/device/phone-11-coop-move.jpg"><img src="screenshots/device/phone-11-coop-move.jpg" width="180" alt="移動の担当。Space・Shift・Ctrlのボタンと、WASDのスティック"></a> | <a href="screenshots/device/phone-12-coop-look.jpg"><img src="screenshots/device/phone-12-coop-look.jpg" width="180" alt="視点の担当。ドラッグでマウスを動かすパッドと感度"></a> | <a href="screenshots/device/phone-13-coop-action.jpg"><img src="screenshots/device/phone-13-coop-action.jpg" width="180" alt="アクションの担当。左右クリック・E・Q・ホイールのボタン"></a> | <a href="screenshots/device/phone-15-layout-selected.jpg"><img src="screenshots/device/phone-15-layout-selected.jpg" width="180" alt="Spaceキーの部品が選ばれ、8つのつまみが出ている"></a> |
+
+<sub>コントローラーの3枚は、Minecraft・3人のときの P1（青）の画面です。枠ごとの色（P2 緑・P3 紫・P4 赤）の画面は [画面一覧](screenshots.md#5-協力プレイ) にあります。</sub>
 
 | PC：一時停止中 | P1：一時停止中のリモコン | PC：緊急停止後の再開確認 |
 |:--:|:--:|:--:|
-| <a href="screenshots/pc-08-paused.jpg"><img src="screenshots/pc-08-paused.jpg" width="360" alt="PCの一時停止画面"></a> | <a href="screenshots/phone-p1-04-host-paused.jpg"><img src="screenshots/phone-p1-04-host-paused.jpg" width="180" alt="P1一時停止中画面"></a> | <a href="screenshots/pc-11-emergency-stop.jpg"><img src="screenshots/pc-11-emergency-stop.jpg" width="360" alt="PC緊急停止画面"></a> |
+| <a href="screenshots/device/pc-19-paused.jpg"><img src="screenshots/device/pc-19-paused.jpg" width="360" alt="PCの一時停止中の画面"></a> | <a href="screenshots/device/phone-17-host-paused.jpg"><img src="screenshots/device/phone-17-host-paused.jpg" width="180" alt="ホストのスマホ。再開する・協力プレイを終了のボタン"></a> | <a href="screenshots/device/pc-22-emergency.jpg"><img src="screenshots/device/pc-22-emergency.jpg" width="360" alt="PCの一時停止画面。入力を再開するボタンと緊急停止の注意"></a> |
 
 ### 5. 操作設定・通信診断・接続案内ダイアログ
 
@@ -203,7 +209,7 @@ PC画面右下の「操作設定」および各スマホ右上のメニュー（
 
 | PC：操作設定ダイアログ | スマホ：接続・通信診断ダイアログ |
 |:--:|:--:|
-| <a href="screenshots/pc-09-settings.jpg"><img src="screenshots/pc-09-settings.jpg" width="520" alt="PC操作設定画面"></a> | <a href="screenshots/phone-p2-05-diagnostics.jpg"><img src="screenshots/phone-p2-05-diagnostics.jpg" width="220" alt="スマホ診断画面"></a> |
+| <a href="screenshots/device/pc-26-settings.jpg"><img src="screenshots/device/pc-26-settings.jpg" width="520" alt="操作設定のダイアログ。項目の一覧"></a> | <a href="screenshots/device/phone-19-menu-host.jpg"><img src="screenshots/device/phone-19-menu-host.jpg" width="220" alt="ホストの接続・診断。RTT、送信数、経路WebRTC＋WS、通信テスト"></a> |
 
 <sub>※掲載スクリーンショットの撮影条件と構成の注記は [画面一覧](screenshots.md) を参照してください。</sub>
 
