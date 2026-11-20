@@ -179,83 +179,6 @@ def star(cx, cy, r, fill, opacity=1.0):
     return f'<polygon points="{" ".join(pts)}" fill="{fill}" opacity="{opacity}"/>'
 
 
-# ---------- ヒーロー ----------
-def hero(t, narrow=False):
-    """narrow=True はスマホ幅向け。右側の画面とキャラクターを文字の下へ回す。"""
-    W, H = (640, 880) if narrow else (1280, 460)
-    b = [f'<rect width="{W}" height="{H}" rx="28" fill="url(#bg)"/>',
-         f'<clipPath id="card"><rect width="{W}" height="{H}" rx="28"/></clipPath><g clip-path="url(#card)">',
-         dots(26, 26, 14, 9, 16, 3.2, t["dot"]),
-         f'<g transform="translate({W} {H}) scale(-1 -1)">{dots(26, 26, 12, 7, 16, 3, t["dot2"])}</g>',
-         f'<path d="M{W - 130} -20L{W + 20} 130V170L{W - 170} -20Z M{W - 70} -20L{W + 20} 70V96L{W - 96} -20Z" fill="{t["stripe"]}" opacity=".8"/>',
-         star(W - 48, 470 if narrow else 214, 16, t["stripe"], .9), star(W - 580, 60, 12, t["dot"], .8),
-         star(40 if narrow else 745, 520 if narrow else 420, 9, t["dot2"], .9),
-         "</g>"]
-    # 左：ロゴ文字とキャッチコピー
-    b += [f'<rect x="64" y="50" width="436" height="38" rx="19" fill="{t["chip"]}" stroke="{t["line"]}"/>',
-          star(88, 69, 9, "#FFB800"),
-          text(106, 76, "JPHACKS 2026　審査委員特別賞・Innovator認定", 17, t["ink"], cls="rnd", weight=700, length=376),
-          text(70, 124, "リコープレイ", 20, t["muted"], cls="rnd", weight=700),
-          text(76, 236, "Re:Cooplay", 124, t["shadow"], cls="disp", weight=900, length=560),
-          text(68, 228, "Re:Cooplay", 124, "url(#brand)", cls="disp", weight=900, length=560,
-               extra=f' stroke="{t["panel"]}" stroke-width="7" paint-order="stroke" stroke-linejoin="round"'),
-          text(68, 300, "ゲームはそのまま。", 42, t["ink"], cls="rnd", weight=800, length=378),
-          f'<rect x="289" y="333" width="172" height="20" rx="4" fill="{t["stripe"]}" opacity=".9"/>',
-          text(68, 352, "1キャラを、", 42, t["ink"], cls="rnd", weight=800, length=221),
-          text(291, 352, "みんなで", 42, t["ink"], cls="rnd", weight=800, length=168),
-          text(461, 352, "操作。", 42, t["ink"], cls="rnd", weight=800, length=126),
-          text(70, 404, "既存のPCゲームに、スマホで協力プレイを後付けする", 21, t["muted"], cls="rnd", weight=700, length=504)]
-    # 右：1台の画面と4体のキャラクター
-    b.append('<g transform="translate(-685 410)">' if narrow else "<g>")
-    mx, my, mw, mh = 830, 34, 340, 176
-    b += [f'<rect x="{mx + mw / 2 - 20}" y="{my + mh}" width="40" height="26" fill="{t["line"]}"/>',
-          f'<rect x="{mx + mw / 2 - 60}" y="{my + mh + 22}" width="120" height="10" rx="5" fill="{t["line"]}"/>',
-          f'<rect x="{mx}" y="{my}" width="{mw}" height="{mh}" rx="16" fill="{t["outline"]}"/>',
-          f'<clipPath id="scr"><rect x="{mx + 10}" y="{my + 10}" width="{mw - 20}" height="{mh - 20}" rx="8"/></clipPath>',
-          f'<g clip-path="url(#scr)"><rect x="{mx}" y="{my}" width="{mw}" height="{mh}" fill="#8EE3FF"/>',
-          f'<circle cx="{mx + 290}" cy="{my + 46}" r="18" fill="#FFF3A6"/>',
-          f'<rect x="{mx + 40}" y="{my + 40}" width="70" height="16" rx="8" fill="#FFFFFF" opacity=".85"/>',
-          f'<rect x="{mx + 70}" y="{my + 30}" width="54" height="16" rx="8" fill="#FFFFFF" opacity=".85"/>']
-    for i in range(11):  # 草ブロックの地面
-        gx = mx + 10 + i * 30
-        b.append(f'<rect x="{gx}" y="{my + 130}" width="30" height="40" fill="#8B5A2B"/>'
-                 f'<rect x="{gx}" y="{my + 124}" width="30" height="12" fill="#5DBB3F"/>'
-                 f'<rect x="{gx}" y="{my + 124}" width="30" height="46" fill="none" stroke="#00000022"/>')
-    b += [f'<rect x="{mx + 236}" y="{my + 94}" width="30" height="30" fill="#8B5A2B" stroke="#00000033"/>',
-          f'<rect x="{mx + 236}" y="{my + 94}" width="30" height="9" fill="#5DBB3F"/>']
-    hx, hy = mx + mw / 2 - 18, my + 68  # 1人のキャラクター
-    b += [f'<g class="bob" style="animation-duration:1.3s">'
-          f'<circle cx="{hx + 18}" cy="{hy + 28}" r="34" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="5 5" class="pulse"/>'
-          f'<rect x="{hx + 6}" y="{hy}" width="24" height="22" fill="#F2C9A0"/><rect x="{hx + 6}" y="{hy}" width="24" height="8" fill="#4A2F1B"/>'
-          f'<rect x="{hx + 11}" y="{hy + 11}" width="4" height="4" fill="#2B2B6B"/><rect x="{hx + 21}" y="{hy + 11}" width="4" height="4" fill="#2B2B6B"/>'
-          f'<rect x="{hx + 4}" y="{hy + 22}" width="28" height="22" fill="#22B8C9"/>'
-          f'<rect x="{hx + 6}" y="{hy + 44}" width="11" height="12" fill="#3B3BA8"/><rect x="{hx + 19}" y="{hy + 44}" width="11" height="12" fill="#3B3BA8"/></g>',
-          f'<rect x="{mx + 18}" y="{my + 18}" width="78" height="26" rx="13" fill="#FFFFFF" opacity=".92"/>',
-          text(mx + 57, my + 37, "1キャラ", 15, "#2E2B48", cls="rnd", weight=800, anchor="middle"),
-          "</g>"]
-    cx0, gap, cy, s = 846, 100, 318, 0.78
-    tip = (mx + mw / 2, my + mh + 32)
-    for i, name in enumerate(ORDER):
-        x = cx0 + i * gap
-        c = CHARS[name]["body"]
-        sx = x + 50 * s
-        b.append(f'<path d="M{sx:.0f} {cy - 30}C{sx:.0f} {cy - 62} {tip[0]:.0f} {tip[1] + 40:.0f} {tip[0]:.0f} {tip[1]:.0f}" '
-                 f'fill="none" stroke="{c}" stroke-width="3.5" stroke-linecap="round" class="flow" '
-                 f'style="animation-delay:{i * .2:.1f}s"/>')
-    for i, name in enumerate(ORDER):
-        x = cx0 + i * gap
-        c = CHARS[name]["body"]
-        sx = x + 50 * s
-        b += [f'<rect x="{sx - 20:.0f}" y="{cy - 30}" width="40" height="22" rx="11" fill="{c}"/>',
-              text(sx, cy - 13, f"P{i + 1}", 15, "#FFFFFF" if name != "green" else "#103B10",
-                   cls="rnd", weight=800, anchor="middle"),
-              char(name, x, cy, s, t, delay=i * .35)]
-    b.append(text(cx0 + 1.5 * gap + 50 * s, 446, "スマホ2〜4台で、1人分の操作を分け合う", 17, t["muted"],
-                  cls="rnd", weight=700, anchor="middle"))
-    b.append("</g>")
-    return svg(W, H, "".join(b), t, "Re:Cooplay — ゲームはそのまま。1キャラをみんなで操作。")
-
-
 # ---------- 遊ぶまでの流れ ----------
 def icon(kind, x, y, c, t):
     s = 56
@@ -286,6 +209,11 @@ def icon(kind, x, y, c, t):
     return "".join(out)
 
 
+# 図はGitHubの本文欄と同じ幅で描き、READMEでは幅を指定せず原寸で表示する（PCは838px、幅390pxのスマホは324px）。
+# 図の文字の大きさが、そのまま画面上の大きさになる。本文は16px、図の文字は13px以上にする。
+PC_W = 838
+PHONE_W = 324
+
 STEPS = [("qr", "スマホでQR参加", "ブラウザで読み取るだけ。", "P1のスマホはPCリモコンに"),
          ("list", "ゲームを選ぶ", "インストール済みから選択。", "操作とキーを自動で読み取り"),
          ("split", "AIが操作を分担", "独自AIが2〜4人へ配分。", "担当を確かめて起動"),
@@ -293,38 +221,30 @@ STEPS = [("qr", "スマホでQR参加", "ブラウザで読み取るだけ。", 
 
 
 def flow(t, narrow=False):
+    """遊ぶまでの4ステップ（PC版）。"""
     if narrow:
         return flow_phone(t)
-    W, H = 1280, 290
-    steps = STEPS
-    cw, x0 = 272, 20
-    gap = 51.3
+    W, H, gap = PC_W, 196, 26
+    cw = (W - 3 * gap) / 4
     b = []
-    for i, (kind, title, d1, d2) in enumerate(steps):
+    for i, (kind, title, d1, d2) in enumerate(STEPS):
         name = ORDER[i]
         c = CHARS[name]["body"]
-        x = x0 + i * (cw + gap)
-        b.append("<g>")
-        b += [f'<rect x="{x}" y="10" width="{cw}" height="270" rx="22" fill="{t["panel"]}" stroke="{t["line"]}"/>',
-              f'<circle cx="{x + 36}" cy="44" r="18" fill="{c}"/>',
-              text(x + 36, 51, str(i + 1), 20, "#FFFFFF" if name != "green" else "#103B10", cls="disp", weight=400, anchor="middle"),
-              text(x + 64, 51, f"STEP {i + 1}", 16, t["muted"], cls="mono", weight=700),
-              char(name, x + cw / 2 - 74, 76, .74, t, delay=i * .4),
-              icon(kind, x + cw / 2 + 14, 104, c, t),
-              text(x + cw / 2, 210, title, 25, t["ink"], weight=900, anchor="middle"),
-              text(x + cw / 2, 241, d1, 16.5, t["muted"], weight=700, anchor="middle"),
-              text(x + cw / 2, 265, d2, 16.5, t["muted"], weight=700, anchor="middle")]
-        b.append("</g>")
+        x = i * (cw + gap)
+        b += [f'<rect x="{x + 1}" y="1" width="{cw - 2}" height="{H - 2}" rx="16" fill="{t["panel"]}" stroke="{t["line"]}"/>',
+              f'<circle cx="{x + 24}" cy="24" r="13" fill="{c}"/>',
+              text(x + 24, 30, str(i + 1), 16, "#FFFFFF" if name != "green" else "#103B10", cls="disp", weight=400, anchor="middle"),
+              text(x + 44, 29, f"STEP {i + 1}", 13, t["muted"], cls="mono", weight=700),
+              char(name, x + cw / 2 - 54, 40, .46, t, delay=i * .4),
+              f'<g transform="translate({x + cw / 2 + 8} {54}) scale(.66)">{icon(kind, 0, 0, c, t)}</g>',
+              text(x + cw / 2, 128, title, 16, t["ink"], weight=900, anchor="middle"),
+              text(x + cw / 2, 154, d1, 13, t["muted"], weight=700, anchor="middle"),
+              text(x + cw / 2, 174, d2, 13, t["muted"], weight=700, anchor="middle")]
         if i < 3:
             ax = x + cw + gap / 2
-            b.append(f'<path d="M{ax - 9} 128l12 12-12 12" fill="none" stroke="url(#brand)" stroke-width="5" '
+            b.append(f'<path d="M{ax - 5} 82l7 7-7 7" fill="none" stroke="url(#brand)" stroke-width="4" '
                      'stroke-linecap="round" stroke-linejoin="round"/>')
     return svg(W, H, "".join(b), t, "遊ぶまでの4ステップ：スマホでQR参加、ゲームを選ぶ、AIが操作を分担、開始ボタンでプレイ")
-
-
-# スマホ版の図は、幅390pxのスマホでGitHubの本文欄と同じ幅（324px）で描き、READMEでは原寸で表示する。
-# 本文（16px）との文字の比がPC版と同じになる。これより狭いスマホでは少し縮む。
-PHONE_W = 324
 
 
 def flow_phone(t):
@@ -339,7 +259,7 @@ def flow_phone(t):
         b += [f'<rect x="{x + 1}" y="{y + 1}" width="{cw - 2}" height="{ch - 2}" rx="16" fill="{t["panel"]}" stroke="{t["line"]}"/>',
               f'<circle cx="{x + 24}" cy="{y + 24}" r="13" fill="{c}"/>',
               text(x + 24, y + 30, str(i + 1), 16, "#FFFFFF" if name != "green" else "#103B10", cls="disp", weight=400, anchor="middle"),
-              text(x + 44, y + 29, f"STEP {i + 1}", 12, t["muted"], cls="mono", weight=700),
+              text(x + 44, y + 29, f"STEP {i + 1}", 13, t["muted"], cls="mono", weight=700),
               char(name, x + cw / 2 - 54, y + 42, .5, t, delay=i * .4),
               f'<g transform="translate({x + cw / 2 + 8} {y + 58}) scale(.7)">{icon(kind, 0, 0, c, t)}</g>',
               text(x + cw / 2, y + ch - 18, title, 15, t["ink"], weight=900, anchor="middle")]
@@ -348,165 +268,254 @@ def flow_phone(t):
 
 
 # ---------- 分担AIの流れ ----------
-def pipeline(t, narrow=False):
-    if narrow:
-        return pipeline_phone(t)
-    PH = 450  # 1枚の高さ
-    W, H = 1280, PH + 20
-    pw, x0 = 372, 20
-    xs = [x0, x0 + pw + 52, x0 + 2 * (pw + 52)]
-
-    def at(i):
-        return "<g>"
-
-    blue, green, purple = (CHARS[n]["body"] for n in ("blue", "green", "purple"))
-    b = []
-    heads = [("①", "ゲームのファイルから自動検出", "設定・データを19系統で解析"),
-             ("②", "分担AIが意味と関係を推論", "MiniLM＋独自の2層Transformer"),
-             ("③", "スマホ画面へ自動で配分", "3人プレイの例")]
-    for i, (n, h1, h2) in enumerate(heads):
-        x = xs[i]
-        b += [at(i), f'<rect x="{x}" y="10" width="{pw}" height="{PH}" rx="22" fill="{t["panel"]}" stroke="{t["line"]}"/>',
-              text(x + 24, 52, n, 26, "url(#brand)", weight=900),
-              text(x + 58, 50, h1, 20, t["ink"], weight=900),
-              text(x + 58, 76, h2, 16, t["muted"], weight=700), "</g>"]
-        if i < 2:
-            ax = x + pw + 26
-            b.append(f'<path d="M{ax - 14} {PH / 2 + 10}H{ax + 8}M{ax} {PH / 2 + 1}l9 9-9 9" fill="none" stroke="url(#brand)" '
-                     'stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>')
-    # ① キー割り当て
-    rows = [("MoveForward", "W", blue), ("MoveBack", "S", blue), ("MoveLeft", "A", blue), ("MoveRight", "D", blue),
-            ("Jump", "Space", blue), ("Look", "Mouse", green), ("Fire", "MouseL", purple), ("Aim", "MouseR", purple),
-            ("Reload", "R", purple), ("WeaponNext", "Wheel", purple)]
-    x = xs[0]
-    b.append(at(0))
-    b.append(f'<rect x="{x + 22}" y="96" width="{pw - 44}" height="{len(rows) * 32 + 16}" rx="12" fill="{t["code"]}"/>')
-    for k, (act, key, c) in enumerate(rows):
-        y = 124 + k * 32
-        b += [f'<circle cx="{x + 42}" cy="{y - 5}" r="5" fill="{c}"/>',
-              text(x + 56, y, act, 16, t["ink"], cls="mono", weight=600),
-              f'<rect x="{x + pw - 128}" y="{y - 19}" width="86" height="24" rx="6" fill="{t["panel"]}" stroke="{t["line"]}"/>',
-              text(x + pw - 85, y - 2, key, 14, t["ink"], cls="mono", weight=700, anchor="middle")]
-    b.append("</g>")
-    # ② モデル
-    b.append(at(1))
-    x = xs[1]
-    cx = x + pw / 2
-    toks = ["IA_Jump", "+attack", "前進", "Look"]
-    for k, tk in enumerate(toks):
-        tx = x + 40 + k * 76
-        b += [f'<rect x="{tx}" y="100" width="68" height="28" rx="14" fill="{t["code"]}" stroke="{t["line"]}"/>',
-              text(tx + 34, 119, tk, 14, t["ink"], cls="mono", weight=700, anchor="middle")]
-    layers = [(150, "多言語エンコーダ（MiniLM・約40MB）", "操作名 → 384次元の意味ベクトル"),
-              (236, "分担判断（2層Transformer・約410KB）", "教師あり＋伏せたキーを当てる学習")]
-    for (y, l1, l2) in layers:
-        b += [f'<rect x="{x + 30}" y="{y}" width="{pw - 60}" height="66" rx="14" fill="url(#brand)" opacity=".14"/>',
-              f'<rect x="{x + 30}" y="{y}" width="{pw - 60}" height="66" rx="14" fill="none" stroke="url(#brand)" stroke-width="2"/>',
-              text(cx, y + 28, l1, 17, t["ink"], weight=900, anchor="middle"),
-              text(cx, y + 52, l2, 15, t["muted"], weight=700, anchor="middle")]
-    for k in range(5):  # 層をつなぐ線
-        lx = x + 70 + k * 58
-        b.append(f'<path d="M{lx} 216V236" stroke="url(#brand)" stroke-width="2.5" class="flow" style="animation-delay:{k * .15:.2f}s"/>')
-    outs = [("カテゴリ", "6種"), ("同じ人か", "確率"), ("方向軸", "縦・横")]
-    for k, (o1, o2) in enumerate(outs):
-        ox = x + 30 + k * 108
-        b += [f'<rect x="{ox}" y="324" width="96" height="58" rx="12" fill="{t["code"]}" stroke="{t["line"]}"/>',
-              text(ox + 48, 349, o1, 16, t["ink"], weight=800, anchor="middle"),
-              text(ox + 48, 372, o2, 15, t["muted"], weight=700, anchor="middle")]
-    b += [f'<rect x="{cx - 120}" y="400" width="240" height="34" rx="17" fill="{t["stripe"]}" opacity=".9"/>',
-          text(cx, 423, "Rustでオフライン推論・約80ms", 16, "#2E2B48", weight=900, anchor="middle")]
-    b.append(text(cx, PH, "※14操作のゲームで2〜4人分の分担を作る時間", 13, t["muted"], weight=600, anchor="middle"))
-    b.append("</g>")
-    # ③ 3人の画面
-    b.append(at(2))
-    x = xs[2]
-    players = [("blue", "P1", "移動", "8方向スティック（WASD）", "＋ Space"),
-               ("green", "P2", "視点", "ドラッグパッド（Mouse）", "感度調整つき"),
-               ("purple", "P3", "アクション", "左右クリック・R キー", "＋ ホイール上下")]
-    for k, (name, p, role, l1, l2) in enumerate(players):
-        y = 100 + k * 116
-        c = CHARS[name]["body"]
-        b += [f'<rect x="{x + 22}" y="{y}" width="{pw - 44}" height="102" rx="16" fill="{t["panel2"]}" stroke="{c}" stroke-width="2"/>',
-              char(name, x + 36, y + 13, .62, t, delay=k * .4),
-              f'<rect x="{x + 112}" y="{y + 16}" width="38" height="22" rx="11" fill="{c}"/>',
-              text(x + 131, y + 32, p, 14, "#FFFFFF" if name != "green" else "#103B10", weight=900, anchor="middle"),
-              text(x + 160, y + 33, role, 19, t["ink"], weight=900),
-              text(x + 112, y + 65, l1, 16, t["ink"], weight=700),
-              text(x + 112, y + 88, l2, 15, t["muted"], weight=700)]
-    b.append("</g>")
-    return svg(W, H, "".join(b), t, "分担AIの流れ：ゲームのファイルから操作を検出し、MiniLMと2層Transformerで推論して、3人のスマホ画面へ配分する")
-
-
-def chip(x, y, s, t, color=None, mono=True, size=12.5):
+def chip(x, y, s, t, color=None, mono=True, size=13):
     """小さな札。幅は文字数から見積もる。戻り値は (svg, 幅)。"""
     w = sum(size * (0.62 if c.isascii() else 1.0) for c in s) + 16
     green = CHARS["green"]["body"]
     ink = t["ink"] if not color else ("#103B10" if color == green else "#FFFFFF")
-    return (f'<rect x="{x}" y="{y}" width="{w:.1f}" height="22" rx="11" fill="{color or t["code"]}" stroke="{color or t["line"]}"/>'
-            + text(x + w / 2, y + 15.5, s, size, ink, cls="mono" if mono else "jp", weight=700, anchor="middle"), w)
+    return (f'<rect x="{x}" y="{y}" width="{w:.1f}" height="23" rx="11.5" fill="{color or t["code"]}" stroke="{color or t["line"]}"/>'
+            + text(x + w / 2, y + 16, s, size, ink, cls="mono" if mono else "jp", weight=700, anchor="middle"), w)
 
 
-def pipeline_phone(t):
-    """分担AIの流れ（スマホ版）。3段の要点だけを縦に並べ、詳しい説明は下の本文に任せる。"""
-    W = PHONE_W
+# 下の本文の ①〜④ と混ざらないよう、図には番号を付けない
+PIPE = [("ゲームのファイルから自動検出", "19系統の設定・データを解析"),
+        ("分担AIが意味と関係を推論", "MiniLM＋独自の2層Transformer"),
+        ("スマホ画面へ自動で配分", "Rustでオフライン推論・約80ms")]
+PIPE_H = 150
+
+
+def pipe_panel(i, x, y, w, t):
+    """分担AIの流れの1枚。"""
     blue, green, purple = (CHARS[n]["body"] for n in ("blue", "green", "purple"))
-    rows = [("①", "ゲームのファイルから自動検出", "19系統の設定・データを解析"),
-            ("②", "分担AIが意味と関係を推論", "MiniLM＋独自の2層Transformer"),
-            ("③", "スマホ画面へ自動で配分", "Rustでオフライン推論・約80ms")]
-    b, y = [], 0
-    for i, (n, h1, h2) in enumerate(rows):
-        rh = 118
-        b += [f'<rect x="1" y="{y + 1}" width="{W - 2}" height="{rh - 2}" rx="16" fill="{t["panel"]}" stroke="{t["line"]}"/>',
-              text(14, y + 30, n, 20, "url(#brand)", weight=900),
-              text(40, y + 29, h1, 16, t["ink"], weight=900),
-              text(40, y + 50, h2, 12.5, t["muted"], weight=700)]
-        cx, cy = 14, y + 66
-        if i == 0:
-            for label, c in (("W", blue), ("A", blue), ("S", blue), ("D", blue), ("Space", blue), ("Mouse", green),
-                             ("MouseL", purple), ("R", purple), ("Wheel", purple)):
-                svg_, w = chip(cx, cy, label, t, c)
-                if cx + w > W - 12:
-                    cx, cy = 14, cy + 26
-                    svg_, w = chip(cx, cy, label, t, c)
-                b.append(svg_)
-                cx += w + 6
-        elif i == 1:
-            for label in ("操作名", "→ 意味ベクトル", "→ 分担"):
-                svg_, w = chip(cx, cy, label, t, None, mono=False)
-                b.append(svg_)
-                cx += w + 6
-        else:
-            for k, (name, p, role) in enumerate((("blue", "P1", "移動"), ("green", "P2", "視点"), ("purple", "P3", "アクション"))):
-                px = 14 + k * (W - 20) / 3
-                b += [char(name, px - 6, cy - 6, .3, t, delay=k * .4),
-                      text(px + 26, cy + 12, p, 12, CHARS[name]["body"] if name != "green" else "#2FB52E", weight=900),
-                      text(px + 26, cy + 30, role, 13, t["ink"], weight=800)]
-        y += rh
+    h1, h2 = PIPE[i]
+    b = [f'<rect x="{x + 1}" y="{y + 1}" width="{w - 2}" height="{PIPE_H - 2}" rx="16" fill="{t["panel"]}" stroke="{t["line"]}"/>',
+         f'<rect x="{x + 14}" y="{y + 15}" width="5" height="40" rx="2.5" fill="url(#brand)"/>',
+         text(x + 28, y + 31, h1, 16, t["ink"], weight=900),
+         text(x + 28, y + 52, h2, 13, t["muted"], weight=700)]
+    cx, cy = x + 14, y + 66
+    if i == 0:
+        for label, c in (("W", blue), ("A", blue), ("S", blue), ("D", blue), ("Space", blue), ("Mouse", green),
+                         ("MouseL", purple), ("R", purple), ("Wheel", purple)):
+            svg_, cw = chip(cx, cy, label, t, c)
+            if cx + cw > x + w - 12:
+                cx, cy = x + 14, cy + 28
+                svg_, cw = chip(cx, cy, label, t, c)
+            b.append(svg_)
+            cx += cw + 6
+    elif i == 1:
+        for label in ("操作名", "→ 意味ベクトル", "→ 分担"):
+            svg_, cw = chip(cx, cy, label, t, None, mono=False)
+            if cx + cw > x + w - 12:
+                cx, cy = x + 14, cy + 28
+                svg_, cw = chip(cx, cy, label, t, None, mono=False)
+            b.append(svg_)
+            cx += cw + 6
+    else:
+        col = (w - 28) / 3
+        for k, (name, pl, role) in enumerate((("blue", "P1", "移動"), ("green", "P2", "視点"), ("purple", "P3", "アクション"))):
+            mx = x + 14 + col * k + col / 2
+            c = CHARS[name]["body"] if name != "green" else "#2FB52E"
+            b += [char(name, mx - 15, cy - 4, .3, t, delay=k * .4),
+                  text(mx + 22, cy + 14, pl, 13, c, weight=900),
+                  text(mx, cy + 62, role, 13, t["ink"], weight=800, anchor="middle")]
+    return "".join(b)
+
+
+def pipeline(t, narrow=False):
+    """分担AIの流れ。PC版は3枚を横に、スマホ版は縦に並べる。詳しい説明は下の本文に任せる。"""
+    title = "分担AIの流れ：ゲームのファイルから操作を検出し、MiniLMと2層Transformerで推論して、3人のスマホ画面へ配分する"
+    b = []
+    if narrow:
+        W, y = PHONE_W, 0
+        for i in range(3):
+            b.append(pipe_panel(i, 0, y, W, t))
+            y += PIPE_H
+            if i < 2:
+                b.append(f'<path d="M{W / 2 - 8} {y + 4}l8 8 8-8" fill="none" stroke="url(#brand)" stroke-width="4" '
+                         'stroke-linecap="round" stroke-linejoin="round"/>')
+                y += 18
+        return svg(W, y, "".join(b), t, title)
+    W, gap = PC_W, 22
+    w = (W - 2 * gap) / 3
+    for i in range(3):
+        x = i * (w + gap)
+        b.append(pipe_panel(i, x, 0, w, t))
         if i < 2:
-            b.append(f'<path d="M{W / 2 - 8} {y + 4}l8 8 8-8" fill="none" stroke="url(#brand)" stroke-width="4" '
+            ax = x + w + gap / 2
+            b.append(f'<path d="M{ax - 4} {PIPE_H / 2 - 7}l7 7-7 7" fill="none" stroke="url(#brand)" stroke-width="4" '
                      'stroke-linecap="round" stroke-linejoin="round"/>')
-            y += 18
-    return svg(W, y, "".join(b), t, "分担AIの流れ：ゲームのファイルから操作を検出し、MiniLMと2層Transformerで推論して、3人のスマホ画面へ配分する")
+    return svg(W, PIPE_H, "".join(b), t, title)
 
 
 # ---------- 区切りとフッター ----------
-def footer(t):
-    W, H = 1280, 250
-    b = [f'<rect width="{W}" height="{H}" rx="28" fill="url(#bg)"/>',
-         '<clipPath id="card"><rect width="1280" height="250" rx="28"/></clipPath><g clip-path="url(#card)">',
-         dots(24, 24, 10, 6, 16, 3, t["dot"]),
-         f'<g transform="translate(1280 250) scale(-1 -1)">{dots(24, 24, 10, 6, 16, 3, t["dot2"])}</g></g>',
-         text(640, 94, "さあ、みんなで遊ぼう！", 46, t["ink"], cls="hand", weight=400, anchor="middle"),
-         text(640, 130, "PCのゲームはそのままに、友達と集まったその場で協力プレイ", 18, t["muted"], cls="rnd", weight=700, anchor="middle")]
+def footer(t, narrow=False):
+    W, H = (PHONE_W, 200) if narrow else (PC_W, 176)
+    cx = W / 2
+    b = [f'<rect width="{W}" height="{H}" rx="22" fill="url(#bg)"/>',
+         f'<clipPath id="card"><rect width="{W}" height="{H}" rx="22"/></clipPath><g clip-path="url(#card)">',
+         dots(18, 18, 7, 5, 13, 2.6, t["dot"]),
+         f'<g transform="translate({W} {H}) scale(-1 -1)">{dots(18, 18, 7, 5, 13, 2.6, t["dot2"])}</g></g>']
+    if narrow:
+        b += [text(cx, 52, "さあ、みんなで遊ぼう！", 28, t["ink"], cls="hand", weight=400, anchor="middle"),
+              text(cx, 80, "PCのゲームはそのままに、", 14, t["muted"], cls="rnd", weight=700, anchor="middle"),
+              text(cx, 100, "友達と集まったその場で協力プレイ", 14, t["muted"], cls="rnd", weight=700, anchor="middle")]
+        top, gap, s = 116, 62, .5
+    else:
+        b += [text(cx, 58, "さあ、みんなで遊ぼう！", 36, t["ink"], cls="hand", weight=400, anchor="middle"),
+              text(cx, 88, "PCのゲームはそのままに、友達と集まったその場で協力プレイ", 15, t["muted"], cls="rnd", weight=700, anchor="middle")]
+        top, gap, s = 102, 84, .5
+    x0 = cx - 1.5 * gap - 50 * s
     for i, n in enumerate(ORDER):
-        b.append(char(n, 440 + i * 110, 150, .62, t, delay=i * .3))
-        b.append(f'<ellipse cx="{440 + i * 110 + 31}" cy="234" rx="26" ry="5" fill="{t["shadow"]}" opacity=".12"/>')
+        b.append(char(n, x0 + i * gap, top, s, t, delay=i * .3))
+        b.append(f'<ellipse cx="{x0 + i * gap + 50 * s:.1f}" cy="{top + 63}" rx="18" ry="3.5" fill="{t["shadow"]}" opacity=".12"/>')
     return svg(W, H, "".join(b), t, "さあ、みんなで遊ぼう！")
 
 
-def avatar(name):
-    t = THEMES["light"]
-    return svg(100, 124, char(name, 0, 0, 1, t), t, f"Re:Cooplayのキャラクター（{name}）")
+# ---------- 分けて操作するイメージ ----------
+def split_demo(t, narrow=False):
+    """3台のスマホ（P1移動・P2視点・P3アクション）が、1台の画面の1人のキャラクターを順番に動かす。
+    P1でキャラクターが歩き、P2で視点（景色）が回り、P3でジャンプしてブロックを壊す。7秒で1周。"""
+    D = 7
+    if narrow:
+        W, H = PHONE_W, 398
+        mx, my, mw, mh = 12, 4, 300, 176
+        ps, ptop = .58, 252
+        pcx = [W / 2 - 108, W / 2, W / 2 + 108]
+        hub = (W / 2, my + mh + 30)
+    else:
+        W, H = PC_W, 300
+        mx, my, mw, mh = 372, 8, 452, 240
+        ps, ptop = .74, 66
+        pcx = [62, 182, 302]
+        hub = (mx - 4, my + mh / 2)
+    ix, iy, iw, ih = mx + 10, my + 10, mw - 20, mh - 20
+    LH = 150
+    k = ih / LH
+    LW = iw / k
+    x0, walk = .16 * LW, .22 * LW
+    bx = .74 * LW
+    pan = bx - (x0 + walk + 34)
+    css = []
+
+    def anim(cls, frames, ease="linear", origin=None):
+        style = f"transform-box:fill-box;transform-origin:{origin};" if origin else ""
+        css.append(kf(f"k-{cls}", frames) + f".{cls}{{{style}animation:k-{cls} {D}s {ease} infinite}}")
+
+    def kf(name, frames, prop="transform"):
+        return f"@keyframes {name}{{" + "".join(f"{p:g}%{{{prop}:{v}}}" for p, v in frames) + "}"
+
+    def opac(cls, frames):
+        css.append(kf(f"k-{cls}", frames, "opacity") + f".{cls}{{animation:k-{cls} {D}s linear infinite}}")
+
+    # --- 画面の中（高さ150の座標で描き、画面に合わせて拡大する）
+    sc = []
+    sc.append(f'<rect x="0" y="0" width="{LW:.1f}" height="{LH}" fill="#8EE3FF"/>')
+    clouds = "".join(f'<rect x="{cx_:.1f}" y="{cy_}" width="{w_}" height="10" rx="5" fill="#FFFFFF" opacity=".9"/>'
+                     for cx_, cy_, w_ in ((.12 * LW, 22, 40), (.18 * LW, 15, 26), (.55 * LW, 30, 46), (.95 * LW, 18, 34),
+                                          (1.3 * LW, 26, 40)))
+    hills = "".join(f'<ellipse cx="{hx:.1f}" cy="118" rx="{hr}" ry="{hr * .5}" fill="#7FD08A"/>'
+                    for hx, hr in ((.3 * LW, 46), (.85 * LW, 60), (1.35 * LW, 50)))
+    sc.append(f'<g class="far">{clouds}{hills}</g>')
+    tiles = "".join(f'<rect x="{-40 + i * 22}" y="124" width="22" height="26" fill="#8B5A2B"/>'
+                    f'<rect x="{-40 + i * 22}" y="118" width="22" height="8" fill="#5DBB3F"/>'
+                    f'<rect x="{-40 + i * 22}" y="118" width="22" height="32" fill="none" stroke="#00000022"/>'
+                    for i in range(int((LW + pan + 80) / 22) + 2))
+    block = (f'<g class="blk"><g class="shake"><rect x="{bx:.1f}" y="92" width="26" height="26" fill="#8B5A2B" stroke="#00000033"/>'
+             f'<rect x="{bx:.1f}" y="92" width="26" height="8" fill="#5DBB3F"/></g></g>')
+    bits = "".join(f'<rect class="bit{j}" x="{bx + 9:.1f}" y="100" width="7" height="7" fill="{c_}"/>'
+                   for j, c_ in enumerate(("#8B5A2B", "#5DBB3F", "#8B5A2B", "#6E4522")))
+    sc.append(f'<g class="near">{tiles}{block}{bits}</g>')
+    gx = x0 - 10
+    guy = (f'<rect x="{gx + 2}" y="82" width="16" height="14" fill="#F2C9A0"/><rect x="{gx + 2}" y="82" width="16" height="5" fill="#4A2F1B"/>'
+           f'<rect x="{gx + 11}" y="88" width="3" height="3" fill="#2B2B6B"/>'
+           f'<rect x="{gx}" y="96" width="20" height="14" fill="#22B8C9"/>'
+           f'<rect x="{gx + 2}" y="110" width="7" height="8" fill="#3B3BA8"/><rect x="{gx + 11}" y="110" width="7" height="8" fill="#3B3BA8"/>'
+           f'<rect class="arm" x="{gx + 14}" y="97" width="12" height="5" fill="#F2C9A0"/>')
+    sc.append(f'<g class="gx"><g class="gy">{guy}</g></g>')
+    scene = (f'<clipPath id="scr"><rect x="{ix}" y="{iy}" width="{iw}" height="{ih}" rx="6"/></clipPath>'
+             f'<g clip-path="url(#scr)"><g class="fade"><g transform="translate({ix} {iy}) scale({k:.4f})">{"".join(sc)}</g></g>'
+             f'<rect x="{ix + 8}" y="{iy + 8}" width="74" height="24" rx="12" fill="#FFFFFF" opacity=".92"/>'
+             + text(ix + 45, iy + 25, "1キャラ", 13, "#2E2B48", weight=900, anchor="middle") + "</g>")
+
+    # 動き：P1 歩く(6-30) → P2 視点(36-60) → P3 ジャンプして壊す(64-86) → 戻す(90-100)
+    gxs = [(0, "translateX(0px)"), (8, "translateX(0px)"), (28, f"translateX({walk:.1f}px)"), (93, f"translateX({walk:.1f}px)"),
+           (94, "translateX(0px)"), (100, "translateX(0px)")]
+    anim("gx", gxs)
+    hop = [(0, "translateY(0px)"), (8, "translateY(0px)")]
+    for j in range(8):
+        a = 8 + j * 2.5
+        hop += [(a + 1.25, "translateY(-3px)"), (a + 2.5, "translateY(0px)")]
+    hop += [(64, "translateY(0px)"), (67, "translateY(-24px)"), (70, "translateY(-24px)"), (73, "translateY(0px)"),
+            (100, "translateY(0px)")]
+    anim("gy", hop)
+    anim("arm", [(0, "rotate(0deg)"), (66, "rotate(0deg)"), (68, "rotate(-50deg)"), (70, "rotate(20deg)"), (72, "rotate(-40deg)"),
+                 (74, "rotate(0deg)"), (100, "rotate(0deg)")], origin="0% 50%")
+    anim("near", [(0, "translateX(0px)"), (38, "translateX(0px)"), (56, f"translateX({-pan:.1f}px)"),
+                  (93, f"translateX({-pan:.1f}px)"), (94, "translateX(0px)"), (100, "translateX(0px)")])
+    anim("far", [(0, "translateX(0px)"), (38, "translateX(0px)"), (56, f"translateX({-pan * .45:.1f}px)"),
+                 (93, f"translateX({-pan * .45:.1f}px)"), (94, "translateX(0px)"), (100, "translateX(0px)")])
+    anim("shake", [(0, "translateX(0px)"), (69, "translateX(0px)"), (70, "translateX(-2px)"), (71, "translateX(2px)"),
+                   (72, "translateX(-2px)"), (73, "translateX(0px)"), (100, "translateX(0px)")])
+    anim("blk", [(0, "scale(1)"), (73, "scale(1)"), (76, "scale(0)"), (93.9, "scale(0)"), (94, "scale(1)"), (100, "scale(1)")],
+         origin="50% 50%")
+    for j, (dx, dy) in enumerate(((-16, -26), (14, -30), (-10, 12), (18, 8))):
+        anim(f"bit{j}", [(0, "translate(0px,0px) scale(0)"), (73, "translate(0px,0px) scale(0)"), (74, "translate(0px,0px) scale(1)"),
+                         (84, f"translate({dx}px,{dy}px) scale(.4)"), (85, "translate(0px,0px) scale(0)"),
+                         (100, "translate(0px,0px) scale(0)")], origin="50% 50%")
+    opac("fade", [(0, 1), (90, 1), (93, 0), (95, 0), (99, 1), (100, 1)])
+
+    # --- 3台のスマホ
+    phones, lines = [], []
+    active = [(5, 31), (35, 61), (63, 87)]
+    for i, name in enumerate(("blue", "green", "purple")):
+        c = CHARS[name]["body"]
+        e = CHARS[name]["eye"]
+        cx = pcx[i]
+        a, z = active[i]
+        if narrow:
+            path = f"M{cx} {ptop - 6}C{cx} {ptop - 30} {hub[0]} {hub[1] + 22} {hub[0]} {hub[1]}"
+        else:
+            path = f"M{cx} {ptop - 6}C{cx} {ptop - 50} {hub[0] - 70} {hub[1]} {hub[0]} {hub[1]}"
+        lines.append(f'<path d="{path}" fill="none" stroke="{c}" stroke-width="3" stroke-linecap="round" class="ln{i}"/>')
+        css.append(kf(f"k-ln{i}", [(0, .2), (a - 1, .2), (a, 1), (z, 1), (z + 1, .2), (100, .2)], "opacity")
+                   + f".ln{i}{{stroke-dasharray:6 7;animation:k-ln{i} {D}s linear infinite,flow 1.1s linear infinite}}")
+        anim(f"ph{i}", [(0, "translateY(0px)"), (a, "translateY(0px)"), (a + 2, "translateY(-6px)"), (a + 4, "translateY(0px)"),
+                        (100, "translateY(0px)")])
+        eyes = f'<circle cx="40" cy="33" r="4" fill="{e}"/><circle cx="60" cy="33" r="4" fill="{e}"/>'
+        if i == 0:
+            ui = (f'<circle cx="50" cy="88" r="24" fill="none" stroke="{e}" stroke-width="3.5"/>'
+                  f'<circle class="knob" cx="50" cy="88" r="11" fill="{e}"/>')
+            anim("knob", [(0, "translateX(0px)"), (7, "translateX(0px)"), (9, "translateX(11px)"), (28, "translateX(11px)"),
+                          (30, "translateX(0px)"), (100, "translateX(0px)")])
+        elif i == 1:
+            ui = (f'<rect x="24" y="58" width="52" height="60" rx="9" fill="none" stroke="{e}" stroke-width="3.5"/>'
+                  f'<circle class="drag" cx="58" cy="88" r="8" fill="{e}"/>')
+            anim("drag", [(0, "translateX(0px)"), (37, "translateX(0px)"), (56, "translateX(-18px)"), (58, "translateX(-18px)"),
+                          (60, "translateX(0px)"), (100, "translateX(0px)")])
+        else:
+            ui = (f'<circle class="btna" cx="38" cy="74" r="13" fill="{e}"/>'
+                  f'<circle cx="64" cy="104" r="11" fill="none" stroke="{e}" stroke-width="3.5"/>')
+            anim("btna", [(0, "scale(1)"), (65, "scale(1)"), (66.5, "scale(.75)"), (68, "scale(1)"), (70, "scale(1)"),
+                          (71.5, "scale(.75)"), (73, "scale(1)"), (100, "scale(1)")], origin="50% 50%")
+        phones.append(f'<g transform="translate({cx - 50 * ps:.1f} {ptop}) scale({ps})"><g class="ph{i}">'
+                      f'<path d="{BODY}" fill="{c}" stroke="{t["outline"]}" stroke-width="1.6"/>'
+                      f'<rect x="14" y="16" width="72" height="117" rx="11" fill="{t["screen"]}"/>'
+                      f'<g filter="url(#glow)">{eyes}{ui}</g></g></g>')
+    labels = []
+    roles = (("P1", "移動"), ("P2", "視点"), ("P3", "アクション"))
+    ly = ptop + 150 * ps + 22
+    for i, (pl, role) in enumerate(roles):
+        c = CHARS[("blue", "green", "purple")[i]]["body"]
+        c = c if i != 1 else "#2FB52E"
+        labels.append(text(pcx[i], ly, pl, 14, c, weight=900, anchor="middle")
+                      + text(pcx[i], ly + 20, role, 14, t["ink"], weight=800, anchor="middle"))
+
+    stand = (f'<rect x="{mx + mw / 2 - 16}" y="{my + mh}" width="32" height="16" fill="{t["line"]}"/>'
+             f'<rect x="{mx + mw / 2 - 50}" y="{my + mh + 14}" width="100" height="8" rx="4" fill="{t["line"]}"/>')
+    monitor = f'<rect x="{mx}" y="{my}" width="{mw}" height="{mh}" rx="14" fill="{t["outline"]}"/>'
+    body = "".join(lines) + stand + monitor + scene + "".join(phones) + "".join(labels)
+    return svg(W, H, body, t, "3台のスマホで1人のキャラクターを分けて操作する様子：P1の移動でキャラクターが歩き、"
+               "P2の視点で景色が回り、P3のアクションでジャンプしてブロックを壊す", "".join(css))
 
 
 # ---------- 見出し ----------
@@ -560,14 +569,14 @@ def head_banner(num, jp, en, name, t, narrow=False):
         lines = wrap(jp, 27, PHONE_W - 4)
         W, H = PHONE_W, 50 + 36 * len(lines)
         b = [text(0, 42, num, 42, "url(#brand)", cls="disp", weight=400, length=44),
-             text(58, 34, en, 12, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"')]
+             text(58, 34, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"')]
         # 行頭の全角括弧は字下げに見えるので、半文字ぶん左へ寄せる
         b += [text(-13.5 if line[0] in "（「" else 0, 80 + 36 * k, line, 27, t["ink"], cls="gh", weight=600)
               for k, line in enumerate(lines)]
     else:
         W, H = 840, 68
         b = [text(0, 52, num, 42, "url(#brand)", cls="disp", weight=400, length=44),
-             text(60, 26, en, 12, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
+             text(60, 26, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
              text(58, 55, jp, 27, t["ink"], cls="gh", weight=600, length=fit(jp, 27, W - 58 - 8))]
     return svg(W, H, "".join(b), t, jp)
 
@@ -576,12 +585,9 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     files = {}
     for mode, t in THEMES.items():
-        for kind, draw in (("hero", hero), ("flow", flow), ("pipeline", pipeline)):
+        for kind, draw in (("split", split_demo), ("flow", flow), ("pipeline", pipeline), ("footer", footer)):
             files[f"{kind}-{mode}.svg"] = draw(t)
             files[f"{kind}-narrow-{mode}.svg"] = draw(t, narrow=True)
-        files[f"footer-{mode}.svg"] = footer(t)
-    for n in ORDER:
-        files[f"char-{n}.svg"] = avatar(n)
     for i, (num, jp, en) in enumerate(HEADS):
         name = ORDER[i % 4]
         for mode, t in THEMES.items():

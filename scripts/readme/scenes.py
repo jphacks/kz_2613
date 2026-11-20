@@ -149,18 +149,24 @@ def pop(cls, dur, a, b):
             + f".{cls}{{animation:k-{cls} {dur}s linear infinite;transform-box:fill-box;transform-origin:50% 100%}}")
 
 
+BUBBLE = 1.0  # 吹き出しと記号の大きさの倍率。スマホ版の帯は縮んで表示されるので大きくする
+
+
 def bubble(x, y, s, cls, size=14):
-    """吹き出し（白地・ライトでもダークでも読める）。(x, y) はしっぽの先。"""
+    """吹き出し（白地・ライトでもダークでも読める）。(x, y) はしっぽの先。舞台の外へ出ないよう左右を寄せる。"""
+    size *= BUBBLE
     w = sum(size * (0.62 if c.isascii() else 1.0) for c in s) + 18
     h = size + 12
-    return (f'<g class="{cls}"><rect x="{x - w / 2:.1f}" y="{y - h - 6}" width="{w:.1f}" height="{h}" rx="{h / 2}" '
+    bx = min(max(x, w / 2 + 4), W - w / 2 - 4)
+    return (f'<g class="{cls}"><rect x="{bx - w / 2:.1f}" y="{y - h - 6}" width="{w:.1f}" height="{h}" rx="{h / 2}" '
             f'fill="#FFFFFF" stroke="#D5DAE3" stroke-width="1.5"/>'
             f'<path d="M{x - 5} {y - 7}L{x} {y}L{x + 5} {y - 7}" fill="#FFFFFF" stroke="#D5DAE3" stroke-width="1.5" stroke-linejoin="round"/>'
             f'<rect x="{x - 6}" y="{y - 9}" width="12" height="3" fill="#FFFFFF"/>'
-            f'{art.text(x, y - 6 - h / 2 + size * .36, s, size, "#2E2B48", cls="rnd", weight=800, anchor="middle")}</g>')
+            f'{art.text(bx, y - 6 - h / 2 + size * .36, s, size, "#2E2B48", cls="rnd", weight=800, anchor="middle")}</g>')
 
 
 def mark(x, y, s, cls, size=22, fill=MARK):
+    size *= BUBBLE
     edge = ' stroke="#FFFFFF" stroke-width="4" paint-order="stroke" stroke-linejoin="round"'
     return f'<g class="{cls}">{art.text(x, y, s, size, fill, cls="rnd", weight=800, anchor="middle", extra=edge)}</g>'
 
@@ -551,11 +557,13 @@ def band(sc, accent, wide=True):
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     rows = []
+    global BUBBLE
     for i, make in enumerate(SCENES, 1):
-        sc, title, desc = make()
         accent = art.ORDER[(i - 1) % 4]
         base = f"scene-{i:02d}-{make.__name__}"
         for suffix, wide in (("", True), ("-narrow", False)):
+            BUBBLE = 1.0 if wide else 1.7
+            sc, title, desc = make()
             bw, body = band(sc, accent, wide)
             svg = art.svg(bw, BH, body, T, f"{title}：{desc}", COMMON + BAND_CSS + "".join(sc.css))
             (OUT / f"{base}{suffix}.svg").write_text(svg + "\n", encoding="utf-8", newline="\n")

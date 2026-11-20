@@ -6,24 +6,23 @@
 
 | ファイル | 内容 |
 |:--|:--|
-| `hero-*.svg` | 冒頭の見出し画像（作品名・キャッチコピー・4体のキャラクター） |
+| `split-*.svg` | 冒頭の概要文のあとのアニメーション。3台のスマホが1人のキャラクターを分けて操作する様子 |
 | `flow-*.svg` | 遊ぶまでの4ステップ |
 | `pipeline-*.svg` | 操作の自動検出から分担AI、スマホ画面への配分までの流れ |
 | `footer-*.svg` | 末尾の締めの画像 |
 | `heads/head-*.svg` | 項目の見出し（番号・英字ラベル・見出し）。見出しの文字はGitHub本体と同じフォント指定で、閲覧者の端末の標準フォントで描く |
 | [`scenes/`](scenes/README.md) | 各項目の終わりに置く区切りの帯（キャラクターが遊ぶ10種類のアニメーション） |
-| `char-*.svg` | キャラクター単体（表・試遊者の声で使用） |
 | `system-architecture.webp` | [システム構成図](../images/recooplay-system-architecture.webp) の余白を詰めたもの |
 
-`-light`／`-dark` はGitHubのテーマ、`-narrow-` はスマホなど幅700px以下の画面用で、READMEの `<picture>` が切り替えます。見出し・4ステップ・分担AIの図のスマホ版は幅360で描き、READMEでは幅を指定せずにそのままの大きさで表示します。本文との文字の大きさの比がPC版と同じになります。
+`-light`／`-dark` はGitHubのテーマ、`-narrow-` はスマホなど幅700px以下の画面用で、READMEの `<picture>` が切り替えます。図と見出しは、GitHubの本文欄と同じ幅（PCは838px、幅390pxのスマホは324px）で描き、READMEでは幅を指定せず原寸で表示します。図の文字の大きさがそのまま画面上の大きさになり、本文（16px）との比がPC版とスマホ版でそろいます。図の文字は13px以上にし、`python scripts/readme/check_text_size.py` で確かめます。
 
 ## フォント
 
-`<img>` で表示したSVGは外部のフォントを読めません。そのため、ヒーローと締めの文字は、使う字だけに絞ったフォントをSVGに埋め込んでいます。ほかの図の文字は、閲覧者の端末の日本語フォントで表示します。
+`<img>` で表示したSVGは外部のフォントを読めません。そのため、締めの文字は、使う字だけに絞ったフォントをSVGに埋め込んでいます。ほかの図の文字は、閲覧者の端末の日本語フォントで表示します。
 
 | フォント | 使う場所 | ライセンス |
 |:--|:--|:--|
-| M PLUS Rounded 1c（Bold・ExtraBold） | ヒーローの文字、締めの説明文 | [SIL Open Font License 1.1](fonts/OFL-MPLUSRounded1c.txt) |
+| M PLUS Rounded 1c（Bold・ExtraBold） | 締めの説明文、区切りの帯の吹き出し | [SIL Open Font License 1.1](fonts/OFL-MPLUSRounded1c.txt) |
 | Yusei Magic | 締めの「さあ、みんなで遊ぼう！」 | [SIL Open Font License 1.1](fonts/OFL-YuseiMagic.txt) |
 
 どちらも [google/fonts](https://github.com/google/fonts) の固定した版から取得します。キャラクターのまばたきなどの動きは、OSで「視差効果を減らす」を選んだ閲覧者には止まります。
