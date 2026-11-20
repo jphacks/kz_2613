@@ -1,6 +1,4 @@
-<h1 align="center">Re:Cooplay（リコープレイ）</h1>
-
-<p align="center"><b>ゲームはそのまま。1キャラを、みんなで操作。</b></p>
+<h1>Re:Cooplay（リコープレイ） ゲームはそのまま。1キャラを、みんなで操作。</h1>
 
 <p align="center">
   <a href="#製品概要"><b>製品概要</b></a>&nbsp;·&nbsp;
