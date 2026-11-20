@@ -706,15 +706,36 @@ def part_banner(part, jp, en, first, last, t, narrow=False):
     return svg(W, H, "".join(b), t, jp)
 
 
-def toc_title(t, narrow=False):
-    """目次の見出し。項目の見出しより前の冒頭なので、番号を付けず、細い線と4色の点で控えめに区切る。"""
-    W = PHONE_W if narrow else PC_W
-    b = [text(0, 31, "目次", 24, t["ink"], cls="gh", weight=700),
-         text(60, 30, "CONTENTS", 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="4"')]
-    x0, x1 = 172, W - 67  # 4色の点の右端を、目次の列の右端（画像の右14pxの余白）にそろえる
-    b.append(f'<rect x="{x0}" y="24.5" width="{x1 - x0}" height="1.5" rx=".75" fill="{t["line"]}"/>')
+def section_head(jp, en, W, t, ls=4):
+    """冒頭の節の見出し（目次・受賞結果）。番号を付けず、細い線と4色の点で控えめに区切る。
+    4色の点の右端は、目次の列の右端（画像の右14pxの余白）にそろえる。線が短くなりすぎるときは点だけにする。"""
+    ex = 24 * len(jp) + 12
+    b = [text(0, 31, jp, 24, t["ink"], cls="gh", weight=700),
+         text(ex, 30, en, 13, t["muted"], cls="gh", weight=600, extra=f' letter-spacing="{ls}"')]
+    x0, x1 = ex + round(len(en) * 8.06 + (len(en) - 1) * ls) + 20, W - 67
+    if x1 - x0 >= 24:
+        b.append(f'<rect x="{x0}" y="24.5" width="{x1 - x0}" height="1.5" rx=".75" fill="{t["line"]}"/>')
     b += [f'<circle cx="{x1 + 10 + i * 13}" cy="25.25" r="4" fill="{CHARS[n]["body"]}"/>' for i, n in enumerate(ORDER)]
-    return svg(W, 40, "".join(b), t, "目次")
+    return "".join(b)
+
+
+def toc_title(t, narrow=False):
+    """目次の見出し。"""
+    W = PHONE_W if narrow else PC_W
+    return svg(W, 40, section_head("目次", "CONTENTS", W, t), t, "目次")
+
+
+def video_cta(t, narrow=False):
+    """サムネイルの下に置く、紹介動画への誘導。押せることが分かるよう、枠・再生の印・矢印を付ける。"""
+    W, H = (PHONE_W, 60) if narrow else (PC_W, 60)
+    red = "#FF2D55"
+    b = [f'<rect x=".75" y=".75" width="{W - 1.5}" height="{H - 1.5}" rx="12" fill="none" stroke="{t["line"]}" stroke-width="1.5"/>',
+         f'<circle cx="34" cy="{H / 2}" r="17" fill="{red}"/>',
+         f'<path d="M29 {H / 2 - 7.5}L41 {H / 2}L29 {H / 2 + 7.5}Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>',
+         text(64, 27, "プロダクト紹介動画を見る", 16, t["ink"], cls="gh", weight=700),
+         text(64, 46, "YouTubeで再生します", 13, t["muted"], cls="gh", weight=600),
+         f'<path d="M{W - 28} {H / 2 - 7}l7 7-7 7" fill="none" stroke="{t["muted"]}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>']
+    return svg(W, H, "".join(b), t, "プロダクト紹介動画を見る（YouTube）")
 
 
 def toc_part(part, jp, en, mode, narrow=False):
@@ -773,26 +794,24 @@ def awards(t, narrow=False):
     rows = max(len(items) for _, _, items in AWARDS)
     ph = 70 + rows * 46
     if narrow:
-        W, pad, top = PHONE_W, 0, 66
+        W, top = PHONE_W, 56
         hs = [70 + len(items) * 46 for _, _, items in AWARDS]
         H = top + sum(hs) + 12
     else:
-        W, pad, top = PC_W, 0, 70
+        W, top = PC_W, 56
         H = top + ph
-    b = []
-    cx = W / 2
-    b += [text(cx, 26, "JPHACKS 2026", 13, t["muted"], cls="gh", weight=700, anchor="middle", extra=' letter-spacing="4"'),
-          text(cx, 54, "受賞結果", 24, t["ink"], cls="gh", weight=700, anchor="middle"),
-          star(cx - 66, 46, 7, MEDAL["gold"]), star(cx + 66, 46, 7, MEDAL["gold"])]
+    # 見出しは目次と同じ形にし、枠の右端も目次の列の右端（右14pxの余白）にそろえる
+    b = [section_head("受賞結果", "JPHACKS 2026", W, t, 2 if narrow else 4)]
+    cw = W - 14
     if narrow:
         y = top
         for (title, sub, items), h in zip(AWARDS, hs):
-            b.append(award_panel(pad, y, W - 2 * pad, h, title, sub, items, t))
+            b.append(award_panel(0, y, cw, h, title, sub, items, t))
             y += h + 12
     else:
-        pw = (W - 2 * pad - 16) / 2
+        pw = (cw - 16) / 2
         for k, (title, sub, items) in enumerate(AWARDS):
-            b.append(award_panel(pad + k * (pw + 16), top, pw, ph, title, sub, items, t))
+            b.append(award_panel(k * (pw + 16), top, pw, ph, title, sub, items, t))
     alt = "JPHACKS 2026 受賞結果。" + "。".join(
         f"{title}{'（' + sub + '）' if sub else ''}：" + "、".join(n + (f"（{note}）" if note else "") for _, n, note in items)
         for title, sub, items in AWARDS)
@@ -825,6 +844,8 @@ def main():
         files[f"heads/toc-title-{mode}.svg"] = toc_title(t)
         files[f"heads/toc-title-narrow-{mode}.svg"] = toc_title(t, narrow=True)
         files[f"awards-{mode}.svg"] = awards(t)
+        files[f"video-cta-{mode}.svg"] = video_cta(t)
+        files[f"video-cta-narrow-{mode}.svg"] = video_cta(t, narrow=True)
         files[f"awards-narrow-{mode}.svg"] = awards(t, narrow=True)
     (OUT / "heads").mkdir(exist_ok=True)
     for name, body in files.items():

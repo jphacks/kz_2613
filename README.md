@@ -1,22 +1,17 @@
 <h1><picture><source media="(max-width: 1100px) and (prefers-color-scheme: dark)" srcset="assets/readme/title-narrow-dark.svg"><source media="(max-width: 1100px)" srcset="assets/readme/title-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/title-dark.svg"><img src="assets/readme/title-light.svg" align="absbottom" alt="※JPHACKS 2026 Award Dayでの内容です Re:Cooplay（リコープレイ）ゲームはそのまま。1キャラを、みんなで操作。"></picture></h1>
 
-<div align="center">
+Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシステム**です。
 
-<a href="https://youtu.be/a8uhU2ymsuQ"><img src="assets/images/recooplay-thumbnail.png" width="760" alt="Re:Cooplay 製品紹介動画（クリックしてYouTubeで再生）"></a>
+1台のPC画面を友達と囲み、普段は1人で操作するキャラクターを2〜4人で分担して動かします。コントローラーは各自のスマートフォンのブラウザなので、専用の機器もアプリも要りません。ゲームの操作名とキー割り当てを自動で読み取り、独自AIが参加人数に合わせて分担とスマホの操作画面を作ります。
 
-<sub>▶ 画像をクリックすると、YouTubeでプロダクト紹介動画を再生します。</sub>
-
-</div>
+<a href="https://youtu.be/a8uhU2ymsuQ"><img src="assets/images/recooplay-thumbnail.png" width="100%" alt="Re:Cooplay 製品紹介動画（クリックしてYouTubeで再生）"></a>
+<a href="https://youtu.be/a8uhU2ymsuQ"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/video-cta-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/video-cta-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/video-cta-dark.svg"><img src="assets/readme/video-cta-light.svg" alt="プロダクト紹介動画を見る（YouTube）"></picture></a>
 
 <br>
 
 <picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/awards-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/awards-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/awards-dark.svg"><img src="assets/readme/awards-light.svg" alt="JPHACKS 2026 受賞結果。Hack Day（金沢会場）：Hack Day Audience Award、Award Day Finalist。Award Day：審査委員特別賞、Innovator認定、合同会社DMM.com賞"></picture>
 
 <br>
-
-Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシステム**です。
-
-1台のPC画面を友達と囲み、普段は1人で操作するキャラクターを2〜4人で分担して動かします。コントローラーは各自のスマートフォンのブラウザなので、専用の機器もアプリも要りません。ゲームの操作名とキー割り当てを自動で読み取り、独自AIが参加人数に合わせて分担とスマホの操作画面を作ります。
 
 <picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-title-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-title-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-title-dark.svg"><img src="assets/readme/heads/toc-title-light.svg" alt="目次"></picture>
 
