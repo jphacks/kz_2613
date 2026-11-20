@@ -386,7 +386,7 @@ def carry(kind, mode):
 def gather(kind, mode):
     """赤がためてから「。」を蹴り、当たった「:」が上下2つの点に割れて一番下の行まで落ちる。
     やってしまった赤のもとへ3体が来て、青と緑が点を頭に載せて運び、下の点は緑から受け取った赤が自分で戻す。
-    最後はみんなで喜んで、左へ去っていく。"""
+    3体はふだん一番下の段にいて、点を戻すときだけ上る。最後は一番下の段でみんなで喜んで、左へ去っていく。"""
     t = Title(kind, mode, 16)
     kick, hit = 31, 37
     ball_flight(t, kick, hit)
@@ -444,17 +444,20 @@ def gather(kind, mode):
     blue.wait(40).walk(48, rest[0] - 2).put(49, sx=1.12, sy=.84).put(50)
     blue.p = 50
     climb(blue, 56, cx - 14, up).wait(58).jump(60, 8)
+    descend(blue, 64, blue.x)  # 戻したら一番下の段へ
     # 緑：下の点を拾って運び、赤へトスする
     green = Path(t, -56, fl)
     green.wait(41).walk(50, rest[1]).put(51, sx=1.12, sy=.84).put(52)
     green.p = 52
     climb(green, 59, cx + 36, up).wait(61.5).jump(63.5, 8)
-    # 紫：赤を励ます（跳ねる）、一緒に上がる
+    descend(green, 66.5, green.x)
+    # 紫：赤を励ます（跳ねる）。点は運ばないので、一番下の段で見守る
     purple = Path(t, -82, fl)
     purple.wait(42).walk(51, meet - 24).jump(53, 10)
-    climb(purple, 59, cx + 60, up)
+    purple.walk(59, cx + 60)
     # 赤が受け取った下の点を、跳んで元に戻す
     red.jump(67.5, 10)
+    descend(red, 70, red.x)
     paths = (("blue", blue), ("green", green), ("purple", purple), ("red", red))
     # みんなで喜ぶ
     for k, (name, path) in enumerate(paths):
@@ -479,7 +482,7 @@ def gather(kind, mode):
                    f'fill="#FF8A00" font-family="{FONT}">!</text></g>')
     t.css.append("@keyframes oops{0%,37.5%{opacity:0}38.5%,46%{opacity:1}47%,100%{opacity:0}}"
                  ".oops{opacity:0;animation:oops 16s linear infinite}")
-    note_y = plat(t, up) - 124 * .2 - 8
+    note_y = fl - 124 * .2 - 8
     t.front.append(f'<g class="joy"><text x="{cx + 20:.1f}" y="{note_y:.1f}" font-size="18" font-weight="800" '
                    f'fill="#FF8A00" font-family="{FONT}">♪</text></g>')
     t.css.append("@keyframes joy{0%,70%{opacity:0;transform:translateY(4px)}72%,80%{opacity:1;transform:translateY(-4px)}"
