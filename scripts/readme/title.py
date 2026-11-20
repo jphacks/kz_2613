@@ -2,7 +2,7 @@
 
 最初はふつうの見出しにしか見えず、少し時間がたつと4色のキャラクターが現れる。赤がためてから文末の「。」を蹴ると、
 「Re:Cooplay」の「:」に当たって2つの点に割れ、画像の一番下まで落ちる。赤は「。」を拾ってみんなに謝り、
-点は青と緑が1つずつ戻す。みんなで喜んだあと3体は去り、赤は「。」を文末に戻して去る。1周17秒。
+点は青と緑が1つずつ戻す。みんなで喜んだあと3体は去り、赤は「。」を文末に戻して去る。1周22秒で、最初の約6.5秒は止まっている。
 キャラクターはふだん画像の一番下（一番下の段の下）にいて、点を戻すときだけ文字の段を上る。
 1行目の作品名はGitHubの h1（32px・太さ600）、2行目のキャッチコピーは h2 と同じ24pxにする。
 文字はGitHub本体と同じフォント指定で描き、1文字ずつの位置はGitHubの見出しをChromeで実測した幅
@@ -44,8 +44,9 @@ def T(x=0, y=0, r=0, sx=1, sy=1):
 
 
 class Title:
-    def __init__(self, kind, mode, dur):
-        self.kind, self.mode, self.dur = kind, mode, dur
+    def __init__(self, kind, mode, dur, lead=0):
+        """dur 秒の動きの前に、lead 秒の止まった時間を足す。動きの時刻は dur 秒を100とした%で書く。"""
+        self.kind, self.mode, self.dur, self.lead = kind, mode, dur + lead, lead
         self.rows = LINES[kind]
         self.W = SIZE[kind]
         self.tops, y = [], TOP
@@ -91,8 +92,14 @@ class Title:
         return x + w / 2, b - size * .35
 
     # 動き
+    def pct(self, p):
+        """動きの時刻(%)を、止まった時間を含めた1周の中の%にする。"""
+        return round((self.lead + p * (self.dur - self.lead) / 100) / self.dur * 100, 2)
+
     def kf(self, name, frames, origin="50% 100%"):
-        body = "".join(f"{p:g}%{{transform:{v}}}" for p, v in sorted(frames))
+        frames = sorted(frames)
+        frames = [(0, frames[0][1])] + [(self.pct(p), v) for p, v in frames]
+        body = "".join(f"{p:g}%{{transform:{v}}}" for p, v in frames)
         self.css.append(f"@keyframes {name}{{{body}}}.{name}{{animation:{name} {self.dur}s linear infinite;"
                         f"transform-box:fill-box;transform-origin:{origin}}}")
 
@@ -291,8 +298,8 @@ def make(kind, mode):
     やってしまった赤は、跳ね返って止まった「。」を拾い、来てくれた3体に謝る。点は青と緑が1つずつ運んで戻す。
     キャラクターはふだん画像の一番下（一番下の段の下）にいて、点を戻すときだけ段を上る。
     みんなで喜んだあと3体は左へ去り、赤は「。」を文末へ戻してから右へ去る。"""
-    dur = 17
-    t = Title(kind, mode, dur)
+    t = Title(kind, mode, 17, lead=5)  # 1周22秒。最初の5秒は止まったまま
+    dur, q = t.dur, t.pct
     kick, hit = 31, 37
     last = len(t.rows) - 1
     fl = floor(t)
@@ -404,13 +411,13 @@ def make(kind, mode):
     # 「!」と「♪」
     t.front.append(f'<g class="oops"><text x="{mark_x - 4:.1f}" y="{mark_y:.1f}" font-size="20" font-weight="800" '
                    f'fill="#FF8A00" font-family="{FONT}">!</text></g>')
-    t.css.append("@keyframes oops{0%,37.5%{opacity:0}38.5%,43%{opacity:1}44%,100%{opacity:0}}"
+    t.css.append(f"@keyframes oops{{0%,{q(37.5)}%{{opacity:0}}{q(38.5)}%,{q(43)}%{{opacity:1}}{q(44)}%,100%{{opacity:0}}}}"
                  f".oops{{opacity:0;animation:oops {dur}s linear infinite}}")
     note_y = fl - 124 * .2 - 8
     t.front.append(f'<g class="joy"><text x="{cx + 20:.1f}" y="{note_y:.1f}" font-size="18" font-weight="800" '
                    f'fill="#FF8A00" font-family="{FONT}">♪</text></g>')
-    t.css.append("@keyframes joy{0%,70.5%{opacity:0;transform:translateY(4px)}72%,78%{opacity:1;transform:translateY(-4px)}"
-                 f"80%,100%{{opacity:0}}}}.joy{{opacity:0;animation:joy {dur}s linear infinite}}")
+    t.css.append(f"@keyframes joy{{0%,{q(70.5)}%{{opacity:0;transform:translateY(4px)}}{q(72)}%,{q(78)}%{{opacity:1;"
+                 f"transform:translateY(-4px)}}{q(80)}%,100%{{opacity:0}}}}.joy{{opacity:0;animation:joy {dur}s linear infinite}}")
     return t.render()
 
 
