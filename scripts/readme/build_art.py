@@ -468,20 +468,21 @@ def eyebrow(num, en, name):
 
 
 def head_banner(num, jp, en, name, t, narrow=False):
-    """案D：見出しそのものを画像の帯にする。狭い版は番号とラベルの下に見出しを置く。"""
-    W, H = (480, 112) if narrow else (840, 84)
-    b = [f'<rect x="1" y="6" width="{W - 2}" height="{H - 12}" rx="16" fill="{t["panel2"]}" stroke="{t["line"]}"/>',
-         f'<rect x="1" y="6" width="8" height="{H - 12}" rx="4" fill="url(#brand)"/>']
+    """案D：見出しそのものを画像にする。背景色・輪郭・キャラクターは付けず、左の色の棒と番号で見出しを示す。
+    狭い版（スマホ）は番号とラベルの下に見出しを置く。"""
+    W, H = (480, 98) if narrow else (840, 72)
+    grad = ('<defs><linearGradient id="brandv" x1="0" y1="0" x2="0" y2="1">'
+            '<stop offset="0" stop-color="#C03BFF"/><stop offset=".55" stop-color="#6F86FF"/>'
+            '<stop offset="1" stop-color="#22C4FA"/></linearGradient></defs>')
+    b = [grad, f'<rect x="0" y="8" width="6" height="{H - 16}" rx="3" fill="url(#brandv)"/>']
     if narrow:
-        b += [char(name, 14, 30, .42, t),
-              text(68, 48, num, 30, "url(#brand)", cls="disp", weight=400, length=32),
-              text(110, 44, en, 12, t["muted"], cls="rnd", weight=800, extra=' letter-spacing="2.5"'),
-              text(68, 86, jp, 22, t["ink"], cls="rnd", weight=800, length=fit(jp, 22, W - 68 - 16))]
+        b += [text(20, 44, num, 32, "url(#brand)", cls="disp", weight=400, length=34),
+              text(64, 38, en, 12, t["muted"], cls="rnd", weight=800, extra=' letter-spacing="2.5"'),
+              text(20, 80, jp, 24, t["ink"], cls="rnd", weight=800, length=fit(jp, 24, W - 20 - 8))]
     else:
-        b += [char(name, 20, 16, .42, t),
-              text(84, 58, num, 36, "url(#brand)", cls="disp", weight=400, length=38),
-              text(136, 36, en, 12, t["muted"], cls="rnd", weight=800, extra=' letter-spacing="3"'),
-              text(134, 63, jp, 24, t["ink"], cls="rnd", weight=800, length=fit(jp, 24, W - 134 - 24))]
+        b += [text(22, 54, num, 42, "url(#brand)", cls="disp", weight=400, length=44),
+              text(82, 28, en, 12, t["muted"], cls="rnd", weight=800, extra=' letter-spacing="3"'),
+              text(80, 57, jp, 27, t["ink"], cls="rnd", weight=800, length=fit(jp, 27, W - 80 - 8))]
     return svg(W, H, "".join(b), t, jp)
 
 
