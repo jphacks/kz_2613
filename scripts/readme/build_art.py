@@ -53,6 +53,7 @@ THEMES = {
 FONTS = """
 .jp{font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic UI','Yu Gothic','Meiryo','Noto Sans JP','Noto Sans CJK JP',sans-serif}
 .disp{font-family:Impact,Haettenschweiler,'Anton','Arial Narrow Bold','Arial Black',sans-serif}
+.gh{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif}
 .rnd{font-family:RcRounded,'Hiragino Maru Gothic ProN','Yu Gothic UI','Noto Sans JP',sans-serif}
 .hand{font-family:RcHand,'Hiragino Maru Gothic ProN','Yu Gothic UI','Noto Sans JP',sans-serif}
 .mono{font-family:ui-monospace,SFMono-Regular,'Cascadia Mono',Consolas,'Liberation Mono',monospace}
@@ -468,21 +469,17 @@ def eyebrow(num, en, name):
 
 
 def head_banner(num, jp, en, name, t, narrow=False):
-    """案D：見出しそのものを画像にする。背景色・輪郭・キャラクターは付けず、左の色の棒と番号で見出しを示す。
-    狭い版（スマホ）は番号とラベルの下に見出しを置く。"""
-    W, H = (480, 98) if narrow else (840, 72)
-    grad = ('<defs><linearGradient id="brandv" x1="0" y1="0" x2="0" y2="1">'
-            '<stop offset="0" stop-color="#C03BFF"/><stop offset=".55" stop-color="#6F86FF"/>'
-            '<stop offset="1" stop-color="#22C4FA"/></linearGradient></defs>')
-    b = [grad, f'<rect x="0" y="8" width="6" height="{H - 16}" rx="3" fill="url(#brandv)"/>']
+    """案D：見出しそのものを画像にする。番号だけ表示用の書体にし、英字ラベルと見出しはGitHub本体と同じ
+    フォント指定（閲覧者の端末の標準フォント）で描く。狭い版（スマホ）は番号とラベルの下に見出しを置く。"""
+    W, H = (480, 92) if narrow else (840, 68)
     if narrow:
-        b += [text(20, 44, num, 32, "url(#brand)", cls="disp", weight=400, length=34),
-              text(64, 38, en, 12, t["muted"], cls="rnd", weight=800, extra=' letter-spacing="2.5"'),
-              text(20, 80, jp, 24, t["ink"], cls="rnd", weight=800, length=fit(jp, 24, W - 20 - 8))]
+        b = [text(0, 38, num, 32, "url(#brand)", cls="disp", weight=400, length=34),
+             text(44, 32, en, 12, t["muted"], cls="gh", weight=600, extra=' letter-spacing="2.5"'),
+             text(0, 76, jp, 24, t["ink"], cls="gh", weight=600, length=fit(jp, 24, W - 8))]
     else:
-        b += [text(22, 54, num, 42, "url(#brand)", cls="disp", weight=400, length=44),
-              text(82, 28, en, 12, t["muted"], cls="rnd", weight=800, extra=' letter-spacing="3"'),
-              text(80, 57, jp, 27, t["ink"], cls="rnd", weight=800, length=fit(jp, 27, W - 80 - 8))]
+        b = [text(0, 52, num, 42, "url(#brand)", cls="disp", weight=400, length=44),
+             text(60, 26, en, 12, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
+             text(58, 55, jp, 27, t["ink"], cls="gh", weight=600, length=fit(jp, 27, W - 58 - 8))]
     return svg(W, H, "".join(b), t, jp)
 
 
