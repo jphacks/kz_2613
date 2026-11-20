@@ -4,6 +4,9 @@
 「Re:Cooplay」の「:」に当たって2つの点に割れ、画像の一番下まで落ちる。赤は「。」を拾ってみんなに謝り、
 点は青と緑が1つずつ戻す。みんなで喜んだあと3体は去り、赤は「。」を文末に戻して去る。1周22秒で、最初の約6.5秒は止まっている。
 キャラクターはふだん画像の一番下（一番下の段の下）にいて、点を戻すときだけ文字の段を上る。
+いちばん上には「※JPHACKS 2026 Award Dayでの内容です」の注釈を、GitHubの引用（> で始まる行）と同じ見た目で描く。
+READMEの先頭に引用と見出しを並べたときと同じ位置になり、見出しの上に余分な余白ができない。注釈の行と見出しの間の
+余白は、蹴った「。」が放物線で飛ぶ場所にもなる。
 1行目の作品名はGitHubの h1（32px・太さ600）、2行目のキャッチコピーは h2 と同じ24pxにする。
 文字はGitHub本体と同じフォント指定で描き、1文字ずつの位置はGitHubの見出しをChromeで実測した幅
 （WIDTHS、32pxのとき）で置く。READMEでは <h1> の中に align="absbottom" で入れると、
@@ -31,10 +34,17 @@ WORDS = [(0, 2), (2, 3), (3, 10)]
 LINES = {"wide": [(0, 18, 32), (18, 40, 24)],
          "narrow": [(0, 10, 32), (10, 18, 32), (18, 27, 24), (27, 40, 24)]}
 SIZE = {"wide": art.PC_W, "narrow": art.PHONE_W}
-TOP = 18  # 上の余白（跳ねる分）
+# いちばん上の注釈。GitHubの引用（16px・行の高さ24px、左に4pxの線、文字は線から16px右）をChromeで実測した見た目で描く。
+# スマホ（本文欄324px）では注釈が入りきらず、GitHubと同じく最後の1文字が折り返す
+NOTE = "※JPHACKS 2026 Award Dayでの内容です"
+NOTE_LINES = {"wide": [NOTE], "narrow": [NOTE[:-1], NOTE[-1]]}
+GAP = 24  # 引用と見出しの間（見出しの上の余白）
 INK = {"light": "#1F2328", "dark": "#F0F6FC"}
+MUTED = {"light": "#59636E", "dark": "#9198A1"}  # 引用の文字
+QUOTE = {"light": "#D1D9E0", "dark": "#3D444D"}  # 引用の線
 FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif"
 STILL = "@media (prefers-reduced-motion:reduce){*{animation:none!important}}"
+ALT = f"{NOTE} {TITLE}"
 COLON = TITLE.index(":")
 BALL = len(TITLE) - 1  # 文末の「。」
 
@@ -49,7 +59,8 @@ class Title:
         self.kind, self.mode, self.dur, self.lead = kind, mode, dur + lead, lead
         self.rows = LINES[kind]
         self.W = SIZE[kind]
-        self.tops, y = [], TOP
+        self.notes = NOTE_LINES[kind]
+        self.tops, y = [], 24 * len(self.notes) + GAP
         for _, _, size in self.rows:
             self.tops.append(y)
             y += size * 1.25
@@ -137,10 +148,14 @@ class Title:
                 self.kf(f"g{i}", fr, origin)
                 t = f'<g class="g{i}">{t}</g>'
             texts[i] = t
-        css = (f".h32{{font-family:{FONT};font-size:32px;font-weight:600;fill:{ink}}}"
+        nh = 24 * len(self.notes)
+        note = f'<rect x="0" y="0" width="4" height="{nh}" fill="{QUOTE[self.mode]}"/>' + "".join(
+            f'<text x="20" y="{18.5 + 24 * k}" class="note">{line}</text>' for k, line in enumerate(self.notes))
+        css = (f".note{{font-family:{FONT};font-size:16px;fill:{MUTED[self.mode]}}}"
+               f".h32{{font-family:{FONT};font-size:32px;font-weight:600;fill:{ink}}}"
                f".h24{{font-family:{FONT};font-size:24px;font-weight:600;fill:{ink}}}" + "".join(self.css) + STILL)
-        body = "".join(self.back) + "".join(texts[k] for k in sorted(texts)) + "".join(self.front)
-        return art.svg(self.W, self.H, body, art.THEMES[self.mode], TITLE, css)
+        body = note + "".join(self.back) + "".join(texts[k] for k in sorted(texts)) + "".join(self.front)
+        return art.svg(self.W, self.H, body, art.THEMES[self.mode], ALT, css)
 
 
 def fill(frames):
@@ -334,7 +349,10 @@ def make(kind, mode):
     bxr = min(cx + 200, t.W * .5)  # 止まる x
     rx, ry = bxr - bx, fl - br - by
     mid = dx + (rx - dx) * .6
-    ball = [(kick, T()), *arc(kick + .5, hit, 0, 0, dx, dy, min(dy, 0) - 30, 10)]
+    peak = min(dy, 0) - 30
+    while min(by + dy * u + peak * 4 * u * (1 - u) for u in (k / 20 for k in range(21))) < br + 2:
+        peak += 1  # 放物線の頂点が画像の上で切れないように低くする
+    ball = [(kick, T()), *arc(kick + .5, hit, 0, 0, dx, dy, peak, 10)]
     ball += arc(hit, hit + 3, dx, dy, mid, ry, -14, 5)[1:] + arc(hit + 3, hit + 5, mid, ry, rx - 6, ry, -8, 4)[1:]
     ball += [(hit + 6.5, T(rx, ry))]
 
