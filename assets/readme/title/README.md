@@ -26,9 +26,9 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 
 ---
 
-## 案C2：2つの点を拾い集める
+## 案C2：やってしまった赤を、みんなで助ける
 
-「。」が当たると「:」が上下2つの点に割れて、下の行の文字の上に転がる。文字に乗った4体が1つずつ跳び上げて元に戻す。
+赤が歩いてきて、ためてから文末の「。」を蹴る。「。」が当たると「:」が上下2つの点に割れ、一番下の行まで落ちる。やってしまった赤を3体が励まし、青と緑が点を1つずつ運んで、下の点は赤が自分で戻す。みんなで喜んで去っていく。
 
 <h1><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="title-c2-narrow-dark.svg"><source media="(max-width: 700px)" srcset="title-c2-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="title-c2-dark.svg"><img src="title-c2-light.svg" align="absbottom" alt="Re:Cooplay（リコープレイ）ゲームはそのまま。1キャラを、みんなで操作。"></picture></h1>
 

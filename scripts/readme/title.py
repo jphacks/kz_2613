@@ -9,6 +9,7 @@
     python scripts/readme/title.py
 """
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -167,11 +168,15 @@ class Path:
 
     def __init__(self, t, x, y=None):
         self.t, self.x, self.y, self.p = t, x, t.H if y is None else y, 0
-        self.k = []
+        self.k, self.raw = [], []  # raw：(時刻, x, 足の高さ, 縦の伸び) 頭に物を載せるときに使う
         self.put(0)
 
+    def at(self, p, x, y, r=0, sx=1, sy=1):
+        self.k.append((round(p, 2), T(x, y - self.t.H, r, sx, sy)))
+        self.raw.append((round(p, 2), x, y, sy))
+
     def put(self, p, dy=0, r=0, sx=1, sy=1, dx=0):
-        self.k.append((round(p, 2), T(self.x + dx, self.y - self.t.H + dy, r, sx, sy)))
+        self.at(p, self.x + dx, self.y + dy, r, sx, sy)
         return self
 
     def wait(self, p):
@@ -196,8 +201,7 @@ class Path:
         self.put(p0 + d * .15, sx=1.1, sy=.86)
         peak = min(y0, y) - h
         for u in (.35, .55, .75):
-            self.k.append((round(p0 + d * (.15 + .7 * u), 2),
-                           T(x0 + (x - x0) * u, (y0 + (y - y0) * u) + (peak - min(y0, y)) * 4 * u * (1 - u) - self.t.H)))
+            self.at(p0 + d * (.15 + .7 * u), x0 + (x - x0) * u, (y0 + (y - y0) * u) + (peak - min(y0, y)) * 4 * u * (1 - u))
         self.x, self.y = x, y
         self.put(p0 + d * .9, sx=1.12, sy=.86)
         self.put(p)
@@ -219,6 +223,10 @@ class Path:
         self.p = p
         return self
 
+    def head(self, p0, p1, hx, hy, r):
+        """p0〜p1(%) のあいだ、頭の上に載せた点（元の中心 hx, hy、半径 r）の動き。"""
+        return [(p, T(x - hx, y - 124 * .2 * sy - r - hy)) for p, x, y, sy in self.raw if p0 <= p <= p1]
+
     def frames(self):
         last = self.k[-1][1]
         return self.k + [(100, last)]
@@ -237,21 +245,30 @@ def row_end(t, row):
     return x + w
 
 
-def climb(path, p, x, row):
-    """下の地面から、文字の段を1段ずつ跳び乗って、row の文字の上へ上がる。"""
+def cur_row(path):
+    """いま乗っている行。地面なら行の数。"""
     t = path.t
-    rows = list(range(len(t.rows) - 1, row - 1, -1))
+    return min((r for r in range(len(t.rows)) if abs(plat(t, r) - path.y) < 1), default=len(t.rows))
+
+
+def climb(path, p, x, row):
+    """いまの段から、文字の段を1段ずつ跳び乗って、row の文字の上へ上がる。"""
+    t = path.t
+    rows = list(range(cur_row(path) - 1, row - 1, -1))
+    if not rows:
+        return path.walk(p, x)
     d = (p - path.p) / len(rows)
     for k, r in enumerate(rows):
         path.hop(path.p + d, path.x + (x - path.x) / (len(rows) - k), plat(t, r), 8)
     return path
 
 
-def descend(path, p, x):
-    """文字の上から段を下りて、地面へ降りる。"""
+def descend(path, p, x, ground=False):
+    """文字の上から段を下りて、いちばん下の行の文字の上（ground なら地面）へ降りる。"""
     t = path.t
-    cur = min((r for r in range(len(t.rows)) if abs(plat(t, r) - path.y) < 1), default=len(t.rows))
-    rows = list(range(cur + 1, len(t.rows))) + [None]
+    rows = list(range(cur_row(path) + 1, len(t.rows))) + ([None] if ground else [])
+    if not rows:
+        return path.walk(p, x)
     d = (p - path.p) / len(rows)
     for k, r in enumerate(rows):
         y = t.H if r is None else plat(t, r)
@@ -263,20 +280,26 @@ def descend(path, p, x):
 HIT = 36
 
 
-def kick_ball(t):
-    """赤が歩いてきて、文末の「。」を蹴る。「。」は行をまたいで「:」に当たり、跳ね返って転がって元の場所に戻る。
-    戻り値は赤の Path（蹴ったあとの動きは各案で足す）。"""
+def ball_flight(t, kick=28.5, hit=HIT):
+    """文末の「。」が kick(%) に蹴られ、行をまたいで hit(%) に「:」に当たり、跳ね返って転がって元の場所に戻る。"""
     bx, by = t.center(BALL)
     cx, cy = t.center(COLON)
     dx, dy = cx - bx, cy - by
-    fly = arc(29, HIT, 0, 0, dx, dy, min(dy, 0) - 30, 10)
-    back = [(HIT + 2, T(dx + 18, dy - 12)), (HIT + 5, T(dx + 36, (dy - 12) * .3)), (HIT + 7, T(dx + 46, 0)),
-            (HIT + 8.5, T(dx + 52, -8)), (HIT + 10, T(dx + 58, 0)), (HIT + 18, T(dx * .3, 0)), (HIT + 20, T(0, -5)),
-            (HIT + 21.5, T(0, 0))]
-    t.move(BALL, [(28.5, T()), *fly, *back], origin="50% 50%")
+    fly = arc(kick + .5, hit, 0, 0, dx, dy, min(dy, 0) - 30, 10)
+    back = [(hit + 2, T(dx + 18, dy - 12)), (hit + 5, T(dx + 36, (dy - 12) * .3)), (hit + 7, T(dx + 46, 0)),
+            (hit + 8.5, T(dx + 52, -8)), (hit + 10, T(dx + 58, 0)), (hit + 18, T(dx * .3, 0)), (hit + 20, T(0, -5)),
+            (hit + 21.5, T(0, 0))]
+    t.move(BALL, [(kick, T()), *fly, *back], origin="50% 50%")
+
+
+def kick_ball(t):
+    """赤が歩いてきて、文末の「。」を蹴る。「。」は行をまたいで「:」に当たり、跳ね返って転がって元の場所に戻る。
+    戻り値は赤の Path（蹴ったあとの動きは各案で足す）。"""
+    ball_flight(t)
     end = t.g[BALL][1] + t.g[BALL][3]
     red = Path(t, t.W + 24)
     red.wait(16).walk(26, min(end + 12, t.W - 10)).lean(27, -14).lean(28.5, 18).lean(30, 0)
+    red.hop(33, end - 12, plat(t, len(t.rows) - 1), 10)  # 文字の上へ跳び乗る（地面は文字と重なるので歩かない）
     return red
 
 
@@ -300,19 +323,36 @@ def setup(kind, mode, dur=14):
     return t, red, cx, land_row, dy
 
 
+def floor(t):
+    """いちばん下の行の文字の上。左の外から出入りするときはここを歩く（地面は文字と重なる）。"""
+    return plat(t, len(t.rows) - 1)
+
+
 def enter(t, x_stop, row, p_in, p_up, start=-30):
-    """左の外から地面を歩いてきて、文字の段を上がる。"""
-    path = Path(t, start)
+    """左の外から、いちばん下の行の文字の上を歩いてきて、文字の段を上がる。"""
+    path = Path(t, start, floor(t))
     path.wait(p_in).walk(p_in + 8, max(x_stop - 14, 4))
     return climb(path, p_up, x_stop, row)
 
 
+def arrive(t, x_stop, p_in, p_walk, p_up, start):
+    """右の外から地面（文字のない所）を歩いてきて、いちばん下の行の文字の端に跳び乗り、x_stop まで歩く。"""
+    end = row_end(t, len(t.rows) - 1)
+    path = Path(t, start)
+    path.wait(p_in).walk(p_walk, min(end + 16, t.W - 12))
+    path.hop(p_walk + 3, end - 10, floor(t), 10)
+    return path.walk(p_up, x_stop)
+
+
 def leave(path, p_down, p_out, side="left"):
-    """文字の段を下りて、地面を歩いて外へ出ていく。"""
+    """文字の段を下りて、いちばん下の行の文字の上を歩いて外へ出ていく。右へ出るときは文字の端で地面へ降りる。"""
     t = path.t
     descend(path, p_down, path.x)
-    path.walk(p_out, -40 if side == "left" else t.W + 40)
-    return path
+    if side == "left":
+        return path.walk(p_out, -40)
+    end = row_end(t, len(t.rows) - 1)
+    path.walk(p_down + (p_out - p_down) * .5, end - 6).hop(p_down + (p_out - p_down) * .65, min(end + 16, t.W - 12), t.H, 6)
+    return path.walk(p_out, t.W + 40)
 
 
 # ---------- 案C1：みんなで担いで戻す ----------
@@ -342,33 +382,115 @@ def carry(kind, mode):
     return t.render()
 
 
-# ---------- 案C2：2つの点を拾い集める ----------
+# ---------- 案C2：やってしまった赤を、みんなで助ける ----------
 def gather(kind, mode):
-    """「:」が上下2つの点に割れて、下の行の文字の上に転がる。文字に乗った4体が1つずつ拾い、跳んで元に戻す。"""
-    t, red, cx, row, dy = setup(kind, mode)
-    size = t.g[COLON][4]
-    gap = size * .33
-    far = 54 if kind == "wide" else 40
-    top = [(HIT, T()), (HIT + .8, T(-2, -4, -20)), (HIT + 4, T(far * .5, dy + gap - 18)), (HIT + 6, T(far, dy + gap)),
-           (HIT + 7, T(far, dy + gap - 6)), (HIT + 8.5, T(far, dy + gap)), (58, T(far, dy + gap)),
-           (60, T(far, dy + gap - 24)), *arc(61, 66, far, dy + gap - 24, 0, 0, -18, 6)[1:], (67, T(0, -3)), (68, T())]
-    bot = [(HIT, T()), (HIT + .8, T(-2, 0, 10)), (HIT + 5, T(8, dy)), (HIT + 6, T(8, dy - 6)), (HIT + 7.5, T(8, dy)),
-           (66, T(8, dy)), (68, T(8, dy - 24)), *arc(69, 74, 8, dy - 24, 0, 0, -14, 6)[1:], (75, T(0, -3)), (76, T())]
+    """赤がためてから「。」を蹴り、当たった「:」が上下2つの点に割れて一番下の行まで落ちる。
+    やってしまった赤のもとへ3体が来て、青と緑が点を頭に載せて運び、下の点は緑から受け取った赤が自分で戻す。
+    最後はみんなで喜んで、左へ去っていく。"""
+    t = Title(kind, mode, 16)
+    kick, hit = 31, 37
+    ball_flight(t, kick, hit)
+    last = len(t.rows) - 1
+    fl = floor(t)
+    _, x0, row0, w0, size = t.g[COLON]
+    cx = x0 + w0 / 2
+    b0 = t.base(row0)
+    rad = size * .07
+    homes = (b0 - size * .42, b0 - size * .06)  # 上の点・下の点の中心の高さ
+    up = row0 + 1  # 「:」の真下の行。ここに乗って点を戻す
+    # 落ちた点が止まる所。スマホは一番下の行の文字の上。PCは行が2つで一段しか落ちないので、画像の一番下
+    # （真下の「ゲーム」の「ー」の下は空いている）まで落とす
+    if kind == "wide":
+        rest, low = (cx - 8, cx + 4), t.H - rad
+    else:
+        rest, low = (cx + 40, cx + 10), fl - rad
+
+    def fall(n):
+        """点が段で跳ねながら、一番下の行の文字の上まで落ちる。"""
+        hy = homes[n]
+        out = [(hit, T()), (hit + .8, T(-2, -4 if n == 0 else 0, -20 if n == 0 else 10))]
+        rows = list(range(up, last + 1)) if kind == "narrow" else []
+        p, x = hit + 1.5, rest[n] - cx
+        step = 5 / max(len(rows), 1)
+        for k, r in enumerate(rows):
+            x = (rest[n] - cx) * (k + 1) / len(rows)
+            y = plat(t, r) - rad - hy
+            out += [(p + step * .6, T(x, y)), (p + step * .8, T(x, y - (8 if r < last else 5)))]
+            p += step
+        y = low - hy
+        return out + [(p, T(x, y)), (p + 1, T(x, y - 3)), (p + 2, T(x, y))]
+
+    # 赤：右から来て「。」の前で止まり、一歩下がって、かがんで震えてから、駆け寄って蹴る
+    end = row_end(t, last)
+    kx = min(end + 14, t.W - 10)
+    bx = min(kx + 16, t.W - 2)
+    red = Path(t, t.W + 24)
+    red.wait(9).walk(19, kx).wait(21).walk(23.5, bx)
+    red.put(24.5, sx=1.12, sy=.82).put(25.5, dx=-1, sx=1.12, sy=.82).put(26.5, dx=1, sx=1.12, sy=.82)
+    red.put(27.5, dx=-1, sx=1.12, sy=.82).put(28.5, r=-14, sx=1.12, sy=.82)
+    red.p = 28.5
+    red.walk(30, kx).lean(kick, 22).lean(32.5, 0)
+    # やってしまった：跳び上がって、しょんぼり
+    red.wait(hit).jump(hit + 2.5, 12).put(hit + 3.5, r=-8, sx=1.06, sy=.88).put(46, r=-8, sx=1.06, sy=.88)
+    red.p = 46
+    mark_x, mark_y = red.x, red.y - 124 * .2 - 6
+    red.hop(48, end - 12, fl, 10)
+    meet = min((rest[0] + end) / 2 + 20, end - 12)
+    red.walk(52, meet).put(53, sx=1.04, sy=.92).put(54)  # 紫に励まされて、うなずく
+    red.p = 54
+    climb(red, 58, cx + 12, up).wait(65)
+    # 青：上の点を拾って運び、元の場所へ放り上げる
+    blue = Path(t, -30, fl)
+    blue.wait(40).walk(48, rest[0] - 2).put(49, sx=1.12, sy=.84).put(50)
+    blue.p = 50
+    climb(blue, 56, cx - 14, up).wait(58).jump(60, 8)
+    # 緑：下の点を拾って運び、赤へトスする
+    green = Path(t, -56, fl)
+    green.wait(41).walk(50, rest[1]).put(51, sx=1.12, sy=.84).put(52)
+    green.p = 52
+    climb(green, 59, cx + 36, up).wait(61.5).jump(63.5, 8)
+    # 紫：赤を励ます（跳ねる）、一緒に上がる
+    purple = Path(t, -82, fl)
+    purple.wait(42).walk(51, meet - 24).jump(53, 10)
+    climb(purple, 59, cx + 60, up)
+    # 赤が受け取った下の点を、跳んで元に戻す
+    red.jump(67.5, 10)
+    paths = (("blue", blue), ("green", green), ("purple", purple), ("red", red))
+    # みんなで喜ぶ
+    for k, (name, path) in enumerate(paths):
+        path.wait(70 + k * .4).jump(73 + k * .4, 10).wait(74.5 + k * .4).jump(77.5 + k * .4, 16 if name == "red" else 10)
+    for k, (name, path) in enumerate(paths):
+        leave(path, 83 + k * .6, 96 + k * .6)
+        t.actor(f"m{k}", name, 0, path.frames())
+
+    top = fall(0)
+    top += [(49, top[-1][1])] + blue.head(50, 58, cx, homes[0], rad)
+    bx0, by0 = _xy(top[-1][1])
+    top += arc(58.6, 61, bx0, by0, 0, 0, -14, 6)[1:] + [(61.6, T(0, -3)), (62.2, T())]
+    bot = fall(1)
+    bot += [(51, bot[-1][1])] + green.head(52, 62, cx, homes[1], rad)
+    gx, gy = _xy(bot[-1][1])
+    rx, ry = _xy(red.head(58, 65, cx, homes[1], rad)[-1][1])
+    bot += arc(62.2, 64.5, gx, gy, rx, ry, -16, 6)[1:] + red.head(64.6, 65.6, cx, homes[1], rad)
+    bot += arc(66, 68, rx, ry, 0, 0, -12, 6)[1:] + [(68.6, T(0, -3)), (69.2, T())]
     t.split(COLON, top, bot)
-    # 青：右の点を拾って跳び上げる。紫：左の点。緑：紫の踏み台になる
-    blue = enter(t, cx + far + 10, row, 40, 52)
-    blue.walk(57, cx + far + 2).jump(60, 12).walk(63, cx + 12).wait(70).jump(78, 7)
-    purple = enter(t, cx + 8, row, 42, 55)
-    purple.wait(66).jump(68.5, 12).wait(70).jump(78.5, 7)
-    green = enter(t, cx - 16, row, 44, 56)
-    green.wait(70).jump(79, 7)
-    red.walk(54, cx + 80)
-    climb(red, 64, cx + 34, row)
-    red.wait(70).jump(79.5, 7)
-    for k, path in enumerate((blue, purple, green, red)):
-        leave(path, 85 + k * .5, 95)
-        t.actor(f"m{k}", ("blue", "purple", "green", "red")[k], 0, path.frames())
+    # 「!」と「♪」
+    t.front.append(f'<g class="oops"><text x="{mark_x - 4:.1f}" y="{mark_y:.1f}" font-size="20" font-weight="800" '
+                   f'fill="#FF8A00" font-family="{FONT}">!</text></g>')
+    t.css.append("@keyframes oops{0%,37.5%{opacity:0}38.5%,46%{opacity:1}47%,100%{opacity:0}}"
+                 ".oops{opacity:0;animation:oops 16s linear infinite}")
+    note_y = plat(t, up) - 124 * .2 - 8
+    t.front.append(f'<g class="joy"><text x="{cx + 20:.1f}" y="{note_y:.1f}" font-size="18" font-weight="800" '
+                   f'fill="#FF8A00" font-family="{FONT}">♪</text></g>')
+    t.css.append("@keyframes joy{0%,70%{opacity:0;transform:translateY(4px)}72%,80%{opacity:1;transform:translateY(-4px)}"
+                 "82%,100%{opacity:0}}.joy{opacity:0;animation:joy 16s linear infinite}")
     return t.render()
+
+
+def _xy(tr):
+    """T() の文字列から移動量 (x, y) を取り出す。"""
+    m = re.match(r"translate\(([-\d.]+)px,([-\d.]+)px\)", tr)
+    return float(m.group(1)), float(m.group(2))
 
 
 # ---------- 案C3：トスでつなぐ ----------
@@ -417,14 +539,10 @@ def eyes(kind, mode):
         t.front.append(f'<g class="eye{n}"><circle cx="{cx:.1f}" cy="{oy:.1f}" r="{r:.1f}" fill="{INK[mode]}"/>'
                        f'<circle cx="{cx - r * .35:.1f}" cy="{oy - r * .35:.1f}" r="{r * .3:.1f}" fill="#FFFFFF"/></g>')
     # 4体は右から歩いてきて、下の行の文字に乗り、文字の上を左へ歩く。目の前で止まって見上げ、跳ねて、左へ去る
-    last = len(t.rows) - 1
     for n, name in enumerate(art.ORDER):
-        path = Path(t, t.W + 30 + n * 28)
         stop = ox[0] + 14 + n * 28
-        path.wait(26 + n * 2).walk(36 + n * 2, min(row_end(t, last) - 10, t.W - 30) + n * 4)
-        path.hop(40 + n * 2, path.x - 14, plat(t, last), 8)
-        path.walk(60 + n, stop).wait(70).jump(73 + n, 9).wait(78)
-        path.walk(88, -10).hop(91, -40, t.H, 6)
+        path = arrive(t, stop, 26 + n * 2, 34 + n * 2, 60 + n, t.W + 30 + n * 28)
+        path.wait(70).jump(73 + n, 9).wait(78).walk(92, -40)
         t.actor(f"w{n}", name, 0, path.frames())
     return t.render()
 
@@ -442,18 +560,15 @@ def still(kind, mode):
             r = 5 if (n + s) % 2 else -5
             fr += [(s, T()), (s + 1, T(0, -7, r)), (s + 2.5, T(0, 0, -r * .5)), (s + 4, T())]
         t.move(i, fr)
-    last = len(t.rows) - 1
     a = TITLE.index("みんなで")
     for k, name in enumerate(art.ORDER):
         x = t.g[a + k][1] + t.g[a + k][3] / 2
-        path = Path(t, t.W + 30 + k * 30)
-        path.wait(22 + k * 1.5).walk(34 + k * 1.5, min(x + 30, t.W - 20))
-        path.hop(38 + k * .5, x, plat(t, last), 8).wait(42)
+        path = arrive(t, x, 22 + k * 1.5, 30 + k * 1.5, 40, t.W + 30 + k * 30).wait(42)
         for s in stomps:
             path.wait(s - 3).put(s - 1.5, dy=-12, sx=.95, sy=1.06).put(s, sx=1.15, sy=.82).put(s + 2)
             path.p = s + 2
         path.wait(70).jump(74 + k * .5, 6).wait(78)
-        path.hop(82, x + 20, t.H, 6).walk(94, t.W + 40)
+        leave(path, 80, 96, "right")
         t.actor(f"s{k}", name, 0, path.frames())
     qx = t.g[STAY[0]][1] + 4
     qy = t.base(t.g[STAY[0]][2]) - t.g[STAY[0]][4] - 2
@@ -482,9 +597,7 @@ def rope(kind, mode):
     half = t.g[BAR][3] * 1.3 + 12
     roles = (("green", bx - half), ("purple", bx + half), ("blue", bx - 8), ("red", bx + 8))
     for k, (name, x) in enumerate(roles):
-        path = Path(t, -30 - k * 26)
-        path.wait(36 + k * 1.5).walk(44 + k * 1.5, max(x - 20, 8))
-        climb(path, 48 + k * .5, x, row)
+        path = enter(t, x, row, 36 + k * 1.5, 48 + k * .5, -30 - k * 26)
         if name in ("blue", "red"):
             for p in turns:
                 path.wait(p + 1.5).put(p + 2.4, dy=-14).put(p + 3.3).put(p + 3.8, sx=1.08, sy=.9).put(p + 4.4)
@@ -501,7 +614,8 @@ def rope(kind, mode):
 OPTIONS = [
     ("c1", "みんなで担いで戻す", "赤が歩いてきて文末の「。」を蹴ると、行をまたいで「:」に当たり、「:」が下の行の文字の上へボトッと落ちる。"
      "歩いてきた3体が文字に乗って担いで運び、最後は赤が跳んで押し込む。", carry),
-    ("c2", "2つの点を拾い集める", "「。」が当たると「:」が上下2つの点に割れて、下の行の文字の上に転がる。文字に乗った4体が1つずつ跳び上げて元に戻す。", gather),
+    ("c2", "やってしまった赤を、みんなで助ける", "赤が歩いてきて、ためてから文末の「。」を蹴る。「。」が当たると「:」が上下2つの点に割れ、"
+     "一番下の行まで落ちる。やってしまった赤を3体が励まし、青と緑が点を1つずつ運んで、下の点は赤が自分で戻す。みんなで喜んで去っていく。", gather),
     ("c3", "トスでつなぐ", "落ちた「:」を、文字の上に並んだ4体がトスでつなぎ、最後は蹴った赤が元の場所へ押し込む。", relay),
     ("e", "Cooplayの目", "「Cooplay」の2つの「o」に黒目が現れ、文字の上を歩いてくるキャラクターを目で追い、まばたきして消える。", eyes),
     ("f", "そのままだけ動かない", "4体が歩いてきて文字に乗り、そろって足踏みすると文字がみんな揺れるが、「ゲームはそのまま。」だけは動かない。", still),
