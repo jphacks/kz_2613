@@ -21,6 +21,8 @@ PC_SCALE = .57  # 一番長い見出し（01）の右の空きに収まる大き
 PC_W = 840  # 項目の見出しの幅（build_art.head_parts）
 BASE = 55  # PC版の見出しの文字の基準線
 BUBBLE = 2.0  # 縮めて表示するので、吹き出しの文字を大きくしておく（12px×2.0×0.57≒13.7px）
+SEP = 44  # 区切りの線から見出しまでの間
+FIRST = {"01", "08"}  # 大見出しの直後の項目には区切りの線を付けない
 
 
 # 見出しの番号 → 場面。見出しごとに、その内容をスマホたちが演じる。
@@ -53,6 +55,13 @@ def play_head(num, jp, en, make, t, narrow=False):
         k = PC_SCALE
         W, H, body = art.head_parts(num, jp, en, t)
         body += stage(sc, PC_W - scenes.W * k, BASE - scenes.G * k, k)
+    if num not in FIRST:
+        # 前の項目との区切り：目次・受賞結果の見出しと同じ、細い線と4色の点。少し間を空けてから見出しを置く
+        x1 = W - 67
+        sep = (f'<rect x="0" y="8.25" width="{x1}" height="1.5" rx=".75" fill="{t["line"]}"/>'
+               + "".join(f'<circle cx="{x1 + 10 + i * 13}" cy="9" r="4" fill="{art.CHARS[n]["body"]}"/>' for i, n in enumerate(art.ORDER)))
+        body = sep + f'<g transform="translate(0 {SEP})">{body}</g>'
+        H += SEP
     return art.svg(W, H, body, t, f"{jp}（{title}：{desc}）", scenes.COMMON + "".join(sc.css))
 
 

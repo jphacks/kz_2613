@@ -132,28 +132,37 @@ def shot(name, w):
 
 
 def phone(name, x, y, w, image, t):
-    """幅 w のスマホ型の枠（キャラクターの体の形）に実際の画面を入れる。(svg, 高さ) を返す。"""
+    """幅 w の、ふつうのスマホの枠（黒いふち・角丸・上のカメラ穴）に実際の画面を入れる。(svg, 高さ) を返す。
+    name は使わない（実際の画面を見せる図では、キャラクターの形にしない）。"""
     uri, ratio = shot(image, min(360, round(w * 1.6)))
-    sx = w / 100
-    sw = 72 * sx
+    bz = max(4.0, w * .045)
+    sw = w - 2 * bz
     sh = sw / ratio
-    sy = sh / 117
+    h = sh + 2 * bz
+    r_out, r_in = w * .15, w * .15 - bz
     _clip[0] += 1
     cid = f"scr{_clip[0]}"
-    sx0, sy0 = x + 14 * sx, y + 16 * sy
-    return (f'<path d="{art.BODY}" transform="translate({x:.1f} {y:.1f}) scale({sx:.4f} {sy:.4f})" fill="{BODY[name]}" '
-            f'stroke="{t["outline"]}" stroke-width="1.4" vector-effect="non-scaling-stroke"/>'
-            f'<clipPath id="{cid}"><rect x="{sx0:.1f}" y="{sy0:.1f}" width="{sw:.1f}" height="{sh:.1f}" rx="{8 * sx:.1f}"/></clipPath>'
-            f'<rect x="{sx0:.1f}" y="{sy0:.1f}" width="{sw:.1f}" height="{sh:.1f}" rx="{8 * sx:.1f}" fill="{t["screen"]}"/>'
+    sx0, sy0 = x + bz, y + bz
+    edge = "#4A5062" if t is THEMES["dark"] else "#2A2E38"
+    return (f'<rect x="{x - 1.2:.1f}" y="{y + h * .18:.1f}" width="2" height="{h * .08:.1f}" rx="1" fill="{edge}"/>'
+            f'<rect x="{x + w - .8:.1f}" y="{y + h * .14:.1f}" width="2" height="{h * .12:.1f}" rx="1" fill="{edge}"/>'
+            f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" rx="{r_out:.1f}" fill="#16181F" stroke="{edge}" stroke-width="1.2"/>'
+            f'<clipPath id="{cid}"><rect x="{sx0:.1f}" y="{sy0:.1f}" width="{sw:.1f}" height="{sh:.1f}" rx="{r_in:.1f}"/></clipPath>'
             f'<image clip-path="url(#{cid})" x="{sx0:.1f}" y="{sy0:.1f}" width="{sw:.1f}" height="{sh:.1f}" '
-            f'preserveAspectRatio="xMidYMid slice" href="{uri}"/>'), 150 * sy
+            f'preserveAspectRatio="xMidYMid slice" href="{uri}"/>'
+            f'<circle cx="{x + w / 2:.1f}" cy="{sy0 + bz * 1.1:.1f}" r="{max(2.2, w * .018):.1f}" fill="#16181F"/>'), h
+
+
+def finish(W, H, b, t, alt, top=10, bottom=30):
+    """図の上下に余白を取って書き出す（本文の文字と図がくっつかないように）。"""
+    return art.svg(W, round(H) + top + bottom, f'<g transform="translate(0 {top})">{"".join(b)}</g>', t, alt.replace("\n", ""))
 
 
 # ---------- 02 製品説明：3人の分担と、実際のスマホの画面 ----------
 
 ROLES = [("blue", "P1", "移動", "ホスト", "phone-11-coop-move.jpg", "移動・ジャンプ・スニーク・ダッシュ", "8方向スティック＋アクションボタン"),
-         ("green", "P2", "視点", None, "phone-12-coop-look.jpg", "視点・カメラ操作", "感度調整つきドラッグパッド"),
-         ("purple", "P3", "アクション", None, "phone-13-coop-action.jpg", "攻撃・ブロック設置・持ち物切替・インベントリ", "左右クリック・ホイール・キーボタン")]
+         ("green", "P2", "視点", None, "phone-32-p2-look.jpg", "視点・カメラ操作", "感度調整つきドラッグパッド"),
+         ("purple", "P3", "アクション", None, "phone-37-p3-action.jpg", "攻撃・ブロック設置・持ち物切替・インベントリ", "左右クリック・ホイール・キーボタン")]
 
 
 def role_head(x, y, name, p, role, sub, t, anchor_center=None):
@@ -203,7 +212,7 @@ def controllers(t, narrow=False):
         H = max(hs)
     alt = "3人で『Minecraft』を遊ぶ場合の分担と、実際のスマホの画面。" + "。".join(
         f"{p}（{role}{'・' + sub if sub else ''}）：{ops}。画面は{ui}" for _, p, role, sub, _, ops, ui in ROLES)
-    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
+    return finish(W, H, b, t, alt)
 
 
 # ---------- 03 特長：3枚のカード ----------
@@ -253,7 +262,7 @@ def features(t, narrow=False):
                   f'<g transform="translate({pad} 22)">{art.icon(kind, 0, 0, BODY[color], t)}</g>',
                   number(colw - pad, 52, k + 1), s1, s2, "</g>"]
     alt = "特長。" + "。".join(f"{k + 1}：{title}。{body}" for k, (_, _, title, body) in enumerate(FEATURES))
-    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
+    return finish(W, H, b, t, alt)
 
 
 # ---------- 04 解決出来ること：ジャンルごとのカード ----------
@@ -331,7 +340,7 @@ def genres(t, narrow=False):
             y += h + GAP
         H = y - GAP
     alt = "ジャンルと分担の例。" + "。".join(f"{name}{'（' + ex + '）' if ex else ''}：分担は{'／'.join(split)}。{exp}" for _, _, name, ex, split, exp in GENRES)
-    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
+    return finish(W, H, b, t, alt)
 
 
 # ---------- 05 試遊での反応：アンケートの数字 ----------
@@ -382,7 +391,7 @@ def stats(t, narrow=False):
             b += [card(x, 0, colw, H, t), f'<g transform="translate({x:.1f} 0)">', big_number(pad, 74, label, 58), s1, s2,
                   bar(pad, H - 26, colw - pad * 2, pct, t), "</g>"]
     alt = "試遊アンケート（回答者26名）の結果。" + "。".join(f"{q}：{label}（{sub}）" for _, label, q, sub in STATS)
-    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
+    return finish(W, H, b, t, alt)
 
 
 # ---------- 06 今後の展望：まず → その先 ----------
@@ -445,7 +454,7 @@ def roadmap(t, narrow=False):
             b += [card(x, 0, cwid, H, t), f'<g transform="translate({x:.1f} 0)">{s}</g>']
         b.append(arrow(W / 2, H / 2))
     alt = "今後の展望。" + "。".join(f"{jp}：{title}。{body}" for _, jp, title, body in ROADMAP)
-    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
+    return finish(W, H, b, t, alt)
 
 
 # ---------- 07 注力したこと：3つのこだわり ----------
@@ -513,7 +522,7 @@ def focus(t, narrow=False):
         b = [card(k * (colw + GAP), 0, colw, H, t) for k in range(3)] + b
     alt = ("注力したこと。1：" + FOCUS[0][2] + "（" + FOCUS[0][3] + "）。2：" + FOCUS[1][2] + "（" + FOCUS[1][3] + "）。3：違和感のない低遅延。"
            + "。".join(f"{label}{num}{unit}（{sub}）" for num, unit, label, sub in LATENCY))
-    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
+    return finish(W, H, b, t, alt)
 
 
 # ---------- 09 システム構成 ----------
@@ -641,7 +650,7 @@ def architecture(t, narrow=False):
     alt = ("システム構成。スマホ（ブラウザ）2〜4台のP1移動・P2視点・P3アクションの操作を、WebSocketとWebRTCでWindows PCのRustホストへ送り、"
            "Rustホストは役割と準備状況をスマホへ返す。Rustホストは入力を統合し、Windows APIのSendInputでキーボード・マウス操作として"
            "既存のPCゲーム（Minecraftなど）へ送る。PCアプリ（Tauri）はRustホストから参加・準備状況を受け取り、ゲーム選択・開始・停止を伝える。")
-    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
+    return finish(W, H, b, t, alt)
 
 
 # ---------- 11 独自技術：分担AIの評価 ----------
@@ -690,7 +699,7 @@ def evaluation(t, narrow=False):
             b += [card(x, 0, cwid, H, t), f'<g transform="translate({x:.1f} 0)">{s}</g>']
     alt = "分担AIの評価（学習に使っていないゲーム、ゲームごとの平均）。" + "。".join(
         f"{title}（{sub}）：" + "、".join(f"{m}{v:.1f}%" for m, v in zip(EVAL_METRICS, vals)) for title, sub, vals in EVAL_SETS)
-    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
+    return finish(W, H, b, t, alt)
 
 
 FIGURES = {"controllers": controllers, "features": features, "genres": genres, "stats": stats, "roadmap": roadmap,
