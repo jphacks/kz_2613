@@ -17,7 +17,7 @@ import showcase as sc  # noqa: E402
 ROOT = art.ROOT
 SRC = ROOT / "README.md"
 OUT = ROOT / "README-text.md"
-VIDEO = "https://youtu.be/a8uhU2ymsuQ"
+VIDEO = "https://youtu.be/FlAFLxX7QEQ"
 
 
 def table(head, rows):
