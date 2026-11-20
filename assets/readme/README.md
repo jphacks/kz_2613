@@ -11,6 +11,7 @@
 | `pipeline-*.svg` | 操作の自動検出から分担AI、スマホ画面への配分までの流れ |
 | `footer-*.svg` | 末尾の締めの画像 |
 | `heads/head-*.svg` | 項目の見出し（番号・英字ラベル・見出し）。見出しの文字はGitHub本体と同じフォント指定で、閲覧者の端末の標準フォントで描く |
+| `heads/toc-*.svg` | 目次の項目（グラデーションの番号＋項目名）。番号と項目名の間で折り返さないよう1枚の画像にし、項目名はGitHubのリンク色で描く |
 | [`scenes/`](scenes/README.md) | 各項目の終わりに置く区切りの帯（キャラクターが遊ぶ10種類のアニメーション） |
 | `system-architecture.webp` | [システム構成図](../images/recooplay-system-architecture.webp) の余白を詰めたもの |
 

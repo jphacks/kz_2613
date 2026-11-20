@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 141 24" width="141" height="24" role="img"><title>04 解決出来ること</title><defs><filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><linearGradient id="brand" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C03BFF"/><stop offset=".55" stop-color="#6F86FF"/><stop offset="1" stop-color="#22C4FA"/></linearGradient><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8FAFF"/><stop offset="1" stop-color="#FFF5DC"/></linearGradient><style>
+.jp{font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic UI','Yu Gothic','Meiryo','Noto Sans JP','Noto Sans CJK JP',sans-serif}
+.disp{font-family:Impact,Haettenschweiler,'Anton','Arial Narrow Bold','Arial Black',sans-serif}
+.gh{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif}
+.rnd{font-family:RcRounded,'Hiragino Maru Gothic ProN','Yu Gothic UI','Noto Sans JP',sans-serif}
+.hand{font-family:RcHand,'Hiragino Maru Gothic ProN','Yu Gothic UI','Noto Sans JP',sans-serif}
+.mono{font-family:ui-monospace,SFMono-Regular,'Cascadia Mono',Consolas,'Liberation Mono',monospace}
+
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes blink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.12)}}
+@keyframes flow{to{stroke-dashoffset:-28}}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+.bob{animation:bob 2.6s ease-in-out infinite}
+.eyes{transform-box:fill-box;transform-origin:center;animation:blink 4.8s infinite}
+.flow{stroke-dasharray:6 8;animation:flow 1.1s linear infinite}
+.pulse{animation:pulse 2.4s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.bob,.eyes,.flow,.pulse{animation:none}}
+</style></defs><text x="0" y="20" class="disp" font-size="21" font-weight="400" fill="url(#brand)" text-anchor="start" textLength="23" lengthAdjust="spacingAndGlyphs">04</text><text x="28" y="18" class="gh" font-size="16" font-weight="400" fill="#0969DA" text-anchor="start">解決出来ること</text></svg>

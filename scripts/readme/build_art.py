@@ -644,6 +644,21 @@ def head_banner(num, jp, en, name, t, narrow=False):
     return svg(W, H, "".join(b), t, jp)
 
 
+# 目次の項目（番号＋項目名）。番号と項目名の間で折り返さないよう1枚の画像にする。
+# 項目名はGitHub本体と同じフォント指定・リンクの色で、本文と同じ16pxの原寸で表示する。
+TOC = [("01", "背景"), ("02", "製品説明"), ("03", "特長"), ("04", "解決出来ること"), ("05", "試遊での反応"),
+       ("06", "今後の展望"), ("07", "注力したこと"), ("08", "技術仕様書"), ("09", "システム構成"),
+       ("10", "活用した技術"), ("11", "独自技術")]
+LINK = {"light": "#0969DA", "dark": "#4493F8"}
+
+
+def toc_item(num, label, mode):
+    w = 28 + sum(16 * (0.6 if c.isascii() else 1.0) for c in label) + 1
+    b = (text(0, 20, num, 21, "url(#brand)", cls="disp", weight=400, length=23)
+         + text(28, 18, label, 16, LINK[mode], cls="gh", weight=400))
+    return svg(round(w), 24, b, THEMES[mode], f"{num} {label}")
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     files = {}
@@ -656,6 +671,9 @@ def main():
         for mode, t in THEMES.items():
             files[f"heads/head-{num}-{mode}.svg"] = head_banner(num, jp, en, name, t)
             files[f"heads/head-{num}-narrow-{mode}.svg"] = head_banner(num, jp, en, name, t, narrow=True)
+    for num, label in TOC:
+        for mode in THEMES:
+            files[f"heads/toc-{num}-{mode}.svg"] = toc_item(num, label, mode)
     (OUT / "heads").mkdir(exist_ok=True)
     for name, body in files.items():
         (OUT / name).write_text(body + "\n", encoding="utf-8", newline="\n")
