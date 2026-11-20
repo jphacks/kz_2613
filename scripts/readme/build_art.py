@@ -322,14 +322,15 @@ def flow(t, narrow=False):
     return svg(W, H, "".join(b), t, "遊ぶまでの4ステップ：スマホでQR参加、ゲームを選ぶ、AIが操作を分担、開始ボタンでプレイ")
 
 
-# スマホ版の図は表示幅（約360px）と同じ幅で描き、拡大・縮小せずに表示する。
-# 文字の大きさが本文（約16px）との比でPC版と同じになる。
-PHONE_W = 360
+# スマホ版の図は、幅390pxのスマホでGitHubの本文欄と同じ幅（324px）で描き、READMEでは原寸で表示する。
+# 本文（16px）との文字の比がPC版と同じになる。これより狭いスマホでは少し縮む。
+PHONE_W = 324
 
 
 def flow_phone(t):
     """遊ぶまでの4ステップ（スマホ版）。2×2の小さなカードにし、説明文は直前の本文に任せる。"""
-    W, cw, ch, gap = PHONE_W, 174, 150, 12
+    W, gap, ch = PHONE_W, 10, 146
+    cw = (W - gap) / 2
     b = []
     for i, (kind, title, _, _) in enumerate(STEPS):
         name = ORDER[i]
@@ -339,9 +340,9 @@ def flow_phone(t):
               f'<circle cx="{x + 24}" cy="{y + 24}" r="13" fill="{c}"/>',
               text(x + 24, y + 30, str(i + 1), 16, "#FFFFFF" if name != "green" else "#103B10", cls="disp", weight=400, anchor="middle"),
               text(x + 44, y + 29, f"STEP {i + 1}", 12, t["muted"], cls="mono", weight=700),
-              char(name, x + cw / 2 - 58, y + 44, .5, t, delay=i * .4),
-              f'<g transform="translate({x + cw / 2 + 10} {y + 60}) scale(.72)">{icon(kind, 0, 0, c, t)}</g>',
-              text(x + cw / 2, y + ch - 18, title, 15.5, t["ink"], weight=900, anchor="middle")]
+              char(name, x + cw / 2 - 54, y + 42, .5, t, delay=i * .4),
+              f'<g transform="translate({x + cw / 2 + 8} {y + 58}) scale(.7)">{icon(kind, 0, 0, c, t)}</g>',
+              text(x + cw / 2, y + ch - 18, title, 15, t["ink"], weight=900, anchor="middle")]
     H = 2 * ch + gap
     return svg(W, H, "".join(b), t, "遊ぶまでの4ステップ：スマホでQR参加、ゲームを選ぶ、AIが操作を分担、開始ボタンでプレイ")
 
@@ -476,7 +477,7 @@ def pipeline_phone(t):
                 cx += w + 6
         else:
             for k, (name, p, role) in enumerate((("blue", "P1", "移動"), ("green", "P2", "視点"), ("purple", "P3", "アクション"))):
-                px = 14 + k * 112
+                px = 14 + k * (W - 20) / 3
                 b += [char(name, px - 6, cy - 6, .3, t, delay=k * .4),
                       text(px + 26, cy + 12, p, 12, CHARS[name]["body"] if name != "green" else "#2FB52E", weight=900),
                       text(px + 26, cy + 30, role, 13, t["ink"], weight=800)]
@@ -532,17 +533,23 @@ def fit(s, size, avail):
 
 
 def wrap(s, size, avail):
-    """見出しを avail に収まるよう折り返す。読点のあと・括弧の前で切ることを優先する。"""
+    """見出しを avail に収まるよう折り返す。2行に収まるなら、読点のあと・括弧の前を優先し、
+    なければ行の長さが釣り合う位置で切る。行頭に句読点・閉じ括弧・小書きの仮名が来ないようにする。"""
     def width(x):
         return sum(size * (0.6 if c.isascii() else 1.0) for c in x)
-    lines = []
-    while width(s) > avail:
-        fits = [i for i in range(1, len(s)) if width(s[:i]) <= avail]
-        good = [i for i in fits if s[i - 1] in "、）)" or s[i] in "（("]
-        cut = (good or fits)[-1]
-        lines.append(s[:cut])
-        s = s[cut:]
-    return lines + [s]
+    if width(s) <= avail:
+        return [s]
+    ok = [i for i in range(1, len(s)) if width(s[:i]) <= avail and width(s[i:]) <= avail
+          and s[i] not in "、。）)ーぁぃぅぇぉっゃゅょ" and s[i - 1] not in "（("]
+    good = [i for i in ok if s[i - 1] in "、）)" or s[i] in "（("]
+    if good:
+        i = good[-1]
+    elif ok:
+        i = max(ok, key=lambda k: min(width(s[:k]), width(s[k:])))
+    else:  # 2行に収まらないときは、入るだけ詰めて次の行へ送る
+        i = max(k for k in range(1, len(s)) if width(s[:k]) <= avail)
+        return [s[:i]] + wrap(s[i:], size, avail)
+    return [s[:i], s[i:]]
 
 
 def head_banner(num, jp, en, name, t, narrow=False):
