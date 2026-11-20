@@ -204,8 +204,9 @@ def icon(kind, x, y, c, t):
             fill = CHARS[n]["body"] if n in CHARS else n
             out.append(f'<path d="M{cxy[0]} {cxy[1]}L{p0[0]:.1f} {p0[1]:.1f}A18 18 0 0 1 {p1[0]:.1f} {p1[1]:.1f}Z" '
                        f'fill="{fill}" stroke="{c}" stroke-width="2"/>')
-    else:
-        out.append(f'<path d="M{x + 21} {y + 15}L{x + 43} {y + 28}L{x + 21} {y + 41}Z" fill="{w}" stroke="{w}" stroke-width="3" stroke-linejoin="round"/>')
+    else:  # 開始の旗（再生ボタンの形は、動画への誘導と紛らわしいので使わない）
+        out.append(f'<path d="M{x + 18} {y + 44}V{y + 12}" stroke="{w}" stroke-width="4" stroke-linecap="round"/>'
+                   f'<path d="M{x + 20} {y + 13}c6-4 11 3 17 0s9-2 9-2v17s-3-1-9 2-11-4-17 0z" fill="{w}"/>')
     return "".join(out)
 
 

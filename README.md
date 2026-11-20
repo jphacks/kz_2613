@@ -36,30 +36,15 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 
 たどり着いたのが、**1人分の操作をみんなで分け合う**という遊び方です。移動する人と視点を動かす人が違うと、思った方向へ進むだけでも声を掛け合う必要があります。息が合わずに起こるハプニングも、連携が決まったときの達成感も、全員で分かち合う体験です。ゲームの中身はそのままで、**全く新しい協力プレイの体験を後付け**できます。
 
-> [!TIP]
+> [!NOTE]
 > **操作を分担する不自由さが、そのまま新しい面白さになる。**
 > ゲーム自体は変えずに、操作する人と協力の仕方を変える。手元のゲームを、友達と集まったその場で新しい協力ゲームにします。
 
 ### <a id="製品説明具体的な製品の説明"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-02-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-02-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-02-dark.svg"><img src="assets/readme/heads/play-02-light.svg" alt="製品説明（具体的な製品の説明）"></picture>
 
-> **既存ゲーム × Tech：1つのキャラクターを、みんなで動かす**
+**既存ゲーム × Tech：1つのキャラクターを、みんなで動かす。**
 
-1. **スマホで参加：** PCアプリのQRコードをスマホのブラウザで読み取ります。最初の参加者（P1・ホスト）のスマホはタッチパッド付きのリモコンになり、手元からPC画面やランチャーを操作できます。
-2. **ゲームを選択：** PCにインストール済みのゲームを一覧から選びます。選んだゲームの操作名とキー設定を自動で読み取ります。
-3. **操作を分担：** ゲームの操作と参加人数（2〜4人）に合わせて、独自AIが分担を作ります。担当を確かめて、そのままゲームを起動します。
-4. **開始ボタンでプレイ：** ホストが「分担操作開始」を押すとゲームが前面に切り替わり、各スマホが自分の担当操作だけを並べたコントローラーになります。
-
-3人で『Minecraft』を遊ぶ場合の分担例です。
-
-| プレイヤー | 担当する操作 | スマホに表示されるUI |
-|---|---|---|
-| **P1**（ホスト） | 移動・ジャンプ・スニーク・ダッシュ | 8方向スティック＋アクションボタン |
-| **P2** | 視点・カメラ操作 | 感度調整つきドラッグパッド |
-| **P3** | 攻撃・ブロック設置・持ち物切替・インベントリ | 左右クリック・ホイール・キーボタン |
-
-実際の画面遷移は[PC・スマホの画面一覧](docs/screenshots.md)で確認できます。
-
-<br>
+PCアプリのQRコードをスマホのブラウザで読み取るだけで参加でき、選んだゲームの操作名とキー設定を自動で読み取って、独自AIが2〜4人に分担を作ります。ホストが「分担操作開始」を押すとゲームが前面に切り替わり、各スマホが自分の担当操作だけを並べたコントローラーになります。
 
 <picture>
   <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/flow-narrow-dark.svg">
@@ -68,37 +53,40 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
   <img src="assets/readme/flow-light.svg" alt="遊ぶまでの4ステップ。1：スマホでQR参加、2：ゲームを選ぶ、3：AIが操作を分担、4：開始ボタンでプレイ">
 </picture>
 
-<p align="center">
-  <a href="assets/images/recooplay-qr-join-guide.webp"><img src="assets/images/recooplay-qr-join-guide.webp" width="49%" alt="PCアプリのQRコードをスマホで読み取り、参加からゲーム選択・開始まで進む流れ"></a>
-  <a href="assets/images/recooplay-role-controllers.webp"><img src="assets/images/recooplay-role-controllers.webp" width="49%" alt="3人プレイの役割分担例。左から移動・視点・アクション"></a>
-</p>
+3人で『Minecraft』を遊ぶ場合の分担と、実際のスマホの画面です。
+
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/controllers-narrow-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/readme/controllers-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/controllers-dark.svg">
+  <img src="assets/readme/controllers-light.svg" alt="3人で『Minecraft』を遊ぶ場合の分担と、実際のスマホの画面。P1（移動・ホスト）：移動・ジャンプ・スニーク・ダッシュを8方向スティック＋アクションボタンで。P2（視点）：視点・カメラ操作を感度調整つきドラッグパッドで。P3（アクション）：攻撃・ブロック設置・持ち物切替・インベントリを左右クリック・ホイール・キーボタンで">
+</picture>
+
+参加からゲームの終了までの、PCとスマホのすべての画面は[画面一覧](docs/screenshots.md)で見られます。
 
 ### <a id="特長"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-03-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-03-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-03-dark.svg"><img src="assets/readme/heads/play-03-light.svg" alt="特長"></picture>
 
-#### 1. 1つのキャラクターを2〜4人で分担する
+ゲームも機器も選ばずに、その場の全員で1つのキャラクターを動かせます。
 
-移動・視点・アクションなどを分け合い、各スマホには自分の担当操作だけが並びます。ボタンの位置や大きさは持ち方に合わせて変えられ、60秒ごとに担当が入れ替わる交代ルールも選べます。
-
-#### 2. 選んだゲームがそのまま協力ゲームになる
-
-PCに入っているゲームを選ぶだけで、その操作に合った分担とコントローラーをその場で用意します。特定のタイトルに限らず、手元のPCゲームで共同操作を楽しめます。
-
-#### 3. 専用の機器もアプリも要らない
-
-Android・iPhoneの標準ブラウザでQRコードを読み取れば参加できます。ホストのスマホがリモコンになるので、PCのキーボードとマウスに触らずに、ゲーム選びから開始まで進められます。
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/features-narrow-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/readme/features-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/features-dark.svg">
+  <img src="assets/readme/features-light.svg" alt="特長。1：1つのキャラクターを2〜4人で分担する。移動・視点・アクションなどを分け合い、各スマホには自分の担当操作だけが並びます。ボタンの位置や大きさは持ち方に合わせて変えられ、60秒ごとに担当が入れ替わる交代ルールも選べます。2：選んだゲームがそのまま協力ゲームになる。PCに入っているゲームを選ぶだけで、その操作に合った分担とコントローラーをその場で用意します。特定のタイトルに限らず、手元のPCゲームで共同操作を楽しめます。3：専用の機器もアプリも要らない。Android・iPhoneの標準ブラウザでQRコードを読み取れば参加できます。ホストのスマホがリモコンになるので、PCのキーボードとマウスに触らずに、ゲーム選びから開始まで進められます。">
+</picture>
 
 ### <a id="解決出来ること"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-04-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-04-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-04-dark.svg"><img src="assets/readme/heads/play-04-light.svg" alt="解決出来ること"></picture>
 
-Re:Cooplayは、手元のPCゲームに、全く新しい協力プレイの体験を後付けします。眠っていたゲームも、遊び慣れたゲームも、1人では手を出しにくかったゲームも、操作を分け合うだけで新しい協力ゲームとして遊べます。試遊では、そのゲームを遊んだことのある21名のうち20名（95.2%）が「1人で遊んだときと違うプレイ体験だった」と答えました。
+Re:Cooplayは、手元のPCゲームに、全く新しい協力プレイの体験を後付けします。眠っていたゲームも、遊び慣れたゲームも、1人では手を出しにくかったゲームも、操作を分け合うだけで新しい協力ゲームとして遊べます。
 
 #### ジャンルごとに違う協力体験が生まれる
 
-| ジャンルと分担の例 | 生まれる体験 |
-|---|---|
-| **3D空間を動くゲーム**<br><sub>『Minecraft』など</sub><br>分担：移動・ジャンプ／視点・カメラ／攻撃・アイテム使用 | 狙った場所へ進むだけでも声掛けが要り、見慣れたワールドでの冒険や建築が共同作業になる |
-| **ホラー・サバイバルホラー**<br><sub>『Outlast（アウトラスト）』『バイオハザード』など</sub><br>分担：移動／視点・照準／ライト・攻撃 | 1人では足がすくむ場面も、声を掛け合いながら進める。驚いた瞬間の悲鳴や笑いも全員で共有できる |
-| **パズル・落ち物**<br><sub>『テトリス』など</sub><br>分担：左右移動／回転／落下 | 「右！」「今、回して！」と息を合わせる、テンポの速いパーティーゲームになる |
-| **レース・ドライブ**<br>分担：ハンドル／アクセル・ブレーキ／視点・ライト・ギア | まっすぐ走るだけでも、互いの呼吸を合わせる必要がある |
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/genres-narrow-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/readme/genres-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/genres-dark.svg">
+  <img src="assets/readme/genres-light.svg" alt="ジャンルと分担の例。3D空間を動くゲーム（『Minecraft』など）：分担は移動・ジャンプ／視点・カメラ／攻撃・アイテム使用。狙った場所へ進むだけでも声掛けが要り、見慣れたワールドでの冒険や建築が共同作業になる。ホラー・サバイバルホラー（『Outlast』『バイオハザード』など）：分担は移動／視点・照準／ライト・攻撃。1人では足がすくむ場面も、声を掛け合いながら進める。驚いた瞬間の悲鳴や笑いも全員で共有できる。パズル・落ち物（『テトリス』など）：分担は左右移動／回転／落下。「右！」「今、回して！」と息を合わせる、テンポの速いパーティーゲームになる。レース・ドライブ：分担はハンドル／アクセル・ブレーキ／視点・ライト・ギア。まっすぐ走るだけでも、互いの呼吸を合わせる必要がある">
+</picture>
 
 アクションRPG、2Dアクション、シミュレーションなど、ほかのジャンルでも、1人分の操作を分け合うことで1人プレイとはまったく違う面白さが生まれます。
 
@@ -108,25 +96,20 @@ Re:Cooplayは、手元のPCゲームに、全く新しい協力プレイの体�
 
 ### <a id="試遊での反応"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-05-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-05-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-05-dark.svg"><img src="assets/readme/heads/play-05-light.svg" alt="試遊での反応"></picture>
 
-<details>
-<summary><b>実プレイ映像</b></summary>
-<br>
-
 移動・視点・攻撃を3人で分担し、1つのキャラクターを共同操作したHack Day中の実プレイです。
 
 https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
-実プレイ映像：[『Outlast』を2人で分担して遊ぶ様子（約3分18秒）](https://drive.google.com/file/d/1ZdPi9M9zD87YS8cdn4fIGKjNNi-r7Ewt/view) ／ [驚いた場面の切り抜き（約11秒）](https://drive.google.com/file/d/1HzBcDEd4Hm6iXMjvd6CHqWi29Rwi6NfX/view)。紹介動画では『Terraria』での共同操作も実演しています。
-
-</details>
+ほかの実プレイ映像：[『Outlast』を2人で分担して遊ぶ様子（約3分18秒）](https://drive.google.com/file/d/1ZdPi9M9zD87YS8cdn4fIGKjNNi-r7Ewt/view) ／ [驚いた場面の切り抜き（約11秒）](https://drive.google.com/file/d/1HzBcDEd4Hm6iXMjvd6CHqWi29Rwi6NfX/view)。紹介動画では『Terraria』での共同操作も実演しています。
 
 試遊アンケート（回答者26名）の結果です。
 
-| 質問 | 結果 |
-|---|---|
-| 楽しかった・またこの遊び方をしてみたい | **100%**（26名全員） |
-| 1人で遊んだときと違うプレイ体験だった | **95.2%**（そのゲームの経験者21名中20名） |
-| 自分の担当操作を思い通りに動かせた | **84.6%**（22名） |
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/stats-narrow-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/readme/stats-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/stats-dark.svg">
+  <img src="assets/readme/stats-light.svg" alt="試遊アンケート（回答者26名）の結果。楽しかった・またこの遊び方をしてみたい：100%（26名全員）。1人で遊んだときと違うプレイ体験だった：95.2%（そのゲームの経験者21名中20名）。自分の担当操作を思い通りに動かせた：84.6%（22名）">
+</picture>
 
 各自の操作は思い通りに動かせる一方で、複数人で息を合わせる連携そのものが新しいゲーム体験を生むことが実証されました。
 
@@ -146,21 +129,35 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
 ### <a id="今後の展望"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-06-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-06-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-06-dark.svg"><img src="assets/readme/heads/play-06-light.svg" alt="今後の展望"></picture>
 
-| 段階 | 目指すこと |
-|---|---|
-| **まず** | 初めての人でも迷わず導入・参加できるように仕上げ、**誰もが手元のPCで遊べるサービスとして公開する** |
-| **その先** | 対応するゲームと設定形式を増やし、PCゲーム以外のプラットフォームや、離れた場所の友達と同じキャラクターを操作するオンライン対応へ広げる |
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/roadmap-narrow-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/readme/roadmap-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/roadmap-dark.svg">
+  <img src="assets/readme/roadmap-light.svg" alt="今後の展望。まず：初めての人でも迷わず導入・参加できるように仕上げ、誰もが手元のPCで遊べるサービスとして公開する。その先：対応するゲームと設定形式を増やし、PCゲーム以外のプラットフォームや、離れた場所の友達と同じキャラクターを操作するオンライン対応へ広げる">
+</picture>
 
 ### <a id="注力したことこだわり等"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-07-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-07-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-07-dark.svg"><img src="assets/readme/heads/play-07-light.svg" alt="注力したこと（こだわり等）"></picture>
 
 「友達と集まったその場で、いつものPCゲームをすぐにみんなで遊べること」を目指し、3つの点に注力しました。
 
-1. **準備から開始まで、スマホだけで進む導線**  
-   P1のスマホをタッチパッド付きのリモコンにして、ゲームの選択・ランチャーの操作・起動・開始まで手元で進められるようにしました。試遊での意見を受けて、参加者のワンタップ退出と、全員リセット時の一時Wi-Fiへの自動切り替えも加えました。
-2. **意味のまとまりで分ける分担と、持ち方に合わせるUI編集**  
-   キーを等分するのではなく、「移動」「視点」「照準と攻撃」のように、意味のつながりと負担の釣り合いを見て独自AIが配分します。「持ち方に合わせてボタンの配置を変えたい」という試遊者の声から、スマホ上でボタンの位置と縦横のサイズを変えられるようにしました。
-3. **違和感のない低遅延**  
-   PCのWindowsモバイルホットスポットでスマホと直接つなぎ、WebSocketとWebRTC DataChannelの2経路で送ります。実機の測定では、Wi-Fiの往復遅延が中央値9.0ms、スマホの操作からPCで入力するまでの推定遅延が中央値26.0msでした。電波が混み合う展示会場でも「ラグなく動かせる」「感度が変えられて快適」と評価されました。
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/focus-narrow-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/readme/focus-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/focus-dark.svg">
+  <img src="assets/readme/focus-light.svg" alt="注力したこと。1：スマホだけで準備から開始まで（P1のスマホがタッチパッド付きのリモコンになる。実際のホストの画面）。2：持ち方に合わせるUI編集（ボタンの位置と縦横のサイズを各スマホで変えられる。実際の編集画面）。3：違和感のない低遅延（Wi-Fiの往復遅延9.0ms、スマホの操作からPC入力まで26.0ms。いずれも中央値）">
+</picture>
+
+#### 1. 準備から開始まで、スマホだけで進む導線
+
+P1のスマホをタッチパッド付きのリモコンにして、ゲームの選択・ランチャーの操作・起動・開始まで手元で進められるようにしました。試遊での意見を受けて、参加者のワンタップ退出と、全員リセット時の一時Wi-Fiへの自動切り替えも加えました。
+
+#### 2. 意味のまとまりで分ける分担と、持ち方に合わせるUI編集
+
+キーを等分するのではなく、「移動」「視点」「照準と攻撃」のように、意味のつながりと負担の釣り合いを見て独自AIが配分します。「持ち方に合わせてボタンの配置を変えたい」という試遊者の声から、スマホ上でボタンの位置と縦横のサイズを変えられるようにしました。
+
+#### 3. 違和感のない低遅延
+
+PCのWindowsモバイルホットスポットでスマホと直接つなぎ、WebSocketとWebRTC DataChannelの2経路で送ります。実機の測定では、Wi-Fiの往復遅延が中央値9.0ms、スマホの操作からPCで入力するまでの推定遅延が中央値26.0msでした。電波が混み合う展示会場でも「ラグなく動かせる」「感度が変えられて快適」と評価されました。
 
 ## <a id="開発技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/part-2-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/part-2-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/part-2-dark.svg"><img src="assets/readme/heads/part-2-light.svg" alt="開発技術"></picture>
 
@@ -181,9 +178,12 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
 各スマートフォンのブラウザで行った操作を、ローカルWi-Fi経由でPC上のRustホストが受け取ります。ホストは参加者ごとの担当・入力の順序・入力先のウィンドウを確かめて1つの入力にまとめ、Windows標準の`SendInput` APIでPCゲームへ送ります。
 
-<div align="center">
-  <a href="assets/images/recooplay-system-architecture.webp"><img src="assets/readme/system-architecture.webp" width="880" alt="スマートフォンの操作をRustホストで統合し、既存PCゲームへ送るシステム構成図"></a>
-</div>
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/architecture-narrow-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/readme/architecture-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/architecture-dark.svg">
+  <img src="assets/readme/architecture-light.svg" alt="システム構成。スマホ（ブラウザ）2〜4台のP1移動・P2視点・P3アクションの操作を、WebSocketとWebRTCでWindows PCのRustホストへ送り、Rustホストは役割と準備状況をスマホへ返す。Rustホストは入力を統合し、Windows APIのSendInputでキーボード・マウス操作として既存のPCゲーム（Minecraftなど）へ送る。PCアプリ（Tauri）はRustホストから参加・準備状況を受け取り、ゲーム選択・開始・停止を伝える">
+</picture>
 
 ### <a id="活用した技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-10-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-10-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-10-dark.svg"><img src="assets/readme/heads/play-10-light.svg" alt="活用した技術"></picture>
 
@@ -205,19 +205,6 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 - Windows 11 PC（ホスト・ゲーム実行）
 - Android／iPhone（標準ブラウザから参加）
 - 通信はローカルWi-Fi（PCのモバイルホットスポットを含む）だけで完結するので、インターネットにつながらない場所でも2〜4人で共同操作できます。
-
-<p>
-  <img src="https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust">
-  <img src="https://img.shields.io/badge/Tokio_%2F_axum-463F3A?style=flat-square&logo=rust&logoColor=white" alt="Tokio / axum">
-  <img src="https://img.shields.io/badge/Tauri_2-24C8D8?style=flat-square&logo=tauri&logoColor=white" alt="Tauri 2">
-  <img src="https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React">
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite">
-  <img src="https://img.shields.io/badge/WebRTC_DataChannel-333333?style=flat-square&logo=webrtc&logoColor=white" alt="WebRTC DataChannel">
-  <img src="https://img.shields.io/badge/WebSocket-010101?style=flat-square" alt="WebSocket">
-  <img src="https://img.shields.io/badge/Win32_SendInput-0078D4?style=flat-square" alt="Win32 SendInput">
-  <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?style=flat-square&logo=huggingface&logoColor=000" alt="Hugging Face">
-</p>
 
 ### <a id="独自技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-11-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-11-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-11-dark.svg"><img src="assets/readme/heads/play-11-light.svg" alt="独自技術"></picture>
 
@@ -245,10 +232,14 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 - **分担の判断（約410KB、104,136パラメータ）：** 教師あり学習と、伏せたキーを当てる自己教師あり学習で育てた2層Transformerエンコーダです。①操作のカテゴリ（6種）、②同じ人が持つべきかの確率、③同じまとまりの中の方向軸（縦・横）を同時に推定します。
 - **オフラインで速く推論：** Rustホストが直接推論し、14操作のゲームなら約80ミリ秒で2〜4人の分担を作って保存します。
 
-| 評価に使ったゲーム（学習に未使用、ゲームごとの平均） | カテゴリの正解率 | 同じ人の判定 | 同じまとまりの再現率 | 同じ軸の判定 |
-|:--|--:|--:|--:|--:|
-| GitHub の Unity・Godot の操作定義 57本（生の名前、4組に分けた評価） | **88.1%** | **94.5%** | **91.8%** | **94.6%** |
-| ゲームのファイルから読んだ操作 6本（生の名前、1本ずつ外した評価） | 76.0% | 89.3% | 75.9% | 91.5% |
+学習に使っていないゲームでの評価です（ゲームごとの平均）。
+
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/evaluation-narrow-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/readme/evaluation-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/evaluation-dark.svg">
+  <img src="assets/readme/evaluation-light.svg" alt="分担AIの評価（学習に使っていないゲーム、ゲームごとの平均）。GitHub の Unity・Godot の操作定義 57本（生の名前、4組に分けた評価）：カテゴリの正解率88.1%、同じ人の判定94.5%、同じまとまりの再現率91.8%、同じ軸の判定94.6%。ゲームのファイルから読んだ操作 6本（生の名前、1本ずつ外した評価）：カテゴリの正解率76.0%、同じ人の判定89.3%、同じまとまりの再現率75.9%、同じ軸の判定91.5%">
+</picture>
 
 ※人が正解を確かめた30本（246操作）でのカテゴリの正解率は87.4%です。
 
@@ -264,12 +255,10 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
 #### 力を入れた部分のコードと資料
 
-| 独自技術 | コード・資料 |
-|---|---|
-| ① 操作名とキー割り当ての自動検出（19系統） | [読み取りの対応表](docs/game-profile-specification.md#定義のないゲームのファイルからの読み取り)<br>[操作抽出の入口](apps/host-rs/src/game_actions.rs)<br>[エンジン別パーサー群](apps/host-rs/src/engines/)<br>[キー設定の取得](apps/host-rs/src/keybinds.rs) |
-| ② 操作分担AI（Re:Cooplay Preset Model v2） | [分担AI仕様書](docs/preset-model-specification.md)<br>[Hugging Faceモデルカード](https://huggingface.co/YOSHI0209/recooplay-preset-model-v2#recooplay-preset-model-v2)<br>[推論・クラスタリング](apps/host-rs/src/preset_model.rs)<br>[MiniLMトークナイザー・埋め込み](apps/host-rs/src/text_encoder.rs) |
-| ③ 2経路の通信と、安全な入力の統合 | [通信処理](apps/host-rs/src/rtc.rs)<br>[入力統合・順序制御](apps/host-rs/src/hub.rs)<br>[入力先の制御](apps/host-rs/src/focus.rs)<br>[Windows入力](apps/host-rs/src/input.rs) |
-| ④ 担当と持ち方に合わせるスマホUIとPCリモコン | [コントローラー生成](apps/web/src/shared/controller-layout.ts)<br>[個人レイアウト設計](apps/web/src/shared/model/layout.ts)<br>[コントローラー編集UI](apps/web/src/phone/LayoutController.tsx)<br>[動作確認の範囲](docs/verification.md) |
+- **① 操作名とキー割り当ての自動検出：** [読み取りの対応表](docs/game-profile-specification.md#定義のないゲームのファイルからの読み取り) ・ [操作抽出の入口](apps/host-rs/src/game_actions.rs) ・ [エンジン別パーサー群](apps/host-rs/src/engines/) ・ [キー設定の取得](apps/host-rs/src/keybinds.rs)
+- **② 操作分担AI：** [分担AI仕様書](docs/preset-model-specification.md) ・ [Hugging Faceモデルカード](https://huggingface.co/YOSHI0209/recooplay-preset-model-v2#recooplay-preset-model-v2) ・ [推論・クラスタリング](apps/host-rs/src/preset_model.rs) ・ [MiniLMトークナイザー・埋め込み](apps/host-rs/src/text_encoder.rs)
+- **③ 2経路の通信と、安全な入力の統合：** [通信処理](apps/host-rs/src/rtc.rs) ・ [入力統合・順序制御](apps/host-rs/src/hub.rs) ・ [入力先の制御](apps/host-rs/src/focus.rs) ・ [Windows入力](apps/host-rs/src/input.rs)
+- **④ 担当と持ち方に合わせるスマホUIとPCリモコン：** [コントローラー生成](apps/web/src/shared/controller-layout.ts) ・ [個人レイアウト設計](apps/web/src/shared/model/layout.ts) ・ [コントローラー編集UI](apps/web/src/phone/LayoutController.tsx) ・ [動作確認の範囲](docs/verification.md)
 
 <picture>
   <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/footer-narrow-dark.svg">
