@@ -203,7 +203,7 @@ def controllers(t, narrow=False):
         H = max(hs)
     alt = "3人で『Minecraft』を遊ぶ場合の分担と、実際のスマホの画面。" + "。".join(
         f"{p}（{role}{'・' + sub if sub else ''}）：{ops}。画面は{ui}" for _, p, role, sub, _, ops, ui in ROLES)
-    return art.svg(W, round(H), "".join(b), t, alt.replace("\n", ""))
+    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
 
 
 # ---------- 03 特長：3枚のカード ----------
@@ -253,7 +253,7 @@ def features(t, narrow=False):
                   f'<g transform="translate({pad} 22)">{art.icon(kind, 0, 0, BODY[color], t)}</g>',
                   number(colw - pad, 52, k + 1), s1, s2, "</g>"]
     alt = "特長。" + "。".join(f"{k + 1}：{title}。{body}" for k, (_, _, title, body) in enumerate(FEATURES))
-    return art.svg(W, round(H), "".join(b), t, alt.replace("\n", ""))
+    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
 
 
 # ---------- 04 解決出来ること：ジャンルごとのカード ----------
@@ -331,7 +331,7 @@ def genres(t, narrow=False):
             y += h + GAP
         H = y - GAP
     alt = "ジャンルと分担の例。" + "。".join(f"{name}{'（' + ex + '）' if ex else ''}：分担は{'／'.join(split)}。{exp}" for _, _, name, ex, split, exp in GENRES)
-    return art.svg(W, round(H), "".join(b), t, alt.replace("\n", ""))
+    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
 
 
 # ---------- 05 試遊での反応：アンケートの数字 ----------
@@ -382,7 +382,7 @@ def stats(t, narrow=False):
             b += [card(x, 0, colw, H, t), f'<g transform="translate({x:.1f} 0)">', big_number(pad, 74, label, 58), s1, s2,
                   bar(pad, H - 26, colw - pad * 2, pct, t), "</g>"]
     alt = "試遊アンケート（回答者26名）の結果。" + "。".join(f"{q}：{label}（{sub}）" for _, label, q, sub in STATS)
-    return art.svg(W, round(H), "".join(b), t, alt.replace("\n", ""))
+    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
 
 
 # ---------- 06 今後の展望：まず → その先 ----------
@@ -445,7 +445,7 @@ def roadmap(t, narrow=False):
             b += [card(x, 0, cwid, H, t), f'<g transform="translate({x:.1f} 0)">{s}</g>']
         b.append(arrow(W / 2, H / 2))
     alt = "今後の展望。" + "。".join(f"{jp}：{title}。{body}" for _, jp, title, body in ROADMAP)
-    return art.svg(W, round(H), "".join(b), t, alt.replace("\n", ""))
+    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
 
 
 # ---------- 07 注力したこと：3つのこだわり ----------
@@ -513,7 +513,7 @@ def focus(t, narrow=False):
         b = [card(k * (colw + GAP), 0, colw, H, t) for k in range(3)] + b
     alt = ("注力したこと。1：" + FOCUS[0][2] + "（" + FOCUS[0][3] + "）。2：" + FOCUS[1][2] + "（" + FOCUS[1][3] + "）。3：違和感のない低遅延。"
            + "。".join(f"{label}{num}{unit}（{sub}）" for num, unit, label, sub in LATENCY))
-    return art.svg(W, round(H), "".join(b), t, alt.replace("\n", ""))
+    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
 
 
 # ---------- 09 システム構成 ----------
@@ -541,7 +541,7 @@ def node_icon(kind, x, y, color):
     return "".join(out)
 
 
-NODES = {"host": ("hub", "#6F86FF", "Rustホスト", "役割・入力の統合"), "app": ("app", "#22C4FA", "PCアプリ", "Tauri・画面の表示"),
+NODES = {"host": ("hub", "#6F86FF", "Rustホスト", "役割・入力の統合"), "app": ("app", "#22C4FA", "PCアプリ", "Tauri・画面"),
          "api": ("keys", "#C03BFF", "Windows API", "SendInput"), "game": ("game", "#FF8A00", "既存のPCゲーム", "Minecraftなど")}
 
 
@@ -628,7 +628,7 @@ def architecture(t, narrow=False):
         px = mx1 + 12
         pw = W - px
         b.append(group(px, 14, pw, H - 14, "Windows PC", t))
-        nw = 186
+        nw = 170
         ax, bx = px + 18, px + pw - 18 - nw
         r1, r2 = 54, 170
         b += [node("host", ax, r1, nw, t), node("app", bx, r1, nw, t), node("api", ax, r2, nw, t), node("game", bx, r2, nw, t)]
@@ -641,7 +641,7 @@ def architecture(t, narrow=False):
     alt = ("システム構成。スマホ（ブラウザ）2〜4台のP1移動・P2視点・P3アクションの操作を、WebSocketとWebRTCでWindows PCのRustホストへ送り、"
            "Rustホストは役割と準備状況をスマホへ返す。Rustホストは入力を統合し、Windows APIのSendInputでキーボード・マウス操作として"
            "既存のPCゲーム（Minecraftなど）へ送る。PCアプリ（Tauri）はRustホストから参加・準備状況を受け取り、ゲーム選択・開始・停止を伝える。")
-    return art.svg(W, round(H), "".join(b), t, alt.replace("\n", ""))
+    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
 
 
 # ---------- 11 独自技術：分担AIの評価 ----------
@@ -690,7 +690,7 @@ def evaluation(t, narrow=False):
             b += [card(x, 0, cwid, H, t), f'<g transform="translate({x:.1f} 0)">{s}</g>']
     alt = "分担AIの評価（学習に使っていないゲーム、ゲームごとの平均）。" + "。".join(
         f"{title}（{sub}）：" + "、".join(f"{m}{v:.1f}%" for m, v in zip(EVAL_METRICS, vals)) for title, sub, vals in EVAL_SETS)
-    return art.svg(W, round(H), "".join(b), t, alt.replace("\n", ""))
+    return art.svg(W, round(H) + 14, "".join(b), t, alt.replace("\n", ""))
 
 
 FIGURES = {"controllers": controllers, "features": features, "genres": genres, "stats": stats, "roadmap": roadmap,
