@@ -168,12 +168,12 @@ class Path:
 
     def __init__(self, t, x, y=None):
         self.t, self.x, self.y, self.p = t, x, t.H if y is None else y, 0
-        self.k, self.raw = [], []  # raw：(時刻, x, 足の高さ, 縦の伸び) 頭に物を載せるときに使う
+        self.k, self.raw = [], []  # raw：(時刻, x, 足の高さ, 傾き, 縦の伸び) 頭に物を載せるときに使う
         self.put(0)
 
     def at(self, p, x, y, r=0, sx=1, sy=1):
         self.k.append((round(p, 2), T(x, y - self.t.H, r, sx, sy)))
-        self.raw.append((round(p, 2), x, y, sy))
+        self.raw.append((round(p, 2), x, y, r, sy))
 
     def put(self, p, dy=0, r=0, sx=1, sy=1, dx=0):
         self.at(p, self.x + dx, self.y + dy, r, sx, sy)
@@ -224,8 +224,14 @@ class Path:
         return self
 
     def head(self, p0, p1, hx, hy, r):
-        """p0〜p1(%) のあいだ、頭の上に載せた点（元の中心 hx, hy、半径 r）の動き。"""
-        return [(p, T(x - hx, y - 124 * .2 * sy - r - hy)) for p, x, y, sy in self.raw if p0 <= p <= p1]
+        """p0〜p1(%) のあいだ、頭の上に載せた点（元の中心 hx, hy、半径 r）の動き。傾くと足元を軸に頭も動く。"""
+        out = []
+        for p, x, y, a, sy in self.raw:
+            if p0 <= p <= p1:
+                h = 124 * .2 * sy + r
+                a = math.radians(a)
+                out.append((p, T(x + h * math.sin(a) - hx, y - h * math.cos(a) - hy)))
+        return out
 
     def frames(self):
         last = self.k[-1][1]
@@ -376,12 +382,13 @@ def carry(kind, mode):
 
 # ---------- 案C2：やってしまった赤を、みんなで助ける ----------
 def gather(kind, mode):
-    """赤がためてから「。」を蹴り、当たった「:」が上下2つの点に割れて一番下の行まで落ちる。
-    やってしまった赤のもとへ3体が来て、青と緑が点を頭に載せて運び、下の点は緑から受け取った赤が自分で戻す。
-    キャラクターはふだん画像の一番下（一番下の段の下）にいて、点を戻すときだけ段を上る。最後はみんなで喜んで、左へ去っていく。"""
-    t = Title(kind, mode, 16)
+    """赤がためてから「。」を蹴り、当たった「:」が上下2つの点に割れて画像の一番下まで落ちる。
+    やってしまった赤は、跳ね返って止まった「。」を拾い、来てくれた3体に謝る。点は青と緑が1つずつ運んで戻す。
+    キャラクターはふだん画像の一番下（一番下の段の下）にいて、点を戻すときだけ段を上る。
+    みんなで喜んだあと3体は左へ去り、赤は「。」を文末へ戻してから右へ去る。"""
+    dur = 17
+    t = Title(kind, mode, dur)
     kick, hit = 31, 37
-    ball_flight(t, kick, hit)
     last = len(t.rows) - 1
     fl = floor(t)
     _, x0, row0, w0, size = t.g[COLON]
@@ -393,7 +400,7 @@ def gather(kind, mode):
     rest, low = (cx - 8, cx + 4), fl - rad  # 落ちた点は画像の一番下（キャラクターのいる地面）で止まる
 
     def fall(n):
-        """点が段で跳ねながら、一番下の行の文字の上まで落ちる。"""
+        """点が段で跳ねながら、画像の一番下まで落ちる。"""
         hy = homes[n]
         out = [(hit, T()), (hit + .8, T(-2, -4 if n == 0 else 0, -20 if n == 0 else 10))]
         rows = list(range(up, last + 1)) if kind == "narrow" else []
@@ -407,73 +414,98 @@ def gather(kind, mode):
         y = low - hy
         return out + [(p, T(x, y)), (p + 1, T(x, y - 3)), (p + 2, T(x, y))]
 
+    # 「。」：蹴られて「:」に当たり、跳ね返って画像の一番下に落ちて止まる
+    bx, by = t.center(BALL)
+    _, ccy = t.center(COLON)
+    br = size * .11
+    dx, dy = cx - bx, ccy - by
+    bxr = min(cx + 200, t.W * .5)  # 止まる x
+    rx, ry = bxr - bx, fl - br - by
+    mid = dx + (rx - dx) * .6
+    ball = [(kick, T()), *arc(kick + .5, hit, 0, 0, dx, dy, min(dy, 0) - 30, 10)]
+    ball += arc(hit, hit + 3, dx, dy, mid, ry, -14, 5)[1:] + arc(hit + 3, hit + 5, mid, ry, rx - 6, ry, -8, 4)[1:]
+    ball += [(hit + 6.5, T(rx, ry))]
+
     # 赤：右から来て「。」の前で止まり、一歩下がって、かがんで震えてから、駆け寄って蹴る
     end = row_end(t, last)
     kx = min(end + 14, t.W - 10)
-    bx = min(kx + 16, t.W - 2)
+    back = min(kx + 16, t.W - 2)
     red = Path(t, t.W + 24)
-    red.wait(9).walk(19, kx).wait(21).walk(23.5, bx)
+    red.wait(9).walk(19, kx).wait(21).walk(23.5, back)
     red.put(24.5, sx=1.12, sy=.82).put(25.5, dx=-1, sx=1.12, sy=.82).put(26.5, dx=1, sx=1.12, sy=.82)
     red.put(27.5, dx=-1, sx=1.12, sy=.82).put(28.5, r=-14, sx=1.12, sy=.82)
     red.p = 28.5
     red.walk(30, kx).lean(kick, 22).lean(32.5, 0)
     # やってしまった：跳び上がって、しょんぼり
-    red.wait(hit).jump(hit + 2.5, 12).put(hit + 3.5, r=-8, sx=1.06, sy=.88).put(46, r=-8, sx=1.06, sy=.88)
-    red.p = 46
-    mark_x, mark_y = red.x, red.y - 124 * .2 - 6
-    red.wait(48)
-    meet = min((rest[0] + end) / 2 + 20, end - 12)
-    red.walk(52, meet).put(53, sx=1.04, sy=.92).put(54)  # 紫に励まされて、うなずく
-    red.p = 54
-    climb(red, 58, cx + 12, up).wait(65)
+    red.wait(hit).jump(hit + 2.5, 12).put(hit + 3.5, r=-8, sx=1.06, sy=.88).put(43, r=-8, sx=1.06, sy=.88)
+    red.p = 43
+    mark_x, mark_y = kx, fl - 124 * .2 - 6
+    # 止まった「。」を拾う
+    red.walk(51, bxr).put(51.8, sx=1.12, sy=.82).put(52.6)
+    red.p = 52.6
+    # 来てくれた紫に謝る（2回おじぎ）
+    for p in (54, 56):
+        red.put(p - .6, r=-28).put(p + .6)
+    red.p = 56.6
+    # 点を戻すのを見守る
+    red.walk(61, cx + 40).wait(66.5)
+    # みんなに謝る
+    for p in (67.5, 69.5):
+        red.put(p - .6, r=-28).put(p + .6)
+    red.p = 70.1
     # 青：上の点を拾って運び、元の場所へ放り上げる
     blue = Path(t, -30, fl)
     blue.wait(40).walk(48, rest[0] - 2).put(49, sx=1.12, sy=.84).put(50)
     blue.p = 50
     climb(blue, 56, cx - 14, up).wait(58).jump(60, 8)
     descend(blue, 64, blue.x)  # 戻したら一番下へ
-    # 緑：下の点を拾って運び、赤へトスする
+    # 緑：下の点を拾って運び、元の場所へ放り上げる
     green = Path(t, -56, fl)
-    green.wait(41).walk(50, rest[1]).put(51, sx=1.12, sy=.84).put(52)
+    green.wait(41).walk(50, rest[1] + 2).put(51, sx=1.12, sy=.84).put(52)
     green.p = 52
-    climb(green, 59, cx + 36, up).wait(61.5).jump(63.5, 8)
+    climb(green, 59, cx + 14, up).wait(61.5).jump(63.5, 8)
     descend(green, 66.5, green.x)
-    # 紫：赤を励ます（跳ねる）。点は運ばないので、一番下で見守る
+    # 紫：赤のところへ行き、謝る赤を励ます（跳ねる）。点は運ばないので、一番下で見守る
     purple = Path(t, -82, fl)
-    purple.wait(42).walk(51, meet - 24).jump(53, 10)
-    purple.walk(59, cx + 60)
-    # 赤が受け取った下の点を、跳んで元に戻す
-    red.jump(67.5, 10)
-    descend(red, 70, red.x)
+    purple.wait(42).walk(52.5, bxr - 26).wait(56.4).jump(58.4, 10)
+    purple.walk(62, cx + 64)
     paths = (("blue", blue), ("green", green), ("purple", purple), ("red", red))
-    # みんなで喜ぶ
+    # 謝る赤を許して、みんなで喜ぶ
     for k, (name, path) in enumerate(paths):
-        path.wait(70 + k * .4).jump(73 + k * .4, 10).wait(74.5 + k * .4).jump(77.5 + k * .4, 16 if name == "red" else 10)
+        path.wait(70.5 + k * .4).jump(73 + k * .4, 10).wait(74 + k * .4).jump(76.5 + k * .4, 14 if name == "red" else 10)
+    # 3体は左へ去る。赤は「。」を文末へ戻して、右へ去る
+    for k, (name, path) in enumerate(paths[:3]):
+        leave(path, 80 + k * .6, 95 + k * .6)
+    red.wait(78).walk(90, bx - 14).put(90.8, r=30).put(92.4)
+    red.p = 92.4
+    red.walk(99, t.W + 40)
     for k, (name, path) in enumerate(paths):
-        leave(path, 83 + k * .6, 96 + k * .6)
         t.actor(f"m{k}", name, 0, path.frames())
+
+    hx0, hy0 = _xy(red.head(90.8, 90.8, bx, by, br)[-1][1])
+    ball += [(51.8, T(rx, ry))] + red.head(52.6, 90.8, bx, by, br)
+    ball += arc(90.8, 92.2, hx0, hy0, 0, 0, -6, 4)[1:] + [(92.8, T(0, -3)), (93.4, T())]
+    t.move(BALL, ball, origin="50% 50%")
 
     top = fall(0)
     top += [(49, top[-1][1])] + blue.head(50, 58, cx, homes[0], rad)
-    bx0, by0 = _xy(top[-1][1])
-    top += arc(58.6, 61, bx0, by0, 0, 0, -14, 6)[1:] + [(61.6, T(0, -3)), (62.2, T())]
+    tx, ty = _xy(top[-1][1])
+    top += arc(58.6, 61, tx, ty, 0, 0, -14, 6)[1:] + [(61.6, T(0, -3)), (62.2, T())]
     bot = fall(1)
     bot += [(51, bot[-1][1])] + green.head(52, 62, cx, homes[1], rad)
     gx, gy = _xy(bot[-1][1])
-    rx, ry = _xy(red.head(58, 65, cx, homes[1], rad)[-1][1])
-    bot += arc(62.2, 64.5, gx, gy, rx, ry, -16, 6)[1:] + red.head(64.6, 65.6, cx, homes[1], rad)
-    bot += arc(66, 68, rx, ry, 0, 0, -12, 6)[1:] + [(68.6, T(0, -3)), (69.2, T())]
+    bot += arc(62.2, 64.6, gx, gy, 0, 0, -12, 6)[1:] + [(65.2, T(0, -3)), (65.8, T())]
     t.split(COLON, top, bot)
     # 「!」と「♪」
     t.front.append(f'<g class="oops"><text x="{mark_x - 4:.1f}" y="{mark_y:.1f}" font-size="20" font-weight="800" '
                    f'fill="#FF8A00" font-family="{FONT}">!</text></g>')
-    t.css.append("@keyframes oops{0%,37.5%{opacity:0}38.5%,46%{opacity:1}47%,100%{opacity:0}}"
-                 ".oops{opacity:0;animation:oops 16s linear infinite}")
+    t.css.append("@keyframes oops{0%,37.5%{opacity:0}38.5%,43%{opacity:1}44%,100%{opacity:0}}"
+                 f".oops{{opacity:0;animation:oops {dur}s linear infinite}}")
     note_y = fl - 124 * .2 - 8
     t.front.append(f'<g class="joy"><text x="{cx + 20:.1f}" y="{note_y:.1f}" font-size="18" font-weight="800" '
                    f'fill="#FF8A00" font-family="{FONT}">♪</text></g>')
-    t.css.append("@keyframes joy{0%,70%{opacity:0;transform:translateY(4px)}72%,80%{opacity:1;transform:translateY(-4px)}"
-                 "82%,100%{opacity:0}}.joy{opacity:0;animation:joy 16s linear infinite}")
+    t.css.append("@keyframes joy{0%,70.5%{opacity:0;transform:translateY(4px)}72%,78%{opacity:1;transform:translateY(-4px)}"
+                 f"80%,100%{{opacity:0}}}}.joy{{opacity:0;animation:joy {dur}s linear infinite}}")
     return t.render()
 
 
@@ -605,7 +637,8 @@ OPTIONS = [
     ("c1", "みんなで担いで戻す", "赤が歩いてきて文末の「。」を蹴ると、行をまたいで「:」に当たり、「:」が下の行の文字の上へボトッと落ちる。"
      "歩いてきた3体が文字に乗って担いで運び、最後は赤が跳んで押し込む。", carry),
     ("c2", "やってしまった赤を、みんなで助ける", "赤が歩いてきて、ためてから文末の「。」を蹴る。「。」が当たると「:」が上下2つの点に割れ、"
-     "一番下の行まで落ちる。やってしまった赤を3体が励まし、青と緑が点を1つずつ運んで、下の点は赤が自分で戻す。みんなで喜んで去っていく。", gather),
+     "画像の一番下まで落ちる。赤は止まった「。」を拾って、来てくれた3体に謝る。点は青と緑が1つずつ運んで戻し、"
+     "みんなで喜んだあと、赤は「。」を文末に戻して去っていく。", gather),
     ("c3", "トスでつなぐ", "落ちた「:」を、文字の上に並んだ4体がトスでつなぎ、最後は蹴った赤が元の場所へ押し込む。", relay),
     ("e", "Cooplayの目", "「Cooplay」の2つの「o」に黒目が現れ、文字の上を歩いてくるキャラクターを目で追い、まばたきして消える。", eyes),
     ("f", "そのままだけ動かない", "4体が歩いてきて文字に乗り、そろって足踏みすると文字がみんな揺れるが、「ゲームはそのまま。」だけは動かない。", still),

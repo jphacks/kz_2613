@@ -28,7 +28,7 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 
 ## 案C2：やってしまった赤を、みんなで助ける
 
-赤が歩いてきて、ためてから文末の「。」を蹴る。「。」が当たると「:」が上下2つの点に割れ、一番下の行まで落ちる。やってしまった赤を3体が励まし、青と緑が点を1つずつ運んで、下の点は赤が自分で戻す。みんなで喜んで去っていく。
+赤が歩いてきて、ためてから文末の「。」を蹴る。「。」が当たると「:」が上下2つの点に割れ、画像の一番下まで落ちる。赤は止まった「。」を拾って、来てくれた3体に謝る。点は青と緑が1つずつ運んで戻し、みんなで喜んだあと、赤は「。」を文末に戻して去っていく。
 
 <h1><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="title-c2-narrow-dark.svg"><source media="(max-width: 700px)" srcset="title-c2-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="title-c2-dark.svg"><img src="title-c2-light.svg" align="absbottom" alt="Re:Cooplay（リコープレイ）ゲームはそのまま。1キャラを、みんなで操作。"></picture></h1>
 
