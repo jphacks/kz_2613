@@ -10,7 +10,7 @@
 
 <br>
 
-<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/awards-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/awards-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/awards-dark.svg"><img src="assets/readme/awards-light.svg" alt="JPHACKS 2026 受賞結果。Hack Day（金沢会場）：Hack Day Audience Award、Award Day Finalist。Award Day：審査委員特別賞、Innovator認定、企業賞（合同会社DMM.com賞）"></picture>
+<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/awards-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/awards-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/awards-dark.svg"><img src="assets/readme/awards-light.svg" alt="JPHACKS 2026 受賞結果。Hack Day（金沢会場）：Hack Day Audience Award、Award Day Finalist。Award Day：審査委員特別賞、Innovator認定、合同会社DMM.com賞"></picture>
 
 <br>
 

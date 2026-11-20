@@ -736,7 +736,7 @@ AWARDS = [
                              ("blue", "Award Day Finalist", None)]),
     ("Award Day", None, [("silver", "審査委員特別賞", None),
                         ("purple", "Innovator認定", None),
-                        ("red", "企業賞", "合同会社DMM.com賞")]),
+                        ("red", "合同会社DMM.com賞", None)]),
 ]
 MEDAL = {"gold": "#F5B300", "blue": "#24C2FA", "silver": "#9AA6B8", "purple": "#CB00EA", "red": "#FF4A3D"}
 
@@ -771,10 +771,10 @@ def award_panel(x, y, w, h, title, sub, items, t):
 def awards(t, narrow=False):
     """受賞結果。背景の色は付けず、Hack Day と Award Day の枠を並べる（スマホは縦に積む）。"""
     rows = max(len(items) for _, _, items in AWARDS)
-    ph = 76 + rows * 46
+    ph = 70 + rows * 46
     if narrow:
         W, pad, top = PHONE_W, 0, 66
-        hs = [76 + len(items) * 46 for _, _, items in AWARDS]
+        hs = [70 + len(items) * 46 for _, _, items in AWARDS]
         H = top + sum(hs) + 12
     else:
         W, pad, top = PC_W, 0, 70
