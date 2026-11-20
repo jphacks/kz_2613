@@ -11,7 +11,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-COLUMNS = {"PC": 838, "スマホ": 324}
+# 名前 → (本文欄の幅, 画面の幅)。<source> の max-width は画面の幅と比べる
+COLUMNS = {"PC": (838, 1280), "スマホ": (324, 390)}
 MIN_PX = 12.5
 DECOR = ("assets/readme/scenes/",)  # 区切りの帯。文字は吹き出しの飾りだけ
 # 利用者の判断で形を変えずに使う図（2026-11-20）。大きさは表示するが、検査の対象から外す
@@ -27,13 +28,13 @@ def svg_info(path):
     return width, sizes
 
 
-def pick(block, col):
-    """picture 要素から、本文欄の幅 col（ライト）で表示される画像を返す。"""
-    narrow = col <= 700
+def pick(block, screen):
+    """picture 要素から、画面の幅 screen（ライト）で表示される画像を返す。"""
     for media, src in re.findall(r'<source media="([^"]+)" srcset="([^"]+)"', block):
         if "prefers-color-scheme: dark" in media:
             continue
-        if "max-width: 700px" in media and narrow:
+        limit = re.search(r"max-width: (\d+)px", media)
+        if limit and screen <= int(limit.group(1)):
             return src
     return re.search(r'<img src="([^"]+)"', block).group(1)
 
@@ -44,10 +45,10 @@ def main():
     rest = re.sub(r"<picture>.*?</picture>", "", readme, flags=re.S)
     blocks += re.findall(r"<img [^>]*>", rest)
     bad = []
-    for name, col in COLUMNS.items():
+    for name, (col, screen) in COLUMNS.items():
         print(f"== {name}（本文欄 {col}px、本文16px）")
         for block in blocks:
-            src = pick(block, col)
+            src = pick(block, screen)
             if not src.endswith(".svg") or src.startswith("http"):
                 continue
             w_attr = re.search(r'<img[^>]*\swidth="([\d.]+)(%?)"', block)

@@ -652,11 +652,137 @@ TOC = [("01", "背景"), ("02", "製品説明"), ("03", "特長"), ("04", "解�
 LINK = {"light": "#0969DA", "dark": "#4493F8"}
 
 
-def toc_item(num, label, mode):
-    w = 28 + sum(16 * (0.6 if c.isascii() else 1.0) for c in label) + 1
-    b = (text(0, 20, num, 21, "url(#brand)", cls="disp", weight=400, length=23)
-         + text(28, 18, label, 16, LINK[mode], cls="gh", weight=400))
-    return svg(round(w), 24, b, THEMES[mode], f"{num} {label}")
+TOC_EN = {num: en for num, _, en in HEADS}
+# 目次は表を使わず、左右1組の画像を本文欄の幅の49%ずつで並べる（表は幅いっぱいに広がらず中央に浮くため）。
+# PCは幅410、スマホは幅158で描き、どちらも本文欄の49%に縮めて表示すると項目名が約16pxになる。
+TOC_W = {False: 410, True: 158}
+
+
+def toc_item(num, label, mode, narrow=False):
+    t = THEMES[mode]
+    W = TOC_W[narrow]
+    b = [text(0, 23, num, 21, "url(#brand)", cls="disp", weight=400, length=23),
+         text(29, 21, label, 16, LINK[mode], cls="gh", weight=400)]
+    if not narrow:
+        b.append(text(W - 14, 20, TOC_EN[num], 13, t["muted"], cls="gh", weight=600, anchor="end",
+                      extra=' letter-spacing="1.5" opacity=".75"'))
+    b.append(f'<rect x="29" y="30" width="{W - 43}" height="1" fill="{t["line"]}"/>')
+    return svg(W, 34, "".join(b), t, f"{num} {label}")
+
+
+# ---------- 大見出し（製品概要・開発技術） ----------
+PARTS = [("1", "製品概要", "PRODUCT", "01", "07"), ("2", "開発技術", "TECHNOLOGY", "08", "11")]
+
+
+def part_banner(part, jp, en, first, last, t, narrow=False):
+    """大見出し。項目の見出し（番号＋英字ラベル）と同じ書体の組み方で、背景の帯と大きな番号で格上に見せる。"""
+    W, H = (PHONE_W, 96) if narrow else (PC_W, 104)
+    b = [f'<rect width="{W}" height="{H}" rx="18" fill="url(#bg)"/>',
+         f'<clipPath id="card"><rect width="{W}" height="{H}" rx="18"/></clipPath><g clip-path="url(#card)">',
+         f'<g transform="translate({W} {H}) scale(-1 -1)">{dots(14, 14, 8, 5, 12, 2.4, t["dot2"])}</g>',
+         f'<rect width="7" height="{H}" fill="url(#brand)"/></g>']
+    if narrow:
+        b += [text(24, 34, "PART", 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
+              text(24, 80, part, 48, "url(#brand)", cls="disp", weight=400),
+              text(66, 34, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
+              text(66, 70, jp, 30, t["ink"], cls="gh", weight=700),
+              text(W - 18, 34, f"{first}–{last}", 15, "url(#brand)", cls="disp", weight=400, anchor="end",
+                   extra=' letter-spacing="1"')]
+    else:
+        b += [text(32, 40, "PART", 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
+              text(32, 86, part, 52, "url(#brand)", cls="disp", weight=400),
+              text(84, 40, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="4"'),
+              text(84, 78, jp, 34, t["ink"], cls="gh", weight=700),
+              text(W - 32, 40, "SECTIONS", 13, t["muted"], cls="gh", weight=600, anchor="end",
+                   extra=' letter-spacing="3"'),
+              text(W - 32, 80, f"{first} – {last}", 32, "url(#brand)", cls="disp", weight=400, anchor="end",
+                   extra=' letter-spacing="1"')]
+    return svg(W, H, "".join(b), t, jp)
+
+
+def toc_part(part, jp, en, mode, narrow=False):
+    """目次の列の見出し。大見出しと同じ PART 番号・英字ラベルで、どちらの列かを示す。"""
+    t = THEMES[mode]
+    W = TOC_W[narrow]
+    b = [text(0, 15, f"PART {part}", 13, "url(#brand)", cls="gh", weight=700, extra=' letter-spacing="2"'),
+         text(0, 41, jp, 19, t["ink"], cls="gh", weight=700)]
+    if not narrow:
+        b.append(text(W - 14, 41, en, 13, t["muted"], cls="gh", weight=600, anchor="end",
+                      extra=' letter-spacing="3"'))
+    b.append(f'<rect y="50" width="{W - 14}" height="3" rx="1.5" fill="url(#brand)"/>')
+    return svg(W, 62, "".join(b), t, f"{jp}（{en}）")
+
+
+# ---------- 受賞結果 ----------
+AWARDS = [
+    ("Hack Day", "金沢会場", [("gold", "Hack Day Audience Award", None),
+                             ("blue", "Award Day Finalist", None)]),
+    ("Award Day", None, [("silver", "審査委員特別賞", None),
+                        ("purple", "Innovator認定", None),
+                        ("red", "企業賞", "合同会社DMM.com賞")]),
+]
+MEDAL = {"gold": "#F5B300", "blue": "#24C2FA", "silver": "#9AA6B8", "purple": "#CB00EA", "red": "#FF4A3D"}
+
+
+def medal(kind, x, y):
+    """リボン付きのメダル。(x, y) は円の中心、半径12。"""
+    c = MEDAL[kind]
+    return (f'<path d="M{x - 9} {y - 24}L{x - 3} {y - 8}L{x + 3} {y - 8}L{x - 2} {y - 24}Z" fill="{c}" opacity=".55"/>'
+            f'<path d="M{x + 9} {y - 24}L{x + 3} {y - 8}L{x - 3} {y - 8}L{x + 2} {y - 24}Z" fill="{c}" opacity=".8"/>'
+            f'<circle cx="{x}" cy="{y}" r="12" fill="{c}"/>'
+            f'<circle cx="{x}" cy="{y}" r="8.5" fill="none" stroke="#FFFFFF" stroke-width="1.4" opacity=".7"/>'
+            + star(x, y, 5.5, "#FFFFFF"))
+
+
+def award_panel(x, y, w, h, title, sub, items, t):
+    b = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="14" fill="{t["panel"]}" stroke="{t["line"]}"/>',
+         text(x + 20, y + 32, title.upper(), 13, t["muted"], cls="gh", weight=700, extra=' letter-spacing="3"')]
+    if sub:
+        b.append(text(x + w - 20, y + 32, sub, 13, t["muted"], cls="gh", weight=600, anchor="end"))
+    b.append(f'<rect x="{x + 20}" y="{y + 44}" width="{w - 40}" height="1" fill="{t["line"]}"/>')
+    for k, (kind, name, note) in enumerate(items):
+        cy = y + 82 + k * 46
+        b.append(medal(kind, x + 34, cy + 4))
+        if note:
+            b += [text(x + 60, cy - 1, name, 16, t["ink"], cls="gh", weight=700),
+                  text(x + 60, cy + 18, note, 13, t["muted"], cls="gh", weight=600)]
+        else:
+            b.append(text(x + 60, cy + 10, name, 16, t["ink"], cls="gh", weight=700))
+    return "".join(b)
+
+
+def awards(t, narrow=False):
+    """受賞結果のカード。フッターと同じ背景で、Hack Day と Award Day のパネルを並べる（スマホは縦に積む）。"""
+    rows = max(len(items) for _, _, items in AWARDS)
+    ph = 64 + rows * 46
+    if narrow:
+        W, pad, top = PHONE_W, 12, 66
+        hs = [64 + len(items) * 46 for _, _, items in AWARDS]
+        H = top + sum(hs) + 12 + pad
+    else:
+        W, pad, top = PC_W, 20, 70
+        H = top + ph + pad
+    b = [f'<rect width="{W}" height="{H}" rx="20" fill="url(#bg)"/>',
+         f'<clipPath id="card"><rect width="{W}" height="{H}" rx="20"/></clipPath><g clip-path="url(#card)">',
+         dots(16, 16, 7, 4, 12, 2.4, t["dot"]),
+         f'<g transform="translate({W} {H}) scale(-1 -1)">{dots(16, 16, 7, 4, 12, 2.4, t["dot2"])}</g></g>']
+    cx = W / 2
+    b += [text(cx, 26, "JPHACKS 2026", 13, t["muted"], cls="gh", weight=700, anchor="middle", extra=' letter-spacing="4"'),
+          text(cx, 54, "受賞結果", 24, t["ink"], cls="gh", weight=700, anchor="middle"),
+          star(cx - 66, 46, 7, MEDAL["gold"]), star(cx + 66, 46, 7, MEDAL["gold"])]
+    if narrow:
+        y = top
+        for (title, sub, items), h in zip(AWARDS, hs):
+            b.append(award_panel(pad, y, W - 2 * pad, h, title, sub, items, t))
+            y += h + 12
+    else:
+        pw = (W - 2 * pad - 16) / 2
+        for k, (title, sub, items) in enumerate(AWARDS):
+            b.append(award_panel(pad + k * (pw + 16), top, pw, ph, title, sub, items, t))
+    alt = "JPHACKS 2026 受賞結果。" + "。".join(
+        f"{title}{'（' + sub + '）' if sub else ''}：" + "、".join(n + (f"（{note}）" if note else "") for _, n, note in items)
+        for title, sub, items in AWARDS)
+    return svg(W, H, "".join(b), t, alt)
 
 
 def main():
@@ -674,6 +800,16 @@ def main():
     for num, label in TOC:
         for mode in THEMES:
             files[f"heads/toc-{num}-{mode}.svg"] = toc_item(num, label, mode)
+            files[f"heads/toc-{num}-narrow-{mode}.svg"] = toc_item(num, label, mode, narrow=True)
+    for part, jp, en, first, last in PARTS:
+        for mode, t in THEMES.items():
+            files[f"heads/part-{part}-{mode}.svg"] = part_banner(part, jp, en, first, last, t)
+            files[f"heads/part-{part}-narrow-{mode}.svg"] = part_banner(part, jp, en, first, last, t, narrow=True)
+            files[f"heads/toc-part-{part}-{mode}.svg"] = toc_part(part, jp, en, mode)
+            files[f"heads/toc-part-{part}-narrow-{mode}.svg"] = toc_part(part, jp, en, mode, narrow=True)
+    for mode, t in THEMES.items():
+        files[f"awards-{mode}.svg"] = awards(t)
+        files[f"awards-narrow-{mode}.svg"] = awards(t, narrow=True)
     (OUT / "heads").mkdir(exist_ok=True)
     for name, body in files.items():
         (OUT / name).write_text(body + "\n", encoding="utf-8", newline="\n")

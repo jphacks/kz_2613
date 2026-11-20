@@ -6,26 +6,11 @@
 
 <sub>▶ 画像をクリックすると、YouTubeでプロダクト紹介動画を再生します。</sub>
 
+</div>
+
 <br>
 
-  [![JPHACKS 2026](https://img.shields.io/badge/JPHACKS%202026-Hack%20Day%20Audience%20Award-gold?style=for-the-badge&logo=trophy)](https://github.com/jphacks/kz_2613)
-  [![JPHACKS 2026](https://img.shields.io/badge/JPHACKS%202026-Award%20Day%20Finalist-blue?style=for-the-badge&logo=star)](https://jphacks.com/2026/detail/)
-
-  [![JPHACKS 2026](https://img.shields.io/badge/JPHACKS%202026-審査委員特別賞-silver?style=for-the-badge&logo=award)](https://jphacks.com/2026/detail/)
-  [![JPHACKS 2026](https://img.shields.io/badge/JPHACKS%202026-Innovator認定-purple?style=for-the-badge&logo=lightbulb)](https://jphacks.com/2026/detail/)
-
-  ## 🎉 JPHACKS 2026 受賞結果 🎉
-  ### **🏆 Hack Day (金沢会場)**
-  **🥇 Hack Day Audience Award**  
-  **🎯 Award Day Finalist**
-
-  ---
-  ### **🏆 Award Day**
-  **🏅 審査委員特別賞**    **💡 Innovator認定**<br>
-  **🎁 企業賞受賞**  
-  合同会社DMM.com賞
-
-</div>
+<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/awards-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/awards-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/awards-dark.svg"><img src="assets/readme/awards-light.svg" alt="JPHACKS 2026 受賞結果。Hack Day（金沢会場）：Hack Day Audience Award、Award Day Finalist。Award Day：審査委員特別賞、Innovator認定、企業賞（合同会社DMM.com賞）"></picture>
 
 <br>
 
@@ -33,38 +18,23 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 
 1台のPC画面を友達と囲み、普段は1人で操作するキャラクターを2〜4人で分担して動かします。コントローラーは各自のスマートフォンのブラウザなので、専用の機器もアプリも要りません。ゲームの操作名とキー割り当てを自動で読み取り、独自AIが参加人数に合わせて分担とスマホの操作画面を作ります。
 
-<div align="center">
-<table>
-  <tr>
-    <th align="left"><a href="#製品概要">製品概要</a><br><sub>PRODUCT</sub></th>
-    <th align="left"><a href="#技術仕様書">開発技術</a><br><sub>TECHNOLOGY</sub></th>
-  </tr>
-  <tr>
-    <td valign="top">
-      <a href="#背景製品開発のきっかけ課題等"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-01-dark.svg"><img src="assets/readme/heads/toc-01-light.svg" alt="01 背景"></picture></a><br>
-      <a href="#製品説明具体的な製品の説明"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-02-dark.svg"><img src="assets/readme/heads/toc-02-light.svg" alt="02 製品説明"></picture></a><br>
-      <a href="#特長"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-03-dark.svg"><img src="assets/readme/heads/toc-03-light.svg" alt="03 特長"></picture></a><br>
-      <a href="#解決出来ること"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-04-dark.svg"><img src="assets/readme/heads/toc-04-light.svg" alt="04 解決出来ること"></picture></a><br>
-      <a href="#試遊での反応"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-05-dark.svg"><img src="assets/readme/heads/toc-05-light.svg" alt="05 試遊での反応"></picture></a><br>
-      <a href="#今後の展望"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-06-dark.svg"><img src="assets/readme/heads/toc-06-light.svg" alt="06 今後の展望"></picture></a><br>
-      <a href="#注力したことこだわり等"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-07-dark.svg"><img src="assets/readme/heads/toc-07-light.svg" alt="07 注力したこと"></picture></a>
-    </td>
-    <td valign="top">
-      <a href="#技術仕様書"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-08-dark.svg"><img src="assets/readme/heads/toc-08-light.svg" alt="08 技術仕様書"></picture></a><br>
-      <a href="#システム構成"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-09-dark.svg"><img src="assets/readme/heads/toc-09-light.svg" alt="09 システム構成"></picture></a><br>
-      <a href="#活用した技術"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-10-dark.svg"><img src="assets/readme/heads/toc-10-light.svg" alt="10 活用した技術"></picture></a><br>
-      <a href="#独自技術"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-11-dark.svg"><img src="assets/readme/heads/toc-11-light.svg" alt="11 独自技術"></picture></a>
-    </td>
-  </tr>
-</table>
-</div>
+<p>
+<a href="#製品概要"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-part-1-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-part-1-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-part-1-dark.svg"><img src="assets/readme/heads/toc-part-1-light.svg" width="49%" alt="製品概要（PRODUCT）"></picture></a> <a href="#開発技術"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-part-2-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-part-2-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-part-2-dark.svg"><img src="assets/readme/heads/toc-part-2-light.svg" width="49%" alt="開発技術（TECHNOLOGY）"></picture></a><br>
+<a href="#背景製品開発のきっかけ課題等"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-01-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-01-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-01-dark.svg"><img src="assets/readme/heads/toc-01-light.svg" width="49%" alt="01 背景"></picture></a> <a href="#技術仕様書"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-08-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-08-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-08-dark.svg"><img src="assets/readme/heads/toc-08-light.svg" width="49%" alt="08 技術仕様書"></picture></a><br>
+<a href="#製品説明具体的な製品の説明"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-02-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-02-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-02-dark.svg"><img src="assets/readme/heads/toc-02-light.svg" width="49%" alt="02 製品説明"></picture></a> <a href="#システム構成"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-09-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-09-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-09-dark.svg"><img src="assets/readme/heads/toc-09-light.svg" width="49%" alt="09 システム構成"></picture></a><br>
+<a href="#特長"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-03-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-03-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-03-dark.svg"><img src="assets/readme/heads/toc-03-light.svg" width="49%" alt="03 特長"></picture></a> <a href="#活用した技術"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-10-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-10-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-10-dark.svg"><img src="assets/readme/heads/toc-10-light.svg" width="49%" alt="10 活用した技術"></picture></a><br>
+<a href="#解決出来ること"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-04-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-04-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-04-dark.svg"><img src="assets/readme/heads/toc-04-light.svg" width="49%" alt="04 解決出来ること"></picture></a> <a href="#独自技術"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-11-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-11-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-11-dark.svg"><img src="assets/readme/heads/toc-11-light.svg" width="49%" alt="11 独自技術"></picture></a><br>
+<a href="#試遊での反応"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-05-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-05-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-05-dark.svg"><img src="assets/readme/heads/toc-05-light.svg" width="49%" alt="05 試遊での反応"></picture></a><br>
+<a href="#今後の展望"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-06-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-06-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-06-dark.svg"><img src="assets/readme/heads/toc-06-light.svg" width="49%" alt="06 今後の展望"></picture></a><br>
+<a href="#注力したことこだわり等"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-07-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/toc-07-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/toc-07-dark.svg"><img src="assets/readme/heads/toc-07-light.svg" width="49%" alt="07 注力したこと"></picture></a>
+</p>
 
 <picture>
   <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-01-daruma-narrow.svg">
   <img src="assets/readme/scenes/scene-01-daruma.svg" width="100%" alt="">
 </picture>
 
-## 製品概要
+## <a id="製品概要"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/part-1-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/part-1-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/part-1-dark.svg"><img src="assets/readme/heads/part-1-light.svg" alt="製品概要"></picture>
 
 ### <a id="背景製品開発のきっかけ課題等"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-01-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-01-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-01-dark.svg"><img src="assets/readme/heads/head-01-light.svg" alt="背景(製品開発のきっかけ、課題等）"></picture>
 
@@ -235,7 +205,9 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
   <img src="assets/readme/scenes/scene-07-volley.svg" width="100%" alt="">
 </picture>
 
-## <a id="技術仕様書"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-08-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-08-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-08-dark.svg"><img src="assets/readme/heads/head-08-light.svg" alt="技術仕様書"></picture>
+## <a id="開発技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/part-2-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/part-2-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/part-2-dark.svg"><img src="assets/readme/heads/part-2-light.svg" alt="開発技術"></picture>
+
+### <a id="技術仕様書"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-08-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-08-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-08-dark.svg"><img src="assets/readme/heads/head-08-light.svg" alt="技術仕様書"></picture>
 
 | 資料 | 内容 |
 |---|---|
@@ -252,8 +224,6 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
   <source media="(max-width: 700px)" srcset="assets/readme/scenes/scene-05-domino-narrow.svg">
   <img src="assets/readme/scenes/scene-05-domino.svg" width="100%" alt="">
 </picture>
-
-## 開発技術
 
 ### <a id="システム構成"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-09-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-09-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-09-dark.svg"><img src="assets/readme/heads/head-09-light.svg" alt="システム構成"></picture>
 
