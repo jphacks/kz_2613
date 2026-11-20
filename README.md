@@ -1,6 +1,6 @@
 <h1 align="center">Re:Cooplay（リコープレイ）</h1>
 
-<p align="center"><b>ゲームはそのまま。1キャラを、みんなで操作。</b><br>既存のPCゲームに、スマホで協力プレイを後付けする</p>
+<p align="center"><b>ゲームはそのまま。1キャラを、みんなで操作。</b></p>
 
 <p align="center">
   <a href="#製品概要"><b>製品概要</b></a>&nbsp;·&nbsp;
