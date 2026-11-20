@@ -36,9 +36,12 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 
 たどり着いたのが、**1人分の操作をみんなで分け合う**という遊び方です。移動する人と視点を動かす人が違うと、思った方向へ進むだけでも声を掛け合う必要があります。息が合わずに起こるハプニングも、連携が決まったときの達成感も、全員で分かち合う体験です。ゲームの中身はそのままで、**全く新しい協力プレイの体験を後付け**できます。
 
-> [!NOTE]
-> **操作を分担する不自由さが、そのまま新しい面白さになる。**
-> ゲーム自体は変えずに、操作する人と協力の仕方を変える。手元のゲームを、友達と集まったその場で新しい協力ゲームにします。
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/message-narrow-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/readme/message-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/message-dark.svg">
+  <img src="assets/readme/message-light.svg" alt="操作を分担する不自由さが、そのまま新しい面白さになる。ゲーム自体は変えずに、操作する人と協力の仕方を変える。手元のゲームを、友達と集まったその場で新しい協力ゲームにします。">
+</picture>
 
 ### <a id="製品説明具体的な製品の説明"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-02-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-02-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-02-dark.svg"><img src="assets/readme/heads/play-02-light.svg" alt="製品説明（具体的な製品の説明）"></picture>
 
@@ -52,8 +55,6 @@ PCアプリのQRコードをスマホのブラウザで読み取るだけで参�
   <source media="(prefers-color-scheme: dark)" srcset="assets/readme/flow-dark.svg">
   <img src="assets/readme/flow-light.svg" alt="遊ぶまでの4ステップ。1：スマホでQR参加、2：ゲームを選ぶ、3：AIが操作を分担、4：開始ボタンでプレイ">
 </picture>
-
-3人で『Minecraft』を遊ぶ場合の分担と、実際のスマホの画面です。
 
 <picture>
   <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/controllers-narrow-dark.svg">
@@ -187,24 +188,16 @@ PCのWindowsモバイルホットスポットでスマホと直接つなぎ、We
 
 ### <a id="活用した技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-10-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-10-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-10-dark.svg"><img src="assets/readme/heads/play-10-light.svg" alt="活用した技術"></picture>
 
-#### API・データ
+使っている技術を、役割ごとに分けて示します。バージョンは各マニフェスト（`apps/host-rs/Cargo.toml`・`apps/desktop/Cargo.toml`・`apps/web/package.json`）の指定です。
 
-- Windows API（`SendInput`・ウィンドウ前面制御・モバイルホットスポット制御）
-- WebSocket、WebRTC DataChannel
-- JSONによるゲーム操作定義、各ゲームエンジンの設定・パッケージデータ解析
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/techstack-narrow-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/readme/techstack-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/techstack-dark.svg">
+  <img src="assets/readme/techstack-light.svg" alt="活用した技術。PCホスト（Rust 2021）：Tokio 1、axum 0.8、datachannel 0.16、tokenizers 0.22、flate2 1、qrcode 0.14・if-addrs 0.13。Windows API（windows クレート 0.62）：SendInput、timeBeginPeriod(1)、GetForegroundWindow・EnumWindows・GetWindowThreadProcessId、SetForegroundWindow・AttachThreadInput、RegisterHotKey、NetworkOperatorTetheringManager、WLAN API・Core Audio、レジストリ・既知のフォルダー。通信：WebSocket（JSON）、WebRTC DataChannel（ordered:false・maxRetransmits:0）、Windows モバイルホットスポット、契約のバージョン（現在 6）。スマホの画面：React 19、TypeScript 7（strict）、Vite 8、Pointer Events、Screen Orientation・Vibration、localStorage。操作分担AI：paraphrase-multilingual-MiniLM-L12-v2、2層Transformerエンコーダ、Rustでの推論、Hugging Face。ゲームの解析：ランチャー7系統、ゲームエンジン19系統、設定リーダー7種類、操作定義JSON。PCアプリ・動作環境：Tauri 2・WebView2、Windows 11、Android・iPhone。検証・CI：Node.jsのシミュレーション、cargo test、必須チェック9件">
+</picture>
 
-#### フレームワーク・ライブラリ・モジュール
-
-- **PCホスト・デスクトップアプリ：** Rust（Tokio・axum・`windows`・`datachannel`・`tokenizers`）、Tauri 2／WebView2
-- **フロントエンド・UI：** React・TypeScript strict（Vite）、Pointer Events API
-- **独自AI（操作分担）：** [Re:Cooplay Preset Model v2](https://huggingface.co/YOSHI0209/recooplay-preset-model-v2#recooplay-preset-model-v2)（事前学習済み多言語エンコーダ＋分担判断用の2層Transformerエンコーダ、Rustで推論）
-- **検証・シミュレーション：** Node.js（通信境界・画面・入力プローブの自動検証）
-
-#### デバイス
-
-- Windows 11 PC（ホスト・ゲーム実行）
-- Android／iPhone（標準ブラウザから参加）
-- 通信はローカルWi-Fi（PCのモバイルホットスポットを含む）だけで完結するので、インターネットにつながらない場所でも2〜4人で共同操作できます。
+分担AIのモデル：[Re:Cooplay Preset Model v2](https://huggingface.co/YOSHI0209/recooplay-preset-model-v2#recooplay-preset-model-v2)（Hugging Face） ／ 採用理由と代替案の比較：[技術選定の理由](docs/technology-selection.md)
 
 ### <a id="独自技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-11-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-11-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-11-dark.svg"><img src="assets/readme/heads/play-11-light.svg" alt="独自技術"></picture>
 

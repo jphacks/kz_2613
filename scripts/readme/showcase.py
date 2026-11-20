@@ -21,6 +21,7 @@ from build_art import CHARS, PC_W, PHONE_W, THEMES, text  # noqa: E402
 
 SHOTS = art.ROOT / "docs" / "screenshots" / "device"
 GAP = 16
+SPARK = "M0-7Q1-1 7 0Q1 1 0 7Q-1 1-7 0Q-1-1 0-7Z"
 BODY = {n: CHARS[n]["body"] for n in art.ORDER}
 DARK_ON = {"blue": "#06243A", "green": "#0C3A0C", "purple": "#FFFFFF", "red": "#FFFFFF"}  # 色の上に載せる文字
 
@@ -180,11 +181,22 @@ def role_head(x, y, name, p, role, sub, t, anchor_center=None):
     return s
 
 
+def caption(W, t, title, sub):
+    """図の中の小見出し（何の例か）。(svg, 高さ) を返す。"""
+    s1, n1 = para(0, 18, title, 16, t["ink"], W, 23, 700)
+    y = 18 + (n1 - 1) * 23
+    s2, n2 = para(0, y + 22, sub, 13, t["muted"], W, 19, 600)
+    y += 22 + (n2 - 1) * 19
+    return s1 + s2 + f'<rect x="0" y="{y + 16}" width="{W - 14}" height="1.5" rx=".75" fill="{t["line"]}"/>', y + 40
+
+
 def controllers(t, narrow=False):
+    W0 = PHONE_W if narrow else PC_W
+    cap, ch = caption(W0, t, "例：3人で『Minecraft』を遊ぶ場合", "各スマホには、担当する操作だけを並べたコントローラーが表示されます（実際の画面）。")
     if narrow:
         W, fw = PHONE_W, 110
-        b = []
-        y = 0
+        b = [cap]
+        y = ch
         for name, p, role, sub, image, ops, ui in ROLES:
             s, h = phone(name, 0, y, fw, image, t)
             tx = fw + 16
@@ -198,17 +210,17 @@ def controllers(t, narrow=False):
         W = PC_W
         colw = (W - 2 * GAP) / 3
         fw = 214
-        b = []
+        b = [cap]
         hs = []
         for k, (name, p, role, sub, image, ops, ui) in enumerate(ROLES):
             cx = k * (colw + GAP) + colw / 2
-            b.append(role_head(0, 0, name, p, role, sub, t, anchor_center=cx))
-            s, h = phone(name, cx - fw / 2, 40, fw, image, t)
+            b.append(role_head(0, ch, name, p, role, sub, t, anchor_center=cx))
+            s, h = phone(name, cx - fw / 2, ch + 40, fw, image, t)
             b.append(s)
-            s1, n1 = para(cx, 40 + h + 32, ops, 14, t["ink"], colw - 24, 21, 600, anchor="middle")
-            s2, n2 = para(cx, 40 + h + 32 + n1 * 21 + 6, ui, 13, t["muted"], colw - 24, 20, anchor="middle")
+            s1, n1 = para(cx, ch + 40 + h + 32, ops, 14, t["ink"], colw - 24, 21, 600, anchor="middle")
+            s2, n2 = para(cx, ch + 40 + h + 32 + n1 * 21 + 6, ui, 13, t["muted"], colw - 24, 20, anchor="middle")
             b += [s1, s2]
-            hs.append(40 + h + 32 + n1 * 21 + 6 + (n2 - 1) * 20 + 8)
+            hs.append(ch + 40 + h + 32 + n1 * 21 + 6 + (n2 - 1) * 20 + 8)
         H = max(hs)
     alt = "3人で『Minecraft』を遊ぶ場合の分担と、実際のスマホの画面。" + "。".join(
         f"{p}（{role}{'・' + sub if sub else ''}）：{ops}。画面は{ui}" for _, p, role, sub, _, ops, ui in ROLES)
@@ -300,30 +312,41 @@ def genre_icon(kind, x, y, color):
 def genres(t, narrow=False):
     roles = [BODY["blue"], BODY["green"], BODY["purple"]]
 
-    def one(kind, color, name, ex, split, exp, w):
+    def head_h(ex, w):
         pad = 20
-        s = [genre_icon(kind, pad, pad, BODY[color]),
-             text(pad + 58, pad + 19, name, 17, t["ink"], cls="gh", weight=700)]
+        if not ex:
+            return pad + 44 + 16
+        _, ne = para(0, 0, ex, 13, t["muted"], w - pad * 2 - 58, 19, 600)
+        return max(pad + 44, pad + 40 + (ne - 1) * 19) + 16
+
+    def one(kind, color, name, ex, split, exp, w, y_chip, y_exp):
+        pad = 20
+        s = [genre_icon(kind, pad, pad, BODY[color])]
         if ex:
-            se, ne = para(pad + 58, pad + 40, ex, 13, t["muted"], w - pad * 2 - 58, 19, 600)
+            s.append(text(pad + 58, pad + 19, name, 17, t["ink"], cls="gh", weight=700))
+            se, _ = para(pad + 58, pad + 40, ex, 13, t["muted"], w - pad * 2 - 58, 19, 600)
             s.append(se)
-            y = max(pad + 44, pad + 40 + (ne - 1) * 19) + 16
         else:
-            s[1] = text(pad + 58, pad + 28, name, 17, t["ink"], cls="gh", weight=700)
-            y = pad + 44 + 16
-        sc, hc = chips(pad, y, split, roles, t, w - pad * 2)
+            s.append(text(pad + 58, pad + 28, name, 17, t["ink"], cls="gh", weight=700))
+        sc, _ = chips(pad, y_chip, split, roles, t, w - pad * 2)
         s.append(sc)
-        y += hc + 18
-        sp, n = para(pad + 14, y + 4, exp, 15, t["ink"], w - pad * 2 - 14, 24, 600)
-        s.append(f'<rect x="{pad}" y="{y - 12}" width="3.5" height="{n * 24 + 6}" rx="1.75" fill="url(#brand)"/>{sp}')
-        return "".join(s), y + (n - 1) * 24 + 4 + 24
+        sp, n = para(pad + 14, y_exp + 4, exp, 15, t["ink"], w - pad * 2 - 14, 24, 600)
+        s.append(f'<rect x="{pad}" y="{y_exp - 12}" width="3.5" height="{n * 24 + 6}" rx="1.75" fill="url(#brand)"/>{sp}')
+        return "".join(s), y_exp + (n - 1) * 24 + 4 + 24
+
+    def layout(w):
+        """すべてのカードで、分担の札と説明の書き出しの高さをそろえる。"""
+        y_chip = max(head_h(g[3], w) for g in GENRES)
+        y_exp = y_chip + max(chips(0, 0, g[4], roles, t, w - 40)[1] for g in GENRES) + 18
+        return y_chip, y_exp
 
     b = []
     if narrow:
         W = PHONE_W
         y = 0
+        yc, ye = layout(W)
         for g in GENRES:
-            s, h = one(*g, W)
+            s, h = one(*g, W, yc, ye)
             b += [card(0, y, W, h, t), f'<g transform="translate(0 {y})">{s}</g>']
             y += h + 12
         H = y - 12
@@ -332,7 +355,7 @@ def genres(t, narrow=False):
         cwid = (W - GAP) / 2
         y = 0
         for r in range(2):
-            parts = [one(*GENRES[r * 2 + c], cwid) for c in range(2)]
+            parts = [one(*GENRES[r * 2 + c], cwid, *layout(cwid)) for c in range(2)]
             h = max(p[1] for p in parts)
             for c, (s, _) in enumerate(parts):
                 x = c * (cwid + GAP)
@@ -702,8 +725,147 @@ def evaluation(t, narrow=False):
     return finish(W, H, b, t, alt)
 
 
+# ---------- 01 背景：この製品の考え方（ひとこと） ----------
+
+MESSAGE = ("操作を分担する不自由さが、\nそのまま新しい面白さになる。",
+           "ゲーム自体は変えずに、操作する人と協力の仕方を変える。手元のゲームを、友達と集まったその場で新しい協力ゲームにします。")
+
+
+def message(t, narrow=False):
+    """注記の囲みではなく、大きな引用符とグラデーションの線で、この製品の考え方を示す。"""
+    W = PHONE_W if narrow else PC_W
+    size, lh = (18, 28) if narrow else (28, 40)
+    q = 40 if narrow else 56
+    tx = q + 10
+    b = [text(0, q * 1.05, "“", q * 1.7, "url(#brand)", cls="disp", weight=400)]
+    s1, n1 = para(tx, size + 8, MESSAGE[0], size, t["ink"], W - tx - 14, lh, 800)
+    y = size + 8 + (n1 - 1) * lh + 22
+    b.append(f'<rect x="{tx}" y="{y}" width="56" height="4" rx="2" fill="url(#brand)"/>')
+    s2, n2 = para(tx, y + 34, MESSAGE[1], 15, t["muted"], W - tx - 14, 25, 600)
+    b += [s1, s2]
+    H = y + 34 + (n2 - 1) * 25 + 8
+    return finish(W, H, b, t, MESSAGE[0] + MESSAGE[1], top=18, bottom=34)
+
+
+# ---------- 10 活用した技術：種類ごとのカード ----------
+
+TECH = [
+    ("hub", "#6F86FF", "PCホスト", "Rust 2021（apps/host-rs）", [
+        ("Tokio 1", "非同期の実行基盤。参加・入力・タイマーの状態は専用の hub スレッド1本で処理"),
+        ("axum 0.8", "画面の配信（HTTP）とWebSocket"),
+        ("datachannel 0.16", "libdatachannel によるWebRTC DataChannel（OpenSSLごと静的リンク）"),
+        ("tokenizers 0.22", "分担AIのMiniLMトークナイザー（純Rustの機能だけ）"),
+        ("flate2 1", "ゲームの pak・zip・BA2 の圧縮データの展開"),
+        ("qrcode 0.14・if-addrs 0.13", "参加用URLのアドレス取得とQRコードの生成")]),
+    ("keys", "#C03BFF", "Windows API", "windows クレート 0.62", [
+        ("SendInput", "スキャンコードのキー・相対マウス移動・左右ボタン・ホイール"),
+        ("timeBeginPeriod(1)", "タイマー分解能を1msにし、4ms周期で視点を補間"),
+        ("GetForegroundWindow ほか", "入力先のゲームが前面にあるときだけ送る（EnumWindows・GetWindowThreadProcessId）"),
+        ("SetForegroundWindow", "開始時にゲームを前面へ（AttachThreadInput）"),
+        ("RegisterHotKey", "PCの緊急停止 Ctrl+Alt+F12"),
+        ("NetworkOperatorTetheringManager", "モバイルホットスポットのON／OFF"),
+        ("WLAN API・Core Audio", "協力プレイ中のWi-Fiのストリーミングモード、Bluetoothの音の出力先の検出"),
+        ("レジストリ・既知のフォルダー", "ランチャーのインストール情報、Unity PlayerPrefs、ゲームの設定ファイル")]),
+    ("wave", "#22C4FA", "通信", "ローカルWi-Fiだけで完結", [
+        ("WebSocket（JSON）", "参加・役割・準備状況・一時停止など、確実に届けたい状態の共有"),
+        ("WebRTC DataChannel", "ordered:false・maxRetransmits:0。視点（30Hz）とボタン入力の速達便。ACKのない入力は直近500ms分をまとめて送る"),
+        ("Windows モバイルホットスポット", "PCのWi-Fiにスマホが直接つながる。STUN／TURN・インターネットは使わない"),
+        ("契約のバージョン（現在 6）", "メッセージの型と契約のバージョンを明示し、接続時に照合して合わない画面の接続を断る")]),
+    ("phone", "#5EFF5D", "スマホの画面", "apps/web（ブラウザだけで動く）", [
+        ("React 19", "画面の描画。入力と通信の処理はReactの状態管理に載せない"),
+        ("TypeScript 7（strict）", "スマホ・PC・overlay・診断・疑似ゲームの5画面"),
+        ("Vite 8", "5画面のビルド（ES2022）"),
+        ("Pointer Events", "setPointerCapture によるマルチタッチのボタン・スティック・ドラッグパッド"),
+        ("Screen Orientation・Vibration", "横持ちへの切り替えと、押したときの短い振動"),
+        ("localStorage", "スマホごとのボタン配置（個人レイアウト）の保存")]),
+    ("spark", "#F5B400", "操作分担AI", "Re:Cooplay Preset Model v2", [
+        ("paraphrase-multilingual-MiniLM-L12-v2", "操作名を384次元の意味ベクトルに。語彙を43,691語に絞り、行ごとに8ビット量子化（約40MB）"),
+        ("2層Transformerエンコーダ", "104,136パラメータ（約410KB）。カテゴリ・同じ人が持つ確率・方向軸を同時に推定"),
+        ("Rustでの推論", "オフライン。14操作のゲームで約80ミリ秒"),
+        ("Hugging Face", "重みを固定した版で配布（CC BY-NC-ND 4.0）。読めないときは規則による分担に戻る")]),
+    ("search", "#FF8A00", "ゲームの解析", "apps/host-rs/src/engines", [
+        ("ランチャー 7系統", "Steam・Epic Games・GOG・Ubisoft・EA・Battle.net・Xbox（ほかにSteamのショートカット・Minecraft・手動登録）"),
+        ("ゲームエンジン 19系統", "Unity・Unreal Engine 4/5・Godot 3/4・RPGツクール・WOLF RPGエディター・Source 1/2・Creation Engine・REDengine・CryEngine など"),
+        ("設定リーダー 7種類", "ユーザーが変えたキー設定を読み、操作定義に重ねる"),
+        ("操作定義 JSON（schema 1）", "固有の定義・自動抽出・汎用定義を同じ分担と画面生成で扱う")]),
+    ("app", "#FF4A6A", "PCアプリ・動作環境", "Tauri 2（apps/desktop）", [
+        ("Tauri 2・WebView2", "PCの画面。Rustホストを子プロセスとして起動・終了する"),
+        ("Windows 11", "ホストとゲームを動かすPC"),
+        ("Android・iPhone", "標準のブラウザ（Chrome・Safari）で参加。アプリのインストールは不要")]),
+    ("check", "#2DA44E", "検証・CI", "GitHub Actions", [
+        ("Node.js のシミュレーション", "dry-runのRustホストに対する通信契約・画面・入力プローブの自動試験"),
+        ("cargo test", "ホストとPCアプリの単体試験（--release --locked）"),
+        ("必須チェック 9件", "structure・host-rs・web・desktop・protocol・package・npm-audit・cargo-audit ×2")]),
+]
+
+
+def tech_icon(kind, x, y, color):
+    if kind in ("hub", "keys", "app"):
+        return node_icon(kind, x, y, color)
+    w = "#FFFFFF"
+    out = [f'<rect x="{x}" y="{y}" width="34" height="34" rx="9" fill="{color}"/>']
+    cx, cy = x + 17, y + 17
+    if kind == "wave":
+        out.append(f'<circle cx="{cx}" cy="{cy + 6}" r="2.4" fill="{w}"/>'
+                   + "".join(f'<path d="M{cx - r * .72:.1f} {cy + 6 - r * .7:.1f}A{r} {r} 0 0 1 {cx + r * .72:.1f} {cy + 6 - r * .7:.1f}" '
+                             f'fill="none" stroke="{w}" stroke-width="2.4" stroke-linecap="round"/>' for r in (6, 11)))
+    elif kind == "phone":
+        out.append(f'<rect x="{cx - 6.5}" y="{cy - 11}" width="13" height="22" rx="3" fill="none" stroke="{w}" stroke-width="2.2"/>'
+                   f'<circle cx="{cx}" cy="{cy + 6.5}" r="1.4" fill="{w}"/>')
+    elif kind == "spark":
+        out.append(f'<path d="{SPARK}" transform="translate({cx} {cy}) scale(1.6)" fill="{w}"/>')
+    elif kind == "search":
+        out.append(f'<circle cx="{cx - 2}" cy="{cy - 2}" r="7" fill="none" stroke="{w}" stroke-width="2.4"/>'
+                   f'<path d="M{cx + 3} {cy + 3}l6 6" stroke="{w}" stroke-width="2.6" stroke-linecap="round"/>')
+    else:
+        out.append(f'<path d="M{cx - 7} {cy}l4.5 4.5 9-9.5" fill="none" stroke="{w}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>')
+    return "".join(out)
+
+
+def tech_card(kind, color, title, sub, items, w, t):
+    """(svg, 高さ) を返す。項目は「名前」と「役割」の2段。"""
+    pad = 20
+    b = [tech_icon(kind, pad, pad, color), text(pad + 46, pad + 15, title, 16, t["ink"], cls="gh", weight=700),
+         text(pad + 46, pad + 33, sub, 13, t["muted"], cls="gh", weight=600)]
+    y = pad + 58
+    b.append(f'<rect x="{pad}" y="{y - 8}" width="{w - pad * 2}" height="1" fill="{t["line"]}"/>')
+    for name, desc in items:
+        s1, n1 = para(pad, y + 16, name, 14, t["ink"], w - pad * 2, 20, 700)
+        s2, n2 = para(pad, y + 16 + n1 * 20 + 2, desc, 13, t["muted"], w - pad * 2, 20, 400)
+        b += [s1, s2]
+        y += 16 + n1 * 20 + 2 + (n2 - 1) * 20 + 14
+    return "".join(b), y + 8
+
+
+def techstack(t, narrow=False):
+    b = []
+    if narrow:
+        W = PHONE_W
+        y = 0
+        for kind, color, title, sub, items in TECH:
+            s, h = tech_card(kind, color, title, sub, items, W, t)
+            b += [card(0, y, W, h, t), f'<g transform="translate(0 {y})">{s}</g>']
+            y += h + 12
+        H = y - 12
+    else:
+        W = PC_W
+        cwid = (W - GAP) / 2
+        y = 0
+        for r in range(0, len(TECH), 2):
+            parts = [tech_card(*TECH[r + c], cwid, t) for c in range(2) if r + c < len(TECH)]
+            h = max(p[1] for p in parts)
+            for c, (s, _) in enumerate(parts):
+                x = c * (cwid + GAP)
+                b += [card(x, y, cwid, h, t), f'<g transform="translate({x:.1f} {y})">{s}</g>']
+            y += h + GAP
+        H = y - GAP
+    alt = "活用した技術。" + "。".join(f"{title}（{sub}）：" + "、".join(f"{n}（{d}）" for n, d in items)
+                                    for _, _, title, sub, items in TECH)
+    return finish(W, H, b, t, alt)
+
+
 FIGURES = {"controllers": controllers, "features": features, "genres": genres, "stats": stats, "roadmap": roadmap,
-           "focus": focus, "architecture": architecture, "evaluation": evaluation}
+           "focus": focus, "architecture": architecture, "evaluation": evaluation, "message": message, "techstack": techstack}
 
 
 def main():
