@@ -1,6 +1,6 @@
-"""区切りの帯をやめ、項目の見出しの右側でキャラクターが遊ぶ版の見出しを生成する（比較用の案）。
+"""項目の見出しの右側で、スマホ型のキャラクターが見出しの内容を演じる版の見出しを生成する。
 
-scenes.py の場面（幅560・高さ100の舞台）を縮めて、見出しの文字の右側に置く。背景の色は付けない。
+product_scenes.py の場面（幅560・高さ100の舞台）を縮めて、見出しの文字の右側に置く。背景の色は付けない。
 PCは見出しの文字の基準線に舞台の地面をそろえ、見出しの文字にかからない右側に置く。
 スマホは横に空きがないので、番号の行の上に幅いっぱいの舞台を置く。
 舞台の左右の端は溶けるように消し、出入りするキャラクターが見出しの文字に重ならないようにする。
@@ -12,8 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_art as art  # noqa: E402
+import product_scenes as ps  # noqa: E402
 import scenes  # noqa: E402
-from scenes import IN, OUT_, Scene, actor, key, mark, pop  # noqa: E402
 
 OUT = art.OUT / "heads"
 PC_SCALE = .57  # 一番長い見出し（01）の右の空きに収まる大きさ
@@ -22,25 +22,9 @@ BASE = 55  # PC版の見出しの文字の基準線
 BUBBLE = 2.0  # 縮めて表示するので、吹き出しの文字を大きくしておく（12px×2.0×0.57≒13.7px）
 
 
-def wave():
-    """4体が順にぴょんと跳ねてウェーブし、最後にそろって跳んで「♪」。"""
-    D = 4.4
-    sc = Scene(D)
-    for i, name in enumerate(art.ORDER):
-        a = 6 + i * 8
-        ks = [key(0, 0), key(a, 0, 0, 0, 1.08, .9, OUT_), key(a + 4, 0, -22, 0, .92, 1.1, IN),
-              key(a + 8, 0, 0, 0, 1.1, .88, OUT_), key(a + 11, 0, 0, 0),
-              key(62, 0, 0, 0, 1.1, .88, OUT_), key(67, 0, -30, 0, .9, 1.12, IN), key(72, 0, 0, 0, 1.12, .86, OUT_),
-              key(76, 0, 0, 0)]
-        sc.add(actor(f"wv{i}", name, ks, D, (("normal", f"wv{i}n"), ("happy", f"wv{i}h")), x0=190 + i * 60))
-        sc.raw(css=scenes.show(f"wv{i}n", D, [(0, 60), (90, 100)]) + scenes.show(f"wv{i}h", D, [(60, 90)]))
-    sc.raw(mark(280, 30, "♪", "wv-m", 22) + mark(350, 24, "♪", "wv-m2", 18), pop("wv-m", D, 66, 88) + pop("wv-m2", D, 69, 88))
-    return sc, "ウェーブ", "4体が順番に跳ねてウェーブし、最後はそろって跳ぶ。"
-
-
-# 見出しの番号 → 場面。帯で使っていた10種に、ウェーブを足して11項目に1つずつ置く。
-PLAY = {"01": scenes.daruma, "02": scenes.chase, "03": scenes.train, "04": scenes.rope, "05": scenes.seesaw,
-        "06": scenes.tug, "07": scenes.hide, "08": scenes.volley, "09": scenes.domino, "10": wave, "11": scenes.nap}
+# 見出しの番号 → 場面。見出しごとに、その内容をスマホたちが演じる。
+PLAY = {"01": ps.alone, "02": ps.together, "03": ps.join, "04": ps.genres, "05": ps.playtest, "06": ps.remote,
+        "07": ps.remocon, "08": ps.hotspot, "09": ps.lanes, "10": ps.build, "11": ps.assign}
 
 
 def stage(sc, x, y, k, fade_l=.12, fade_r=.08):
