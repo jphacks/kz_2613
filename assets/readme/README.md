@@ -10,11 +10,12 @@
 | `flow-*.svg` | 遊ぶまでの4ステップ |
 | `pipeline-*.svg` | 操作の自動検出から分担AI、スマホ画面への配分までの流れ |
 | `footer-*.svg` | 末尾の締めの画像 |
+| `heads/head-*.svg` | 項目の見出し（番号・英字ラベル・見出し）。見出しの文字はGitHub本体と同じフォント指定で、閲覧者の端末の標準フォントで描く |
 | [`scenes/`](scenes/README.md) | 各項目の終わりに置く区切りの帯（キャラクターが遊ぶ10種類のアニメーション） |
 | `char-*.svg` | キャラクター単体（表・試遊者の声で使用） |
 | `system-architecture.webp` | [システム構成図](../images/recooplay-system-architecture.webp) の余白を詰めたもの |
 
-`-light`／`-dark` はGitHubのテーマ、`-narrow-` はスマホなど幅700px以下の画面用で、READMEの `<picture>` が切り替えます。
+`-light`／`-dark` はGitHubのテーマ、`-narrow-` はスマホなど幅700px以下の画面用で、READMEの `<picture>` が切り替えます。見出し・4ステップ・分担AIの図のスマホ版は幅360で描き、READMEでは幅を指定せずにそのままの大きさで表示します。本文との文字の大きさの比がPC版と同じになります。
 
 ## フォント
 

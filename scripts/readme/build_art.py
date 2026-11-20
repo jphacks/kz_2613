@@ -286,20 +286,25 @@ def icon(kind, x, y, c, t):
     return "".join(out)
 
 
+STEPS = [("qr", "スマホでQR参加", "ブラウザで読み取るだけ。", "P1のスマホはPCリモコンに"),
+         ("list", "ゲームを選ぶ", "インストール済みから選択。", "操作とキーを自動で読み取り"),
+         ("split", "AIが操作を分担", "独自AIが2〜4人へ配分。", "担当を確かめて起動"),
+         ("play", "開始ボタンでプレイ", "ホストが「分担操作開始」。", "各スマホが担当の操作画面に")]
+
+
 def flow(t, narrow=False):
-    W, H = (312, 1180) if narrow else (1280, 290)
-    steps = [("qr", "スマホでQR参加", "ブラウザで読み取るだけ。", "P1のスマホはPCリモコンに"),
-             ("list", "ゲームを選ぶ", "インストール済みから選択。", "操作とキーを自動で読み取り"),
-             ("split", "AIが操作を分担", "独自AIが2〜4人へ配分。", "担当を確かめて起動"),
-             ("play", "開始ボタンでプレイ", "ホストが「分担操作開始」。", "各スマホが担当の操作画面に")]
+    if narrow:
+        return flow_phone(t)
+    W, H = 1280, 290
+    steps = STEPS
     cw, x0 = 272, 20
     gap = 51.3
     b = []
     for i, (kind, title, d1, d2) in enumerate(steps):
         name = ORDER[i]
         c = CHARS[name]["body"]
-        x = x0 if narrow else x0 + i * (cw + gap)
-        b.append(f'<g transform="translate(0 {i * 300 if narrow else 0})">')
+        x = x0 + i * (cw + gap)
+        b.append("<g>")
         b += [f'<rect x="{x}" y="10" width="{cw}" height="270" rx="22" fill="{t["panel"]}" stroke="{t["line"]}"/>',
               f'<circle cx="{x + 36}" cy="44" r="18" fill="{c}"/>',
               text(x + 36, 51, str(i + 1), 20, "#FFFFFF" if name != "green" else "#103B10", cls="disp", weight=400, anchor="middle"),
@@ -310,27 +315,48 @@ def flow(t, narrow=False):
               text(x + cw / 2, 241, d1, 16.5, t["muted"], weight=700, anchor="middle"),
               text(x + cw / 2, 265, d2, 16.5, t["muted"], weight=700, anchor="middle")]
         b.append("</g>")
-        if i < 3 and narrow:
-            ay = i * 300 + 290
-            b.append(f'<path d="M{W / 2 - 9} {ay - 5}l9 9 9-9" fill="none" stroke="url(#brand)" stroke-width="5" '
-                     'stroke-linecap="round" stroke-linejoin="round"/>')
-        elif i < 3:
+        if i < 3:
             ax = x + cw + gap / 2
             b.append(f'<path d="M{ax - 9} 128l12 12-12 12" fill="none" stroke="url(#brand)" stroke-width="5" '
                      'stroke-linecap="round" stroke-linejoin="round"/>')
     return svg(W, H, "".join(b), t, "遊ぶまでの4ステップ：スマホでQR参加、ゲームを選ぶ、AIが操作を分担、開始ボタンでプレイ")
 
 
+# スマホ版の図は表示幅（約360px）と同じ幅で描き、拡大・縮小せずに表示する。
+# 文字の大きさが本文（約16px）との比でPC版と同じになる。
+PHONE_W = 360
+
+
+def flow_phone(t):
+    """遊ぶまでの4ステップ（スマホ版）。2×2の小さなカードにし、説明文は直前の本文に任せる。"""
+    W, cw, ch, gap = PHONE_W, 174, 150, 12
+    b = []
+    for i, (kind, title, _, _) in enumerate(STEPS):
+        name = ORDER[i]
+        c = CHARS[name]["body"]
+        x, y = (i % 2) * (cw + gap), (i // 2) * (ch + gap)
+        b += [f'<rect x="{x + 1}" y="{y + 1}" width="{cw - 2}" height="{ch - 2}" rx="16" fill="{t["panel"]}" stroke="{t["line"]}"/>',
+              f'<circle cx="{x + 24}" cy="{y + 24}" r="13" fill="{c}"/>',
+              text(x + 24, y + 30, str(i + 1), 16, "#FFFFFF" if name != "green" else "#103B10", cls="disp", weight=400, anchor="middle"),
+              text(x + 44, y + 29, f"STEP {i + 1}", 12, t["muted"], cls="mono", weight=700),
+              char(name, x + cw / 2 - 58, y + 44, .5, t, delay=i * .4),
+              f'<g transform="translate({x + cw / 2 + 10} {y + 60}) scale(.72)">{icon(kind, 0, 0, c, t)}</g>',
+              text(x + cw / 2, y + ch - 18, title, 15.5, t["ink"], weight=900, anchor="middle")]
+    H = 2 * ch + gap
+    return svg(W, H, "".join(b), t, "遊ぶまでの4ステップ：スマホでQR参加、ゲームを選ぶ、AIが操作を分担、開始ボタンでプレイ")
+
+
 # ---------- 分担AIの流れ ----------
 def pipeline(t, narrow=False):
-    """narrow=True は3枚を縦に積む。"""
-    PH, D = 450, 490  # 1枚の高さと、縦に積むときの間隔
-    W, H = (412, 2 * D + PH + 20) if narrow else (1280, PH + 20)
+    if narrow:
+        return pipeline_phone(t)
+    PH = 450  # 1枚の高さ
+    W, H = 1280, PH + 20
     pw, x0 = 372, 20
-    xs = [x0] * 3 if narrow else [x0, x0 + pw + 52, x0 + 2 * (pw + 52)]
+    xs = [x0, x0 + pw + 52, x0 + 2 * (pw + 52)]
 
     def at(i):
-        return f'<g transform="translate(0 {i * D if narrow else 0})">'
+        return "<g>"
 
     blue, green, purple = (CHARS[n]["body"] for n in ("blue", "green", "purple"))
     b = []
@@ -343,11 +369,7 @@ def pipeline(t, narrow=False):
               text(x + 24, 52, n, 26, "url(#brand)", weight=900),
               text(x + 58, 50, h1, 20, t["ink"], weight=900),
               text(x + 58, 76, h2, 16, t["muted"], weight=700), "</g>"]
-        if i < 2 and narrow:
-            ay = i * D + PH + 30
-            b.append(f'<path d="M{W / 2} {ay - 12}V{ay + 8}M{W / 2 - 9} {ay}l9 9 9-9" fill="none" stroke="url(#brand)" '
-                     'stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>')
-        elif i < 2:
+        if i < 2:
             ax = x + pw + 26
             b.append(f'<path d="M{ax - 14} {PH / 2 + 10}H{ax + 8}M{ax} {PH / 2 + 1}l9 9-9 9" fill="none" stroke="url(#brand)" '
                      'stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>')
@@ -414,6 +436,58 @@ def pipeline(t, narrow=False):
     return svg(W, H, "".join(b), t, "分担AIの流れ：ゲームのファイルから操作を検出し、MiniLMと2層Transformerで推論して、3人のスマホ画面へ配分する")
 
 
+def chip(x, y, s, t, color=None, mono=True, size=12.5):
+    """小さな札。幅は文字数から見積もる。戻り値は (svg, 幅)。"""
+    w = sum(size * (0.62 if c.isascii() else 1.0) for c in s) + 16
+    green = CHARS["green"]["body"]
+    ink = t["ink"] if not color else ("#103B10" if color == green else "#FFFFFF")
+    return (f'<rect x="{x}" y="{y}" width="{w:.1f}" height="22" rx="11" fill="{color or t["code"]}" stroke="{color or t["line"]}"/>'
+            + text(x + w / 2, y + 15.5, s, size, ink, cls="mono" if mono else "jp", weight=700, anchor="middle"), w)
+
+
+def pipeline_phone(t):
+    """分担AIの流れ（スマホ版）。3段の要点だけを縦に並べ、詳しい説明は下の本文に任せる。"""
+    W = PHONE_W
+    blue, green, purple = (CHARS[n]["body"] for n in ("blue", "green", "purple"))
+    rows = [("①", "ゲームのファイルから自動検出", "19系統の設定・データを解析"),
+            ("②", "分担AIが意味と関係を推論", "MiniLM＋独自の2層Transformer"),
+            ("③", "スマホ画面へ自動で配分", "Rustでオフライン推論・約80ms")]
+    b, y = [], 0
+    for i, (n, h1, h2) in enumerate(rows):
+        rh = 118
+        b += [f'<rect x="1" y="{y + 1}" width="{W - 2}" height="{rh - 2}" rx="16" fill="{t["panel"]}" stroke="{t["line"]}"/>',
+              text(14, y + 30, n, 20, "url(#brand)", weight=900),
+              text(40, y + 29, h1, 16, t["ink"], weight=900),
+              text(40, y + 50, h2, 12.5, t["muted"], weight=700)]
+        cx, cy = 14, y + 66
+        if i == 0:
+            for label, c in (("W", blue), ("A", blue), ("S", blue), ("D", blue), ("Space", blue), ("Mouse", green),
+                             ("MouseL", purple), ("R", purple), ("Wheel", purple)):
+                svg_, w = chip(cx, cy, label, t, c)
+                if cx + w > W - 12:
+                    cx, cy = 14, cy + 26
+                    svg_, w = chip(cx, cy, label, t, c)
+                b.append(svg_)
+                cx += w + 6
+        elif i == 1:
+            for label in ("操作名", "→ 意味ベクトル", "→ 分担"):
+                svg_, w = chip(cx, cy, label, t, None, mono=False)
+                b.append(svg_)
+                cx += w + 6
+        else:
+            for k, (name, p, role) in enumerate((("blue", "P1", "移動"), ("green", "P2", "視点"), ("purple", "P3", "アクション"))):
+                px = 14 + k * 112
+                b += [char(name, px - 6, cy - 6, .3, t, delay=k * .4),
+                      text(px + 26, cy + 12, p, 12, CHARS[name]["body"] if name != "green" else "#2FB52E", weight=900),
+                      text(px + 26, cy + 30, role, 13, t["ink"], weight=800)]
+        y += rh
+        if i < 2:
+            b.append(f'<path d="M{W / 2 - 8} {y + 4}l8 8 8-8" fill="none" stroke="url(#brand)" stroke-width="4" '
+                     'stroke-linecap="round" stroke-linejoin="round"/>')
+            y += 18
+    return svg(W, y, "".join(b), t, "分担AIの流れ：ゲームのファイルから操作を検出し、MiniLMと2層Transformerで推論して、3人のスマホ画面へ配分する")
+
+
 # ---------- 区切りとフッター ----------
 def footer(t):
     W, H = 1280, 250
@@ -457,26 +531,34 @@ def fit(s, size, avail):
     return avail if w > avail else None
 
 
-def eyebrow(num, en, name):
-    """案C：見出しの上に添える小さな画像（番号・英字ラベル・キャラクター）。半透明の色でライト・ダーク共通。"""
-    W, H = 340, 40
-    t = THEMES["light"]
-    b = [char(name, 0, 6, .25, t),
-         text(34, 32, num, 30, "url(#brand)", cls="disp", weight=400, length=32),
-         '<path d="M74 21h18" stroke="#8A7CFF" stroke-width="2.6" stroke-linecap="round"/>',  # 平らな線にはグラデーションが効かない
-         text(100, 26, en, 13, "#8A90A2", cls="rnd", weight=800, extra=' letter-spacing="3"')]
-    return svg(W, H, "".join(b), t, "")
+def wrap(s, size, avail):
+    """見出しを avail に収まるよう折り返す。読点のあと・括弧の前で切ることを優先する。"""
+    def width(x):
+        return sum(size * (0.6 if c.isascii() else 1.0) for c in x)
+    lines = []
+    while width(s) > avail:
+        fits = [i for i in range(1, len(s)) if width(s[:i]) <= avail]
+        good = [i for i in fits if s[i - 1] in "、）)" or s[i] in "（("]
+        cut = (good or fits)[-1]
+        lines.append(s[:cut])
+        s = s[cut:]
+    return lines + [s]
 
 
 def head_banner(num, jp, en, name, t, narrow=False):
     """案D：見出しそのものを画像にする。番号だけ表示用の書体にし、英字ラベルと見出しはGitHub本体と同じ
-    フォント指定（閲覧者の端末の標準フォント）で描く。狭い版（スマホ）は番号とラベルの下に見出しを置く。"""
-    W, H = (480, 102) if narrow else (840, 68)
-    if narrow:  # スマホでは本文（約16px）より大きく見えるよう、見出しを28（表示で約19px）にする
-        b = [text(0, 40, num, 36, "url(#brand)", cls="disp", weight=400, length=38),
-             text(48, 33, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="2.5"'),
-             text(0, 84, jp, 28, t["ink"], cls="gh", weight=600, length=fit(jp, 28, W - 4))]
+    フォント指定（閲覧者の端末の標準フォント）で描く。
+    スマホ版はPC版と同じ文字の大きさのまま幅360で描き、番号とラベルの下に見出しを置いて折り返す。"""
+    if narrow:
+        lines = wrap(jp, 27, PHONE_W - 4)
+        W, H = PHONE_W, 50 + 36 * len(lines)
+        b = [text(0, 42, num, 42, "url(#brand)", cls="disp", weight=400, length=44),
+             text(58, 34, en, 12, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"')]
+        # 行頭の全角括弧は字下げに見えるので、半文字ぶん左へ寄せる
+        b += [text(-13.5 if line[0] in "（「" else 0, 80 + 36 * k, line, 27, t["ink"], cls="gh", weight=600)
+              for k, line in enumerate(lines)]
     else:
+        W, H = 840, 68
         b = [text(0, 52, num, 42, "url(#brand)", cls="disp", weight=400, length=44),
              text(60, 26, en, 12, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
              text(58, 55, jp, 27, t["ink"], cls="gh", weight=600, length=fit(jp, 27, W - 58 - 8))]
@@ -495,7 +577,6 @@ def main():
         files[f"char-{n}.svg"] = avatar(n)
     for i, (num, jp, en) in enumerate(HEADS):
         name = ORDER[i % 4]
-        files[f"heads/eyebrow-{num}.svg"] = eyebrow(num, en, name)
         for mode, t in THEMES.items():
             files[f"heads/head-{num}-{mode}.svg"] = head_banner(num, jp, en, name, t)
             files[f"heads/head-{num}-narrow-{mode}.svg"] = head_banner(num, jp, en, name, t, narrow=True)

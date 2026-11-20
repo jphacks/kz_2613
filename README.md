@@ -69,7 +69,7 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 
 ## 製品概要
 
-### <a id="背景製品開発のきっかけ課題等"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-01-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-01-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-01-dark.svg"><img src="assets/readme/heads/head-01-light.svg" width="100%" alt="背景(製品開発のきっかけ、課題等）"></picture>
+### <a id="背景製品開発のきっかけ課題等"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-01-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-01-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-01-dark.svg"><img src="assets/readme/heads/head-01-light.svg" alt="背景(製品開発のきっかけ、課題等）"></picture>
 
 友達と集まって1人用のPCゲームを遊ぶと、操作できるのは1人だけで、ほかの人は画面を眺める観客になります。クリアしたり遊び尽くしたりして、PCに眠っているゲームも少なくありません。
 
@@ -86,28 +86,21 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
   <img src="assets/readme/scenes/scene-02-chase.svg" width="100%" alt="">
 </picture>
 
-### <a id="製品説明具体的な製品の説明"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-02-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-02-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-02-dark.svg"><img src="assets/readme/heads/head-02-light.svg" width="100%" alt="製品説明（具体的な製品の説明）"></picture>
+### <a id="製品説明具体的な製品の説明"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-02-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-02-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-02-dark.svg"><img src="assets/readme/heads/head-02-light.svg" alt="製品説明（具体的な製品の説明）"></picture>
 
 > **既存ゲーム × Tech：1つのキャラクターを、みんなで動かす**
-
-<picture>
-  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/flow-narrow-dark.svg">
-  <source media="(max-width: 700px)" srcset="assets/readme/flow-narrow-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/flow-dark.svg">
-  <img src="assets/readme/flow-light.svg" width="100%" alt="遊ぶまでの4ステップ。1：スマホでQR参加、2：ゲームを選ぶ、3：AIが操作を分担、4：開始ボタンでプレイ">
-</picture>
 
 1. **スマホで参加：** PCアプリのQRコードをスマホのブラウザで読み取ります。最初の参加者（P1・ホスト）のスマホはタッチパッド付きのリモコンになり、手元からPC画面やランチャーを操作できます。
 2. **ゲームを選択：** PCにインストール済みのゲームを一覧から選びます。選んだゲームの操作名とキー設定を自動で読み取ります。
 3. **操作を分担：** ゲームの操作と参加人数（2〜4人）に合わせて、独自AIが分担を作ります。担当を確かめて、そのままゲームを起動します。
 4. **開始ボタンでプレイ：** ホストが「分担操作開始」を押すとゲームが前面に切り替わり、各スマホが自分の担当操作だけを並べたコントローラーになります。
 
-<div align="center">
-  <a href="assets/images/recooplay-qr-join-guide.webp"><img src="assets/images/recooplay-qr-join-guide.webp" width="880" alt="PCアプリのQRコードをスマホで読み取り、参加からゲーム選択・開始まで進む流れ"></a>
-  <br><sub>QRコードの読み取りから開始まで、操作はすべてスマートフォンで行います。</sub>
-</div>
-
-<br>
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/flow-narrow-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/readme/flow-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/flow-dark.svg">
+  <img src="assets/readme/flow-light.svg" alt="遊ぶまでの4ステップ。1：スマホでQR参加、2：ゲームを選ぶ、3：AIが操作を分担、4：開始ボタンでプレイ">
+</picture>
 
 3人で『Minecraft』を遊ぶ場合の分担例です。
 
@@ -117,12 +110,11 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 | <img src="assets/readme/char-green.svg" height="28" align="absmiddle" alt="P2のキャラクター（緑）">&nbsp;**P2** | 視点・カメラ操作 | 感度調整つきドラッグパッド |
 | <img src="assets/readme/char-purple.svg" height="28" align="absmiddle" alt="P3のキャラクター（紫）">&nbsp;**P3** | 攻撃・ブロック設置・持ち物切替・インベントリ | 左右クリック・ホイール・キーボタン |
 
-<div align="center">
-  <a href="assets/images/recooplay-role-controllers.webp"><img src="assets/images/recooplay-role-controllers.webp" width="880" alt="3人プレイの役割分担例。左から移動・視点・アクション"></a>
-  <br><sub>3人分の操作画面。担当別の画面は、ゲームと参加人数に合わせて自動で作られます。</sub>
-</div>
-
-<br>
+<p align="center">
+  <a href="assets/images/recooplay-qr-join-guide.webp"><img src="assets/images/recooplay-qr-join-guide.webp" width="49%" alt="PCアプリのQRコードをスマホで読み取り、参加からゲーム選択・開始まで進む流れ"></a>
+  <a href="assets/images/recooplay-role-controllers.webp"><img src="assets/images/recooplay-role-controllers.webp" width="49%" alt="3人プレイの役割分担例。左から移動・視点・アクション"></a>
+  <br><sub>左：QRコードの読み取りから開始まで、操作はすべてスマートフォンで行います。<br>右：3人分の操作画面。担当別の画面は、ゲームと参加人数に合わせて自動で作られます。</sub>
+</p>
 
 実際の画面遷移は[PC・スマホの画面一覧](docs/screenshots.md)で確認できます。
 
@@ -131,7 +123,7 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
   <img src="assets/readme/scenes/scene-03-train.svg" width="100%" alt="">
 </picture>
 
-### <a id="特長"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-03-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-03-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-03-dark.svg"><img src="assets/readme/heads/head-03-light.svg" width="100%" alt="特長"></picture>
+### <a id="特長"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-03-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-03-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-03-dark.svg"><img src="assets/readme/heads/head-03-light.svg" alt="特長"></picture>
 
 #### <img src="assets/readme/char-blue.svg" height="30" align="absmiddle" alt=""> 1. 1つのキャラクターを2〜4人で分担する
 
@@ -150,7 +142,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
   <img src="assets/readme/scenes/scene-04-rope.svg" width="100%" alt="">
 </picture>
 
-### <a id="解決出来ること"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-04-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-04-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-04-dark.svg"><img src="assets/readme/heads/head-04-light.svg" width="100%" alt="解決出来ること"></picture>
+### <a id="解決出来ること"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-04-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-04-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-04-dark.svg"><img src="assets/readme/heads/head-04-light.svg" alt="解決出来ること"></picture>
 
 1人用のPCゲームを囲んでも操作できるのは1人だけで、周りは観客になってしまう。遊び慣れたゲームはPCに眠ってしまう。Re:Cooplayは、手元のPCゲームを全員がプレイヤーになれる協力ゲームに変えて、この2つの課題を解決します。
 
@@ -174,14 +166,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
   <img src="assets/readme/scenes/scene-08-seesaw.svg" width="100%" alt="">
 </picture>
 
-### <a id="試遊での反応"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-05-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-05-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-05-dark.svg"><img src="assets/readme/heads/head-05-light.svg" width="100%" alt="試遊での反応"></picture>
-
-<div align="center">
-  <a href="assets/images/recooplay-hackday-play.webp"><img src="assets/images/recooplay-hackday-play.webp" width="720" alt="3人が同じPC画面を見ながら各自のスマートフォンでPCゲームを共同操作している実プレイ風景"></a>
-  <br><sub>1台のPC画面を囲み、各自のスマートフォンで1つのキャラクターを操作している様子</sub>
-</div>
-
-<br>
+### <a id="試遊での反応"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-05-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-05-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-05-dark.svg"><img src="assets/readme/heads/head-05-light.svg" alt="試遊での反応"></picture>
 
 実プレイ映像：[『Outlast』を2人で分担して遊ぶ様子（約3分18秒）](https://drive.google.com/file/d/1ZdPi9M9zD87YS8cdn4fIGKjNNi-r7Ewt/view) ／ [驚いた場面の切り抜き（約11秒）](https://drive.google.com/file/d/1HzBcDEd4Hm6iXMjvd6CHqWi29Rwi6NfX/view)。紹介動画では『Terraria』での共同操作も実演しています。
 
@@ -195,14 +180,11 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
 
 各自の操作は思い通りに動かせる一方で、複数人で息を合わせる連携そのものが新しいゲーム体験を生むことが実証されました。
 
-<details>
-<summary><b>📊 アンケートの集計グラフを見る</b></summary>
-<br>
-<div align="center">
-  <a href="assets/images/recooplay-survey-results.png"><img src="assets/images/recooplay-survey-results.png" width="720" alt="試遊アンケート結果：①プレイ体験の違い（大きな違いを感じた85.7%、多少の違いを感じた9.5%）、②もう一度遊びたいか（とてもそう思う61.5%、ややそう思う38.5%）"></a>
-  <br><sub>①プレイ体験の違い：経験者21名、②もう一度遊びたいか：回答者26名</sub>
-</div>
-</details>
+<p align="center">
+  <a href="assets/images/recooplay-hackday-play.webp"><img src="assets/images/recooplay-hackday-play.webp" width="49%" alt="3人が同じPC画面を見ながら各自のスマートフォンでPCゲームを共同操作している実プレイ風景"></a>
+  <a href="assets/images/recooplay-survey-results.png"><img src="assets/images/recooplay-survey-results.png" width="49%" alt="試遊アンケート結果：①プレイ体験の違い（大きな違いを感じた85.7%、多少の違いを感じた9.5%）、②もう一度遊びたいか（とてもそう思う61.5%、ややそう思う38.5%）"></a>
+  <br><sub>左：1台のPC画面を囲み、各自のスマートフォンで1つのキャラクターを操作している様子<br>右：試遊アンケートの結果（①プレイ体験の違い：経験者21名、②もう一度遊びたいか：回答者26名）</sub>
+</p>
 
 **試遊者の声**（自由記述から抜粋）
 
@@ -230,7 +212,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
   <img src="assets/readme/scenes/scene-09-tug.svg" width="100%" alt="">
 </picture>
 
-### <a id="今後の展望"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-06-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-06-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-06-dark.svg"><img src="assets/readme/heads/head-06-light.svg" width="100%" alt="今後の展望"></picture>
+### <a id="今後の展望"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-06-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-06-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-06-dark.svg"><img src="assets/readme/heads/head-06-light.svg" alt="今後の展望"></picture>
 
 | 段階 | 目指すこと |
 |---|---|
@@ -242,7 +224,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
   <img src="assets/readme/scenes/scene-06-hide.svg" width="100%" alt="">
 </picture>
 
-### <a id="注力したことこだわり等"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-07-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-07-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-07-dark.svg"><img src="assets/readme/heads/head-07-light.svg" width="100%" alt="注力したこと（こだわり等）"></picture>
+### <a id="注力したことこだわり等"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-07-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-07-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-07-dark.svg"><img src="assets/readme/heads/head-07-light.svg" alt="注力したこと（こだわり等）"></picture>
 
 「友達と集まったその場で、いつものPCゲームをすぐにみんなで遊べること」を目指し、3つの点に注力しました。
 
@@ -258,7 +240,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
   <img src="assets/readme/scenes/scene-07-volley.svg" width="100%" alt="">
 </picture>
 
-## <a id="技術仕様書"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-08-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-08-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-08-dark.svg"><img src="assets/readme/heads/head-08-light.svg" width="100%" alt="技術仕様書"></picture>
+## <a id="技術仕様書"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-08-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-08-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-08-dark.svg"><img src="assets/readme/heads/head-08-light.svg" alt="技術仕様書"></picture>
 
 | 資料 | 内容 |
 |---|---|
@@ -278,7 +260,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
 
 ## 開発技術
 
-### <a id="システム構成"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-09-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-09-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-09-dark.svg"><img src="assets/readme/heads/head-09-light.svg" width="100%" alt="システム構成"></picture>
+### <a id="システム構成"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-09-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-09-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-09-dark.svg"><img src="assets/readme/heads/head-09-light.svg" alt="システム構成"></picture>
 
 各スマートフォンのブラウザで行った操作を、ローカルWi-Fi経由でPC上のRustホストが受け取ります。ホストは参加者ごとの担当・入力の順序・入力先のウィンドウを確かめて1つの入力にまとめ、Windows標準の`SendInput` APIでPCゲームへ送ります。
 
@@ -287,20 +269,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
   <br><sub>3人で共同操作する場合のシステム構成例</sub>
 </div>
 
-### <a id="活用した技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-10-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-10-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-10-dark.svg"><img src="assets/readme/heads/head-10-light.svg" width="100%" alt="活用した技術"></picture>
-
-<p>
-  <img src="https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust">
-  <img src="https://img.shields.io/badge/Tokio_%2F_axum-463F3A?style=flat-square&logo=rust&logoColor=white" alt="Tokio / axum">
-  <img src="https://img.shields.io/badge/Tauri_2-24C8D8?style=flat-square&logo=tauri&logoColor=white" alt="Tauri 2">
-  <img src="https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React">
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite">
-  <img src="https://img.shields.io/badge/WebRTC_DataChannel-333333?style=flat-square&logo=webrtc&logoColor=white" alt="WebRTC DataChannel">
-  <img src="https://img.shields.io/badge/WebSocket-010101?style=flat-square" alt="WebSocket">
-  <img src="https://img.shields.io/badge/Win32_SendInput-0078D4?style=flat-square" alt="Win32 SendInput">
-  <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?style=flat-square&logo=huggingface&logoColor=000" alt="Hugging Face">
-</p>
+### <a id="活用した技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-10-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-10-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-10-dark.svg"><img src="assets/readme/heads/head-10-light.svg" alt="活用した技術"></picture>
 
 #### API・データ
 
@@ -321,7 +290,20 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
 - Android／iPhone（標準ブラウザから参加）
 - 通信はローカルWi-Fi（PCのモバイルホットスポットを含む）だけで完結するので、インターネットにつながらない場所でも2〜4人で共同操作できます。
 
-### <a id="独自技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-11-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-11-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-11-dark.svg"><img src="assets/readme/heads/head-11-light.svg" width="100%" alt="独自技術"></picture>
+<p>
+  <img src="https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust">
+  <img src="https://img.shields.io/badge/Tokio_%2F_axum-463F3A?style=flat-square&logo=rust&logoColor=white" alt="Tokio / axum">
+  <img src="https://img.shields.io/badge/Tauri_2-24C8D8?style=flat-square&logo=tauri&logoColor=white" alt="Tauri 2">
+  <img src="https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React">
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite">
+  <img src="https://img.shields.io/badge/WebRTC_DataChannel-333333?style=flat-square&logo=webrtc&logoColor=white" alt="WebRTC DataChannel">
+  <img src="https://img.shields.io/badge/WebSocket-010101?style=flat-square" alt="WebSocket">
+  <img src="https://img.shields.io/badge/Win32_SendInput-0078D4?style=flat-square" alt="Win32 SendInput">
+  <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?style=flat-square&logo=huggingface&logoColor=000" alt="Hugging Face">
+</p>
+
+### <a id="独自技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-11-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-11-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-11-dark.svg"><img src="assets/readme/heads/head-11-light.svg" alt="独自技術"></picture>
 
 #### ハッカソンで開発した独自機能・技術
 
@@ -331,7 +313,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
   <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/pipeline-narrow-dark.svg">
   <source media="(max-width: 700px)" srcset="assets/readme/pipeline-narrow-light.svg">
   <source media="(prefers-color-scheme: dark)" srcset="assets/readme/pipeline-dark.svg">
-  <img src="assets/readme/pipeline-light.svg" width="100%" alt="分担AIの流れ。①ゲームのファイルからMoveForward:W、Jump:Space、Look:Mouse、Fire:MouseLなどの操作を19系統で自動検出。②多言語エンコーダMiniLMと独自の2層Transformerで、カテゴリ・同じ人が持つ確率・方向軸を推論。③P1に移動（WASD＋Space）、P2に視点（Mouse）、P3にアクション（左右クリック・Rキー・ホイール）を配分">
+  <img src="assets/readme/pipeline-light.svg" alt="分担AIの流れ。①ゲームのファイルからMoveForward:W、Jump:Space、Look:Mouse、Fire:MouseLなどの操作を19系統で自動検出。②多言語エンコーダMiniLMと独自の2層Transformerで、カテゴリ・同じ人が持つ確率・方向軸を推論。③P1に移動（WASD＋Space）、P2に視点（Mouse）、P3にアクション（左右クリック・Rキー・ホイール）を配分">
 </picture>
 
 ##### ① 操作名とキー割り当ての自動検出（19系統）
