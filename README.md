@@ -69,7 +69,7 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 
 ## 製品概要
 
-### 背景(製品開発のきっかけ、課題等）
+### <a id="背景製品開発のきっかけ課題等"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-01-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-01-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-01-dark.svg"><img src="assets/readme/heads/head-01-light.svg" width="100%" alt="背景(製品開発のきっかけ、課題等）"></picture>
 
 友達と集まって1人用のPCゲームを遊ぶと、操作できるのは1人だけで、ほかの人は画面を眺める観客になります。クリアしたり遊び尽くしたりして、PCに眠っているゲームも少なくありません。
 
@@ -86,7 +86,7 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
   <img src="assets/readme/scenes/scene-02-chase.svg" width="100%" alt="">
 </picture>
 
-### 製品説明（具体的な製品の説明）
+### <a id="製品説明具体的な製品の説明"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-02-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-02-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-02-dark.svg"><img src="assets/readme/heads/head-02-light.svg" width="100%" alt="製品説明（具体的な製品の説明）"></picture>
 
 > **既存ゲーム × Tech：1つのキャラクターを、みんなで動かす**
 
@@ -131,7 +131,7 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
   <img src="assets/readme/scenes/scene-03-train.svg" width="100%" alt="">
 </picture>
 
-### 特長
+### <a id="特長"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-03-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-03-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-03-dark.svg"><img src="assets/readme/heads/head-03-light.svg" width="100%" alt="特長"></picture>
 
 #### <img src="assets/readme/char-blue.svg" height="30" align="absmiddle" alt=""> 1. 1つのキャラクターを2〜4人で分担する
 
@@ -150,7 +150,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
   <img src="assets/readme/scenes/scene-04-rope.svg" width="100%" alt="">
 </picture>
 
-### 解決出来ること
+### <a id="解決出来ること"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-04-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-04-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-04-dark.svg"><img src="assets/readme/heads/head-04-light.svg" width="100%" alt="解決出来ること"></picture>
 
 1人用のPCゲームを囲んでも操作できるのは1人だけで、周りは観客になってしまう。遊び慣れたゲームはPCに眠ってしまう。Re:Cooplayは、手元のPCゲームを全員がプレイヤーになれる協力ゲームに変えて、この2つの課題を解決します。
 
@@ -174,7 +174,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
   <img src="assets/readme/scenes/scene-08-seesaw.svg" width="100%" alt="">
 </picture>
 
-### 試遊での反応
+### <a id="試遊での反応"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-05-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-05-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-05-dark.svg"><img src="assets/readme/heads/head-05-light.svg" width="100%" alt="試遊での反応"></picture>
 
 <div align="center">
   <a href="assets/images/recooplay-hackday-play.webp"><img src="assets/images/recooplay-hackday-play.webp" width="720" alt="3人が同じPC画面を見ながら各自のスマートフォンでPCゲームを共同操作している実プレイ風景"></a>
@@ -230,7 +230,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
   <img src="assets/readme/scenes/scene-09-tug.svg" width="100%" alt="">
 </picture>
 
-### 今後の展望
+### <a id="今後の展望"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-06-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-06-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-06-dark.svg"><img src="assets/readme/heads/head-06-light.svg" width="100%" alt="今後の展望"></picture>
 
 | 段階 | 目指すこと |
 |---|---|
@@ -242,7 +242,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
   <img src="assets/readme/scenes/scene-06-hide.svg" width="100%" alt="">
 </picture>
 
-### 注力したこと（こだわり等）
+### <a id="注力したことこだわり等"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-07-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-07-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-07-dark.svg"><img src="assets/readme/heads/head-07-light.svg" width="100%" alt="注力したこと（こだわり等）"></picture>
 
 「友達と集まったその場で、いつものPCゲームをすぐにみんなで遊べること」を目指し、3つの点に注力しました。
 
@@ -258,7 +258,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
   <img src="assets/readme/scenes/scene-07-volley.svg" width="100%" alt="">
 </picture>
 
-## 技術仕様書
+## <a id="技術仕様書"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-08-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-08-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-08-dark.svg"><img src="assets/readme/heads/head-08-light.svg" width="100%" alt="技術仕様書"></picture>
 
 | 資料 | 内容 |
 |---|---|
@@ -278,7 +278,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
 
 ## 開発技術
 
-### システム構成
+### <a id="システム構成"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-09-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-09-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-09-dark.svg"><img src="assets/readme/heads/head-09-light.svg" width="100%" alt="システム構成"></picture>
 
 各スマートフォンのブラウザで行った操作を、ローカルWi-Fi経由でPC上のRustホストが受け取ります。ホストは参加者ごとの担当・入力の順序・入力先のウィンドウを確かめて1つの入力にまとめ、Windows標準の`SendInput` APIでPCゲームへ送ります。
 
@@ -287,7 +287,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
   <br><sub>3人で共同操作する場合のシステム構成例</sub>
 </div>
 
-### 活用した技術
+### <a id="活用した技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-10-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-10-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-10-dark.svg"><img src="assets/readme/heads/head-10-light.svg" width="100%" alt="活用した技術"></picture>
 
 <p>
   <img src="https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust">
@@ -321,7 +321,7 @@ Android・iPhoneの標準ブラウザでQRコードを読み取れば参加で�
 - Android／iPhone（標準ブラウザから参加）
 - 通信はローカルWi-Fi（PCのモバイルホットスポットを含む）だけで完結するので、インターネットにつながらない場所でも2〜4人で共同操作できます。
 
-### 独自技術
+### <a id="独自技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/head-11-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/head-11-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/head-11-dark.svg"><img src="assets/readme/heads/head-11-light.svg" width="100%" alt="独自技術"></picture>
 
 #### ハッカソンで開発した独自機能・技術
 
