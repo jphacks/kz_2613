@@ -257,7 +257,7 @@ PCのWindowsモバイルホットスポットでスマホと直接つなぎ、We
   <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/footer-narrow-dark.svg">
   <source media="(max-width: 700px)" srcset="assets/readme/footer-narrow-light.svg">
   <source media="(prefers-color-scheme: dark)" srcset="assets/readme/footer-dark.svg">
-  <img src="assets/readme/footer-light.svg" alt="さあ、みんなで遊ぼう！">
+  <img src="assets/readme/footer-light.svg" alt="さあ、みんなで遊ぼう！（COMING SOON：一般公開に向けて準備中です）">
 </picture>
 
 <sub>Re:Cooplayは独立した非公式システムであり、Minecraftのゲーム本体・素材を同梱していません。Minecraftの公式製品ではなく、Mojang Studios・Microsoftの承認・提携を受けていません。NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. [Minecraftの利用条件に関する確認記録](docs/develop/decisions/2026-10-25-minecraft-usage-terms.md)</sub>

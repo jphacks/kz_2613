@@ -413,7 +413,7 @@ def pipeline_phone(t):
 
 # ---------- 区切りとフッター ----------
 def footer(t, narrow=False):
-    W, H = (PHONE_W, 200) if narrow else (PC_W, 176)
+    W, H = (PHONE_W, 272) if narrow else (PC_W, 230)
     cx = W / 2
     b = [f'<rect width="{W}" height="{H}" rx="22" fill="url(#bg)"/>',
          f'<clipPath id="card"><rect width="{W}" height="{H}" rx="22"/></clipPath><g clip-path="url(#card)">',
@@ -432,7 +432,24 @@ def footer(t, narrow=False):
     for i, n in enumerate(ORDER):
         b.append(char(n, x0 + i * gap, top, s, t, delay=i * .3))
         b.append(f'<ellipse cx="{x0 + i * gap + 50 * s:.1f}" cy="{top + 63}" rx="18" ry="3.5" fill="{t["shadow"]}" opacity=".12"/>')
-    return svg(W, H, "".join(b), t, "さあ、みんなで遊ぼう！")
+    # まだ一般公開（リリース）していないことを、締めの気分を壊さない札で伝える
+    label, note = "COMING SOON", "一般公開に向けて準備中です"
+    lw = len(label) * 10.6  # 13px・太字・字間2の英大文字の幅の見積もり
+    ph = 34
+    if narrow:  # 幅が狭いので、札は「COMING SOON」だけにして、説明はその下に置く
+        pw = 34 + lw + 16
+        px, py = cx - pw / 2, top + 76
+        b.append(text(cx, py + ph + 24, note, 14, t["ink"], cls="rnd", weight=700, anchor="middle"))
+    else:
+        pw = 34 + lw + 18 + len(note) * 14 + 22
+        px, py = cx - pw / 2, top + 78
+        b += [f'<rect x="{px + 34 + lw + 8:.1f}" y="{py + 9}" width="1.5" height="{ph - 18}" fill="{t["line"]}"/>',
+              text(px + 34 + lw + 18, py + 22.5, note, 14, t["ink"], cls="rnd", weight=700)]
+    b = b[:-2 if not narrow else -1] + [
+        f'<rect x="{px:.1f}" y="{py}" width="{pw:.1f}" height="{ph}" rx="{ph / 2}" fill="{t["chip"]}" stroke="url(#brand)" stroke-width="1.6"/>',
+        f'<circle class="pulse" cx="{px + 20:.1f}" cy="{py + ph / 2}" r="4.5" fill="#22C4FA"/>',
+        text(px + 34, py + 22, label, 13, "url(#brand)", cls="gh", weight=800, extra=' letter-spacing="2"')] + b[-2 if not narrow else -1:]
+    return svg(W, H, "".join(b), t, "さあ、みんなで遊ぼう！（COMING SOON：一般公開に向けて準備中です）")
 
 
 # ---------- 分けて操作するイメージ ----------
