@@ -245,7 +245,7 @@ def flow(t, narrow=False):
             ax = x + cw + gap / 2
             b.append(f'<path d="M{ax - 5} 82l7 7-7 7" fill="none" stroke="url(#brand)" stroke-width="4" '
                      'stroke-linecap="round" stroke-linejoin="round"/>')
-    return svg(W, H, "".join(b), t, "遊ぶまでの4ステップ：スマホでQR参加、ゲームを選ぶ、AIが操作を分担、開始ボタンでプレイ")
+    return svg(W, H + 24, "".join(b), t, "遊ぶまでの4ステップ：スマホでQR参加、ゲームを選ぶ、AIが操作を分担、開始ボタンでプレイ")
 
 
 def flow_phone(t):
@@ -265,7 +265,7 @@ def flow_phone(t):
               f'<g transform="translate({x + cw / 2 + 8} {y + 58}) scale(.7)">{icon(kind, 0, 0, c, t)}</g>',
               text(x + cw / 2, y + ch - 18, title, 15, t["ink"], weight=900, anchor="middle")]
     H = 2 * ch + gap
-    return svg(W, H, "".join(b), t, "遊ぶまでの4ステップ：スマホでQR参加、ゲームを選ぶ、AIが操作を分担、開始ボタンでプレイ")
+    return svg(W, H + 24, "".join(b), t, "遊ぶまでの4ステップ：スマホでQR参加、ゲームを選ぶ、AIが操作を分担、開始ボタンでプレイ")
 
 
 # ---------- 分担AIの流れ ----------
