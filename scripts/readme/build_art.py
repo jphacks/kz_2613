@@ -433,6 +433,58 @@ def avatar(name):
     return svg(100, 124, char(name, 0, 0, 1, t), t, f"Re:Cooplayのキャラクター（{name}）")
 
 
+# ---------- 見出し ----------
+# 帯のあとに続く項目の見出し。番号・英字ラベル・キャラクターで、帯が項目の区切りであることを示す。
+HEADS = [
+    ("01", "背景(製品開発のきっかけ、課題等）", "BACKGROUND"),
+    ("02", "製品説明（具体的な製品の説明）", "PRODUCT"),
+    ("03", "特長", "FEATURES"),
+    ("04", "解決出来ること", "SOLUTION"),
+    ("05", "試遊での反応", "PLAYTEST"),
+    ("06", "今後の展望", "FUTURE"),
+    ("07", "注力したこと（こだわり等）", "FOCUS"),
+    ("08", "技術仕様書", "SPECS"),
+    ("09", "システム構成", "ARCHITECTURE"),
+    ("10", "活用した技術", "TECH STACK"),
+    ("11", "独自技術", "ORIGINAL TECH"),
+]
+
+
+def fit(s, size, avail):
+    """全角1字=size、半角=0.6size として幅を見積もり、はみ出すなら textLength で縮める。"""
+    w = sum(size * (0.6 if c.isascii() else 1.0) for c in s)
+    return avail if w > avail else None
+
+
+def eyebrow(num, en, name):
+    """案C：見出しの上に添える小さな画像（番号・英字ラベル・キャラクター）。半透明の色でライト・ダーク共通。"""
+    W, H = 340, 40
+    t = THEMES["light"]
+    b = [char(name, 0, 6, .25, t),
+         text(34, 32, num, 30, "url(#brand)", cls="disp", weight=400, length=32),
+         '<path d="M74 21h18" stroke="#8A7CFF" stroke-width="2.6" stroke-linecap="round"/>',  # 平らな線にはグラデーションが効かない
+         text(100, 26, en, 13, "#8A90A2", cls="rnd", weight=800, extra=' letter-spacing="3"')]
+    return svg(W, H, "".join(b), t, "")
+
+
+def head_banner(num, jp, en, name, t, narrow=False):
+    """案D：見出しそのものを画像の帯にする。狭い版は番号とラベルの下に見出しを置く。"""
+    W, H = (480, 112) if narrow else (840, 84)
+    b = [f'<rect x="1" y="6" width="{W - 2}" height="{H - 12}" rx="16" fill="{t["panel2"]}" stroke="{t["line"]}"/>',
+         f'<rect x="1" y="6" width="8" height="{H - 12}" rx="4" fill="url(#brand)"/>']
+    if narrow:
+        b += [char(name, 14, 30, .42, t),
+              text(68, 48, num, 30, "url(#brand)", cls="disp", weight=400, length=32),
+              text(110, 44, en, 12, t["muted"], cls="rnd", weight=800, extra=' letter-spacing="2.5"'),
+              text(68, 86, jp, 22, t["ink"], cls="rnd", weight=800, length=fit(jp, 22, W - 68 - 16))]
+    else:
+        b += [char(name, 20, 16, .42, t),
+              text(84, 58, num, 36, "url(#brand)", cls="disp", weight=400, length=38),
+              text(136, 36, en, 12, t["muted"], cls="rnd", weight=800, extra=' letter-spacing="3"'),
+              text(134, 63, jp, 24, t["ink"], cls="rnd", weight=800, length=fit(jp, 24, W - 134 - 24))]
+    return svg(W, H, "".join(b), t, jp)
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     files = {}
@@ -443,6 +495,13 @@ def main():
         files[f"footer-{mode}.svg"] = footer(t)
     for n in ORDER:
         files[f"char-{n}.svg"] = avatar(n)
+    for i, (num, jp, en) in enumerate(HEADS):
+        name = ORDER[i % 4]
+        files[f"heads/eyebrow-{num}.svg"] = eyebrow(num, en, name)
+        for mode, t in THEMES.items():
+            files[f"heads/head-{num}-{mode}.svg"] = head_banner(num, jp, en, name, t)
+            files[f"heads/head-{num}-narrow-{mode}.svg"] = head_banner(num, jp, en, name, t, narrow=True)
+    (OUT / "heads").mkdir(exist_ok=True)
     for name, body in files.items():
         (OUT / name).write_text(body + "\n", encoding="utf-8", newline="\n")
     print(f"wrote {len(files)} files to {OUT}")
