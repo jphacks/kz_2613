@@ -679,20 +679,21 @@ def part_banner(part, jp, en, first, last, t, narrow=False):
     W, H = (PHONE_W, 96) if narrow else (PC_W, 104)
     b = [f'<rect width="{W}" height="{H}" rx="18" fill="url(#bg)"/>',
          f'<clipPath id="card"><rect width="{W}" height="{H}" rx="18"/></clipPath><g clip-path="url(#card)">',
-         f'<g transform="translate({W} {H}) scale(-1 -1)">{dots(14, 14, 8, 5, 12, 2.4, t["dot2"])}</g>',
-         f'<rect width="7" height="{H}" fill="url(#brand)"/></g>']
+         f'<g transform="translate({W - (110 if narrow else 230)} {H}) scale(-1 -1)">{dots(14, 14, 8, 5, 12, 2.4, t["dot2"])}</g>',
+         f'<rect width="7" height="{H}" fill="url(#brand)"/></g>',
+         f'<rect x="{58 if narrow else 72}" y="22" width="1.5" height="{H - 44}" fill="{t["line"]}"/>']
     if narrow:
         b += [text(24, 34, "PART", 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
               text(24, 80, part, 48, "url(#brand)", cls="disp", weight=400),
-              text(66, 34, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
-              text(66, 70, jp, 30, t["ink"], cls="gh", weight=700),
+              text(74, 34, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
+              text(74, 70, jp, 30, t["ink"], cls="gh", weight=700),
               text(W - 18, 34, f"{first}–{last}", 15, "url(#brand)", cls="disp", weight=400, anchor="end",
                    extra=' letter-spacing="1"')]
     else:
         b += [text(32, 40, "PART", 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
               text(32, 86, part, 52, "url(#brand)", cls="disp", weight=400),
-              text(84, 40, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="4"'),
-              text(84, 78, jp, 34, t["ink"], cls="gh", weight=700),
+              text(92, 40, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="4"'),
+              text(92, 78, jp, 34, t["ink"], cls="gh", weight=700),
               text(W - 32, 40, "SECTIONS", 13, t["muted"], cls="gh", weight=600, anchor="end",
                    extra=' letter-spacing="3"'),
               text(W - 32, 80, f"{first} – {last}", 32, "url(#brand)", cls="disp", weight=400, anchor="end",
@@ -754,10 +755,10 @@ def award_panel(x, y, w, h, title, sub, items, t):
 def awards(t, narrow=False):
     """受賞結果のカード。フッターと同じ背景で、Hack Day と Award Day のパネルを並べる（スマホは縦に積む）。"""
     rows = max(len(items) for _, _, items in AWARDS)
-    ph = 64 + rows * 46
+    ph = 76 + rows * 46
     if narrow:
         W, pad, top = PHONE_W, 12, 66
-        hs = [64 + len(items) * 46 for _, _, items in AWARDS]
+        hs = [76 + len(items) * 46 for _, _, items in AWARDS]
         H = top + sum(hs) + 12 + pad
     else:
         W, pad, top = PC_W, 20, 70
