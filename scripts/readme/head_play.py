@@ -8,6 +8,7 @@ PCは見出しの文字の基準線に舞台の地面をそろえ、見出しの
     python scripts/readme/head_play.py
 """
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -63,6 +64,7 @@ def main():
         for mode, t in art.THEMES.items():
             for suffix, narrow in (("", False), ("-narrow", True)):
                 svg = play_head(num, jp, en, PLAY[num], t, narrow)
+                ET.fromstring(svg)  # 属性の重複などがあると GitHub で画像が表示されないので、XMLとして読めることを確かめる
                 (OUT / f"play-{num}{suffix}-{mode}.svg").write_text(svg + "\n", encoding="utf-8", newline="\n")
                 n += 1
     print(f"wrote {n} files to {OUT}")

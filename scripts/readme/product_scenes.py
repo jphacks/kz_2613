@@ -141,25 +141,28 @@ def screen(kind, name):
     kind, _, cls = kind.partition(":")
     kind, _, rot = kind.partition("@")
     c = f' class="{cls}"' if cls else ""
-    ring = f'fill="none" stroke="{e}" stroke-width="6"'
-    line = f'fill="none" stroke="{e}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"'
+    def ring(w=6):
+        return f'fill="none" stroke="{e}" stroke-width="{w}"'
+
+    def line(w=8):
+        return f'fill="none" stroke="{e}" stroke-width="{w}" stroke-linecap="round" stroke-linejoin="round"'
     if kind == "stick":  # P1：移動のスティック
-        g = f'<circle cx="50" cy="76" r="25" {ring} opacity=".45"/><g{c}><circle cx="50" cy="76" r="13" fill="{e}"/></g>'
+        g = f'<circle cx="50" cy="76" r="25" {ring()} opacity=".45"/><g{c}><circle cx="50" cy="76" r="13" fill="{e}"/></g>'
     elif kind == "drag":  # P2：視点のドラッグパッド
-        g = (f'<rect x="24" y="40" width="52" height="72" rx="12" {ring} opacity=".45"/>'
-             f'<path d="M33 70l-6 6 6 6M67 70l6 6-6 6" {line} stroke-width="5" opacity=".7"/>'
+        g = (f'<rect x="24" y="40" width="52" height="72" rx="12" {ring()} opacity=".45"/>'
+             f'<path d="M33 70l-6 6 6 6M67 70l6 6-6 6" {line(5)} opacity=".7"/>'
              f'<g{c}><circle cx="50" cy="76" r="10" fill="{e}"/></g>')
     elif kind == "button":  # P3：アクションのボタン
-        g = (f'<circle cx="50" cy="66" r="26" {ring} opacity=".4"/><g{c}><circle cx="50" cy="66" r="18" fill="{e}"/></g>'
+        g = (f'<circle cx="50" cy="66" r="26" {ring()} opacity=".4"/><g{c}><circle cx="50" cy="66" r="18" fill="{e}"/></g>'
              f'<circle cx="38" cy="108" r="8" fill="{e}" opacity=".55"/><circle cx="62" cy="108" r="8" fill="{e}" opacity=".55"/>')
     elif kind == "pad":  # P1のリモコン：タッチパッド
-        g = (f'<rect x="22" y="30" width="56" height="70" rx="8" {ring} opacity=".5"/>'
+        g = (f'<rect x="22" y="30" width="56" height="70" rx="8" {ring()} opacity=".5"/>'
              f'<rect x="22" y="106" width="26" height="14" rx="5" fill="{e}" opacity=".55"/>'
              f'<rect x="52" y="106" width="26" height="14" rx="5" fill="{e}" opacity=".55"/>'
              f'<g{c}><circle cx="50" cy="65" r="9" fill="{e}"/></g>')
     elif kind == "wheel":  # レース：ハンドル
-        g = (f'<g{c}><circle cx="50" cy="74" r="25" {ring} stroke-width="8"/><circle cx="50" cy="74" r="6" fill="{e}"/>'
-             f'<path d="M26 74h48M50 74v25" {line} stroke-width="6"/></g>')
+        g = (f'<g{c}><circle cx="50" cy="74" r="25" {ring(8)}/><circle cx="50" cy="74" r="6" fill="{e}"/>'
+             f'<path d="M26 74h48M50 74v25" {line(6)}/></g>')
     elif kind == "pedal":  # レース：アクセルとブレーキ
         g = (f'<rect x="28" y="62" width="18" height="30" rx="5" fill="{e}" opacity=".55"/>'
              f'<g{c}><rect x="54" y="48" width="18" height="44" rx="5" fill="{e}"/></g>')
@@ -168,22 +171,22 @@ def screen(kind, name):
     elif kind == "lr":  # パズル：左右移動
         g = f'<path d="M42 58l-16 18 16 18z" fill="{e}"/><g{c}><path d="M58 58l16 18-16 18z" fill="{e}"/></g>'
     elif kind == "spin":  # パズル：回転
-        g = f'<g{c}><path d="M70 66a21 21 0 1 0 2 18" {line} stroke-width="7"/><path d="M76 56l-3 16-14-7z" fill="{e}"/></g>'
+        g = f'<g{c}><path d="M70 66a21 21 0 1 0 2 18" {line(7)}/><path d="M76 56l-3 16-14-7z" fill="{e}"/></g>'
     elif kind == "drop":  # パズル：落下
-        g = f'<path d="M34 50h32" {line} stroke-width="6" opacity=".5"/><g{c}><path d="M50 98l-20-26h40z" fill="{e}"/></g>'
+        g = f'<path d="M34 50h32" {line(6)} opacity=".5"/><g{c}><path d="M50 98l-20-26h40z" fill="{e}"/></g>'
     elif kind == "finder":  # カメラでQRを読み取る
         q = "#E9EEF6"
-        g = (f'<path d="M24 46v-10h10M66 36h10v10M76 104v10H66M34 114H24v-10" {line} stroke-width="5"/>'
+        g = (f'<path d="M24 46v-10h10M66 36h10v10M76 104v10H66M34 114H24v-10" {line(5)}/>'
              + "".join(f'<rect x="{x}" y="{y}" width="12" height="12" fill="none" stroke="{q}" stroke-width="3"/>'
                        for x, y in ((33, 54), (55, 54), (33, 84)))
              + f'<rect x="57" y="86" width="5" height="5" fill="{q}"/><rect x="64" y="93" width="5" height="5" fill="{q}"/>'
              f'<g{c}><rect x="22" y="74" width="56" height="3" rx="1.5" fill="#FF4A6A"/></g>')
     elif kind == "check":
-        g = f'<path d="M30 76l14 14 26-30" {line} stroke-width="9"/>'
+        g = f'<path d="M30 76l14 14 26-30" {line(9)}/>'
     elif kind == "bored":  # 退屈：半目
-        g = (f'<g transform="translate(0 6)"><path d="M28 47h15M57 47h15" {line} stroke-width="5"/>'
-             f'<path d="M30 52q6 4 12 0M58 52q6 4 12 0" {line} stroke-width="3.5" opacity=".8"/>'
-             f'<path d="M45 64h10" {line} stroke-width="4"/></g>')
+        g = (f'<g transform="translate(0 6)"><path d="M28 47h15M57 47h15" {line(5)}/>'
+             f'<path d="M30 52q6 4 12 0M58 52q6 4 12 0" {line(3.5)} opacity=".8"/>'
+             f'<path d="M45 64h10" {line(4)}/></g>')
     elif kind == "off":  # 画面が消えている
         return '<path d="M24 40L44 24M24 56L58 26" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity=".1"/>'
     elif kind == "notify":  # 通知が届いて画面が点く（横に寝かせたスマホでは、通知を画面の上辺に出す）
@@ -830,15 +833,15 @@ def tech_block(kind):
     """技術のブロック（中心が原点、幅26・高さ22）。歯車＝Rust、原子＝React、双方向の矢印＝WebRTC。"""
     color = {"gear": "#E5733A", "atom": "#22A6CE", "link": "#7A5AF5"}[kind]
     out = [f'<rect x="-13" y="-11" width="26" height="22" rx="4" fill="{color}" stroke="#000" stroke-opacity=".2" stroke-width="1.2"/>']
-    w = 'fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'
+    w = 'fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"'
     if kind == "gear":
         teeth = "".join(f'<rect x="-1.6" y="-8.3" width="3.2" height="3.4" rx=".8" fill="#FFFFFF" transform="rotate({a})"/>' for a in range(0, 360, 45))
-        out.append(f'{teeth}<circle r="5.6" {w}/><circle r="1.8" fill="#FFFFFF"/>')
+        out.append(f'{teeth}<circle r="5.6" {w} stroke-width="1.8"/><circle r="1.8" fill="#FFFFFF"/>')
     elif kind == "atom":
         out.append("".join(f'<ellipse rx="8.6" ry="3.2" {w} stroke-width="1.5" transform="rotate({a})"/>' for a in (0, 60, 120))
                    + '<circle r="1.8" fill="#FFFFFF"/>')
     else:
-        out.append(f'<path d="M-7 -3h13l-3.5-3.5M7 3H-6l3.5 3.5" {w}/>')
+        out.append(f'<path d="M-7 -3h13l-3.5-3.5M7 3H-6l3.5 3.5" {w} stroke-width="1.8"/>')
     return "".join(out)
 
 
