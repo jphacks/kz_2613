@@ -35,9 +35,10 @@ LINES = {"wide": [(0, 18, 32), (18, 40, 24)],
          "narrow": [(0, 10, 32), (10, 18, 32), (18, 27, 24), (27, 40, 24)]}
 SIZE = {"wide": art.PC_W, "narrow": art.PHONE_W}
 # いちばん上の注釈。GitHubの引用（16px・行の高さ24px、左に4pxの線、文字は線から16px右）をChromeで実測した見た目で描く。
-# スマホ（本文欄324px）では注釈が入りきらず、GitHubと同じく最後の1文字が折り返す
+# スマホは画面の幅で本文欄が変わり（294〜364px）、多くの幅で注釈が1行に入りきらない。どの幅でも不自然でないよう、
+# 意味の切れ目で2行に分ける
 NOTE = "※JPHACKS 2026 Award Dayでの内容です"
-NOTE_LINES = {"wide": [NOTE], "narrow": [NOTE[:-1], NOTE[-1]]}
+NOTE_LINES = {"wide": [NOTE], "narrow": ["※JPHACKS 2026 Award Day", "での内容です"]}
 GAP = 24  # 引用と見出しの間（見出しの上の余白）
 INK = {"light": "#1F2328", "dark": "#F0F6FC"}
 MUTED = {"light": "#59636E", "dark": "#9198A1"}  # 引用の文字
