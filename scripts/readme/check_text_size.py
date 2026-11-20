@@ -14,6 +14,8 @@ ROOT = Path(__file__).resolve().parents[2]
 COLUMNS = {"PC": 838, "スマホ": 324}
 MIN_PX = 12.5
 DECOR = ("assets/readme/scenes/",)  # 区切りの帯。文字は吹き出しの飾りだけ
+# 利用者の判断で形を変えずに使う図（2026-11-20）。大きさは表示するが、検査の対象から外す
+FIXED = ("assets/readme/pipeline-",)
 
 
 def svg_info(path):
@@ -64,7 +66,7 @@ def main():
             k = shown / width
             small = min(sizes)[0] * k
             print(f"  {src:60s} 倍率{k:.2f}  最小{small:5.1f}px  最大{max(sizes)[0] * k:5.1f}px")
-            if small < MIN_PX and not src.startswith(DECOR):
+            if small < MIN_PX and not src.startswith(DECOR + FIXED):
                 worst = sorted({t for sz, t in sizes if sz * k < MIN_PX})[:3]
                 bad.append(f"{name} {src}: {small:.1f}px {worst}")
     if bad:
