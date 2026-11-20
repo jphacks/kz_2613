@@ -471,11 +471,11 @@ def eyebrow(num, en, name):
 def head_banner(num, jp, en, name, t, narrow=False):
     """案D：見出しそのものを画像にする。番号だけ表示用の書体にし、英字ラベルと見出しはGitHub本体と同じ
     フォント指定（閲覧者の端末の標準フォント）で描く。狭い版（スマホ）は番号とラベルの下に見出しを置く。"""
-    W, H = (480, 92) if narrow else (840, 68)
-    if narrow:
-        b = [text(0, 38, num, 32, "url(#brand)", cls="disp", weight=400, length=34),
-             text(44, 32, en, 12, t["muted"], cls="gh", weight=600, extra=' letter-spacing="2.5"'),
-             text(0, 76, jp, 24, t["ink"], cls="gh", weight=600, length=fit(jp, 24, W - 8))]
+    W, H = (480, 102) if narrow else (840, 68)
+    if narrow:  # スマホでは本文（約16px）より大きく見えるよう、見出しを28（表示で約19px）にする
+        b = [text(0, 40, num, 36, "url(#brand)", cls="disp", weight=400, length=38),
+             text(48, 33, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="2.5"'),
+             text(0, 84, jp, 28, t["ink"], cls="gh", weight=600, length=fit(jp, 28, W - 4))]
     else:
         b = [text(0, 52, num, 42, "url(#brand)", cls="disp", weight=400, length=44),
              text(60, 26, en, 12, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"'),
