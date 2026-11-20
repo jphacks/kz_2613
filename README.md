@@ -4,7 +4,7 @@ Re:Cooplayは、**既存のPCゲームに協力プレイを後付けするシス
 
 1台のPC画面を友達と囲み、普段は1人で操作するキャラクターを2〜4人で分担して動かします。コントローラーは各自のスマートフォンのブラウザなので、専用の機器もアプリも要りません。ゲームの操作名とキー割り当てを自動で読み取り、独自AIが参加人数に合わせて分担とスマホの操作画面を作ります。
 
-<a href="https://youtu.be/a8uhU2ymsuQ"><img src="assets/images/recooplay-thumbnail.png" width="100%" alt="Re:Cooplay 製品紹介動画（クリックしてYouTubeで再生）"></a>
+<a href="https://youtu.be/a8uhU2ymsuQ"><img src="assets/images/recooplay-thumbnail.png" width="838" alt="Re:Cooplay 製品紹介動画（クリックしてYouTubeで再生）"></a>
 <a href="https://youtu.be/a8uhU2ymsuQ"><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/video-cta-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/video-cta-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/video-cta-dark.svg"><img src="assets/readme/video-cta-light.svg" alt="プロダクト紹介動画を見る（YouTube）"></picture></a>
 
 <br>
