@@ -706,6 +706,17 @@ def part_banner(part, jp, en, first, last, t, narrow=False):
     return svg(W, H, "".join(b), t, jp)
 
 
+def toc_title(t, narrow=False):
+    """目次の見出し。項目の見出しより前の冒頭なので、番号を付けず、細い線と4色の点で控えめに区切る。"""
+    W = PHONE_W if narrow else PC_W
+    b = [text(0, 31, "目次", 24, t["ink"], cls="gh", weight=700),
+         text(60, 30, "CONTENTS", 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="4"')]
+    x0, x1 = 172, W - 67  # 4色の点の右端を、目次の列の右端（画像の右14pxの余白）にそろえる
+    b.append(f'<rect x="{x0}" y="24.5" width="{x1 - x0}" height="1.5" rx=".75" fill="{t["line"]}"/>')
+    b += [f'<circle cx="{x1 + 10 + i * 13}" cy="25.25" r="4" fill="{CHARS[n]["body"]}"/>' for i, n in enumerate(ORDER)]
+    return svg(W, 40, "".join(b), t, "目次")
+
+
 def toc_part(part, jp, en, mode, narrow=False):
     """目次の列の見出し。大見出しと同じ PART 番号・英字ラベルで、どちらの列かを示す。"""
     t = THEMES[mode]
@@ -814,6 +825,8 @@ def main():
             files[f"heads/toc-part-{part}-{mode}.svg"] = toc_part(part, jp, en, mode)
             files[f"heads/toc-part-{part}-narrow-{mode}.svg"] = toc_part(part, jp, en, mode, narrow=True)
     for mode, t in THEMES.items():
+        files[f"heads/toc-title-{mode}.svg"] = toc_title(t)
+        files[f"heads/toc-title-narrow-{mode}.svg"] = toc_title(t, narrow=True)
         files[f"awards-{mode}.svg"] = awards(t)
         files[f"awards-narrow-{mode}.svg"] = awards(t, narrow=True)
     (OUT / "heads").mkdir(exist_ok=True)
