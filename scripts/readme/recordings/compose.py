@@ -337,12 +337,17 @@ def build_b():
     return frames, durs
 
 
-frames, durs = (build_a if WHICH == "a" else build_b)()
-# 大きさをそろえる（キャプションの行数で高さが変わらないよう、最大に合わせる）
-H = max(f.height for f in frames)
-W = frames[0].width
-frames = [f if f.height == H else (lambda c: (c.alpha_composite(f, (0, 0)), c)[1])(Image.new("RGBA", (W, H), (0, 0, 0, 0))) for f in frames]
-out = f"out-{WHICH}-{LAYOUT}.webp"
-encode(frames, out, durs)
-frames[len(frames) // 2].save(f"out-{WHICH}-{LAYOUT}-mid.png")
-print(out, len(frames), W, H)
+def main():
+    frames, durs = (build_a if WHICH == "a" else build_b)()
+    # 大きさをそろえる（キャプションの行数で高さが変わらないよう、最大に合わせる）
+    H = max(f.height for f in frames)
+    W = frames[0].width
+    frames = [f if f.height == H else (lambda c: (c.alpha_composite(f, (0, 0)), c)[1])(Image.new("RGBA", (W, H), (0, 0, 0, 0))) for f in frames]
+    out = f"out-{WHICH}-{LAYOUT}.webp"
+    encode(frames, out, durs)
+    frames[len(frames) // 2].save(f"out-{WHICH}-{LAYOUT}-mid.png")
+    print(out, len(frames), W, H)
+
+
+if __name__ == "__main__":
+    main()
