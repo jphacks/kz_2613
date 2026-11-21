@@ -30,3 +30,6 @@ export interface PcInfo {
 }
 
 export interface LogEntry {t:number;kind:string;burst?:boolean;slot?:string;cmd?:string;reason?:string;mode?:string;[key:string]:unknown}
+
+export interface InjectionNotice {out:string;state:'down'|'up';slot:string;ok:boolean;label:string}
+export interface LookNotice {dx:number;dy:number;slot:string}

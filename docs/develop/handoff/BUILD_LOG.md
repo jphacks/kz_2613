@@ -1661,3 +1661,10 @@
 - npm ci / npm run build成功。product-web-test（diagnostics-test追加）成功。全CI相当Node試験はauxiliary-pages-smoke以外成功（protocol-sim 60/60、shutdown、input-probe 12/12含む）。受信互換修正後にproduct-web-testと実headless Chromeのoverlay/diagnosticsスモークを再実行し成功。後者は1005件受信→古い5件除去・文字列escape・phase操作・確認取消時非送信・再接続・pagehide破棄を含む。
 - desktop build/test（3成功）、package.ps1 -Out data/local/package-b / package-smoke成功。hostの初回再構築は検証シェルにPerl/libclangを設定していなかったため失敗した。SETUP_WINDOWSの環境を再設定したhost build/testは再実行中（第三者ライブラリの再構築）。Rust製品ソースはPR-Aから変更していない。
 - Tauri実窓の共通起動・終了はPR-Aで確認済み。Android実Wi-Fiの前後比較はprivate設定なし、実入力照合は許可なしのため実施しない。iPhone・実指・Minecraft・実無線断は未確認。
+
+## 2026-11-09 — 利用者依頼による一時停止（#279）
+
+- PR-AはDraft #280、先端1702e60までpush済み。PR-Bは0a07f52をローカルのcodex/279-web-diagnosticsにコミット済み、未push・PR未作成。現在codex/279-web-pseudo-gameでPR-Cの変更を未コミットのまま保存した。
+- PR-CのWeb strict/buildとpseudo-game-testは成功。旧画面の12系列trace（通知/観測先着・down/up・保持時間・視点・未反映等）と一致し、破棄後timer/frameは0。PR-Cの全CI相当スイート・新画面実ブラウザ・配布・実窓は未実施。
+- PR-Bのhost再構築は、Perl/libclangの設定不足で初回失敗、設定後のdatachannel-sys再構築は利用者の停止依頼により中断（終了コード1）。build/testの再実行が必要。Rust製品ソースはPR-Aと同一。PR-Bのdesktop build/test・package-smokeと、code:null修正後のproduct-web-test/overlay・diagnostics実ブラウザ試験は成功済み。
+- 検証用プロセスを終了。元の作業ツリーを変更せず、未コミット差分は保持。再開情報は元ツリーの data/local/codex-handoff/web-structure-resume.md に保存した。mainの更新・マージ・Issue close・リリースはしていない。

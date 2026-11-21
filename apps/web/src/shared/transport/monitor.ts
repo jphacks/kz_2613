@@ -27,6 +27,7 @@ export function createMonitor(options:Options){
   }
   connect();
   return {
+    isOpen:()=>!disposed&&current?.readyState===1,
     send(message:MonitorCommand){if(!disposed&&current?.readyState===1)current.send(JSON.stringify(message));},
     dispose(){if(disposed)return;disposed=true;clearTimeout(timer);const socket=current;current=undefined;if(socket){socket.onopen=socket.onmessage=socket.onclose=socket.onerror=null;socket.close();}},
   };

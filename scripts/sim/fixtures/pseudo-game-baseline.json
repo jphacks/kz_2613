@@ -1,0 +1,725 @@
+[
+  {
+    "name": "初期状態",
+    "stats": {
+      "sInj": "",
+      "sOk": "",
+      "sMiss": "",
+      "sAvg": "",
+      "sMax": "",
+      "sHold": "",
+      "lookInj": "",
+      "lookRecv": "",
+      "lookRatio": "",
+      "phase": "ロビー（ホストのリモコン操作）",
+      "inj": "注入: 有効（テスト）",
+      "focus": "この画面: 選択中",
+      "lock": "マウス: 未固定"
+    },
+    "log": [
+      "7:13:21.000 サーバーに接続"
+    ],
+    "observations": [],
+    "draws": [
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る"
+    ]
+  },
+  {
+    "name": "注入通知が先",
+    "stats": {
+      "sInj": "1",
+      "sOk": "1",
+      "sMiss": "0",
+      "sAvg": "0.0ms",
+      "sMax": "0.0ms",
+      "sHold": "-",
+      "lookInj": "0 / 0",
+      "lookRecv": "0 / 0",
+      "lookRatio": "-",
+      "phase": "ロビー（ホストのリモコン操作）",
+      "inj": "注入: 有効（テスト）",
+      "focus": "この画面: 選択中",
+      "lock": "マウス: 未固定"
+    },
+    "log": [
+      "7:13:21.000 サーバーに接続",
+      "7:13:21.000 P1     W down → 受信OK (+0.0ms)"
+    ],
+    "observations": [],
+    "draws": [
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る"
+    ]
+  },
+  {
+    "name": "解放と保持時間",
+    "stats": {
+      "sInj": "2",
+      "sOk": "2",
+      "sMiss": "0",
+      "sAvg": "0.0ms",
+      "sMax": "0.0ms",
+      "sHold": "-",
+      "lookInj": "0 / 0",
+      "lookRecv": "0 / 0",
+      "lookRatio": "-",
+      "phase": "ロビー（ホストのリモコン操作）",
+      "inj": "注入: 有効（テスト）",
+      "focus": "この画面: 選択中",
+      "lock": "マウス: 未固定"
+    },
+    "log": [
+      "7:13:21.000 サーバーに接続",
+      "7:13:21.000 P1     W down → 受信OK (+0.0ms)",
+      "7:13:21.080 P1     W up   → 受信OK (+0.0ms)"
+    ],
+    "observations": [],
+    "draws": [
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る"
+    ]
+  },
+  {
+    "name": "観測が先",
+    "stats": {
+      "sInj": "3",
+      "sOk": "3",
+      "sMiss": "0",
+      "sAvg": "6.7ms",
+      "sMax": "20.0ms",
+      "sHold": "80ms",
+      "lookInj": "0 / 0",
+      "lookRecv": "0 / 0",
+      "lookRatio": "-",
+      "phase": "ロビー（ホストのリモコン操作）",
+      "inj": "注入: 有効（テスト）",
+      "focus": "この画面: 選択中",
+      "lock": "マウス: 未固定"
+    },
+    "log": [
+      "7:13:21.000 サーバーに接続",
+      "7:13:21.000 P1     W down → 受信OK (+0.0ms)",
+      "7:13:21.080 P1     W up   → 受信OK (+0.0ms)",
+      "7:13:21.100 P1     左クリック down → 受信OK (-20.0ms)"
+    ],
+    "observations": [],
+    "draws": [
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る"
+    ]
+  },
+  {
+    "name": "マウス解放",
+    "stats": {
+      "sInj": "4",
+      "sOk": "4",
+      "sMiss": "0",
+      "sAvg": "5.0ms",
+      "sMax": "20.0ms",
+      "sHold": "80ms",
+      "lookInj": "0 / 0",
+      "lookRecv": "0 / 0",
+      "lookRatio": "-",
+      "phase": "ロビー（ホストのリモコン操作）",
+      "inj": "注入: 有効（テスト）",
+      "focus": "この画面: 選択中",
+      "lock": "マウス: 未固定"
+    },
+    "log": [
+      "7:13:21.000 サーバーに接続",
+      "7:13:21.000 P1     W down → 受信OK (+0.0ms)",
+      "7:13:21.080 P1     W up   → 受信OK (+0.0ms)",
+      "7:13:21.100 P1     左クリック down → 受信OK (-20.0ms)",
+      "7:13:21.180 P1     左クリック up   → 受信OK (+0.0ms)"
+    ],
+    "observations": [],
+    "draws": [
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る"
+    ]
+  },
+  {
+    "name": "ホイール",
+    "stats": {
+      "sInj": "5",
+      "sOk": "5",
+      "sMiss": "0",
+      "sAvg": "4.0ms",
+      "sMax": "20.0ms",
+      "sHold": "80ms",
+      "lookInj": "0 / 0",
+      "lookRecv": "0 / 0",
+      "lookRatio": "-",
+      "phase": "ロビー（ホストのリモコン操作）",
+      "inj": "注入: 有効（テスト）",
+      "focus": "この画面: 選択中",
+      "lock": "マウス: 未固定"
+    },
+    "log": [
+      "7:13:21.000 サーバーに接続",
+      "7:13:21.000 P1     W down → 受信OK (+0.0ms)",
+      "7:13:21.080 P1     W up   → 受信OK (+0.0ms)",
+      "7:13:21.100 P1     左クリック down → 受信OK (-20.0ms)",
+      "7:13:21.180 P1     左クリック up   → 受信OK (+0.0ms)",
+      "7:13:21.180 P1     ホイール↓ down → 受信OK (+0.0ms)"
+    ],
+    "observations": [],
+    "draws": [
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る"
+    ]
+  },
+  {
+    "name": "視点照合",
+    "stats": {
+      "sInj": "5",
+      "sOk": "5",
+      "sMiss": "0",
+      "sAvg": "4.0ms",
+      "sMax": "20.0ms",
+      "sHold": "80ms",
+      "lookInj": "6 / -2",
+      "lookRecv": "0 / 0",
+      "lookRatio": "0.00",
+      "phase": "ロビー（ホストのリモコン操作）",
+      "inj": "注入: 有効（テスト）",
+      "focus": "この画面: 選択中",
+      "lock": "マウス: 未固定"
+    },
+    "log": [
+      "7:13:21.000 サーバーに接続",
+      "7:13:21.000 P1     W down → 受信OK (+0.0ms)",
+      "7:13:21.080 P1     W up   → 受信OK (+0.0ms)",
+      "7:13:21.100 P1     左クリック down → 受信OK (-20.0ms)",
+      "7:13:21.180 P1     左クリック up   → 受信OK (+0.0ms)",
+      "7:13:21.180 P1     ホイール↓ down → 受信OK (+0.0ms)"
+    ],
+    "observations": [],
+    "draws": [
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る"
+    ]
+  },
+  {
+    "name": "物理入力の分類",
+    "stats": {
+      "sInj": "5",
+      "sOk": "5",
+      "sMiss": "0",
+      "sAvg": "4.0ms",
+      "sMax": "20.0ms",
+      "sHold": "80ms",
+      "lookInj": "6 / -2",
+      "lookRecv": "0 / 0",
+      "lookRatio": "0.00",
+      "phase": "ロビー（ホストのリモコン操作）",
+      "inj": "注入: 有効（テスト）",
+      "focus": "この画面: 選択中",
+      "lock": "マウス: 未固定"
+    },
+    "log": [
+      "7:13:21.000 サーバーに接続",
+      "7:13:21.000 P1     W down → 受信OK (+0.0ms)",
+      "7:13:21.080 P1     W up   → 受信OK (+0.0ms)",
+      "7:13:21.100 P1     左クリック down → 受信OK (-20.0ms)",
+      "7:13:21.180 P1     左クリック up   → 受信OK (+0.0ms)",
+      "7:13:21.180 P1     ホイール↓ down → 受信OK (+0.0ms)",
+      "7:13:21.700 手元     A down（PC の物理キーボード / マウス）"
+    ],
+    "observations": [
+      {
+        "type": "observe",
+        "events": [
+          {
+            "out": "KEY_W",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "KEY_W",
+            "state": "up",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "MOUSE_L",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": -20
+          },
+          {
+            "out": "MOUSE_L",
+            "state": "up",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "WHEEL_DOWN",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          }
+        ]
+      }
+    ],
+    "draws": [
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る"
+    ]
+  },
+  {
+    "name": "非選択は未反映に数えない",
+    "stats": {
+      "sInj": "6",
+      "sOk": "5",
+      "sMiss": "0",
+      "sAvg": "4.0ms",
+      "sMax": "20.0ms",
+      "sHold": "80ms",
+      "lookInj": "6 / -2",
+      "lookRecv": "6 / -2",
+      "lookRatio": "1.00",
+      "phase": "ロビー（ホストのリモコン操作）",
+      "inj": "注入: 有効（テスト）",
+      "focus": "この画面: 非選択（クリックで選択）",
+      "lock": "マウス: 未固定"
+    },
+    "log": [
+      "7:13:21.000 サーバーに接続",
+      "7:13:21.000 P1     W down → 受信OK (+0.0ms)",
+      "7:13:21.080 P1     W up   → 受信OK (+0.0ms)",
+      "7:13:21.100 P1     左クリック down → 受信OK (-20.0ms)",
+      "7:13:21.180 P1     左クリック up   → 受信OK (+0.0ms)",
+      "7:13:21.180 P1     ホイール↓ down → 受信OK (+0.0ms)",
+      "7:13:21.700 手元     A down（PC の物理キーボード / マウス）",
+      "7:13:22.300 P1     W down → 注入（この画面は非選択のため照合対象外）"
+    ],
+    "observations": [
+      {
+        "type": "observe",
+        "events": [
+          {
+            "out": "KEY_W",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "KEY_W",
+            "state": "up",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "MOUSE_L",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": -20
+          },
+          {
+            "out": "MOUSE_L",
+            "state": "up",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "WHEEL_DOWN",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          }
+        ]
+      }
+    ],
+    "draws": [
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る"
+    ]
+  },
+  {
+    "name": "未反映の分類",
+    "stats": {
+      "sInj": "7",
+      "sOk": "5",
+      "sMiss": "1",
+      "sAvg": "4.0ms",
+      "sMax": "20.0ms",
+      "sHold": "80ms",
+      "lookInj": "6 / -2",
+      "lookRecv": "6 / -2",
+      "lookRatio": "1.00",
+      "phase": "ロビー（ホストのリモコン操作）",
+      "inj": "注入: 有効（テスト）",
+      "focus": "この画面: 選択中",
+      "lock": "マウス: 未固定"
+    },
+    "log": [
+      "7:13:21.000 サーバーに接続",
+      "7:13:21.000 P1     W down → 受信OK (+0.0ms)",
+      "7:13:21.080 P1     W up   → 受信OK (+0.0ms)",
+      "7:13:21.100 P1     左クリック down → 受信OK (-20.0ms)",
+      "7:13:21.180 P1     左クリック up   → 受信OK (+0.0ms)",
+      "7:13:21.180 P1     ホイール↓ down → 受信OK (+0.0ms)",
+      "7:13:21.700 手元     A down（PC の物理キーボード / マウス）",
+      "7:13:22.300 P1     W down → 注入（この画面は非選択のため照合対象外）",
+      "7:13:22.900 P1     W down → 未反映（この画面で受信できず）"
+    ],
+    "observations": [
+      {
+        "type": "observe",
+        "events": [
+          {
+            "out": "KEY_W",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "KEY_W",
+            "state": "up",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "MOUSE_L",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": -20
+          },
+          {
+            "out": "MOUSE_L",
+            "state": "up",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "WHEEL_DOWN",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          }
+        ]
+      }
+    ],
+    "draws": [
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る"
+    ]
+  },
+  {
+    "name": "注入失敗",
+    "stats": {
+      "sInj": "7",
+      "sOk": "5",
+      "sMiss": "1",
+      "sAvg": "4.0ms",
+      "sMax": "20.0ms",
+      "sHold": "80ms",
+      "lookInj": "6 / -2",
+      "lookRecv": "6 / -2",
+      "lookRatio": "1.00",
+      "phase": "ロビー（ホストのリモコン操作）",
+      "inj": "注入: 有効（テスト）",
+      "focus": "この画面: 選択中",
+      "lock": "マウス: 未固定"
+    },
+    "log": [
+      "7:13:21.000 サーバーに接続",
+      "7:13:21.000 P1     W down → 受信OK (+0.0ms)",
+      "7:13:21.080 P1     W up   → 受信OK (+0.0ms)",
+      "7:13:21.100 P1     左クリック down → 受信OK (-20.0ms)",
+      "7:13:21.180 P1     左クリック up   → 受信OK (+0.0ms)",
+      "7:13:21.180 P1     ホイール↓ down → 受信OK (+0.0ms)",
+      "7:13:21.700 手元     A down（PC の物理キーボード / マウス）",
+      "7:13:22.300 P1     W down → 注入（この画面は非選択のため照合対象外）",
+      "7:13:22.900 P1     W down → 未反映（この画面で受信できず）",
+      "7:13:22.983 P1 KEY_W down → SendInput 失敗"
+    ],
+    "observations": [
+      {
+        "type": "observe",
+        "events": [
+          {
+            "out": "KEY_W",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "KEY_W",
+            "state": "up",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "MOUSE_L",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": -20
+          },
+          {
+            "out": "MOUSE_L",
+            "state": "up",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "WHEEL_DOWN",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          }
+        ]
+      }
+    ],
+    "draws": [
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る"
+    ]
+  },
+  {
+    "name": "ワールドとジャンプ",
+    "stats": {
+      "sInj": "7",
+      "sOk": "5",
+      "sMiss": "1",
+      "sAvg": "4.0ms",
+      "sMax": "20.0ms",
+      "sHold": "80ms",
+      "lookInj": "6 / -2",
+      "lookRecv": "6 / -2",
+      "lookRatio": "1.00",
+      "phase": "ロビー（ホストのリモコン操作）",
+      "inj": "注入: 有効（テスト）",
+      "focus": "この画面: 選択中",
+      "lock": "マウス: 固定中"
+    },
+    "log": [
+      "7:13:21.000 サーバーに接続",
+      "7:13:21.000 P1     W down → 受信OK (+0.0ms)",
+      "7:13:21.080 P1     W up   → 受信OK (+0.0ms)",
+      "7:13:21.100 P1     左クリック down → 受信OK (-20.0ms)",
+      "7:13:21.180 P1     左クリック up   → 受信OK (+0.0ms)",
+      "7:13:21.180 P1     ホイール↓ down → 受信OK (+0.0ms)",
+      "7:13:21.700 手元     A down（PC の物理キーボード / マウス）",
+      "7:13:22.300 P1     W down → 注入（この画面は非選択のため照合対象外）",
+      "7:13:22.900 P1     W down → 未反映（この画面で受信できず）",
+      "7:13:22.983 P1 KEY_W down → SendInput 失敗"
+    ],
+    "observations": [
+      {
+        "type": "observe",
+        "events": [
+          {
+            "out": "KEY_W",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "KEY_W",
+            "state": "up",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "MOUSE_L",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": -20
+          },
+          {
+            "out": "MOUSE_L",
+            "state": "up",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          },
+          {
+            "out": "WHEEL_DOWN",
+            "state": "down",
+            "slot": "P1",
+            "result": "ok",
+            "delay": 0
+          }
+        ]
+      }
+    ],
+    "draws": [
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°",
+      "Re:Cooplay テストワールド",
+      "ワールドに入る",
+      "設定",
+      "終了",
+      "↑↓ で選択 / Enter で決定 / Esc で戻る",
+      "上下",
+      "向き 270°"
+    ]
+  }
+]
