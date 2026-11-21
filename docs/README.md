@@ -221,6 +221,7 @@ powershell -ExecutionPolicy Bypass -File scripts/windows/build-installer.ps1
 - [導入・接続](getting-started.md)：必要環境、入手・展開、起動、QR参加
 - [使い方](usage.md)：ゲーム選択、分担確認、開始・一時停止・役割交換・終了
 - [困ったとき](troubleshooting.md)：起動・接続・通信・入力のトラブル対処
+- [READMEのデザイン](readme-design.md)：製品紹介（README）の見出し・図・アニメーションに込めた狙いと、デザインの判断の理由
 - [動作確認の範囲](verification.md)：実機確認済みタイトル・人数、自動試験、未確認条件の区別
 - [開発資料](develop/README.md)：Web構成設計、要件定義、意思決定記録、BUILD_LOG、CI検証範囲
 

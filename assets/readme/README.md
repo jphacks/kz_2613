@@ -2,7 +2,7 @@
 
 [公開素材一覧](../README.md) ／ [製品README](../../README.md)
 
-製品READMEで使う図版です。4色のスマホ型キャラクター（P1青・P2緑・P3紫・P4赤）は、アプリの [キャラクター画像](../../apps/web/public/assets/characters/) をもとにSVGで描き直しています。
+製品READMEで使う図版です。デザインの狙いと判断の理由は [READMEのデザイン](../../docs/readme-design.md) にあります。4色のスマホ型キャラクター（P1青・P2緑・P3紫・P4赤）は、アプリの [キャラクター画像](../../apps/web/public/assets/characters/) をもとにSVGで描き直しています。
 
 | ファイル | 内容 |
 |:--|:--|
