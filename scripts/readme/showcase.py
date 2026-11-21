@@ -658,6 +658,7 @@ LANES = {
     "ws": ("WebSocket /ws", "TCP・JSON（参加・状態・入力）"),
 }
 # スマホ用の狭い箱では、英字の名前が途中で切れないよう、改行の位置を決めておく
+NARROW_GAME_TITLE = "既存の"+chr(10)+"PCゲーム"
 NARROW_SUBS = {"focus": "GetForeground\nWindow", "game": "前面のときだけ\n入力", "queue": "60ms・50ms・\n視点4ms",
                "detect": "MiniLM＋\nTransformer", "data": "ゲーム設定・\n操作定義・重み", "dc": "UDP・順序なし・再送なし\n（入力・視点）"}
 PHONE_NOTE = "React・TypeScript（P1はホストを兼ねる）"
@@ -678,6 +679,7 @@ def arch_box_c(key, x, y, w, t, h=None):
     """スマホ用の箱。アイコンを小さくし、技術名と説明を下に重ねる。(svg, 高さ) を返す。"""
     kind, color, title, sub = ARCH[key]
     sub = NARROW_SUBS.get(key, sub)
+    title = NARROW_GAME_TITLE if key == "game" else title
     icon = node_icon("game", 0, 0, color) if kind == "game" else tech_icon(kind, 0, 0, color)
     ts, nt = para(x + 40, y + 24, title, 13, t["ink"], w - 48, 17, 700)
     dy = y + 24 + max(nt - 1, 0) * 17 + 21
@@ -832,7 +834,7 @@ def architecture(t, narrow=False):
         poly = [(hx0, yt), (hx1, yt), (hx1, host_bottom), (16, host_bottom), (16, rb - 16), (hx0, rb - 16)]
         dpoly = "M" + "L".join(f"{x:.1f} {y:.1f}" for x, y in poly) + "Z"
         pill, _ = host_pill(hx0 + 44, yt, t)
-        b.insert(0, f'<path d="{dpoly}" fill="none" stroke="{HOST_C}" stroke-width="1.5" stroke-dasharray="4 4" stroke-linejoin="round"/>' + pill)
+        b.insert(0, f'<path d="{dpoly}" fill="none" stroke="{HOST_C}" stroke-width="1.5" stroke-dasharray="4 4" stroke-linejoin="round"/>')
         b.insert(0, group(0, p0, W, p1 - p0, "Windows 11 PC", t))
         # 矢印（点がたどる道は太く、色を付ける）
         sx = 400
@@ -924,7 +926,7 @@ def architecture(t, narrow=False):
         poly = [(pad - 10, yt), (W - pad + 10, yt), (W - pad + 10, hb), (mid, hb), (mid, fb), (pad - 10, fb)]
         dpoly = "M" + "L".join(f"{x:.1f} {y:.1f}" for x, y in poly) + "Z"
         pill, _ = host_pill(pad, yt, t)
-        b.insert(0, f'<path d="{dpoly}" fill="none" stroke="{HOST_C}" stroke-width="1.5" stroke-dasharray="4 4" stroke-linejoin="round"/>' + pill)
+        b.insert(0, f'<path d="{dpoly}" fill="none" stroke="{HOST_C}" stroke-width="1.5" stroke-dasharray="4 4" stroke-linejoin="round"/>')
         b.insert(0, group(0, p0, W, p1 - p0, "Windows 11 PC", t))
         cx = W / 2
         rxx = pos["rtc"][0] + cwn / 2
@@ -969,7 +971,8 @@ def architecture(t, narrow=False):
            "PC上のデータ（ゲームの設定・操作定義・AIの重み）、SendInput（Win32 API）、既存のPCゲーム（前面のときだけ入力）がある。"
            "ボタン入力は、スマホ → DataChannel → WebRTC → hub → 出力キュー → SendInput → 既存のPCゲームの順に届き、図ではこの道を1つの点がたどる。"
            "WebSocketはaxumを通ってhubとやり取りし、PCアプリはaxumとつながり、Rustホストを起動・監視する。ゲーム解析・分担AIはPC上のデータを読み、分担をhubへ渡す。")
-    return finish_css(W, H, b + [dot], t, alt, PK_CSS)
+    # Rustホストの札は、線より手前に描く（線が札の文字を横切らないように）
+    return finish_css(W, H, b + [pill, dot], t, alt, PK_CSS)
 
 
 def arch_box_c_lane(key, x, y, w, t, h=None):
