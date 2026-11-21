@@ -138,6 +138,8 @@ def convert(s):
     s = re.sub(r'(#{2,3} <a id="[^"]+"></a>)(' + pic + ")",
                lambda m: m.group(1) + re.sub(r"[（(].*", "", alt_of(m.group(2))) if "part-" in m.group(2)
                else m.group(1) + head_text(m.group(2), alt_of(m.group(2))), s, flags=re.S)
+    # 実画面の録画（アニメーション）は、直前の文章で内容を説明しているので、文字版では外す
+    s = re.sub(r'<p align="center">\n<picture>(?:(?!</picture>).)*assets/readme/recordings/.*?</picture>\n</p>\n', "", s, flags=re.S)
     # 図
     def fig(m):
         block = m.group(0)

@@ -10,6 +10,28 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
 Hack Dayの開発中に撮影した3人での共同操作です。
 
+## 実画面の録画
+
+PCアプリとAndroid実機の画面を、2026年11月21日に録画しました。指の位置の円とPCのカーソルの輪は、見やすくするために録画後に重ねています。
+
+**P1のスマホだけで、ゲームの選択からランチャーの「プレイ」まで**
+
+<div align="center">
+<picture>
+  <source media="(max-width: 700px)" srcset="../assets/readme/recordings/remote-start-narrow.webp">
+  <img src="../assets/readme/recordings/remote-start-wide.webp" width="760" alt="実画面の録画。P1のスマホのタッチパッドでPCのカーソルを動かし、Minecraftを選んで分担を決め、ゲームを起動する。開いた公式ランチャーの「プレイ」もスマホから押す">
+</picture>
+</div>
+
+**持ち方に合わせるUI編集**（つまみで縦横を変え、重なる場所では置ける場所を枠で示す）
+
+<div align="center">
+<picture>
+  <source media="(max-width: 700px)" srcset="../assets/readme/recordings/layout-edit-narrow.webp">
+  <img src="../assets/readme/recordings/layout-edit-wide.webp" width="640" alt="実画面の録画。配置の編集で、Spaceキーのつまみを引いて縦と横を縮め、Ctrlキーを重ねると置ける場所が点線の枠で示され、指を離すとそこに収まる。空いた所へShiftキーを広げて保存する">
+</picture>
+</div>
+
 ## PCから参加・ゲーム選択・開始まで
 
 

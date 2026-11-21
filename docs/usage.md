@@ -58,6 +58,15 @@ flowchart LR
 |:--:|:--:|
 | <a href="screenshots/device/pc-10-roles.jpg"><img src="screenshots/device/pc-10-roles.jpg" width="440" alt="PCの分担画面。プレイヤー1がキー、2がマウス移動、3がクリック・キー・ホイール"></a> | <a href="screenshots/device/pc-12-roles-confirmed.jpg"><img src="screenshots/device/pc-12-roles-confirmed.jpg" width="440" alt="分担決定の画面。ゲームを起動するボタン"></a> |
 
+ゲームの選択から、分担の決定・起動・ランチャーの「プレイ」まで、P1のスマホだけで進める様子です（PCアプリとAndroid実機の画面を同時に録画）。
+
+<div align="center">
+<picture>
+  <source media="(max-width: 700px)" srcset="../assets/readme/recordings/remote-start-narrow.webp">
+  <img src="../assets/readme/recordings/remote-start-wide.webp" width="760" alt="実画面の録画。P1のスマホのタッチパッドでPCのカーソルを動かし、Minecraftを選んで分担を決め、ゲームを起動する。開いた公式ランチャーの「プレイ」もスマホから押す">
+</picture>
+</div>
+
 ---
 
 ## 4. 「分担操作開始」で共同プレイを始める
@@ -74,6 +83,14 @@ flowchart LR
 ### スマホ操作画面のカスタマイズ（個人レイアウト編集・横持ち設定）
 
 - **ボタンの位置・大きさ・複製の編集**：プレイ画面右上の**ペンアイコン（配置を編集）**を押すと、編集中は入力を止めた状態で、ボタンやスティックをドラッグで移動したり、四隅・辺のハンドルで縦横サイズを変えたり、長押しメニューから同じボタンを複製・非表示にしたりできます。「保存」を押すとそのスマホに保存されます。
+
+<div align="center">
+<picture>
+  <source media="(max-width: 700px)" srcset="../assets/readme/recordings/layout-edit-narrow.webp">
+  <img src="../assets/readme/recordings/layout-edit-wide.webp" width="640" alt="実画面の録画。配置の編集で、Spaceキーのつまみを引いて縦と横を縮め、Ctrlキーを重ねると置ける場所が点線の枠で示され、指を離すとそこに収まる。空いた所へShiftキーを広げて保存する">
+</picture>
+</div>
+
 - **回転ロックのまま横持ちで遊ぶ場合**：スマホ右上のメニュー（`…`）→「持ち方」から **「横持ち（左に90度）」** または **「横持ち（右に90度）」** を選ぶと、手元の向きに合わせてスティックと視点の上下左右が切り替わります。
 
 ---

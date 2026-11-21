@@ -152,9 +152,23 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 
 P1のスマホをタッチパッド付きのリモコンにして、ゲームの選択・ランチャーの操作・起動・開始まで手元で進められるようにしました。試遊での意見を受けて、参加者のワンタップ退出と、全員リセット時の一時Wi-Fiへの自動切り替えも加えました。
 
+<p align="center">
+<picture>
+  <source media="(max-width: 700px)" srcset="assets/readme/recordings/remote-start-narrow.webp">
+  <img src="assets/readme/recordings/remote-start-wide.webp" width="838" alt="実画面の録画。P1のスマホのタッチパッドでPCのカーソルを動かし、ゲーム一覧でMinecraftを選ぶ。分担を決めて「ゲームを起動する」を押すと公式ランチャーが開き、ランチャーの「プレイ」もスマホから押す。PCアプリとAndroid実機の画面を同時に録画したもの">
+</picture>
+</p>
+
 #### 2. 意味のまとまりで分ける分担と、持ち方に合わせるUI編集
 
 キーを等分するのではなく、「移動」「視点」「照準と攻撃」のように、意味のつながりと負担の釣り合いを見て独自AIが配分します。「持ち方に合わせてボタンの配置を変えたい」という試遊者の声から、スマホ上でボタンの位置と縦横のサイズを変えられるようにしました。
+
+<p align="center">
+<picture>
+  <source media="(max-width: 700px)" srcset="assets/readme/recordings/layout-edit-narrow.webp">
+  <img src="assets/readme/recordings/layout-edit-wide.webp" width="838" alt="実画面の録画。移動の担当のスマホで配置の編集を始め、Spaceキーのつまみを引いて縦と横を縮める。Ctrlキーを動かしてSpaceキーに重ねると、置ける場所が点線の枠で示され、指を離すとそこに収まる。空いた所へShiftキーを広げ、保存する。Android実機の画面を録画したもの">
+</picture>
+</p>
 
 #### 3. 違和感のない低遅延
 
