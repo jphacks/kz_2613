@@ -174,12 +174,31 @@ PCのWindowsモバイルホットスポットでスマホと直接つなぎ、We
 
 各スマートフォンのブラウザで行った操作を、ローカルWi-Fi経由でPC上のRustホストが受け取ります。ホストは参加者ごとの担当・入力の順序・入力先のウィンドウを確かめて1つの入力にまとめ、Windows標準の`SendInput` APIでPCゲームへ送ります。
 
-- **スマホ（ブラウザ）2〜4台：** P1 移動・P2 視点・P3 アクション
-- **スマホ → PC：** 操作を WebSocket と WebRTC で Rustホストへ送る
-- **PC → スマホ：** Rustホストが役割と準備状況を返す
-- **Rustホスト（役割・入力の統合） ⇄ PCアプリ（Tauri）：** 参加・準備状況を表示し、ゲーム選択・開始・停止を受け取る
-- **Rustホスト → Windows API（SendInput）：** 統合した入力を渡す
-- **Windows API → 既存のPCゲーム（Minecraftなど）：** キーボード・マウス操作として入力する
+**スマホ（ブラウザ）2〜4台：** React画面（/）を標準のブラウザで開く。P1がホストを兼ね、PCのリモコンにもなる。Pointer Eventsの入力処理は、画面の描画から分けている。
+
+**ローカルWi-Fi（Windowsのモバイルホットスポット）：** インターネットとSTUN/TURNサーバーは使わない。ホットスポットはRustホストが Tethering API で起動する。
+
+| 通信の経路 | 流れるデータ |
+|---|---|
+| WebRTC DataChannel「fast」（UDP・順序なし・再送なし） | スマホ→PC：ボタン入力（未確認の直近分を束ねて送る）と視点（30Hz）。PC→スマホ：遅延測定の応答 |
+| WebSocket /ws（JSON・TCP） | スマホ→PC：参加・コマンド・ボタン入力（通し番号で重複を除く）・WebRTCの仲介。PC→スマホ：役割と状態 |
+
+**Windows 11 PC：** Rustホスト（recooplay-host.exe、Tokio・axum、ポート8080）と、その外の部品。
+
+| 部品 | 役割 |
+|---|---|
+| PCアプリ | recooplay-desktop.exe。Tauri 2・WebView2。PC画面（/app）と観客向けの表示（/overlay）を開き、Rustホストを子プロセスとして起動・監視する |
+| HTTP・WebSocket（axum） | 画面（apps/web/dist）の配信と /ws。Originを確かめて受け付ける |
+| WebRTC（libdatachannel） | DataChannelの受け口。入力と視点をイベントで hub へ渡す |
+| hubスレッド（1本） | 接続と役割の認可、セッションの状態、入力の順序・重複・鮮度（500ms）、epoch、全解放。緊急停止（Ctrl+Alt+F12）は、専用スレッドから受ける |
+| ゲームの検出・分担AI | ランチャー7系統・エンジン19系統から操作を読み、MiniLM＋2層Transformerで2〜4人に配分 |
+| 入力先の確認 | 100msごとに対象のゲームが前面か確かめ、外れたら全解放。開始時は前面へ出す |
+| 出力キュー・視点の補間 | 最低押下60ms・最低解放50msを守り、視点は4msごとに補間する |
+| Win32 SendInput | スキャンコードのキー、相対マウス移動、左右ボタン、ホイール |
+| PC上のデータ | ランチャーの情報（レジストリ）、ゲームの設定ファイル、同梱の操作定義JSONと分担AIの重み |
+| 既存のPCゲーム | 改造・MODなし。前面にあるときだけ入力を受け取る |
+
+データの流れ：スマホ → DataChannel → WebRTC → hub、スマホ ⇄ WebSocket ⇄ axum ⇄ hub、PCアプリ ⇄ axum、PC上のデータ → ゲームの検出・分担AI → hub → 出力キュー → SendInput → 既存のPCゲーム。制御：PCアプリが Rustホストを子プロセスとして起動・監視し、標準入力で終了・停止を伝える。入力先の確認は、hub と既存のPCゲームの前面の状態をつなぐ。
 
 ### <a id="活用した技術"></a>10 活用した技術
 

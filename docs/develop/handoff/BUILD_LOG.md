@@ -2926,3 +2926,15 @@
 - 追記：利用者の判断で、`docs/readme-design.md` から今のREADMEにないものへの言及（ヒーロー画像、GitHubの Note、区切りの帯、作品名の見出しの比較案、キャラクターが生えてくる動き、以前のffmpegの書き出し、試した形の移り変わりの表）を外し、今の形の説明だけにした。`python scripts/check-public-docs.py` PASS。
 - 追記：利用者の指摘で、`docs/readme-design.md` の「ほかのREADMEに持ち出すときのチェックリスト」から、遊び心のテーマが前提の項目（最初は「ふつう」に見せる、見たことのない要素を増やす、遊びの絵）を外し、どのREADMEにも使える書き方に直した。外した理由を節の冒頭に1文で書いた。`python scripts/check-public-docs.py` PASS。
 - 追記：利用者の指示で、READMEの「技術仕様書」の資料一覧の表の最後に `docs/readme-design.md` へのリンクを足した。冒頭は「ぱっと見ふつう」の錯覚と目次までの流れを壊すため、図と図の間は文章を挟まないため避け、文章の場所である表にした。`python scripts/readme/text_readme.py` で `README-text.md` も書き出し直した。`python scripts/check-public-docs.py`・`python scripts/verify_overlay.py` PASS。
+
+## 2026-11-21 — READMEのシステム構成の図を詳しく正確にし、データの通り道をアニメーションにする（Claude Code）
+
+- 利用者の依頼で、`scripts/readme/showcase.py` の `architecture` を作り直した。図に書く事実は、次のコードで確かめた。
+  - 待ち受け：`apps/host-rs/src/main.rs`（0.0.0.0:8080、`/ws`・`/api/*`・`apps/web/dist` の配信、hub は専用スレッド1本）、`config.rs`（既定ポート8080）
+  - 通信：`apps/web/src/shared/transport/fast-channel.ts`（DataChannel「fast」は `ordered:false`・`maxRetransmits:0`）、`apps/web/src/phone/runtime.ts`（ボタン入力は DataChannel と WebSocket の両方へ送り、未確認の直近分を束ねる。視点は DataChannel、だめなら WebSocket）、`rtc.rs`（ICE サーバーなし、コールバックは Event で hub へ）
+  - 数値：`freshness.rs`（500ms）、`input_manager.rs`（60ms・50ms）、`look.rs`（4ms）、`hub.rs`（前面の確認100ms）、`hotkey.rs`（Ctrl+Alt+F12）
+  - PCアプリ：`apps/desktop/src/main.rs`（子プロセスの起動・監視、標準入力の quit・stop、`/app` と `/overlay`）
+- データの流れは実線と、線の上を流れてループする点（SVG の `animateMotion`）で、確認・起動などの制御は破線で描く。「視差効果を減らす」の設定では点を消す。`<img>` で表示した SVG で点が動くことを、ヘッドレス Chrome で時間を変えた2枚の画像の差分で確かめた。
+- README の代替テキスト、`README-text.md`（`text_readme.py` の構成図の表）、`assets/readme/README.md`、`docs/readme-design.md` の動きの節を合わせて直した。
+- 確認：`python scripts/readme/check_text_size.py`・`python scripts/check-public-docs.py`・`python scripts/verify_overlay.py` PASS。`python scripts/readme/showcase.py` で書き出し直し、変わったのは構成図の4枚だけ。
+

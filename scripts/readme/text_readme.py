@@ -71,13 +71,22 @@ def focus():
 
 
 def architecture():
+    rows = [[sc.ARCH[k][2], sc.ARCH[k][3].replace("。\n", "。").replace("\n", "。")] for k in ("app", "axum", "rtc", "hub", "detect", "focus", "queue", "send", "data", "game")]
+    lanes = [[f"{title}（{sub}）", desc] for title, sub, desc in sc.LANES.values()]
     return "\n".join([
-        "- **スマホ（ブラウザ）2〜4台：** P1 移動・P2 視点・P3 アクション",
-        "- **スマホ → PC：** 操作を WebSocket と WebRTC で Rustホストへ送る",
-        "- **PC → スマホ：** Rustホストが役割と準備状況を返す",
-        "- **Rustホスト（役割・入力の統合） ⇄ PCアプリ（Tauri）：** 参加・準備状況を表示し、ゲーム選択・開始・停止を受け取る",
-        "- **Rustホスト → Windows API（SendInput）：** 統合した入力を渡す",
-        "- **Windows API → 既存のPCゲーム（Minecraftなど）：** キーボード・マウス操作として入力する"])
+        "**スマホ（ブラウザ）2〜4台：** " + "。".join(sc.PHONE_NOTES) + "。",
+        "",
+        "**ローカルWi-Fi（Windowsのモバイルホットスポット）：** " + sc.NET_NOTE + "。",
+        "",
+        table(["通信の経路", "流れるデータ"], lanes),
+        "",
+        "**Windows 11 PC：** Rustホスト（recooplay-host.exe、Tokio・axum、ポート8080）と、その外の部品。",
+        "",
+        table(["部品", "役割"], rows),
+        "",
+        "データの流れ：スマホ → DataChannel → WebRTC → hub、スマホ ⇄ WebSocket ⇄ axum ⇄ hub、PCアプリ ⇄ axum、"
+        "PC上のデータ → ゲームの検出・分担AI → hub → 出力キュー → SendInput → 既存のPCゲーム。"
+        "制御：PCアプリが Rustホストを子プロセスとして起動・監視し、標準入力で終了・停止を伝える。入力先の確認は、hub と既存のPCゲームの前面の状態をつなぐ。"])
 
 
 def techstack():
