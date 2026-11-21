@@ -141,7 +141,7 @@ def convert(s):
     # 図
     def fig(m):
         block = m.group(0)
-        name = re.search(r'src="assets/readme/([a-z-]+?)-light\.svg"', block).group(1)
+        name = re.search(r'src="assets/readme/([a-z-]+?)-light\.(?:svg|webp)"', block).group(1)
         if name == "footer":
             return "---\n\n**さあ、みんなで遊ぼう！** PCのゲームはそのままに、友達と集まったその場で協力プレイ。\n\n<sub>COMING SOON：一般公開に向けて準備中です。</sub>"
         if name not in FIGS:

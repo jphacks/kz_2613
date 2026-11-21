@@ -19,7 +19,7 @@ from compose import FPS, K, draw_touch, encode, read_frames, touches  # noqa: E4
 
 SRC = Path(sys.argv[3]) if len(sys.argv) > 3 else Path(".")
 OUT = Path(__file__).resolve().parents[3] / "assets" / "readme" / "recordings"
-W = 340
+W = 420  # 図の中のスマホ画面（最大で幅約200px）の2倍より少し大きく
 
 
 def first_change(video, crop, size, limit=12.0):

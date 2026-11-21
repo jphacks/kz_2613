@@ -124,11 +124,14 @@ def shot(name, w):
     """撮影画像を幅 w(px) に縮めたJPEGのdata URIと、縦横比（幅/高さ）。"""
     key = (name, w)
     if key not in _shot_cache and name.endswith(".webp"):
-        # 実画面の録画（アニメーションWebP）はそのまま埋め込む。動かない環境では最初のコマが出る
-        path = RECORDINGS / name
-        with Image.open(path) as im:
-            ratio = im.width / im.height
-        _shot_cache[key] = ("data:image/webp;base64," + base64.b64encode(path.read_bytes()).decode(), ratio)
+        # 実画面の録画は、最初のコマ（触る前の画面）を静止画として入れる。動きは recordings/bake.py が図ごとWebPに焼き込む
+        with Image.open(RECORDINGS / name) as anim:
+            first = anim.convert("RGB")
+        ratio = first.width / first.height
+        first = first.resize((w, round(w / ratio)), Image.LANCZOS)
+        buf = io.BytesIO()
+        first.save(buf, "JPEG", quality=82, optimize=True, progressive=True)
+        _shot_cache[key] = ("data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode(), ratio)
     if key not in _shot_cache:
         im = Image.open(SHOTS / name).convert("RGB")
         ratio = im.width / im.height
@@ -157,8 +160,9 @@ def phone(name, x, y, w, image, t):
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" rx="{r_out:.1f}" fill="#16181F" stroke="{edge}" stroke-width="1.2"/>'
             f'<clipPath id="{cid}"><rect x="{sx0:.1f}" y="{sy0:.1f}" width="{sw:.1f}" height="{sh:.1f}" rx="{r_in:.1f}"/></clipPath>'
             f'<image clip-path="url(#{cid})" x="{sx0:.1f}" y="{sy0:.1f}" width="{sw:.1f}" height="{sh:.1f}" '
-            f'preserveAspectRatio="xMidYMid slice" href="{uri}"/>'
-            f'<circle cx="{x + w / 2:.1f}" cy="{sy0 + bz * 1.1:.1f}" r="{max(2.2, w * .018):.1f}" fill="#16181F"/>'), h
+            + (f'data-recording="{image}" ' if image.endswith(".webp") else "")
+            + f'preserveAspectRatio="xMidYMid slice" href="{uri}"/>'
+            + f'<circle cx="{x + w / 2:.1f}" cy="{sy0 + bz * 1.1:.1f}" r="{max(2.2, w * .018):.1f}" fill="#16181F"/>'), h
 
 
 def finish(W, H, b, t, alt, top=10, bottom=30):
