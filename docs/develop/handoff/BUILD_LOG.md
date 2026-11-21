@@ -2911,3 +2911,10 @@
 - 改善：`scripts/readme/recordings/bake.py` の符号化を ffmpeg（libwebp_anim・品質90）から Pillow（libwebp 1.5 の WebPAnimEncoder・品質80・`minimize_size`）に替えて8本を焼き直した。元のコマとのPSNRは全8本で0.5〜1.4dB上がり、サイズは21〜24%減った（PC版の2本の計 2475KB→1895KB、スマホ版 1406KB→1092KB）。ffmpeg は RGB→YUV の変換を自前で行うため、同じ品質値でも劣化が大きかった。寸法・コマ数・透過は旧版と同じ。再生時間は旧版より約0.15秒短い（ffmpeg の concat が最後のコマを余分に足していた分で、今は録画の長さ＋0.6秒）。同じコマを並べて見ても差は見分けられなかった。ffmpeg は焼き込みに不要になった。
 - 変えなかったもの：フォントのBase64（必須で小さい）、静止画のSVG（gzipで計約150KB）、`controllers-*.svg`・`focus-*.svg`（焼き込みの下絵と文字の大きさの確認に使う）、明暗別のWebP（閲覧者は片方だけを読む）。AVIF（`<source type>` で併記はできる）は、ファイル数が倍になる手間とアニメーションの互換性の確認の負担に見合わないため採らなかった。`assets/readme/README.md` の、今は使っていない画像（`split-*`・`heads/head-*`）とWebPに替えた図の説明を実態に合わせ、埋め込みの判断を記した。
 - 確認：`python scripts/readme/check_text_size.py` PASS。PSNR・寸法・コマ数・再生時間・透過の比較は、作業用のスクリプト（リポジトリ外）で行った。
+
+## 2026-11-21 — READMEのデザインの考え方を資料にし、作品名の見出しが動き出す時刻を約5秒にする（Claude Code）
+
+- `docs/develop/design/readme-design.md` を追加した。「ぱっと見ふつうのREADME」から驚きを段階的に大きくする狙い、作品名の見出しをふつうの見出しに錯覚させる工夫（「※」の注釈の役割を含む）、色・文字・部品・見出しの階層・キャラクター・動き・実画面の見せ方を、利用者の判断の理由とともに記録した。
+- `scripts/readme/title.py`：止まった時間を5秒から3.5秒にした。赤が歩き出すのは動きの9%（約1.5秒）なので、表示から動き始めるまでが約6.5秒から約5秒になる。1周は22秒から20.5秒になる。`python scripts/readme/title.py` で `assets/readme/title-*.svg` の4枚を書き出した。
+- 確認：書き出したSVGで、赤のキーフレームが24.54%（20.5秒の約5.03秒）まで元の位置のままで、その後に動くことを確かめた。`python scripts/readme/check_text_size.py`：PASS。`python scripts/check-public-docs.py`：PASS（Markdown 18件、ローカル参照636件）。GitHub上での見た目の確認はPRで行う。
+

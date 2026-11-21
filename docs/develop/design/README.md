@@ -8,6 +8,7 @@
 
 - [ロゴ・アイコン](brand-assets.md)
 - [配色](color-palette.md)
+- [READMEのデザインの考え方](readme-design.md)
 - [原案と画面の対応](ui-reference-map.md)
 - [PC・スマホUIの検証結果](ui-validation.md)
 - [改良後UIの監査](improved-ui-audit-2026-10-25.md)
