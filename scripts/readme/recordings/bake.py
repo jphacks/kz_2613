@@ -7,8 +7,11 @@ SVGの中に動く画像を入れると、ブラウザは画像が1コマ進む�
 
 1. SVG（showcase.py の出力。録画は最初のコマ＝触る前の画面を静止画で入れ、data-recording で録画の名前を示す）を、ヘッドレスChromeで2倍の解像度・透明の背景で撮る
 2. スマホの画面の位置（<image> と角丸の clipPath）に、各録画のコマを重ねる（カメラの穴は覆わない）。録画はすべて同時に始め、短いものは最後のコマ（触っていない画面）で待つ
-3. ffmpeg（libwebp_anim）でアニメーションWebPにする。続けて同じコマはまとめる
-必要なもの：Chrome、ffmpeg、Pillow、numpy。出力は assets/readme/<図>-<版>.webp
+3. Pillow（libwebp の WebPAnimEncoder）でアニメーションWebPにする。続けて同じコマはまとめ、
+   コマの間で変わった矩形だけを書く（minimize_size）。品質80は、以前の ffmpeg（libwebp_anim・品質90）より
+   文字も録画も元の画像に近く（PSNRで0.5〜1.4dB上）、ファイルは21〜24%小さい（2026-11-21 の比較）。
+   ffmpeg は RGB→YUV の変換を libwebp に任せず自前で行うため、同じ品質値でも劣化が大きかった
+必要なもの：Chrome、Pillow（WebPのアニメーション対応）、numpy。出力は assets/readme/<図>-<版>.webp
 """
 import os
 import re
@@ -29,6 +32,7 @@ REC = ART / "recordings"
 VARIANTS = ["light", "dark", "narrow-light", "narrow-dark"]
 SCALE = 2
 FPS = 12
+QUALITY = 80
 CHROME = os.environ.get("CHROME", r"C:\Program Files\Google\Chrome\Application\chrome.exe")
 PORT = 9447
 
@@ -106,9 +110,6 @@ def bake(name, variant, chrome_js, work):
         s["box"] = (round(s["x"] * SCALE), round(s["y"] * SCALE), bw, bh)
     T = max(s["clip"][1][-1] for s in spots)
     n = int(round(T * FPS))
-    frames_dir = work / "frames"
-    shutil.rmtree(frames_dir, ignore_errors=True)
-    frames_dir.mkdir()
     entries, last_key = [], None
     for k in range(n):
         t = k / FPS
@@ -121,20 +122,18 @@ def bake(name, variant, chrome_js, work):
             x, y, bw, bh = s["box"]
             f = frame_at(s["clip"], t).resize((bw, bh), Image.LANCZOS)
             img.paste(f, (x, y), s["mask"])
-        p = frames_dir / f"{len(entries):05d}.png"
-        img.save(p)
-        entries.append([p, 1 / FPS])
+        entries.append([img, 1 / FPS])
         last_key = key
     entries[-1][1] += 0.6  # 最後（全員が触っていない画面）で少し止める
-    lst = work / "list.txt"
-    with open(lst, "w", encoding="utf-8") as fh:
-        for p, d in entries:
-            fh.write(f"file '{p.as_posix()}'\nduration {d:.4f}\n")
-        fh.write(f"file '{entries[-1][0].as_posix()}'\n")
+    # コマの長さはミリ秒の整数。端数を次のコマへ繰り越し、全体の長さをずらさない
+    durations, acc = [], 0.0
+    for _, d in entries:
+        acc += d * 1000
+        durations.append(round(acc) - sum(durations))
     out = ART / f"{name}-{variant}.webp"
-    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-fps_mode", "vfr",
-                    "-c:v", "libwebp_anim", "-lossless", "0", "-quality", "90", "-compression_level", "6", "-loop", "0",
-                    "-pix_fmt", "yuva420p", str(out)], check=True)
+    frames = [e[0] for e in entries]
+    frames[0].save(out, save_all=True, append_images=frames[1:], duration=durations, loop=0,
+                   lossless=False, quality=QUALITY, method=6, minimize_size=True)
     print(f"{out.name}: {len(entries)}コマ {T:.1f}秒 {base.width}x{base.height} {out.stat().st_size // 1024}KB")
 
 
