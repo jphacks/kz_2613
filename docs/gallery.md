@@ -20,21 +20,16 @@ Hack Dayの開発中に撮影した3人での共同操作です。
 
 1. PCに参加画面とQRコードを表示
 2. スマホで参加し、PC側でゲームを選択
-3. 担当する操作を確認
-4. ホストが明示的にReadyして、共同操作を開始
-
-<details>
-<summary>PCアプリの表示検証画面（4枚）を見る</summary>
+3. 担当する操作を確認して、ゲームを起動
+4. ホストがスマホの「分担操作開始」を押して、共同操作を開始
 
 | 参加画面 | ゲーム選択 |
 |:--:|:--:|
-| <img src="../artifacts/improved-ui/final/pc-1920-join.jpg" width="400" alt="PC参加画面"> | <img src="../artifacts/improved-ui/final/pc-1920-game.jpg" width="400" alt="PCゲーム選択画面"> |
-| 操作分担 | Ready待ち |
-| <img src="../artifacts/improved-ui/final/pc-1920-roles.jpg" width="400" alt="PC操作分担画面"> | <img src="../artifacts/improved-ui/final/pc-1920-ready.jpg" width="400" alt="PC Ready待ち画面"> |
+| <a href="screenshots/device/pc-04-join-3.jpg"><img src="screenshots/device/pc-04-join-3.jpg" width="400" alt="PCの参加画面。3人参加中で、OKを押せる"></a> | <a href="screenshots/device/pc-08-game-selected.jpg"><img src="screenshots/device/pc-08-game-selected.jpg" width="400" alt="PCのゲーム一覧。Minecraftのタイルが選ばれ、右上に▶が出ている"></a> |
+| 操作分担 | 開始待ち |
+| <a href="screenshots/device/pc-10-roles.jpg"><img src="screenshots/device/pc-10-roles.jpg" width="400" alt="PCの分担画面。プレイヤー1がキー、2がマウス移動、3がクリック・キー・ホイール"></a> | <a href="screenshots/device/pc-17-launched.jpg"><img src="screenshots/device/pc-17-launched.jpg" width="400" alt="PCの分担画面。ホストのスマホで開始という表示"></a> |
 
-</details>
-
-PC画面4枚は2026年10月25日の表示検証キャプチャです。現在のゲーム一覧・人数表示とは異なる部分があります。
+PC画面4枚は2026年11月20日に、PCアプリを通常どおり起動して撮影しました（QRとWi-Fi名は説明用に差し替えています）。ほかの画面は[画面一覧](screenshots.md)にあります。
 
 
 ## スマホのコントローラー（3人プレイ例）
@@ -43,25 +38,13 @@ PC画面4枚は2026年10月25日の表示検証キャプチャです。現在の
   <a href="../assets/images/recooplay-role-controllers.webp"><img src="../assets/images/recooplay-role-controllers.webp" width="960" alt="移動・視点・アクションを分担する3台のスマホの説明画像"></a>
 </div>
 
-左からP1・P2・P3の分担例です。プレゼン用の説明画像であり、現行UIの実機キャプチャではありません。現在の操作画面は実際に送るキー名・クリック等を主表示にします。
+左からP1・P2・P3の分担例です。プレゼン用の説明画像であり、現行UIの実機キャプチャではありません。現在の操作画面は、ゲームごとの操作の定義と分担から作り、実際に送るキー名・クリック等を主に表示します。
 
-<details>
-<summary>開発時の3人向け表示検証キャプチャを見る</summary>
+| 移動 | 視点 | アクション |
+|:--:|:--:|:--:|
+| <a href="screenshots/device/phone-11-coop-move.jpg"><img src="screenshots/device/phone-11-coop-move.jpg" width="210" alt="移動の担当。Space・Shift・Ctrlのボタンと、WASDのスティック"></a> | <a href="screenshots/device/phone-12-coop-look.jpg"><img src="screenshots/device/phone-12-coop-look.jpg" width="210" alt="視点の担当。ドラッグでマウスを動かすパッドと感度"></a> | <a href="screenshots/device/phone-13-coop-action.jpg"><img src="screenshots/device/phone-13-coop-action.jpg" width="210" alt="アクションの担当。左右クリック・E・Q・ホイールのボタン"></a> |
 
-
-<table>
-  <tr><th align="center">P1 移動</th><th align="center">P2 視点</th><th align="center">P3 アクション</th></tr>
-  <tr>
-    <td><img src="../artifacts/improved-ui/final/phone-402x874-move.jpg" width="210" alt="移動担当の表示検証画像"></td>
-    <td><img src="../artifacts/improved-ui/final/phone-402x874-look.jpg" width="210" alt="視点担当の表示検証画像"></td>
-    <td><img src="../artifacts/improved-ui/final/phone-402x874-action.jpg" width="210" alt="アクション担当の表示検証画像"></td>
-  </tr>
-</table>
-
-3枚は2026年10月25日の模擬状態による表示検証キャプチャで、スマホ実機の写真ではありません。現在は2〜4人とも操作定義から画面を生成します。
-
-
-</details>
+3枚は2026年11月20日に Android 実機で撮影した、Minecraft・3人のときの現行の操作画面（P1 の色）です。
 
 ## Hack Dayでの実プレイ
 

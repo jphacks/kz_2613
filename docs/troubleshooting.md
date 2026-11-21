@@ -1,6 +1,6 @@
 # 困ったとき
 
-**更新日**: 2026-11-18
+**更新日**: 2026-11-20
 
 [導入・接続](getting-started.md) ／ [使い方](usage.md) ／ [動作確認](verification.md) ／ [総合仕様](README.md)
 
@@ -40,10 +40,11 @@ flowchart TB
 
 PC画面の「操作設定」→「通信の診断」、または各スマホ右上の `…`（接続・診断）から、端末ごとの **通信経路（`WebRTC+WS` / `WS`）**、**往復遅延（RTT）**、**未ACK件数**、**直近10秒の途切れ回数（`stalls`）** をリアルタイムで確認できます。
 
-<div align="center">
-  <a href="screenshots/phone-p2-05-diagnostics.jpg"><img src="screenshots/phone-p2-05-diagnostics.jpg" width="240" alt="スマホの接続・通信診断ダイアログ"></a>
-  <p><sub>スマホ右上の「…」からRTT・経路・画面色・横持ちの向き・退出を操作できます。</sub></p>
-</div>
+| ホスト：接続・診断（一時停止中） | 参加者：接続・診断（ロビー） |
+|:--:|:--:|
+| <a href="screenshots/device/phone-19-menu-host.jpg"><img src="screenshots/device/phone-19-menu-host.jpg" width="220" alt="ホストの接続・診断。RTT、送信数、経路WebRTC＋WS、通信テスト"></a> | <a href="screenshots/device/phone-06-menu-participant.jpg"><img src="screenshots/device/phone-06-menu-participant.jpg" width="220" alt="接続・診断のメニュー。画面の色、持ち方、退出する"></a> |
+
+<sub>スマホ右上の「…」から、RTT・経路の確認、通信テスト（協力プレイ中以外）、画面の色・持ち方の切り替え、退出（ロビーのホスト以外）ができます。</sub>
 
 通信が途切れやすい場合は、PCのモバイルホットスポット（5GHz帯）を使用し、スマホの省電力モードやPCのBluetooth音声出力の影響を確認してください。
 
