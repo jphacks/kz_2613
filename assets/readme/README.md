@@ -17,7 +17,7 @@
 | `stats-*.svg` | 試遊アンケートの数字 |
 | `roadmap-*.svg` | 今後の展望（まず → その先） |
 | `focus-*.webp` | 注力したことの3つ（実際の画面の録画と遅延の数値）。`controllers` と同じく `focus-*.svg` から焼き込む |
-| `architecture-*.svg` | システム構成図。スマホ・ローカルWi-Fi・PCを、Rustホストの中の部品まで技術名で描く。ボタン入力がゲームに届くまでの道を、1つの点がたどってループする（SVGの `animateMotion`）。「視差効果を減らす」の設定では点を消す。図に書く事実は `apps/host-rs`・`apps/desktop`・`apps/web` のコードで確かめる |
+| `architecture-*.svg` | システム構成図。各スマホからRustホストの受け口（WebRTC DataChannel・WebSocket）へ直接の矢印を引き、Rustホストの中の部品まで技術名で描く。P1のボタン入力がゲームに届くまでの道を、1つの点がたどってループする（SVGの `animateMotion`）。「視差効果を減らす」の設定では点を消す。段・Rustホスト・箱には、見分けるためのうすい面を敷く。図に書く事実は `apps/host-rs`・`apps/desktop`・`apps/web` のコードで確かめる |
 | `evaluation-*.svg` | 分担AIの評価 |
 | `pipeline-*.svg` | 操作の自動検出から分担AI、スマホ画面への配分までの流れ |
 | `footer-*.svg` | 末尾の締めの画像 |

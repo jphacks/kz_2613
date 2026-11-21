@@ -71,16 +71,14 @@ def focus():
 
 
 def architecture():
-    host = [[sc.ARCH[k][2], sc.ARCH[k][3]] for k in ("rtc", "axum", "hub", "detect", "queue")]
+    host = [[title, sub] for _, _, title, sub, _ in sc.RECV] + [[sc.ARCH[k][2], sc.ARCH[k][3]] for k in ("hub", "detect", "queue")]
     outside = [[sc.ARCH[k][2], sc.ARCH[k][3]] for k in ("app", "data", "send", "game")]
     return "\n".join([
-        "**スマホ（ブラウザ）2〜4台：** " + "。".join(sc.PHONE_NOTE),
+        f"**スマホ（ブラウザ）2〜4台：** {sc.PHONE_NOTE}。各スマホが、ローカルWi-Fiを通ってPCのRustホストへ直接つながる",
         "",
-        "**ローカルWi-Fi：** " + "。".join(sc.NET_NOTE),
+        f"**{sc.NET_LABEL[0]}：** " + "・".join(sc.NET_NOTE),
         "",
-        table(["通信の経路", "内容"], [[sc.ARCH[k][2], sc.ARCH[k][3]] for k in ("dc", "ws")]),
-        "",
-        "**Windows 11 PC：** Rustホスト（recooplay-host.exe）の中",
+        "**Windows 11 PC：** Rustホスト（recooplay-host.exe）の中。受け口は WebRTC DataChannel と WebSocket の2経路で、どのスマホも両方でつながる",
         "",
         table(["部品", "技術"], host),
         "",
@@ -88,7 +86,7 @@ def architecture():
         "",
         table(["部品", "技術"], outside),
         "",
-        "ボタン入力の流れ：スマホ → WebRTC DataChannel → WebRTC → hubスレッド → 出力キュー → SendInput → 既存のPCゲーム"])
+        "ボタン入力の流れ：スマホ → 受け口（WebRTC DataChannel）→ hubスレッド → 出力キュー → SendInput → 既存のPCゲーム"])
 
 
 def techstack():

@@ -639,17 +639,17 @@ def finish_css(W, H, b, t, alt, css, top=10, bottom=30):
                    alt.replace("\n", ""), css)
 
 
-# 構成図。伝えたいことは1つ：スマホのボタン入力が、ローカルWi-Fiの速い経路を通り、Rustホストの hub で1つの入力に
-# まとまって、SendInput で既存のPCゲームに届く。その道を1つの点がたどる。ほかの部品（WebSocket・PCアプリ・分担AI）は脇役。
-# 部品は技術名を主役にし、説明は1行。色は「活用した技術」のカードと同じ意味（PCホスト・通信・Windows API・分担AI・
-# ゲームの解析・PCアプリ）。既存のPCゲームはRe:Cooplayの外なので灰色。図に書く事実はコードで確かめたもの。
-# 配置は格子：左の列は各段の補足とRustホストの外の部品、右の2列が主役。矢印はすべて箱の中心を通るまっすぐな線にする。
+# 構成図。伝えたいことは1つ：各スマホのボタン入力が、ローカルWi-Fiを通ってPCのRustホストに直接届き、hub で1つの入力に
+# まとまって、SendInput で既存のPCゲームに届く。P1のその道を1つの点がたどる。ほかの部品（PCアプリ・分担AI）は脇役。
+# スマホとPCのあいだに中継はないので、通信の技術（WebRTC DataChannel・WebSocket）はRustホストの「受け口」の箱に書き、
+# 各スマホからはその箱へ直接の矢印を引く。部品は技術名を主役にし、説明は1行。色は「活用した技術」のカードと同じ意味
+# （PCホスト・通信・Windows API・分担AI・ゲームの解析・PCアプリ）。既存のPCゲームはRe:Cooplayの外なので灰色。
+# 図に書く事実はコードで確かめたもの。配置は格子で、矢印はすべてまっすぐな線にする。
 HOST_C, NET_C, WIN_C, AI_C, DATA_C, APP_C, GAME_C = "#6F86FF", "#22C4FA", "#C03BFF", "#F5B400", "#FF8A00", "#FF4A6A", "#8B93A7"
+# 受け口の箱の2段（どのスマホも、両方の経路でRustホストとつながる）
+RECV = [("wave", NET_C, "WebRTC DataChannel", "UDP・順序なし・再送なし／libdatachannel", "UDP・順序なし・再送なし\nlibdatachannel"),
+        ("hub", HOST_C, "WebSocket /ws", "TCP・JSON／axum（:8080）", "TCP・JSON\naxum（:8080）")]
 ARCH = {
-    "dc": ("wave", NET_C, "WebRTC DataChannel", "UDP・順序なし・再送なし"),
-    "ws": ("wave", NET_C, "WebSocket /ws", "TCP・JSON・参加と状態"),
-    "rtc": ("wave", NET_C, "WebRTC", "libdatachannel"),
-    "axum": ("hub", HOST_C, "HTTP・WebSocket", "axum（:8080）"),
     "hub": ("hub", HOST_C, "hubスレッド", "認可・状態・順序・全解放"),
     "detect": ("spark", AI_C, "ゲーム解析・分担AI", "MiniLM＋Transformer"),
     "queue": ("hub", HOST_C, "出力キュー", "60ms・50ms・視点4ms"),
@@ -659,22 +659,27 @@ ARCH = {
     "app": ("app", APP_C, "PCアプリ", "Tauri 2・WebView2"),
 }
 # スマホ用の狭い箱では、名前が途中で切れないよう改行の位置を決める
-NARROW = {"dc": ("WebRTC\nDataChannel", "UDP・順序なし・\n再送なし"), "ws": ("WebSocket\n/ws", "TCP・JSON・\n参加と状態"),
-          "detect": ("ゲーム解析・\n分担AI", "MiniLM＋\nTransformer"), "queue": ("出力キュー", "60ms・50ms・\n視点4ms"),
+NARROW = {"detect": ("ゲーム解析・\n分担AI", "MiniLM＋\nTransformer"), "queue": ("出力キュー", "60ms・50ms・\n視点4ms"),
           "data": ("PC上の\nデータ", "ゲーム設定・\n操作定義・重み"), "game": ("既存の\nPCゲーム", "前面のときだけ\n入力"),
-          "axum": ("HTTP・\nWebSocket", "axum（:8080）"), "hub": ("hubスレッド", "認可・状態・順序・全解放")}
-PHONE_NOTE = ["React・TypeScript", "P1はホストを兼ねる"]
+          "hub": ("hubスレッド", "認可・状態・順序・全解放")}
+PHONE_NOTE = "React・TypeScript"
+NET_LABEL = ("ローカルWi-Fi", "ローカルWi-Fi")
 NET_NOTE = ["モバイルホットスポット", "インターネット・STUN/TURNなし"]
-NET_NOTE_NARROW = ["ホットスポット", "インターネット・", "STUN/TURNなし"]
-LEGEND = "流れる点：ボタン入力がゲームに届くまでの道（hubで1つの入力にまとまる）"
+LEGEND = ("流れる点：P1のボタン入力がゲームに届くまでの道（hubで1つの入力にまとまる）",
+          ["流れる点：P1のボタン入力がゲームに", "届くまでの道（hubで1つの入力にまとまる）"])
 BOX_H = 58
+
+
+def scard(x, y, w, h, t):
+    """構成図の箱：面を塗り（ライトは白、ダークは少し明るい面）、背景の段から浮かせる。"""
+    return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="12" fill="{t["chip"]}"/>' + card(x, y, w, h, t, 12)
 
 
 def arch_box(key, x, y, w, t, h=BOX_H):
     """構成図の箱（アイコン・技術名・1行の説明）。"""
     kind, color, title, sub = ARCH[key]
     icon = node_icon("game", x + 12, y + 12, color) if kind == "game" else tech_icon(kind, x + 12, y + 12, color)
-    return (card(x, y, w, h, t, 12) + icon + text(x + 56, y + 27, title, 14, t["ink"], cls="gh", weight=700)
+    return (scard(x, y, w, h, t) + icon + text(x + 56, y + 27, title, 14, t["ink"], cls="gh", weight=700)
             + text(x + 56, y + 45, sub, 13, t["muted"], cls="gh", weight=600))
 
 
@@ -688,7 +693,7 @@ def arch_box_c(key, x, y, w, t, h=None):
     ds, nd = para(x + 12, dy, sub, 13, t["muted"], w - 22, 17, 600)
     need = dy - y + (nd - 1) * 17 + 13
     h = max(h or 0, need)
-    return card(x, y, w, h, t, 12) + f'<g transform="translate({x + 11} {y + 10}) scale(.62)">{icon}</g>' + ts + ds, h
+    return scard(x, y, w, h, t) + f'<g transform="translate({x + 11} {y + 10}) scale(.62)">{icon}</g>' + ts + ds, h
 
 
 def arrow_line(p, q, t, both=False, main=False):
@@ -755,15 +760,15 @@ def arch_phones_at(centers, y, t):
     return "".join(out)
 
 
-def host_frame(x0, y0, x1, y1, t, label, pill_cx):
+def host_frame(x0, y0, x1, y1, t, label, pill_cx, bottom=False):
     """Rustホストの範囲（青の点線の枠と札）。札は線より手前に描くので (枠, 札) を分けて返す。
-    札は、上から入る矢印にかからない位置（pill_cx を中心）に置く。"""
+    札は、矢印にかからない位置（pill_cx を中心）に置く。bottom=True なら枠の下辺に置く。"""
     lw = sum(cw(c, 13) for c in label) + 24
-    frame = (f'<rect x="{x0}" y="{y0}" width="{x1 - x0}" height="{y1 - y0}" rx="16" fill="none" stroke="{HOST_C}" '
+    frame = (f'<rect x="{x0}" y="{y0}" width="{x1 - x0}" height="{y1 - y0}" rx="16" fill="{HOST_C}" fill-opacity=".08" stroke="{HOST_C}" '
              'stroke-width="1.5" stroke-dasharray="4 4"/>')
-    px = pill_cx - lw / 2
-    pill = (f'<rect x="{px:.1f}" y="{y0 - 12}" width="{lw:.1f}" height="24" rx="12" fill="{HOST_C}"/>'
-            + text(pill_cx, y0 + 4.5, label, 13, "#FFFFFF", cls="gh", weight=700, anchor="middle"))
+    px, py = pill_cx - lw / 2, (y1 if bottom else y0)
+    pill = (f'<rect x="{px:.1f}" y="{py - 12}" width="{lw:.1f}" height="24" rx="12" fill="{HOST_C}"/>'
+            + text(pill_cx, py + 4.5, label, 13, "#FFFFFF", cls="gh", weight=700, anchor="middle"))
     return frame, pill
 
 
@@ -788,80 +793,96 @@ def elbow(pts, t, both=True):
     return s + (head(pts[1], pts[0]) if both else "")
 
 
+def recv_box(x, y, w, t, narrow=False):
+    """Rustホストの受け口（WebRTC DataChannel と WebSocket を2段に並べた1つの箱）。
+    各スマホからの矢印は箱の上辺に入るので、どのスマホも両方の経路でつながっていると読める。(svg, 高さ, 各段の中央のy) を返す。"""
+    out, mids, ry = [], [], y
+    for k, (kind, color, title, sub, sub_n) in enumerate(RECV):
+        s, n = para(x + 56, ry + 45, sub_n if narrow else sub, 13, t["muted"], w - 68, 18, 600)
+        rh = 45 + (n - 1) * 18 + 14
+        out.append(tech_icon(kind, x + 12, ry + 12, color) + text(x + 56, ry + 27, title, 14, t["ink"], cls="gh", weight=700) + s)
+        mids.append(ry + rh / 2)
+        ry += rh
+        if k == 0:
+            out.append(f'<rect x="{x + 12}" y="{ry - .5}" width="{w - 24}" height="1" fill="{t["line"]}"/>')
+    h = ry - y
+    return scard(x, y, w, h, t) + "".join(out), h, mids
+
+
 def architecture(t, narrow=False):
-    """主役の道（スマホ → DataChannel → WebRTC → hub → 出力キュー → SendInput → ゲーム）を左の列に1本で通し、
-    P1の真下から点が出る。WebSocket と axum は中の列、Rustホストの外（PCアプリ・PC上のデータ）と各段の補足は右の列。"""
+    """P1のボタン入力の道（P1 → 受け口 → hub → 出力キュー → SendInput → ゲーム）を左の列にまっすぐ通し、1つの点がたどる。
+    各スマホからは受け口へ直接の矢印を引く。Rustホストの外（PCアプリ・PC上のデータ）は右の列。"""
     b, front = [], []
     # 余白の決まり：枠の上（見出しの札の下）36、枠の左右と下 30、箱と箱の間（矢印の長さ）40、枠と枠の間 40
     G_TOP, G_PAD, GAP, BETWEEN = 36, 30, 40, 40
     L = lambda p, q, **k: b.append(arrow_line(p, q, t, **k))  # noqa: E731
 
-    def gp(*args):
-        """枠は先に、見出しの札は線より手前に描く（線が札の後ろをくぐる）。"""
-        frame, pill = group(*args, parts=True)
+    def gp(x, y, w, h, label, t, tint=None):
+        """段の枠。うすい面を敷き（ローカルWi-Fiは通信の色）、見出しの札は線より手前に描く（線が札の後ろをくぐる）。"""
+        frame, pill = group(x, y, w, h, label, t, parts=True)
         front.append(pill)
-        return frame
+        fill = f'fill="{tint}" fill-opacity=".10"' if tint else f'fill="{t["panel2"]}"'
+        return f'<rect x="{x + 1}" y="{y + 1}" width="{w - 2}" height="{h - 2}" rx="18" {fill}/>' + frame
+
     if not narrow:
         W = PC_W
-        # 左右の余白は同じ（46）。主役の線（左の列の中心）が、枠の見出しの札から13px以上離れる位置にする
         cwid = 226
         cols = [G_PAD + 16, 0, W - G_PAD - 16 - cwid]
         cols[1] = cols[0] + cwid + 40
-        cx = [c + cwid / 2 for c in cols]
+        A, B = cols[0] + cwid / 2, cols[1] + cwid / 2
+        span0, span1 = cols[0], cols[1] + cwid
+        # スマホ：P1 は主役の列（左）の真上、P4 は中の列の真上に置き、その間を等間隔にする。補足は右の列
         y0 = 14
-        # スマホ：P1 は主役の列の真上、P4 は WebSocket の列の真上。補足は右の列
+        phones_x = [A + (B - A) * k / 3 for k in range(4)]
         ph_h = G_TOP + 92 + G_PAD - 8
-        step = (cx[1] - cx[0]) / 3
-        b += [gp(0, y0, W, ph_h, "スマホ（ブラウザ）× 2〜4台", t),
-              arch_phones_at([cx[0] + step * k for k in range(4)], y0 + G_TOP, t),
-              note_lines(cols[2] + 4, y0 + G_TOP + 40, PHONE_NOTE, t)]
+        pill_b = y0 + G_TOP + 92
+        b += [gp(0, y0, W, ph_h, "スマホ（ブラウザ）× 2〜4台", t), arch_phones_at(phones_x, y0 + G_TOP, t),
+              text(cols[2] + 4, y0 + G_TOP + 50, PHONE_NOTE, 13, t["muted"], cls="gh", weight=600)]
         ph_b = y0 + ph_h
+        # ローカルWi-Fi：各スマホからの矢印が通る帯
         n0 = ph_b + BETWEEN
-        ny = n0 + G_TOP
-        n_h = G_TOP + BOX_H + G_PAD - 8
-        n_b = n0 + n_h
-        b += [gp(0, n0, W, n_h, "ローカルWi-Fi", t), arch_box("dc", cols[0], ny, cwid, t), arch_box("ws", cols[1], ny, cwid, t),
-              note_lines(cols[2] + 4, ny + 24, NET_NOTE, t)]
-        # PC：Rustホストの枠（左と中の列）、その右の列に外の部品
-        p0 = n_b + BETWEEN
-        hy0 = p0 + G_TOP + 14
-        r1 = hy0 + 30
-        r2 = r1 + BOX_H + GAP
+        n_h = 64
+        b += [gp(0, n0, W, n_h, NET_LABEL[0], t, NET_C), note_lines(cols[2] + 4, n0 + 28, NET_NOTE, t)]
+        # PC：Rustホストの枠（左と中の列）、右の列に外の部品
+        p0 = n0 + n_h + BETWEEN
+        hy0 = p0 + G_TOP
+        r1 = hy0 + 22
+        rs, rh, mids = recv_box(span0, r1, span1 - span0, t)
+        r2 = r1 + rh + GAP
         r3 = r2 + BOX_H + GAP
         hy1 = r3 + BOX_H + 16
         r4 = r3 + BOX_H + GAP + 16
         p_h = r4 + BOX_H + G_PAD - 8 - p0
-        fx0, fx1 = cols[0] - 16, cols[1] + cwid + 16
-        frame, pill = host_frame(fx0, hy0, fx1, hy1, t, "Rustホスト recooplay-host.exe", (cx[0] + cx[1]) / 2)
-        b += [gp(0, p0, W, p_h, "Windows 11 PC", t), frame,
-              arch_box("rtc", cols[0], r1, cwid, t), arch_box("axum", cols[1], r1, cwid, t), arch_box("app", cols[2], r1, cwid, t),
-              arch_box("hub", cols[0], r2, cols[1] + cwid - cols[0], t),
+        # Rustホストの札は、矢印の通らない下辺の右寄り（中の列の中心）に置く
+        frame, pill = host_frame(cols[0] - 16, hy0, cols[1] + cwid + 16, hy1, t, "Rustホスト recooplay-host.exe", B, bottom=True)
+        app_y = mids[1] - BOX_H / 2
+        b += [gp(0, p0, W, p_h, "Windows 11 PC", t), frame, rs,
+              arch_box("app", cols[2], app_y, cwid, t),
+              arch_box("hub", cols[0], r2, span1 - span0, t),
               arch_box("queue", cols[0], r3, cwid, t), arch_box("detect", cols[1], r3, cwid, t), arch_box("data", cols[2], r3, cwid, t),
               arch_box("send", cols[0], r4, cwid, t), arch_box("game", cols[1], r4, cwid, t)]
         front.append(pill)
-        A, B = cx[0], cx[1]
-        L((A, ph_b), (A, ny), main=True)
-        L((B, ph_b), (B, ny), both=True)
-        L((A, ny + BOX_H), (A, r1), main=True)
-        L((B, ny + BOX_H), (B, r1), both=True)
-        L((cols[2], r1 + BOX_H / 2), (cols[1] + cwid, r1 + BOX_H / 2), both=True)
-        L((A, r1 + BOX_H), (A, r2), main=True)
-        L((B, r1 + BOX_H), (B, r2), both=True)
+        # 各スマホ → 受け口（P1 の道は太く色を付ける）
+        for k, px in enumerate(phones_x):
+            L((px, pill_b + 6), (px, r1), both=True, main=(k == 0))
+        L((A, r1 + rh), (A, r2), main=True)
+        L((B, r1 + rh), (B, r2), both=True)
+        L((cols[2], mids[1]), (span1, mids[1]), both=True)
         L((A, r2 + BOX_H), (A, r3), main=True)
         L((B, r3), (B, r2 + BOX_H))
         L((cols[2], r3 + BOX_H / 2), (cols[1] + cwid, r3 + BOX_H / 2))
         L((A, r3 + BOX_H), (A, r4), main=True)
         L((cols[0] + cwid, r4 + BOX_H / 2), (cols[1], r4 + BOX_H / 2), main=True)
+        P = phones_x[0]
         gy = r4 + BOX_H / 2
-        top = y0 + G_TOP + 92
-        segs = [([(A, top), (A, ph_b)], True), ([(A, ph_b), (A, ny)], True), ([(A, ny), (A, ny + BOX_H)], False),
-                ([(A, ny + BOX_H), (A, r1)], True), ([(A, r1), (A, r1 + BOX_H)], False), ([(A, r1 + BOX_H), (A, r2)], True),
-                ([(A, r2), (A, r2 + BOX_H)], False), ([(A, r2 + BOX_H), (A, r3)], True), ([(A, r3), (A, r3 + BOX_H)], False),
-                ([(A, r3 + BOX_H), (A, r4)], True), ([(A, r4), (A, gy), (cols[0] + cwid, gy)], False),
-                ([(cols[0] + cwid, gy), (cols[1], gy)], True), ([(cols[1], gy), (B, gy)], False)]
-        dot = flow_dot(segs, 7)
+        segs = [([(P, pill_b), (P, r1)], True), ([(P, r1), (P, r1 + rh / 2), (A, r1 + rh / 2), (A, r1 + rh)], False),
+                ([(A, r1 + rh), (A, r2)], True), ([(A, r2), (A, r2 + BOX_H)], False), ([(A, r2 + BOX_H), (A, r3)], True),
+                ([(A, r3), (A, r3 + BOX_H)], False), ([(A, r3 + BOX_H), (A, r4)], True),
+                ([(A, r4), (A, gy), (cols[0] + cwid, gy)], False), ([(cols[0] + cwid, gy), (cols[1], gy)], True),
+                ([(cols[1], gy), (B, gy)], False)]
+        dot = flow_dot(segs, 4)
         H = p0 + p_h + 30
-        b.append(text(cols[0] - 4, H - 6, LEGEND, 13, t["muted"], cls="gh", weight=600))
+        b.append(text(cols[0] - 4, H - 6, LEGEND[0], 13, t["muted"], cls="gh", weight=600))
     else:
         W = PHONE_W
         pad, gap = 20, 14
@@ -869,26 +890,22 @@ def architecture(t, narrow=False):
         cols = [pad, pad + cwid + gap]
         A, B = [c + cwid / 2 for c in cols]
         y0 = 14
-        # スマホ：P1 を主役の列の真上に置き、残りは右へ等間隔
-        ph_h = G_TOP + 92 + 18 + 19 + 18
-        step = (W - pad - 22 - A) / 3
-        mid = (A + B) / 2  # 補足の文字は、2本の線のあいだに置く（線が文字を横切らないように）
-        b += [gp(0, y0, W, ph_h, "スマホ（ブラウザ）× 2〜4台", t), arch_phones_at([A + step * k for k in range(4)], y0 + G_TOP, t),
-              note_lines(mid, y0 + G_TOP + 92 + 24, PHONE_NOTE, t, "middle")]
+        # スマホ：補足を上に、4台を図の幅に均等に置く（左右の空きをそろえる）
+        phones_x = [W * (k + .5) / 4 for k in range(4)]
+        ph_h = G_TOP + 24 + 92 + 18
+        pill_b = y0 + G_TOP + 24 + 92
+        b += [gp(0, y0, W, ph_h, "スマホ（ブラウザ）× 2〜4台", t),
+              text(W / 2, y0 + G_TOP + 6, PHONE_NOTE, 13, t["muted"], cls="gh", weight=600, anchor="middle"),
+              arch_phones_at(phones_x, y0 + G_TOP + 24, t)]
         ph_b = y0 + ph_h
         n0 = ph_b + BETWEEN
-        ny = n0 + G_TOP
-        nh = max(arch_box_c(k, 0, 0, cwid, t)[1] for k in ("dc", "ws"))
-        n_h = G_TOP + nh + 18 + 19 * 2 + 18 + 6
-        n_b = n0 + n_h
-        b += [gp(0, n0, W, n_h, "ローカルWi-Fi", t), arch_box_c("dc", cols[0], ny, cwid, t, nh)[0],
-              arch_box_c("ws", cols[1], ny, cwid, t, nh)[0], note_lines(mid, ny + nh + 24, NET_NOTE_NARROW, t, "middle")]
-        # PC：主役は左の列をまっすぐ下る。Rustホストの外（PC上のデータ・PCアプリ）は右の列の下
-        p0 = n_b + BETWEEN
-        hy0 = p0 + G_TOP + 14
-        r1 = hy0 + 30
-        h1 = max(arch_box_c(k, 0, 0, cwid, t)[1] for k in ("rtc", "axum"))
-        r2 = r1 + h1 + GAP
+        n_h = 50
+        b += [gp(0, n0, W, n_h, NET_LABEL[1], t, NET_C)]
+        p0 = n0 + n_h + BETWEEN
+        hy0 = p0 + G_TOP
+        r1 = hy0 + 22
+        rs, rh, mids = recv_box(pad, r1, W - pad * 2, t, narrow=True)
+        r2 = r1 + rh + GAP
         h2 = arch_box_c("hub", 0, 0, W - pad * 2, t)[1]
         r3 = r2 + h2 + GAP
         h3 = max(arch_box_c(k, 0, 0, cwid, t)[1] for k in ("queue", "detect"))
@@ -898,45 +915,42 @@ def architecture(t, narrow=False):
         r5 = r4 + h4 + GAP
         h5 = max(arch_box_c(k, 0, 0, cwid, t)[1] for k in ("game", "app"))
         p_h = r5 + h5 + 22 - p0
-        frame, pill = host_frame(pad - 6, hy0, W - pad + 6, hy1, t, "Rustホスト", (A + B) / 2)
-        boxes = [("rtc", cols[0], r1, cwid, h1), ("axum", cols[1], r1, cwid, h1), ("hub", cols[0], r2, W - pad * 2, h2),
-                 ("queue", cols[0], r3, cwid, h3), ("detect", cols[1], r3, cwid, h3), ("send", cols[0], r4, cwid, h4),
-                 ("data", cols[1], r4, cwid, h4), ("game", cols[0], r5, cwid, h5), ("app", cols[1], r5, cwid, h5)]
-        b += [gp(0, p0, W, p_h, "Windows 11 PC", t), frame] + [arch_box_c(k, x, y, w, t, h)[0] for k, x, y, w, h in boxes]
+        frame, pill = host_frame(pad - 6, hy0, W - pad + 6, hy1, t, "Rustホスト", (A + B) / 2, bottom=True)
+        boxes = [("hub", cols[0], r2, W - pad * 2, h2), ("queue", cols[0], r3, cwid, h3), ("detect", cols[1], r3, cwid, h3),
+                 ("send", cols[0], r4, cwid, h4), ("data", cols[1], r4, cwid, h4), ("game", cols[0], r5, cwid, h5),
+                 ("app", cols[1], r5, cwid, h5)]
+        b += [gp(0, p0, W, p_h, "Windows 11 PC", t), frame, rs] + [arch_box_c(k, x, y, w, t, h)[0] for k, x, y, w, h in boxes]
         front.append(pill)
-        L((A, ph_b), (A, ny), main=True)
-        L((B, ph_b), (B, ny), both=True)
-        L((A, ny + nh), (A, r1), main=True)
-        L((B, ny + nh), (B, r1), both=True)
-        L((A, r1 + h1), (A, r2), main=True)
-        L((B, r1 + h1), (B, r2), both=True)
+        for k, px in enumerate(phones_x):
+            L((px, pill_b + 6), (px, r1), both=True, main=(k == 0))
+        L((A, r1 + rh), (A, r2), main=True)
+        L((B, r1 + rh), (B, r2), both=True)
         L((A, r2 + h2), (A, r3), main=True)
         L((B, r3), (B, r2 + h2))
         L((B, r4), (B, r3 + h3))
         L((A, r3 + h3), (A, r4), main=True)
         L((A, r4 + h4), (A, r5), main=True)
-        # PCアプリ ⇄ axum：Rustホストの枠と図の枠のちょうど真ん中を通す
+        # PCアプリ ⇄ 受け口（WebSocket の段）：Rustホストの枠と図の枠のちょうど真ん中を通す
         ex = (W - pad + 6 + W - 1) / 2
-        b.append(elbow([(cols[1] + cwid, r5 + h5 / 2), (ex, r5 + h5 / 2), (ex, r1 + h1 / 2), (cols[1] + cwid, r1 + h1 / 2)], t))
-        top = y0 + G_TOP + 92
-        segs = [([(A, top), (A, ph_b)], True), ([(A, ph_b), (A, ny)], True), ([(A, ny), (A, ny + nh)], False),
-                ([(A, ny + nh), (A, r1)], True), ([(A, r1), (A, r1 + h1)], False), ([(A, r1 + h1), (A, r2)], True),
-                ([(A, r2), (A, r2 + h2)], False), ([(A, r2 + h2), (A, r3)], True), ([(A, r3), (A, r3 + h3)], False),
-                ([(A, r3 + h3), (A, r4)], True), ([(A, r4), (A, r4 + h4)], False), ([(A, r4 + h4), (A, r5)], True),
-                ([(A, r5), (A, r5 + h5 / 2)], False)]
-        dot = flow_dot(segs, 9)
+        b.append(elbow([(cols[1] + cwid, r5 + h5 / 2), (ex, r5 + h5 / 2), (ex, mids[1]), (W - pad, mids[1])], t))
+        P = phones_x[0]
+        segs = [([(P, pill_b), (P, r1)], True), ([(P, r1), (P, r1 + rh / 2), (A, r1 + rh / 2), (A, r1 + rh)], False),
+                ([(A, r1 + rh), (A, r2)], True), ([(A, r2), (A, r2 + h2)], False), ([(A, r2 + h2), (A, r3)], True),
+                ([(A, r3), (A, r3 + h3)], False), ([(A, r3 + h3), (A, r4)], True), ([(A, r4), (A, r4 + h4)], False),
+                ([(A, r4 + h4), (A, r5)], True), ([(A, r5), (A, r5 + h5 / 2)], False)]
+        dot = flow_dot(segs, 4)
         H = p0 + p_h + 12
-        for part in ("流れる点：ボタン入力がゲームに届くまでの道", "（hubで1つの入力にまとまる）"):
+        for part in LEGEND[1]:
             H += 19
             b.append(text(pad, H, part, 13, t["muted"], cls="gh", weight=600))
         H += 8
-    alt = ("システム構成。スマホ（ブラウザ、React・TypeScript）2〜4台のうちP1はホストを兼ねる。スマホとWindows 11 PCはモバイルホットスポットのローカルWi-Fiでつながり、"
-           "インターネットとSTUN/TURNは使わない。通信はWebRTC DataChannel（UDP・順序なし・再送なし）とWebSocket /ws（TCP・JSON・参加と状態）の2経路。"
-           "PCではRustホスト recooplay-host.exe の中に、WebRTC（libdatachannel）、HTTP・WebSocket（axum、ポート8080）、hubスレッド（認可・状態・順序・全解放）、"
+    alt = ("システム構成。スマホ（ブラウザ、React・TypeScript）2〜4台が、Windows 11 PCのモバイルホットスポットのローカルWi-Fiで、PCのRustホストに直接つながる。"
+           "インターネットとSTUN/TURNは使わない。Rustホスト recooplay-host.exe の受け口は、WebRTC DataChannel（UDP・順序なし・再送なし、libdatachannel）と"
+           "WebSocket /ws（TCP・JSON、axum、ポート8080）の2経路で、どのスマホも両方でつながる。Rustホストの中には、hubスレッド（認可・状態・順序・全解放）、"
            "出力キュー（60ms・50ms・視点4ms）、ゲーム解析・分担AI（MiniLM＋Transformer）がある。その外に、PCアプリ（Tauri 2・WebView2）、"
            "PC上のデータ（ゲームの設定・操作定義・分担AIの重み）、SendInput（Win32 API）、既存のPCゲーム（前面のときだけ入力）がある。"
-           "ボタン入力は、スマホ → WebRTC DataChannel → WebRTC → hubスレッド → 出力キュー → SendInput → 既存のPCゲームの順に届き、図ではこの道を1つの点がたどる。"
-           "WebSocketはaxumを通ってhubとやり取りし、PCアプリはaxumとつながる。ゲーム解析・分担AIはPC上のデータを読み、分担をhubへ渡す。")
+           "ボタン入力は、スマホ → 受け口 → hubスレッド → 出力キュー → SendInput → 既存のPCゲームの順に届き、図ではP1のこの道を1つの点がたどる。"
+           "PCアプリはWebSocketでRustホストとつながる。ゲーム解析・分担AIはPC上のデータを読み、分担をhubへ渡す。")
     return finish_css(W, H, b + front + [dot], t, alt, PK_CSS)
 
 

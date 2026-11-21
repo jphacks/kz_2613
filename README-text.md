@@ -174,21 +174,16 @@ PCのWindowsモバイルホットスポットでスマホと直接つなぎ、We
 
 各スマートフォンのブラウザで行った操作を、ローカルWi-Fi経由でPC上のRustホストが受け取ります。ホストは参加者ごとの担当・入力の順序・入力先のウィンドウを確かめて1つの入力にまとめ、Windows標準の`SendInput` APIでPCゲームへ送ります。
 
-**スマホ（ブラウザ）2〜4台：** React・TypeScript。P1はホストを兼ねる
+**スマホ（ブラウザ）2〜4台：** React・TypeScript。各スマホが、ローカルWi-Fiを通ってPCのRustホストへ直接つながる
 
-**ローカルWi-Fi：** モバイルホットスポット。インターネット・STUN/TURNなし
+**ローカルWi-Fi：** モバイルホットスポット・インターネット・STUN/TURNなし
 
-| 通信の経路 | 内容 |
-|---|---|
-| WebRTC DataChannel | UDP・順序なし・再送なし |
-| WebSocket /ws | TCP・JSON・参加と状態 |
-
-**Windows 11 PC：** Rustホスト（recooplay-host.exe）の中
+**Windows 11 PC：** Rustホスト（recooplay-host.exe）の中。受け口は WebRTC DataChannel と WebSocket の2経路で、どのスマホも両方でつながる
 
 | 部品 | 技術 |
 |---|---|
-| WebRTC | libdatachannel |
-| HTTP・WebSocket | axum（:8080） |
+| WebRTC DataChannel | UDP・順序なし・再送なし／libdatachannel |
+| WebSocket /ws | TCP・JSON／axum（:8080） |
 | hubスレッド | 認可・状態・順序・全解放 |
 | ゲーム解析・分担AI | MiniLM＋Transformer |
 | 出力キュー | 60ms・50ms・視点4ms |
@@ -202,7 +197,7 @@ Rustホストの外
 | SendInput | Win32 API |
 | 既存のPCゲーム | 前面のときだけ入力 |
 
-ボタン入力の流れ：スマホ → WebRTC DataChannel → WebRTC → hubスレッド → 出力キュー → SendInput → 既存のPCゲーム
+ボタン入力の流れ：スマホ → 受け口（WebRTC DataChannel）→ hubスレッド → 出力キュー → SendInput → 既存のPCゲーム
 
 ### <a id="活用した技術"></a>10 活用した技術
 
