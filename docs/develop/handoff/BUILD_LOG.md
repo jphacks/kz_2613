@@ -2937,4 +2937,4 @@
 - データの流れは実線と、線の上を流れてループする点（SVG の `animateMotion`）で、確認・起動などの制御は破線で描く。「視差効果を減らす」の設定では点を消す。`<img>` で表示した SVG で点が動くことを、ヘッドレス Chrome で時間を変えた2枚の画像の差分で確かめた。
 - README の代替テキスト、`README-text.md`（`text_readme.py` の構成図の表）、`assets/readme/README.md`、`docs/readme-design.md` の動きの節を合わせて直した。
 - 確認：`python scripts/readme/check_text_size.py`・`python scripts/check-public-docs.py`・`python scripts/verify_overlay.py` PASS。`python scripts/readme/showcase.py` で書き出し直し、変わったのは構成図の4枚だけ。
-
+- 追記：利用者の指摘（具体的すぎる、点が多すぎて追えない）を受けて作り直した。各部品は技術名と1行の説明だけにし（PC用の高さ1122px→768px、スマホ用1971px→約1280px）、データの点は「ボタン入力がゲームに届くまで」の1本の道を1つの点がたどる形にした（`calcMode="paced"`、箱の中では見せない、hubを過ぎると色を変える）。点がたどる道は太い線、ほかは細い線、制御は破線。`README-text.md` の構成図は部品と技術の表にした。`check_text_size.py`・`check-public-docs.py` PASS。

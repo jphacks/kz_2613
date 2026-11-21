@@ -174,31 +174,36 @@ PCのWindowsモバイルホットスポットでスマホと直接つなぎ、We
 
 各スマートフォンのブラウザで行った操作を、ローカルWi-Fi経由でPC上のRustホストが受け取ります。ホストは参加者ごとの担当・入力の順序・入力先のウィンドウを確かめて1つの入力にまとめ、Windows標準の`SendInput` APIでPCゲームへ送ります。
 
-**スマホ（ブラウザ）2〜4台：** React画面（/）を標準のブラウザで開く。P1がホストを兼ね、PCのリモコンにもなる。Pointer Eventsの入力処理は、画面の描画から分けている。
+**スマホ（ブラウザ）2〜4台：** React・TypeScript（P1はホストを兼ねる）
 
-**ローカルWi-Fi（Windowsのモバイルホットスポット）：** インターネットとSTUN/TURNサーバーは使わない。ホットスポットはRustホストが Tethering API で起動する。
+**ローカルWi-Fi（モバイルホットスポット）：** インターネット・STUN/TURNなし
 
-| 通信の経路 | 流れるデータ |
+| 通信の経路 | 内容 |
 |---|---|
-| WebRTC DataChannel「fast」（UDP・順序なし・再送なし） | スマホ→PC：ボタン入力（未確認の直近分を束ねて送る）と視点（30Hz）。PC→スマホ：遅延測定の応答 |
-| WebSocket /ws（JSON・TCP） | スマホ→PC：参加・コマンド・ボタン入力（通し番号で重複を除く）・WebRTCの仲介。PC→スマホ：役割と状態 |
+| WebRTC DataChannel | UDP・順序なし・再送なし（入力・視点） |
+| WebSocket /ws | TCP・JSON（参加・状態・入力） |
 
-**Windows 11 PC：** Rustホスト（recooplay-host.exe、Tokio・axum、ポート8080）と、その外の部品。
+**Windows 11 PC：** Rustホスト（recooplay-host.exe）の中
 
-| 部品 | 役割 |
+| 部品 | 技術 |
 |---|---|
-| PCアプリ | recooplay-desktop.exe。Tauri 2・WebView2。PC画面（/app）と観客向けの表示（/overlay）を開き、Rustホストを子プロセスとして起動・監視する |
-| HTTP・WebSocket（axum） | 画面（apps/web/dist）の配信と /ws。Originを確かめて受け付ける |
-| WebRTC（libdatachannel） | DataChannelの受け口。入力と視点をイベントで hub へ渡す |
-| hubスレッド（1本） | 接続と役割の認可、セッションの状態、入力の順序・重複・鮮度（500ms）、epoch、全解放。緊急停止（Ctrl+Alt+F12）は、専用スレッドから受ける |
-| ゲームの検出・分担AI | ランチャー7系統・エンジン19系統から操作を読み、MiniLM＋2層Transformerで2〜4人に配分 |
-| 入力先の確認 | 100msごとに対象のゲームが前面か確かめ、外れたら全解放。開始時は前面へ出す |
-| 出力キュー・視点の補間 | 最低押下60ms・最低解放50msを守り、視点は4msごとに補間する |
-| Win32 SendInput | スキャンコードのキー、相対マウス移動、左右ボタン、ホイール |
-| PC上のデータ | ランチャーの情報（レジストリ）、ゲームの設定ファイル、同梱の操作定義JSONと分担AIの重み |
-| 既存のPCゲーム | 改造・MODなし。前面にあるときだけ入力を受け取る |
+| WebRTC | libdatachannel |
+| HTTP・WebSocket | axum（:8080） |
+| hubスレッド | 認可・状態・順序・全解放 |
+| ゲーム解析・分担AI | MiniLM＋Transformer |
+| 入力先の確認 | GetForegroundWindow |
+| 出力キュー | 60ms・50ms・視点4ms |
 
-データの流れ：スマホ → DataChannel → WebRTC → hub、スマホ ⇄ WebSocket ⇄ axum ⇄ hub、PCアプリ ⇄ axum、PC上のデータ → ゲームの検出・分担AI → hub → 出力キュー → SendInput → 既存のPCゲーム。制御：PCアプリが Rustホストを子プロセスとして起動・監視し、標準入力で終了・停止を伝える。入力先の確認は、hub と既存のPCゲームの前面の状態をつなぐ。
+Rustホストの外
+
+| 部品 | 技術 |
+|---|---|
+| PCアプリ | Tauri 2・WebView2 |
+| PC上のデータ | ゲーム設定・操作定義・重み |
+| SendInput | Win32 API |
+| 既存のPCゲーム | 前面のときだけ入力 |
+
+ボタン入力の流れ：スマホ → WebRTC DataChannel → WebRTC → hubスレッド → 出力キュー → SendInput → 既存のPCゲーム
 
 ### <a id="活用した技術"></a>10 活用した技術
 
