@@ -134,7 +134,7 @@ def wrap(s, f, w):
     """日本語の折り返し（読点・句点・括弧の後ろで切りやすくする簡単なもの）。"""
     out, cur = [], ""
     for ch in s:
-        if f.getlength(cur + ch) > w and cur:
+        if f.getlength(cur + ch) > w and cur and ch not in "）」。、":  # 閉じ括弧・句読点は行頭に送らない
             cut = max(cur.rfind("、"), cur.rfind("。"), cur.rfind("）"), cur.rfind("で"), cur.rfind("を"))
             if cut >= len(cur) - 6 and cut > 0:
                 out.append(cur[:cut + 1]); cur = cur[cut + 1:] + ch
@@ -182,7 +182,7 @@ def build_a():
     up = [e for e in log if e[0] == "u"][0][1]
     off = t_edit - (up - edit_down) / 1000 - 0.03   # 押して離した直後に帯が変わる
     t0, t1 = off + 0.0 - 0.8, off + (marks["save"] - marks["edit"]) / 1000 + 2.0
-    caps = [(t0, "① 鉛筆のボタンで編集を始める。編集中はゲームに入力を送らない"),
+    caps = [(t0, "① 鉛筆のボタンで編集を始める（編集中はゲームに送らない）"),
             (off + (marks["select-space"] - marks["edit"]) / 1000 - 0.3, "② つまみを引いて、ボタンの縦と横の大きさを変える"),
             (off + (marks["resize-w"] - marks["edit"]) / 1000 + 0.6, "③ ほかのボタンに重なると、置ける場所を点線の枠で示す。指を離すとそこに収まる"),
             (off + (marks["select-shift"] - marks["edit"]) / 1000 - 0.2, "④ 空いた所へ広げる。隣のボタンに当たると止まる"),
@@ -202,9 +202,9 @@ def build_a():
         if LAYOUT == "wide":
             W, H = round(838 * scale), ph.height + round(20 * scale)
             img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-            img.alpha_composite(ph, (round(70 * scale), round(10 * scale)))
+            img.alpha_composite(ph, (round(40 * scale), round(10 * scale)))
             # 右側：手順の一覧。今の手順を色付きの札に、ほかは薄い札にする
-            x0 = round(70 * scale) + ph.width + round(48 * scale)
+            x0 = round(40 * scale) + ph.width + round(36 * scale)
             cur = caption_at(caps, t)
             ps = []
             for start, text_ in caps:
