@@ -71,14 +71,14 @@ def focus():
 
 
 def architecture():
-    host = [[sc.ARCH[k][2], sc.ARCH[k][3]] for k in ("rtc", "axum", "hub", "detect", "focus", "queue")]
+    host = [[sc.ARCH[k][2], sc.ARCH[k][3]] for k in ("rtc", "axum", "hub", "detect", "queue")]
     outside = [[sc.ARCH[k][2], sc.ARCH[k][3]] for k in ("app", "data", "send", "game")]
     return "\n".join([
-        f"**スマホ（ブラウザ）2〜4台：** {sc.PHONE_NOTE}",
+        "**スマホ（ブラウザ）2〜4台：** " + "。".join(sc.PHONE_NOTE),
         "",
-        f"**ローカルWi-Fi（モバイルホットスポット）：** {sc.NET_NOTE}",
+        "**ローカルWi-Fi：** " + "。".join(sc.NET_NOTE),
         "",
-        table(["通信の経路", "内容"], [[title, sub] for title, sub in sc.LANES.values()]),
+        table(["通信の経路", "内容"], [[sc.ARCH[k][2], sc.ARCH[k][3]] for k in ("dc", "ws")]),
         "",
         "**Windows 11 PC：** Rustホスト（recooplay-host.exe）の中",
         "",

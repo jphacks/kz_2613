@@ -608,11 +608,13 @@ def arrow(x0, y0, x1, y1, t, both=False):
     return s
 
 
-def group(x, y, w, h, label, t):
+def group(x, y, w, h, label, t, parts=False):
+    """点線の枠と見出しの札。parts=True なら (枠, 札) を分けて返す（札を線より手前に描くため）。"""
     lw = sum(cw(c, 13) for c in label) + 24
-    return (f'<rect x="{x + 1}" y="{y + 1}" width="{w - 2}" height="{h - 2}" rx="18" fill="none" stroke="url(#brand)" stroke-width="2" stroke-dasharray="6 5"/>'
-            f'<rect x="{x + 20}" y="{y - 12}" width="{lw:.1f}" height="24" rx="12" fill="url(#brand)"/>'
+    frame = f'<rect x="{x + 1}" y="{y + 1}" width="{w - 2}" height="{h - 2}" rx="18" fill="none" stroke="url(#brand)" stroke-width="2" stroke-dasharray="6 5"/>'
+    pill = (f'<rect x="{x + 20}" y="{y - 12}" width="{lw:.1f}" height="24" rx="12" fill="url(#brand)"/>'
             + text(x + 20 + lw / 2, y + 4.5, label, 13, "#FFFFFF", cls="gh", weight=700, anchor="middle"))
+    return (frame, pill) if parts else frame + pill
 
 
 def phones_row(x, y, w, t):
@@ -632,98 +634,87 @@ def label(x, y, s, t, anchor="middle", muted=False):
 
 
 def finish_css(W, H, b, t, alt, css, top=10, bottom=30):
-    """finish と同じ。図だけに要るCSS（データの点の動きを止める設定など）を足す。"""
+    """finish と同じ。図だけに要るCSS（データの点の動きを止める設定）を足す。"""
     return art.svg(W, round(H) + top + bottom, f'<g transform="translate(0 {top})">{"".join(b)}</g>', t,
                    alt.replace("\n", ""), css)
 
 
-# 構成図。部品は技術名を主役にし、説明は1行にする。色は「活用した技術」のカードと同じ意味で使う
-# （PCホスト・通信・Windows API・分担AI・ゲームの解析・PCアプリ）。既存のPCゲームはRe:Cooplayの外なので灰色。
-# 図に書く事実は apps/host-rs・apps/desktop・apps/web のコードで確かめたもの。
+# 構成図。伝えたいことは1つ：スマホのボタン入力が、ローカルWi-Fiの速い経路を通り、Rustホストの hub で1つの入力に
+# まとまって、SendInput で既存のPCゲームに届く。その道を1つの点がたどる。ほかの部品（WebSocket・PCアプリ・分担AI）は脇役。
+# 部品は技術名を主役にし、説明は1行。色は「活用した技術」のカードと同じ意味（PCホスト・通信・Windows API・分担AI・
+# ゲームの解析・PCアプリ）。既存のPCゲームはRe:Cooplayの外なので灰色。図に書く事実はコードで確かめたもの。
+# 配置は格子：左の列は各段の補足とRustホストの外の部品、右の2列が主役。矢印はすべて箱の中心を通るまっすぐな線にする。
 HOST_C, NET_C, WIN_C, AI_C, DATA_C, APP_C, GAME_C = "#6F86FF", "#22C4FA", "#C03BFF", "#F5B400", "#FF8A00", "#FF4A6A", "#8B93A7"
 ARCH = {
+    "dc": ("wave", NET_C, "WebRTC DataChannel", "UDP・順序なし・再送なし"),
+    "ws": ("wave", NET_C, "WebSocket /ws", "TCP・JSON・参加と状態"),
     "rtc": ("wave", NET_C, "WebRTC", "libdatachannel"),
     "axum": ("hub", HOST_C, "HTTP・WebSocket", "axum（:8080）"),
     "hub": ("hub", HOST_C, "hubスレッド", "認可・状態・順序・全解放"),
     "detect": ("spark", AI_C, "ゲーム解析・分担AI", "MiniLM＋Transformer"),
-    "focus": ("keys", WIN_C, "入力先の確認", "GetForegroundWindow"),
     "queue": ("hub", HOST_C, "出力キュー", "60ms・50ms・視点4ms"),
     "send": ("keys", WIN_C, "SendInput", "Win32 API"),
-    "data": ("search", DATA_C, "PC上のデータ", "ゲーム設定・操作定義・重み"),
+    "data": ("search", DATA_C, "PC上のデータ", "設定・操作定義・重み"),
     "game": ("game", GAME_C, "既存のPCゲーム", "前面のときだけ入力"),
     "app": ("app", APP_C, "PCアプリ", "Tauri 2・WebView2"),
 }
-LANES = {
-    "dc": ("WebRTC DataChannel", "UDP・順序なし・再送なし（入力・視点）"),
-    "ws": ("WebSocket /ws", "TCP・JSON（参加・状態・入力）"),
-}
-# スマホ用の狭い箱では、英字の名前が途中で切れないよう、改行の位置を決めておく
-NARROW_GAME_TITLE = "既存の"+chr(10)+"PCゲーム"
-NARROW_SUBS = {"focus": "GetForeground\nWindow", "game": "前面のときだけ\n入力", "queue": "60ms・50ms・\n視点4ms",
-               "detect": "MiniLM＋\nTransformer", "data": "ゲーム設定・\n操作定義・重み", "dc": "UDP・順序なし・再送なし\n（入力・視点）"}
-PHONE_NOTE = "React・TypeScript（P1はホストを兼ねる）"
-NET_NOTE = "インターネット・STUN/TURNなし"
-LEGEND = ["流れる点：ボタン入力がゲームに届くまで（hubで1つの入力にまとまる）", "破線：確認・起動などの制御"]
-FLOW_C = HOST_C  # 点がたどる道の線の色
+# スマホ用の狭い箱では、名前が途中で切れないよう改行の位置を決める
+NARROW = {"dc": ("WebRTC\nDataChannel", "UDP・順序なし・\n再送なし"), "ws": ("WebSocket\n/ws", "TCP・JSON・\n参加と状態"),
+          "detect": ("ゲーム解析・\n分担AI", "MiniLM＋\nTransformer"), "queue": ("出力キュー", "60ms・50ms・\n視点4ms"),
+          "data": ("PC上の\nデータ", "ゲーム設定・\n操作定義・重み"), "game": ("既存の\nPCゲーム", "前面のときだけ\n入力"),
+          "axum": ("HTTP・\nWebSocket", "axum（:8080）"), "hub": ("hubスレッド", "認可・状態・順序・全解放")}
+PHONE_NOTE = ["React・TypeScript", "P1はホストを兼ねる"]
+NET_NOTE = ["モバイルホットスポット", "インターネット・STUN/TURNなし"]
+NET_NOTE_NARROW = ["ホットスポット", "インターネット・", "STUN/TURNなし"]
+LEGEND = "流れる点：ボタン入力がゲームに届くまでの道（hubで1つの入力にまとまる）"
+BOX_H = 58
 
 
-def arch_box(key, x, y, w, t, h=58):
-    """構成図の箱（アイコン・技術名・1行の説明）。(svg, 高さ) を返す。"""
+def arch_box(key, x, y, w, t, h=BOX_H):
+    """構成図の箱（アイコン・技術名・1行の説明）。"""
     kind, color, title, sub = ARCH[key]
     icon = node_icon("game", x + 12, y + 12, color) if kind == "game" else tech_icon(kind, x + 12, y + 12, color)
     return (card(x, y, w, h, t, 12) + icon + text(x + 56, y + 27, title, 14, t["ink"], cls="gh", weight=700)
-            + text(x + 56, y + 45, sub, 13, t["muted"], cls="gh", weight=600)), h
+            + text(x + 56, y + 45, sub, 13, t["muted"], cls="gh", weight=600))
 
 
 def arch_box_c(key, x, y, w, t, h=None):
-    """スマホ用の箱。アイコンを小さくし、技術名と説明を下に重ねる。(svg, 高さ) を返す。"""
+    """スマホ用の箱。小さなアイコンの横に名前、その下に説明。(svg, 高さ) を返す。"""
     kind, color, title, sub = ARCH[key]
-    sub = NARROW_SUBS.get(key, sub)
-    title = NARROW_GAME_TITLE if key == "game" else title
+    title, sub = NARROW.get(key, (title, sub))
     icon = node_icon("game", 0, 0, color) if kind == "game" else tech_icon(kind, 0, 0, color)
-    ts, nt = para(x + 40, y + 24, title, 13, t["ink"], w - 48, 17, 700)
-    dy = y + 24 + max(nt - 1, 0) * 17 + 21
-    ds, nd = para(x + 10, dy, sub, 13, t["muted"], w - 20, 17, 600)
-    h = max(h or 0, dy - y + (nd - 1) * 17 + 12)
-    return card(x, y, w, h, t, 12) + f'<g transform="translate({x + 10} {y + 9}) scale(.65)">{icon}</g>' + ts + ds, h
+    ts, nt = para(x + 38, y + 24, title, 13, t["ink"], w - 46, 17, 700)
+    dy = y + 24 + (nt - 1) * 17 + 21
+    ds, nd = para(x + 12, dy, sub, 13, t["muted"], w - 22, 17, 600)
+    need = dy - y + (nd - 1) * 17 + 13
+    h = max(h or 0, need)
+    return card(x, y, w, h, t, 12) + f'<g transform="translate({x + 11} {y + 10}) scale(.62)">{icon}</g>' + ts + ds, h
 
 
-def lane_card(key, x, y, w, t, h=58):
-    """通信の経路のカード。(svg, 高さ) を返す。"""
-    title, sub = LANES[key]
-    return (card(x, y, w, h, t, 12) + tech_icon("wave", x + 12, y + 12, NET_C)
-            + text(x + 56, y + 27, title, 14, t["ink"], cls="gh", weight=700)
-            + text(x + 56, y + 45, sub, 13, t["muted"], cls="gh", weight=600)), h
-
-
-def route(pts, t, both=False, dashed=False, color=None, width=2):
-    """折れ線の矢印。破線は確認・制御の線。color を渡すと点がたどる道として目立たせる。"""
+def arrow_line(p, q, t, both=False, main=False):
+    """まっすぐな矢印。main は点がたどる道（太く、色を付ける）。"""
     import math
-    c = color or t["muted"]
-    d = "M" + "L".join(f"{x:.1f} {y:.1f}" for x, y in pts)
+    c, wdt = (HOST_C, 3) if main else (t["muted"], 2)
+    a = math.atan2(q[1] - p[1], q[0] - p[0])
 
-    def head(p, q):
-        a = math.atan2(q[1] - p[1], q[0] - p[0])
-        x, y = q
-        p1 = (x - 8 * math.cos(a - .45), y - 8 * math.sin(a - .45))
-        p2 = (x - 8 * math.cos(a + .45), y - 8 * math.sin(a + .45))
+    def head(x, y, ang):
+        p1 = (x - 8 * math.cos(ang - .45), y - 8 * math.sin(ang - .45))
+        p2 = (x - 8 * math.cos(ang + .45), y - 8 * math.sin(ang + .45))
         return (f'<path d="M{p1[0]:.1f} {p1[1]:.1f}L{x:.1f} {y:.1f}L{p2[0]:.1f} {p2[1]:.1f}" fill="none" stroke="{c}" '
-                f'stroke-width="{width}" stroke-linecap="round" stroke-linejoin="round"/>')
-    dash = ' stroke-dasharray="5 5"' if dashed else ""
-    s = (f'<path d="{d}" fill="none" stroke="{c}" stroke-width="{1.6 if dashed else width}"{dash} '
-         'stroke-linecap="round" stroke-linejoin="round"/>') + head(pts[-2], pts[-1])
+                f'stroke-width="{wdt}" stroke-linecap="round" stroke-linejoin="round"/>')
+    s = (f'<path d="M{p[0]:.1f} {p[1]:.1f}L{q[0]:.1f} {q[1]:.1f}" stroke="{c}" stroke-width="{wdt}" stroke-linecap="round"/>'
+         + head(q[0], q[1], a))
     if both:
-        s += head(pts[1], pts[0])
+        s += head(p[0], p[1], a + math.pi)
     return s
 
 
-def flow_dot(segs, change_at, dur=7.0, r=6):
-    """1つの点が、segs（[(点の列, 見せるか), ...]）を順にたどってループする。
-    箱の中を通る区間は見せない。change_at 番目の区間から色を変える（担当の色 → Windowsへの入力の色）。
-    calcMode="paced" で一定の速さで動かすので、道のりの割合がそのまま時間の割合になる。"""
+def flow_dot(segs, change_at, dur=6.0, r=6):
+    """1つの点が、segs（[(点の列, 見せるか), ...]）を順にたどってループする。箱の中を通る区間は見せない。
+    change_at 番目の区間から色を変える（担当の色 → Windowsへの入力の色）。calcMode="paced" で一定の速さにする。"""
     import math
     pts, marks, total = [], [], 0.0
-    for k, (seg, show) in enumerate(segs):
+    for seg, show in segs:
         start = total
         for i, p in enumerate(seg):
             if pts and i == 0 and p == pts[-1]:
@@ -736,11 +727,10 @@ def flow_dot(segs, change_at, dur=7.0, r=6):
     eps = .004
     kt, vals = [0.0], ["1" if marks[0][2] else "0"]
     for a, b, show in marks:
-        v = "1" if show else "0"
         for f in (a / total + eps, b / total - eps):
             if f > kt[-1]:
                 kt.append(f)
-                vals.append(v)
+                vals.append("1" if show else "0")
     kt.append(1.0)
     vals.append(vals[-1])
     cf = marks[change_at][0] / total
@@ -755,234 +745,199 @@ def flow_dot(segs, change_at, dur=7.0, r=6):
 PK_CSS = "@media (prefers-reduced-motion:reduce){.pk{display:none}}"
 
 
-def arch_phones(x, y, w, t):
-    """P1〜P4のキャラクターと札。(svg, 高さ) を返す。"""
+def arch_phones_at(centers, y, t):
+    """P1〜P4のキャラクターと札を、指定した中心のx座標に置く（高さ92）。"""
     out = []
-    for k, (name, p) in enumerate((("blue", "P1"), ("green", "P2"), ("purple", "P3"), ("red", "P4"))):
-        cx = x + w * (k + .5) / 4
+    for cx, (name, p) in zip(centers, (("blue", "P1"), ("green", "P2"), ("purple", "P3"), ("red", "P4"))):
         out.append(art.char(name, cx - 26, y, .5, t, animate=False))
         out.append(f'<rect x="{cx - 17}" y="{y + 70}" width="34" height="22" rx="11" fill="{BODY[name]}"/>'
                    + text(cx, y + 85.5, p, 13, DARK_ON[name], cls="gh", weight=700, anchor="middle"))
-    return "".join(out), 92
+    return "".join(out)
 
 
-def host_pill(x, y, t, label="Rustホスト recooplay-host.exe"):
+def host_frame(x0, y0, x1, y1, t, label, pill_cx):
+    """Rustホストの範囲（青の点線の枠と札）。札は線より手前に描くので (枠, 札) を分けて返す。
+    札は、上から入る矢印にかからない位置（pill_cx を中心）に置く。"""
     lw = sum(cw(c, 13) for c in label) + 24
-    return (f'<rect x="{x}" y="{y - 12}" width="{lw:.1f}" height="24" rx="12" fill="{HOST_C}"/>'
-            + text(x + lw / 2, y + 4.5, label, 13, "#FFFFFF", cls="gh", weight=700, anchor="middle")), lw
+    frame = (f'<rect x="{x0}" y="{y0}" width="{x1 - x0}" height="{y1 - y0}" rx="16" fill="none" stroke="{HOST_C}" '
+             'stroke-width="1.5" stroke-dasharray="4 4"/>')
+    px = pill_cx - lw / 2
+    pill = (f'<rect x="{px:.1f}" y="{y0 - 12}" width="{lw:.1f}" height="24" rx="12" fill="{HOST_C}"/>'
+            + text(pill_cx, y0 + 4.5, label, 13, "#FFFFFF", cls="gh", weight=700, anchor="middle"))
+    return frame, pill
+
+
+def note_lines(x, y, lines, t, anchor="start", lh=19):
+    return "".join(text(x, y + i * lh, s, 13, t["muted"], cls="gh", weight=600, anchor=anchor) for i, s in enumerate(lines))
+
+
+def elbow(pts, t, both=True):
+    """直角に曲がる矢印（スマホ用の PCアプリ ⇄ axum だけで使う）。"""
+    import math
+    c = t["muted"]
+    d = "M" + "L".join(f"{x:.1f} {y:.1f}" for x, y in pts)
+
+    def head(p, q):
+        a = math.atan2(q[1] - p[1], q[0] - p[0])
+        x, y = q
+        p1 = (x - 8 * math.cos(a - .45), y - 8 * math.sin(a - .45))
+        p2 = (x - 8 * math.cos(a + .45), y - 8 * math.sin(a + .45))
+        return (f'<path d="M{p1[0]:.1f} {p1[1]:.1f}L{x:.1f} {y:.1f}L{p2[0]:.1f} {p2[1]:.1f}" fill="none" stroke="{c}" '
+                'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>')
+    s = f'<path d="{d}" fill="none" stroke="{c}" stroke-width="2" stroke-linejoin="round"/>' + head(pts[-2], pts[-1])
+    return s + (head(pts[1], pts[0]) if both else "")
 
 
 def architecture(t, narrow=False):
-    b, pos = [], {}
+    """主役の道（スマホ → DataChannel → WebRTC → hub → 出力キュー → SendInput → ゲーム）を左の列に1本で通し、
+    P1の真下から点が出る。WebSocket と axum は中の列、Rustホストの外（PCアプリ・PC上のデータ）と各段の補足は右の列。"""
+    b, front = [], []
+    # 余白の決まり：枠の上（見出しの札の下）36、枠の左右と下 30、箱と箱の間（矢印の長さ）40、枠と枠の間 40
+    G_TOP, G_PAD, GAP, BETWEEN = 36, 30, 40, 40
+    L = lambda p, q, **k: b.append(arrow_line(p, q, t, **k))  # noqa: E731
 
-    def add(pts, both=False, dashed=False, main=False):
-        b.append(route(pts, t, both, dashed, FLOW_C if main else None, 3 if main else 2))
-
-    def top(k, x=None):
-        X, Y, w, h = pos[k]
-        return (X + w / 2 if x is None else x, Y)
-
-    def bot(k, x=None):
-        X, Y, w, h = pos[k]
-        return (X + w / 2 if x is None else x, Y + h)
-
-    def side(k, s, y=None):
-        X, Y, w, h = pos[k]
-        return (X if s == "l" else X + w, Y + h / 2 if y is None else y)
-
+    def gp(*args):
+        """枠は先に、見出しの札は線より手前に描く（線が札の後ろをくぐる）。"""
+        frame, pill = group(*args, parts=True)
+        front.append(pill)
+        return frame
     if not narrow:
         W = PC_W
-        # 上の段：左にスマホ、右にローカルWi-Fi
-        half = 410
-        nx, nw = half + 18, W - half - 18
-        cw2 = nw - 28
-        dcy = 14 + 30
-        wsy = dcy + 58 + 14
-        g_h = wsy + 58 + 40 - 14
-        ph, _ = arch_phones(14, 36, 330, t)
-        b += [group(0, 14, half, g_h, "スマホ（ブラウザ）× 2〜4台", t), ph,
-              text(16, 14 + g_h - 16, PHONE_NOTE, 13, t["muted"], cls="gh", weight=600),
-              group(nx, 14, nw, g_h, "ローカルWi-Fi（モバイルホットスポット）", t),
-              lane_card("dc", nx + 14, dcy, cw2, t)[0], lane_card("ws", nx + 14, wsy, cw2, t)[0],
-              text(nx + 14, 14 + g_h - 16, NET_NOTE, 13, t["muted"], cls="gh", weight=600)]
-        top_bottom = 14 + g_h
-        # PC：3列。PCアプリ・axum・WebRTC → hub → 分担AI・入力先の確認・出力キュー → ゲームの解析・ゲーム・SendInput
-        p0 = top_bottom + 40
-        cw3 = 240
-        cols = [44, 44 + cw3 + 15, 44 + (cw3 + 15) * 2]
-
-        def put(k, x, y, w):
-            s, h = arch_box(k, x, y, w, t)
-            b.append(s)
-            pos[k] = (x, y, w, h)
-        ra = p0 + 62
-        put("app", 16, ra, cols[0] + cw3 - 16)
-        put("axum", cols[1], ra, cw3)
-        put("rtc", cols[2], ra, cw3)
-        rb = ra + 58 + 32
-        put("hub", cols[0], rb, cols[2] + cw3 - cols[0])
-        rc = rb + 58 + 32
-        for k, x in zip(("detect", "focus", "queue"), cols):
-            put(k, x, rc, cw3)
-        host_bottom = rc + 58 + 16
-        rd = host_bottom + 28
-        for k, x in zip(("data", "game", "send"), cols):
-            put(k, x, rd, cw3)
-        p1 = rd + 58 + 20
-        hx0, hx1 = cols[1] - 16, W - 16
-        yt = ra - 28
-        poly = [(hx0, yt), (hx1, yt), (hx1, host_bottom), (16, host_bottom), (16, rb - 16), (hx0, rb - 16)]
-        dpoly = "M" + "L".join(f"{x:.1f} {y:.1f}" for x, y in poly) + "Z"
-        pill, _ = host_pill(hx0 + 44, yt, t)
-        b.insert(0, f'<path d="{dpoly}" fill="none" stroke="{HOST_C}" stroke-width="1.5" stroke-dasharray="4 4" stroke-linejoin="round"/>')
-        b.insert(0, group(0, p0, W, p1 - p0, "Windows 11 PC", t))
-        # 矢印（点がたどる道は太く、色を付ける）
-        sx = 400
-        p1x, ly = 14 + 330 / 8, 150  # P1 の札の下から出て、スマホの下を通り、DataChannel へ
-        start = [(p1x, 130), (p1x, ly), (390, ly), (390, dcy + 29), (nx + 14, dcy + 29)]
-        dm, wm = dcy + 29, wsy + 29
-        rx = top("rtc")[0] + 60
-        ax = cols[1] + 22
-        gx = half + 9
-        qx = top("queue")[0]
-        add(start, main=True)
-        add([(sx, wm), (nx + 14, wm)], both=True)
-        add([(nx + 14 + cw2, dm), (W - 6, dm), (W - 6, yt - 18), (rx, yt - 18), (rx, ra)], main=True)
-        add([(nx + 14, wsy + 58 - 12), (gx, wsy + 58 - 12), (gx, top_bottom + 20), (ax, top_bottom + 20), (ax, ra)], both=True)
-        add([side("app", "r"), side("axum", "l")], both=True)
-        add([bot("app", pos["app"][0] + 110), top("hub", pos["app"][0] + 110)], dashed=True)
-        add([bot("rtc", rx), top("hub", rx)], main=True)
-        add([bot("axum", ax), top("hub", ax)], both=True)
-        add([top("detect"), bot("hub", top("detect")[0])])
-        add([top("data"), bot("detect")])
-        add([bot("hub", top("focus")[0]), top("focus")], both=True, dashed=True)
-        add([bot("focus"), top("game")], both=True, dashed=True)
-        add([bot("hub", qx), top("queue")], main=True)
-        add([bot("queue"), top("send")], main=True)
-        add([side("send", "l"), side("game", "r")], main=True)
-        # 1つの点：スマホ → DataChannel → WebRTC → hub → 出力キュー → SendInput → ゲーム
-        segs = [(start, True), ([(nx + 14, dm), (nx + 14 + cw2, dm)], False),
-                ([(nx + 14 + cw2, dm), (W - 6, dm), (W - 6, yt - 18), (rx, yt - 18), (rx, ra)], True),
-                ([(rx, ra), (rx, ra + 58)], False), ([(rx, ra + 58), (rx, rb)], True),
-                ([(rx, rb), (qx, rb + 58)], False), ([(qx, rb + 58), (qx, rc)], True),
-                ([(qx, rc), (qx, rc + 58)], False), ([(qx, rc + 58), (qx, rd)], True),
-                ([(qx, rd), side("send", "l")], False), ([side("send", "l"), side("game", "r")], True),
-                ([side("game", "r"), (pos["game"][0] + cw3 / 2, rd + 29)], False)]
-        dot = flow_dot(segs, 5)
-        H = p1 + 12
-        for line in LEGEND:
-            H += 20
-            b.append(text(16, H, line, 13, t["muted"], cls="gh", weight=600))
+        # 左右の余白は同じ（46）。主役の線（左の列の中心）が、枠の見出しの札から13px以上離れる位置にする
+        cwid = 226
+        cols = [G_PAD + 16, 0, W - G_PAD - 16 - cwid]
+        cols[1] = cols[0] + cwid + 40
+        cx = [c + cwid / 2 for c in cols]
+        y0 = 14
+        # スマホ：P1 は主役の列の真上、P4 は WebSocket の列の真上。補足は右の列
+        ph_h = G_TOP + 92 + G_PAD - 8
+        step = (cx[1] - cx[0]) / 3
+        b += [gp(0, y0, W, ph_h, "スマホ（ブラウザ）× 2〜4台", t),
+              arch_phones_at([cx[0] + step * k for k in range(4)], y0 + G_TOP, t),
+              note_lines(cols[2] + 4, y0 + G_TOP + 40, PHONE_NOTE, t)]
+        ph_b = y0 + ph_h
+        n0 = ph_b + BETWEEN
+        ny = n0 + G_TOP
+        n_h = G_TOP + BOX_H + G_PAD - 8
+        n_b = n0 + n_h
+        b += [gp(0, n0, W, n_h, "ローカルWi-Fi", t), arch_box("dc", cols[0], ny, cwid, t), arch_box("ws", cols[1], ny, cwid, t),
+              note_lines(cols[2] + 4, ny + 24, NET_NOTE, t)]
+        # PC：Rustホストの枠（左と中の列）、その右の列に外の部品
+        p0 = n_b + BETWEEN
+        hy0 = p0 + G_TOP + 14
+        r1 = hy0 + 30
+        r2 = r1 + BOX_H + GAP
+        r3 = r2 + BOX_H + GAP
+        hy1 = r3 + BOX_H + 16
+        r4 = r3 + BOX_H + GAP + 16
+        p_h = r4 + BOX_H + G_PAD - 8 - p0
+        fx0, fx1 = cols[0] - 16, cols[1] + cwid + 16
+        frame, pill = host_frame(fx0, hy0, fx1, hy1, t, "Rustホスト recooplay-host.exe", (cx[0] + cx[1]) / 2)
+        b += [gp(0, p0, W, p_h, "Windows 11 PC", t), frame,
+              arch_box("rtc", cols[0], r1, cwid, t), arch_box("axum", cols[1], r1, cwid, t), arch_box("app", cols[2], r1, cwid, t),
+              arch_box("hub", cols[0], r2, cols[1] + cwid - cols[0], t),
+              arch_box("queue", cols[0], r3, cwid, t), arch_box("detect", cols[1], r3, cwid, t), arch_box("data", cols[2], r3, cwid, t),
+              arch_box("send", cols[0], r4, cwid, t), arch_box("game", cols[1], r4, cwid, t)]
+        front.append(pill)
+        A, B = cx[0], cx[1]
+        L((A, ph_b), (A, ny), main=True)
+        L((B, ph_b), (B, ny), both=True)
+        L((A, ny + BOX_H), (A, r1), main=True)
+        L((B, ny + BOX_H), (B, r1), both=True)
+        L((cols[2], r1 + BOX_H / 2), (cols[1] + cwid, r1 + BOX_H / 2), both=True)
+        L((A, r1 + BOX_H), (A, r2), main=True)
+        L((B, r1 + BOX_H), (B, r2), both=True)
+        L((A, r2 + BOX_H), (A, r3), main=True)
+        L((B, r3), (B, r2 + BOX_H))
+        L((cols[2], r3 + BOX_H / 2), (cols[1] + cwid, r3 + BOX_H / 2))
+        L((A, r3 + BOX_H), (A, r4), main=True)
+        L((cols[0] + cwid, r4 + BOX_H / 2), (cols[1], r4 + BOX_H / 2), main=True)
+        gy = r4 + BOX_H / 2
+        top = y0 + G_TOP + 92
+        segs = [([(A, top), (A, ph_b)], True), ([(A, ph_b), (A, ny)], True), ([(A, ny), (A, ny + BOX_H)], False),
+                ([(A, ny + BOX_H), (A, r1)], True), ([(A, r1), (A, r1 + BOX_H)], False), ([(A, r1 + BOX_H), (A, r2)], True),
+                ([(A, r2), (A, r2 + BOX_H)], False), ([(A, r2 + BOX_H), (A, r3)], True), ([(A, r3), (A, r3 + BOX_H)], False),
+                ([(A, r3 + BOX_H), (A, r4)], True), ([(A, r4), (A, gy), (cols[0] + cwid, gy)], False),
+                ([(cols[0] + cwid, gy), (cols[1], gy)], True), ([(cols[1], gy), (B, gy)], False)]
+        dot = flow_dot(segs, 7)
+        H = p0 + p_h + 30
+        b.append(text(cols[0] - 4, H - 6, LEGEND, 13, t["muted"], cls="gh", weight=600))
     else:
         W = PHONE_W
-        pad, gap = 22, 12
-        iw = W - pad * 2
-        cwn = (iw - gap) / 2
-        colx = [pad, pad + cwn + gap]
-        L1, L2, R1 = 8, 15, W - 8
-        ph, phh = arch_phones(14, 34, W - 28, t)
-        note_s, nn = para(14, 34 + phh + 36, PHONE_NOTE, 13, t["muted"], W - 28, 18, 600)
-        ph_bottom = 34 + phh + 36 + (nn - 1) * 18 + 14
-        b += [group(0, 14, W, ph_bottom - 14, "スマホ（ブラウザ）× 2〜4台", t), ph, note_s]
-        n0 = ph_bottom + 40
-        dcy = n0 + 30
-        dch = max(arch_box_c_lane(k, 0, 0, iw, t)[1] for k in LANES)
-        b.append(arch_box_c_lane("dc", pad, dcy, iw, t, dch)[0])
-        wsy = dcy + dch + 18
-        b.append(arch_box_c_lane("ws", pad, wsy, iw, t, dch)[0])
-        n1 = wsy + dch + 40
-        b += [text(pad, n1 - 16, NET_NOTE, 13, t["muted"], cls="gh", weight=600)]
-        b.insert(len(b) - 3, group(0, n0, W, n1 - n0, "ローカルWi-Fi（ホットスポット）", t))
-        p0 = n1 + 40
-
-        def cput(key, x, y, w, h=None):
-            s, h = arch_box_c(key, x, y, w, t, h)
-            b.append(s)
-            pos[key] = (x, y, w, h)
-            return h
-
-        def crow(keys, y):
-            h = max(arch_box_c(k, 0, 0, cwn, t)[1] for k in keys)
-            for k, x in zip(keys, colx):
-                cput(k, x, y, cwn, h)
-            return h
-        r0 = p0 + 34
-        h0 = cput("app", pad, r0, iw)
-        r1 = r0 + h0 + 58
-        h1 = crow(("rtc", "axum"), r1)
-        r2 = r1 + h1 + 30
-        h2 = cput("hub", pad, r2, iw)
-        r3 = r2 + h2 + 30
-        h3 = crow(("detect", "queue"), r3)
-        r4 = r3 + h3 + 30
-        h4 = crow(("focus", "send"), r4)
-        r5 = r4 + h4 + 30
-        h5 = crow(("data", "game"), r5)
-        p1 = r5 + h5 + 18
-        yt = r1 - 28
-        hb = r3 + h3 + 14
-        fb = r4 + h4 + 10
-        mid = colx[1] - gap / 2
-        poly = [(pad - 10, yt), (W - pad + 10, yt), (W - pad + 10, hb), (mid, hb), (mid, fb), (pad - 10, fb)]
-        dpoly = "M" + "L".join(f"{x:.1f} {y:.1f}" for x, y in poly) + "Z"
-        pill, _ = host_pill(pad, yt, t)
-        b.insert(0, f'<path d="{dpoly}" fill="none" stroke="{HOST_C}" stroke-width="1.5" stroke-dasharray="4 4" stroke-linejoin="round"/>')
-        b.insert(0, group(0, p0, W, p1 - p0, "Windows 11 PC", t))
-        cx = W / 2
-        rxx = pos["rtc"][0] + cwn / 2
-        qx = pos["queue"][0] + cwn / 2
-        p1x = 14 + (W - 28) / 8  # P1 の札の下から出て、左の線を下り、DataChannel へ
-        start = [(p1x, 128), (p1x, 136), (L1, 136), (L1, dcy + 20), (pad, dcy + 20)]
-        add(start, main=True)
-        add([(W - 15, ph_bottom), (W - 15, wsy + 20), (W - pad, wsy + 20)], both=True)
-        add([(pad, dcy + dch - 16), (L1, dcy + dch - 16), (L1, r1 + 24), (pad, r1 + 24)], main=True)
-        add([(W - pad, wsy + dch - 16), (R1, wsy + dch - 16), (R1, r1 + 24), (W - pad, r1 + 24)], both=True)
-        add([bot("app", top("axum")[0]), top("axum")], both=True)
-        add([bot("app", cx), (cx, r2)], dashed=True)
-        add([bot("rtc"), (rxx, r2)], main=True)
-        add([bot("axum"), (top("axum")[0], r2)], both=True)
-        add([top("detect"), (top("detect")[0], r2 + h2)])
-        add([(qx, r2 + h2), top("queue")], main=True)
-        add([bot("queue"), top("send")], main=True)
-        add([bot("send"), top("game")], main=True)
-        add([(pad, r2 + h2 - 14), (L2, r2 + h2 - 14), (L2, r4 + 22), (pad, r4 + 22)], both=True, dashed=True)
-        gy = r4 + h4 + 15
-        gx = pos["game"][0] + 20
-        add([bot("focus"), (bot("focus")[0], gy), (gx, gy), (gx, r5)], both=True, dashed=True)
-        add([(pad, r5 + 22), (L1, r5 + 22), (L1, r3 + h3 - 18), (pad, r3 + h3 - 18)])
-        segs = [(start, True), ([(pad, dcy + 20), (pad + 12, dcy + 20), (pad + 12, dcy + dch - 16), (pad, dcy + dch - 16)], False),
-                ([(pad, dcy + dch - 16), (L1, dcy + dch - 16), (L1, r1 + 24), (pad, r1 + 24)], True),
-                ([(pad, r1 + 24), (rxx, r1 + h1)], False), ([(rxx, r1 + h1), (rxx, r2)], True),
-                ([(rxx, r2), (qx, r2 + h2)], False), ([(qx, r2 + h2), (qx, r3)], True),
-                ([(qx, r3), (qx, r3 + h3)], False), ([(qx, r3 + h3), (qx, r4)], True),
-                ([(qx, r4), (qx, r4 + h4)], False), ([(qx, r4 + h4), (qx, r5)], True),
-                ([(qx, r5), (qx, r5 + h5 / 2)], False)]
-        dot = flow_dot(segs, 5)
-        H = p1 + 6
-        for line in LEGEND:
-            s, n = para(14, H + 18, line, 13, t["muted"], W - 28, 18, 600)
-            b.append(s)
-            H += n * 18 + 4
-        H += 10
+        pad, gap = 20, 14
+        cwid = (W - pad * 2 - gap) / 2
+        cols = [pad, pad + cwid + gap]
+        A, B = [c + cwid / 2 for c in cols]
+        y0 = 14
+        # スマホ：P1 を主役の列の真上に置き、残りは右へ等間隔
+        ph_h = G_TOP + 92 + 18 + 19 + 18
+        step = (W - pad - 22 - A) / 3
+        mid = (A + B) / 2  # 補足の文字は、2本の線のあいだに置く（線が文字を横切らないように）
+        b += [gp(0, y0, W, ph_h, "スマホ（ブラウザ）× 2〜4台", t), arch_phones_at([A + step * k for k in range(4)], y0 + G_TOP, t),
+              note_lines(mid, y0 + G_TOP + 92 + 24, PHONE_NOTE, t, "middle")]
+        ph_b = y0 + ph_h
+        n0 = ph_b + BETWEEN
+        ny = n0 + G_TOP
+        nh = max(arch_box_c(k, 0, 0, cwid, t)[1] for k in ("dc", "ws"))
+        n_h = G_TOP + nh + 18 + 19 * 2 + 18 + 6
+        n_b = n0 + n_h
+        b += [gp(0, n0, W, n_h, "ローカルWi-Fi", t), arch_box_c("dc", cols[0], ny, cwid, t, nh)[0],
+              arch_box_c("ws", cols[1], ny, cwid, t, nh)[0], note_lines(mid, ny + nh + 24, NET_NOTE_NARROW, t, "middle")]
+        # PC：主役は左の列をまっすぐ下る。Rustホストの外（PC上のデータ・PCアプリ）は右の列の下
+        p0 = n_b + BETWEEN
+        hy0 = p0 + G_TOP + 14
+        r1 = hy0 + 30
+        h1 = max(arch_box_c(k, 0, 0, cwid, t)[1] for k in ("rtc", "axum"))
+        r2 = r1 + h1 + GAP
+        h2 = arch_box_c("hub", 0, 0, W - pad * 2, t)[1]
+        r3 = r2 + h2 + GAP
+        h3 = max(arch_box_c(k, 0, 0, cwid, t)[1] for k in ("queue", "detect"))
+        hy1 = r3 + h3 + 14
+        r4 = r3 + h3 + GAP + 14
+        h4 = max(arch_box_c(k, 0, 0, cwid, t)[1] for k in ("send", "data"))
+        r5 = r4 + h4 + GAP
+        h5 = max(arch_box_c(k, 0, 0, cwid, t)[1] for k in ("game", "app"))
+        p_h = r5 + h5 + 22 - p0
+        frame, pill = host_frame(pad - 6, hy0, W - pad + 6, hy1, t, "Rustホスト", (A + B) / 2)
+        boxes = [("rtc", cols[0], r1, cwid, h1), ("axum", cols[1], r1, cwid, h1), ("hub", cols[0], r2, W - pad * 2, h2),
+                 ("queue", cols[0], r3, cwid, h3), ("detect", cols[1], r3, cwid, h3), ("send", cols[0], r4, cwid, h4),
+                 ("data", cols[1], r4, cwid, h4), ("game", cols[0], r5, cwid, h5), ("app", cols[1], r5, cwid, h5)]
+        b += [gp(0, p0, W, p_h, "Windows 11 PC", t), frame] + [arch_box_c(k, x, y, w, t, h)[0] for k, x, y, w, h in boxes]
+        front.append(pill)
+        L((A, ph_b), (A, ny), main=True)
+        L((B, ph_b), (B, ny), both=True)
+        L((A, ny + nh), (A, r1), main=True)
+        L((B, ny + nh), (B, r1), both=True)
+        L((A, r1 + h1), (A, r2), main=True)
+        L((B, r1 + h1), (B, r2), both=True)
+        L((A, r2 + h2), (A, r3), main=True)
+        L((B, r3), (B, r2 + h2))
+        L((B, r4), (B, r3 + h3))
+        L((A, r3 + h3), (A, r4), main=True)
+        L((A, r4 + h4), (A, r5), main=True)
+        # PCアプリ ⇄ axum：Rustホストの枠と図の枠のちょうど真ん中を通す
+        ex = (W - pad + 6 + W - 1) / 2
+        b.append(elbow([(cols[1] + cwid, r5 + h5 / 2), (ex, r5 + h5 / 2), (ex, r1 + h1 / 2), (cols[1] + cwid, r1 + h1 / 2)], t))
+        top = y0 + G_TOP + 92
+        segs = [([(A, top), (A, ph_b)], True), ([(A, ph_b), (A, ny)], True), ([(A, ny), (A, ny + nh)], False),
+                ([(A, ny + nh), (A, r1)], True), ([(A, r1), (A, r1 + h1)], False), ([(A, r1 + h1), (A, r2)], True),
+                ([(A, r2), (A, r2 + h2)], False), ([(A, r2 + h2), (A, r3)], True), ([(A, r3), (A, r3 + h3)], False),
+                ([(A, r3 + h3), (A, r4)], True), ([(A, r4), (A, r4 + h4)], False), ([(A, r4 + h4), (A, r5)], True),
+                ([(A, r5), (A, r5 + h5 / 2)], False)]
+        dot = flow_dot(segs, 9)
+        H = p0 + p_h + 12
+        for part in ("流れる点：ボタン入力がゲームに届くまでの道", "（hubで1つの入力にまとまる）"):
+            H += 19
+            b.append(text(pad, H, part, 13, t["muted"], cls="gh", weight=600))
+        H += 8
     alt = ("システム構成。スマホ（ブラウザ、React・TypeScript）2〜4台のうちP1はホストを兼ねる。スマホとWindows 11 PCはモバイルホットスポットのローカルWi-Fiでつながり、"
-           "インターネットとSTUN/TURNは使わない。通信はWebRTC DataChannel（UDP・順序なし・再送なし。入力・視点）とWebSocket /ws（TCP・JSON。参加・状態・入力）の2経路。"
+           "インターネットとSTUN/TURNは使わない。通信はWebRTC DataChannel（UDP・順序なし・再送なし）とWebSocket /ws（TCP・JSON・参加と状態）の2経路。"
            "PCではRustホスト recooplay-host.exe の中に、WebRTC（libdatachannel）、HTTP・WebSocket（axum、ポート8080）、hubスレッド（認可・状態・順序・全解放）、"
-           "ゲーム解析・分担AI（MiniLM＋Transformer）、入力先の確認（GetForegroundWindow）、出力キュー（60ms・50ms・視点4ms）がある。その外に、PCアプリ（Tauri 2・WebView2）、"
-           "PC上のデータ（ゲームの設定・操作定義・AIの重み）、SendInput（Win32 API）、既存のPCゲーム（前面のときだけ入力）がある。"
-           "ボタン入力は、スマホ → DataChannel → WebRTC → hub → 出力キュー → SendInput → 既存のPCゲームの順に届き、図ではこの道を1つの点がたどる。"
-           "WebSocketはaxumを通ってhubとやり取りし、PCアプリはaxumとつながり、Rustホストを起動・監視する。ゲーム解析・分担AIはPC上のデータを読み、分担をhubへ渡す。")
-    # Rustホストの札は、線より手前に描く（線が札の文字を横切らないように）
-    return finish_css(W, H, b + [pill, dot], t, alt, PK_CSS)
-
-
-def arch_box_c_lane(key, x, y, w, t, h=None):
-    """スマホ用の通信の経路のカード。(svg, 高さ) を返す。"""
-    title, sub = LANES[key]
-    sub = NARROW_SUBS.get(key, sub)
-    ds, nd = para(x + 56, y + 45, sub, 13, t["muted"], w - 68, 18, 600)
-    h = max(h or 0, 45 + (nd - 1) * 18 + 14, 58)
-    return (card(x, y, w, h, t, 12) + tech_icon("wave", x + 12, y + 12, NET_C)
-            + text(x + 56, y + 27, title, 14, t["ink"], cls="gh", weight=700) + ds), h
+           "出力キュー（60ms・50ms・視点4ms）、ゲーム解析・分担AI（MiniLM＋Transformer）がある。その外に、PCアプリ（Tauri 2・WebView2）、"
+           "PC上のデータ（ゲームの設定・操作定義・分担AIの重み）、SendInput（Win32 API）、既存のPCゲーム（前面のときだけ入力）がある。"
+           "ボタン入力は、スマホ → WebRTC DataChannel → WebRTC → hubスレッド → 出力キュー → SendInput → 既存のPCゲームの順に届き、図ではこの道を1つの点がたどる。"
+           "WebSocketはaxumを通ってhubとやり取りし、PCアプリはaxumとつながる。ゲーム解析・分担AIはPC上のデータを読み、分担をhubへ渡す。")
+    return finish_css(W, H, b + front + [dot], t, alt, PK_CSS)
 
 
 # ---------- 11 独自技術：分担AIの評価 ----------

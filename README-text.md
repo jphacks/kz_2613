@@ -174,14 +174,14 @@ PCのWindowsモバイルホットスポットでスマホと直接つなぎ、We
 
 各スマートフォンのブラウザで行った操作を、ローカルWi-Fi経由でPC上のRustホストが受け取ります。ホストは参加者ごとの担当・入力の順序・入力先のウィンドウを確かめて1つの入力にまとめ、Windows標準の`SendInput` APIでPCゲームへ送ります。
 
-**スマホ（ブラウザ）2〜4台：** React・TypeScript（P1はホストを兼ねる）
+**スマホ（ブラウザ）2〜4台：** React・TypeScript。P1はホストを兼ねる
 
-**ローカルWi-Fi（モバイルホットスポット）：** インターネット・STUN/TURNなし
+**ローカルWi-Fi：** モバイルホットスポット。インターネット・STUN/TURNなし
 
 | 通信の経路 | 内容 |
 |---|---|
-| WebRTC DataChannel | UDP・順序なし・再送なし（入力・視点） |
-| WebSocket /ws | TCP・JSON（参加・状態・入力） |
+| WebRTC DataChannel | UDP・順序なし・再送なし |
+| WebSocket /ws | TCP・JSON・参加と状態 |
 
 **Windows 11 PC：** Rustホスト（recooplay-host.exe）の中
 
@@ -191,7 +191,6 @@ PCのWindowsモバイルホットスポットでスマホと直接つなぎ、We
 | HTTP・WebSocket | axum（:8080） |
 | hubスレッド | 認可・状態・順序・全解放 |
 | ゲーム解析・分担AI | MiniLM＋Transformer |
-| 入力先の確認 | GetForegroundWindow |
 | 出力キュー | 60ms・50ms・視点4ms |
 
 Rustホストの外
@@ -199,7 +198,7 @@ Rustホストの外
 | 部品 | 技術 |
 |---|---|
 | PCアプリ | Tauri 2・WebView2 |
-| PC上のデータ | ゲーム設定・操作定義・重み |
+| PC上のデータ | 設定・操作定義・重み |
 | SendInput | Win32 API |
 | 既存のPCゲーム | 前面のときだけ入力 |
 
