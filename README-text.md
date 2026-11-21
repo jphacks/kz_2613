@@ -166,6 +166,7 @@ PCのWindowsモバイルホットスポットでスマホと直接つなぎ、We
 | [分担AI仕様書](docs/preset-model-specification.md) | 独自AIによる分担の構成・学習・推論と評価 |
 | [Re:Cooplay Preset Model v2](https://huggingface.co/YOSHI0209/recooplay-preset-model-v2#recooplay-preset-model-v2) | 操作の意味と関係から分担を生成する独自モデル（Hugging Face） |
 | [画面一覧](docs/screenshots.md) | PC・スマホの画面と使用の流れ |
+| [READMEのデザイン](docs/readme-design.md) | このREADMEの見出し・図・アニメーションに込めた狙いと、デザインの判断 |
 
 詳細：[フロントエンド](docs/frontend-specification.md) ／ [ホスト](docs/host-specification.md) ／ [通信](docs/protocol-specification.md) ／ [動作確認の範囲](docs/verification.md)
 

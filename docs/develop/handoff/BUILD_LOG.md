@@ -2925,3 +2925,4 @@
 - 追記：利用者の判断で、`docs/readme-design.md` はデザインについての資料とし、文章の中身に関する記述（同じ主張は1か所、太字の数、宣伝調、実装済みは「できること」と書く、活用した技術の厳密さ、JPHACKSの項目を守る、事実と異なることを書かない）を外した。5節は「配置」として、冒頭の並びと各項目の「文章 → 図」の並べ方だけを残した。`python scripts/check-public-docs.py` PASS。
 - 追記：利用者の判断で、`docs/readme-design.md` から今のREADMEにないものへの言及（ヒーロー画像、GitHubの Note、区切りの帯、作品名の見出しの比較案、キャラクターが生えてくる動き、以前のffmpegの書き出し、試した形の移り変わりの表）を外し、今の形の説明だけにした。`python scripts/check-public-docs.py` PASS。
 - 追記：利用者の指摘で、`docs/readme-design.md` の「ほかのREADMEに持ち出すときのチェックリスト」から、遊び心のテーマが前提の項目（最初は「ふつう」に見せる、見たことのない要素を増やす、遊びの絵）を外し、どのREADMEにも使える書き方に直した。外した理由を節の冒頭に1文で書いた。`python scripts/check-public-docs.py` PASS。
+- 追記：利用者の指示で、READMEの「技術仕様書」の資料一覧の表の最後に `docs/readme-design.md` へのリンクを足した。冒頭は「ぱっと見ふつう」の錯覚と目次までの流れを壊すため、図と図の間は文章を挟まないため避け、文章の場所である表にした。`python scripts/readme/text_readme.py` で `README-text.md` も書き出し直した。`python scripts/check-public-docs.py`・`python scripts/verify_overlay.py` PASS。
