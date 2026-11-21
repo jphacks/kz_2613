@@ -14,7 +14,9 @@
 
 ## 組み立て
 
-`python compose.py a|b wide|narrow` で `out-<a|b>-<wide|narrow>.webp` を書く（幅 838px・324px の2倍で描く）。背景は透明で、文字は色付きの札に載せる。
+`python compose.py a|b wide|narrow` で `out-<a|b>-<wide|narrow>.webp` を書く（幅 838px・324px の2倍で描く）。資料（画面一覧・使い方・画面仕様・ギャラリー）で使う。
+
+`python compose.py a screen` は、README の「注力したこと」の図（`scripts/readme/showcase.py` → `focus-*.svg`）の中のスマホ画面に埋め込む、画面だけの録画（`layout-edit-screen.webp`）を書く。枠と文字はなく、最初のコマは以前の静止画と同じ見た目にしてある。背景は透明で、文字は色付きの札に載せる。
 
 - 指の位置の円：スマホのページで記録した pointer イベントから重ねる（端末の「タップを表示」は録画に写らなかった）。
 - PC のカーソルの輪：`cdet.py` が録画からカーソルの形を型合わせして位置を求める。

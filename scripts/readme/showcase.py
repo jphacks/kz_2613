@@ -20,6 +20,7 @@ import build_art as art  # noqa: E402
 from build_art import CHARS, PC_W, PHONE_W, THEMES, text  # noqa: E402
 
 SHOTS = art.ROOT / "docs" / "screenshots" / "device"
+RECORDINGS = art.ROOT / "assets" / "readme" / "recordings"  # scripts/readme/recordings/compose.py で作る
 GAP = 16
 SPARK = "M0-7Q1-1 7 0Q1 1 0 7Q-1 1-7 0Q-1-1 0-7Z"
 BODY = {n: CHARS[n]["body"] for n in art.ORDER}
@@ -122,6 +123,12 @@ _clip = [0]
 def shot(name, w):
     """撮影画像を幅 w(px) に縮めたJPEGのdata URIと、縦横比（幅/高さ）。"""
     key = (name, w)
+    if key not in _shot_cache and name.endswith(".webp"):
+        # 実画面の録画（アニメーションWebP）はそのまま埋め込む。動かない環境では最初のコマが出る
+        path = RECORDINGS / name
+        with Image.open(path) as im:
+            ratio = im.width / im.height
+        _shot_cache[key] = ("data:image/webp;base64," + base64.b64encode(path.read_bytes()).decode(), ratio)
     if key not in _shot_cache:
         im = Image.open(SHOTS / name).convert("RGB")
         ratio = im.width / im.height
@@ -483,7 +490,7 @@ def roadmap(t, narrow=False):
 # ---------- 07 注力したこと：3つのこだわり ----------
 
 FOCUS = [("blue", "phone-01-host-lobby-1.jpg", "スマホだけで準備から開始まで", "P1のスマホがタッチパッド付きのリモコンになる"),
-         ("green", "phone-14-layout-editor.jpg", "持ち方に合わせるUI編集", "ボタンの位置と縦横のサイズを、各スマホで変えられる")]
+         ("green", "layout-edit-screen.webp", "持ち方に合わせるUI編集", "ボタンの位置と縦横のサイズを、各スマホで変えられる")]
 LATENCY = [("9.0", "ms", "Wi-Fiの往復遅延", "実機の測定・中央値"), ("26.0", "ms", "スマホの操作からPC入力まで", "推定遅延・中央値")]
 
 

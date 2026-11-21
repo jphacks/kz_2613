@@ -166,7 +166,7 @@ def encode(frames, out, durations):
             fh.write(f"file '{os.path.abspath(tmp)}/{k:05d}.png'\nduration {dur:.4f}\n")
         fh.write(f"file '{os.path.abspath(tmp)}/{len(frames) - 1:05d}.png'\n")
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-fps_mode", "vfr", "-c:v", "libwebp_anim",
-                    "-lossless", "0", "-quality", "72", "-compression_level", "6", "-loop", "0", "-pix_fmt", "yuva420p", out], check=True)
+                    "-lossless", "0", "-quality", "72", "-compression_level", "6", "-loop", "0", "-pix_fmt", "yuv420p" if LAYOUT == "screen" else "yuva420p", out], check=True)
     shutil.rmtree(tmp)
 
 
@@ -187,6 +187,8 @@ def build_a():
             (off + (marks["resize-w"] - marks["edit"]) / 1000 + 0.6, "③ ほかのボタンに重なると、置ける場所を点線の枠で示す。指を離すとそこに収まる"),
             (off + (marks["select-shift"] - marks["edit"]) / 1000 - 0.2, "④ 空いた所へ広げる。隣のボタンに当たると止まる"),
             (off + (marks["save"] - marks["edit"]) / 1000 - 0.3, "⑤ 保存すると、このスマホの配置になる")]
+    if LAYOUT == "screen":
+        return screen_a(log, marks, off, edit_down)
     scale = 2 if LAYOUT == "wide" else 2
     sw = round(270 * scale) if LAYOUT == "wide" else round(250 * scale)
     sh = round(sw * PAGE_H / 1080)
@@ -233,6 +235,25 @@ def build_a():
         frames.append(img)
     durs = [1 / FPS] * len(frames)
     durs[-1] = 2.0
+    return frames, durs
+
+
+def screen_a(log, marks, off, edit_down):
+    """READMEの「注力したこと」の図に埋め込む、スマホの画面だけの録画（枠・文字なし）。
+    最初のコマは編集を始めた直後（以前の静止画と同じ見た目）。動かない環境ではこのコマが出る。保存の直前で止めて最初へ戻る。"""
+    sw = 320
+    sh = round(sw * PAGE_H / 1080)
+    t0 = off + 0.25
+    t1 = off + (marks["save"] - marks["edit"]) / 1000 - 0.2
+    times = [t0 + k / FPS for k in range(int((t1 - t0) * FPS))]
+    shots = read_frames("rec-a-phone.mp4", times, f"1080:{PAGE_H}:0:{PAGE_TOP}", (sw, sh))
+    frames = []
+    for t, a in zip(times, shots):
+        scr = Image.fromarray(a).convert("RGBA")
+        pos, alpha = touches(log, edit_down + (t - off) * 1000)
+        frames.append(draw_touch(scr, pos, alpha, sw / 384))
+    durs = [1 / FPS] * len(frames)
+    durs[0], durs[-1] = 1.2, 1.8
     return frames, durs
 
 
