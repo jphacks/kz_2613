@@ -21,7 +21,8 @@ FIXED = ("assets/readme/pipeline-",)
 
 def svg_info(path):
     s = (ROOT / path).read_text(encoding="utf-8")
-    width = float(re.search(r'viewBox="0 0 ([\d.]+) ', s).group(1))
+    # 録画入りの図の文字の枠（recordings/pieces.py）は、元の図の viewBox を切り出しているので原点が0でない
+    width = float(re.search(r'viewBox="[-\d.]+ [-\d.]+ ([\d.]+) ', s).group(1))
     # 見出しの横の舞台（入れ子の svg）は区切りの帯と同じ飾りとして除く。吹き出しの大きさは head_play.py が確かめる
     s = re.sub(r"<svg x=.*?</svg>", "", s, flags=re.S)
     sizes = []

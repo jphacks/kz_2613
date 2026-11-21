@@ -264,16 +264,22 @@ GitHubは画面の幅が768px以上になると、本文の横に欄を出し、
 - 録画は図の元の見た目と要素をほとんど変えずに、動きだけを足すものにしています。説明文がなくても見れば分かる操作を選びます。説明の文を大きく添えた録画は、READMEのテンポと重さを考えて、[画面一覧](screenshots.md) や仕様書に置いています。
 - 分担の図では各担当のスマホに、その担当の実際の操作画面を入れています。
 
-<table><tr><th align="left">画像12　実機の操作の録画を焼き込んだ図（アニメーションWebP）<br><sub>READMEで使っている画像の実物：<code>assets/readme/controllers-*.webp</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/controllers-narrow-dark.webp"><source media="(max-width: 700px)" srcset="../assets/readme/controllers-narrow-light.webp"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/controllers-dark.webp"><img src="../assets/readme/controllers-light.webp" alt="画像：controllers（READMEで使っている画像）"></picture></td></tr></table>
+**画像12　実機の操作の録画を入れた図（文字はSVG、スマホ画面はアニメーションWebP）**<br>
+<sub>READMEで使っている画像の実物：<code>assets/readme/pieces/controllers-*</code>。表の枠の中では幅の割合が決まらないため、この画像だけ表に入れずに置いています</sub>
+
+<p><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/pieces/controllers-narrow-dark-1a.svg"><source media="(max-width: 700px)" srcset="../assets/readme/pieces/controllers-narrow-light-1a.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/pieces/controllers-wide-dark-1a.svg"><img src="../assets/readme/pieces/controllers-wide-light-1a.svg" width="99.8%" align="absbottom" alt="画像：controllers（READMEで使っている画像）"></picture><br>
+<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/pieces/controllers-narrow-dark-2a.webp"><source media="(max-width: 700px)" srcset="../assets/readme/pieces/controllers-narrow-light-2a.webp"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/pieces/controllers-wide-dark-2a.svg"><img src="../assets/readme/pieces/controllers-wide-light-2a.svg" width="33.8%" align="absbottom" alt=""></picture><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/pieces/controllers-narrow-dark-2b.svg"><source media="(max-width: 700px)" srcset="../assets/readme/pieces/controllers-narrow-light-2b.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/pieces/controllers-wide-dark-2b.svg"><img src="../assets/readme/pieces/controllers-wide-light-2b.svg" width="66%" align="absbottom" alt=""></picture><br>
+<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/pieces/controllers-narrow-dark-3a.webp"><source media="(max-width: 700px)" srcset="../assets/readme/pieces/controllers-narrow-light-3a.webp"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/pieces/controllers-wide-dark-3a.webp"><img src="../assets/readme/pieces/controllers-wide-light-3a.webp" width="33.8%" align="absbottom" alt=""></picture><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/pieces/controllers-narrow-dark-3b.svg"><source media="(max-width: 700px)" srcset="../assets/readme/pieces/controllers-narrow-light-3b.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/pieces/controllers-wide-dark-3b.webp"><img src="../assets/readme/pieces/controllers-wide-light-3b.webp" width="66%" align="absbottom" alt=""></picture><br>
+<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/pieces/controllers-narrow-dark-4a.webp"><source media="(max-width: 700px)" srcset="../assets/readme/pieces/controllers-narrow-light-4a.webp"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/pieces/controllers-wide-dark-4a.svg"><img src="../assets/readme/pieces/controllers-wide-light-4a.svg" width="33.8%" align="absbottom" alt=""></picture><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/pieces/controllers-narrow-dark-4b.svg"><source media="(max-width: 700px)" srcset="../assets/readme/pieces/controllers-narrow-light-4b.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/pieces/controllers-wide-dark-4b.svg"><img src="../assets/readme/pieces/controllers-wide-light-4b.svg" width="66%" align="absbottom" alt=""></picture></p>
 
 ## 13. SVGとWebPの使い分け
 
-READMEの図は**SVGを基本**にし、**実機の録画を含む図だけをアニメーションWebP**にしています。WebPにした図も、4節と同じ4種類を用意しています。
+READMEの図は**SVGを基本**にし、**実機の録画を含む図だけ、スマホ画面の部分をアニメーションWebP**にしています。この図も、4節と同じ4種類を用意しています。
 
 | 形式 | 使う図 | 選んだ理由 |
 |---|---|---|
 | SVG | 見出し・目次・受賞結果・特長・アンケート・構成図など、ほとんどの図（画像1〜11） | 下の「SVGを基本にする理由」を参照 |
-| アニメーションWebP | 製品説明の分担の図（`controllers`）と、注力したことの図（`focus`）の2つ（画像12） | 下の「録画を含む図だけWebPにする理由」を参照 |
+| アニメーションWebP | 製品説明の分担の図（`controllers`）と、注力したことの図（`focus`）の、スマホ画面の部分だけ（画像12）。文字の部分はSVG | 下の「録画を含む図の作り方」を参照 |
 | JPEG（SVGに埋め込む） | SVGの図の中に置く、実機で撮った静止画 | 写真はベクターで描けないため。縮めてからBase64でSVGに入れる |
 | PNG | 紹介動画のサムネイル（`assets/images/recooplay-thumbnail.png`） | YouTubeへのリンクの画像として置く |
 
@@ -288,14 +294,16 @@ READMEの図は**SVGを基本**にし、**実機の録画を含む図だけを�
 
 SVGには制約もあります。READMEの画像は `raw.githubusercontent.com` から `Content-Security-Policy: default-src 'none'` 付きで配信され、`<img>` で表示したSVGは外部の画像もフォントも読めません。そのため、写真はJPEGに縮めてBase64で、締めのフォントは使う字だけに絞ってSVGに埋め込んでいます。Base64で増えた分は、gzipでほぼ打ち消せることを実測で確かめています（JPEGを3枚埋め込んだ `controllers-light.svg` は、94KBのファイルが転送量59KB。JPEGとSVGを別のファイルに分けると計68KBで、2回の通信が要る）。
 
-### 13.2 録画を含む図だけWebPにする理由
+### 13.2 録画を含む図の作り方
 
 - SVGの中で録画を動かすと重い。SVGの中に動く画像を入れると、ブラウザは画像が1コマ進むたびにSVG全体を描き直します。録画が複数ある図では重くなり、止まって見えます。
-- 図ごと1本のアニメーションにする。`bake.py` が、SVGの図をChromeで2倍の解像度・透明の背景で撮り、スマホ画面の位置に録画のコマを重ねて、アニメーションWebPにします。変わった所（スマホの画面）だけを描き直すので、動きが滑らかになります。
+- 動く所だけをWebPにする。`bake.py` が、SVGの図をChromeで3倍の解像度・透明の背景で撮り、スマホ画面の位置に録画のコマを重ねて、スマホの部分だけをアニメーションWebPに切り出します（PC用は約2.4倍、スマホ用は2倍の画素）。変わった所（スマホの画面）だけを描き直すので、動きが滑らかになります。
+- 文字はSVGのまま残す。以前は図ごと1本のWebPにしていましたが、見出しや説明の文字までラスタになり、ぼやけて見えました。いまは図を段と列の枠に切り、文字の枠は元のSVGを `viewBox` で切り出したSVGにしています。READMEでは各枠を `<img width="〇%" align="absbottom">` で隙間なく並べます。枠の幅が親の幅に対する割合なので、GitHub上のどの横幅でも同じ比率で縮み、継ぎ目がずれません。`align="absbottom"` で、画像の下に文字の下がり分の隙間もできません。同じ段の枠は表示の高さがぴったりそろうように、WebPの画素数を枠の幅に比例させ、SVGの高さもそこから決めています（そろわないと、カードの枠線の継ぎ目に1px弱の切れ目が出ます）。
+- PC用とスマホ用で枠の幅をそろえる。`<picture>` の差し替えでは `width` 属性が共通になるためです。片方の版で使わない段には高さがほぼ0の画像を入れ、その段は1行分（約24px）の空きになるので、もともと空きのある所に置いています。枠の合計は99.8%にして、ブラウザの丸めで最後の枠が次の行に落ちないようにしています。詳しくは `scripts/readme/recordings/pieces.py` を参照してください。
 - 画質と大きさを比べて決めた。Pillow（libwebp）の品質80で書き出しています。ffmpegの品質90で書き出すより元の画像に近く（PSNRで0.5〜1.4dB上）、ファイルは21〜24%小さくなります（2026-11-21の比較）。
-- 重さのほとんどはこの2本にある。閲覧1回の転送量の9割以上はこの2本です（PC用は計約1.9MB、スマホ用は計約1.1MB）。GitHubは `<img>` の `loading` 属性を取り除くため、遅延読み込みでは軽くできません。
+- 重さのほとんどはこのWebPにある。閲覧1回の転送量の9割以上はこのWebPです（PC用は計約1.7MB、スマホ用は計約1.0MB）。GitHubは `<img>` の `loading` 属性を取り除くため、遅延読み込みでは軽くできません。
 
-WebPにした図も元のSVG（`controllers-*.svg`・`focus-*.svg`）は残しています。文字の大きさの確認は同じ名前のSVGで行います。WebPはSVGから焼き込むので、図の中身はSVGの生成スクリプトで直します。
+切り分ける前の元のSVG（`controllers-*.svg`・`focus-*.svg`）は残しています。文字の大きさの確認は同じ名前のSVGで行います。枠はすべてこのSVGから作るので、図の中身はSVGの生成スクリプトで直します。
 
 ## 14. 画像が読み込めないときの、文字だけのREADME
 
@@ -330,5 +338,5 @@ WebPにした図も元のSVG（`controllers-*.svg`・`focus-*.svg`）は残し�
 9. 部品の種類を絞り、すべての図で使い回す。
 10. 飾りの絵と、実際の画面を見せる画像を、見た目で分ける。
 11. 動きを入れるなら控えめにし、「視差効果を減らす」の設定を尊重する。
-12. 図はSVGを基本にし、録画を含む図だけをアニメーションWebPに焼き込む。
+12. 図はSVGを基本にし、録画の部分だけをアニメーションWebPにして、文字はSVGのまま並べる。
 13. 画像が読み込めないときのために、同じデータから文字だけのREADMEを作る。

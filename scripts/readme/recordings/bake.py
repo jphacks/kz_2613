@@ -1,11 +1,12 @@
-"""READMEの図（SVG）に埋め込んだ実画面の録画を、図ごと1本のアニメーションWebPに焼き込む。
+"""READMEの図（SVG）に埋め込んだ実画面の録画を焼き込み、スマホ画面の枠だけをアニメーションWebPに切り出す。
+文字の枠はSVGのまま切り出す（pieces.py）。READMEでは両方を隙間なく並べて1枚の図に見せる。
 
 python bake.py [図の名前 ...]   （既定：controllers focus）
 
 SVGの中に動く画像を入れると、ブラウザは画像が1コマ進むたびにSVG全体を描き直すため、
-録画が複数あると重くなって止まって見える。図をラスタの1本のアニメーションにすれば、変わる所（スマホの画面）だけを描き直す。
+録画が複数あると重くなって止まって見える。録画をラスタのアニメーションにすれば、変わる所（スマホの画面）だけを描き直す。
 
-1. SVG（showcase.py の出力。録画は最初のコマ＝触る前の画面を静止画で入れ、data-recording で録画の名前を示す）を、ヘッドレスChromeで2倍の解像度・透明の背景で撮る
+1. SVG（showcase.py の出力。録画は最初のコマ＝触る前の画面を静止画で入れ、data-recording で録画の名前を示す）を、ヘッドレスChromeで3倍の解像度・透明の背景で撮る
 2. スマホの画面の位置（<image> と角丸の clipPath）に、各録画のコマを重ねる（カメラの穴は覆わない）。録画はすべて同時に始め、短いものは最後のコマ（触っていない画面）で待つ
 3. Pillow（libwebp の WebPAnimEncoder）でアニメーションWebPにする。続けて同じコマはまとめ、
    コマの間で変わった矩形だけを書く（minimize_size）。品質80は、以前の ffmpeg（libwebp_anim・品質90）より
@@ -26,11 +27,14 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageSequence
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import pieces  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[3]
 ART = ROOT / "assets" / "readme"
 REC = ART / "recordings"
 VARIANTS = ["light", "dark", "narrow-light", "narrow-dark"]
-SCALE = 2
+SCALE = 3  # 撮る倍率。WebP の枠は pieces.cells の画素数へ縮める
 FPS = 12
 QUALITY = 80
 CHROME = os.environ.get("CHROME", r"C:\Program Files\Google\Chrome\Application\chrome.exe")
@@ -64,14 +68,14 @@ const t = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { 
 const ws = new WebSocket(t.webSocketDebuggerUrl); await new Promise(r => ws.onopen = r);
 let id = 0; const m = new Map(); ws.onmessage = e => { const d = JSON.parse(e.data); if (m.has(d.id)) { m.get(d.id)(d.result); m.delete(d.id); } };
 const call = (method, params = {}) => new Promise(r => { const i = ++id; m.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
-await call('Emulation.setDeviceMetricsOverride', { width: +w, height: +h, deviceScaleFactor: 2, mobile: false });
+await call('Emulation.setDeviceMetricsOverride', { width: +w, height: +h, deviceScaleFactor: __SCALE__, mobile: false });
 await call('Emulation.setDefaultBackgroundColorOverride', { color: { r: 0, g: 0, b: 0, a: 0 } });
 await call('Page.navigate', { url }); await new Promise(r => setTimeout(r, 2500));
 const s = await call('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: +w, height: +h, scale: 1 } });
 (await import('node:fs')).writeFileSync(out, Buffer.from(s.data, 'base64'));
 await fetch(`http://127.0.0.1:${port}/json/close/${t.id}`); process.exit(0);
 """
-    return js
+    return js.replace("__SCALE__", str(SCALE))
 
 
 def bake(name, variant, chrome_js, work):
@@ -98,7 +102,8 @@ def bake(name, variant, chrome_js, work):
     base_png = work / "base.png"
     subprocess.run(["node", str(chrome_js), str(PORT), (work / "page.html").as_uri(), str(int(round(W))), str(int(round(H))), str(base_png)], check=True)
     base = Image.open(base_png).convert("RGBA")
-    # 角丸のマスク（2倍）
+    assert base.width == round(W * SCALE), (base.size, W, SCALE)  # 撮る倍率と切り出しの倍率がずれると枠の位置が狂う
+    # 角丸のマスク（撮る倍率）
     for s in spots:
         bw, bh = round(s["w"] * SCALE), round(s["h"] * SCALE)
         mask = Image.new("L", (bw * 4, bh * 4), 0)
@@ -130,11 +135,32 @@ def bake(name, variant, chrome_js, work):
     for _, d in entries:
         acc += d * 1000
         durations.append(round(acc) - sum(durations))
-    out = ART / f"{name}-{variant}.webp"
     frames = [e[0] for e in entries]
-    frames[0].save(out, save_all=True, append_images=frames[1:], duration=durations, loop=0,
-                   lossless=False, quality=QUALITY, method=6, minimize_size=True)
-    print(f"{out.name}: {len(entries)}コマ {T:.1f}秒 {base.width}x{base.height} {out.stat().st_size // 1024}KB")
+    mode = "narrow" if variant.startswith("narrow-") else "wide"
+    theme = variant.split("-")[-1]
+    # 図をそのまま1本にせず、スマホ画面の枠だけを切り出して書く（文字の枠は pieces.py がSVGで書く）
+    for r, c, kind, x, y, w, h, px in pieces.cells(name, mode):
+        if kind != "webp":
+            continue
+        box = tuple(v * SCALE for v in (x, y, x + w, y + h))
+        out_frames, out_durs = [], []
+        for f, d in zip(frames, durations):
+            # 図の外（narrow の右の余白）は透明で広げる。端数の位置は resize の box で正確に切る
+            if box[2] > f.width or box[3] > f.height:
+                g = Image.new("RGBA", (max(f.width, int(box[2]) + 1), max(f.height, int(box[3]) + 1)), (0, 0, 0, 0))
+                g.paste(f, (0, 0))
+                f = g
+            crop = f.resize(px, Image.LANCZOS, box=box)
+            if out_frames and crop.tobytes() == out_frames[-1].tobytes():
+                out_durs[-1] += d  # この枠が変わらないコマはまとめる
+                continue
+            out_frames.append(crop)
+            out_durs.append(d)
+        out = pieces.OUT / pieces.piece_name(name, mode, theme, r, c, kind)
+        out_frames[0].save(out, save_all=True, append_images=out_frames[1:], duration=out_durs, loop=0,
+                           lossless=False, quality=QUALITY, method=6, minimize_size=True)
+        print(f"{out.name}: {len(out_frames)}コマ {T:.1f}秒 {out_frames[0].width}x{out_frames[0].height} {out.stat().st_size // 1024}KB")
+    pieces.write_svg_pieces(name, mode, theme)
 
 
 def main():
@@ -152,6 +178,7 @@ def main():
                 break
             except Exception:
                 time.sleep(0.2)
+        pieces.write_blank()
         for name in names:
             for v in VARIANTS:
                 bake(name, v, chrome_js, work)

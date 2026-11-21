@@ -27,10 +27,11 @@
 
 ## READMEの図への焼き込み
 
-READMEの 02 分担（`controllers`）と 07 注力したこと（`focus`）は、SVGではなく `bake.py` が作るアニメーションWebP（`assets/readme/<図>-<版>.webp`）を表示する。
+READMEの 02 分担（`controllers`）と 07 注力したこと（`focus`）は、`bake.py` が作る「切り絵」を並べて表示する。文字の枠は元の図のSVGを `viewBox` で切り出したSVG、スマホ画面の枠はアニメーションWebP（どちらも `assets/readme/pieces/<図>-<wide|narrow>-<light|dark>-<段><列>.<svg|webp>`）。切り方と、READMEに入れる `<p>…</p>` は `pieces.py` にある（`python pieces.py` で書き出せる）。
 
 - SVGの中に動く画像を入れると、ブラウザは画像が1コマ進むたびにSVG全体を描き直すので、録画が複数あると重く、止まって見えた。図を1本のラスタのアニメーションにすると、変わる所だけを描き直す。
-- 手順：`python scripts/readme/showcase.py`（SVG。録画は最初のコマを静止画で入れ、`data-recording` に録画の名前を書く）→ `python scripts/readme/recordings/bake.py`（SVGをChromeで2倍・透明の背景で撮り、スマホ画面の位置に録画のコマを重ねる）。
-- 録画はすべて同時に始め、短いものは最後のコマ（触っていない画面）で待つ。最後に0.6秒止めて最初へ戻る。
+- 図を1本のWebPにすると文字までラスタになり、ぼやける。そこで文字はSVGのまま残し、動く所だけをWebPにする。各枠は `<img width="〇%" align="absbottom">` で並べるので、GitHub上のどの横幅でも同じ比率で縮み、継ぎ目もずれない。
+- 手順：`python scripts/readme/showcase.py`（SVG。録画は最初のコマを静止画で入れ、`data-recording` に録画の名前を書く）→ `python scripts/readme/recordings/bake.py`（SVGをChromeで3倍・透明の背景で撮り、スマホ画面の位置に録画のコマを重ね、スマホの枠だけを切り出して、同じ段の枠と高さがぴったりそろう画素数（PC版は約2.4倍、スマホ版は2倍）に縮める。文字の枠のSVGも書く）。図の配置を変えたら、`pieces.py` の切る位置（枠の境目が文字やスマホにかからないこと）を見直し、README の `<p>…</p>` を `python pieces.py` の出力で入れ替える。
+- 録画はすべて同時に始め、短いものは最後のコマ（触っていない画面）で待つ。最後に0.6秒止めて最初へ戻る。枠ごとに別のWebPなので、枠どうしの再生の始まりは読み込みの順でずれる。
 - 文字の大きさの確認（`check_text_size.py`）は、同じ名前のSVGで行う。
 
