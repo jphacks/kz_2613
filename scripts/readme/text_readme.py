@@ -156,6 +156,9 @@ def convert(s):
         if name not in FIGS:
             raise SystemExit(f"文字に置き換える方法がない画像：{name}")
         return FIGS[name]()
+    # 文字のSVGと録画のWebPを並べた図（recordings/pieces.py）は、<p> ごと1つの図として置き換える
+    s = re.sub(r'<p><picture>(?:(?!</p>).)*?src="assets/readme/pieces/([a-z]+)-wide-light-1a\.svg".*?</p>',
+               lambda m: FIGS[m.group(1)](), s, flags=re.S)
     s = re.sub(pic, fig, s, flags=re.S)
     s = re.sub(r"\n<br>\n", "\n", s)
     s = re.sub(r"\n{3,}", "\n\n", s)

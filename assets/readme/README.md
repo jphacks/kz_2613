@@ -35,7 +35,7 @@
 READMEの相対パスの画像は `raw.githubusercontent.com` から配信され、`Content-Security-Policy: default-src 'none'` と `Cache-Control: max-age=300` が付きます。`<img>` で表示したSVGは、もともと外部の画像やフォントを読み込めません。そのため、SVGの中の写真とフォントはBase64で埋め込みます。
 
 - SVGはgzipで配信されるため、Base64による増加はほぼ打ち消されます。2026-11-21に測ると、JPEGを3枚埋め込んだ `controllers-light.svg`（main、94KB）の転送量は59KBでした。JPEGとSVGを別のファイルに分けた場合は計68KBで、2回の通信が要ります。
-- 動く録画を含む図（`controllers`・`focus`）は、SVGに埋め込まずに図ごとアニメーションWebPへ焼き込みます。閲覧1回の転送量の9割以上はこの2本です（PC版は計約1.9MB、スマホ版は計約1.1MB。そのほかのSVG 43枚は、gzipで計約150KB）。
+- 動く録画を含む図（`controllers`・`focus`）は、文字の枠をSVG、スマホ画面の枠をアニメーションWebPに切り分け（`pieces/`）、READMEで隙間なく並べて1枚の図に見せます。図ごと1本のWebPにすると文字までラスタになってぼやけるためです（2026-11-21に変更）。並べ方は `scripts/readme/recordings/pieces.py` の説明を参照してください。閲覧1回の転送量の9割以上はこのWebPです（PC版は計約1.7MB、スマホ版は計約1.0MB。そのほかのSVGは、gzipで計約150KB）。
 - GitHubは `<img>` の `loading` 属性を取り除くため、遅延読み込みは指定できません。
 
 ## フォント
