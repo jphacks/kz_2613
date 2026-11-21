@@ -835,13 +835,15 @@ def architecture(t, narrow=False):
         b.insert(0, f'<path d="{dpoly}" fill="none" stroke="{HOST_C}" stroke-width="1.5" stroke-dasharray="4 4" stroke-linejoin="round"/>' + pill)
         b.insert(0, group(0, p0, W, p1 - p0, "Windows 11 PC", t))
         # 矢印（点がたどる道は太く、色を付ける）
-        sx = 380
+        sx = 400
+        p1x, ly = 14 + 330 / 8, 150  # P1 の札の下から出て、スマホの下を通り、DataChannel へ
+        start = [(p1x, 130), (p1x, ly), (390, ly), (390, dcy + 29), (nx + 14, dcy + 29)]
         dm, wm = dcy + 29, wsy + 29
         rx = top("rtc")[0] + 60
         ax = cols[1] + 22
         gx = half + 9
         qx = top("queue")[0]
-        add([(sx, dm), (nx + 14, dm)], main=True)
+        add(start, main=True)
         add([(sx, wm), (nx + 14, wm)], both=True)
         add([(nx + 14 + cw2, dm), (W - 6, dm), (W - 6, yt - 18), (rx, yt - 18), (rx, ra)], main=True)
         add([(nx + 14, wsy + 58 - 12), (gx, wsy + 58 - 12), (gx, top_bottom + 20), (ax, top_bottom + 20), (ax, ra)], both=True)
@@ -857,7 +859,7 @@ def architecture(t, narrow=False):
         add([bot("queue"), top("send")], main=True)
         add([side("send", "l"), side("game", "r")], main=True)
         # 1つの点：スマホ → DataChannel → WebRTC → hub → 出力キュー → SendInput → ゲーム
-        segs = [([(sx, dm), (nx + 14, dm)], True), ([(nx + 14, dm), (nx + 14 + cw2, dm)], False),
+        segs = [(start, True), ([(nx + 14, dm), (nx + 14 + cw2, dm)], False),
                 ([(nx + 14 + cw2, dm), (W - 6, dm), (W - 6, yt - 18), (rx, yt - 18), (rx, ra)], True),
                 ([(rx, ra), (rx, ra + 58)], False), ([(rx, ra + 58), (rx, rb)], True),
                 ([(rx, rb), (qx, rb + 58)], False), ([(qx, rb + 58), (qx, rc)], True),
@@ -877,8 +879,8 @@ def architecture(t, narrow=False):
         colx = [pad, pad + cwn + gap]
         L1, L2, R1 = 8, 15, W - 8
         ph, phh = arch_phones(14, 34, W - 28, t)
-        note_s, nn = para(14, 34 + phh + 24, PHONE_NOTE, 13, t["muted"], W - 28, 18, 600)
-        ph_bottom = 34 + phh + 24 + (nn - 1) * 18 + 14
+        note_s, nn = para(14, 34 + phh + 36, PHONE_NOTE, 13, t["muted"], W - 28, 18, 600)
+        ph_bottom = 34 + phh + 36 + (nn - 1) * 18 + 14
         b += [group(0, 14, W, ph_bottom - 14, "スマホ（ブラウザ）× 2〜4台", t), ph, note_s]
         n0 = ph_bottom + 40
         dcy = n0 + 30
@@ -927,7 +929,9 @@ def architecture(t, narrow=False):
         cx = W / 2
         rxx = pos["rtc"][0] + cwn / 2
         qx = pos["queue"][0] + cwn / 2
-        add([(cx, ph_bottom), (cx, dcy)], main=True)
+        p1x = 14 + (W - 28) / 8  # P1 の札の下から出て、左の線を下り、DataChannel へ
+        start = [(p1x, 128), (p1x, 136), (L1, 136), (L1, dcy + 20), (pad, dcy + 20)]
+        add(start, main=True)
         add([(W - 15, ph_bottom), (W - 15, wsy + 20), (W - pad, wsy + 20)], both=True)
         add([(pad, dcy + dch - 16), (L1, dcy + dch - 16), (L1, r1 + 24), (pad, r1 + 24)], main=True)
         add([(W - pad, wsy + dch - 16), (R1, wsy + dch - 16), (R1, r1 + 24), (W - pad, r1 + 24)], both=True)
@@ -944,7 +948,7 @@ def architecture(t, narrow=False):
         gx = pos["game"][0] + 20
         add([bot("focus"), (bot("focus")[0], gy), (gx, gy), (gx, r5)], both=True, dashed=True)
         add([(pad, r5 + 22), (L1, r5 + 22), (L1, r3 + h3 - 18), (pad, r3 + h3 - 18)])
-        segs = [([(cx, ph_bottom), (cx, dcy)], True), ([(cx, dcy), (pad, dcy + dch - 16)], False),
+        segs = [(start, True), ([(pad, dcy + 20), (pad + 12, dcy + 20), (pad + 12, dcy + dch - 16), (pad, dcy + dch - 16)], False),
                 ([(pad, dcy + dch - 16), (L1, dcy + dch - 16), (L1, r1 + 24), (pad, r1 + 24)], True),
                 ([(pad, r1 + 24), (rxx, r1 + h1)], False), ([(rxx, r1 + h1), (rxx, r2)], True),
                 ([(rxx, r2), (qx, r2 + h2)], False), ([(qx, r2 + h2), (qx, r3)], True),
