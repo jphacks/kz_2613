@@ -1,8 +1,10 @@
-# READMEのデザインの考え方
+# Re:Cooplay READMEのデザイン
 
-[デザイン資料の案内](README.md) ／ [README用の図版](../../../assets/readme/README.md) ／ [製品README](../../../README.md)
+[製品紹介](../README.md) ／ [文字だけのREADME](../README-text.md) ／ [README用の図版](../assets/readme/README.md) ／ [ギャラリー](gallery.md)
 
-製品READMEのデザインで何を狙い、どう判断したかの記録です。図の作り方や配信の仕組みは [README用の図版](../../../assets/readme/README.md) に、各回の作業と確認結果は [BUILD_LOG](../handoff/BUILD_LOG.md) にあります。ここでは、ほかの作品のREADMEにも持ち出せるように、**判断の理由**を中心に残します。
+Re:CooplayのREADMEは見出し・目次・図の1枚1枚まで作り込んでいます。開いて驚いた方もいるかもしれません。この資料は、READMEのデザインを手がけた作者が、何を狙い、どう判断したかをまとめたものです。こだわりの裏にある考え方を、**判断の理由**を中心に残します。
+
+図の作り方や配信の仕組みの細かな手順は [README用の図版](../assets/readme/README.md) に、制作中の作業と確認の記録は [開発資料](develop/README.md) にあります。
 
 ## この資料の読み方
 
@@ -36,7 +38,7 @@
 
 作品名の見出しは、GitHubのふつうの見出しと見分けがつかないことを最優先にしています。動きの物語は、その錯覚が成立してから始まります。
 
-<table><tr><th align="left">画像1　作品名の見出し（約5秒後に動き出す）<br><sub>READMEで使っている画像の実物：<code>assets/readme/title-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 1100px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/title-narrow-dark.svg"><source media="(max-width: 1100px)" srcset="../../../assets/readme/title-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/title-dark.svg"><img src="../../../assets/readme/title-light.svg" alt="画像：title（READMEで使っている画像）"></picture></td></tr></table>
+<table><tr><th align="left">画像1　作品名の見出し（約5秒後に動き出す）<br><sub>READMEで使っている画像の実物：<code>assets/readme/title-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 1100px) and (prefers-color-scheme: dark)" srcset="../assets/readme/title-narrow-dark.svg"><source media="(max-width: 1100px)" srcset="../assets/readme/title-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/title-dark.svg"><img src="../assets/readme/title-light.svg" alt="画像：title（READMEで使っている画像）"></picture></td></tr></table>
 
 ### 2.1 錯覚を成立させる工夫
 
@@ -82,7 +84,7 @@
 | 全体 | ライト・ダークのテーマと、スマホの画面幅に合わせて、図が描き直される | どの環境で開いても崩れない |
 | 末尾 | 締めの「さあ、みんなで遊ぼう！」 | 製品の世界観で終わる |
 
-<table><tr><th align="left">画像2　項目の見出しと、横で内容を演じるキャラクター<br><sub>READMEで使っている画像の実物：<code>assets/readme/heads/play-03-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/play-03-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../../../assets/readme/heads/play-03-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/play-03-dark.svg"><img src="../../../assets/readme/heads/play-03-light.svg" alt="画像：heads/play-03（READMEで使っている画像）"></picture></td></tr></table>
+<table><tr><th align="left">画像2　項目の見出しと、横で内容を演じるキャラクター<br><sub>READMEで使っている画像の実物：<code>assets/readme/heads/play-03-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/heads/play-03-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../assets/readme/heads/play-03-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/play-03-dark.svg"><img src="../assets/readme/heads/play-03-light.svg" alt="画像：heads/play-03（READMEで使っている画像）"></picture></td></tr></table>
 
 項目の見出しの横で演じる形は、各項目の終わりにキャラクターが遊ぶ帯（`assets/readme/scenes/`）を置く案と見比べて選びました。帯の案は今のREADMEでは使っていません。
 
@@ -103,7 +105,7 @@ READMEの図は見出し・目次・カード・録画の図まで含めて、**
 
 作品名の見出しの4種類を、切り替えずにすべて並べると次のようになります。ダークの2枚は暗い背景用の色なので、ライトの画面では文字が薄く見えます。
 
-<table><tr><th align="left">画像3　作品名の見出しの4種類（切り替えずに4枚とも並べたもの）<br><sub>READMEで使っている画像の実物：<code>assets/readme/title-*.svg</code></sub></th></tr><tr><td><sub>PC・ライト：<code>title-light.svg</code>（幅838px）</sub><br><img src="../../../assets/readme/title-light.svg" alt="画像：作品名の見出しのPC・ライト"></td></tr><tr><td><sub>PC・ダーク：<code>title-dark.svg</code>（幅838px）</sub><br><img src="../../../assets/readme/title-dark.svg" alt="画像：作品名の見出しのPC・ダーク"></td></tr><tr><td><sub>スマホ・ライト：<code>title-narrow-light.svg</code>（幅324px）</sub><br><img src="../../../assets/readme/title-narrow-light.svg" alt="画像：作品名の見出しのスマホ・ライト"></td></tr><tr><td><sub>スマホ・ダーク：<code>title-narrow-dark.svg</code>（幅324px）</sub><br><img src="../../../assets/readme/title-narrow-dark.svg" alt="画像：作品名の見出しのスマホ・ダーク"></td></tr></table>
+<table><tr><th align="left">画像3　作品名の見出しの4種類（切り替えずに4枚とも並べたもの）<br><sub>READMEで使っている画像の実物：<code>assets/readme/title-*.svg</code></sub></th></tr><tr><td><sub>PC・ライト：<code>title-light.svg</code>（幅838px）</sub><br><img src="../assets/readme/title-light.svg" alt="画像：作品名の見出しのPC・ライト"></td></tr><tr><td><sub>PC・ダーク：<code>title-dark.svg</code>（幅838px）</sub><br><img src="../assets/readme/title-dark.svg" alt="画像：作品名の見出しのPC・ダーク"></td></tr><tr><td><sub>スマホ・ライト：<code>title-narrow-light.svg</code>（幅324px）</sub><br><img src="../assets/readme/title-narrow-light.svg" alt="画像：作品名の見出しのスマホ・ライト"></td></tr><tr><td><sub>スマホ・ダーク：<code>title-narrow-dark.svg</code>（幅324px）</sub><br><img src="../assets/readme/title-narrow-dark.svg" alt="画像：作品名の見出しのスマホ・ダーク"></td></tr></table>
 
 ### 4.2 切り替え方
 
@@ -156,9 +158,9 @@ GitHubは画面の幅が768px以上になると、本文の横に欄を出し、
 - 文字の黒は純粋な黒ではなく、ブランドの色になじむ青紫寄りの黒です（4.5の表）。
 - 色の上に載せる文字は色ごとに濃い色か白かを選びます。目次の項目名はGitHubのリンク色で描き、画像でも押せるリンクに見えるようにします。
 
-<table><tr><th align="left">画像4　ブランドのグラデーションを数字と棒に使う<br><sub>READMEで使っている画像の実物：<code>assets/readme/stats-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/stats-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../../../assets/readme/stats-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/stats-dark.svg"><img src="../../../assets/readme/stats-light.svg" alt="画像：stats（READMEで使っている画像）"></picture></td></tr></table>
+<table><tr><th align="left">画像4　ブランドのグラデーションを数字と棒に使う<br><sub>READMEで使っている画像の実物：<code>assets/readme/stats-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/stats-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../assets/readme/stats-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/stats-dark.svg"><img src="../assets/readme/stats-light.svg" alt="画像：stats（READMEで使っている画像）"></picture></td></tr></table>
 
-<table><tr><th align="left">画像5　役割の4色で担当を示す札<br><sub>READMEで使っている画像の実物：<code>assets/readme/genres-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/genres-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../../../assets/readme/genres-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/genres-dark.svg"><img src="../../../assets/readme/genres-light.svg" alt="画像：genres（READMEで使っている画像）"></picture></td></tr></table>
+<table><tr><th align="left">画像5　役割の4色で担当を示す札<br><sub>READMEで使っている画像の実物：<code>assets/readme/genres-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/genres-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../assets/readme/genres-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/genres-dark.svg"><img src="../assets/readme/genres-light.svg" alt="画像：genres（READMEで使っている画像）"></picture></td></tr></table>
 
 ## 6. 文字
 
@@ -173,7 +175,7 @@ GitHubは画面の幅が768px以上になると、本文の横に欄を出し、
 - 「日本語の見出し＋小さな英字ラベル」の2段の組み方を、見出し・カード・展望でくり返します。
 - 日本語の折り返しは、行頭の禁則（「、」「。」「）」「ー」など）、句読点の後での改行、行の長さの釣り合いを、生成スクリプトで処理します。行頭の「（」は字下げに見えるので、半文字ぶん左へ寄せます。
 
-<table><tr><th align="left">画像6　埋め込みフォントを使う締めのカード<br><sub>READMEで使っている画像の実物：<code>assets/readme/footer-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/footer-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../../../assets/readme/footer-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/footer-dark.svg"><img src="../../../assets/readme/footer-light.svg" alt="画像：footer（READMEで使っている画像）"></picture></td></tr></table>
+<table><tr><th align="left">画像6　埋め込みフォントを使う締めのカード<br><sub>READMEで使っている画像の実物：<code>assets/readme/footer-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/footer-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../assets/readme/footer-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/footer-dark.svg"><img src="../assets/readme/footer-light.svg" alt="画像：footer（READMEで使っている画像）"></picture></td></tr></table>
 
 ## 7. 形と部品
 
@@ -185,11 +187,11 @@ GitHubは画面の幅が768px以上になると、本文の横に欄を出し、
 - 説明の左の縦線、進み具合の棒、手順をつなぐ「›」を、ブランドのグラデーションで描きます。
 - 飾りとして、大見出しと締めのカードの角に、薄い色の点を並べます。節の見出しの右端に、キャラクターの4色の点を並べます。
 
-<table><tr><th align="left">画像7　枠線だけのカード・アイコンのタイル・グラデーションの番号<br><sub>READMEで使っている画像の実物：<code>assets/readme/features-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/features-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../../../assets/readme/features-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/features-dark.svg"><img src="../../../assets/readme/features-light.svg" alt="画像：features（READMEで使っている画像）"></picture></td></tr></table>
+<table><tr><th align="left">画像7　枠線だけのカード・アイコンのタイル・グラデーションの番号<br><sub>READMEで使っている画像の実物：<code>assets/readme/features-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/features-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../assets/readme/features-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/features-dark.svg"><img src="../assets/readme/features-light.svg" alt="画像：features（READMEで使っている画像）"></picture></td></tr></table>
 
-<table><tr><th align="left">画像8　色で塗った札と、手順をつなぐ「›」<br><sub>READMEで使っている画像の実物：<code>assets/readme/flow-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/flow-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../../../assets/readme/flow-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/flow-dark.svg"><img src="../../../assets/readme/flow-light.svg" alt="画像：flow（READMEで使っている画像）"></picture></td></tr></table>
+<table><tr><th align="left">画像8　色で塗った札と、手順をつなぐ「›」<br><sub>READMEで使っている画像の実物：<code>assets/readme/flow-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/flow-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../assets/readme/flow-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/flow-dark.svg"><img src="../assets/readme/flow-light.svg" alt="画像：flow（READMEで使っている画像）"></picture></td></tr></table>
 
-<table><tr><th align="left">画像9　グラデーションの点線でまとめる枠<br><sub>READMEで使っている画像の実物：<code>assets/readme/architecture-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/architecture-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../../../assets/readme/architecture-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/architecture-dark.svg"><img src="../../../assets/readme/architecture-light.svg" alt="画像：architecture（READMEで使っている画像）"></picture></td></tr></table>
+<table><tr><th align="left">画像9　グラデーションの点線でまとめる枠<br><sub>READMEで使っている画像の実物：<code>assets/readme/architecture-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/architecture-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../assets/readme/architecture-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/architecture-dark.svg"><img src="../assets/readme/architecture-light.svg" alt="画像：architecture（READMEで使っている画像）"></picture></td></tr></table>
 
 ## 8. 見出しの階層
 
@@ -205,9 +207,9 @@ GitHubは画面の幅が768px以上になると、本文の横に欄を出し、
 - 目次は表を使わず、本文欄の幅の49%ずつの画像を並べます。表は幅いっぱいに広がらず、中央に浮いてしまうためです。
 - 見出しを画像にしても、`<a id>` を置いて目次のリンクが効くようにします。
 
-<table><tr><th align="left">画像10　大見出し（PART）<br><sub>READMEで使っている画像の実物：<code>assets/readme/heads/part-1-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/part-1-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../../../assets/readme/heads/part-1-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/part-1-dark.svg"><img src="../../../assets/readme/heads/part-1-light.svg" alt="画像：heads/part-1（READMEで使っている画像）"></picture></td></tr></table>
+<table><tr><th align="left">画像10　大見出し（PART）<br><sub>READMEで使っている画像の実物：<code>assets/readme/heads/part-1-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/heads/part-1-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../assets/readme/heads/part-1-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/part-1-dark.svg"><img src="../assets/readme/heads/part-1-light.svg" alt="画像：heads/part-1（READMEで使っている画像）"></picture></td></tr></table>
 
-<table><tr><th align="left">画像11　節の見出しと目次<br><sub>READMEで使っている画像の実物：<code>assets/readme/heads/toc-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-title-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../../../assets/readme/heads/toc-title-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-title-dark.svg"><img src="../../../assets/readme/heads/toc-title-light.svg" alt="画像：heads/toc-title（READMEで使っている画像）"></picture><br><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-part-1-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../../../assets/readme/heads/toc-part-1-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-part-1-dark.svg"><img src="../../../assets/readme/heads/toc-part-1-light.svg" width="49%" alt="画像：heads/toc-part-1（READMEで使っている画像）"></picture> <picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-part-2-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../../../assets/readme/heads/toc-part-2-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-part-2-dark.svg"><img src="../../../assets/readme/heads/toc-part-2-light.svg" width="49%" alt="画像：heads/toc-part-2（READMEで使っている画像）"></picture><br><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-01-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../../../assets/readme/heads/toc-01-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-01-dark.svg"><img src="../../../assets/readme/heads/toc-01-light.svg" width="49%" alt="画像：heads/toc-01（READMEで使っている画像）"></picture> <picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-08-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../../../assets/readme/heads/toc-08-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-08-dark.svg"><img src="../../../assets/readme/heads/toc-08-light.svg" width="49%" alt="画像：heads/toc-08（READMEで使っている画像）"></picture></td></tr></table>
+<table><tr><th align="left">画像11　節の見出しと目次<br><sub>READMEで使っている画像の実物：<code>assets/readme/heads/toc-*.svg</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/heads/toc-title-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../assets/readme/heads/toc-title-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/toc-title-dark.svg"><img src="../assets/readme/heads/toc-title-light.svg" alt="画像：heads/toc-title（READMEで使っている画像）"></picture><br><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/heads/toc-part-1-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../assets/readme/heads/toc-part-1-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/toc-part-1-dark.svg"><img src="../assets/readme/heads/toc-part-1-light.svg" width="49%" alt="画像：heads/toc-part-1（READMEで使っている画像）"></picture> <picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/heads/toc-part-2-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../assets/readme/heads/toc-part-2-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/toc-part-2-dark.svg"><img src="../assets/readme/heads/toc-part-2-light.svg" width="49%" alt="画像：heads/toc-part-2（READMEで使っている画像）"></picture><br><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/heads/toc-01-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../assets/readme/heads/toc-01-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/toc-01-dark.svg"><img src="../assets/readme/heads/toc-01-light.svg" width="49%" alt="画像：heads/toc-01（READMEで使っている画像）"></picture> <picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/heads/toc-08-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../assets/readme/heads/toc-08-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/toc-08-dark.svg"><img src="../assets/readme/heads/toc-08-light.svg" width="49%" alt="画像：heads/toc-08（READMEで使っている画像）"></picture></td></tr></table>
 
 ## 9. キャラクター
 
@@ -229,7 +231,7 @@ GitHubは画面の幅が768px以上になると、本文の横に欄を出し、
 - 録画は黒いふちとカメラ穴のあるふつうのスマホの枠に入れます。指の位置は円で、PCのカーソルは輪で重ねます。加工はそれと、読み込み中の早送りだけにします。
 - 最初のコマは静止画の図と同じ見た目にし、最後に少し止めてから最初に戻ります。
 
-<table><tr><th align="left">画像12　実機の操作の録画を焼き込んだ図（アニメーションWebP）<br><sub>READMEで使っている画像の実物：<code>assets/readme/controllers-*.webp</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../../../assets/readme/controllers-narrow-dark.webp"><source media="(max-width: 700px)" srcset="../../../assets/readme/controllers-narrow-light.webp"><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/controllers-dark.webp"><img src="../../../assets/readme/controllers-light.webp" alt="画像：controllers（READMEで使っている画像）"></picture></td></tr></table>
+<table><tr><th align="left">画像12　実機の操作の録画を焼き込んだ図（アニメーションWebP）<br><sub>READMEで使っている画像の実物：<code>assets/readme/controllers-*.webp</code></sub></th></tr><tr><td><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../assets/readme/controllers-narrow-dark.webp"><source media="(max-width: 700px)" srcset="../assets/readme/controllers-narrow-light.webp"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/controllers-dark.webp"><img src="../assets/readme/controllers-light.webp" alt="画像：controllers（READMEで使っている画像）"></picture></td></tr></table>
 
 ## 12. SVGとWebPの使い分け
 
@@ -264,7 +266,7 @@ WebPにした図も元のSVG（`controllers-*.svg`・`focus-*.svg`）は残し�
 
 ## 13. 画像が読み込めないときの、文字だけのREADME
 
-リポジトリの直下に、画像を使わず文字だけで読める `README-text.md` を置いています（2026-11-20 の利用者の指示）。READMEのほとんどが画像なので、画像が読み込めないときにも同じ内容を読めるようにするためです。
+リポジトリの直下に、画像を使わず文字だけで読める `README-text.md` を置いています（2026-11-20 に追加）。READMEのほとんどが画像なので、画像が読み込めないときにも同じ内容を読めるようにするためです。
 
 - `scripts/readme/text_readme.py` が `README.md` から作ります。直接は編集しません。
 - 文章は `README.md` のまま使い、画像（`<picture>`）だけを、同じ内容の見出し・表・箇条書きに置き換えます。
@@ -278,7 +280,7 @@ WebPにした図も元のSVG（`controllers-*.svg`・`focus-*.svg`）は残し�
 - 図は生成スクリプトから書き出します。SVGは手で直さず、`scripts/readme/` のスクリプトを直してから書き出します。4種類の画像、文字だけのREADME（`README-text.md`）、画像の代替テキストを、同じデータから作るためです。
 - 案は並べて選びます。作品名の見出しや項目の見出しは、比較用のブランチで複数の案を作り、GitHub上で見比べてから決めました。
 - GitHub上で確かめます。手元のブラウザだけでなく、GitHubに表示したREADMEを、PCとスマホ、ライトとダークで撮って確かめます。
-- READMEの変更は、利用者が確認してからmainへ入れます。
+- READMEの変更は、作者が確認してからmainへ入れます。
 
 ## 15. ほかのREADMEに持ち出すときのチェックリスト
 
