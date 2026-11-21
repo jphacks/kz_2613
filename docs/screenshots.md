@@ -145,6 +145,15 @@ PCに入っているゲームを自動で見つけて並べます。この PC �
 |:--:|:--:|:--:|
 | <a href="screenshots/device/phone-14-layout-editor.jpg"><img src="screenshots/device/phone-14-layout-editor.jpg" width="190" alt="配置の編集。上に破棄・元に戻す・保存の帯"></a> | <a href="screenshots/device/phone-15-layout-selected.jpg"><img src="screenshots/device/phone-15-layout-selected.jpg" width="190" alt="Spaceキーの部品が選ばれ、8つのつまみが出ている"></a> | <a href="screenshots/device/phone-16-layout-menu.jpg"><img src="screenshots/device/phone-16-layout-menu.jpg" width="190" alt="操作の付け替え・複製・画面から外す・閉じるのメニュー"></a> |
 
+編集の操作を通して録画したものです（Android 実機。指の位置の円は録画後に重ねています）。つまみで縦横を変え、ほかのボタンに重ねると置ける場所を点線の枠で示し、指を離すとそこに収まります。
+
+<div align="center">
+<picture>
+  <source media="(max-width: 700px)" srcset="../assets/readme/recordings/layout-edit-narrow.webp">
+  <img src="../assets/readme/recordings/layout-edit-wide.webp" width="640" alt="実画面の録画。配置の編集で、Spaceキーのつまみを引いて縦と横を縮め、Ctrlキーを重ねると置ける場所が点線の枠で示され、指を離すとそこに収まる。空いた所へShiftキーを広げて保存する">
+</picture>
+</div>
+
 操作設定で「ゲーム画面の右上に、担当と操作中のキーを重ねて表示する」を ON にすると、PCアプリが透明なウィンドウで担当を重ねて表示します（初期は OFF）。
 
 <a href="screenshots/device/pc-34-desktop-overlay.png"><img src="screenshots/device/pc-34-desktop-overlay.png" width="200" alt="プレイヤーごとの担当を縦に並べた、重ねる表示"></a>

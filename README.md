@@ -57,10 +57,10 @@ PCアプリのQRコードをスマホのブラウザで読み取るだけで参�
 </picture>
 
 <picture>
-  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/controllers-narrow-dark.svg">
-  <source media="(max-width: 700px)" srcset="assets/readme/controllers-narrow-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/controllers-dark.svg">
-  <img src="assets/readme/controllers-light.svg" alt="3人で『Minecraft』を遊ぶ場合の分担と、実際のスマホの画面。P1（移動・ホスト）：移動・ジャンプ・スニーク・ダッシュを8方向スティック＋アクションボタンで。P2（視点）：視点・カメラ操作を感度調整つきドラッグパッドで。P3（アクション）：攻撃・ブロック設置・持ち物切替・インベントリを左右クリック・ホイール・キーボタンで">
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/controllers-narrow-dark.webp">
+  <source media="(max-width: 700px)" srcset="assets/readme/controllers-narrow-light.webp">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/controllers-dark.webp">
+  <img src="assets/readme/controllers-light.webp" width="838" alt="3人で『Minecraft』を遊ぶ場合の分担と、実際のスマホの画面（それぞれの担当を操作している様子）。P1（移動・ホスト）：移動・ジャンプ・スニーク・ダッシュを8方向スティック＋アクションボタンで。P2（視点）：視点・カメラ操作を感度調整つきドラッグパッドで。P3（アクション）：攻撃・ブロック設置・持ち物切替・インベントリを左右クリック・ホイール・キーボタンで">
 </picture>
 
 参加からゲームの終了までの、PCとスマホのすべての画面は[画面一覧](docs/screenshots.md)で見られます。
@@ -142,10 +142,10 @@ https://github.com/user-attachments/assets/60d577f4-e287-45bc-bc6a-09455dd017c3
 「友達と集まったその場で、いつものPCゲームをすぐにみんなで遊べること」を目指し、3つの点に注力しました。
 
 <picture>
-  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/focus-narrow-dark.svg">
-  <source media="(max-width: 700px)" srcset="assets/readme/focus-narrow-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/focus-dark.svg">
-  <img src="assets/readme/focus-light.svg" alt="注力したこと。1：スマホだけで準備から開始まで（P1のスマホがタッチパッド付きのリモコンになる。実際のホストの画面）。2：持ち方に合わせるUI編集（ボタンの位置と縦横のサイズを各スマホで変えられる。実際の編集画面）。3：違和感のない低遅延（Wi-Fiの往復遅延9.0ms、スマホの操作からPC入力まで26.0ms。いずれも中央値）">
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/focus-narrow-dark.webp">
+  <source media="(max-width: 700px)" srcset="assets/readme/focus-narrow-light.webp">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/focus-dark.webp">
+  <img src="assets/readme/focus-light.webp" width="838" alt="注力したこと。1：スマホだけで準備から開始まで（P1のスマホがタッチパッド付きのリモコンになる。実際のホストの画面でタッチパッドを操作している様子）。2：持ち方に合わせるUI編集（ボタンの位置と縦横のサイズを各スマホで変えられる。実際の編集画面で、ボタンの大きさを変え、動かしている様子）。3：違和感のない低遅延（Wi-Fiの往復遅延9.0ms、スマホの操作からPC入力まで26.0ms。いずれも中央値）">
 </picture>
 
 #### 1. 準備から開始まで、スマホだけで進む導線

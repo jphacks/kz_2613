@@ -51,6 +51,9 @@ def main():
         print(f"== {name}（本文欄 {col}px、本文16px）")
         for block in blocks:
             src = pick(block, screen)
+            # 録画を焼き込んだ図（recordings/bake.py）は、元のSVGの文字で確かめる
+            if src.endswith(".webp") and (ROOT / src[:-5]).with_suffix(".svg").exists():
+                src = src[:-5] + ".svg"
             if not src.endswith(".svg") or src.startswith("http"):
                 continue
             w_attr = re.search(r'<img[^>]*\swidth="([\d.]+)(%?)"', block)

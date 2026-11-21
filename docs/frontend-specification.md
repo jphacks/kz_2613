@@ -296,6 +296,16 @@ flowchart LR
   - **タップ選択**：8方向のリサイズハンドル（スティックは四隅4方向）を表示してサイズ変更。
   - **ドラッグ移動**：他の部品は一切勝手に動かさず、重なる場合は最も近い配置可能な空き領域（`findFreeSpot`、最小間隔6px）を枠でプレビュー表示してスナップします。
   - **長押しメニュー**：ボタンに割り当てる担当操作の付け替え、**同じ操作ボタンの複製**（複数箇所にジャンプボタンを置くなど、最大64部品）、画面からの非表示化、および非表示部品の復元・初期配置へのリセット、最大50手のUndo履歴を備えています。
+
+実際の編集の様子（Android実機の録画）：
+
+<div align="center">
+<picture>
+  <source media="(max-width: 700px)" srcset="../assets/readme/recordings/layout-edit-narrow.webp">
+  <img src="../assets/readme/recordings/layout-edit-wide.webp" width="640" alt="実画面の録画。配置の編集で、Spaceキーのつまみを引いて縦と横を縮め、Ctrlキーを重ねると置ける場所が点線の枠で示され、指を離すとそこに収まる。空いた所へShiftキーを広げて保存する">
+</picture>
+</div>
+
 - **回転ロック時の「持ち方」切替（`shared/input/hold.ts`）**：
   - スマホの画面回転をロックしたまま横持ちで遊ぶプレイヤー向けに、診断ダイアログで「縦持ち」「横持ち（左が上）」「横持ち（右が上）」を切り替えられます（#514）。変更時は押下中の入力を即時解放し、スティックの8方向判定と視点パッドの `dx`/`dy` 軸を手元の向きに合わせて90度回転させます。
 
@@ -313,6 +323,15 @@ P1（ホスト）のスマホは、協力プレイ中（`coop`）以外のすべ
   - **`app`**：PCアプリ（`/app`）が前面のとき、WebView内の仮想カーソルを動かしてタイル選択やボタン操作を行います。さらにデスクトップ版で仮想カーソルがウィンドウの端を越えると（`remote_leave`）、その同じ比率の座標へOSの実マウスカーソルを移動させ、そのまま `desktop` 経路へシームレスに引き継ぎます。
   - **`desktop`**：Minecraft公式ランチャーやSteamの起動ダイアログなど、PCアプリでも対象ゲームでもないウィンドウが前面のとき（または枠外へ出たとき）、OSの実際のマウス移動・クリック・ホイール・Escとして `SendInput` で送出し、PCの物理マウスに触れずにランチャーの「プレイ」押下まで完結させます。
   - **`game`**：準備中（`preparing`）や一時停止中（`paused`）に対象ゲームが前面のとき、ゲームのメニューやインベントリを操作します。
+
+実際の操作の様子（PCアプリとAndroid実機の画面を同時に録画）。PCアプリの中では `app`、ランチャーが前面になってからは `desktop` の経路で動いています。
+
+<div align="center">
+<picture>
+  <source media="(max-width: 700px)" srcset="../assets/readme/recordings/remote-start-narrow.webp">
+  <img src="../assets/readme/recordings/remote-start-wide.webp" width="760" alt="実画面の録画。P1のスマホのタッチパッドでPCのカーソルを動かし、Minecraftを選んで分担を決め、ゲームを起動する。開いた公式ランチャーの「プレイ」もスマホから押す">
+</picture>
+</div>
 
 ---
 

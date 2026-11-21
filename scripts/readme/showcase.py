@@ -20,6 +20,7 @@ import build_art as art  # noqa: E402
 from build_art import CHARS, PC_W, PHONE_W, THEMES, text  # noqa: E402
 
 SHOTS = art.ROOT / "docs" / "screenshots" / "device"
+RECORDINGS = art.ROOT / "assets" / "readme" / "recordings"  # scripts/readme/recordings/compose.py で作る
 GAP = 16
 SPARK = "M0-7Q1-1 7 0Q1 1 0 7Q-1 1-7 0Q-1-1 0-7Z"
 BODY = {n: CHARS[n]["body"] for n in art.ORDER}
@@ -122,6 +123,15 @@ _clip = [0]
 def shot(name, w):
     """撮影画像を幅 w(px) に縮めたJPEGのdata URIと、縦横比（幅/高さ）。"""
     key = (name, w)
+    if key not in _shot_cache and name.endswith(".webp"):
+        # 実画面の録画は、最初のコマ（触る前の画面）を静止画として入れる。動きは recordings/bake.py が図ごとWebPに焼き込む
+        with Image.open(RECORDINGS / name) as anim:
+            first = anim.convert("RGB")
+        ratio = first.width / first.height
+        first = first.resize((w, round(w / ratio)), Image.LANCZOS)
+        buf = io.BytesIO()
+        first.save(buf, "JPEG", quality=82, optimize=True, progressive=True)
+        _shot_cache[key] = ("data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode(), ratio)
     if key not in _shot_cache:
         im = Image.open(SHOTS / name).convert("RGB")
         ratio = im.width / im.height
@@ -150,8 +160,9 @@ def phone(name, x, y, w, image, t):
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" rx="{r_out:.1f}" fill="#16181F" stroke="{edge}" stroke-width="1.2"/>'
             f'<clipPath id="{cid}"><rect x="{sx0:.1f}" y="{sy0:.1f}" width="{sw:.1f}" height="{sh:.1f}" rx="{r_in:.1f}"/></clipPath>'
             f'<image clip-path="url(#{cid})" x="{sx0:.1f}" y="{sy0:.1f}" width="{sw:.1f}" height="{sh:.1f}" '
-            f'preserveAspectRatio="xMidYMid slice" href="{uri}"/>'
-            f'<circle cx="{x + w / 2:.1f}" cy="{sy0 + bz * 1.1:.1f}" r="{max(2.2, w * .018):.1f}" fill="#16181F"/>'), h
+            + (f'data-recording="{image}" ' if image.endswith(".webp") else "")
+            + f'preserveAspectRatio="xMidYMid slice" href="{uri}"/>'
+            + f'<circle cx="{x + w / 2:.1f}" cy="{sy0 + bz * 1.1:.1f}" r="{max(2.2, w * .018):.1f}" fill="#16181F"/>'), h
 
 
 def finish(W, H, b, t, alt, top=10, bottom=30):
@@ -161,9 +172,9 @@ def finish(W, H, b, t, alt, top=10, bottom=30):
 
 # ---------- 02 製品説明：3人の分担と、実際のスマホの画面 ----------
 
-ROLES = [("blue", "P1", "移動", "ホスト", "phone-11-coop-move.jpg", "移動・ジャンプ・スニーク・ダッシュ", "8方向スティック＋アクションボタン"),
-         ("green", "P2", "視点", None, "phone-32-p2-look.jpg", "視点・カメラ操作", "感度調整つきドラッグパッド"),
-         ("purple", "P3", "アクション", None, "phone-37-p3-action.jpg", "攻撃・ブロック設置・持ち物切替・インベントリ", "左右クリック・ホイール・キーボタン")]
+ROLES = [("blue", "P1", "移動", "ホスト", "role-p1-move.webp", "移動・ジャンプ・スニーク・ダッシュ", "8方向スティック＋アクションボタン"),
+         ("green", "P2", "視点", None, "role-p2-look.webp", "視点・カメラ操作", "感度調整つきドラッグパッド"),
+         ("purple", "P3", "アクション", None, "role-p3-action.webp", "攻撃・ブロック設置・持ち物切替・インベントリ", "左右クリック・ホイール・キーボタン")]
 
 
 def role_head(x, y, name, p, role, sub, t, anchor_center=None):
@@ -482,8 +493,8 @@ def roadmap(t, narrow=False):
 
 # ---------- 07 注力したこと：3つのこだわり ----------
 
-FOCUS = [("blue", "phone-01-host-lobby-1.jpg", "スマホだけで準備から開始まで", "P1のスマホがタッチパッド付きのリモコンになる"),
-         ("green", "phone-14-layout-editor.jpg", "持ち方に合わせるUI編集", "ボタンの位置と縦横のサイズを、各スマホで変えられる")]
+FOCUS = [("blue", "remote-screen.webp", "スマホだけで準備から開始まで", "P1のスマホがタッチパッド付きのリモコンになる"),
+         ("green", "layout-edit-screen.webp", "持ち方に合わせるUI編集", "ボタンの位置と縦横のサイズを、各スマホで変えられる")]
 LATENCY = [("9.0", "ms", "Wi-Fiの往復遅延", "実機の測定・中央値"), ("26.0", "ms", "スマホの操作からPC入力まで", "推定遅延・中央値")]
 
 

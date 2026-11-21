@@ -1,0 +1,28 @@
+import { moveTo, tap, LEFT, sleep, closeCursor, cursor, vcursor } from './remote.mjs';
+import { start } from './rec.mjs';
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+const ps = (...a) => execFileSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', process.cwd() + '/cur.ps1', ...a.map(String)]);
+const ev = (port, e) => execFileSync('node', ['ev.mjs', port, '8080', e]).toString().trim();
+const text = () => ev('9333', 'document.body.innerText');
+async function click(r, label, check) { await sleep(600); r.mark(label); tap(...LEFT); for (let i = 0; i < 3; i++) { await sleep(900); if (!check || check()) return; r.mark(label + '-retry'); tap(...LEFT); } throw new Error('click failed ' + label); }
+const btn = label => JSON.parse(ev('9333', `JSON.stringify((r=>[Math.round(60+r.left+r.width/2),Math.round(83+r.top+r.height/2)])([...document.querySelectorAll('button')].find(b=>b.innerText.replace(/\s/g,'').includes('${label}')).getBoundingClientRect()))`));
+ev('9222', "window.__log=[];for(const t of ['pointerdown','pointermove','pointerup'])addEventListener(t,e=>__log.push([t[7],Math.round(performance.timeOrigin+performance.now()),Math.round(e.clientX),Math.round(e.clientY)]),{capture:true});1");
+ps(1500, 600);
+await sleep(500);
+const r = start('rec-b');
+const t0 = Date.now(); const clog = []; let logging = true;
+(async () => { while (logging) { const t = Date.now() - t0; clog.push([t, ...(await cursor()), ...((await vcursor()) || [0, 0])]); await sleep(25); } })();
+await sleep(2000); r.mark('start');
+await moveTo(621, 390); await click(r, 'click-game', () => text().includes('Minecraft') && ev('9333',"!!document.querySelector('.game-choice.selected')")==='true');
+await moveTo(712, 268); await click(r, 'click-advance', () => text().includes('この分担で決定')); await sleep(1200);
+let [x, y] = btn('この分担で決定'); await moveTo(x, y); await click(r, 'click-decide', () => text().includes('ゲームを起動する')); await sleep(700);
+[x, y] = btn('ゲームを起動する'); await moveTo(x, y); await click(r, 'click-launch');
+await sleep(15000); r.mark('launcher');
+await moveTo(994, 744, 0.92, true); await click(r, 'click-play');
+await sleep(7000);
+logging = false; await sleep(100);
+const marks = await r.stop();
+fs.writeFileSync('rec-b-marks.json', JSON.stringify({ marks, clog, log: JSON.parse(ev('9222', 'JSON.stringify(__log)')) }));
+console.log(marks);
+closeCursor();
