@@ -4,6 +4,8 @@
 
 製品READMEのデザインで何を狙い、どう判断したかの記録です。図の作り方や配信の仕組みは [README用の図版](../../../assets/readme/README.md) に、各回の作業と確認結果は [BUILD_LOG](../handoff/BUILD_LOG.md) にあります。ここでは、ほかの作品のREADMEにも持ち出せるように、**判断の理由**を中心に残します。
 
+特定の部分のデザインを説明する所には、READMEで使っている画像の実物を置いています。画像はすべて「画像1」のような番号の見出しと、ファイルの場所を書いた枠の中に入れています。**枠の中は画像、枠の外はこの資料の本文です。** とくに見出しの画像は本物の見出しと見分けがつかないように作っているため、枠の外に置くとこの資料の見出しと区別できなくなります。
+
 ## 1. いちばんの狙い：「ぱっと見ふつう」から「えええ」へ
 
 このREADMEは最初から圧倒するのではなく、**驚きを段階的に大きくする**ように作っています。
@@ -26,6 +28,8 @@
 | 1文字ずつの位置は、GitHubの見出しをChromeで実測した幅で置く | OSの書体の差で文字の並びが不自然にならないようにする |
 | `<h1>` の中に `align="absbottom"` で画像を入れる | 見出しの下線までの間隔を、ふつうの見出しと同じにする |
 | 一番上に「※JPHACKS 2026 Award Dayでの内容です」を、GitHubの引用と同じ見た目で描く | 下の2つを参照 |
+
+<table><tr><th align="left">画像1　作品名の見出し（約5秒後に動き出す）<br><sub>READMEで使っている画像の実物：<code>assets/readme/title-*.svg</code></sub></th></tr><tr><td><picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/title-dark.svg"><img src="../../../assets/readme/title-light.svg" alt="画像：title"></picture></td></tr></table>
 
 一番上の「※」の注釈には、2つの役割があります。
 
@@ -62,12 +66,18 @@
 | 全体 | ライト・ダークのテーマと、スマホの画面幅に合わせて、図が描き直される | どの環境で開いても崩れない |
 | 末尾 | 締めの「さあ、みんなで遊ぼう！」 | 製品の世界観で終わる |
 
+<table><tr><th align="left">画像2　項目の見出しと、横で内容を演じるキャラクター<br><sub>READMEで使っている画像の実物：<code>assets/readme/heads/play-03-*.svg</code></sub></th></tr><tr><td><picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/play-03-dark.svg"><img src="../../../assets/readme/heads/play-03-light.svg" alt="画像：heads/play-03"></picture></td></tr></table>
+
 ## 4. 色
 
 - ブランドのグラデーションは、紫 `#C03BFF` → 青 `#6F86FF` → 水色 `#22C4FA` です。使う場所を、大きな数字・細い線・矢印・札の縁に限ります。面を塗ることはほとんどなく、塗るときも不透明度を14%に抑えます。派手にせず、要所だけを目立たせるためです。
 - キャラクターの4色は、P1青 `#24C2FA`・P2緑 `#5EFF5D`・P3紫 `#CB00EA`・P4赤 `#FF1D00` です。アプリの `colors.css` と同じ色です。図の中で「誰の担当か」を示すときは、必ずこの4色を使います。**色に役割の意味を持たせ、最後まで同じ意味で使う**ので、読み手は色だけで担当を追えます。
 - ライトとダークのテーマで、背景・文字・線の色を個別に決めています。色を反転させるのではなく、テーマごとに描き直します。文字の黒は純粋な黒ではなく、ブランドの色になじむ青紫寄りの黒（ライトで `#2E2B48`）です。
 - 色の上に載せる文字は色ごとに濃い色か白かを選びます。目次の項目名はGitHubのリンク色（ライト `#0969DA`・ダーク `#4493F8`）で描き、画像でも押せるリンクに見えるようにします。
+
+<table><tr><th align="left">画像3　ブランドのグラデーションを数字と棒に使う<br><sub>READMEで使っている画像の実物：<code>assets/readme/stats-*.svg</code></sub></th></tr><tr><td><picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/stats-dark.svg"><img src="../../../assets/readme/stats-light.svg" alt="画像：stats"></picture></td></tr></table>
+
+<table><tr><th align="left">画像4　役割の4色で担当を示す札<br><sub>READMEで使っている画像の実物：<code>assets/readme/genres-*.svg</code></sub></th></tr><tr><td><picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/genres-dark.svg"><img src="../../../assets/readme/genres-light.svg" alt="画像：genres"></picture></td></tr></table>
 
 ## 5. 文字
 
@@ -82,6 +92,8 @@
 - 「日本語の見出し＋小さな英字ラベル」の2段の組み方を、見出し・カード・展望でくり返します。
 - 日本語の折り返しは、行頭の禁則（「、」「。」「）」「ー」など）、句読点の後での改行、行の長さの釣り合いを、生成スクリプトで処理します。行頭の「（」は字下げに見えるので、半文字ぶん左へ寄せます。
 
+<table><tr><th align="left">画像5　埋め込みフォントを使う締めのカード<br><sub>READMEで使っている画像の実物：<code>assets/readme/footer-*.svg</code></sub></th></tr><tr><td><picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/footer-dark.svg"><img src="../../../assets/readme/footer-light.svg" alt="画像：footer"></picture></td></tr></table>
+
 ## 6. 形と部品
 
 部品の種類を絞り、すべての図で使い回しています。10枚以上の図が1つの体系に見えるのは、このためです。
@@ -91,6 +103,12 @@
 - アイコンのタイルは、角丸の正方形を役割の色で塗り、白い線のアイコンを載せます。
 - 説明の左の縦線、進み具合の棒、手順をつなぐ「›」を、ブランドのグラデーションで描きます。
 - 飾りとして、大見出しと締めのカードの角に、薄い色の点を並べます。節の見出しの右端に、キャラクターの4色の点を並べます。
+
+<table><tr><th align="left">画像6　枠線だけのカード・アイコンのタイル・グラデーションの番号<br><sub>READMEで使っている画像の実物：<code>assets/readme/features-*.svg</code></sub></th></tr><tr><td><picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/features-dark.svg"><img src="../../../assets/readme/features-light.svg" alt="画像：features"></picture></td></tr></table>
+
+<table><tr><th align="left">画像7　色で塗った札と、手順をつなぐ「›」<br><sub>READMEで使っている画像の実物：<code>assets/readme/flow-*.svg</code></sub></th></tr><tr><td><picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/flow-dark.svg"><img src="../../../assets/readme/flow-light.svg" alt="画像：flow"></picture></td></tr></table>
+
+<table><tr><th align="left">画像8　グラデーションの点線でまとめる枠<br><sub>READMEで使っている画像の実物：<code>assets/readme/architecture-*.svg</code></sub></th></tr><tr><td><picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/architecture-dark.svg"><img src="../../../assets/readme/architecture-light.svg" alt="画像：architecture"></picture></td></tr></table>
 
 ## 7. 見出しの階層
 
@@ -106,6 +124,10 @@
 - 目次は表を使わず、本文欄の幅の49%ずつの画像を並べます。表は幅いっぱいに広がらず、中央に浮いてしまうためです。
 - 見出しを画像にしても、`<a id>` を置いて目次のリンクが効くようにします。
 
+<table><tr><th align="left">画像9　大見出し（PART）<br><sub>READMEで使っている画像の実物：<code>assets/readme/heads/part-1-*.svg</code></sub></th></tr><tr><td><picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/part-1-dark.svg"><img src="../../../assets/readme/heads/part-1-light.svg" alt="画像：heads/part-1"></picture></td></tr></table>
+
+<table><tr><th align="left">画像10　節の見出しと目次<br><sub>READMEで使っている画像の実物：<code>assets/readme/heads/toc-*.svg</code></sub></th></tr><tr><td><picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-title-dark.svg"><img src="../../../assets/readme/heads/toc-title-light.svg" alt="画像：heads/toc-title"></picture><br><picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-part-1-dark.svg"><img src="../../../assets/readme/heads/toc-part-1-light.svg" width="49%" alt="画像：heads/toc-part-1"></picture> <picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-part-2-dark.svg"><img src="../../../assets/readme/heads/toc-part-2-light.svg" width="49%" alt="画像：heads/toc-part-2"></picture><br><picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-01-dark.svg"><img src="../../../assets/readme/heads/toc-01-light.svg" width="49%" alt="画像：heads/toc-01"></picture> <picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/heads/toc-08-dark.svg"><img src="../../../assets/readme/heads/toc-08-light.svg" width="49%" alt="画像：heads/toc-08"></picture></td></tr></table>
+
 ## 8. キャラクター
 
 - 製品のコントローラーそのものがキャラクターです。4体ともスマホの形（四辺が少しくびれた縦長の枠に黒い画面）です。顔だけで性格を分けます（青は丸い目、緑は四角い目、紫は細い目、赤は吊り目）。
@@ -120,11 +142,15 @@
 - 最初は止めておきます。作品名の見出しと同じく、にぎやかさは後から来るようにします。
 - OSで「視差効果を減らす」を選んだ閲覧者には、すべての動きを止めます。
 
+<table><tr><th align="left">画像11　区切りの帯でキャラクターが遊ぶ場面<br><sub>READMEで使っている画像の実物：<code>assets/readme/scenes/scene-07-volley.svg</code></sub></th></tr><tr><td><picture><img src="../../../assets/readme/scenes/scene-07-volley.svg" alt="画像：scenes/scene-07-volley"></picture></td></tr></table>
+
 ## 10. 実際の画面と録画
 
 - 図の中のスマホ画面は作ったモックではなく、**実機で撮った画面と、実際の指の操作の録画**です。主張に証拠を添えるためです。
 - 録画は黒いふちとカメラ穴のあるふつうのスマホの枠に入れます。指の位置は円で、PCのカーソルは輪で重ねます。加工はそれと、読み込み中の早送りだけにします。
 - 最初のコマは静止画の図と同じ見た目にし、最後に少し止めてから最初に戻ります。
+
+<table><tr><th align="left">画像12　実機の操作の録画を焼き込んだ図（アニメーションWebP）<br><sub>READMEで使っている画像の実物：<code>assets/readme/controllers-*.webp</code></sub></th></tr><tr><td><picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/controllers-dark.webp"><img src="../../../assets/readme/controllers-light.webp" alt="画像：controllers"></picture></td></tr></table>
 
 ## 11. 画面の幅とテーマへの合わせ方
 
@@ -136,14 +162,58 @@
 | 図の文字は13px以上（`check_text_size.py` で確認） | 本文16pxとの比を、PCとスマホでそろえる |
 | 作品名の見出しだけは、画面の幅1100px以下でスマホ版にする | GitHubは幅768px以上で横に欄を出し、本文欄が狭くなるため |
 
-## 12. 作り方の判断
+<table><tr><th align="left">画像13　スマホ版の図（画像6を縦1列に組み替えたもの）<br><sub>READMEで使っている画像の実物：<code>assets/readme/features-narrow-*.svg</code></sub></th></tr><tr><td><picture><source media="(prefers-color-scheme: dark)" srcset="../../../assets/readme/features-narrow-dark.svg"><img src="../../../assets/readme/features-narrow-light.svg" alt="画像：features-narrow"></picture></td></tr></table>
+
+## 12. SVGとWebPの使い分け
+
+READMEの図は**SVGを基本**にし、**実機の録画を含む図だけをアニメーションWebP**にしています。
+
+| 形式 | 使う図 | 選んだ理由 |
+|---|---|---|
+| SVG | 見出し・目次・受賞結果・特長・アンケート・構成図など、ほとんどの図（画像1〜11・13） | 下の「SVGを基本にする理由」を参照 |
+| アニメーションWebP | 製品説明の分担の図（`controllers`）と、注力したことの図（`focus`）の2つ（画像12） | 下の「録画を含む図だけWebPにする理由」を参照 |
+| JPEG（SVGに埋め込む） | SVGの図の中に置く、実機で撮った静止画 | 写真はベクターで描けないため。縮めてからBase64でSVGに入れる |
+| PNG | 紹介動画のサムネイル（`assets/images/recooplay-thumbnail.png`） | YouTubeへのリンクの画像として置く |
+
+### 12.1 SVGを基本にする理由
+
+- 文字を文字のまま描ける。図の文字は閲覧者の端末のフォントで、GitHub本体と同じ指定のまま表示されます。画像の中の文字が本文と同じ書体になるので、図が本文から浮きません。画像1の見出しの錯覚も文字を文字として描けるから成り立ちます。
+- 拡大してもぼやけない。高解像度の画面でも線と文字がくっきり表示されます。
+- CSSで動かせる。キャラクターのまばたきや見出しの物語は、SVGの中のCSSアニメーションで動かしています。動きを足してもファイルはほとんど大きくならず、「視差効果を減らす」の設定で止めることもできます。
+- テーマと幅の描き分けが安い。ライト・ダークとPC・スマホの4つの版は、同じ生成スクリプトで色と配置を変えて書き出すだけです。
+- 検査できる。文字がデータとして残るので、`check_text_size.py` で表示時の文字の大きさを計算できます。代替テキストと `README-text.md` も図と同じデータから作れます。
+- 軽い。SVGはgzipで配信されるので、録画を含まない43枚を合わせても転送量は約150KBです。
+
+SVGには制約もあります。READMEの画像は `raw.githubusercontent.com` から `Content-Security-Policy: default-src 'none'` 付きで配信され、`<img>` で表示したSVGは外部の画像もフォントも読めません。そのため、写真はJPEGに縮めてBase64で、締めのフォントは使う字だけに絞ってSVGに埋め込んでいます。Base64で増えた分は、gzipでほぼ打ち消せることを実測で確かめています（JPEGを3枚埋め込んだ `controllers-light.svg` は、94KBのファイルが転送量59KB。JPEGとSVGを別のファイルに分けると計68KBで、2回の通信が要る）。
+
+### 12.2 録画を含む図だけWebPにする理由
+
+- SVGの中で録画を動かすと重い。SVGの中に動く画像を入れると、ブラウザは画像が1コマ進むたびにSVG全体を描き直します。録画が複数ある図では、重くなって止まって見えました。
+- 図ごと1本のアニメーションにする。`bake.py` が、SVGの図をChromeで2倍の解像度・透明の背景で撮り、スマホ画面の位置に録画のコマを重ねて、アニメーションWebPにします。変わった所（スマホの画面）だけを描き直すので、動きが滑らかになります。
+- 画質と大きさを比べて決めた。Pillow（libwebp）の品質80で書き出すと、以前のffmpegの品質90より元の画像に近く（PSNRで0.5〜1.4dB上）、ファイルは21〜24%小さくなりました（2026-11-21の比較）。
+- 重さのほとんどはこの2本にある。閲覧1回の転送量の9割以上はこの2本です（PC版は計約1.9MB、スマホ版は計約1.1MB）。GitHubは `<img>` の `loading` 属性を取り除くため、遅延読み込みでは軽くできません。
+
+WebPにした図も、元のSVG（`controllers-*.svg`・`focus-*.svg`）は残しています。文字の大きさの確認は同じ名前のSVGで行います。WebPはSVGから焼き込むので、図の中身はSVGの生成スクリプトで直します。
+
+## 13. 画像が読み込めないときの、文字だけのREADME
+
+リポジトリの直下に、画像を使わず文字だけで読める `README-text.md` を置いています（2026-11-20 の利用者の指示）。READMEのほとんどが画像なので、画像が読み込めないときにも同じ内容を読めるようにするためです。
+
+- `scripts/readme/text_readme.py` が `README.md` から作ります。直接は編集しません。
+- 文章は `README.md` のまま使い、画像（`<picture>`）だけを、同じ内容の見出し・表・箇条書きに置き換えます。
+- 図の中身は `showcase.py`・`build_art.py` と同じデータから書くので、図と文字の内容がずれません。画像が残ると生成を止めます。
+- 目次のリンクは `README.md` と同じ `<a id>` を使います。先頭には図の入った通常版の `README.md` への案内を置いています。
+
+あわせて、`README.md` の画像には図の内容をすべて書いた代替テキスト（`alt`）を付けています。数値や受賞名を変えるときは、本文・代替テキスト・`README-text.md` をそろえて直します。
+
+## 14. 作り方の判断
 
 - 図は生成スクリプトから書き出します。SVGは手で直さず、`scripts/readme/` のスクリプトを直してから書き出します。4つの版、文字だけの版（`README-text.md`）、画像の代替テキストを、同じデータから作るためです。
 - 案は並べて選びます。作品名の見出しや項目の見出しは、比較用のブランチで複数の案を作り、GitHub上で見比べてから決めました。
 - GitHub上で確かめます。手元のブラウザだけでなく、GitHubに表示したREADMEを、PCとスマホ、ライトとダークで撮って確かめます。
 - READMEの変更は、利用者が確認してからmainへ入れます。
 
-## 13. ほかのREADMEに持ち出すときのチェックリスト
+## 15. ほかのREADMEに持ち出すときのチェックリスト
 
 1. 最初は「ふつう」に見せる。驚きは読み手が油断してから届ける。
 2. 下へ読み進めるほど、見たことのない要素を増やす。
@@ -156,3 +226,5 @@
 9. 部品の種類を絞り、すべての図で使い回す。
 10. 遊びの絵と事実の画面を、見た目で分ける。
 11. 動きは控えめにし、「視差効果を減らす」の設定を尊重する。
+12. 図はSVGを基本にし、録画を含む図だけをアニメーションWebPに焼き込む。
+13. 画像が読み込めないときのために、同じデータから文字だけのREADMEを作る。

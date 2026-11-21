@@ -2917,4 +2917,4 @@
 - `docs/develop/design/readme-design.md` を追加した。「ぱっと見ふつうのREADME」から驚きを段階的に大きくする狙い、作品名の見出しをふつうの見出しに錯覚させる工夫（「※」の注釈の役割を含む）、色・文字・部品・見出しの階層・キャラクター・動き・実画面の見せ方を、利用者の判断の理由とともに記録した。
 - `scripts/readme/title.py`：止まった時間を5秒から3.5秒にした。赤が歩き出すのは動きの9%（約1.5秒）なので、表示から動き始めるまでが約6.5秒から約5秒になる。1周は22秒から20.5秒になる。`python scripts/readme/title.py` で `assets/readme/title-*.svg` の4枚を書き出した。
 - 確認：書き出したSVGで、赤のキーフレームが24.54%（20.5秒の約5.03秒）まで元の位置のままで、その後に動くことを確かめた。`python scripts/readme/check_text_size.py`：PASS。`python scripts/check-public-docs.py`：PASS（Markdown 18件、ローカル参照636件）。GitHub上での見た目の確認はPRで行う。
-
+- 追記：利用者の依頼で、`readme-design.md` に「SVGとWebPの使い分け」と「画像が読み込めないときの、文字だけのREADME（`README-text.md`）」の節を足した。特定の部分のデザインを説明する所には、READMEで使っている画像の実物を13枚置いた。見出しの画像は本物の見出しと見分けがつかないため、すべて「画像n」の見出しとファイルの場所を書いた表の枠に入れ、資料の本文と区別できるようにした。画像の参照先がすべて存在することと、`python scripts/check-public-docs.py` の PASS を確かめた。
