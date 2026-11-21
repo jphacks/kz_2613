@@ -71,13 +71,22 @@ def focus():
 
 
 def architecture():
+    host = [[title, sub] for _, _, title, sub, _ in sc.RECV] + [[sc.ARCH[k][2], sc.ARCH[k][3]] for k in ("hub", "detect", "queue")]
+    outside = [[sc.ARCH[k][2], sc.ARCH[k][3]] for k in ("app", "data", "send", "game")]
     return "\n".join([
-        "- **スマホ（ブラウザ）2〜4台：** P1 移動・P2 視点・P3 アクション",
-        "- **スマホ → PC：** 操作を WebSocket と WebRTC で Rustホストへ送る",
-        "- **PC → スマホ：** Rustホストが役割と準備状況を返す",
-        "- **Rustホスト（役割・入力の統合） ⇄ PCアプリ（Tauri）：** 参加・準備状況を表示し、ゲーム選択・開始・停止を受け取る",
-        "- **Rustホスト → Windows API（SendInput）：** 統合した入力を渡す",
-        "- **Windows API → 既存のPCゲーム（Minecraftなど）：** キーボード・マウス操作として入力する"])
+        f"**スマホ（ブラウザ）2〜4台：** {sc.PHONE_NOTE}。各スマホが、ローカルWi-Fiを通ってPCのRustホストへ直接つながる",
+        "",
+        f"**{sc.NET_LABEL[0]}：** " + "・".join(sc.NET_NOTE),
+        "",
+        "**Windows 11 PC：** Rustホスト（recooplay-host.exe）の中。受け口は WebRTC DataChannel と WebSocket の2経路で、どのスマホも両方でつながる",
+        "",
+        table(["部品", "技術"], host),
+        "",
+        "Rustホストの外",
+        "",
+        table(["部品", "技術"], outside),
+        "",
+        "ボタン入力の流れ：スマホ → 受け口（WebRTC DataChannel）→ hubスレッド → 出力キュー → SendInput → 既存のPCゲーム"])
 
 
 def techstack():

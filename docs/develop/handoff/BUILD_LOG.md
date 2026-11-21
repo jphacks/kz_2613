@@ -2926,3 +2926,17 @@
 - 追記：利用者の判断で、`docs/readme-design.md` から今のREADMEにないものへの言及（ヒーロー画像、GitHubの Note、区切りの帯、作品名の見出しの比較案、キャラクターが生えてくる動き、以前のffmpegの書き出し、試した形の移り変わりの表）を外し、今の形の説明だけにした。`python scripts/check-public-docs.py` PASS。
 - 追記：利用者の指摘で、`docs/readme-design.md` の「ほかのREADMEに持ち出すときのチェックリスト」から、遊び心のテーマが前提の項目（最初は「ふつう」に見せる、見たことのない要素を増やす、遊びの絵）を外し、どのREADMEにも使える書き方に直した。外した理由を節の冒頭に1文で書いた。`python scripts/check-public-docs.py` PASS。
 - 追記：利用者の指示で、READMEの「技術仕様書」の資料一覧の表の最後に `docs/readme-design.md` へのリンクを足した。冒頭は「ぱっと見ふつう」の錯覚と目次までの流れを壊すため、図と図の間は文章を挟まないため避け、文章の場所である表にした。`python scripts/readme/text_readme.py` で `README-text.md` も書き出し直した。`python scripts/check-public-docs.py`・`python scripts/verify_overlay.py` PASS。
+
+## 2026-11-21 — READMEのシステム構成の図を詳しく正確にし、データの通り道をアニメーションにする（Claude Code）
+
+- 利用者の依頼で、`scripts/readme/showcase.py` の `architecture` を作り直した。図に書く事実は、次のコードで確かめた。
+  - 待ち受け：`apps/host-rs/src/main.rs`（0.0.0.0:8080、`/ws`・`/api/*`・`apps/web/dist` の配信、hub は専用スレッド1本）、`config.rs`（既定ポート8080）
+  - 通信：`apps/web/src/shared/transport/fast-channel.ts`（DataChannel「fast」は `ordered:false`・`maxRetransmits:0`）、`apps/web/src/phone/runtime.ts`（ボタン入力は DataChannel と WebSocket の両方へ送り、未確認の直近分を束ねる。視点は DataChannel、だめなら WebSocket）、`rtc.rs`（ICE サーバーなし、コールバックは Event で hub へ）
+  - 数値：`freshness.rs`（500ms）、`input_manager.rs`（60ms・50ms）、`look.rs`（4ms）、`hub.rs`（前面の確認100ms）、`hotkey.rs`（Ctrl+Alt+F12）
+  - PCアプリ：`apps/desktop/src/main.rs`（子プロセスの起動・監視、標準入力の quit・stop、`/app` と `/overlay`）
+- データの流れは実線と、線の上を流れてループする点（SVG の `animateMotion`）で、確認・起動などの制御は破線で描く。「視差効果を減らす」の設定では点を消す。`<img>` で表示した SVG で点が動くことを、ヘッドレス Chrome で時間を変えた2枚の画像の差分で確かめた。
+- README の代替テキスト、`README-text.md`（`text_readme.py` の構成図の表）、`assets/readme/README.md`、`docs/readme-design.md` の動きの節を合わせて直した。
+- 確認：`python scripts/readme/check_text_size.py`・`python scripts/check-public-docs.py`・`python scripts/verify_overlay.py` PASS。`python scripts/readme/showcase.py` で書き出し直し、変わったのは構成図の4枚だけ。
+- 追記：利用者の指摘（具体的すぎる、点が多すぎて追えない）を受けて作り直した。各部品は技術名と1行の説明だけにし（PC用の高さ1122px→768px、スマホ用1971px→約1280px）、データの点は「ボタン入力がゲームに届くまで」の1本の道を1つの点がたどる形にした（`calcMode="paced"`、箱の中では見せない、hubを過ぎると色を変える）。点がたどる道は太い線、ほかは細い線、制御は破線。`README-text.md` の構成図は部品と技術の表にした。`check_text_size.py`・`check-public-docs.py` PASS。
+- 追記：利用者の指摘（線の位置・余白・破線の要否・伝えたいことの整理・見やすさ）を受けて作り直した。伝えたいことを「ボタン入力がローカルWi-Fiの速い経路を通り、hubで1つの入力にまとまってSendInputで既存のゲームに届く」1本に絞り、その道を左の列にまっすぐ通した（P1の真下から点が出る）。WebSocket・axum・分担AIは中の列、Rustホストの外（PCアプリ・PC上のデータ）と各段の補足は右の列。破線の制御線と「入力先の確認」の箱を外した。矢印はすべて箱の中心を通る直線（スマホ用の PCアプリ ⇄ axum だけ、2つの枠のちょうど真ん中を通す直角の線）。余白は枠の上36・左右と下30・箱の間40・枠の間40にそろえ、主役の線が枠の見出しの札から13px以上離れるよう列を寄せた。枠と Rustホストの札は線より手前に描く。
+- 追記：利用者の指摘（スマホ用でP1の左が空く、「P1はホストを兼ねる」がP2P通信のホストに見える、各スマホから直接矢印のイメージ）を受けて直した。WebRTC DataChannel と WebSocket の箱を通信の途中から外し、Rustホストの「受け口」の箱（2段）にまとめ、各スマホからその箱へ直接の矢印を引いた。「P1はホストを兼ねる」を外した。スマホ用は4台を左右均等に並べた。PC用は P1 を主役の列、P4 を中の列の真上に置き、Rustホストの札を下辺へ移して、矢印が札にかからないようにした。利用者の許可を受けて、段にうすい面、ローカルWi-Fiの帯に通信の色、Rustホストの範囲にPCホストの色を薄く敷き、箱は白い面（ダークは少し明るい面）にした（`docs/readme-design.md` に例外として記録）。

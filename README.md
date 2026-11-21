@@ -184,7 +184,7 @@ PCのWindowsモバイルホットスポットでスマホと直接つなぎ、We
   <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/architecture-narrow-dark.svg">
   <source media="(max-width: 700px)" srcset="assets/readme/architecture-narrow-light.svg">
   <source media="(prefers-color-scheme: dark)" srcset="assets/readme/architecture-dark.svg">
-  <img src="assets/readme/architecture-light.svg" alt="システム構成。スマホ（ブラウザ）2〜4台のP1移動・P2視点・P3アクションの操作を、WebSocketとWebRTCでWindows PCのRustホストへ送り、Rustホストは役割と準備状況をスマホへ返す。Rustホストは入力を統合し、Windows APIのSendInputでキーボード・マウス操作として既存のPCゲーム（Minecraftなど）へ送る。PCアプリ（Tauri）はRustホストから参加・準備状況を受け取り、ゲーム選択・開始・停止を伝える">
+  <img src="assets/readme/architecture-light.svg" alt="システム構成。スマホ（ブラウザ、React・TypeScript）2〜4台が、Windows 11 PCのモバイルホットスポットのローカルWi-Fiで、PCのRustホストに直接つながる。インターネットとSTUN/TURNは使わない。Rustホスト recooplay-host.exe の受け口は、WebRTC DataChannel（UDP・順序なし・再送なし、libdatachannel）とWebSocket /ws（TCP・JSON、axum、ポート8080）の2経路で、どのスマホも両方でつながる。Rustホストの中には、hubスレッド（認可・状態・順序・全解放）、出力キュー（60ms・50ms・視点4ms）、ゲーム解析・分担AI（MiniLM＋Transformer）がある。その外に、PCアプリ（Tauri 2・WebView2）、PC上のデータ（ゲームの設定・操作定義・分担AIの重み）、SendInput（Win32 API）、既存のPCゲーム（前面のときだけ入力）がある。ボタン入力は、スマホ → 受け口 → hubスレッド → 出力キュー → SendInput → 既存のPCゲームの順に届き、図ではP1のこの道を1つの点がたどる。PCアプリはWebSocketでRustホストとつながる。ゲーム解析・分担AIはPC上のデータを読み、分担をhubへ渡す。">
 </picture>
 
 ### <a id="活用した技術"></a><picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/readme/heads/play-10-narrow-dark.svg"><source media="(max-width: 700px)" srcset="assets/readme/heads/play-10-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/heads/play-10-dark.svg"><img src="assets/readme/heads/play-10-light.svg" alt="活用した技術"></picture>
