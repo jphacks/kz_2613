@@ -1,7 +1,9 @@
 """README の画像（SVG）の文字が、GitHub上で何pxで表示されるかを見積もる。
 
-GitHub の本文欄は PC で 838px、幅390px のスマホで 324px（どちらも実測）。本文は16px。
-<picture> の source から、幅ごとに表示される画像を選び、表示幅 ÷ 画像の幅 で文字を縮めた大きさを出す。
+GitHub の本文欄の幅は、画面幅ごとに実測した値を使う（COLUMNS。本文は16px）。本文欄は画面幅どおりには
+変わらない（右の欄が下へ回る幅がある）ので、PC・タブレット・スマホの代表的な画面幅をすべて調べる。
+README の <picture>（scripts/readme/markup.py の新形式）から、その画面幅で表示される版を選び、
+表示幅 ÷ 画像の幅 で文字を縮めた大きさを出す。
 飾り（区切りの帯）を除き、MIN_PX より小さい文字があれば一覧にして終了コード1を返す。
 
     python scripts/readme/check_text_size.py
@@ -11,12 +13,27 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-# 名前 → (本文欄の幅, 画面の幅)。<source> の max-width は画面の幅と比べる
-COLUMNS = {"PC": (838, 1280), "スマホ": (324, 390)}
+# 名前 → (本文欄の幅, 画面の幅)。2026-11-22 に Chrome（スクロールバーのある Windows）で GitHub のリポジトリのページを
+# 開いて測った本文欄の幅。<source> の min-width・max-width は画面の幅と比べる。
+# 名前に「スマホ」とある画面幅は、スクロールバーのないスマホの値（スクロールバーがあると15px狭い）。
+# よく使われる画面幅（PC・PCの画面を半分に分けた幅・iPad の縦横・スマホの縦横）と、版の境目の両側を調べる。
+COLUMNS = {
+    "1920": (838, 1920), "1536": (838, 1536), "1366": (838, 1366), "1280": (823, 1280), "1266（PC版の下限）": (809, 1266),
+    "1265（中間の版の上限）": (808, 1265), "1194（iPad Pro 11 横）": (737, 1194), "1180（iPad Air 横）": (723, 1180),
+    "1133（iPad mini 横）": (676, 1133), "1100": (643, 1100), "1080": (623, 1080), "1024（iPad 横）": (567, 1024),
+    "1012": (555, 1012), "1011": (634, 1011), "960（1920の半分）": (583, 960), "932（中間の版の下限）": (555, 932),
+    "931（小さい中間の版の上限）": (554, 931), "915（スマホ 横）": (553, 915), "896（スマホ 横）": (534, 896),
+    "844（スマホ 横）": (482, 844), "834（iPad 縦）": (457, 834), "820（iPad Air 縦）": (443, 820), "810（iPad 縦）": (433, 810),
+    "768（iPad 縦・1536の半分）": (391, 768), "767（中間の版の上限）": (654, 767), "744（iPad mini 縦）": (631, 744),
+    "720（1440の半分）": (607, 720), "683（1366の半分）": (570, 683), "668（中間の版の下限）": (555, 668),
+    "667（小さい中間の版の上限）": (554, 667), "640": (527, 640), "600": (487, 600), "544": (431, 544), "543": (462, 543),
+    "481（小さい中間の版の下限）": (400, 481), "480（スマホ版の上限）": (399, 480), "430（スマホ）": (364, 430),
+    "412（スマホ）": (346, 412), "390（iPhone）": (324, 390), "375（スマホ）": (309, 375), "360（Android）": (294, 360),
+}
 MIN_PX = 12.5
 DECOR = ("assets/readme/scenes/",)  # 区切りの帯。文字は吹き出しの飾りだけ
 # 利用者の判断で形を変えずに使う図（2026-11-20）。大きさは表示するが、検査の対象から外す
-FIXED = ("assets/readme/pipeline-",)
+FIXED = ("assets/readme/pipeline-light", "assets/readme/pipeline-dark", "assets/readme/pipeline-narrow-")  # 中間の版は対象にする
 
 
 def svg_info(path):
@@ -31,14 +48,28 @@ def svg_info(path):
     return width, sizes
 
 
+def matches(media, screen):
+    """media の条件（カンマ区切りは「または」）が、画面幅 screen・動きを減らさない設定で成り立つか。"""
+    def one(q):
+        ok = True
+        for feat, val in re.findall(r"\(([a-z-]+):\s*([^)]+)\)", q):
+            if feat == "min-width":
+                ok &= screen >= int(val.rstrip("px"))
+            elif feat == "max-width":
+                ok &= screen <= int(val.rstrip("px"))
+            elif feat == "prefers-reduced-motion":
+                ok &= val == "no-preference"
+            elif feat == "prefers-color-scheme":
+                ok &= val == "light"
+        return ok
+    return any(one(q) for q in media.split(","))
+
+
 def pick(block, screen):
-    """picture 要素から、画面の幅 screen（ライト）で表示される画像を返す。"""
+    """picture 要素が画面幅 screen（ライト）で表示する画像を返す。使わない画面で消す版（HIDE）なら None。"""
     for media, src in re.findall(r'<source media="([^"]+)" srcset="([^"]+)"', block):
-        if "prefers-color-scheme: dark" in media:
-            continue
-        limit = re.search(r"max-width: (\d+)px", media)
-        if limit and screen <= int(limit.group(1)):
-            return src
+        if matches(media, screen):
+            return None if src.endswith("/hide.svg") else src
     return re.search(r'<img src="([^"]+)"', block).group(1)
 
 
@@ -52,6 +83,8 @@ def main():
         print(f"== {name}（本文欄 {col}px、本文16px）")
         for block in blocks:
             src = pick(block, screen)
+            if src is None:
+                continue
             # 録画を焼き込んだ図（recordings/bake.py）は、元のSVGの文字で確かめる
             if src.endswith(".webp") and (ROOT / src[:-5]).with_suffix(".svg").exists():
                 src = src[:-5] + ".svg"

@@ -5,6 +5,7 @@
 | ファイル | 内容 | 種別 |
 |:--|:--|:--|
 | [recooplay-thumbnail.png](recooplay-thumbnail.png) | 製品紹介サムネイル | プレゼン用の説明画像 |
+| [recooplay-thumbnail.webp](recooplay-thumbnail.webp) | 製品紹介サムネイル（幅1676px） | README用軽量版（`scripts/readme/thumbnail.py` でPNGから作る） |
 | [recooplay-hackday-play.webp](recooplay-hackday-play.webp) | 3人がスマートフォンからPCゲームを共同操作している様子 | Hack Dayの実プレイ写真（README用軽量版） |
 | [recooplay-qr-join-guide.webp](recooplay-qr-join-guide.webp) | PCアプリのQRコードからスマホで参加する流れ | PCとスマホの画面を組み合わせた説明用画像 |
 | [recooplay-role-controllers.webp](recooplay-role-controllers.webp) | P1移動・P2視点・P3アクションのスマホ操作画面 | 3人プレイを説明する画像 |

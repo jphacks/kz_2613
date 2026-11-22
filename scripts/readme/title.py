@@ -31,14 +31,21 @@ WIDTHS = [19.08, 17, 7.72, 19.88, 19.11, 19.11, 19.28, 8.36, 16.7, 16.27, 32, 32
 # 英字はまとめて1つの要素にし、端末のフォントの違いを textLength で吸収する。「:」は動かすので分ける
 WORDS = [(0, 2), (2, 3), (3, 10)]
 # 行：(始まり, 終わり, 文字の大きさ)
+# 版ごとの改行（scripts/readme/markup.py の版の段階）。作品名はGitHubの h1 と同じ32pxに見せたいので、どの版も
+# 原寸で表示し（拡大しない）、図の幅はその版の本文欄のいちばん狭い幅に近づける。
+#   PC版・中間の版：作品名／キャッチコピー（24pxで512px）の2行
+#   小さい中間の版：作品名（417px）／「ゲームはそのまま。」／「1キャラを、みんなで操作。」の3行
+#   スマホ版：作品名を「Re:Cooplay」「（リコープレイ）」に分けた4行
 LINES = {"wide": [(0, 18, 32), (18, 40, 24)],
+         "mid": [(0, 18, 32), (18, 40, 24)],
+         "compact": [(0, 18, 32), (18, 27, 24), (27, 40, 24)],
          "narrow": [(0, 10, 32), (10, 18, 32), (18, 27, 24), (27, 40, 24)]}
-SIZE = {"wide": art.PC_W, "narrow": art.PHONE_W}
+SIZE = {"wide": art.PC_W, "mid": 555, "compact": 420, "narrow": art.PHONE_W}
 # いちばん上の注釈。GitHubの引用（16px・行の高さ24px、左に4pxの線、文字は線から16px右）をChromeで実測した見た目で描く。
 # スマホは画面の幅で本文欄が変わり（294〜364px）、多くの幅で注釈が1行に入りきらない。どの幅でも不自然でないよう、
 # 意味の切れ目で2行に分ける
 NOTE = "※JPHACKS 2026 Award Dayでの内容です"
-NOTE_LINES = {"wide": [NOTE], "narrow": ["※JPHACKS 2026 Award Day", "での内容です"]}
+NOTE_LINES = {"wide": [NOTE], "mid": [NOTE], "compact": [NOTE], "narrow": ["※JPHACKS 2026 Award Day", "での内容です"]}
 GAP = 24  # 引用と見出しの間（見出しの上の余白）
 INK = {"light": "#1F2328", "dark": "#F0F6FC"}
 MUTED = {"light": "#59636E", "dark": "#9198A1"}  # 引用の文字
@@ -333,7 +340,7 @@ def make(kind, mode):
         """点が段で跳ねながら、画像の一番下まで落ちる。"""
         hy = homes[n]
         out = [(hit, T()), (hit + .8, T(-2, -4 if n == 0 else 0, -20 if n == 0 else 10))]
-        rows = list(range(up, last + 1)) if kind == "narrow" else []
+        rows = list(range(up, last + 1)) if kind in ("narrow", "compact") else []
         p, x = hit + 1.5, rest[n] - cx
         step = 5 / max(len(rows), 1)
         for k, r in enumerate(rows):
@@ -449,11 +456,11 @@ def _xy(tr):
 
 
 def main():
-    for kind in ("wide", "narrow"):
+    for kind in ("wide", "mid", "compact", "narrow"):
         for mode in ("light", "dark"):
-            name = "title" + ("-narrow" if kind == "narrow" else "") + f"-{mode}.svg"
+            name = "title" + ("" if kind == "wide" else f"-{kind}") + f"-{mode}.svg"
             (OUT / name).write_text(make(kind, mode) + "\n", encoding="utf-8", newline="\n")
-    print(f"wrote 4 files to {OUT}")
+    print(f"wrote 8 files to {OUT}")
 
 
 if __name__ == "__main__":

@@ -39,9 +39,23 @@ def cw(c, size):
 BREAK_AFTER = set("、。・／）」』！？")
 
 
+_parser = []
+HANG = "、。，．」』）"  # 行末からはみ出してもよい約物（以前の1字ずつの折り返しと同じ扱い）
+
+
+def phrases(s):
+    """日本語の文を文節に区切る（BudouX。生成のときだけ使う：pip install budoux==0.10.4）。"""
+    if not _parser:
+        import budoux
+        _parser.append(budoux.load_default_japanese_parser())
+    # 「キー・相対マウス移動・左右ボタン」のような並びは1つの文節になるので、「・」「、」の後ろでも区切る
+    return [p for ph in _parser[0].parse(s) for p in re.split(r"(?<=[・、])(?=.)", ph)]
+
+
 def lines(s, size, avail, balance=False):
     """全角1字=size、半角=0.6size で幅を見積もって折り返す。
-    行頭の句読点は前の行へ送り、英数字の単語は分けず、行末の近くに「・」「、」などがあればその後ろで切る。
+    文節（BudouX）の切れ目で折り返し、「共／有」「パー／ティー」のように語の途中で切らない。
+    1つの文節が1行に入らないときだけ、その文節を char_lines で1字ずつ折り返す。
     balance=True なら、各行の長さがそろうように折り返す（見出し向け）。"""
     if "\n" in s:  # 改行の位置を指定した見出しは、その位置で分けてから折り返す
         return [line for part in s.split("\n") for line in lines(part, size, avail)]
@@ -51,6 +65,36 @@ def lines(s, size, avail, balance=False):
         n = -(-total // avail)
         if n > 1:
             avail = min(avail, total / n + size * 1.5)
+    out, cur = [], ""
+    for ph in phrases(s):
+        if width(cur + ph) <= avail or (cur and width(cur + ph.rstrip(HANG)) <= avail):
+            cur += ph
+            continue
+        if cur:
+            # 行末の近く（後ろ6字以内）に読点・句点などがあれば、その後ろで切る（文の区切りで改行する）
+            k = max((i for i, ch in enumerate(cur) if ch in BREAK_AFTER), default=-1)
+            if 0 <= k < len(cur) - 1 and len(cur) - 1 - k <= 6 and width(cur[:k + 1]) >= avail * .55 \
+                    and width(cur[k + 1:] + ph.rstrip(HANG)) <= avail:
+                out.append(cur[:k + 1])
+                cur = cur[k + 1:] + ph
+                continue
+            out.append(cur)
+            cur = ""
+        if width(ph.rstrip(HANG)) <= avail:
+            cur = ph
+        else:  # 文節が1行に入らない
+            parts = char_lines(ph, size, avail)
+            out += parts[:-1]
+            cur = parts[-1]
+    if cur:
+        out.append(cur)
+    return [line.strip(" ") for line in out]
+
+
+def char_lines(s, size, avail):
+    """1字ずつ詰めて折り返す。行頭の句読点は前の行へ送り、英数字の単語は分けず、
+    行末の近くに「・」「、」などがあればその後ろで切る。"""
+    width = lambda x: sum(cw(ch, size) for ch in x)  # noqa: E731
     out, cur = [], ""
     for c in s:
         if cur and width(cur + c) > avail:
@@ -102,14 +146,14 @@ def chip(x, y, label, color, t, size=13, h=26):
             + text(x + 24, y + h / 2 + size * .36, label, size, t["ink"], cls="gh", weight=600)), w
 
 
-def chips(x, y, labels, colors, t, avail, gap=8, h=26):
+def chips(x, y, labels, colors, t, avail, gap=8, h=26, size=13):
     """札を左から並べ、入らなければ次の行へ送る。(svg, 高さ) を返す。"""
     out, cx, cy = [], x, y
     for label, color in zip(labels, colors):
-        w = sum(cw(c, 13) for c in label) + 34
+        w = sum(cw(c, size) for c in label) + 34
         if cx > x and cx + w > x + avail:
             cx, cy = x, cy + h + 8
-        s, w = chip(cx, cy, label, color, t)
+        s, w = chip(cx, cy, label, color, t, size)
         out.append(s)
         cx += w + gap
     return "".join(out), cy + h - y
@@ -166,6 +210,29 @@ def phone(name, x, y, w, image, t):
             + f'<circle cx="{x + w / 2:.1f}" cy="{sy0 + bz * 1.1:.1f}" r="{max(2.2, w * .018):.1f}" fill="#16181F"/>'), h
 
 
+# 版の段階（scripts/readme/markup.py の TIERS）。図の関数の narrow 引数は、真偽値（PC版・スマホ版）か段階の名前を受ける。
+TIER_W = {"wide": PC_W, "mid": art.MID_W, "compact": art.COMPACT_W, "narrow": PHONE_W}
+# 段階ごとの文字の最小（art.svg が引き上げる大きさ。折り返しの計算もこの大きさで行う）
+TIER_FLOOR = {"wide": 13, "mid": art.PHONE_MIN_FONT, "compact": art.COMPACT_MIN_FONT, "narrow": art.PHONE_MIN_FONT}
+
+
+def tier(narrow):
+    return narrow if isinstance(narrow, str) else "narrow" if narrow else "wide"
+
+
+def fs(size, narrow):
+    """段階 narrow で実際に描かれる文字の大きさ。"""
+    return max(size, TIER_FLOOR[tier(narrow)])
+
+
+def sizer(narrow):
+    """PC版以外では、文字の大きさを段階の最小まで引き上げた値で折り返しを計算する（art.svg が実際にその大きさで描くので、
+    元の大きさで計算すると、端末のフォントによっては行が右端からはみ出す）。"""
+    if tier(narrow) != "wide":
+        return lambda s: fs(s, narrow)
+    return lambda s: s
+
+
 def finish(W, H, b, t, alt, top=10, bottom=30):
     """図の上下に余白を取って書き出す（本文の文字と図がくっつかないように）。"""
     return art.svg(W, round(H) + top + bottom, f'<g transform="translate(0 {top})">{"".join(b)}</g>', t, alt.replace("\n", ""))
@@ -197,24 +264,29 @@ def caption(W, t, title, sub):
     """図の中の小見出し（何の例か）。(svg, 高さ) を返す。"""
     s1, n1 = para(0, 18, title, 16, t["ink"], W, 23, 700)
     y = 18 + (n1 - 1) * 23
-    s2, n2 = para(0, y + 22, sub, 13, t["muted"], W, 19, 600)
+    sz = art.COMPACT_MIN_FONT if W == art.COMPACT_W else art.PHONE_MIN_FONT if W == art.MID_W else 13
+    s2, n2 = para(0, y + 22, sub, sz, t["muted"], W, 19, 600)
     y += 22 + (n2 - 1) * 19
     return s1 + s2 + f'<rect x="0" y="{y + 16}" width="{W - 14}" height="1.5" rx=".75" fill="{t["line"]}"/>', y + 40
 
 
 def controllers(t, narrow=False):
-    W0 = PHONE_W if narrow else PC_W
+    """PC版は3台を横に並べ、ほかはスマホ画面を左、説明を右にした行を積む。
+    中間の版2つのスマホ画面は、スマホ版と同じ大きさ（幅110）・同じ並びにする。録画の切り絵（recordings/pieces.py）で、
+    スマホ版の録画の枠をそのまま使い、文字の欄だけを広げて切り出すため。"""
+    W0 = TIER_W[tier(narrow)]
+    F = sizer(narrow)
     cap, ch = caption(W0, t, "例：3人で『Minecraft』を遊ぶ場合", "各スマホには、担当する操作だけを並べたコントローラーが表示されます（実際の画面）。")
-    if narrow:
-        W, fw = PHONE_W, 110
+    if tier(narrow) != "wide":
+        W, fw = W0, 110
         b = [cap]
         y = ch
         for name, p, role, sub, image, ops, ui in ROLES:
             s, h = phone(name, 0, y, fw, image, t)
             tx = fw + 16
             b += [s, role_head(tx, y + 8, name, p, role, sub, t)]
-            s1, n1 = para(tx, y + 62, ops, 14, t["ink"], W - tx, 21, 600)
-            s2, n2 = para(tx, y + 62 + n1 * 21 + 8, ui, 13, t["muted"], W - tx, 20)
+            s1, n1 = para(tx, y + 62, ops, F(14), t["ink"], W - tx, 21, 600)
+            s2, n2 = para(tx, y + 62 + n1 * 21 + 8, ui, F(13), t["muted"], W - tx, 20)
             b += [s1, s2]
             y += h + 22
         H = y - 22
@@ -257,14 +329,16 @@ def number(x, y, n, size=30, anchor="end"):
 
 
 def features(t, narrow=False):
+    """PC版は横3列。ほかは縦に積む（中間の版で3列にすると1列が196pxしかない）。"""
     b = []
-    if narrow:
-        W, pad = PHONE_W, 18
+    F = sizer(narrow)
+    if tier(narrow) != "wide":
+        W, pad = TIER_W[tier(narrow)], 18 if narrow is True else 22
         y = 0
         for k, (kind, color, title, body) in enumerate(FEATURES):
-            s1, n1 = para(pad + 62, 30, title, 16, t["ink"], W - pad * 2 - 62 - 26, 23, 700, balance=True)
+            s1, n1 = para(pad + 62, 30, title, F(16), t["ink"], W - pad * 2 - 62 - 26, 23, 700, balance=True)
             top = max(24 + n1 * 24, 66) + 12
-            s2, n2 = para(pad, top + 16, body, 14, t["muted"], W - pad * 2, 22)
+            s2, n2 = para(pad, top + 16, body, F(14), t["muted"], W - pad * 2, 22)
             h = top + 16 + (n2 - 1) * 22 + 22
             b += [card(0, y, W, h, t), f'<g transform="translate(0 {y})">',
                   f'<g transform="translate({pad} 18) scale(.86)">{art.icon(kind, 0, 0, BODY[color], t)}</g>',
@@ -324,11 +398,13 @@ def genre_icon(kind, x, y, color):
 def genres(t, narrow=False):
     roles = [BODY["blue"], BODY["green"], BODY["purple"]]
 
+    F = sizer(narrow)
+
     def head_h(ex, w):
         pad = 20
         if not ex:
             return pad + 44 + 16
-        _, ne = para(0, 0, ex, 13, t["muted"], w - pad * 2 - 58, 19, 600)
+        _, ne = para(0, 0, ex, F(13), t["muted"], w - pad * 2 - 58, 19, 600)
         return max(pad + 44, pad + 40 + (ne - 1) * 19) + 16
 
     def one(kind, color, name, ex, split, exp, w, y_chip, y_exp):
@@ -336,11 +412,11 @@ def genres(t, narrow=False):
         s = [genre_icon(kind, pad, pad, BODY[color])]
         if ex:
             s.append(text(pad + 58, pad + 19, name, 17, t["ink"], cls="gh", weight=700))
-            se, _ = para(pad + 58, pad + 40, ex, 13, t["muted"], w - pad * 2 - 58, 19, 600)
+            se, _ = para(pad + 58, pad + 40, ex, F(13), t["muted"], w - pad * 2 - 58, 19, 600)
             s.append(se)
         else:
             s.append(text(pad + 58, pad + 28, name, 17, t["ink"], cls="gh", weight=700))
-        sc, _ = chips(pad, y_chip, split, roles, t, w - pad * 2)
+        sc, _ = chips(pad, y_chip, split, roles, t, w - pad * 2, size=F(13))
         s.append(sc)
         sp, n = para(pad + 14, y_exp + 4, exp, 15, t["ink"], w - pad * 2 - 14, 24, 600)
         s.append(f'<rect x="{pad}" y="{y_exp - 12}" width="3.5" height="{n * 24 + 6}" rx="1.75" fill="url(#brand)"/>{sp}')
@@ -349,21 +425,24 @@ def genres(t, narrow=False):
     def layout(w):
         """すべてのカードで、分担の札と説明の書き出しの高さをそろえる。"""
         y_chip = max(head_h(g[3], w) for g in GENRES)
-        y_exp = y_chip + max(chips(0, 0, g[4], roles, t, w - 40)[1] for g in GENRES) + 18
+        y_exp = y_chip + max(chips(0, 0, g[4], roles, t, w - 40, size=F(13))[1] for g in GENRES) + 18
         return y_chip, y_exp
 
     b = []
-    if narrow:
-        W = PHONE_W
+    # PC版と中間の版は2×2（中間の版のカードは幅302px で、スマホ版のカードとほぼ同じ）。ほかは縦に積む
+    if tier(narrow) in ("narrow", "compact"):
+        W = TIER_W[tier(narrow)]
         y = 0
-        yc, ye = layout(W)
         for g in GENRES:
+            # 縦に積むときは横のカードと高さをそろえる必要がないので、カードごとに詰める
+            yc = head_h(g[3], W)
+            ye = yc + chips(0, 0, g[4], roles, t, W - 40, size=F(13))[1] + 18
             s, h = one(*g, W, yc, ye)
             b += [card(0, y, W, h, t), f'<g transform="translate(0 {y})">{s}</g>']
             y += h + 12
         H = y - 12
     else:
-        W = PC_W
+        W = TIER_W[tier(narrow)]
         cwid = (W - GAP) / 2
         y = 0
         for r in range(2):
@@ -402,28 +481,33 @@ def big_number(x, y, label, size, anchor="start"):
 
 
 def stats(t, narrow=False):
+    """PC版と中間の版は横3列の数字。小さい中間の版とスマホ版は、数字と質問を左右に置いた行を積む。"""
     b = []
-    if narrow:
-        W, pad = PHONE_W, 18
+    F = sizer(narrow)
+    if tier(narrow) in ("narrow", "compact"):
+        W, pad = TIER_W[tier(narrow)], 18
         y = 0
         for pct, label, q, sub in STATS:
-            s1, n1 = para(118, 32, q, 14, t["ink"], W - 118 - pad, 21, 700)
-            s2, _ = para(118, 32 + n1 * 22 + 4, sub, 13, t["muted"], W - 118 - pad, 19, 600)
-            h = max(32 + n1 * 22 + 4 + 18, 76) + 14
+            s1, n1 = para(118, 32, q, F(14), t["ink"], W - 118 - pad, 21, 700)
+            s2, n2 = para(118, 32 + n1 * 22 + 4, sub, F(13), t["muted"], W - 118 - pad, 19, 600)
+            h = max(32 + n1 * 22 + 4 + (n2 - 1) * 19 + 18, 76) + 14
             b += [card(0, y, W, h, t), f'<g transform="translate(0 {y})">', big_number(pad, 52, label, 40), s1, s2,
                   bar(pad, h - 14, W - pad * 2, pct, t, 4), "</g>"]
             y += h + 10
         H = y - 10
     else:
-        W, pad = PC_W, 22
+        W = TIER_W[tier(narrow)]
+        pad = 22 if W == PC_W else 18
         colw = (W - 2 * GAP) / 3
-        parts = [para(pad, 108, q, 15, t["ink"], colw - pad * 2, 22, 700, balance=True) for _, _, q, _ in STATS]
+        big = 58 if W == PC_W else 50
+        parts = [para(pad, 108, q, F(15), t["ink"], colw - pad * 2, 22, 700, balance=True) for _, _, q, _ in STATS]
         nmax = max(n for _, n in parts)
-        H = 108 + nmax * 22 + 4 + 20 + 34
+        nsub = max(para(0, 0, sub, F(13), t["muted"], colw - pad * 2, 19, 600)[1] for _, _, _, sub in STATS)
+        H = 108 + nmax * 22 + 4 + 20 + (nsub - 1) * 19 + 34
         for k, ((pct, label, q, sub), (s1, n1)) in enumerate(zip(STATS, parts)):
             x = k * (colw + GAP)
-            s2, _ = para(pad, 108 + n1 * 22 + 4, sub, 13, t["muted"], colw - pad * 2, 19, 600)
-            b += [card(x, 0, colw, H, t), f'<g transform="translate({x:.1f} 0)">', big_number(pad, 74, label, 58), s1, s2,
+            s2, _ = para(pad, 108 + n1 * 22 + 4, sub, F(13), t["muted"], colw - pad * 2, 19, 600)
+            b += [card(x, 0, colw, H, t), f'<g transform="translate({x:.1f} 0)">', big_number(pad, 74, label, big), s1, s2,
                   bar(pad, H - 26, colw - pad * 2, pct, t), "</g>"]
     alt = "試遊アンケート（回答者26名）の結果。" + "。".join(f"{q}：{label}（{sub}）" for _, label, q, sub in STATS)
     return finish(W, H, b, t, alt)
@@ -454,21 +538,24 @@ def roadmap_icon(k, x, y, t):
 
 
 def roadmap(t, narrow=False):
+    """PC版と中間の版は矢印でつないだ2列。小さい中間の版とスマホ版は縦に積む。"""
+    F = sizer(narrow)
+
     def one(k, en, jp, title, body, w):
         pad = 22
         s = [roadmap_icon(k, pad, pad, t),
              text(pad + 58, pad + 15, en, 13, t["muted"], cls="gh", weight=700, extra=' letter-spacing="3"'),
              text(pad + 58, pad + 39, jp, 20, t["ink"], cls="gh", weight=700)]
-        s1, n1 = para(pad, pad + 78, title, 16, t["ink"], w - pad * 2, 24, 700, balance=True)
-        s2, n2 = para(pad, pad + 78 + n1 * 24 + 10, body, 14, t["muted"], w - pad * 2, 22)
+        s1, n1 = para(pad, pad + 78, title, F(16), t["ink"], w - pad * 2, 24, 700, balance=True)
+        s2, n2 = para(pad, pad + 78 + n1 * 24 + 10, body, F(14), t["muted"], w - pad * 2, 22)
         return "".join(s) + s1 + s2, pad + 78 + n1 * 24 + 10 + (n2 - 1) * 22 + 26
 
     b = []
     arrow = (lambda x, y, down=False: f'<g transform="translate({x} {y}) rotate({90 if down else 0})">'
              f'<circle r="15" fill="none" stroke="{t["line"]}" stroke-width="1.5"/>'
              f'<path d="M-5 0h10M1 -5l5 5-5 5" fill="none" stroke="url(#brand)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></g>')
-    if narrow:
-        W = PHONE_W
+    if tier(narrow) in ("narrow", "compact"):
+        W = TIER_W[tier(narrow)]
         y = 0
         for k, r in enumerate(ROADMAP):
             s, h = one(k, *r, W)
@@ -479,7 +566,7 @@ def roadmap(t, narrow=False):
                 y += 44
         H = y
     else:
-        W = PC_W
+        W = TIER_W[tier(narrow)]
         gap = 48
         cwid = (W - gap) / 2
         parts = [one(k, *r, cwid) for k, r in enumerate(ROADMAP)]
@@ -513,19 +600,39 @@ def latency(x, y, w, t):
     return "".join(out), yy - y - 34
 
 
+def latency_row(x, y, w, t, F):
+    """低遅延の2つの数値を横に並べる（中間の版）。(svg, 高さ) を返す。"""
+    out, hs = [], []
+    cw_ = (w - 24) / 2
+    for k, (num, unit, label, sub) in enumerate(LATENCY):
+        xx = x + k * (cw_ + 24)
+        out.append(text(xx, y + 50, num, 52, "url(#brand)", cls="disp", weight=400))
+        out.append(text(xx + vector.width(num, 52) + 3, y + 50, unit, 20, t["muted"], cls="gh", weight=700))
+        s, n = para(xx, y + 76, label, F(15), t["ink"], cw_, 22, 700)
+        out.append(s + text(xx, y + 76 + n * 22, sub, F(13), t["muted"], cls="gh", weight=600))
+        hs.append(76 + n * 22)
+    return "".join(out), max(hs)
+
+
 def focus(t, narrow=False):
+    """PC版は3枚のカードを横に並べ、ほかはスマホ画面を左、説明を右にした行を積んで、低遅延のカードを下に置く。
+    中間の版2つのスマホ画面はスマホ版と同じ大きさ・並び（controllers と同じ理由）。低遅延の2つの数値は横に並べる。"""
     b = []
-    if narrow:
-        W, fw = PHONE_W, 110
+    F = sizer(narrow)
+    if tier(narrow) != "wide":
+        W, fw = TIER_W[tier(narrow)], 110
         y = 0
         for k, (name, image, title, sub) in enumerate(FOCUS):
             s, h = phone(name, 0, y, fw, image, t)
             tx = fw + 16
             s1, n1 = para(tx, y + 62, title, 16, t["ink"], W - tx, 23, 700, balance=True)
-            s2, _ = para(tx, y + 62 + n1 * 23 + 6, sub, 13, t["muted"], W - tx, 20, 600)
+            s2, _ = para(tx, y + 62 + n1 * 23 + 6, sub, F(13), t["muted"], W - tx, 20, 600, balance=True)
             b += [s, number(tx, y + 34, k + 1, 26, "start"), s1, s2]
             y += h + 22
-        s, h = latency(22, y + 70, W - 44, t)
+        if tier(narrow) == "narrow":
+            s, h = latency(22, y + 70, W - 44, t)
+        else:
+            s, h = latency_row(22, y + 70, W - 44, t, F)
         b += [card(0, y, W, h + 96, t), number(22, y + 38, 3, 26, "start"),
               text(62, y + 36, "違和感のない低遅延", 16, t["ink"], cls="gh", weight=700), s]
         H = y + h + 96
@@ -684,15 +791,18 @@ def arch_box(key, x, y, w, t, h=BOX_H):
             + text(x + 56, y + 45, sub, 13, t["muted"], cls="gh", weight=600))
 
 
-def arch_box_c(key, x, y, w, t, h=None):
-    """スマホ用の箱。小さなアイコンの横に名前、その下に説明。(svg, 高さ) を返す。"""
+def arch_box_c(key, x, y, w, t, h=None, fz=13, short=True):
+    """スマホ用の箱。小さなアイコンの横に名前、その下に説明。(svg, 高さ) を返す。
+    fz は文字の大きさ（中間の版は引き上げた大きさで折り返す）、short はスマホ版の短い名前と説明を使うか。"""
     kind, color, title, sub = ARCH[key]
-    title, sub = NARROW.get(key, (title, sub))
+    if short:
+        title, sub = NARROW.get(key, (title, sub))
     icon = node_icon("game", 0, 0, color) if kind == "game" else tech_icon(kind, 0, 0, color)
-    ts, nt = para(x + 38, y + 24, title, 13, t["ink"], w - 46, 17, 700)
-    dy = y + 24 + (nt - 1) * 17 + 21
-    ds, nd = para(x + 12, dy, sub, 13, t["muted"], w - 22, 17, 600)
-    need = dy - y + (nd - 1) * 17 + 13
+    lh = round(fz * 1.31)
+    ts, nt = para(x + 38, y + 24, title, fz, t["ink"], w - 46, lh, 700)
+    dy = y + 24 + (nt - 1) * lh + 21
+    ds, nd = para(x + 12, dy, sub, fz, t["muted"], w - 22, lh, 600)
+    need = dy - y + (nd - 1) * lh + 13
     h = max(h or 0, need)
     return scard(x, y, w, h, t) + f'<g transform="translate({x + 11} {y + 10}) scale(.62)">{icon}</g>' + ts + ds, h
 
@@ -794,13 +904,14 @@ def elbow(pts, t, both=True):
     return s + (head(pts[1], pts[0]) if both else "")
 
 
-def recv_box(x, y, w, t, narrow=False):
+def recv_box(x, y, w, t, narrow=False, fz=13):
     """Rustホストの受け口（WebRTC DataChannel と WebSocket を2段に並べた1つの箱）。
     各スマホからの矢印は箱の上辺に入るので、どのスマホも両方の経路でつながっていると読める。(svg, 高さ, 各段の中央のy) を返す。"""
     out, mids, ry = [], [], y
     for k, (kind, color, title, sub, sub_n) in enumerate(RECV):
-        s, n = para(x + 56, ry + 45, sub_n if narrow else sub, 13, t["muted"], w - 68, 18, 600)
-        rh = 45 + (n - 1) * 18 + 14
+        lh = max(18, round(fz * 1.31))
+        s, n = para(x + 56, ry + 45, sub_n if narrow else sub, fz, t["muted"], w - 68, lh, 600)
+        rh = 45 + (n - 1) * lh + 14
         out.append(tech_icon(kind, x + 12, ry + 12, color) + text(x + 56, ry + 27, title, 14, t["ink"], cls="gh", weight=700) + s)
         mids.append(ry + rh / 2)
         ry += rh
@@ -825,7 +936,7 @@ def architecture(t, narrow=False):
         fill = f'fill="{tint}" fill-opacity=".10"' if tint else f'fill="{t["panel2"]}"'
         return f'<rect x="{x + 1}" y="{y + 1}" width="{w - 2}" height="{h - 2}" rx="18" {fill}/>' + frame
 
-    if not narrow:
+    if tier(narrow) == "wide":
         W = PC_W
         cwid = 226
         cols = [G_PAD + 16, 0, W - G_PAD - 16 - cwid]
@@ -885,7 +996,10 @@ def architecture(t, narrow=False):
         H = p0 + p_h + 30
         b.append(text(cols[0] - 4, H - 6, LEGEND[0], 13, t["muted"], cls="gh", weight=600))
     else:
-        W = PHONE_W
+        # スマホ版の組み方（箱を2列に積む）を、中間の版では広い幅で使う。中間の版は名前と説明を短くしない
+        W = TIER_W[tier(narrow)]
+        fz, short, wide_ok = sizer(narrow)(13), tier(narrow) == "narrow", W >= art.MID_W
+        box = lambda k, x, y, w, h=None: arch_box_c(k, x, y, w, t, h, fz, short)  # noqa: E731
         pad, gap = 20, 14
         cwid = (W - pad * 2 - gap) / 2
         cols = [pad, pad + cwid + gap]
@@ -900,27 +1014,38 @@ def architecture(t, narrow=False):
               arch_phones_at(phones_x, y0 + G_TOP + 24, t)]
         ph_b = y0 + ph_h
         n0 = ph_b + BETWEEN
-        n_h = 50
+        n_h = 50 if short else 64 if wide_ok else 82
         b += [gp(0, n0, W, n_h, NET_LABEL[1], t, NET_C)]
+        if not short:
+            # 中間の版は、PC版の右の列にある補足を帯の中に置く。スマホからの矢印が通るので、不透明な札に載せて
+            # 矢印をその後ろにくぐらせる（front は矢印より手前に描く）
+            notes = ["・".join(NET_NOTE)] if wide_ok else NET_NOTE
+            nw = max(sum(cw(c, fz) for c in s) for s in notes) + 28
+            nh = 19 * len(notes) + 12
+            ny = n0 + (n_h - nh) / 2 + 4
+            front.append(f'<rect x="{W / 2 - nw / 2:.1f}" y="{ny:.1f}" width="{nw:.1f}" height="{nh}" rx="10" '
+                         f'fill="{t["panel"]}" stroke="{t["line"]}" stroke-width="1.2"/>'
+                         + note_lines(W / 2, ny + 20, notes, t, anchor="middle"))
         p0 = n0 + n_h + BETWEEN
         hy0 = p0 + G_TOP
         r1 = hy0 + 22
-        rs, rh, mids = recv_box(pad, r1, W - pad * 2, t, narrow=True)
+        rs, rh, mids = recv_box(pad, r1, W - pad * 2, t, narrow=short, fz=fz)
         r2 = r1 + rh + GAP
-        h2 = arch_box_c("hub", 0, 0, W - pad * 2, t)[1]
+        h2 = box("hub", 0, 0, W - pad * 2)[1]
         r3 = r2 + h2 + GAP
-        h3 = max(arch_box_c(k, 0, 0, cwid, t)[1] for k in ("queue", "detect"))
+        h3 = max(box(k, 0, 0, cwid)[1] for k in ("queue", "detect"))
         hy1 = r3 + h3 + 14
         r4 = r3 + h3 + GAP + 14
-        h4 = max(arch_box_c(k, 0, 0, cwid, t)[1] for k in ("send", "data"))
+        h4 = max(box(k, 0, 0, cwid)[1] for k in ("send", "data"))
         r5 = r4 + h4 + GAP
-        h5 = max(arch_box_c(k, 0, 0, cwid, t)[1] for k in ("game", "app"))
+        h5 = max(box(k, 0, 0, cwid)[1] for k in ("game", "app"))
         p_h = r5 + h5 + 22 - p0
-        frame, pill = host_frame(pad - 6, hy0, W - pad + 6, hy1, t, "Rustホスト", (A + B) / 2, bottom=True)
+        frame, pill = host_frame(pad - 6, hy0, W - pad + 6, hy1, t,
+                                 "Rustホスト recooplay-host.exe" if wide_ok else "Rustホスト", (A + B) / 2, bottom=True)
         boxes = [("hub", cols[0], r2, W - pad * 2, h2), ("queue", cols[0], r3, cwid, h3), ("detect", cols[1], r3, cwid, h3),
                  ("send", cols[0], r4, cwid, h4), ("data", cols[1], r4, cwid, h4), ("game", cols[0], r5, cwid, h5),
                  ("app", cols[1], r5, cwid, h5)]
-        b += [gp(0, p0, W, p_h, "Windows 11 PC", t), frame, rs] + [arch_box_c(k, x, y, w, t, h)[0] for k, x, y, w, h in boxes]
+        b += [gp(0, p0, W, p_h, "Windows 11 PC", t), frame, rs] + [box(k, x, y, w, h)[0] for k, x, y, w, h in boxes]
         front.append(pill)
         for k, px in enumerate(phones_x):
             L((px, pill_b + 6), (px, r1), both=True, main=(k == 0))
@@ -941,7 +1066,7 @@ def architecture(t, narrow=False):
                 ([(A, r4 + h4), (A, r5)], True), ([(A, r5), (A, r5 + h5 / 2)], False)]
         dot = flow_dot(segs, 4)
         H = p0 + p_h + 12
-        for part in LEGEND[1]:
+        for part in [LEGEND[0]] if wide_ok else LEGEND[1]:
             H += 19
             b.append(text(pad, H, part, 13, t["muted"], cls="gh", weight=600))
         H += 8
@@ -963,12 +1088,18 @@ EVAL_SETS = [("GitHub の Unity・Godot の操作定義 57本", "生の名前、
 
 
 def evaluation(t, narrow=False):
-    def one(title, sub, vals, w):
+    """PC版と中間の版は2列、小さい中間の版とスマホ版は縦に積む。カードが広ければ指標名の右に棒を置く。"""
+    F = sizer(narrow)
+
+    def one(title, sub, vals, w, rows=None):
+        """rows を渡すと、題をその行数ぶんの高さとして扱う（横に並べたカードで指標の行の高さをそろえる）。"""
         pad = 22
-        s1, n1 = para(pad, pad + 16, title, 15, t["ink"], w - pad * 2, 22, 700)
+        s1, n1 = para(pad, pad + 16, title, F(15), t["ink"], w - pad * 2, 22, 700)
+        n1 = rows or n1
         s = [s1, text(pad, pad + 16 + n1 * 22, sub, 13, t["muted"], cls="gh", weight=600)]
         y = pad + 16 + n1 * 22 + 26
-        lw = 150 if w > 340 else 0
+        # 指標名の列の幅。PC版は150。中間の版では引き上げた文字の大きさで、いちばん長い指標名に合わせる
+        lw = (150 if F(13) == 13 else round(max(len(m) for m in EVAL_METRICS) * F(13)) + 14) if w > 340 else 0
         for m, v in zip(EVAL_METRICS, vals):
             if lw:
                 s.append(text(pad, y + 14, m, 13, t["ink"], cls="gh", weight=600))
@@ -983,8 +1114,8 @@ def evaluation(t, narrow=False):
         return "".join(s), y + 6
 
     b = []
-    if narrow:
-        W = PHONE_W
+    if tier(narrow) in ("narrow", "compact"):
+        W = TIER_W[tier(narrow)]
         y = 0
         for st in EVAL_SETS:
             s, h = one(*st, W)
@@ -992,9 +1123,10 @@ def evaluation(t, narrow=False):
             y += h + 12
         H = y - 12
     else:
-        W = PC_W
+        W = TIER_W[tier(narrow)]
         cwid = (W - GAP) / 2
-        parts = [one(*st, cwid) for st in EVAL_SETS]
+        rows = max(para(0, 0, st[0], F(15), t["ink"], cwid - 44, 22, 700)[1] for st in EVAL_SETS)
+        parts = [one(*st, cwid, rows) for st in EVAL_SETS]
         H = max(h for _, h in parts)
         for k, (s, _) in enumerate(parts):
             x = k * (cwid + GAP)
@@ -1011,16 +1143,16 @@ MESSAGE = ("操作を分担する不自由さが、\nそのまま新しい面白
 
 
 def message(t, narrow=False):
-    """注記の囲みではなく、大きな引用符とグラデーションの線で、この製品の考え方を示す。"""
-    W = PHONE_W if narrow else PC_W
-    size, lh = (18, 28) if narrow else (28, 40)
-    q = 40 if narrow else 56
+    """注記の囲みではなく、大きな引用符とグラデーションの線で、この製品の考え方を示す。
+    見出しの2行（「操作を分担する不自由さが、」「そのまま新しい面白さになる。」）が折り返さない大きさを、版ごとに選ぶ。"""
+    W = TIER_W[tier(narrow)]
+    size, lh, q = {"narrow": (18, 28, 40), "compact": (24, 35, 50), "mid": (28, 40, 56), "wide": (28, 40, 56)}[tier(narrow)]
     tx = q + 10
     b = [text(0, q * 1.05, "“", q * 1.7, "url(#brand)", cls="disp", weight=400)]
     s1, n1 = para(tx, size + 8, MESSAGE[0], size, t["ink"], W - tx - 14, lh, 800)
     y = size + 8 + (n1 - 1) * lh + 22
     b.append(f'<rect x="{tx}" y="{y}" width="56" height="4" rx="2" fill="url(#brand)"/>')
-    s2, n2 = para(tx, y + 34, MESSAGE[1], 15, t["muted"], W - tx - 14, 25, 600)
+    s2, n2 = para(tx, y + 34, MESSAGE[1], sizer(narrow)(15), t["muted"], W - tx - 14, 25, 600)
     b += [s1, s2]
     H = y + 34 + (n2 - 1) * 25 + 8
     return finish(W, H, b, t, MESSAGE[0] + MESSAGE[1], top=18, bottom=34)
@@ -1101,37 +1233,37 @@ def tech_icon(kind, x, y, color):
     return "".join(out)
 
 
-def tech_card(kind, color, title, sub, items, w, t):
-    """(svg, 高さ) を返す。項目は「名前」と「役割」の2段。"""
+def tech_card(kind, color, title, sub, items, w, t, floor=13):
+    """(svg, 高さ) を返す。項目は「名前」と「役割」の2段。floor は図の文字の最小（折り返しをその大きさで計算する）。"""
     pad = 20
     b = [tech_icon(kind, pad, pad, color), text(pad + 46, pad + 15, title, 16, t["ink"], cls="gh", weight=700),
          text(pad + 46, pad + 33, sub, 13, t["muted"], cls="gh", weight=600)]
     y = pad + 58
     b.append(f'<rect x="{pad}" y="{y - 8}" width="{w - pad * 2}" height="1" fill="{t["line"]}"/>')
     for name, desc in items:
-        s1, n1 = para(pad, y + 16, name, 14, t["ink"], w - pad * 2, 20, 700)
-        s2, n2 = para(pad, y + 16 + n1 * 20 + 2, desc, 13, t["muted"], w - pad * 2, 20, 400)
+        s1, n1 = para(pad, y + 16, name, max(14, floor), t["ink"], w - pad * 2, 20, 700)
+        s2, n2 = para(pad, y + 16 + n1 * 20 + 2, desc, max(13, floor), t["muted"], w - pad * 2, 20, 400)
         b += [s1, s2]
         y += 16 + n1 * 20 + 2 + (n2 - 1) * 20 + 14
     return "".join(b), y + 8
 
 
 def techstack(t, narrow=False):
+    """PC版は2列、ほかは1列にカードを並べる（中間の版で2列にすると1列が302pxしかなく、英字の名前が途中で折れる）。"""
     b = []
-    if narrow:
-        W = PHONE_W
+    W, floor = TIER_W[tier(narrow)], TIER_FLOOR[tier(narrow)]
+    if tier(narrow) != "wide":
         y = 0
         for kind, color, title, sub, items in TECH:
-            s, h = tech_card(kind, color, title, sub, items, W, t)
+            s, h = tech_card(kind, color, title, sub, items, W, t, floor)
             b += [card(0, y, W, h, t), f'<g transform="translate(0 {y})">{s}</g>']
             y += h + 12
         H = y - 12
     else:
-        W = PC_W
         cwid = (W - GAP) / 2
         y = 0
         for r in range(0, len(TECH), 2):
-            parts = [tech_card(*TECH[r + c], cwid, t) for c in range(2) if r + c < len(TECH)]
+            parts = [tech_card(*TECH[r + c], cwid, t, floor) for c in range(2) if r + c < len(TECH)]
             h = max(p[1] for p in parts)
             for c, (s, _) in enumerate(parts):
                 x = c * (cwid + GAP)
@@ -1147,15 +1279,22 @@ FIGURES = {"controllers": controllers, "features": features, "genres": genres, "
            "focus": focus, "architecture": architecture, "evaluation": evaluation, "message": message, "techstack": techstack}
 
 
+# 中間の版2つを描く図（ほかの図は、その画面幅でスマホ版を原寸で置く。markup.py）
+TIERED = {"techstack", "features", "genres", "stats", "roadmap", "evaluation", "architecture", "message", "controllers", "focus"}
+
+
 def main():
     n = 0
-    for name, make in FIGURES.items():
-        for mode, t in THEMES.items():
-            for suffix, narrow in (("", False), ("-narrow", True)):
-                s = make(t, narrow)
-                ET.fromstring(s)  # 属性の重複などがあると GitHub で画像が表示されないので、XMLとして読めることを確かめる
-                (art.OUT / f"{name}{suffix}-{mode}.svg").write_text(s + "\n", encoding="utf-8", newline="\n")
-                n += 1
+    # 中間の版は、PC版・スマホ版をすべて書いたあとに書く（画面のクリップの番号が通し番号なので、
+    # 先に書くとPC版・スマホ版の番号が変わり、見た目が同じでも差分が出る）
+    jobs = [(name, make, mode, t, suffix, narrow) for tiers in ((("", False), ("-narrow", True)), (("-mid", "mid"), ("-compact", "compact")))
+            for name, make in FIGURES.items() for mode, t in THEMES.items() for suffix, narrow in tiers
+            if narrow in (False, True) or name in TIERED]
+    for name, make, mode, t, suffix, narrow in jobs:
+        s = make(t, narrow)
+        ET.fromstring(s)  # 属性の重複などがあると GitHub で画像が表示されないので、XMLとして読めることを確かめる
+        (art.OUT / f"{name}{suffix}-{mode}.svg").write_text(s + "\n", encoding="utf-8", newline="\n")
+        n += 1
     print(f"wrote {n} files to {art.OUT}")
 
 

@@ -11,6 +11,7 @@ data/local/readme-fonts/ に置いて再利用する。
 """
 import base64
 import io
+import re
 import urllib.request
 from pathlib import Path
 
@@ -135,8 +136,30 @@ def font_faces():
     return "".join(css)
 
 
-def svg(w, h, body, t, title, extra_css=""):
+# スマホ版の文字の最小。幅360pxのスマホ（本文欄294px）では図が0.91倍に縮むので、13pxだと11.8pxになる。
+# 録画の図（幅329px を本文欄の99.8%に並べる）はさらに0.89倍に縮むので、14.1pxにして12.5px以上を保つ（check_text_size.py）。
+PHONE_MIN_FONT = 14.1
+
+
+def phone_min_font(body, floor=None):
+    """スマホ版の図の、PHONE_MIN_FONT より小さい文字を引き上げる。字幅を固定した文字（textLength）と、
+    見出しの舞台（入れ子の <svg>。吹き出しは飾りで、大きさは head_play.py が確かめる）は除く。"""
+    def bump(m):
+        tag = m.group(0)
+        if "textLength" in tag:
+            return tag
+        return re.sub(r'font-size="([\d.]+)"',
+                      lambda f: f'font-size="{max(float(f.group(1)), floor or PHONE_MIN_FONT):g}"', tag)
+    parts = re.split(r"(<svg x=.*?</svg>)", body, flags=re.S)
+    return "".join(p if p.startswith("<svg x=") else re.sub(r"<text [^>]*>", bump, p) for p in parts)
+
+
+def svg(w, h, body, t, title, extra_css="", phone=None):
     import vector  # 循環 import を避けるためここで読む
+    if w in (COMPACT_W, TOC_W["compact"]) and phone is not False:
+        body = phone_min_font(body, COMPACT_MIN_FONT)
+    elif phone if phone is not None else (w <= PHONE_W + 10 or w == MID_W):
+        body = phone_min_font(body)
     faces = font_faces()
     return vector.vectorize(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img">'
             f'<title>{title}</title><defs>'
@@ -214,6 +237,13 @@ def icon(kind, x, y, c, t):
 # 図の文字の大きさが、そのまま画面上の大きさになる。本文は16px、図の文字は13px以上にする。
 PC_W = 838
 PHONE_W = 324
+# 中間の版（タブレット・狭いPC。本文欄555〜808px）。幅620で描き、本文欄の幅いっぱい（0.895〜1.30倍）に表示する
+# （scripts/readme/markup.py の MID）。縮んでも12.5px以上になるよう、文字はスマホ版と同じく14.1px以上にする。
+MID_W = 620
+# 小さい中間の版（iPad の縦向き・スマホの横向き。本文欄391〜554px）。幅460で描き、本文欄の幅いっぱい（0.85〜1.2倍）に
+# 表示する。0.85倍に縮んでも12.5px以上になるよう、文字は14.8px以上にする。
+COMPACT_W = 460
+COMPACT_MIN_FONT = 14.8
 
 STEPS = [("qr", "スマホでQR参加", "ブラウザで読み取るだけ。", "P1のスマホはPCリモコンに"),
          ("list", "ゲームを選ぶ", "インストール済みから選択。", "操作とキーを自動で読み取り"),
@@ -222,7 +252,9 @@ STEPS = [("qr", "スマホでQR参加", "ブラウザで読み取るだけ。", 
 
 
 def flow(t, narrow=False):
-    """遊ぶまでの4ステップ（PC版）。"""
+    """遊ぶまでの4ステップ（PC版）。中間の版2つは flow_grid、スマホ版は flow_phone。"""
+    if narrow in ("mid", "compact"):
+        return flow_grid(t, MID_W if narrow == "mid" else COMPACT_W)
     if narrow:
         return flow_phone(t)
     W, H, gap = PC_W, 196, 26
@@ -245,6 +277,29 @@ def flow(t, narrow=False):
             ax = x + cw + gap / 2
             b.append(f'<path d="M{ax - 5} 82l7 7-7 7" fill="none" stroke="url(#brand)" stroke-width="4" '
                      'stroke-linecap="round" stroke-linejoin="round"/>')
+    return svg(W, H + 24, "".join(b), t, "遊ぶまでの4ステップ：スマホでQR参加、ゲームを選ぶ、AIが操作を分担、開始ボタンでプレイ")
+
+
+def flow_grid(t, W):
+    """遊ぶまでの4ステップ（中間の版）。横4列では「開始ボタンでプレイ」が入らないので2×2にし、
+    PC版と同じく説明の2行も載せる。"""
+    gap, ch = 14, 196
+    cw = (W - gap) / 2
+    b = []
+    for i, (kind, title, d1, d2) in enumerate(STEPS):
+        name = ORDER[i]
+        c = CHARS[name]["body"]
+        x, y = (i % 2) * (cw + gap), (i // 2) * (ch + gap)
+        b += [f'<rect x="{x + 1}" y="{y + 1}" width="{cw - 2}" height="{ch - 2}" rx="16" fill="{t["panel"]}" stroke="{t["line"]}"/>',
+              f'<circle cx="{x + 24}" cy="{y + 24}" r="13" fill="{c}"/>',
+              text(x + 24, y + 30, str(i + 1), 16, "#FFFFFF" if name != "green" else "#103B10", cls="disp", weight=400, anchor="middle"),
+              text(x + 44, y + 29, f"STEP {i + 1}", 13, t["muted"], cls="mono", weight=700),
+              char(name, x + cw / 2 - 54, y + 40, .46, t, delay=i * .4),
+              f'<g transform="translate({x + cw / 2 + 8} {y + 54}) scale(.66)">{icon(kind, 0, 0, c, t)}</g>',
+              text(x + cw / 2, y + 128, title, 16, t["ink"], weight=900, anchor="middle"),
+              text(x + cw / 2, y + 154, d1, 13, t["muted"], weight=700, anchor="middle"),
+              text(x + cw / 2, y + 175, d2, 13, t["muted"], weight=700, anchor="middle")]
+    H = 2 * ch + gap
     return svg(W, H + 24, "".join(b), t, "遊ぶまでの4ステップ：スマホでQR参加、ゲームを選ぶ、AIが操作を分担、開始ボタンでプレイ")
 
 
@@ -271,6 +326,8 @@ def flow_phone(t):
 # ---------- 分担AIの流れ ----------
 # 利用者の判断で、この図は形を変えずに使い続ける（2026-11-20）。
 def pipeline(t, narrow=False):
+    if narrow in ("mid", "compact"):  # 中間の版2つは、スマホ版と同じ形を幅に合わせて広げる（形は変えない）
+        return pipeline_phone(t, MID_W if narrow == "mid" else COMPACT_W)
     if narrow:
         return pipeline_phone(t)
     PH = 450  # 1枚の高さ
@@ -319,12 +376,15 @@ def pipeline(t, narrow=False):
         tx = x + 40 + k * 76
         b += [f'<rect x="{tx}" y="100" width="68" height="28" rx="14" fill="{t["code"]}" stroke="{t["line"]}"/>',
               text(tx + 34, 119, tk, 14, t["ink"], cls="mono", weight=700, anchor="middle")]
-    layers = [(150, "多言語エンコーダ（MiniLM・約40MB）", "操作名 → 384次元の意味ベクトル"),
-              (236, "分担判断（2層Transformer・約410KB）", "教師あり＋伏せたキーを当てる学習")]
-    for (y, l1, l2) in layers:
+    # 枠いっぱいの見出しは、Windows（Yu Gothic UI）で測った幅に textLength で固定する。Android の Noto Sans JP や
+    # macOS・iPhone のヒラギノは仮名が広く、そのままでは枠から最大15pxはみ出すため（check_text_fit.mjs、2026-11-22）。
+    # Windows では見た目が変わらず、字幅の広い端末では字を少し詰めて枠に収める。
+    layers = [(150, "多言語エンコーダ（MiniLM・約40MB）", "操作名 → 384次元の意味ベクトル", 278),
+              (236, "分担判断（2層Transformer・約410KB）", "教師あり＋伏せたキーを当てる学習", 294)]
+    for (y, l1, l2, l1w) in layers:
         b += [f'<rect x="{x + 30}" y="{y}" width="{pw - 60}" height="66" rx="14" fill="url(#brand)" opacity=".14"/>',
               f'<rect x="{x + 30}" y="{y}" width="{pw - 60}" height="66" rx="14" fill="none" stroke="url(#brand)" stroke-width="2"/>',
-              text(cx, y + 28, l1, 17, t["ink"], weight=900, anchor="middle"),
+              text(cx, y + 28, l1, 17, t["ink"], weight=900, anchor="middle", length=l1w),
               text(cx, y + 52, l2, 15, t["muted"], weight=700, anchor="middle")]
     for k in range(5):  # 層をつなぐ線
         lx = x + 70 + k * 58
@@ -336,7 +396,7 @@ def pipeline(t, narrow=False):
               text(ox + 48, 349, o1, 16, t["ink"], weight=800, anchor="middle"),
               text(ox + 48, 372, o2, 15, t["muted"], weight=700, anchor="middle")]
     b += [f'<rect x="{cx - 120}" y="400" width="240" height="34" rx="17" fill="{t["stripe"]}" opacity=".9"/>',
-          text(cx, 423, "Rustでオフライン推論・約80ms", 16, "#2E2B48", weight=900, anchor="middle")]
+          text(cx, 423, "Rustでオフライン推論・約80ms", 16, "#2E2B48", weight=900, anchor="middle", length=199)]
     b.append(text(cx, PH, "※14操作のゲームで2〜4人分の分担を作る時間", 13, t["muted"], weight=600, anchor="middle"))
     b.append("</g>")
     # ③ 3人の画面
@@ -368,52 +428,60 @@ def chip(x, y, s, t, color=None, mono=True, size=12.5):
             + text(x + w / 2, y + 15.5, s, size, ink, cls="mono" if mono else "jp", weight=700, anchor="middle"), w)
 
 
-def pipeline_phone(t):
-    """分担AIの流れ（スマホ版）。3段の要点だけを縦に並べ、詳しい説明は下の本文に任せる。"""
-    W = PHONE_W
+def pipeline_phone(t, W=PHONE_W):
+    """分担AIの流れ（スマホ版）。3段の要点だけを縦に並べ、詳しい説明は下の本文に任せる。
+    W を渡すと中間の版：同じ形のまま幅 W に広げ、文字はその版の最小（14.1・14.8px）まで大きくする。"""
+    mid = W != PHONE_W
+    fz = (COMPACT_MIN_FONT if W == COMPACT_W else PHONE_MIN_FONT) if mid else None
+    F = (lambda s: max(s, fz)) if mid else (lambda s: s)
     blue, green, purple = (CHARS[n]["body"] for n in ("blue", "green", "purple"))
     rows = [("①", "ゲームのファイルから自動検出", "19系統の設定・データを解析"),
             ("②", "分担AIが意味と関係を推論", "MiniLM＋独自の2層Transformer"),
             ("③", "スマホ画面へ自動で配分", "Rustでオフライン推論・約80ms")]
     b, y = [], 0
     for i, (n, h1, h2) in enumerate(rows):
-        rh = 118
+        rh = 118 if not mid else 114
         b += [f'<rect x="1" y="{y + 1}" width="{W - 2}" height="{rh - 2}" rx="16" fill="{t["panel"]}" stroke="{t["line"]}"/>',
               text(14, y + 30, n, 20, "url(#brand)", weight=900),
               text(40, y + 29, h1, 16, t["ink"], weight=900),
-              text(40, y + 50, h2, 12.5, t["muted"], weight=700)]
-        cx, cy = 14, y + 66
+              text(40, y + 50 + (3 if mid else 0), h2, F(12.5), t["muted"], weight=700)]
+        cx, cy = 14, y + 66 + (4 if mid else 0)
         if i == 0:
             for label, c in (("W", blue), ("A", blue), ("S", blue), ("D", blue), ("Space", blue), ("Mouse", green),
                              ("MouseL", purple), ("R", purple), ("Wheel", purple)):
-                svg_, w = chip(cx, cy, label, t, c)
+                svg_, w = chip(cx, cy, label, t, c, size=F(12.5))
                 if cx + w > W - 12:
                     cx, cy = 14, cy + 26
-                    svg_, w = chip(cx, cy, label, t, c)
+                    svg_, w = chip(cx, cy, label, t, c, size=F(12.5))
                 b.append(svg_)
                 cx += w + 6
         elif i == 1:
             for label in ("操作名", "→ 意味ベクトル", "→ 分担"):
-                svg_, w = chip(cx, cy, label, t, None, mono=False)
+                svg_, w = chip(cx, cy, label, t, None, mono=False, size=F(12.5))
                 b.append(svg_)
                 cx += w + 6
         else:
             for k, (name, p, role) in enumerate((("blue", "P1", "移動"), ("green", "P2", "視点"), ("purple", "P3", "アクション"))):
                 px = 14 + k * (W - 20) / 3
                 b += [char(name, px - 6, cy - 6, .3, t, delay=k * .4),
-                      text(px + 26, cy + 12, p, 12, CHARS[name]["body"] if name != "green" else "#2FB52E", weight=900),
-                      text(px + 26, cy + 30, role, 13, t["ink"], weight=800)]
+                      text(px + 26, cy + 12, p, F(12), CHARS[name]["body"] if name != "green" else "#2FB52E", weight=900),
+                      text(px + 26, cy + 30, role, F(13), t["ink"], weight=800)]
         y += rh
         if i < 2:
             b.append(f'<path d="M{W / 2 - 8} {y + 4}l8 8 8-8" fill="none" stroke="url(#brand)" stroke-width="4" '
                      'stroke-linecap="round" stroke-linejoin="round"/>')
             y += 18
-    return svg(W, y, "".join(b), t, "分担AIの流れ：ゲームのファイルから操作を検出し、MiniLMと2層Transformerで推論して、3人のスマホ画面へ配分する")
+    # 利用者の判断で形を変えない図なので、スマホ版の文字の引き上げ（phone_min_font）もしない
+    return svg(W, y, "".join(b), t, "分担AIの流れ：ゲームのファイルから操作を検出し、MiniLMと2層Transformerで推論して、3人のスマホ画面へ配分する",
+               phone=None if mid else False)
 
 
 # ---------- 区切りとフッター ----------
 def footer(t, narrow=False):
-    W, H = (PHONE_W, 272) if narrow else (PC_W, 230)
+    """締めのカード。中間の版（620）はPC版と同じ組み方。小さい中間の版（460）は副題を2行にし、札はPC版と同じ1本。"""
+    compact = narrow == "compact"
+    W, H = (PHONE_W, 272) if narrow is True else (MID_W if narrow == "mid" else COMPACT_W if compact else PC_W, 252 if compact else 230)
+    narrow = narrow is True
     cx = W / 2
     b = [f'<rect width="{W}" height="{H}" rx="22" fill="url(#bg)"/>',
          f'<clipPath id="card"><rect width="{W}" height="{H}" rx="22"/></clipPath><g clip-path="url(#card)">',
@@ -424,6 +492,11 @@ def footer(t, narrow=False):
               text(cx, 80, "PCのゲームはそのままに、", 14, t["muted"], cls="rnd", weight=700, anchor="middle"),
               text(cx, 100, "友達と集まったその場で協力プレイ", 14, t["muted"], cls="rnd", weight=700, anchor="middle")]
         top, gap, s = 116, 62, .5
+    elif compact:
+        b += [text(cx, 56, "さあ、みんなで遊ぼう！", 34, t["ink"], cls="hand", weight=400, anchor="middle"),
+              text(cx, 86, "PCのゲームはそのままに、", 15, t["muted"], cls="rnd", weight=700, anchor="middle"),
+              text(cx, 108, "友達と集まったその場で協力プレイ", 15, t["muted"], cls="rnd", weight=700, anchor="middle")]
+        top, gap, s = 124, 76, .5
     else:
         b += [text(cx, 58, "さあ、みんなで遊ぼう！", 36, t["ink"], cls="hand", weight=400, anchor="middle"),
               text(cx, 88, "PCのゲームはそのままに、友達と集まったその場で協力プレイ", 15, t["muted"], cls="rnd", weight=700, anchor="middle")]
@@ -434,14 +507,15 @@ def footer(t, narrow=False):
         b.append(f'<ellipse cx="{x0 + i * gap + 50 * s:.1f}" cy="{top + 63}" rx="18" ry="3.5" fill="{t["shadow"]}" opacity=".12"/>')
     # まだ一般公開（リリース）していないことを、締めの気分を壊さない札で伝える
     label, note = "COMING SOON", "一般公開に向けて準備中です"
-    lw = len(label) * 10.6  # 13px・太字・字間2の英大文字の幅の見積もり
+    # 13px・太字・字間2の英大文字の幅の見積もり。PC版以外は art.svg が文字を引き上げるので、その大きさで見積もる
+    lw = len(label) * 10.6 * (1 if W == PC_W else (COMPACT_MIN_FONT if compact else PHONE_MIN_FONT) / 13)
     ph = 34
     if narrow:  # 幅が狭いので、札は「COMING SOON」だけにして、説明はその下に置く
         pw = 34 + lw + 16
         px, py = cx - pw / 2, top + 76
         b.append(text(cx, py + ph + 24, note, 14, t["ink"], cls="rnd", weight=700, anchor="middle"))
     else:
-        pw = 34 + lw + 18 + len(note) * 14 + 22
+        pw = 34 + lw + 18 + len(note) * (COMPACT_MIN_FONT if compact else PHONE_MIN_FONT if W == MID_W else 14) + 22
         px, py = cx - pw / 2, top + 78
         b += [f'<rect x="{px + 34 + lw + 8:.1f}" y="{py + 9}" width="1.5" height="{ph - 18}" fill="{t["line"]}"/>',
               text(px + 34 + lw + 18, py + 22.5, note, 14, t["ink"], cls="rnd", weight=700)]
@@ -642,12 +716,20 @@ def wrap(s, size, avail):
     return [s[:i], s[i:]]
 
 
-def head_banner(num, jp, en, name, t, narrow=False):
-    W, H, body = head_parts(num, jp, en, t, narrow)
+def head_banner(num, jp, en, name, t, narrow=False, mid=False, compact=False):
+    W, H, body = head_parts(num, jp, en, t, narrow, mid, compact)
     return svg(W, H, body, t, jp)
 
 
-def head_parts(num, jp, en, t, narrow=False):
+# 中間の版の見出しで、見出しの文字に使える幅（右の舞台の、何も描かれない左端の帯までの幅。head_play.py と合わせる）
+MID_HEAD_AVAIL = 311
+
+
+# 小さい中間の版の見出しで、番号と英字ラベルの行の右に置く舞台の左端（head_play.py と合わせる）
+COMPACT_STAGE_X = 160
+
+
+def head_parts(num, jp, en, t, narrow=False, mid=False, compact=False):
     """案D：見出しそのものを画像にする。番号だけ表示用の書体にし、英字ラベルと見出しはGitHub本体と同じ
     フォント指定（閲覧者の端末の標準フォント）で描く。
     スマホ版はPC版と同じ文字の大きさのまま幅360で描き、番号とラベルの下に見出しを置いて折り返す。"""
@@ -658,6 +740,22 @@ def head_parts(num, jp, en, t, narrow=False):
              text(58, 34, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"')]
         # 行頭の全角括弧は字下げに見えるので、半文字ぶん左へ寄せる
         b += [text(-13.5 if line[0] in "（「" else 0, 80 + 36 * k, line, 27, t["ink"], cls="gh", weight=600)
+              for k, line in enumerate(lines)]
+    elif compact:
+        # 番号と英字ラベルの行の右に舞台を置き（head_play.py）、見出しはその下に幅いっぱいで折り返す
+        lines = wrap(jp, 27, COMPACT_W - 4)
+        W, H = COMPACT_W, 50 + 36 * len(lines)
+        b = [text(0, 42, num, 42, "url(#brand)", cls="disp", weight=400, length=44),
+             text(58, 34, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"')]
+        b += [text(-13.5 if line[0] in "（「" else 0, 80 + 36 * k, line, 27, t["ink"], cls="gh", weight=600)
+              for k, line in enumerate(lines)]
+    elif mid:
+        # PC版と同じ並び（番号の右に英字ラベルと見出し）。右に舞台を置くので、長い見出しは2行に折り返す
+        lines = wrap(jp, 27, MID_HEAD_AVAIL)
+        W, H = MID_W, 68 + 36 * (len(lines) - 1)
+        b = [text(0, 52, num, 42, "url(#brand)", cls="disp", weight=400, length=44),
+             text(60, 26, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"')]
+        b += [text(58 - (13.5 if k and line[0] in "（「" else 0), 55 + 36 * k, line, 27, t["ink"], cls="gh", weight=600)
               for k, line in enumerate(lines)]
     else:
         W, H = 840, 68
@@ -678,12 +776,15 @@ LINK = {"light": "#0969DA", "dark": "#4493F8"}
 TOC_EN = {num: en for num, _, en in HEADS}
 # 目次は表を使わず、左右1組の画像を本文欄の幅の49%ずつで並べる（表は幅いっぱいに広がらず中央に浮くため）。
 # PCは幅410、スマホは幅158で描き、どちらも本文欄の49%に縮めて表示すると項目名が約16pxになる。
-TOC_W = {False: 410, True: 158}
+# 中間の版は幅304（MID_W の49%）で描き、本文欄の49%で表示する（0.895〜1.30倍）。
+# 小さい中間の版は幅225（COMPACT_W の49%）で描く。英字ラベルは項目名と重なるので、スマホ版と同じく付けない。
+TOC_W = {False: 410, True: 158, "mid": 304, "compact": 225}
 
 
-def toc_item(num, label, mode, narrow=False):
+def toc_item(num, label, mode, narrow=False, mid=False, compact=False):
     t = THEMES[mode]
-    W = TOC_W[narrow]
+    W = TOC_W["mid" if mid else "compact" if compact else narrow]
+    narrow = narrow or compact
     b = [text(0, 23, num, 21, "url(#brand)", cls="disp", weight=400, length=23),
          text(29, 21, label, 16, LINK[mode], cls="gh", weight=400)]
     if not narrow:
@@ -697,12 +798,15 @@ def toc_item(num, label, mode, narrow=False):
 PARTS = [("1", "製品概要", "PRODUCT", "01", "07"), ("2", "開発技術", "TECHNOLOGY", "08", "11")]
 
 
-def part_banner(part, jp, en, first, last, t, narrow=False):
-    """大見出し。項目の見出し（番号＋英字ラベル）と同じ書体の組み方で、背景の帯と大きな番号で格上に見せる。"""
-    W, H = (PHONE_W, 96) if narrow else (PC_W, 104)
+def part_banner(part, jp, en, first, last, t, narrow=False, mid=False, compact=False):
+    """大見出し。項目の見出し（番号＋英字ラベル）と同じ書体の組み方で、背景の帯と大きな番号で格上に見せる。
+    中間の版2つはPC版と同じ組み方で、幅だけ MID_W・COMPACT_W にする。"""
+    W, H = (PHONE_W, 96) if narrow else (MID_W if mid else COMPACT_W if compact else PC_W, 104)
     b = [f'<rect width="{W}" height="{H}" rx="18" fill="url(#bg)"/>',
          f'<clipPath id="card"><rect width="{W}" height="{H}" rx="18"/></clipPath><g clip-path="url(#card)">',
-         f'<g transform="translate({W if narrow else W - 230} {H}) scale(-1 -1)">{dots(14, 14, 8, 5, 12, 2.4, t["dot2"])}</g>',
+         # 点の模様は見出しの文字と SECTIONS の間に置く。小さい中間の版は間が狭いので6列にする
+         f'<g transform="translate({W if narrow else 330 if compact else W - 230} {H}) scale(-1 -1)">'
+         f'{dots(14, 14, 6 if compact else 8, 5, 12, 2.4, t["dot2"])}</g>',
          f'<rect width="7" height="{H}" fill="url(#brand)"/></g>',
          f'<rect x="{66 if narrow else 80}" y="22" width="1.5" height="{H - 44}" fill="{t["line"]}"/>']
     if narrow:
@@ -737,15 +841,15 @@ def section_head(jp, en, W, t, ls=4):
     return "".join(b)
 
 
-def toc_title(t, narrow=False):
+def toc_title(t, narrow=False, mid=False, compact=False):
     """目次の見出し。"""
-    W = PHONE_W if narrow else PC_W
+    W = PHONE_W if narrow else MID_W if mid else COMPACT_W if compact else PC_W
     return svg(W, 40, section_head("目次", "CONTENTS", W, t), t, "目次")
 
 
-def video_cta(t, narrow=False):
+def video_cta(t, narrow=False, mid=False, compact=False):
     """サムネイルの下に置く、紹介動画への誘導。押せることが分かるよう、枠・再生の印・矢印を付ける。"""
-    W, H = (PHONE_W, 60) if narrow else (PC_W, 60)
+    W, H = (PHONE_W if narrow else MID_W if mid else COMPACT_W if compact else PC_W, 60)
     red = "#FF2D55"
     b = [f'<rect x=".75" y=".75" width="{W - 1.5}" height="{H - 1.5}" rx="12" fill="none" stroke="{t["line"]}" stroke-width="1.5"/>',
          f'<circle cx="34" cy="{H / 2}" r="17" fill="{red}"/>',
@@ -756,10 +860,11 @@ def video_cta(t, narrow=False):
     return svg(W, H, "".join(b), t, "プロダクト紹介動画を見る（YouTube）")
 
 
-def toc_part(part, jp, en, mode, narrow=False):
+def toc_part(part, jp, en, mode, narrow=False, mid=False, compact=False):
     """目次の列の見出し。大見出しと同じ PART 番号・英字ラベルで、どちらの列かを示す。"""
     t = THEMES[mode]
-    W = TOC_W[narrow]
+    W = TOC_W["mid" if mid else "compact" if compact else narrow]
+    narrow = narrow or compact
     b = [text(0, 15, f"PART {part}", 13, "url(#brand)", cls="gh", weight=700, extra=' letter-spacing="2"'),
          text(0, 41, jp, 19, t["ink"], cls="gh", weight=700)]
     if not narrow:
@@ -787,6 +892,9 @@ def main():
         for kind, draw in (("split", split_demo), ("flow", flow), ("pipeline", pipeline), ("footer", footer)):
             files[f"{kind}-{mode}.svg"] = draw(t)
             files[f"{kind}-narrow-{mode}.svg"] = draw(t, narrow=True)
+            if kind in ("flow", "footer", "pipeline"):  # 中間の版2つ（scripts/readme/markup.py の TIERS）
+                files[f"{kind}-mid-{mode}.svg"] = draw(t, narrow="mid")
+                files[f"{kind}-compact-{mode}.svg"] = draw(t, narrow="compact")
     for i, (num, jp, en) in enumerate(HEADS):
         name = ORDER[i % 4]
         for mode, t in THEMES.items():
@@ -795,17 +903,27 @@ def main():
     for num, label in TOC:
         for mode in THEMES:
             files[f"heads/toc-{num}-{mode}.svg"] = toc_item(num, label, mode)
+            files[f"heads/toc-{num}-mid-{mode}.svg"] = toc_item(num, label, mode, mid=True)
+            files[f"heads/toc-{num}-compact-{mode}.svg"] = toc_item(num, label, mode, compact=True)
             files[f"heads/toc-{num}-narrow-{mode}.svg"] = toc_item(num, label, mode, narrow=True)
     for part, jp, en, first, last in PARTS:
         for mode, t in THEMES.items():
             files[f"heads/part-{part}-{mode}.svg"] = part_banner(part, jp, en, first, last, t)
+            files[f"heads/part-{part}-mid-{mode}.svg"] = part_banner(part, jp, en, first, last, t, mid=True)
+            files[f"heads/part-{part}-compact-{mode}.svg"] = part_banner(part, jp, en, first, last, t, compact=True)
             files[f"heads/part-{part}-narrow-{mode}.svg"] = part_banner(part, jp, en, first, last, t, narrow=True)
             files[f"heads/toc-part-{part}-{mode}.svg"] = toc_part(part, jp, en, mode)
+            files[f"heads/toc-part-{part}-mid-{mode}.svg"] = toc_part(part, jp, en, mode, mid=True)
+            files[f"heads/toc-part-{part}-compact-{mode}.svg"] = toc_part(part, jp, en, mode, compact=True)
             files[f"heads/toc-part-{part}-narrow-{mode}.svg"] = toc_part(part, jp, en, mode, narrow=True)
     for mode, t in THEMES.items():
         files[f"heads/toc-title-{mode}.svg"] = toc_title(t)
+        files[f"heads/toc-title-mid-{mode}.svg"] = toc_title(t, mid=True)
+        files[f"heads/toc-title-compact-{mode}.svg"] = toc_title(t, compact=True)
         files[f"heads/toc-title-narrow-{mode}.svg"] = toc_title(t, narrow=True)
         files[f"video-cta-{mode}.svg"] = video_cta(t)
+        files[f"video-cta-mid-{mode}.svg"] = video_cta(t, mid=True)
+        files[f"video-cta-compact-{mode}.svg"] = video_cta(t, compact=True)
         files[f"video-cta-narrow-{mode}.svg"] = video_cta(t, narrow=True)
     (OUT / "heads").mkdir(exist_ok=True)
     for name, body in files.items():

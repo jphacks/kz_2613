@@ -301,7 +301,7 @@ flowchart LR
 
 <div align="center">
 <picture>
-  <source media="(max-width: 700px)" srcset="../assets/readme/recordings/layout-edit-narrow.webp">
+  <source media="(max-width: 700px)" srcset="../assets/readme/recordings/layout-edit-narrow.webp" width="324">
   <img src="../assets/readme/recordings/layout-edit-wide.webp" width="640" alt="実画面の録画。配置の編集で、Spaceキーのつまみを引いて縦と横を縮め、Ctrlキーを重ねると置ける場所が点線の枠で示され、指を離すとそこに収まる。空いた所へShiftキーを広げて保存する">
 </picture>
 </div>
@@ -328,7 +328,7 @@ P1（ホスト）のスマホは、協力プレイ中（`coop`）以外のすべ
 
 <div align="center">
 <picture>
-  <source media="(max-width: 700px)" srcset="../assets/readme/recordings/remote-start-narrow.webp">
+  <source media="(max-width: 700px)" srcset="../assets/readme/recordings/remote-start-narrow.webp" width="324">
   <img src="../assets/readme/recordings/remote-start-wide.webp" width="760" alt="実画面の録画。P1のスマホのタッチパッドでPCのカーソルを動かし、Minecraftを選んで分担を決め、ゲームを起動する。開いた公式ランチャーの「プレイ」もスマホから押す">
 </picture>
 </div>

@@ -149,7 +149,7 @@ PCに入っているゲームを自動で見つけて並べます。この PC �
 
 <div align="center">
 <picture>
-  <source media="(max-width: 700px)" srcset="../assets/readme/recordings/layout-edit-narrow.webp">
+  <source media="(max-width: 700px)" srcset="../assets/readme/recordings/layout-edit-narrow.webp" width="324">
   <img src="../assets/readme/recordings/layout-edit-wide.webp" width="640" alt="実画面の録画。配置の編集で、Spaceキーのつまみを引いて縦と横を縮め、Ctrlキーを重ねると置ける場所が点線の枠で示され、指を離すとそこに収まる。空いた所へShiftキーを広げて保存する">
 </picture>
 </div>

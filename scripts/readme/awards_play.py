@@ -432,13 +432,15 @@ def train_icon(t):
     return out
 
 
-def setup(t, narrow, H, D):
-    W = art.PHONE_W if narrow else art.PC_W
+def setup(t, narrow, H, D, W=None):
+    """W を渡すと、スマホ版のカードはそのままで、図（見出しの線と4色の点）だけ幅 W に広げる（中間の版）。"""
+    W = W or (art.PHONE_W if narrow else art.PC_W)
     st = Stage(W, H, D, t)
-    x0, x1, ry, xs, dy = heading(st, W, 2 if narrow else 4)
+    x0, x1, ry, xs, dy = heading(st, W, 2 if W <= art.COMPACT_W else 4)
     if x1 - x0 < 24:  # スマホでは線が短すぎて描かれない（目次の見出しと同じ）
         st.back[-1] = "</g>"
-    return st, Geo(W=W, cw=W - 14, narrow=narrow, x0=x0, ry=ry, xs=xs, dy=dy, CT=78)
+    cw = (art.PHONE_W if narrow else W) - 14
+    return st, Geo(W=W, cw=cw, narrow=narrow, x0=x0, ry=ry, xs=xs, dy=dy, CT=78)
 
 
 def rows(st, g, L, R):
@@ -767,7 +769,9 @@ def scene(st, c, P0, S):
 
 
 def make(t, narrow=False):
-    """1枚の画像（テーマ t、スマホ版なら narrow）を作る。"""
+    """1枚の画像（テーマ t、スマホ版なら narrow）を作る。narrow が "mid"・"compact" なら中間の版（route_tiered）。"""
+    if narrow in ("mid", "compact"):
+        return route_tiered(t, art.MID_W if narrow == "mid" else art.COMPACT_W)
     return route_narrow(t) if narrow else route_pc(t)
 
 
@@ -954,15 +958,105 @@ def route_narrow(t):
     return st.svg()
 
 
+def route_tiered(t, W):
+    """中間の版（幅 W）。スマホ版の縦の路線図を土台に、カードを図の幅いっぱいに広げる。
+    スマホ版では東京駅の上に置いていた発表と展示の場面は、PC版と同じく、受賞の行の右の空いた所に置く
+    （配置はPC版の場面を、カードの右端からの距離のまま移す）。物語と演出はスマホ版と同じ。"""
+    unlock0 = 8.3 + 4.2
+    t_in, t_dep, t_arr = unlock0 + 1.1, unlock0 + 3.1, unlock0 + 5.2
+    P0 = t_arr + 1.3
+    TA = P0 + SCENE + .1
+    D = round(TA + TENSE + 12.3, 2)
+    CT = 78
+    LX = 24
+    # 場面を東京駅の上に置かないので、金沢と東京の間はスマホ版（166）より詰める
+    S1, S2 = CT + 30, CT + 176
+    H = S2 + 164
+    st, g = setup(t, False, H, D, W)
+    cw = g.cw
+    card(st, 0, CT, cw, H - CT)
+    X0 = 44
+    for y, name, en in ((S1, "金沢", "HACK DAY"), (S2, "東京", "AWARD DAY")):
+        st.back.append(art.text(X0, y + 6, name, 16, t["ink"], cls="gh", weight=700))
+        st.back.append(art.text(X0 + 44, y + 5, en, 13, t["muted"], cls="gh", weight=700, extra=' letter-spacing="3"'))
+    y_last = H - 24
+    st.back.append(f'<rect x="{LX - 1.5}" y="{S1}" width="3" height="{y_last - S1}" rx="1.5" fill="{grad(st, 0, S1, 0, y_last)}"/>')
+    station(st, LX, S1, "#C03BFF")
+    station(st, LX, S2, "#4F9CFC", "st-tokyo")
+    g.r1, g.r2 = S1 + 44, S1 + 88
+    g.q1, g.q2, g.q3 = S2 + 44, S2 + 88, S2 + 132
+    rows(st, g, X0, X0)
+    g.aud = [X0 + 52 + i * 38 for i in range(3)]
+    lock(st, lambda c_: f'<rect x="{LX - 1.5}" y="{S1}" width="3" height="{y_last - S1}" rx="1.5" fill="{c_}"/>',
+         lambda c_: f'<circle cx="{LX}" cy="{S2}" r="6.5" fill="{PAGE[mode_of(t)]}" stroke="{c_}" stroke-width="3"/>',
+         3.7, unlock0, unlock0 + 1.0, False)
+    st.anim("st-tokyo", [(unlock0 + .7, "scale(1)", OUT_), (unlock0 + .9, "scale(1.6)", IO), (unlock0 + 1.15, "scale(1)")])
+    st.sparkle(LX, S2, unlock0 + .75, 18, 6, "#22C4FA")
+    c = make_team(st, g)
+    # 見出しの右端の点から、線の上を駆けて観客賞の文字の右端へ跳び乗り、文字の上を歩いて並ぶ
+    for i, n in enumerate(TEAM):
+        c[n].wait(4.6 + i * .18).run(5.15 + i * .18, 300 + i * 16).hop(5.75 + i * .18, 262 - i * 6, g.top(g.r1), 18) \
+            .walk(7.0 + i * .22, g.aud[i])
+    tj, got = hackday_and_ticket(st, g, c, 8.3)
+    # 新幹線：上から金沢駅に入り、3体が乗ると路線を下って東京駅へ。降ろしたあとは路線の先へ走り去る
+    y_top = S1 + 8
+    y_end = S2 - 50
+    y_far = y_last - 74
+    t_leave = t_arr + 1.0
+
+    def pos(s):
+        if s <= t_in:
+            return y_top - 30
+        if s <= t_in + .5:
+            return y_top - 30 + 30 * (1 - (1 - (s - t_in) / .5) ** 2)
+        if s <= t_dep:
+            return y_top
+        if s <= t_arr:
+            return y_top + (y_end - y_top) * smooth((s - t_dep) / (t_arr - t_dep))
+        if s <= t_leave:
+            return y_end
+        if s <= t_leave + 1.2:
+            return y_end + (y_far - y_end) * ((s - t_leave) / 1.2) ** 2
+        return y_far
+    frames = [(s / 10, f"translate(0px,{pos(s / 10):.1f}px)") for s in range(int(t_in * 10) - 1, int((t_leave + 1.3) * 10))]
+    st.front.append(f'<g class="fx"><g class="trainO"><g class="train"><g transform="translate({LX} 0)">{train_icon(t)}</g></g></g></g>')
+    st.anim("train", frames, base=f"translate(0px,{y_top - 30}px)")
+    st.anim("trainO", [(t_in, 0), (t_in + .4, 1), (t_leave + .8, 1), (t_leave + 1.25, 0)], prop="opacity", base="0")
+    board = {"blue": t_in + .7, "green": t_in + 1.0, "purple": t_in + 1.3}
+    outs = ride(st, g, c, board, pos, t_in, t_arr + .25, None, lambda n, s: (LX, pos(s) + WIN[n] + 12))
+    # 東京：PC版と同じく、受賞の行（審査委員特別賞・Innovator認定）の右で発表と展示をする
+    dx = cw - 824  # PC版のカードの右端（824）からの距離を保つ
+    fy = g.feet(g.q2)
+    S = {"fy": fy, "screen": 774 + dx, "sw": 56, "sh": 34, "podium": 718 + dx, "ay": g.q3 + 19,
+         "aud_pres": [x + dx for x in (664, 690, 716, 742, 768)], "aud_expo": [x + dx for x in (736, 758, 780, 800, 818)],
+         "booth": 766 + dx, "bw": 84,
+         "team_pres": {n: x + dx for n, x in (("blue", 718), ("green", 684), ("purple", 654))},
+         "team_expo": {n: x + dx for n, x in (("blue", 704), ("green", 680), ("purple", 654))}}
+    assert min(S["aud_pres"] + [S["team_pres"]["purple"]]) - 20 > g.e["sp"], "場面が受賞の行の文字にかかる"
+    for k, n in enumerate(TEAM):
+        out = t_arr + .25 + k * .22
+        c[n].wait(out + .35).hops(P0 - .1, [(g.e["sp"] - 30 + k * 14, g.top(g.q1)), (S["team_pres"][n], fy)], h=14)
+    scene(st, c, P0, S)
+    sp, inn, dmm = g.spots["green"], g.spots["purple"], g.spots["blue"]
+    arrive = {"blue": (TA, TA + 1.1, [dmm]), "green": (TA + .1, TA + 1.0, [sp]), "purple": (TA + .2, TA + 1.1, [inn])}
+    award_part(st, g, c, TA, arrive, got, outs)
+    # 受賞の行の文字の右端を伝って Hack Day の段を上り、見出しの点へ戻る
+    back = {n: [(g.e["sp"] - 10 + k * 12, g.top(g.q1)), (g.e["fin"] - 20 + k * 12, g.top(g.r2)),
+                (g.e["aud"] - 10 + k * 12, g.top(g.r1)), (g.xs[k], g.ry)] for k, n in enumerate(TEAM)}
+    end = finish(st, g, c, TA + TENSE, back)
+    assert end <= D + .01, end
+    return st.svg()
+
+
 def main():
     import xml.etree.ElementTree as ET
     for mode, t in art.THEMES.items():
-        for narrow in (False, True):
+        for narrow in (False, True, "mid", "compact"):
             svg = make(t, narrow)
             ET.fromstring(svg)  # 属性の重複などがあると GitHub で画像が表示されないので、XMLとして読めることを確かめる
-            name = f"awards{'-narrow' if narrow else ''}-{mode}.svg"
+            name = f"awards{'-' + narrow if isinstance(narrow, str) else '-narrow' if narrow else ''}-{mode}.svg"
             (OUT / name).write_text(svg + "\n", encoding="utf-8", newline="\n")
-    print("wrote 4 files to", OUT)
+    print("wrote 8 files to", OUT)
 
 
 if __name__ == "__main__":
