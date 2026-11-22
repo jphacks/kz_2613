@@ -432,13 +432,15 @@ def train_icon(t):
     return out
 
 
-def setup(t, narrow, H, D):
-    W = art.PHONE_W if narrow else art.PC_W
+def setup(t, narrow, H, D, W=None):
+    """W を渡すと、スマホ版のカードはそのままで、図（見出しの線と4色の点）だけ幅 W に広げる（中間の版）。"""
+    W = W or (art.PHONE_W if narrow else art.PC_W)
     st = Stage(W, H, D, t)
-    x0, x1, ry, xs, dy = heading(st, W, 2 if narrow else 4)
+    x0, x1, ry, xs, dy = heading(st, W, 2 if W <= art.COMPACT_W else 4)
     if x1 - x0 < 24:  # スマホでは線が短すぎて描かれない（目次の見出しと同じ）
         st.back[-1] = "</g>"
-    return st, Geo(W=W, cw=W - 14, narrow=narrow, x0=x0, ry=ry, xs=xs, dy=dy, CT=78)
+    cw = (art.PHONE_W if narrow else W) - 14
+    return st, Geo(W=W, cw=cw, narrow=narrow, x0=x0, ry=ry, xs=xs, dy=dy, CT=78)
 
 
 def rows(st, g, L, R):
@@ -767,7 +769,10 @@ def scene(st, c, P0, S):
 
 
 def make(t, narrow=False):
-    """1枚の画像（テーマ t、スマホ版なら narrow）を作る。"""
+    """1枚の画像（テーマ t、スマホ版なら narrow）を作る。narrow が "mid"・"compact" なら中間の版：
+    路線図のカードはスマホ版のまま、見出しの線と4色の点だけを本文欄の幅に広げる（すぐ下の目次の見出しと線の長さをそろえる）。"""
+    if narrow in ("mid", "compact"):
+        return route_narrow(t, art.MID_W if narrow == "mid" else art.COMPACT_W)
     return route_narrow(t) if narrow else route_pc(t)
 
 
@@ -867,7 +872,7 @@ def route_pc(t):
     return st.svg()
 
 
-def route_narrow(t):
+def route_narrow(t, W=None):
     unlock0 = 8.3 + 4.2
     t_in, t_dep, t_arr = unlock0 + 1.1, unlock0 + 3.1, unlock0 + 5.2
     P0 = t_arr + 1.3
@@ -877,7 +882,7 @@ def route_narrow(t):
     LX = 24
     S1, S2 = CT + 30, CT + 196
     H = S2 + 164
-    st, g = setup(t, True, H, D)
+    st, g = setup(t, True, H, D, W)
     cw = g.cw
     card(st, 0, CT, cw, H - CT)
     X0 = 44
@@ -957,12 +962,12 @@ def route_narrow(t):
 def main():
     import xml.etree.ElementTree as ET
     for mode, t in art.THEMES.items():
-        for narrow in (False, True):
+        for narrow in (False, True, "mid", "compact"):
             svg = make(t, narrow)
             ET.fromstring(svg)  # 属性の重複などがあると GitHub で画像が表示されないので、XMLとして読めることを確かめる
-            name = f"awards{'-narrow' if narrow else ''}-{mode}.svg"
+            name = f"awards{'-' + narrow if isinstance(narrow, str) else '-narrow' if narrow else ''}-{mode}.svg"
             (OUT / name).write_text(svg + "\n", encoding="utf-8", newline="\n")
-    print("wrote 4 files to", OUT)
+    print("wrote 8 files to", OUT)
 
 
 if __name__ == "__main__":
