@@ -1,7 +1,7 @@
 """READMEの画像を、画面幅とGitHubの外観（ライト・ダーク）に合わせて差し替えるための <picture> を書く。
 
     python scripts/readme/markup.py migrate [ファイル…]   # 書きやすい旧形式の <picture> を、下の新形式に書き換える
-    python scripts/readme/markup.py rebuild [ファイル…]   # 新形式を組み直す（中間の版 *-mid-* を足した後など）
+    python scripts/readme/markup.py rebuild [ファイル…]   # 新形式を組み直す（段階の版 *-compact-*・*-mid-* を足した後など）
     python scripts/readme/markup.py check [ファイル…]     # <picture> が新形式の決まりを守っているか確かめる
 
 ファイルを省くと、README.md と、README の図を並べて説明する docs/readme-design.md を扱う。
@@ -23,7 +23,7 @@
    どおりには変わらない（右の欄が下へ回る幅がある）。PC版（838px）の図は本文欄が 808px 未満だと
    13px の文字が 12.5px を下回る。→ PC版は画面幅 1266px 以上だけで使い、それより狭い画面はスマホ版にする。
 3. 幅を % で指定した画像（目次・録画の図の切り絵）のスマホ版は、本文欄が広いと何倍にも拡大される。
-   → 画面幅 420〜1265px では、スマホ版を原寸（px 指定）で表示する。
+   → その画面幅の版がない図は、スマホ版を原寸（px 指定）で表示する。
 
 ## 新形式
 
@@ -31,11 +31,9 @@
 使わない画面で、幅0・高さ0の透明な画像（HIDE）に差し替えて消すためのもの（外観の条件を含まないので、
 GitHub に書き換えられない）。2つ目の <source> は外観の条件だけを持つ。
 
-- 幅の指定がない図：スマホ版（〜1265px）と PC版（1266px〜）の2つ。
-- 幅を % で指定した図：スマホ版・伸縮（〜419px）、スマホ版・原寸（420〜1265px）、PC版（1266px〜）の3つ。
-- 中間の版（スマホ版の名前の -narrow- を -mid- にしたファイル）がある図は、668〜767px と 932〜1265px
-  （本文欄が 555px 以上）で中間の版を本文欄の幅いっぱい（% 指定の図は同じ %）に表示し、スマホ版はそれ以外の
-  画面だけで使う。中間の版は幅 620px で描くので、0.895〜1.30倍で表示される（2026-11-22 に実測した本文欄の幅）。
+- 版の段階は TIERS（スマホ版・小さい中間の版・中間の版・PC版）。本文欄の幅で区切り、画面幅に直してある。
+- スマホ版と中間の版2つは本文欄の幅いっぱい（% 指定の図は同じ %）に表示する。図にその段階の版
+  （スマホ版の名前の -narrow- を -compact- か -mid- にしたファイル）がなければ、1つ下の段階の版を原寸で置く。
 - アニメーションWebP を含む版は、OS で「視差効果を減らす」を選んだ閲覧者向けの静止画（*-still.webp）の
   版を別に並べる（prefers-reduced-motion も外観の条件と同じ <source> に書けないため）。
 
@@ -49,26 +47,51 @@ ROOT = Path(__file__).resolve().parents[2]
 FILES = ["README.md", "docs/readme-design.md"]
 HIDE_PATH = "assets/readme/hide.svg"
 BASE = ""  # 扱っているファイルから見たリポジトリの根（docs/ の中なら "../"）。main が設定する
-WIDE_MIN = 1266   # PC版を使う最小の画面幅（スクロールバーがあっても本文欄が 808px 以上。見出しの13pxが12.5px以上）
-FIXED_MIN = 420   # スマホ版を原寸で並べる最小の画面幅（本文欄が 339px 以上で、約330px の段が収まる）
-# 中間の版（幅 MID_W で描き、本文欄の幅いっぱいに表示）を使う画面幅。本文欄が 555px 以上（0.895倍以上）になる2つの区間。
-# 本文欄は 544〜767px で「画面幅−113」、768〜1011px で「−377」、1012〜1279px で「−457」（スクロールバーのある Chrome の実測）。
-MID = ((668, 767), (932, WIDE_MIN - 1))
-DARK = "(prefers-color-scheme: dark)"
-_MID_ON = ", ".join(f"(min-width: {a}px) and (max-width: {b}px)" for a, b in MID)
-RANGES = {
-    "narrow": f"(min-width: {WIDE_MIN}px)",
-    "wide": f"(max-width: {WIDE_MIN - 1}px)",
-    "fluid": f"(min-width: {FIXED_MIN}px)",
-    "fixed": f"(max-width: {FIXED_MIN - 1}px), (min-width: {WIDE_MIN}px)",
-    # 中間の版がある図。スマホ版は中間の版の区間でも消す
-    "narrow+mid": f"(min-width: {MID[0][0]}px) and (max-width: {MID[0][1]}px), (min-width: {MID[1][0]}px)",
-    "fixed+mid": f"(max-width: {FIXED_MIN - 1}px), (min-width: {MID[0][0]}px) and (max-width: {MID[0][1]}px), "
-                 f"(min-width: {MID[1][0]}px)",
-    "mid": f"(max-width: {MID[0][0] - 1}px), (min-width: {MID[0][1] + 1}px) and (max-width: {MID[1][0] - 1}px), "
-           f"(min-width: {WIDE_MIN}px)",
+WIDE_MIN = 1266   # PC版を使う最小の画面幅（スクロールバーがあっても本文欄が 809px 以上。13px の文字が12.5px以上）
+# 版の段階。名前 → (ファイル名の印, 描いた幅, 使う画面幅の区間)。区間は本文欄の幅で決め、画面幅に直した。
+# 本文欄は 〜543px で「画面幅−81」、544〜767px で「−113」、768〜1011px で「−377」、
+# 1012〜1279px で「−457」、1300px 以上で 838（2026-11-22、スクロールバーのある Chrome の実測。スクロールバーのないスマホ・Mac は15px広い）。
+#   narrow ：本文欄 〜399px（スマホの縦向き）
+#   compact：本文欄 400〜554px（iPad の縦向き、スマホの横向き、画面を半分に分けたPC）
+#   mid    ：本文欄 555〜808px（iPad の横向き、狭いPC）
+#   wide   ：本文欄 809px〜
+# narrow・compact・mid は本文欄の幅いっぱい（幅を % で指定した図は同じ %）に表示する。倍率はおおむね 0.85〜1.3倍。
+# 図にその段階の版（ファイル名の -narrow- を印に替えたファイル）がなければ、1つ下の段階の版を原寸で置く。
+INF = 10 ** 6
+TIERS = {
+    "narrow": ("-narrow-", 324, ((0, 480),)),
+    "compact": ("-compact-", 460, ((481, 667), (768, 931))),
+    "mid": ("-mid-", 620, ((668, 767), (932, WIDE_MIN - 1))),
+    "wide": ("", 838, ((WIDE_MIN, INF),)),
 }
+ORDER = list(TIERS)
+DARK = "(prefers-color-scheme: dark)"
 MOTION = {"anim": "(prefers-reduced-motion: reduce)", "still": "(prefers-reduced-motion: no-preference)"}
+
+
+def media_of(intervals):
+    """画面幅の区間の並びを media の条件（カンマ区切りは「または」）にする。"""
+    out = []
+    for a, b in intervals:
+        if a <= 0:
+            out.append(f"(max-width: {b}px)")
+        elif b >= INF:
+            out.append(f"(min-width: {a}px)")
+        else:
+            out.append(f"(min-width: {a}px) and (max-width: {b}px)")
+    return ", ".join(out)
+
+
+def complement(intervals):
+    """区間の並びの補集合（0〜INF の中で）。"""
+    out, x = [], 0
+    for a, b in sorted(intervals):
+        if a > x:
+            out.append((x, a - 1))
+        x = max(x, b + 1)
+    if x < INF:
+        out.append((x, INF))
+    return out
 
 
 def still(src):
@@ -82,16 +105,17 @@ def picture(hide, light, dark, attrs, alt):
     return s + f'<img src="{light}"{attrs} alt="{alt}"></picture>'
 
 
-def versions(rng, light, dark, attrs, alt):
-    """1つの版（画面幅の範囲）の <picture>。WebP なら動く版と静止画の版の2つ。"""
+def versions(intervals, light, dark, attrs, alt):
+    """1つの版（画面幅の区間）の <picture>。WebP なら動く版と静止画の版の2つ。"""
+    hide = media_of(complement(intervals))
     if not light.endswith(".webp"):
-        return [picture(RANGES[rng], light, dark, attrs, alt)]
-    return [picture(f"{MOTION['anim']}, {RANGES[rng]}", light, dark, attrs, alt),
-            picture(f"{MOTION['still']}, {RANGES[rng]}", still(light), still(dark), attrs, "")]
+        return [picture(hide, light, dark, attrs, alt)]
+    return [picture(f"{MOTION['anim']}, {hide}", light, dark, attrs, alt),
+            picture(f"{MOTION['still']}, {hide}", still(light), still(dark), attrs, "")]
 
 
 def intrinsic_width(src):
-    """スマホ版の原寸の表示幅（CSS px）。SVG は width 属性、WebP は2倍の画素で書き出してあるので半分。"""
+    """原寸の表示幅（CSS px）。SVG は width 属性、WebP は2倍の画素で書き出してあるので半分。"""
     p = ROOT / src[len(BASE):]
     if src.endswith(".svg"):
         return float(re.search(r'<svg[^>]* width="([\d.]+)"', p.read_text(encoding="utf-8")).group(1))
@@ -102,32 +126,46 @@ def intrinsic_width(src):
 PIECE_UNIT = 111.5 / 33.8  # recordings/pieces.py の narrow の unit（1% あたりの図の座標）
 
 
-def mid_of(src):
-    """スマホ版の画像に対応する中間の版（-narrow- を -mid- にした名前）。ファイルがなければ None。"""
-    m = src.replace("-narrow-", "-mid-")
+def tier_of(src, tier):
+    """スマホ版の画像に対応する、段階 tier の版の名前。ファイルがなければ None。"""
+    if tier == "narrow":
+        return src
+    m = src.replace("-narrow-", TIERS[tier][0])
     return m if m != src and (ROOT / m[len(BASE):]).exists() else None
 
 
 def figure(nl, nd, wl, wd, alt, width=None, align=None):
     a = f' align="{align}"' if align else ""
-    ml, md = mid_of(nl), mid_of(nd)
-    mid = bool(ml and md)
-    if width is None:
-        pics = versions("narrow+mid" if mid else "narrow", nl, nd, a, alt)
-        if mid:  # 中間の版は本文欄の幅いっぱいに表示する（0.895〜1.30倍）
-            pics += versions("mid", ml, md, f' width="100%"{a}', "")
-        pics += versions("wide", wl, wd, a, "")
-    else:
-        pct = float(width.rstrip("%"))
-        blank = nl.endswith("pieces/blank.svg")
-        px = pct * PIECE_UNIT if blank or "/pieces/" in nl else intrinsic_width(nl)
-        pics = (versions("fluid", nl, nd, f' width="{width}"{a}', alt)
-                + versions("fixed+mid" if mid else "fixed", nl, nd, f' width="{px:.2f}"{a}', "")
-                + (versions("mid", ml, md, f' width="{width}"{a}', "") if mid else [])
-                + versions("wide", wl, wd, f' width="{width}"{a}', ""))
+    have = {"narrow": (nl, nd), "wide": (wl, wd)}
+    for tier in ("compact", "mid"):
+        l, d = tier_of(nl, tier), tier_of(nd, tier)
+        if l and d:
+            have[tier] = (l, d)
+    groups = {}  # (light, dark, 属性) → 画面幅の区間。同じ表示の段階は1つの <picture> にまとめる
+    for i, tier in enumerate(ORDER):
+        if tier in have:
+            (l, d), size = have[tier], ""
+            if tier != "wide":
+                size = f' width="{width or "100%"}"'
+            elif width:
+                size = f' width="{width}"'
+        else:  # この段階の版がない：1つ下の段階の版を原寸で置く
+            low = next(t for t in reversed(ORDER[:i]) if t in have)
+            l, d = have[low]
+            if width is None:
+                size = ""
+            else:
+                pct = float(width.rstrip("%"))
+                px = pct * PIECE_UNIT if "/pieces/" in l else intrinsic_width(l)
+                size = f' width="{px:.2f}"'
+        # スマホ版・PC版は、ほかの段階と同じ表示でもまとめない（collapse が図の始まりと PC 版を見分けるため）
+        key = (l, d, size + a, tier if tier in ("narrow", "wide") else "")
+        groups.setdefault(key, []).extend(TIERS[tier][2])
+    pics = []
+    for (l, d, attrs, _), intervals in groups.items():
+        pics += versions(intervals, l, d, attrs, alt if not pics else "")
     # 2つ目以降の代替テキストは空にする（静止画の版も含む）
-    out = [pics[0]] + [re.sub(r' alt="[^"]*"', ' alt=""', p) for p in pics[1:]]
-    return "".join(out)
+    return pics[0] + "".join(re.sub(r' alt="[^"]*"', ' alt=""', p) for p in pics[1:])
 
 
 OLD = re.compile(r'<picture>\s*'
@@ -167,19 +205,25 @@ NEW_PIC = re.compile(r'<picture><source media="([^"]+)" srcset="[^"]*hide\.svg" 
                      r'(?:<source media="\(prefers-color-scheme: dark\)" srcset="([^"]+)">)?<img ([^>]*)></picture>')
 
 
+WIDE_HIDE = media_of(complement(TIERS["wide"][2]))
+
+
 def collapse(text):
     """新形式を、図1つにつき旧形式の <picture> 1つに戻す（読むだけの道具向け。text_readme.py が使う）。"""
     def group(m):
         pics = [(media, dark, img) for media, dark, img in NEW_PIC.findall(m.group(0))]
-        first, wide = pics[0], next(p for p in pics if p[0] == RANGES["wide"] or p[0] == f"{MOTION['anim']}, {RANGES['wide']}")
+        first, wide = pics[0], next(p for p in pics if p[0] in (WIDE_HIDE, f"{MOTION['anim']}, {WIDE_HIDE}"))
         nl, wl = attr(first[2], "src"), attr(wide[2], "src")
         nd, wd = first[1] or nl, wide[1] or wl
         attrs = "".join(f' {k}="{attr(wide[2], k)}"' for k in ("width", "align") if attr(wide[2], k))
         return ('<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" '
                 f'srcset="{nd}"><source media="(max-width: 700px)" srcset="{nl}">'
                 f'<source media="{DARK}" srcset="{wd}"><img src="{wl}"{attrs} alt="{attr(first[2], "alt")}"></picture>')
-    starts = "|".join(re.escape(r) for r in (RANGES["narrow"], RANGES["narrow+mid"], RANGES["fluid"],
-                                             f"{MOTION['anim']}, {RANGES['fluid']}"))
+    # 図の始まり（スマホ版の <picture>）。以前の形式（PC版の下限だけ・中間の版つき・% 指定）も読めるようにしておく
+    first = media_of(complement(TIERS["narrow"][2]))
+    heads = (first, "(min-width: 513px)", "(min-width: 1266px)", "(min-width: 668px) and (max-width: 767px), (min-width: 932px)",
+             "(min-width: 420px)")
+    starts = "|".join(re.escape(r) for h in heads for r in (h, f"{MOTION['anim']}, {h}"))
     one = NEW_PIC.pattern
     head = rf'<picture><source media="(?:{starts})"'
     text = re.sub(rf'{head}[^>]*>(?:(?!</picture>).)*</picture>(?:(?!{head}){one})*',
@@ -188,7 +232,7 @@ def collapse(text):
 
 
 def rebuild(text):
-    """新形式をいったん旧形式に戻して組み直す。中間の版（*-mid-*）を足したり消したりした後に使う。"""
+    """新形式をいったん旧形式に戻して組み直す。段階の版（*-compact-*・*-mid-*）を足したり消したりした後に使う。"""
     return outside_fences(text, lambda t: OLD.sub(convert, collapse(t)))
 
 
@@ -213,9 +257,10 @@ def check(text, here=ROOT):
         for src in re.findall(r'(?:srcset|src)="([^"]+)"', p):
             if not src.startswith("http") and not (here / src).exists():
                 errors.append(f"{line}: ファイルがない：{src}")
-            mid = src.replace("-narrow-", "-mid-")
-            if mid != src and not src.startswith("http") and (here / mid).exists() and mid not in text:
-                errors.append(f"{line}: 中間の版があるのに使っていない（markup.py rebuild で組み直す）：{mid}")
+            for mark, _, _ in list(TIERS.values())[1:3]:
+                other = src.replace("-narrow-", mark)
+                if other != src and not src.startswith("http") and (here / other).exists() and other not in text:
+                    errors.append(f"{line}: {mark.strip('-')} の版があるのに使っていない（markup.py rebuild で組み直す）：{other}")
     return errors
 
 

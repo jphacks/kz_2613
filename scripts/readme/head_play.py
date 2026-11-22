@@ -46,10 +46,23 @@ def stage(sc, x, y, k):
             f'viewBox="0 0 {scenes.W} {scenes.H}" overflow="visible">{"".join(sc.svg)}</svg></g>')
 
 
-def play_head(num, jp, en, make, t, narrow=False, mid=False):
+# 小さい中間の版の舞台。番号と英字ラベルの行の右に置き、地面を番号の基準線にそろえる（0.85倍でも吹き出しが12.5px以上：
+# 12×2.0×0.62×0.85≒12.6px）
+COMPACT_SCALE = .62
+
+
+def play_head(num, jp, en, make, t, narrow=False, mid=False, compact=False):
     scenes.BUBBLE = BUBBLE
     sc, title, desc = make()
-    if mid:
+    if compact:
+        k = COMPACT_SCALE
+        W, H, body = art.head_parts(num, jp, en, t, compact=True)
+        x = art.COMPACT_STAGE_X
+        assert x + scenes.W * k * .76 <= art.COMPACT_W - 10  # 動きのある範囲は図の中に収まる
+        top = max(0, round(scenes.G * k - 42))  # 舞台の地面を番号の基準線（y=42）にそろえ、上にはみ出す分だけ下げる
+        body = stage(sc, x, 42 + top - scenes.G * k, k) + f'<g transform="translate(0 {top})">{body}</g>'
+        H += top
+    elif mid:
         # PC版と同じく見出しの右に舞台を置き、地面を見出しの最後の行の基準線にそろえる
         k = MID_SCALE
         W, H, body = art.head_parts(num, jp, en, t, mid=True)
@@ -80,12 +93,13 @@ def play_head(num, jp, en, make, t, narrow=False, mid=False):
 
 def main():
     # 場面の吹き出しの文字は12〜15px。縮めて表示しても、図の文字の下限（12.5px）を下回らないようにする
-    assert 12 * BUBBLE * min(PC_SCALE, art.PHONE_W / scenes.W, MID_SCALE * .895) >= 12.5
+    assert 12 * BUBBLE * min(PC_SCALE, art.PHONE_W / scenes.W, MID_SCALE * .895, COMPACT_SCALE * .845) >= 12.5
     n = 0
     for num, jp, en in art.HEADS:
         for mode, t in art.THEMES.items():
-            for suffix, narrow, mid in (("", False, False), ("-mid", False, True), ("-narrow", True, False)):
-                svg = play_head(num, jp, en, PLAY[num], t, narrow, mid)
+            for suffix, narrow, mid, compact in (("", False, False, False), ("-mid", False, True, False),
+                                                 ("-compact", False, False, True), ("-narrow", True, False, False)):
+                svg = play_head(num, jp, en, PLAY[num], t, narrow, mid, compact)
                 ET.fromstring(svg)  # 属性の重複などがあると GitHub で画像が表示されないので、XMLとして読めることを確かめる
                 (OUT / f"play-{num}{suffix}-{mode}.svg").write_text(svg + "\n", encoding="utf-8", newline="\n")
                 n += 1

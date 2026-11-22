@@ -141,7 +141,7 @@ def font_faces():
 PHONE_MIN_FONT = 14.1
 
 
-def phone_min_font(body):
+def phone_min_font(body, floor=None):
     """スマホ版の図の、PHONE_MIN_FONT より小さい文字を引き上げる。字幅を固定した文字（textLength）と、
     見出しの舞台（入れ子の <svg>。吹き出しは飾りで、大きさは head_play.py が確かめる）は除く。"""
     def bump(m):
@@ -149,14 +149,16 @@ def phone_min_font(body):
         if "textLength" in tag:
             return tag
         return re.sub(r'font-size="([\d.]+)"',
-                      lambda f: f'font-size="{max(float(f.group(1)), PHONE_MIN_FONT):g}"', tag)
+                      lambda f: f'font-size="{max(float(f.group(1)), floor or PHONE_MIN_FONT):g}"', tag)
     parts = re.split(r"(<svg x=.*?</svg>)", body, flags=re.S)
     return "".join(p if p.startswith("<svg x=") else re.sub(r"<text [^>]*>", bump, p) for p in parts)
 
 
 def svg(w, h, body, t, title, extra_css="", phone=None):
     import vector  # 循環 import を避けるためここで読む
-    if phone if phone is not None else (w <= PHONE_W + 10 or w == MID_W):
+    if w in (COMPACT_W, TOC_W["compact"]) and phone is not False:
+        body = phone_min_font(body, COMPACT_MIN_FONT)
+    elif phone if phone is not None else (w <= PHONE_W + 10 or w == MID_W):
         body = phone_min_font(body)
     faces = font_faces()
     return vector.vectorize(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img">'
@@ -238,6 +240,10 @@ PHONE_W = 324
 # 中間の版（タブレット・狭いPC。本文欄555〜808px）。幅620で描き、本文欄の幅いっぱい（0.895〜1.30倍）に表示する
 # （scripts/readme/markup.py の MID）。縮んでも12.5px以上になるよう、文字はスマホ版と同じく14.1px以上にする。
 MID_W = 620
+# 小さい中間の版（iPad の縦向き・スマホの横向き。本文欄391〜554px）。幅460で描き、本文欄の幅いっぱい（0.85〜1.2倍）に
+# 表示する。0.85倍に縮んでも12.5px以上になるよう、文字は14.8px以上にする。
+COMPACT_W = 460
+COMPACT_MIN_FONT = 14.8
 
 STEPS = [("qr", "スマホでQR参加", "ブラウザで読み取るだけ。", "P1のスマホはPCリモコンに"),
          ("list", "ゲームを選ぶ", "インストール済みから選択。", "操作とキーを自動で読み取り"),
@@ -671,8 +677,8 @@ def wrap(s, size, avail):
     return [s[:i], s[i:]]
 
 
-def head_banner(num, jp, en, name, t, narrow=False, mid=False):
-    W, H, body = head_parts(num, jp, en, t, narrow, mid)
+def head_banner(num, jp, en, name, t, narrow=False, mid=False, compact=False):
+    W, H, body = head_parts(num, jp, en, t, narrow, mid, compact)
     return svg(W, H, body, t, jp)
 
 
@@ -680,7 +686,11 @@ def head_banner(num, jp, en, name, t, narrow=False, mid=False):
 MID_HEAD_AVAIL = 311
 
 
-def head_parts(num, jp, en, t, narrow=False, mid=False):
+# 小さい中間の版の見出しで、番号と英字ラベルの行の右に置く舞台の左端（head_play.py と合わせる）
+COMPACT_STAGE_X = 160
+
+
+def head_parts(num, jp, en, t, narrow=False, mid=False, compact=False):
     """案D：見出しそのものを画像にする。番号だけ表示用の書体にし、英字ラベルと見出しはGitHub本体と同じ
     フォント指定（閲覧者の端末の標準フォント）で描く。
     スマホ版はPC版と同じ文字の大きさのまま幅360で描き、番号とラベルの下に見出しを置いて折り返す。"""
@@ -690,6 +700,14 @@ def head_parts(num, jp, en, t, narrow=False, mid=False):
         b = [text(0, 42, num, 42, "url(#brand)", cls="disp", weight=400, length=44),
              text(58, 34, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"')]
         # 行頭の全角括弧は字下げに見えるので、半文字ぶん左へ寄せる
+        b += [text(-13.5 if line[0] in "（「" else 0, 80 + 36 * k, line, 27, t["ink"], cls="gh", weight=600)
+              for k, line in enumerate(lines)]
+    elif compact:
+        # 番号と英字ラベルの行の右に舞台を置き（head_play.py）、見出しはその下に幅いっぱいで折り返す
+        lines = wrap(jp, 27, COMPACT_W - 4)
+        W, H = COMPACT_W, 50 + 36 * len(lines)
+        b = [text(0, 42, num, 42, "url(#brand)", cls="disp", weight=400, length=44),
+             text(58, 34, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"')]
         b += [text(-13.5 if line[0] in "（「" else 0, 80 + 36 * k, line, 27, t["ink"], cls="gh", weight=600)
               for k, line in enumerate(lines)]
     elif mid:
@@ -720,12 +738,14 @@ TOC_EN = {num: en for num, _, en in HEADS}
 # 目次は表を使わず、左右1組の画像を本文欄の幅の49%ずつで並べる（表は幅いっぱいに広がらず中央に浮くため）。
 # PCは幅410、スマホは幅158で描き、どちらも本文欄の49%に縮めて表示すると項目名が約16pxになる。
 # 中間の版は幅304（MID_W の49%）で描き、本文欄の49%で表示する（0.895〜1.30倍）。
-TOC_W = {False: 410, True: 158, "mid": 304}
+# 小さい中間の版は幅225（COMPACT_W の49%）で描く。英字ラベルは項目名と重なるので、スマホ版と同じく付けない。
+TOC_W = {False: 410, True: 158, "mid": 304, "compact": 225}
 
 
-def toc_item(num, label, mode, narrow=False, mid=False):
+def toc_item(num, label, mode, narrow=False, mid=False, compact=False):
     t = THEMES[mode]
-    W = TOC_W["mid" if mid else narrow]
+    W = TOC_W["mid" if mid else "compact" if compact else narrow]
+    narrow = narrow or compact
     b = [text(0, 23, num, 21, "url(#brand)", cls="disp", weight=400, length=23),
          text(29, 21, label, 16, LINK[mode], cls="gh", weight=400)]
     if not narrow:
@@ -739,13 +759,15 @@ def toc_item(num, label, mode, narrow=False, mid=False):
 PARTS = [("1", "製品概要", "PRODUCT", "01", "07"), ("2", "開発技術", "TECHNOLOGY", "08", "11")]
 
 
-def part_banner(part, jp, en, first, last, t, narrow=False, mid=False):
+def part_banner(part, jp, en, first, last, t, narrow=False, mid=False, compact=False):
     """大見出し。項目の見出し（番号＋英字ラベル）と同じ書体の組み方で、背景の帯と大きな番号で格上に見せる。
-    中間の版はPC版と同じ組み方で、幅だけ MID_W にする。"""
-    W, H = (PHONE_W, 96) if narrow else (MID_W if mid else PC_W, 104)
+    中間の版2つはPC版と同じ組み方で、幅だけ MID_W・COMPACT_W にする。"""
+    W, H = (PHONE_W, 96) if narrow else (MID_W if mid else COMPACT_W if compact else PC_W, 104)
     b = [f'<rect width="{W}" height="{H}" rx="18" fill="url(#bg)"/>',
          f'<clipPath id="card"><rect width="{W}" height="{H}" rx="18"/></clipPath><g clip-path="url(#card)">',
-         f'<g transform="translate({W if narrow else W - 230} {H}) scale(-1 -1)">{dots(14, 14, 8, 5, 12, 2.4, t["dot2"])}</g>',
+         # 点の模様は見出しの文字と SECTIONS の間に置く。小さい中間の版は間が狭いので6列にする
+         f'<g transform="translate({W if narrow else 330 if compact else W - 230} {H}) scale(-1 -1)">'
+         f'{dots(14, 14, 6 if compact else 8, 5, 12, 2.4, t["dot2"])}</g>',
          f'<rect width="7" height="{H}" fill="url(#brand)"/></g>',
          f'<rect x="{66 if narrow else 80}" y="22" width="1.5" height="{H - 44}" fill="{t["line"]}"/>']
     if narrow:
@@ -780,15 +802,15 @@ def section_head(jp, en, W, t, ls=4):
     return "".join(b)
 
 
-def toc_title(t, narrow=False, mid=False):
+def toc_title(t, narrow=False, mid=False, compact=False):
     """目次の見出し。"""
-    W = PHONE_W if narrow else MID_W if mid else PC_W
+    W = PHONE_W if narrow else MID_W if mid else COMPACT_W if compact else PC_W
     return svg(W, 40, section_head("目次", "CONTENTS", W, t), t, "目次")
 
 
-def video_cta(t, narrow=False, mid=False):
+def video_cta(t, narrow=False, mid=False, compact=False):
     """サムネイルの下に置く、紹介動画への誘導。押せることが分かるよう、枠・再生の印・矢印を付ける。"""
-    W, H = (PHONE_W if narrow else MID_W if mid else PC_W, 60)
+    W, H = (PHONE_W if narrow else MID_W if mid else COMPACT_W if compact else PC_W, 60)
     red = "#FF2D55"
     b = [f'<rect x=".75" y=".75" width="{W - 1.5}" height="{H - 1.5}" rx="12" fill="none" stroke="{t["line"]}" stroke-width="1.5"/>',
          f'<circle cx="34" cy="{H / 2}" r="17" fill="{red}"/>',
@@ -799,10 +821,11 @@ def video_cta(t, narrow=False, mid=False):
     return svg(W, H, "".join(b), t, "プロダクト紹介動画を見る（YouTube）")
 
 
-def toc_part(part, jp, en, mode, narrow=False, mid=False):
+def toc_part(part, jp, en, mode, narrow=False, mid=False, compact=False):
     """目次の列の見出し。大見出しと同じ PART 番号・英字ラベルで、どちらの列かを示す。"""
     t = THEMES[mode]
-    W = TOC_W["mid" if mid else narrow]
+    W = TOC_W["mid" if mid else "compact" if compact else narrow]
+    narrow = narrow or compact
     b = [text(0, 15, f"PART {part}", 13, "url(#brand)", cls="gh", weight=700, extra=' letter-spacing="2"'),
          text(0, 41, jp, 19, t["ink"], cls="gh", weight=700)]
     if not narrow:
@@ -839,21 +862,26 @@ def main():
         for mode in THEMES:
             files[f"heads/toc-{num}-{mode}.svg"] = toc_item(num, label, mode)
             files[f"heads/toc-{num}-mid-{mode}.svg"] = toc_item(num, label, mode, mid=True)
+            files[f"heads/toc-{num}-compact-{mode}.svg"] = toc_item(num, label, mode, compact=True)
             files[f"heads/toc-{num}-narrow-{mode}.svg"] = toc_item(num, label, mode, narrow=True)
     for part, jp, en, first, last in PARTS:
         for mode, t in THEMES.items():
             files[f"heads/part-{part}-{mode}.svg"] = part_banner(part, jp, en, first, last, t)
             files[f"heads/part-{part}-mid-{mode}.svg"] = part_banner(part, jp, en, first, last, t, mid=True)
+            files[f"heads/part-{part}-compact-{mode}.svg"] = part_banner(part, jp, en, first, last, t, compact=True)
             files[f"heads/part-{part}-narrow-{mode}.svg"] = part_banner(part, jp, en, first, last, t, narrow=True)
             files[f"heads/toc-part-{part}-{mode}.svg"] = toc_part(part, jp, en, mode)
             files[f"heads/toc-part-{part}-mid-{mode}.svg"] = toc_part(part, jp, en, mode, mid=True)
+            files[f"heads/toc-part-{part}-compact-{mode}.svg"] = toc_part(part, jp, en, mode, compact=True)
             files[f"heads/toc-part-{part}-narrow-{mode}.svg"] = toc_part(part, jp, en, mode, narrow=True)
     for mode, t in THEMES.items():
         files[f"heads/toc-title-{mode}.svg"] = toc_title(t)
         files[f"heads/toc-title-mid-{mode}.svg"] = toc_title(t, mid=True)
+        files[f"heads/toc-title-compact-{mode}.svg"] = toc_title(t, compact=True)
         files[f"heads/toc-title-narrow-{mode}.svg"] = toc_title(t, narrow=True)
         files[f"video-cta-{mode}.svg"] = video_cta(t)
         files[f"video-cta-mid-{mode}.svg"] = video_cta(t, mid=True)
+        files[f"video-cta-compact-{mode}.svg"] = video_cta(t, compact=True)
         files[f"video-cta-narrow-{mode}.svg"] = video_cta(t, narrow=True)
     (OUT / "heads").mkdir(exist_ok=True)
     for name, body in files.items():
