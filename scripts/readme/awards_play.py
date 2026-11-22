@@ -355,492 +355,495 @@ def option(key, title, story):
     return deco
 
 
-def road(st, x0, x1, y, down=False):
-    """Award Day への道：ブランドのグラデーションの点線と、行き先を指す矢印。"""
-    gid = f"road{len(st.back)}"
+# ---------- 物語の共通部分 ----------
+# 事実に沿った筋：Hack Day（金沢）の勝者＝観客賞 → 決勝進出は Award Day への切符 → 新幹線で東京へ → Award Day で受賞。
+# 赤はおっちょこちょい（作品名の見出しで「。」を蹴った赤と同じ役）。セリフは使わず、「!」「♪」「z」などの記号だけにする。
+ICONS["crown"] = '<path d="M3.6 8.6l4.5 3.7L12 5.6l3.9 6.7 4.5-3.7-1.8 9.2H5.4z"/><path d="M5.6 20.6h12.8"/>'
+ICONS["ticket"] = ('<path d="M3 6.6h18v3.1a2.3 2.3 0 0 0 0 4.6v3.1H3v-3.1a2.3 2.3 0 0 0 0-4.6z"/>'
+                   '<path d="M14.6 7.8v1.4M14.6 11.3v1.4M14.6 14.8v1.4"/>')
+AWARDS[0]["icon"] = "crown"
+AWARDS[1]["icon"] = "ticket"
+PAGE = {"light": "#FFFFFF", "dark": "#0D1117"}
+
+
+def follow(a, t0, t1, fn, dx, step=.1):
+    """t0〜t1秒のあいだ、fn(t)+dx の位置について動く（乗り物に乗っているとき）。"""
+    n = max(1, round((t1 - t0) / step))
+    for i in range(n + 1):
+        t = t0 + (t1 - t0) * i / n
+        a.key(t, fn(t) + dx, a.y, 0, 1, 1, "linear", "linear")
+    a.x, a.t = fn(t1) + dx, t1
+    return a
+
+
+def grad(st, x0, x1):
+    gid = f"g{len(st.back)}"
     st.back.append(f'<defs><linearGradient id="{gid}" gradientUnits="userSpaceOnUse" x1="{x0}" y1="0" x2="{x1}" y2="0">'
                    '<stop offset="0" stop-color="#C03BFF"/><stop offset=".55" stop-color="#6F86FF"/>'
                    '<stop offset="1" stop-color="#22C4FA"/></linearGradient></defs>')
-    dash = "".join(f'<rect x="{x:.1f}" y="{y - 1}" width="8" height="2.5" rx="1.25"/>' for x in range(int(x0), int(x1) - 14, 14))
-    st.back.append(f'<g fill="url(#{gid})">{dash}</g>')
-    if down:
-        st.back.append(f'<path d="M{x1 - 6} {y + 4}l6 6 6-6" fill="none" stroke="#22C4FA" stroke-width="2.5" '
-                       'stroke-linecap="round" stroke-linejoin="round"/>')
-    else:
-        st.back.append(f'<path d="M{x1 - 6} {y - 6.5}l6.5 6.75-6.5 6.75" fill="none" stroke="#22C4FA" stroke-width="2.5" '
-                       'stroke-linecap="round" stroke-linejoin="round"/>')
+    return f"url(#{gid})"
 
 
-@option("a", "Award Day への道", "4色の点がキャラクターになって見出しの線の上を駆け、Hack Day へ。みんなで観客賞の文字に乗って喜び、"
-        "青が決勝進出の旗を受け取って先導する。寝坊した赤が慌てて追いつき、Award Day ではそれぞれが自分の賞を受け取って画面に映す。"
-        "最後は見出しへ戻り、元の点になる。")
-def option_a(t, narrow=False):
+class Geo:
+    """配置（座標）をまとめて持つ。"""
+
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
+
+    def top(self, cy):  # 文字の上（乗れる高さ）
+        return cy + 5.5 - 12
+
+    def feet(self, cy):  # 文字の横（基準線）
+        return cy + 6.5
+
+
+def setup(t, narrow, H, D):
     W = art.PHONE_W if narrow else art.PC_W
-    cw = W - 14
-    CT = 78
-    D = 25
-    H = CT + (354 if narrow else 198)
     st = Stage(W, H, D, t)
     x0, x1, ry, xs, dy = heading(st, W, 2 if narrow else 4)
     if x1 - x0 < 24:  # スマホでは線が短すぎて描かれない（目次の見出しと同じ）
         st.back[-1] = "</g>"
-    card(st, 0, CT, cw, H - CT)
+    return st, Geo(W=W, cw=W - 14, narrow=narrow, x0=x0, ry=ry, xs=xs, dy=dy, CT=78)
+
+
+def awards_rows(st, g):
     A = {a["key"]: a for a in AWARDS}
-    if narrow:
-        L = R = 20
-        label(st, L, CT + 30, "HACK DAY", "金沢会場", cw - 20)
-        line(st, L, cw - 20, CT + 40)
-        r1, r2 = CT + 70, CT + 114
-        road_y = CT + 156
-        label(st, R, CT + 196, "AWARD DAY")
-        line(st, R, cw - 20, CT + 206)
-        q1, q2, q3 = CT + 236, CT + 280, CT + 324
-        hack_line, award_line = CT + 40, CT + 206
-    else:
-        L, R = 24, 452
-        label(st, L, CT + 30, "HACK DAY", "金沢会場", 398)
-        line(st, L, 398, CT + 40)
-        label(st, R, CT + 30, "AWARD DAY")
-        line(st, R, cw - 24, CT + 40)
-        st.back.append(f'<rect x="425" y="{CT + 22}" width="1" height="{H - CT - 44}" fill="{t["line"]}"/>')
-        r1, r2 = CT + 70, CT + 114
-        q1, q2, q3 = CT + 70, CT + 114, CT + 158
-        road_y = CT + 162
-        hack_line = award_line = CT + 40
-    row(st, A["aud"], L, r1)
-    e_fin = row(st, A["fin"], L, r2)
-    e_sp = row(st, A["sp"], R, q1)
-    e_inn = row(st, A["inn"], R, q2)
-    e_dmm = row(st, A["dmm"], R, q3)
-    road_x1 = cw - 20 if narrow else 404
-    road(st, L, road_x1, road_y, down=narrow)
-
-    def top(cy):  # 文字の上
-        return cy + 5.5 - 12
-
-    def feet(cy):  # 文字の横（基準線）
-        return cy + 6.5
-
-    names = art.ORDER
-    out_at = [3.5 + i * .12 for i in range(4)]
-    back_at = [23.6 + i * .14 for i in range(4)]
-    dots(st, xs, dy, out_at, back_at)
-    c = {n: st.actor(n, xs[i], ry) for i, n in enumerate(names)}
-    for i, n in enumerate(names):
-        c[n].appear(out_at[i])
-    # 見出しの線の上を左へ駆け、カードへ跳び下りる。赤は止まりきれずに紫にぶつかる
-    aud = [L + 28 + i * (36 if narrow else 40) for i in range(4)]
-    if narrow:
-        for i, n in enumerate(names):
-            c[n].wait(4.6 + i * .15).hops(6.2 + i * .15, [(xs[i] - 20, hack_line), (aud[i], top(r1))], h=14)
-    else:
-        line_x = [x0 + 12 + i * 23 for i in range(4)]
-        for i, n in enumerate(names[:3]):
-            c[n].wait(4.5 + i * .08).run(5.9 + i * .1, line_x[i])
-        c["red"].wait(4.75).run(6.0, line_x[3] - 5)
-        c["red"].shake(6.3, 8, 2, 1.1, .88)
-        c["purple"].wait(6.0).lean(6.12, -14).lean(6.35, 0)
-        c["green"].wait(6.08).lean(6.2, -10).lean(6.4, 0)
-        st.mark(line_x[3] - 2, ry - CH - 4, "!", 6.0, 6.7)
-        for i, n in enumerate(names):
-            c[n].wait(6.7 + i * .15).hops(7.8 + i * .15, [(line_x[i] - 30, hack_line), (aud[i], top(r1))], h=16)
-    # みんなで観客賞（みんなの賞）の文字に乗って喜ぶ
-    st.anim("tile-aud", st.pulse("tile-aud", 8.3, 1.3))
-    st.sparkle(L + 15, r1, 8.35, 20)
-    for i, n in enumerate(names):
-        c[n].wait(8.35 + i * .06).jump(8.9 + i * .06, 9).jump(9.55 + i * .06, 9)
-        c[n].face("happy", 8.35, 10.0)
-    st.say(aud[1] + 18, top(r1) - CH - 2, "みんなの賞！", 8.5, 9.9)
-    # 青が決勝進出の旗を受け取り、先導する
-    fin = e_fin + 20
-    c["blue"].wait(10.0).hop(10.5, fin, feet(r2), 10)
-    st.anim("tile-fin", st.pulse("tile-fin", 10.55, 1.3))
-    st.sparkle(L + 15, r2, 10.6, 18, 5, art.CHARS["blue"]["body"])
-    c["blue"].face("icon:flag", 10.65, 21.0)
-    c["blue"].jump(11.0, 8)
-    st.say(fin, feet(r2) - CH - 2, "Award Dayへ！", 10.8, 12.0, dx=0 if narrow else 44)
-    start = [L + 150, L + 124, L + 98, L + 66]
-    c["blue"].wait(11.9).hop(12.4, start[0], road_y, 8)
-    for i, n in enumerate(names[1:], 1):
-        c[n].wait(10.3 + i * .15).hops(11.5 + i * .15, [(aud[i] + 4, top(r2)), (start[i], road_y)], h=8)
-    # 道を進む。赤は寝てしまい、気づいて慌てて追いかけ、紫にぶつかる
-    end = [road_x1 - 14 - i * 24 for i in range(4)]
-    c["red"].face("sleep", 11.9, 13.5)
-    st.mark(start[3] - 18, road_y - 14, "z", 12.1, 13.3, 15, "#7FA8D9")
-    st.mark(start[3] - 28, road_y - 26, "z", 12.4, 13.3, 13, "#7FA8D9")
-    for i, n in enumerate(names[:3]):
-        c[n].wait(12.4 + i * .1).walk(14.7 + i * .1, end[i])
-    c["red"].wait(13.5).jump(13.9, 12)
-    c["red"].face("surprised", 13.5, 14.3)
-    st.mark(start[3], road_y - CH - 6, "!", 13.5, 14.2)
-    c["red"].run(14.95, end[3] + 6).shake(15.25, 8, 2, 1.1, .88).walk(15.4, end[3])
-    c["purple"].wait(14.95).lean(15.1, 14).lean(15.35, 0)
-    c["purple"].face("surprised", 14.95, 15.5)
-    # Award Day：それぞれ自分の賞へ。受け取ると画面に賞が映る
-    sp, inn, dmm = e_sp + 20, e_inn + 20, e_dmm + 20
-    if narrow:
-        c["green"].wait(15.5).hops(16.6, [(end[1] - 30, award_line), (sp, feet(q1))], h=10)
-        c["purple"].wait(15.7).hops(16.9, [(end[2] - 40, award_line), (inn - 20, top(q1)), (inn, feet(q2))], h=10)
-        c["red"].wait(15.9).hops(17.3, [(end[3] - 60, award_line), (dmm - 50, top(q2)), (dmm, feet(q3))], h=10)
-        c["blue"].wait(15.4).hops(16.4, [(cw - 40, award_line)], h=10)
-    else:
-        c["green"].wait(15.5).hops(16.8, [(520, top(q2)), (sp, feet(q1))], h=14)
-        c["purple"].wait(15.7).hops(17.0, [(500, top(q3)), (inn, feet(q2))], h=12)
-        c["red"].wait(15.9).hop(16.4, 480, top(q3), 10).walk(17.0, dmm - 26).hop(17.4, dmm, feet(q3), 6)
-        c["blue"].wait(15.4).hops(16.6, [(560, award_line)], h=40).walk(17.4, 740)
-    for n, key, at, cy in (("green", "sp", 17.4, q1), ("purple", "inn", 18.1, q2), ("red", "dmm", 18.8, q3)):
-        st.anim(f"tile-{key}", st.pulse(f"tile-{key}", at, 1.3))
-        st.sparkle(R + 15, cy, at + .05, 18, 5, art.CHARS[n]["body"])
-        c[n].face("icon:" + A[key]["icon"], at + .1, 21.0)
-        c[n].wait(at).jump(at + .55, 10)
-    c["red"].face("strain", 18.3, 18.8)
-    c["red"].wait(18.3).put(18.8, sx=1.12, sy=.84)
-    c["red"].jump(19.4, 14)
-    c["blue"].wait(19.0).shake(19.6, 10, 4)
-    # みんなで喜ぶ
-    for i, n in enumerate(names):
-        c[n].wait(19.8 + i * .07).jump(20.35 + i * .07, 9).jump(20.9 + i * .07, 11)
-    st.mark(W - 60 if narrow else 600, (feet(q2) if narrow else feet(q1)) - CH - 16, "♪", 19.9, 21.2)
-    # 見出しへ戻り、点になる
-    if narrow:
-        back = {"green": [(cw - 60, award_line), (cw - 70, road_y), (xs[1] - 10, hack_line), (xs[1], ry)],
-                "purple": [(inn + 30, top(q1)), (cw - 90, award_line), (cw - 80, road_y), (xs[2] - 10, hack_line), (xs[2], ry)],
-                "red": [(dmm + 20, top(q2)), (cw - 110, award_line), (cw - 100, road_y), (xs[3] - 10, hack_line), (xs[3], ry)]}
-        c["blue"].wait(21.3).hops(22.4, [(cw - 50, road_y), (xs[0] - 10, hack_line), (xs[0], ry)], h=14)
-        for k, n in enumerate(("green", "purple", "red")):
-            c[n].wait(21.3 + k * .1).hops(23.1 + k * .15, back[n], h=12)
-    else:
-        c["blue"].wait(21.4).hop(22.2, xs[0], ry, 30)
-        c["green"].wait(21.3).hops(22.6, [(680, award_line), (xs[1], ry)], h=22)
-        c["purple"].wait(21.4).hops(22.9, [(560, top(q1)), (720, award_line), (xs[2], ry)], h=18)
-        c["red"].wait(21.5).hops(23.2, [(560, top(q2)), (700, award_line), (xs[3], ry)], h=18)
-    for i, n in enumerate(names):
-        c[n].wait(back_at[i]).vanish(back_at[i])
-    return st.svg()
+    g.e = {}
+    for k, x, cy in (("aud", g.L, g.r1), ("fin", g.L, g.r2), ("sp", g.R, g.q1), ("inn", g.R, g.q2), ("dmm", g.R, g.q3)):
+        g.e[k] = row(st, A[k], x, cy)
+    g.aud = [g.L + 28 + i * (36 if g.narrow else 40) for i in range(4)]
+    g.fin = g.e["fin"] + 20
+    g.spots = {"green": (g.e["sp"] + 20, g.feet(g.q1)), "purple": (g.e["inn"] + 20, g.feet(g.q2)),
+               "red": (g.e["dmm"] + 20, g.feet(g.q3))}
 
 
-def big_number(st, s, x, base, size, cls):
-    """ブランドのグラデーションの大きな数字（輪郭にして描く）。動かせるよう <g class> で包む。"""
-    st.back.append(f'<g class="{cls}">{art.text(x, base, s, size, "url(#brand)", cls="disp", weight=400)}</g>')
-    return vector.width(s, size)
+def intro(st, c, g):
+    """4色の点がキャラクターになり、Hack Day の観客賞の文字の上へ。PCは見出しの線の上を駆け、赤は止まりきれずにぶつかる。"""
+    for i, n in enumerate(art.ORDER):
+        c[n].appear(3.5 + i * .12)
+    if g.narrow:
+        for i, n in enumerate(art.ORDER):
+            c[n].wait(4.6 + i * .15).hops(6.2 + i * .15, [(g.xs[i] - 20, g.hack_line), (g.aud[i], g.top(g.r1))], h=14)
+        return 6.65
+    line_x = [g.x0 + 12 + i * 23 for i in range(4)]
+    for i, n in enumerate(art.ORDER[:3]):
+        c[n].wait(4.5 + i * .08).run(5.9 + i * .1, line_x[i])
+    c["red"].wait(4.75).run(6.0, line_x[3] - 5).shake(6.3, 8, 2, 1.1, .88)
+    c["purple"].wait(6.0).lean(6.12, -14).lean(6.35, 0)
+    c["green"].wait(6.08).lean(6.2, -10).lean(6.4, 0)
+    st.mark(line_x[3] - 2, g.ry - CH - 4, "!", 6.0, 6.7)
+    for i, n in enumerate(art.ORDER):
+        c[n].wait(6.7 + i * .15).hops(7.8 + i * .15, [(line_x[i] - 30, g.hack_line), (g.aud[i], g.top(g.r1))], h=16)
+    return 8.25
 
 
-@option("b", "わっしょい！5", "受賞の数「5」を大きな数字で見せる。点から出てきた4体はカードの枠の上を駆けて「5」の下にもぐり、"
-        "みんなで担いでわっしょい。赤が足を滑らせて「5」が傾き、みんなで踏んばって立て直す。最後は「5」を放り上げ、"
-        "落ちてきた「5」が元の場所に収まると、5つの賞が1つずつ光る。帰りは賞の文字を階段にして見出しへ戻る。")
-def option_b(t, narrow=False):
-    W = art.PHONE_W if narrow else art.PC_W
-    cw = W - 14
-    CT = 78
-    D = 23
+def hackday(st, c, g, t0, sleepy_until=None):
+    """Hack Day の勝者（観客賞）。王冠のタイルが光り、みんなで跳ねて喜ぶ。そのあと青が Award Day への切符を受け取る。
+    sleepy_until を渡すと、赤は喜び疲れて観客賞の文字の上で眠ってしまう。"""
+    st.anim("tile-aud", st.pulse("tile-aud", t0, 1.35))
+    st.sparkle(g.L + 15, g.r1, t0 + .05, 22, 8)
+    for i, n in enumerate(art.ORDER):
+        c[n].wait(t0 + .05 + i * .06).jump(t0 + .6 + i * .06, 10).jump(t0 + 1.25 + i * .06, 12)
+        c[n].face("happy", t0, t0 + 1.8)
+    st.mark(g.aud[1] + 20, g.top(g.r1) - CH - 6, "♪", t0 + .2, t0 + 1.6)
+    # 切符：青が決勝進出の行へ跳び、画面に切符を映して掲げる
+    tb = t0 + 1.8
+    c["blue"].wait(tb).hop(tb + .5, g.fin, g.feet(g.r2), 10)
+    st.anim("tile-fin", st.pulse("tile-fin", tb + .55, 1.35))
+    st.sparkle(g.L + 15, g.r2, tb + .6, 18, 6, art.CHARS["blue"]["body"])
+    c["blue"].jump(tb + 1.0, 9).shake(tb + 1.5, 9, 4)
+    if sleepy_until:
+        c["red"].face("sleep", t0 + 2.0, sleepy_until)
+        st.mark(g.aud[3] + 16, g.top(g.r1) - CH + 2, "z", t0 + 2.3, sleepy_until - .1, 15, "#7FA8D9")
+        st.mark(g.aud[3] + 25, g.top(g.r1) - CH - 9, "z", t0 + 2.7, sleepy_until - .1, 13, "#7FA8D9")
+    return tb + .6  # 切符を受け取った時刻
+
+
+def award_day(st, c, g, T, arrive, back):
+    """Award Day：それぞれ自分の賞へ行き、受け取ると画面に賞が映る。喜んだあと見出しへ戻って点になる。
+    arrive：名前 → (始め, 終わり, 経由点)。back：名前 → 見出しまでの経由点。返り値は1周の長さ。"""
     A = {a["key"]: a for a in AWARDS}
-    if narrow:
-        size, nx = 130, 26
-        base = CT + 18 + 105
-        floor = base + CH + 1
-        H = floor + 290
-    else:
-        size, nx = 160, 40
-        base = CT + 20 + 129
-        floor = base + CH + 1
-        H = floor + 1
-    st = Stage(W, H, D, t)
-    x0, x1, ry, xs, dy = heading(st, W, 2 if narrow else 4)
-    if x1 - x0 < 24:
-        st.back[-1] = "</g>"
-    card(st, 0, CT, cw, H - CT)
-    fw = big_number(st, "5", nx, base, size, "five")
-    lx = nx + fw + 14
-    st.back.append(art.text(lx, base - 4, "AWARDS", 13, t["muted"], cls="gh", weight=700, extra=' letter-spacing="3"'))
-    if narrow:
-        line(st, 0, cw, floor)
-        L = 20
-        label(st, L, floor + 30, "HACK DAY", "金沢会場", cw - 20)
-        line(st, L, cw - 20, floor + 40)
-        rows = {"aud": (L, floor + 68), "fin": (L, floor + 108)}
-        label(st, L, floor + 150, "AWARD DAY")
-        line(st, L, cw - 20, floor + 160)
-        rows.update({"sp": (L, floor + 188), "inn": (L, floor + 228), "dmm": (L, floor + 268)})
-        top_line = floor + 160
-    else:
-        st.back.append(f'<rect x="212" y="{CT + 22}" width="1" height="{H - CT - 44}" fill="{t["line"]}"/>')
-        L, R = 236, 540
-        label(st, L, CT + 34, "HACK DAY", "金沢会場", 508)
-        line(st, L, 508, CT + 44)
-        label(st, R, CT + 34, "AWARD DAY")
-        line(st, R, cw - 24, CT + 44)
-        rows = {"aud": (L, CT + 76), "fin": (L, CT + 118), "sp": (R, CT + 76), "inn": (R, CT + 118), "dmm": (R, CT + 160)}
-        top_line = CT + 44
-    ends = {k: row(st, A[k], x, cy) for k, (x, cy) in rows.items()}
-
-    def top(k):
-        return rows[k][1] + 5.5 - 12
-
-    names = art.ORDER
-    out_at = [3.5 + i * .12 for i in range(4)]
-    back_at = [21.6 + i * .14 for i in range(4)]
-    dots(st, xs, dy, out_at, back_at)
-    c = {n: st.actor(n, xs[i], ry) for i, n in enumerate(names)}
-    for i, n in enumerate(names):
-        c[n].appear(out_at[i])
-    # カードの枠の上を左へ駆け、「AWARDS」の上から下へ跳び下りる
-    drop = [lx + 8 + i * 18 for i in range(4)] if not narrow else [lx + 4 + i * 16 for i in range(4)]
-    edge = [(250 if not narrow else 236) + i * (24 if not narrow else 18) for i in range(4)]
-    for i, n in enumerate(names):
-        a = c[n]
-        a.wait(4.2 + i * .1).hop(4.6 + i * .1, xs[i] - 6, CT, 8)
-        a.run(6.1 + i * .12, edge[i])
-        a.hop(6.9 + i * .22, drop[i], floor, 10)
-    for i in range(4):
-        st.sparkle(drop[i], floor - 2, 6.9 + i * .22, 10, 3, "#BFC5D2")
-    # 「5」の下へもぐる
-    under = [nx + fw / 2 - 30 + i * 20 for i in range(4)]
-    for i, n in enumerate(names):
-        c[n].wait(7.4 + i * .1).walk(8.5 + i * .12, under[i])
-    # せーの、わっしょい
-    st.say(under[3], floor - CH - 4, "せーの！", 8.8, 9.8)
-    lift = (CH * .3)
-    five = [(9.2, "translate(0px,0px) rotate(0deg)")]
-    for i, n in enumerate(names):
-        c[n].wait(9.2).put(9.5, sx=1.12, sy=.86).put(9.8, sy=1.3, sx=.9)
-    five.append((9.5, "translate(0px,0px) rotate(0deg)"))
-    five.append((9.8, f"translate(0px,{-lift:.1f}px) rotate(0deg)"))
-    tt = 9.8
-    for k in range(3):
-        for n in names:
-            c[n].put(tt + .3, sy=1.05, sx=1.0).put(tt + .6, sy=1.3, sx=.9)
-        five += [(tt + .3, f"translate(0px,{-lift * .2:.1f}px) rotate(0deg)"), (tt + .6, f"translate(0px,{-lift:.1f}px) rotate(0deg)")]
-        tt += .6
-    st.say(lx + 44, base - 64, "わっしょい！", 9.9, 11.4)
-    # 赤が足を滑らせ、「5」が傾く。紫が踏んばって支え、赤が戻る
-    c["red"].wait(12.0).put(12.25, x=under[3] + 16, r=28, sx=1.05, sy=.9).put(12.6, x=under[3] + 22, r=0, sx=1.2, sy=.75)
-    c["red"].face("dizzy", 12.05, 13.0)
-    st.mark(under[3] + 22, floor - CH - 12, "!", 12.0, 12.9)
-    five += [(12.0, f"translate(0px,{-lift:.1f}px) rotate(0deg)"), (12.35, f"translate(2px,{-lift * .4:.1f}px) rotate(14deg)"),
-             (12.6, f"translate(2px,{-lift * .5:.1f}px) rotate(11deg)"), (12.9, f"translate(1px,{-lift * .7:.1f}px) rotate(5deg)"),
-             (13.6, f"translate(0px,{-lift:.1f}px) rotate(0deg)")]
-    for n in names[:3]:
-        c[n].face("strain", 12.1, 13.7)
-        c[n].wait(12.0).put(12.3, r=8, sx=1.12, sy=1.1).put(12.9, r=4, sy=1.2).put(13.6, sy=1.3, sx=.9)
-    c["purple"].wait(12.3).put(12.9, x=under[2] + 8, r=6, sy=1.25)
-    c["red"].wait(12.6).put(13.0, sx=1.0, sy=1.0).walk(13.4, under[3]).put(13.6, sy=1.3, sx=.9)
-    c["purple"].wait(13.4).put(13.7, x=under[2], sy=1.3, sx=.9)
-    # せーの、で放り上げる。「5」は回って元の場所に収まり、5つの賞が1つずつ光る
-    st.say(under[0], floor - CH - 16, "せーの！", 13.9, 14.8)
-    for n in names:
-        c[n].wait(14.2).put(14.45, sx=1.15, sy=.84).put(14.65, sy=1.35, sx=.88).put(14.9)
-    five += [(14.2, f"translate(0px,{-lift:.1f}px) rotate(0deg)"), (14.45, "translate(0px,3px) rotate(0deg)"),
-             (14.7, "translate(0px,-40px) rotate(-120deg)"), (15.0, "translate(0px,-56px) rotate(-240deg)"),
-             (15.35, "translate(0px,-20px) rotate(-360deg)"), (15.55, "translate(0px,0px) rotate(-360deg)")]
-    five += [(15.7, "translate(0px,3px) rotate(-360deg)"), (15.85, "translate(0px,0px) rotate(-360deg)"),
-             (20.0, "translate(0px,0px) rotate(-360deg)"), (20.01, "translate(0px,0px) rotate(0deg)")]
-    for i, n in enumerate(names):
-        c[n].wait(15.5).put(15.65, sx=1.25, sy=.62).put(15.9, sx=.95, sy=1.08).put(16.1)
-        c[n].face("dizzy" if n == "red" else "surprised", 15.55, 16.3)
-    st.sparkle(nx + fw / 2, base - 60, 15.65, 46, 8)
-    st.anim("five", five, origin="50% 100%")
-    order = ["aud", "fin", "sp", "inn", "dmm"]
-    for k, key in enumerate(order):
-        at = 16.4 + k * .28
+    for n, (a, b, pts) in arrive.items():
+        c[n].wait(a).hops(b, pts, h=12)
+    for n, key, at in (("green", "sp", T + 1.9), ("purple", "inn", T + 2.6), ("red", "dmm", T + 3.4)):
         st.anim(f"tile-{key}", st.pulse(f"tile-{key}", at, 1.35))
-        x, cy = rows[key]
-        st.sparkle(x + 15, cy, at + .03, 16, 5, tile_color(A[key]) if A[key]["color"] != "brand" else scenes.GOLD)
-    # 喜んで、賞の文字を階段にして見出しへ戻る
-    out = [lx + 6 + i * 22 for i in range(4)]
-    for i, n in enumerate(names):
-        c[n].wait(16.3 + i * .08).walk(16.9 + i * .08, out[i] if not narrow else out[i] - 20)
-        c[n].face("happy", 16.9, 18.4)
-        c[n].wait(17.0 + i * .06).jump(17.5 + i * .06, 10).jump(18.0 + i * .06, 10)
-    st.mark(out[1] + 10, floor - CH - 14, "♪", 17.0, 18.3)
-    if narrow:
-        for i, n in enumerate(names):
-            c[n].wait(18.4 + i * .18).walk(19.0 + i * .18, xs[i] - 50).hops(21.2 + i * .1, [(xs[i] - 30, CT), (xs[i], ry)], h=14)
-    else:
-        stairs = ["dmm", "inn", "sp"]
-        for i, n in enumerate(names):
-            pts = [(ends[k] + 18 + i * 9, rows[k][1] + 6.5) for k in stairs] + [(740 + i * 8, top_line), (xs[i] - 6, CT), (xs[i], ry)]
-            c[n].wait(18.4 + i * .2).walk(19.0 + i * .2, 560 + i * 8).hops(21.4 + i * .05, pts, h=10)
-    for i, n in enumerate(names):
+        cy = {"sp": g.q1, "inn": g.q2, "dmm": g.q3}[key]
+        st.sparkle(g.R + 15, cy, at + .05, 18, 6, art.CHARS[n]["body"])
+        c[n].face("icon:" + A[key]["icon"], at + .1, T + 6.0)
+        c[n].wait(at).jump(at + .55, 10)
+    c["red"].face("strain", T + 2.85, T + 3.4)
+    c["red"].wait(T + 2.85).put(T + 3.35, sx=1.14, sy=.84)
+    c["red"].jump(T + 4.0, 15)
+    c["blue"].wait(T + 3.6).shake(T + 4.2, 10, 4)
+    for i, n in enumerate(art.ORDER):
+        c[n].wait(T + 4.4 + i * .07).jump(T + 4.95 + i * .07, 10).jump(T + 5.5 + i * .07, 12)
+    st.mark(g.spots["purple"][0] + 34, g.spots["purple"][1] - CH - 10, "♪", T + 4.5, T + 5.8)
+    for i, n in enumerate(art.ORDER):
+        c[n].wait(T + 6.0 + i * .1).hops(T + 7.6 + i * .15, back[n], h=14)
+    back_at = [T + 8.1 + i * .14 for i in range(4)]
+    for i, n in enumerate(art.ORDER):
         c[n].wait(back_at[i]).vanish(back_at[i])
+    dots(st, g.xs, g.dy, [3.5 + i * .12 for i in range(4)], back_at)
+    return T + 9.0
+
+
+def make_actors(st, g):
+    return {n: st.actor(n, g.xs[i], g.ry) for i, n in enumerate(art.ORDER)}
+
+
+def pc_back(g):
+    """PC：Award Day の列から見出しの点へ戻る経由点。"""
+    return {"blue": [(g.xs[0], g.ry)],
+            "green": [(680, g.award_line), (g.xs[1], g.ry)],
+            "purple": [(560, g.top(g.q1)), (720, g.award_line), (g.xs[2], g.ry)],
+            "red": [(560, g.top(g.q2)), (700, g.award_line), (g.xs[3], g.ry)]}
+
+
+def narrow_back(g, mid):
+    """スマホ：下の段から、間の線（mid）と Hack Day の線を経て見出しの点へ戻る経由点。"""
+    out = {}
+    for i, n in enumerate(art.ORDER):
+        pts = [] if n == "blue" else [(g.cw - 50 - i * 12, g.award_line)]
+        out[n] = pts + [(g.cw - 44 - i * 12, mid), (g.xs[i] - 10, g.hack_line), (g.xs[i], g.ry)]
+    return out
+
+
+def columns(st, g, sub_l, sub_r):
+    """PC：Hack Day と Award Day の2列の見出しと区切り。"""
+    g.L, g.R = 24, 452
+    label(st, g.L, g.CT + 30, "HACK DAY", sub_l, 398)
+    line(st, g.L, 398, g.CT + 40)
+    label(st, g.R, g.CT + 30, "AWARD DAY", sub_r, g.cw - 24)
+    line(st, g.R, g.cw - 24, g.CT + 40)
+    g.r1, g.r2 = g.CT + 70, g.CT + 114
+    g.q1, g.q2, g.q3 = g.CT + 70, g.CT + 114, g.CT + 158
+    g.hack_line = g.award_line = g.CT + 40
+
+
+# ---------- 案1：新幹線 ----------
+TRAIN_L, TRAIN_H = 150, 34
+
+
+def shinkansen(st, t):
+    """横から見た新幹線（進む向きは右）。窓は穴にして、乗ったキャラクターの顔が見えるようにする。"""
+    L, Hh = TRAIN_L, TRAIN_H
+    dark = t is art.THEMES["dark"]
+    body = "#E8EDF5" if dark else "#FFFFFF"
+    edge = "#8A95A8" if dark else "#A9B3C3"
+    outer = (f"M8 0H{L - 54}C{L - 26} 0 {L - 6} 13 {L} {Hh - 7}Q{L + 1} {Hh} {L - 8} {Hh}H8Q0 {Hh} 0 {Hh - 8}V8Q0 0 8 0Z")
+    holes = "".join(f"M{x + 4} 6h12a4 4 0 0 1 4 4v4a4 4 0 0 1-4 4h-12a4 4 0 0 1-4-4v-4a4 4 0 0 1 4-4z" for x in (16, 42, 68, 94))
+    return (f'<path d="{outer}{holes}" fill="{body}" fill-rule="evenodd" stroke="{edge}" stroke-width="1.5"/>'
+            f'<path d="M{L - 48} 7H{L - 30}L{L - 17} 17H{L - 48}Z" fill="#1C2333"/>'
+            f'<rect x="3" y="{Hh - 12}" width="{L - 14}" height="3.5" rx="1.75" fill="url(#brand)"/>'
+            f'<rect x="10" y="{Hh - 3}" width="{L - 30}" height="3" rx="1.5" fill="{edge}" opacity=".6"/>')
+
+
+def rail(st, t, x0, x1, y, stations):
+    fill = grad(st, x0, x1)
+    sleepers = "".join(f'<rect x="{x}" y="{y + 3}" width="6" height="2" rx="1"/>' for x in range(int(x0) + 4, int(x1) - 6, 12))
+    st.back.append(f'<g fill="{t["line"]}">{sleepers}</g><rect x="{x0}" y="{y - 1}" width="{x1 - x0}" height="2.5" rx="1.25" fill="{fill}"/>')
+    for x, color in stations:
+        st.back.append(f'<circle cx="{x}" cy="{y + .25}" r="5" fill="{PAGE["dark" if t is art.THEMES["dark"] else "light"]}" '
+                       f'stroke="{color}" stroke-width="2.5"/>')
+
+
+def ease_out(u):
+    return 1 - (1 - u) ** 2
+
+
+def smooth(u):
+    return u * u * (3 - 2 * u)
+
+
+@option("1", "新幹線で東京へ", "Hack Day（金沢）の勝者＝観客賞の王冠の上でみんなで喜び、青が決勝進出＝Award Day への切符を受け取る。"
+        "線路に新幹線が入ってきて、3体は窓から顔を出す。喜び疲れて眠っていた赤は、発車に気づいて走り出した新幹線に飛び乗る。"
+        "東京に着いたら、それぞれ Award Day の自分の賞へ。最後は見出しへ戻り、元の点になる。")
+def option_1(t, narrow=False):
+    H = 78 + (374 if narrow else 226)
+    st, g = setup(t, narrow, H, 26)
+    card(st, 0, g.CT, g.cw, H - g.CT)
+    CT = g.CT
+    if narrow:
+        g.L = g.R = 20
+        label(st, g.L, CT + 30, "HACK DAY", "金沢", g.cw - 20)
+        line(st, g.L, g.cw - 20, CT + 40)
+        g.r1, g.r2 = CT + 70, CT + 114
+        TY = CT + 180
+        label(st, g.R, CT + 218, "AWARD DAY", "東京", g.cw - 20)
+        line(st, g.R, g.cw - 20, CT + 228)
+        g.q1, g.q2, g.q3 = CT + 258, CT + 302, CT + 346
+        g.hack_line, g.award_line = CT + 40, CT + 228
+        rx0, rx1 = 20, g.cw - 20
+        X1, X2 = 24, g.cw - TRAIN_L - 6
+    else:
+        columns(st, g, "金沢", "東京")
+        st.back.append(f'<rect x="425" y="{CT + 22}" width="1" height="{140}" fill="{t["line"]}"/>')
+        TY = CT + 206
+        rx0, rx1 = 24, g.cw - 24
+        X1, X2 = 40, 560
+    rail(st, t, rx0, rx1, TY, [(rx0 + 10, "#C03BFF"), (rx1 - 10, "#22C4FA")])
+    awards_rows(st, g)
+    c = make_actors(st, g)
+    t0 = intro(st, c, g)
+    tk = hackday(st, c, g, t0 + .05, sleepy_until=14.3)
+    # 新幹線：左から入って金沢に止まり、発車して東京に止まり、右へ去る
+    ta, tb, td, te, tl, tm = 11.2, 12.4, 14.2, 16.6, 18.2, 19.2
+    out_x = g.W + 20
+
+    def pos(s):
+        if s <= ta:
+            return -TRAIN_L - 20
+        if s <= tb:
+            return -TRAIN_L - 20 + (X1 + TRAIN_L + 20) * ease_out((s - ta) / (tb - ta))
+        if s <= td:
+            return X1
+        if s <= te:
+            return X1 + (X2 - X1) * smooth((s - td) / (te - td))
+        if s <= tl:
+            return X2
+        if s <= tm:
+            return X2 + (out_x - X2) * ((s - tl) / (tm - tl)) ** 2
+        return out_x
+    frames = [(s / 10, f"translate({pos(s / 10):.1f}px,0px)") for s in range(0, 261)]
+    frames.append((25.99, f"translate({-TRAIN_L - 20}px,0px)"))
+    st.front.append(f'<g class="fx"><g class="train"><g transform="translate(0 {TY - TRAIN_H - 1})">{shinkansen(st, t)}</g></g></g>')
+    st.anim("train", frames, base=f"translate({-TRAIN_L - 20}px,0px)")
+    win = {"red": 26, "purple": 52, "green": 78, "blue": 104}
+    # 乗る：青は切符の行から、緑と紫は観客賞の文字から、窓の位置へ跳び込む
+    c["blue"].wait(12.6).hop(13.1, X1 + win["blue"], TY, 12)
+    c["green"].wait(12.75).hop(13.3, X1 + win["green"], TY, 12)
+    c["purple"].wait(12.9).hop(13.5, X1 + win["purple"], TY, 12)
+    for n in ("blue", "green", "purple"):
+        follow(c[n], c[n].t + .05, te + .3, pos, win[n])
+    # 赤：発車に気づいて飛び起き、走り出した新幹線に飛び乗る
+    st.mark(g.aud[3], g.top(g.r1) - CH - 6, "!", 14.3, 15.0)
+    c["red"].face("surprised", 14.3, 15.4)
+    c["red"].wait(14.3).jump(14.7, 14)
+    c["red"].hop(15.3, pos(15.3) + win["red"], TY, 16)
+    follow(c["red"], 15.3, te + .3, pos, win["red"])
+    # 東京：窓から出て、それぞれ自分の賞へ
+    T = 17.0
+    sp, inn, dmm = g.spots["green"], g.spots["purple"], g.spots["red"]
+    if narrow:
+        arrive = {"green": (T, T + 1.2, [(sp[0] - 6, g.award_line), sp]),
+                  "purple": (T + .15, T + 1.4, [(inn[0] + 24, g.award_line), inn]),
+                  "red": (T + .3, T + 1.6, [(dmm[0] + 30, g.award_line), (dmm[0] + 10, g.top(g.q2)), dmm]),
+                  "blue": (T + .1, T + 1.0, [(g.cw - 40, g.award_line)])}
+        back = narrow_back(g, TY)
+    else:
+        arrive = {"green": (T, T + 1.2, [(650, g.top(g.q3)), sp]),
+                  "purple": (T + .15, T + 1.3, [(615, g.top(g.q3)), inn]),
+                  "red": (T + .3, T + .9, [dmm]),
+                  "blue": (T + .1, T + 1.2, [(770, g.feet(g.q2)), (740, g.award_line)])}
+        back = pc_back(g)
+    award_day(st, c, g, T, arrive, back)
     return st.svg()
 
 
-def wrap_name(s, size, avail):
-    if tw(s, size) <= avail:
-        return [s]
-    if " " in s:
-        words = s.split(" ")
-        for k in range(len(words) - 1, 0, -1):
-            a = " ".join(words[:k])
-            if tw(a, size) <= avail:
-                return [a, " ".join(words[k:])]
-    for k in range(len(s) - 1, 0, -1):
-        if tw(s[:k], size) <= avail and not s[k - 1].isascii() and s[k].isascii():
-            return [s[:k], s[k:]]
-    return [s]
+# ---------- 案2：路線図 ----------
+@option("2", "路線図", "カードを路線図にする。金沢と東京の駅を線でつなぎ、駅の下にそれぞれの日の賞を並べる。"
+        "Hack Day の勝者として喜んだあと、青が切符を受け取り、4体は連なって列車になる。眠っていた赤は置いていかれ、"
+        "走って追いかけて最後尾に連結する。東京の駅で降りて、Award Day の賞へ。")
+def option_2(t, narrow=False):
+    H = 78 + (376 if narrow else 206)
+    st, g = setup(t, narrow, H, 25.5)
+    card(st, 0, g.CT, g.cw, H - g.CT)
+    CT = g.CT
+    dark = "dark" if t is art.THEMES["dark"] else "light"
+
+    def station(x, y, color):
+        st.back.append(f'<circle cx="{x}" cy="{y}" r="6.5" fill="{PAGE[dark]}" stroke="{color}" stroke-width="3"/>')
+
+    if narrow:
+        g.L = g.R = 20
+        label(st, g.L, CT + 30, "HACK DAY")
+        line(st, g.L, g.cw - 20, CT + 40)
+        g.r1, g.r2 = CT + 70, CT + 114
+        RL = CT + 160
+        st.back.append(f'<rect x="20" y="{RL - 1.5}" width="{g.cw - 40}" height="3" rx="1.5" fill="{grad(st, 20, g.cw - 20)}"/>')
+        station(30, RL, "#C03BFF")
+        station(g.cw - 30, RL, "#22C4FA")
+        st.back.append(art.text(20, RL + 26, "金沢", 16, t["ink"], cls="gh", weight=700))
+        st.back.append(art.text(g.cw - 20, RL + 26, "東京", 16, t["ink"], cls="gh", weight=700, anchor="end"))
+        label(st, g.R, RL + 62, "AWARD DAY")
+        line(st, g.R, g.cw - 20, RL + 72)
+        g.q1, g.q2, g.q3 = RL + 102, RL + 146, RL + 190
+        g.hack_line, g.award_line = CT + 40, RL + 72
+        front0, front1 = 110, g.cw - 34
+    else:
+        g.L, g.R = 24, 452
+        RL = CT + 26
+        for x, name, en in ((g.L, "金沢", "HACK DAY"), (g.R, "東京", "AWARD DAY")):
+            st.back.append(art.text(x, CT + 56, name, 16, t["ink"], cls="gh", weight=700))
+            st.back.append(art.text(x + 44, CT + 55, en, 13, t["muted"], cls="gh", weight=700, extra=' letter-spacing="3"'))
+        st.back.append(f'<rect x="{g.L}" y="{RL - 1.5}" width="{g.cw - 24 - g.L}" height="3" rx="1.5" fill="{grad(st, g.L, g.cw - 24)}"/>')
+        station(g.L + 8, RL, "#C03BFF")
+        station(g.R + 8, RL, "#4F9CFC")
+        st.back.append(f'<rect x="425" y="{CT + 44}" width="1" height="{H - CT - 66}" fill="{t["line"]}"/>')
+        g.r1, g.r2 = CT + 92, CT + 136
+        g.q1, g.q2, g.q3 = CT + 92, CT + 136, CT + 180
+        g.hack_line = g.award_line = RL - 1.5
+        front0, front1 = 120, 540
+    awards_rows(st, g)
+    c = make_actors(st, g)
+    t0 = intro(st, c, g)
+    hackday(st, c, g, t0 + .05, sleepy_until=13.2)
+    rl = RL - 1.5
+    gap = 22
+    car = {"blue": 0, "green": 1, "purple": 2, "red": 3}
+    # 連なって列車になる
+    if narrow:
+        c["blue"].wait(11.0).hops(11.9, [(front0, rl)], h=12)
+        c["green"].wait(11.1).hops(12.0, [(g.aud[1] + 10, g.top(g.r2)), (front0 - gap, rl)], h=10)
+        c["purple"].wait(11.2).hops(12.1, [(g.aud[2] - 20, g.top(g.r2)), (front0 - 2 * gap, rl)], h=10)
+    else:
+        c["blue"].wait(11.0).hops(11.9, [(200, g.top(g.r1)), (front0, rl)], h=12)
+        c["green"].wait(11.1).hop(11.8, front0 - gap, rl, 14)
+        c["purple"].wait(11.2).hop(11.9, front0 - 2 * gap, rl, 14)
+    st.mark(front0 + 18, rl - CH - 6, "♪", 12.0, 12.6)
+    t_go, t_end = 12.6, 16.0
+    for n in ("blue", "green", "purple"):
+        c[n].wait(t_go).walk(t_end, front0 + (front1 - front0) - car[n] * gap, step=10, h=3)
+
+    def front(s):
+        return front0 + (front1 - front0) * min(1, max(0, (s - t_go) / (t_end - t_go)))
+    # 赤：置いていかれたことに気づき、走って追いかけ、最後尾に連結する（ぶつかって列車が揺れる）
+    st.mark(g.aud[3], g.top(g.r1) - CH - 6, "!", 13.2, 13.9)
+    c["red"].face("surprised", 13.2, 14.0)
+    c["red"].wait(13.2).jump(13.55, 12).hop(13.95, g.aud[3] - 6, rl, 12)
+    tc = 14.55
+    c["red"].run(tc, front(tc) - 3 * gap + 6)
+    for n in ("blue", "green", "purple"):
+        c[n].key(tc + .08, front(tc + .08) - car[n] * gap + 5, rl, 10, 1, 1, OUT_, "linear")
+    c["purple"].face("surprised", tc, tc + .5)
+    c["red"].put(tc + .12, x=front(tc + .12) - 3 * gap, sx=1.12, sy=.86)
+    c["red"].walk(t_end, front1 - 3 * gap, step=10, h=3)
+    st.mark(front(tc) - 2 * gap, rl - CH - 8, "!", tc, tc + .6)
+    # 東京で降りて、それぞれ自分の賞へ
+    T = 16.3
+    sp, inn, dmm = g.spots["green"], g.spots["purple"], g.spots["red"]
+    if narrow:
+        arrive = {"green": (T, T + 1.2, [(sp[0] + 20, g.award_line), sp]),
+                  "purple": (T + .15, T + 1.4, [(inn[0] + 40, g.award_line), inn]),
+                  "red": (T + .3, T + 1.6, [(dmm[0] + 40, g.award_line), (dmm[0] + 10, g.top(g.q2)), dmm]),
+                  "blue": (T + .1, T + 1.0, [(g.cw - 40, g.award_line)])}
+        back = narrow_back(g, rl)
+    else:
+        arrive = {"green": (T, T + .9, [sp]),
+                  "purple": (T + .15, T + 1.2, [(inn[0] - 40, g.top(g.q1)), inn]),
+                  "red": (T + .3, T + 1.5, [(dmm[0] - 70, g.top(g.q1)), (dmm[0] - 40, g.top(g.q2)), dmm]),
+                  "blue": (T + .1, T + 1.2, [])}
+        c["blue"].wait(T + .1).walk(T + 1.4, 740)
+        del arrive["blue"]
+        back = pc_back(g)
+    award_day(st, c, g, T, arrive, back)
+    return st.svg()
 
 
-def award_card(st, a, num, x, y, w, h, size=16):
-    """特長の図と同じ形のカード：左上にタイル、右上にグラデーションの番号、下に賞の名前。"""
+# ---------- 案3：切符 ----------
+def ticket_card(st, x0, y0, w, h, notch, vertical, r=10, rr=14):
+    """切符の形の枠。vertical なら上下の辺の x=notch に、そうでなければ左右の辺の y=notch に半円の切り欠きを入れる。"""
+    x1, y1 = x0 + w, y0 + h
+    if vertical:
+        d = (f"M{x0 + rr} {y0}H{notch - r}A{r} {r} 0 0 0 {notch + r} {y0}H{x1 - rr}A{rr} {rr} 0 0 1 {x1} {y0 + rr}"
+             f"V{y1 - rr}A{rr} {rr} 0 0 1 {x1 - rr} {y1}H{notch + r}A{r} {r} 0 0 0 {notch - r} {y1}H{x0 + rr}"
+             f"A{rr} {rr} 0 0 1 {x0} {y1 - rr}V{y0 + rr}A{rr} {rr} 0 0 1 {x0 + rr} {y0}Z")
+    else:
+        d = (f"M{x0 + rr} {y0}H{x1 - rr}A{rr} {rr} 0 0 1 {x1} {y0 + rr}V{notch - r}A{r} {r} 0 0 0 {x1} {notch + r}"
+             f"V{y1 - rr}A{rr} {rr} 0 0 1 {x1 - rr} {y1}H{x0 + rr}A{rr} {rr} 0 0 1 {x0} {y1 - rr}"
+             f"V{notch + r}A{r} {r} 0 0 0 {x0} {notch - r}V{y0 + rr}A{rr} {rr} 0 0 1 {x0 + rr} {y0}Z")
+    st.back.append(f'<path d="{d}" fill="none" stroke="{st.t["line"]}" stroke-width="1.5"/>')
+
+
+def gate(st, gx, fy):
+    """自動改札：左右の柱と、閉じている扉（ブランドのグラデーション）。扉は flapL / flapR で開け閉めする。"""
     t = st.t
-    st.back.append(f'<g class="card-{a["key"]}"><rect x="{x + .75}" y="{y + .75}" width="{w - 1.5}" height="{h - 1.5}" rx="14" '
-                   f'fill="none" stroke="{t["line"]}" stroke-width="1.5"/>'
-                   f'<g class="tile-{a["key"]}">{tile(a, x + 16 + 15, y + 16 + 15)}</g>'
-                   + art.text(x + w - 14, y + 40, num, 26, "url(#brand)", cls="disp", weight=400, anchor="end"))
-    lines = wrap_name(a["name"], size, w - 28)
-    for k, s in enumerate(lines):
-        st.back.append(art.text(x + 14, y + h - 16 - (len(lines) - 1 - k) * (size + 6), s, size, t["ink"], cls="gh", weight=700))
-    st.back.append("</g>")
+    post = "#C9D1DE" if t is art.THEMES["light"] else "#3A4255"
+    st.back.append(f'<rect x="{gx - 22}" y="{fy - 28}" width="9" height="28" rx="3" fill="{post}"/>'
+                   f'<rect x="{gx + 13}" y="{fy - 28}" width="9" height="28" rx="3" fill="{post}"/>'
+                   f'<rect x="{gx - 20}" y="{fy - 25}" width="5" height="3" rx="1.5" fill="#22C4FA"/>'
+                   f'<rect class="flapL" x="{gx - 13}" y="{fy - 19}" width="13" height="6" rx="3" fill="url(#brand)"/>'
+                   f'<rect class="flapR" x="{gx}" y="{fy - 19}" width="13" height="6" rx="3" fill="url(#brand)"/>')
 
 
-@option("c", "取り違え", "賞を、特長の図と同じ形の5枚のカードにする。点から出てきた4体は、それぞれ自分の賞のカードの上に乗り、"
-        "画面に賞を映す。ところが赤は緑の賞に乗ってしまい、画面に緑の星が映る。緑に見つめられて赤は気づき、謝って自分の賞へ。"
-        "最後は「みんなの賞」の観客賞に4体でぎゅうぎゅうに乗り、カードがたわむ。")
-def option_c(t, narrow=False):
-    W = art.PHONE_W if narrow else art.PC_W
-    cw = W - 14
-    D = 22
-    A = {a["key"]: a for a in AWARDS}
-    LB = PAD + 76  # 組の見出しの基準線
+@option("3", "切符と改札", "カード全体を、金沢から東京への切符の形にする（切り取り線と半円の切り欠き）。"
+        "Hack Day の勝者として喜んだあと、青が切符を受け取る。切り取り線のところの自動改札に青がタッチして3体が通るが、"
+        "遅れてきた赤は閉まった扉にぶつかる。青が戻ってもう一度タッチし、赤を通してあげる。そして Award Day の賞へ。")
+def option_3(t, narrow=False):
+    H = 78 + (358 if narrow else 222)
+    st, g = setup(t, narrow, H, 25.5)
+    CT = g.CT
     if narrow:
-        gap, ch = 10, 104
-        w2 = (cw - gap) / 2
-        y1 = LB + 30
-        y2 = y1 + ch + 46
-        y3 = y2 + ch + 40
-        pos = {"aud": (0, y1, w2), "fin": (w2 + gap, y1, w2), "sp": (0, y2, w2), "inn": (w2 + gap, y2, w2),
-               "dmm": (0, y3, cw)}
-        H = y3 + ch + 2
-        size = 15
+        g.L = g.R = 20
+        P = CT + 156
+        ticket_card(st, .75, CT + .75, g.cw - 1.5, H - CT - 1.5, P, False)
+        st.back.append(f'<line x1="16" y1="{P}" x2="{g.cw - 16}" y2="{P}" stroke="{t["line"]}" stroke-width="1.5" stroke-dasharray="5 5"/>')
+        label(st, g.L, CT + 30, "HACK DAY", "金沢", g.cw - 20)
+        line(st, g.L, g.cw - 20, CT + 40)
+        g.r1, g.r2 = CT + 70, CT + 114
+        label(st, g.R, P + 44, "AWARD DAY", "東京", g.cw - 20)
+        line(st, g.R, g.cw - 20, P + 54)
+        g.q1, g.q2, g.q3 = P + 84, P + 128, P + 172
+        g.hack_line, g.award_line = CT + 40, P + 54
+        FY, GX = P, 180
     else:
-        gap, ch = 12, 112
-        w5 = (cw - 4 * gap) / 5
-        y1 = LB + 30
-        pos = {k: (i * (w5 + gap), y1, w5) for i, k in enumerate(["aud", "fin", "sp", "inn", "dmm"])}
-        H = y1 + ch + 2
-        size = 16
-    st = Stage(W, H, D, t)
-    x0, x1, ry, xs, dy = heading(st, W, 2 if narrow else 4)
-    if x1 - x0 < 24:
-        st.back[-1] = "</g>"
+        FY = H - 1.6
+        ticket_card(st, .75, CT + .75, g.cw - 1.5, H - CT - 1.5, 425, True)
+        st.back.append(f'<line x1="425" y1="{CT + 16}" x2="425" y2="{FY - 36}" stroke="{t["line"]}" stroke-width="1.5" stroke-dasharray="5 5"/>')
+        columns(st, g, "金沢", "東京")
+        GX = 425
+    gate(st, GX, FY)
+    awards_rows(st, g)
+    c = make_actors(st, g)
+    t0 = intro(st, c, g)
+    hackday(st, c, g, t0 + .05, sleepy_until=12.9)
+    # 改札の手前まで行く
+    lx = [GX - 34 - i * 24 for i in range(3)]
     if narrow:
-        label(st, 0, LB, "HACK DAY", "金沢会場", cw)
-        line(st, 0, cw, LB + 10)
-        label(st, 0, y2 - 30, "AWARD DAY")
-        line(st, 0, cw, y2 - 20)
-        lines = {"hack": LB + 10, "award": y2 - 20}
+        c["blue"].wait(11.0).hops(11.7, [(lx[0], FY)], h=10)
+        c["green"].wait(11.05).hops(12.0, [(g.aud[1] + 6, g.top(g.r2)), (lx[1], FY)], h=8)
+        c["purple"].wait(11.15).hops(12.1, [(g.aud[2] - 30, g.top(g.r2)), (lx[2], FY)], h=8)
     else:
-        hw = 2 * w5 + gap
-        label(st, 0, LB, "HACK DAY", "金沢会場")
-        line(st, 0, hw, LB + 10)
-        label(st, hw + gap, LB, "AWARD DAY")
-        line(st, hw + gap, cw, LB + 10)
-        lines = {"hack": LB + 10, "award": LB + 10}
-    for i, k in enumerate(["aud", "fin", "sp", "inn", "dmm"]):
-        x, y, w = pos[k]
-        award_card(st, A[k], f"0{i + 1}", x, y, w, ch, size)
-
-    def spot(k, dx=0):
-        x, y, w = pos[k]
-        return x + w * .62 + dx, y
-
-    names = art.ORDER
-    out_at = [3.5 + i * .12 for i in range(4)]
-    back_at = [20.6 + i * .14 for i in range(4)]
-    dots(st, xs, dy, out_at, back_at)
-    c = {n: st.actor(n, xs[i], ry) for i, n in enumerate(names)}
-    for i, n in enumerate(names):
-        c[n].appear(out_at[i])
-    # それぞれ自分の賞のカードへ。赤はいちばん近い緑の賞に先に乗ってしまう
-    mine = {"blue": "fin", "green": "sp", "purple": "inn", "red": "dmm"}
+        c["blue"].wait(11.0).hop(11.6, 300, FY, 10).walk(12.0, lx[0])
+        c["green"].wait(11.05).hops(11.8, [(g.aud[1] + 14, g.top(g.r2)), (240, FY)], h=8).walk(12.1, lx[1])
+        c["purple"].wait(11.15).hops(11.9, [(g.aud[2] - 10, g.top(g.r2)), (210, FY)], h=8).walk(12.2, lx[2])
+    # 青がタッチすると扉が開き、3体が通る。扉はすぐ閉まる
+    flap_open = [(12.5, 1), (12.7, .12), (13.9, .12), (14.1, 1), (15.3, 1), (15.5, .12), (16.2, .12), (16.4, 1)]
+    st.anim("flapL", [(s, f"scale({v},1)") for s, v in flap_open], origin="0% 50%")
+    st.anim("flapR", [(s, f"scale({v},1)") for s, v in flap_open], origin="100% 50%")
+    st.sparkle(GX - 18, FY - 24, 12.4, 10, 5, "#22C4FA")
+    c["blue"].wait(12.2).lean(12.35, 14).lean(12.55, 0)
+    rx = [GX + 32 + i * 22 for i in range(3)] if narrow else [GX + 120, GX + 96, GX + 72]
+    c["blue"].wait(12.7).walk(13.3, rx[0])
+    c["green"].wait(12.8).walk(13.5, rx[1])
+    c["purple"].wait(12.9).walk(13.7, rx[2])
+    # 赤：起きて駆けつけるが、閉まった扉にぶつかって跳ね返る
+    st.mark(g.aud[3], g.top(g.r1) - CH - 6, "!", 12.9, 13.6)
+    c["red"].face("surprised", 12.9, 13.5)
+    c["red"].wait(12.9).jump(13.25, 12).hop(13.8, g.aud[3] - 20 if narrow else 330, FY, 12)
+    c["red"].run(14.25, GX - 12).put(14.4, x=GX - 22, r=-22, sx=1.2, sy=.8).put(14.7, x=GX - 34, r=-8).put(14.9, x=GX - 30)
+    c["red"].face("dizzy", 14.25, 15.1)
+    st.mark(GX - 14, FY - CH - 10, "!", 14.25, 14.9)
+    # 青が戻ってもう一度タッチし、赤を通す。赤は青におじぎする
+    c["blue"].wait(14.4).walk(15.2, GX + 30).lean(15.35, -14).lean(15.55, 0)
+    st.sparkle(GX + 18, FY - 24, 15.3, 10, 5, "#22C4FA")
+    c["red"].wait(15.5).walk(16.0, GX + 4 if narrow else GX + 48).bow(16.6, 1)
+    c["blue"].wait(16.0).walk(16.4, rx[0] if not narrow else GX + 66)
+    T = 16.8
+    sp, inn, dmm = g.spots["green"], g.spots["purple"], g.spots["red"]
     if narrow:
-        route = {
-            "blue": [(xs[0] - 20, lines["hack"]), spot("fin")],
-            "green": [(xs[1] - 30, lines["hack"]), (cw - 40, y1), (cw - 60, lines["award"]), spot("sp", -14)],
-            "purple": [(xs[2] - 40, lines["hack"]), (cw - 30, y1), (cw - 40, lines["award"]), spot("inn")],
-            "red": [(xs[3] - 50, lines["hack"]), (cw - 20, y1), (cw - 20, lines["award"]), spot("sp", 14)],
-        }
+        arrive = {"green": (T, T + 1.2, [(sp[0] + 20, g.award_line), sp]),
+                  "purple": (T + .15, T + 1.4, [(inn[0] + 40, g.award_line), inn]),
+                  "red": (T + .3, T + 1.6, [(dmm[0] + 40, g.award_line), (dmm[0] + 10, g.top(g.q2)), dmm]),
+                  "blue": (T + .1, T + 1.0, [(g.cw - 40, g.award_line)])}
+        back = narrow_back(g, FY)
     else:
-        route = {
-            "blue": [(xs[0] - 340, lines["award"]), (spot("fin")[0] + 60, lines["hack"]), spot("fin")],
-            "green": [(xs[1] - 200, lines["award"]), spot("sp", -14)],
-            "purple": [(xs[2] - 140, lines["award"]), spot("inn")],
-            "red": [(xs[3] - 90, lines["award"]), spot("sp", 14)],
-        }
-    arrive = {"blue": 6.6, "green": 6.4, "purple": 6.0, "red": 5.6}
-    for i, n in enumerate(names):
-        c[n].wait(4.3 + i * .05).hops(arrive[n], route[n], h=14)
-    # 画面に賞が映る（赤は緑の星を映してしまう）
-    shows = {"red": 5.8, "purple": 6.2, "green": 6.7, "blue": 6.9}
-    for n in ("purple", "blue"):
-        k = mine[n]
-        st.anim(f"tile-{k}", st.pulse("", shows[n], 1.3))
-        x, y, w = pos[k]
-        st.sparkle(x + 31, y + 31, shows[n] + .05, 16, 5, art.CHARS[n]["body"])
-        c[n].face("icon:" + A[k]["icon"], shows[n] + .1, 19.0)
-        c[n].wait(shows[n]).jump(shows[n] + .5, 9)
-    c["red"].face("icon:star", 5.9, 8.4)
-    c["red"].wait(5.8).jump(6.3, 9).jump(6.8, 9)
-    # 緑が来て、じっと見る。赤は気づいて謝る
-    c["green"].face("worried", 6.5, 8.4)
-    st.mark(spot("sp", -14)[0], spot("sp")[1] - CH - 8, "?", 7.0, 8.0)
-    c["green"].wait(7.0).lean(7.3, 10).lean(8.0, 10).lean(8.2, 0)
-    c["red"].wait(7.6).lean(7.8, -12)
-    c["red"].face("surprised", 8.4, 9.0)
-    st.mark(spot("sp", 14)[0], spot("sp")[1] - CH - 8, "!", 8.4, 9.1)
-    c["red"].wait(8.4).jump(8.8, 12).put(9.0).bow(10.0, 2)
-    st.say(spot("sp", 14)[0], spot("sp")[1] - CH - 4, "ごめん！", 9.0, 10.1)
-    c["red"].face("worried", 9.0, 10.0)
-    # 赤は自分の賞へ。緑は空いた自分の賞に乗る
-    if narrow:
-        c["red"].wait(10.1).hops(11.0, [spot("dmm")], h=14)
-    else:
-        c["red"].wait(10.1).hops(11.0, [spot("inn", 34), spot("dmm")], h=14)
-    c["green"].wait(10.1).walk(10.7, spot("sp")[0])
-    for n, at in (("green", 10.9), ("red", 11.4)):
-        k = mine[n]
-        st.anim(f"tile-{k}", st.pulse("", at, 1.3))
-        x, y, w = pos[k]
-        st.sparkle(x + 31, y + 31, at + .05, 16, 5, art.CHARS[n]["body"])
-        c[n].face("icon:" + A[k]["icon"], at + .1, 19.0)
-        c[n].wait(at).jump(at + .5, 10)
-    c["red"].jump(12.4, 14)
-    # みんなの賞（観客賞）へ。4体で乗るとカードがたわむ
-    ax, ay, aw = pos["aud"]
-    on = [ax + aw / 2 - 33 + i * 22 for i in range(4)]
-    if narrow:
-        paths = {"blue": [(on[0], ay)],
-                 "green": [(cw - 40, lines["award"]), (on[1], ay)],
-                 "purple": [(cw - 60, lines["award"]), (on[2] + 4, ay)],
-                 "red": [(spot("inn")[0], pos["inn"][1]), (cw - 80, lines["award"]), (on[3], ay)]}
-    else:
-        paths = {"blue": [(on[0], ay)],
-                 "green": [(spot("fin", 20)[0], ay), (on[1], ay)],
-                 "purple": [(spot("sp")[0], ay), (spot("fin", 30)[0], ay), (on[2], ay)],
-                 "red": [(spot("inn")[0], ay), (spot("sp", 10)[0], ay), (spot("fin", 40)[0], ay), (on[3], ay)]}
-    for i, n in enumerate(names):
-        c[n].wait(12.8 + i * .15).hops(14.6 + i * .1, paths[n], h=14)
-    card_bend = [(14.4, "translate(0px,0px) scale(1,1)"), (14.55, "translate(0px,3px) scale(1,1)"),
-                 (14.75, "translate(0px,0px) scale(1,1)"), (14.9, "translate(0px,4px) scale(1,1)"),
-                 (15.1, "translate(0px,0px) scale(1,1)")]
-    for n in names:
-        c[n].face("happy", 15.1, 17.4)
-    st.anim("tile-aud", st.pulse("", 15.2, 1.35))
-    st.sparkle(ax + 31, ay + 31, 15.25, 22, 7)
-    for i, n in enumerate(names):
-        y = c[n].y
-        c[n].wait(15.4 + i * .1).put(15.6 + i * .1, y=y - 10).put(15.8 + i * .1, y=y)
-        c[n].wait(16.3 + i * .1).put(16.5 + i * .1, y=y - 10).put(16.7 + i * .1, y=y)
-    st.say(on[1] + 11, ay - CH - 4, "みんなの賞！", 15.3, 17.0)
-    st.anim("card-aud", card_bend + [(15.6, "translate(0px,0px) scale(1,1)"), (15.75, "translate(0px,3px) scale(1,1)"),
-                                     (15.95, "translate(0px,0px) scale(1,1)"), (16.5, "translate(0px,0px) scale(1,1)"),
-                                     (16.65, "translate(0px,3px) scale(1,1)"), (16.85, "translate(0px,0px) scale(1,1)")])
-    # 見出しへ戻る
-    for i, n in enumerate(names):
-        c[n].wait(17.6 + i * .15).hops(20.0 + i * .12, [(on[i] + (40 if narrow else 120), lines["hack"]),
-                                                        (xs[i] - 8, ry)], h=18)
-    for i, n in enumerate(names):
-        c[n].wait(back_at[i]).vanish(back_at[i])
+        arrive = {"green": (T, T + 1.2, [(650, g.top(g.q3)), sp]),
+                  "purple": (T + .15, T + 1.3, [(615, g.top(g.q3)), inn]),
+                  "red": (T + .3, T + 1.2, [(dmm[0] - 30, g.top(g.q3)), dmm]),
+                  "blue": (T + .1, T + 1.2, [(770, g.feet(g.q2)), (740, g.award_line)])}
+        back = pc_back(g)
+    award_day(st, c, g, T, arrive, back)
     return st.svg()
 
 
