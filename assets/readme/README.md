@@ -9,7 +9,7 @@
 | `title-*.svg` | 作品名の見出し（h1）。最初はふつうの見出しに見え、少したつとキャラクターが文字の「。」と「:」で遊ぶアニメーション。文字はGitHub本体と同じフォント指定と大きさで描く（`python scripts/readme/title.py`）。GitHubは幅768px以上で横に欄を出して本文欄が狭くなるため、見出しが小さく縮まないよう、この画像だけは画面の幅1100px以下でスマホ用（`-narrow-`）に切り替える |
 | `split-*.svg` | 3台のスマホが1人のキャラクターを分けて操作するアニメーション（今のREADMEでは使っていない） |
 | `video-cta-*.svg` | 紹介動画のサムネイルの下に置く、YouTubeへの誘導 |
-| `awards-*.svg` | 受賞結果。見出しは目次と同じ形 |
+| `awards-*.svg` | 受賞結果。見出しは目次と同じ形で、カードは金沢と東京を結ぶ路線図（PCは横、スマホは縦）。約3.5秒たつと見出しの青・緑・紫の点がチームの3体になり、Hack Day の勝者 → Award Day への切符（路線の開通）→ 新幹線で東京へ → 発表と展示 → 受賞（紙吹雪）を演じて点に戻る。1周約38秒。「視差効果を減らす」の設定では止まった路線図だけを見せる（`python scripts/readme/awards_play.py`） |
 | `flow-*.svg` | 遊ぶまでの4ステップ |
 | `controllers-*.webp` | 3人の分担と、実際のスマホの操作の録画。`controllers-*.svg`（`docs/screenshots/device/` の撮影画像をJPEGで埋め込んだ下絵）に録画を重ねて焼き込む（[手順](../../scripts/readme/recordings/README.md#readmeの図への焼き込み)） |
 | `features-*.svg` | 特長の3枚のカード |
