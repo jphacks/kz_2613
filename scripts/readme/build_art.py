@@ -777,63 +777,7 @@ AWARDS = [
                         ("purple", "Innovator認定", None),
                         ("red", "合同会社DMM.com賞", None)]),
 ]
-MEDAL = {"gold": "#F5B300", "blue": "#24C2FA", "silver": "#9AA6B8", "purple": "#CB00EA", "red": "#FF4A3D"}
-
-
-def medal(kind, x, y):
-    """リボン付きのメダル。(x, y) は円の中心、半径12。"""
-    c = MEDAL[kind]
-    return (f'<path d="M{x - 9} {y - 24}L{x - 3} {y - 8}L{x + 3} {y - 8}L{x - 2} {y - 24}Z" fill="{c}" opacity=".55"/>'
-            f'<path d="M{x + 9} {y - 24}L{x + 3} {y - 8}L{x - 3} {y - 8}L{x + 2} {y - 24}Z" fill="{c}" opacity=".8"/>'
-            f'<circle cx="{x}" cy="{y}" r="12" fill="{c}"/>'
-            f'<circle cx="{x}" cy="{y}" r="8.5" fill="none" stroke="#FFFFFF" stroke-width="1.4" opacity=".7"/>'
-            + star(x, y, 5.5, "#FFFFFF"))
-
-
-def award_panel(x, y, w, h, title, sub, items, t):
-    b = [f'<rect x="{x + .5}" y="{y + .5}" width="{w - 1}" height="{h - 1}" rx="14" fill="none" stroke="{t["line"]}"/>',
-         text(x + 20, y + 32, title.upper(), 13, t["muted"], cls="gh", weight=700, extra=' letter-spacing="3"')]
-    if sub:
-        b.append(text(x + w - 20, y + 32, sub, 13, t["muted"], cls="gh", weight=600, anchor="end"))
-    b.append(f'<rect x="{x + 20}" y="{y + 44}" width="{w - 40}" height="1" fill="{t["line"]}"/>')
-    for k, (kind, name, note) in enumerate(items):
-        cy = y + 82 + k * 46
-        b.append(medal(kind, x + 34, cy + 4))
-        if note:
-            b += [text(x + 60, cy - 1, name, 16, t["ink"], cls="gh", weight=700),
-                  text(x + 60, cy + 18, note, 13, t["muted"], cls="gh", weight=600)]
-        else:
-            b.append(text(x + 60, cy + 10, name, 16, t["ink"], cls="gh", weight=700))
-    return "".join(b)
-
-
-def awards(t, narrow=False):
-    """受賞結果。背景の色は付けず、Hack Day と Award Day の枠を並べる（スマホは縦に積む）。"""
-    rows = max(len(items) for _, _, items in AWARDS)
-    ph = 70 + rows * 46
-    if narrow:
-        W, top = PHONE_W, 56
-        hs = [70 + len(items) * 46 for _, _, items in AWARDS]
-        H = top + sum(hs) + 12
-    else:
-        W, top = PC_W, 56
-        H = top + ph
-    # 見出しは目次と同じ形にし、枠の右端も目次の列の右端（右14pxの余白）にそろえる
-    b = [section_head("受賞結果", "JPHACKS 2026", W, t, 2 if narrow else 4)]
-    cw = W - 14
-    if narrow:
-        y = top
-        for (title, sub, items), h in zip(AWARDS, hs):
-            b.append(award_panel(0, y, cw, h, title, sub, items, t))
-            y += h + 12
-    else:
-        pw = (cw - 16) / 2
-        for k, (title, sub, items) in enumerate(AWARDS):
-            b.append(award_panel(k * (pw + 16), top, pw, ph, title, sub, items, t))
-    alt = "JPHACKS 2026 受賞結果。" + "。".join(
-        f"{title}{'（' + sub + '）' if sub else ''}：" + "、".join(n + (f"（{note}）" if note else "") for _, n, note in items)
-        for title, sub, items in AWARDS)
-    return svg(W, H, "".join(b), t, alt)
+# 受賞結果の図は awards_play.py で描く（ここのデータは文字だけのREADMEで使う）
 
 
 def main():
@@ -861,10 +805,8 @@ def main():
     for mode, t in THEMES.items():
         files[f"heads/toc-title-{mode}.svg"] = toc_title(t)
         files[f"heads/toc-title-narrow-{mode}.svg"] = toc_title(t, narrow=True)
-        files[f"awards-{mode}.svg"] = awards(t)
         files[f"video-cta-{mode}.svg"] = video_cta(t)
         files[f"video-cta-narrow-{mode}.svg"] = video_cta(t, narrow=True)
-        files[f"awards-narrow-{mode}.svg"] = awards(t, narrow=True)
     (OUT / "heads").mkdir(exist_ok=True)
     for name, body in files.items():
         (OUT / name).write_text(body + "\n", encoding="utf-8", newline="\n")
