@@ -16,6 +16,7 @@
 //   node scripts/readme/check_text_fit.mjs            # 問題があれば一覧にして終了コード1
 //   node scripts/readme/check_text_fit.mjs --all      # 基準（windows）で起きているものも出す
 //
+// PC版・中間の版（*-mid-*）・スマホ版のうち、README が使うものをすべて調べる。
 // 録画の図の切り絵（pieces/）は元の図（controllers-*.svg・focus-*.svg）を切り出したものなので、元の図で調べる。
 import {spawn} from 'node:child_process';
 import fs from 'node:fs';
@@ -44,7 +45,7 @@ function svgFiles() {
   const md = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
   const set = new Set();
   for (const [, s] of md.matchAll(/(?:src|srcset)="(assets\/readme\/[^"]+-light\.svg)"/g)) {
-    set.add(s.includes('/pieces/') ? s.replace(/pieces\/([a-z]+)-(narrow|wide)-light-.*$/, (_, n, m) => `${n}-${m === 'narrow' ? 'narrow-' : ''}light.svg`) : s);
+    set.add(s.includes('/pieces/') ? s.replace(/pieces\/([a-z]+)-(narrow|mid|wide)-light-.*$/, (_, n, m) => `${n}-${m === 'wide' ? '' : m + '-'}light.svg`) : s);
   }
   return [...set].filter(s => fs.existsSync(path.join(ROOT, s))).sort();
 }

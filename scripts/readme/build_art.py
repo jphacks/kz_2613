@@ -156,7 +156,7 @@ def phone_min_font(body):
 
 def svg(w, h, body, t, title, extra_css="", phone=None):
     import vector  # 循環 import を避けるためここで読む
-    if phone if phone is not None else w <= PHONE_W + 10:
+    if phone if phone is not None else (w <= PHONE_W + 10 or w == MID_W):
         body = phone_min_font(body)
     faces = font_faces()
     return vector.vectorize(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img">'
@@ -235,6 +235,9 @@ def icon(kind, x, y, c, t):
 # 図の文字の大きさが、そのまま画面上の大きさになる。本文は16px、図の文字は13px以上にする。
 PC_W = 838
 PHONE_W = 324
+# 中間の版（タブレット・狭いPC。本文欄555〜808px）。幅620で描き、本文欄の幅いっぱい（0.895〜1.30倍）に表示する
+# （scripts/readme/markup.py の MID）。縮んでも12.5px以上になるよう、文字はスマホ版と同じく14.1px以上にする。
+MID_W = 620
 
 STEPS = [("qr", "スマホでQR参加", "ブラウザで読み取るだけ。", "P1のスマホはPCリモコンに"),
          ("list", "ゲームを選ぶ", "インストール済みから選択。", "操作とキーを自動で読み取り"),
@@ -668,12 +671,16 @@ def wrap(s, size, avail):
     return [s[:i], s[i:]]
 
 
-def head_banner(num, jp, en, name, t, narrow=False):
-    W, H, body = head_parts(num, jp, en, t, narrow)
+def head_banner(num, jp, en, name, t, narrow=False, mid=False):
+    W, H, body = head_parts(num, jp, en, t, narrow, mid)
     return svg(W, H, body, t, jp)
 
 
-def head_parts(num, jp, en, t, narrow=False):
+# 中間の版の見出しで、見出しの文字に使える幅（右の舞台の、何も描かれない左端の帯までの幅。head_play.py と合わせる）
+MID_HEAD_AVAIL = 311
+
+
+def head_parts(num, jp, en, t, narrow=False, mid=False):
     """案D：見出しそのものを画像にする。番号だけ表示用の書体にし、英字ラベルと見出しはGitHub本体と同じ
     フォント指定（閲覧者の端末の標準フォント）で描く。
     スマホ版はPC版と同じ文字の大きさのまま幅360で描き、番号とラベルの下に見出しを置いて折り返す。"""
@@ -684,6 +691,14 @@ def head_parts(num, jp, en, t, narrow=False):
              text(58, 34, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"')]
         # 行頭の全角括弧は字下げに見えるので、半文字ぶん左へ寄せる
         b += [text(-13.5 if line[0] in "（「" else 0, 80 + 36 * k, line, 27, t["ink"], cls="gh", weight=600)
+              for k, line in enumerate(lines)]
+    elif mid:
+        # PC版と同じ並び（番号の右に英字ラベルと見出し）。右に舞台を置くので、長い見出しは2行に折り返す
+        lines = wrap(jp, 27, MID_HEAD_AVAIL)
+        W, H = MID_W, 68 + 36 * (len(lines) - 1)
+        b = [text(0, 52, num, 42, "url(#brand)", cls="disp", weight=400, length=44),
+             text(60, 26, en, 13, t["muted"], cls="gh", weight=600, extra=' letter-spacing="3"')]
+        b += [text(58 - (13.5 if k and line[0] in "（「" else 0), 55 + 36 * k, line, 27, t["ink"], cls="gh", weight=600)
               for k, line in enumerate(lines)]
     else:
         W, H = 840, 68
@@ -704,12 +719,13 @@ LINK = {"light": "#0969DA", "dark": "#4493F8"}
 TOC_EN = {num: en for num, _, en in HEADS}
 # 目次は表を使わず、左右1組の画像を本文欄の幅の49%ずつで並べる（表は幅いっぱいに広がらず中央に浮くため）。
 # PCは幅410、スマホは幅158で描き、どちらも本文欄の49%に縮めて表示すると項目名が約16pxになる。
-TOC_W = {False: 410, True: 158}
+# 中間の版は幅304（MID_W の49%）で描き、本文欄の49%で表示する（0.895〜1.30倍）。
+TOC_W = {False: 410, True: 158, "mid": 304}
 
 
-def toc_item(num, label, mode, narrow=False):
+def toc_item(num, label, mode, narrow=False, mid=False):
     t = THEMES[mode]
-    W = TOC_W[narrow]
+    W = TOC_W["mid" if mid else narrow]
     b = [text(0, 23, num, 21, "url(#brand)", cls="disp", weight=400, length=23),
          text(29, 21, label, 16, LINK[mode], cls="gh", weight=400)]
     if not narrow:
@@ -723,9 +739,10 @@ def toc_item(num, label, mode, narrow=False):
 PARTS = [("1", "製品概要", "PRODUCT", "01", "07"), ("2", "開発技術", "TECHNOLOGY", "08", "11")]
 
 
-def part_banner(part, jp, en, first, last, t, narrow=False):
-    """大見出し。項目の見出し（番号＋英字ラベル）と同じ書体の組み方で、背景の帯と大きな番号で格上に見せる。"""
-    W, H = (PHONE_W, 96) if narrow else (PC_W, 104)
+def part_banner(part, jp, en, first, last, t, narrow=False, mid=False):
+    """大見出し。項目の見出し（番号＋英字ラベル）と同じ書体の組み方で、背景の帯と大きな番号で格上に見せる。
+    中間の版はPC版と同じ組み方で、幅だけ MID_W にする。"""
+    W, H = (PHONE_W, 96) if narrow else (MID_W if mid else PC_W, 104)
     b = [f'<rect width="{W}" height="{H}" rx="18" fill="url(#bg)"/>',
          f'<clipPath id="card"><rect width="{W}" height="{H}" rx="18"/></clipPath><g clip-path="url(#card)">',
          f'<g transform="translate({W if narrow else W - 230} {H}) scale(-1 -1)">{dots(14, 14, 8, 5, 12, 2.4, t["dot2"])}</g>',
@@ -763,15 +780,15 @@ def section_head(jp, en, W, t, ls=4):
     return "".join(b)
 
 
-def toc_title(t, narrow=False):
+def toc_title(t, narrow=False, mid=False):
     """目次の見出し。"""
-    W = PHONE_W if narrow else PC_W
+    W = PHONE_W if narrow else MID_W if mid else PC_W
     return svg(W, 40, section_head("目次", "CONTENTS", W, t), t, "目次")
 
 
-def video_cta(t, narrow=False):
+def video_cta(t, narrow=False, mid=False):
     """サムネイルの下に置く、紹介動画への誘導。押せることが分かるよう、枠・再生の印・矢印を付ける。"""
-    W, H = (PHONE_W, 60) if narrow else (PC_W, 60)
+    W, H = (PHONE_W if narrow else MID_W if mid else PC_W, 60)
     red = "#FF2D55"
     b = [f'<rect x=".75" y=".75" width="{W - 1.5}" height="{H - 1.5}" rx="12" fill="none" stroke="{t["line"]}" stroke-width="1.5"/>',
          f'<circle cx="34" cy="{H / 2}" r="17" fill="{red}"/>',
@@ -782,10 +799,10 @@ def video_cta(t, narrow=False):
     return svg(W, H, "".join(b), t, "プロダクト紹介動画を見る（YouTube）")
 
 
-def toc_part(part, jp, en, mode, narrow=False):
+def toc_part(part, jp, en, mode, narrow=False, mid=False):
     """目次の列の見出し。大見出しと同じ PART 番号・英字ラベルで、どちらの列かを示す。"""
     t = THEMES[mode]
-    W = TOC_W[narrow]
+    W = TOC_W["mid" if mid else narrow]
     b = [text(0, 15, f"PART {part}", 13, "url(#brand)", cls="gh", weight=700, extra=' letter-spacing="2"'),
          text(0, 41, jp, 19, t["ink"], cls="gh", weight=700)]
     if not narrow:
@@ -821,17 +838,22 @@ def main():
     for num, label in TOC:
         for mode in THEMES:
             files[f"heads/toc-{num}-{mode}.svg"] = toc_item(num, label, mode)
+            files[f"heads/toc-{num}-mid-{mode}.svg"] = toc_item(num, label, mode, mid=True)
             files[f"heads/toc-{num}-narrow-{mode}.svg"] = toc_item(num, label, mode, narrow=True)
     for part, jp, en, first, last in PARTS:
         for mode, t in THEMES.items():
             files[f"heads/part-{part}-{mode}.svg"] = part_banner(part, jp, en, first, last, t)
+            files[f"heads/part-{part}-mid-{mode}.svg"] = part_banner(part, jp, en, first, last, t, mid=True)
             files[f"heads/part-{part}-narrow-{mode}.svg"] = part_banner(part, jp, en, first, last, t, narrow=True)
             files[f"heads/toc-part-{part}-{mode}.svg"] = toc_part(part, jp, en, mode)
+            files[f"heads/toc-part-{part}-mid-{mode}.svg"] = toc_part(part, jp, en, mode, mid=True)
             files[f"heads/toc-part-{part}-narrow-{mode}.svg"] = toc_part(part, jp, en, mode, narrow=True)
     for mode, t in THEMES.items():
         files[f"heads/toc-title-{mode}.svg"] = toc_title(t)
+        files[f"heads/toc-title-mid-{mode}.svg"] = toc_title(t, mid=True)
         files[f"heads/toc-title-narrow-{mode}.svg"] = toc_title(t, narrow=True)
         files[f"video-cta-{mode}.svg"] = video_cta(t)
+        files[f"video-cta-mid-{mode}.svg"] = video_cta(t, mid=True)
         files[f"video-cta-narrow-{mode}.svg"] = video_cta(t, narrow=True)
     (OUT / "heads").mkdir(exist_ok=True)
     for name, body in files.items():

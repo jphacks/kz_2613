@@ -18,6 +18,10 @@ import scenes  # noqa: E402
 
 OUT = art.OUT / "heads"
 PC_SCALE = .57  # 一番長い見出し（01）の右の空きに収まる大きさ
+# 中間の版の舞台の大きさ。縮めて（0.895倍）表示しても吹き出しの文字が12.5px以上になる（12×2.0×0.6×0.895≒12.9px）
+MID_SCALE = .6
+MID_EDGE = .17  # 舞台の左端のこの割合には何も描かれない（stage の説明）。見出しの文字はここまで使える
+MID_SHIFT = 36  # 舞台の右端の帯（約24%）にも何も描かれないので、図の右端からはみ出させて見出しの幅を広げる
 PC_W = 840  # 項目の見出しの幅（build_art.head_parts）
 BASE = 55  # PC版の見出しの文字の基準線
 BUBBLE = 2.0  # 縮めて表示するので、吹き出しの文字を大きくしておく（12px×2.0×0.57≒13.7px）
@@ -42,10 +46,18 @@ def stage(sc, x, y, k):
             f'viewBox="0 0 {scenes.W} {scenes.H}" overflow="visible">{"".join(sc.svg)}</svg></g>')
 
 
-def play_head(num, jp, en, make, t, narrow=False):
+def play_head(num, jp, en, make, t, narrow=False, mid=False):
     scenes.BUBBLE = BUBBLE
     sc, title, desc = make()
-    if narrow:
+    if mid:
+        # PC版と同じく見出しの右に舞台を置き、地面を見出しの最後の行の基準線にそろえる
+        k = MID_SCALE
+        W, H, body = art.head_parts(num, jp, en, t, mid=True)
+        x = art.MID_W - scenes.W * k + MID_SHIFT
+        assert x + scenes.W * k * .76 <= art.MID_W - 20  # 動きのある範囲（横幅の約19〜76%）は図の中に収まる
+        assert round(x + scenes.W * k * MID_EDGE - 58 - 8) == art.MID_HEAD_AVAIL
+        body = stage(sc, x, BASE + (H - 68) - scenes.G * k, k) + body
+    elif narrow:
         k = art.PHONE_W / scenes.W
         top = round(scenes.G * k) - 4  # 舞台の地面を、番号の行の少し上に置く
         W, H, body = art.head_parts(num, jp, en, t, narrow=True)
@@ -68,12 +80,12 @@ def play_head(num, jp, en, make, t, narrow=False):
 
 def main():
     # 場面の吹き出しの文字は12〜15px。縮めて表示しても、図の文字の下限（12.5px）を下回らないようにする
-    assert 12 * BUBBLE * min(PC_SCALE, art.PHONE_W / scenes.W) >= 12.5
+    assert 12 * BUBBLE * min(PC_SCALE, art.PHONE_W / scenes.W, MID_SCALE * .895) >= 12.5
     n = 0
     for num, jp, en in art.HEADS:
         for mode, t in art.THEMES.items():
-            for suffix, narrow in (("", False), ("-narrow", True)):
-                svg = play_head(num, jp, en, PLAY[num], t, narrow)
+            for suffix, narrow, mid in (("", False, False), ("-mid", False, True), ("-narrow", True, False)):
+                svg = play_head(num, jp, en, PLAY[num], t, narrow, mid)
                 ET.fromstring(svg)  # 属性の重複などがあると GitHub で画像が表示されないので、XMLとして読めることを確かめる
                 (OUT / f"play-{num}{suffix}-{mode}.svg").write_text(svg + "\n", encoding="utf-8", newline="\n")
                 n += 1
