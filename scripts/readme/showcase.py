@@ -1110,7 +1110,9 @@ def tech_card(kind, color, title, sub, items, w, t):
     b.append(f'<rect x="{pad}" y="{y - 8}" width="{w - pad * 2}" height="1" fill="{t["line"]}"/>')
     for name, desc in items:
         s1, n1 = para(pad, y + 16, name, 14, t["ink"], w - pad * 2, 20, 700)
-        s2, n2 = para(pad, y + 16 + n1 * 20 + 2, desc, 13, t["muted"], w - pad * 2, 20, 400)
+        # スマホ版の文字は art.svg が14pxに引き上げる（PHONE_MIN_FONT）ので、折り返しもその大きさで計算する
+        ds = 13 if w > art.PHONE_W else max(13, art.PHONE_MIN_FONT)
+        s2, n2 = para(pad, y + 16 + n1 * 20 + 2, desc, ds, t["muted"], w - pad * 2, 20, 400)
         b += [s1, s2]
         y += 16 + n1 * 20 + 2 + (n2 - 1) * 20 + 14
     return "".join(b), y + 8

@@ -155,7 +155,7 @@ def html(name, alt):
                 '</picture>')
         lines.append("".join(pics))
     # 旧形式で組んでから、画面幅・外観・動きを減らす設定ごとの版に分ける（scripts/readme/markup.py）。
-    # 画面幅 420〜1262px ではスマホ版を原寸で表示するので、本文欄の中央に置く。
+    # 画面幅 420〜1265px ではスマホ版を原寸で表示するので、本文欄の中央に置く。
     sys.path.insert(0, str(ROOT / "scripts" / "readme"))
     import markup
     return '<p align="center">' + markup.migrate("<br>\n".join(lines)) + "</p>"

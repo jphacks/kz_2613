@@ -11,6 +11,7 @@ data/local/readme-fonts/ に置いて再利用する。
 """
 import base64
 import io
+import re
 import urllib.request
 from pathlib import Path
 
@@ -135,8 +136,28 @@ def font_faces():
     return "".join(css)
 
 
-def svg(w, h, body, t, title, extra_css=""):
+# スマホ版の文字の最小。幅360pxのスマホ（本文欄294px）では図が0.91倍に縮むので、13pxだと11.8pxになる。
+# 録画の図（幅329px を本文欄の99.8%に並べる）はさらに0.89倍に縮むので、14.1pxにして12.5px以上を保つ（check_text_size.py）。
+PHONE_MIN_FONT = 14.1
+
+
+def phone_min_font(body):
+    """スマホ版の図の、PHONE_MIN_FONT より小さい文字を引き上げる。字幅を固定した文字（textLength）と、
+    見出しの舞台（入れ子の <svg>。吹き出しは飾りで、大きさは head_play.py が確かめる）は除く。"""
+    def bump(m):
+        tag = m.group(0)
+        if "textLength" in tag:
+            return tag
+        return re.sub(r'font-size="([\d.]+)"',
+                      lambda f: f'font-size="{max(float(f.group(1)), PHONE_MIN_FONT):g}"', tag)
+    parts = re.split(r"(<svg x=.*?</svg>)", body, flags=re.S)
+    return "".join(p if p.startswith("<svg x=") else re.sub(r"<text [^>]*>", bump, p) for p in parts)
+
+
+def svg(w, h, body, t, title, extra_css="", phone=None):
     import vector  # 循環 import を避けるためここで読む
+    if phone if phone is not None else w <= PHONE_W + 10:
+        body = phone_min_font(body)
     faces = font_faces()
     return vector.vectorize(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img">'
             f'<title>{title}</title><defs>'
@@ -411,7 +432,9 @@ def pipeline_phone(t):
             b.append(f'<path d="M{W / 2 - 8} {y + 4}l8 8 8-8" fill="none" stroke="url(#brand)" stroke-width="4" '
                      'stroke-linecap="round" stroke-linejoin="round"/>')
             y += 18
-    return svg(W, y, "".join(b), t, "分担AIの流れ：ゲームのファイルから操作を検出し、MiniLMと2層Transformerで推論して、3人のスマホ画面へ配分する")
+    # 利用者の判断で形を変えない図なので、スマホ版の文字の引き上げ（phone_min_font）もしない
+    return svg(W, y, "".join(b), t, "分担AIの流れ：ゲームのファイルから操作を検出し、MiniLMと2層Transformerで推論して、3人のスマホ画面へ配分する",
+               phone=False)
 
 
 # ---------- 区切りとフッター ----------

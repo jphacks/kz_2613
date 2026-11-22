@@ -1,7 +1,9 @@
 """README の画像（SVG）の文字が、GitHub上で何pxで表示されるかを見積もる。
 
-GitHub の本文欄は PC で 838px、幅390px のスマホで 324px（どちらも実測）。本文は16px。
-<picture> の source から、幅ごとに表示される画像を選び、表示幅 ÷ 画像の幅 で文字を縮めた大きさを出す。
+GitHub の本文欄の幅は、画面幅ごとに実測した値を使う（COLUMNS。本文は16px）。本文欄は画面幅どおりには
+変わらない（右の欄が下へ回る幅がある）ので、PC・タブレット・スマホの代表的な画面幅をすべて調べる。
+README の <picture>（scripts/readme/markup.py の新形式）から、その画面幅で表示される版を選び、
+表示幅 ÷ 画像の幅 で文字を縮めた大きさを出す。
 飾り（区切りの帯）を除き、MIN_PX より小さい文字があれば一覧にして終了コード1を返す。
 
     python scripts/readme/check_text_size.py
@@ -11,8 +13,14 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-# 名前 → (本文欄の幅, 画面の幅)。<source> の max-width は画面の幅と比べる
-COLUMNS = {"PC": (838, 1280), "スマホ": (324, 390)}
+# 名前 → (本文欄の幅, 画面の幅)。2026-11-22 に Chrome で GitHub のリポジトリのページを開いて測った本文欄の幅
+# （1265・1266px は 1262px の実測 805px から推定。スクロールバーのある Windows の値）。<source> の min-width・max-width は画面の幅と比べる
+COLUMNS = {
+    "PC 1440": (838, 1440), "PC 1280（1920×1080 の150%）": (823, 1280), "PC 1266（PC版の下限）": (808, 1266),
+    "1265": (808, 1265), "1262": (805, 1262), "1100": (643, 1100), "1024（iPad 横）": (567, 1024), "834（iPad 縦）": (457, 834),
+    "768": (391, 768), "744（iPad mini 縦）": (631, 744), "700": (602, 700), "430": (364, 430),
+    "420": (354, 420), "390（iPhone）": (324, 390), "360（Android）": (294, 360),
+}
 MIN_PX = 12.5
 DECOR = ("assets/readme/scenes/",)  # 区切りの帯。文字は吹き出しの飾りだけ
 # 利用者の判断で形を変えずに使う図（2026-11-20）。大きさは表示するが、検査の対象から外す
@@ -31,14 +39,28 @@ def svg_info(path):
     return width, sizes
 
 
+def matches(media, screen):
+    """media の条件（カンマ区切りは「または」）が、画面幅 screen・動きを減らさない設定で成り立つか。"""
+    def one(q):
+        ok = True
+        for feat, val in re.findall(r"\(([a-z-]+):\s*([^)]+)\)", q):
+            if feat == "min-width":
+                ok &= screen >= int(val.rstrip("px"))
+            elif feat == "max-width":
+                ok &= screen <= int(val.rstrip("px"))
+            elif feat == "prefers-reduced-motion":
+                ok &= val == "no-preference"
+            elif feat == "prefers-color-scheme":
+                ok &= val == "light"
+        return ok
+    return any(one(q) for q in media.split(","))
+
+
 def pick(block, screen):
-    """picture 要素から、画面の幅 screen（ライト）で表示される画像を返す。"""
+    """picture 要素が画面幅 screen（ライト）で表示する画像を返す。使わない画面で消す版（HIDE）なら None。"""
     for media, src in re.findall(r'<source media="([^"]+)" srcset="([^"]+)"', block):
-        if "prefers-color-scheme: dark" in media:
-            continue
-        limit = re.search(r"max-width: (\d+)px", media)
-        if limit and screen <= int(limit.group(1)):
-            return src
+        if matches(media, screen):
+            return None if src.endswith("/hide.svg") else src
     return re.search(r'<img src="([^"]+)"', block).group(1)
 
 
@@ -52,6 +74,8 @@ def main():
         print(f"== {name}（本文欄 {col}px、本文16px）")
         for block in blocks:
             src = pick(block, screen)
+            if src is None:
+                continue
             # 録画を焼き込んだ図（recordings/bake.py）は、元のSVGの文字で確かめる
             if src.endswith(".webp") and (ROOT / src[:-5]).with_suffix(".svg").exists():
                 src = src[:-5] + ".svg"
