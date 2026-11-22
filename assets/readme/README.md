@@ -47,7 +47,21 @@ READMEの相対パスの画像は `raw.githubusercontent.com` から配信され
 | M PLUS Rounded 1c（Bold・ExtraBold） | 締めの説明文、区切りの帯の吹き出し | [SIL Open Font License 1.1](fonts/OFL-MPLUSRounded1c.txt) |
 | Yusei Magic | 締めの「さあ、みんなで遊ぼう！」 | [SIL Open Font License 1.1](fonts/OFL-YuseiMagic.txt) |
 
-どちらも [google/fonts](https://github.com/google/fonts) の固定した版から取得します。キャラクターのまばたきなどの動きは、OSで「視差効果を減らす」を選んだ閲覧者には止まります。
+| Anton | グラデーションの数字（項目の番号・アンケートの割合・遅延のミリ秒など）。輪郭（`<path>`）にして描く | [SIL Open Font License 1.1](fonts/OFL-Anton.txt) |
+| Noto Sans（Bold・ExtraBold） | 「PART 1」「COMING SOON」。輪郭にして描く | [SIL Open Font License 1.1](fonts/OFL-NotoSans.txt) |
+| Noto Sans JP（Black） | 処理の流れの図の「①②③」。輪郭にして描く | [SIL Open Font License 1.1](fonts/OFL-NotoSansJP.txt) |
+
+どれも [google/fonts](https://github.com/google/fonts) の固定した版から取得します。キャラクターのまばたきなどの動きは、OSで「視差効果を減らす」を選んだ閲覧者には止まります。
+
+## Safari でぼやけさせない描き方
+
+iPhone の Safari（WebKit）は、`<img>` で表示した SVG の中の「グラデーションで塗った文字」「マスク」「フィルタ」を、いったん画像にしてから描きます。その画像は端末の倍率を考えずに作られるので、高解像度の画面ではぼやけます（2026-11-22、利用者が iPhone で見出しの番号のぼやけを確認。原因は WebKit の描き方からの推測で、WebKit の Windows 版では再現しない）。そこで、`build_art.svg()` の最後に `scripts/readme/vector.py` を通して、次のように直します。
+
+- グラデーションで塗った `<text>` は、上の表のフォントの輪郭（`<path>`）にする。字幅で並べる所（「95.2%」の「%」、「9.0ms」の「ms」）は `vector.width()` で同じフォントの字幅を測る。
+- 光彩（`filter="url(#glow)"`）は、にじみだけをフィルタで描き、元の図形はフィルタの外に重ねる。にじみはもともとぼやけた絵なので、画像になっても見た目は変わらない。
+- 項目の見出しの舞台の端のフェードは、マスクの代わりに、矩形で切り抜いて端に GitHub の背景色（ライト `#FFFFFF`、ダーク `#0D1117`）のグラデーションを重ねる（`head_play.stage`）。GitHub の Dark dimmed など、ほかの背景色のテーマでは端に帯が見える。
+
+README で画像（ラスタ）のまま表示するのは、実機の録画（`pieces/*.webp`）と紹介動画のサムネイル（PNG）だけです。
 
 ## 作り直し方
 

@@ -17,6 +17,7 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_art as art  # noqa: E402
+import vector  # noqa: E402
 from build_art import CHARS, PC_W, PHONE_W, THEMES, text  # noqa: E402
 
 SHOTS = art.ROOT / "docs" / "screenshots" / "device"
@@ -392,10 +393,10 @@ def bar(x, y, w, pct, t, h=6):
 def big_number(x, y, label, size, anchor="start"):
     """「95.2%」の % だけ小さくする。"""
     num = label.rstrip("%")
-    w = sum(size * (.48 if c != "." else .22) for c in num)  # 表示用の細い書体の幅の見積もり
+    w = vector.width(num, size)  # 数字は vector.py が輪郭にする書体で描かれるので、その字幅で並べる
     s = text(x, y, num, size, "url(#brand)", cls="disp", weight=400, anchor=anchor)
     if label.endswith("%"):
-        px = x + w + 3 if anchor == "start" else x + 3
+        px = x + w + 1 if anchor == "start" else x + 1  # 以前（Impact）の見た目と同じ、ほぼ詰めた間隔
         s += text(px, y, "%", size * .5, "url(#brand)", cls="disp", weight=400)
     return s
 
@@ -504,8 +505,8 @@ def latency(x, y, w, t):
     yy = y
     for k, (num, unit, label, sub) in enumerate(LATENCY):
         out.append(text(x, yy + 50, num, 52, "url(#brand)", cls="disp", weight=400))
-        nw = sum(52 * (.48 if c != "." else .22) for c in num)
-        out.append(text(x + nw + 6, yy + 50, unit, 20, t["muted"], cls="gh", weight=700))
+        nw = vector.width(num, 52)
+        out.append(text(x + nw + 3, yy + 50, unit, 20, t["muted"], cls="gh", weight=700))
         s, n = para(x, yy + 76, label, 15, t["ink"], w, 22, 700)
         out.append(s + text(x, yy + 76 + n * 22, sub, 13, t["muted"], cls="gh", weight=600))
         yy += 76 + n * 22 + 34
