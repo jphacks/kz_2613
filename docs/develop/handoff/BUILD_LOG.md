@@ -2950,3 +2950,13 @@
 - 合わせて直したもの：`check_text_size.py`（原点が0でない viewBox に対応）、`text_readme.py`（切り絵の `<p>` を1つの図として文字に置き換える。`README-text.md` は変化なし）、`assets/readme/README.md`・`scripts/readme/recordings/README.md`・`docs/readme-design.md`（画像12と13節）。
 - 確認：GitHub の本文と同じCSS（`max-width:100%`・`box-sizing:content-box`・本文16px・行の高さ1.5、画像を `<a>` で包む）のページをヘッドレス Chrome で、幅320・360・390・700・701・760・900・1012・1280、ライト・ダーク、倍率1〜3で撮り、各段の画像の上端と高さが段の中でそろうこと、継ぎ目の線が切れず・ずれないこと、文字がベクターで描かれることを確かめた。`python scripts/readme/check_text_size.py`・`python scripts/check-public-docs.py`・`python scripts/verify_overlay.py` PASS。GitHub 上（ブランチ `claude/readme-vector-text` の README）でも、幅1278（Chrome）と、端末エミュレーションの幅390・360・1012（ライト・ダーク）で、各段の画像の位置と高さが上と同じに並び、継ぎ目が切れず、録画が動くことを確かめた。GitHub は画像を `<a>` ではなく `<themed-picture>` で包むが、並び方は変わらなかった。
 - 追記：注力したことの図は、PC版で使わない最後の段が1行分の空きになり、図の下の余白が以前より約24px広かった。カードの下の段を図の下端（497）から473で切り、以前と同じ程度の余白にした。
+
+## 2026-11-22 — READMEの図を、iPhone の Safari でもぼやけないベクターにする（Claude Code）
+
+- 利用者の指摘：iPhone の Safari で、項目の見出しの「01」「02」がぼやける。見出しの番号は SVG の `<text>` で、ブランドのグラデーションで塗っていた。WebKit はグラデーションで塗った文字・マスク・フィルタをいったん画像（ImageBuffer）にしてから描き、`<img>` の SVG ではその画像を端末の倍率を考えずに作るため、ぼやけると判断した（推測。Playwright の WebKit 18.2〈Windows 版〉では再現せず、iPhone 実機での修正後の確認は利用者に頼む）。
+- 対応（`scripts/readme/vector.py`、`build_art.svg()` が書き出しの最後に通す）：
+  - グラデーションで塗った `<text>`（README の SVG で計288か所：項目と目次の番号、アンケートの割合、遅延のミリ秒、PART の番号、「COMING SOON」、引用符、①②③）を、フォントの輪郭の `<path>` にした。書体は google/fonts の固定した版の Anton（disp。Impact より数字が約7.5%高いので0.93倍）・Noto Sans（gh 700/800）・Noto Sans JP（jp 900）。`textLength`・`letter-spacing`・`text-anchor` を同じ計算で反映する。Anton の en dash は短く細いので em dash で描く。数字の後ろの「%」「ms」の位置は `vector.width()` で Anton の字幅を測り、以前（Impact）と同じ詰めた間隔にした。ライセンス文を `assets/readme/fonts/` に足した。
+  - 光彩（`filter="url(#glow)"`、ぼかし＋元の図形の合成）は、にじみだけのフィルタと、フィルタの外の元の図形に分けた。にじみはもともとぼやけた絵なので見た目は変わらない。
+  - 項目の見出しの舞台の端のフェード（mask）は、矩形の clipPath と、端に GitHub の背景色（ライト #FFFFFF・ダーク #0D1117）のグラデーションを重ねる形にした（`head_play.stage`）。重ねる色が見出しの文字にかからないよう、PC版は舞台を見出しの文字より先に描く。GitHub の Dark dimmed など背景色の違うテーマでは、舞台の端に帯が見える。
+- 結果：README が表示する SVG 207枚に、グラデーションで塗った文字・マスク・元の図形を含むフィルタは残っていない（スクリプトで検査）。README でラスタのまま表示するのは、実機の録画（`pieces/*.webp`）と紹介動画のサムネイル（PNG）だけ。
+- 確認：変更前後の SVG を Chrome と WebKit で並べて表示し、番号・単位・引用符・舞台・光彩・締めのカードが同じ見た目であることを確かめた。Windows の Chrome では、数字の書体が Impact から Anton（輪郭）に変わる。iPhone には Impact がなく、以前は端末の別の書体で表示されていたので、今後はどの端末でも同じ形になる。`python scripts/readme/check_text_size.py`・`python scripts/check-public-docs.py`・`python scripts/verify_overlay.py` PASS。`README-text.md` は変化なし。

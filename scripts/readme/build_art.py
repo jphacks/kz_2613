@@ -136,12 +136,12 @@ def font_faces():
 
 
 def svg(w, h, body, t, title, extra_css=""):
+    import vector  # 循環 import を避けるためここで読む
     faces = font_faces()
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img">'
+    return vector.vectorize(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img">'
             f'<title>{title}</title><defs>'
             '<filter id="glow" x="-30%" y="-30%" width="160%" height="160%">'
-            '<feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/>'
-            '<feMergeNode in="SourceGraphic"/></feMerge></filter>'
+            '<feGaussianBlur stdDeviation="1.6"/></filter>'  # にじみだけ。元の図形は vector.split_glow が上に重ねる
             '<linearGradient id="brand" x1="0" y1="0" x2="1" y2="0">'
             '<stop offset="0" stop-color="#C03BFF"/><stop offset=".55" stop-color="#6F86FF"/>'
             '<stop offset="1" stop-color="#22C4FA"/></linearGradient>'
