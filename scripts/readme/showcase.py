@@ -226,8 +226,9 @@ def fs(size, narrow):
 
 
 def sizer(narrow):
-    """中間の版2つでは、文字の大きさを段階の最小まで引き上げた値で折り返しを計算する。PC版・スマホ版はそのまま。"""
-    if tier(narrow) in ("mid", "compact"):
+    """PC版以外では、文字の大きさを段階の最小まで引き上げた値で折り返しを計算する（art.svg が実際にその大きさで描くので、
+    元の大きさで計算すると、端末のフォントによっては行が右端からはみ出す）。"""
+    if tier(narrow) != "wide":
         return lambda s: fs(s, narrow)
     return lambda s: s
 
@@ -488,8 +489,8 @@ def stats(t, narrow=False):
         y = 0
         for pct, label, q, sub in STATS:
             s1, n1 = para(118, 32, q, F(14), t["ink"], W - 118 - pad, 21, 700)
-            s2, _ = para(118, 32 + n1 * 22 + 4, sub, F(13), t["muted"], W - 118 - pad, 19, 600)
-            h = max(32 + n1 * 22 + 4 + 18, 76) + 14
+            s2, n2 = para(118, 32 + n1 * 22 + 4, sub, F(13), t["muted"], W - 118 - pad, 19, 600)
+            h = max(32 + n1 * 22 + 4 + (n2 - 1) * 19 + 18, 76) + 14
             b += [card(0, y, W, h, t), f'<g transform="translate(0 {y})">', big_number(pad, 52, label, 40), s1, s2,
                   bar(pad, h - 14, W - pad * 2, pct, t, 4), "</g>"]
             y += h + 10
@@ -625,7 +626,7 @@ def focus(t, narrow=False):
             s, h = phone(name, 0, y, fw, image, t)
             tx = fw + 16
             s1, n1 = para(tx, y + 62, title, 16, t["ink"], W - tx, 23, 700, balance=True)
-            s2, _ = para(tx, y + 62 + n1 * 23 + 6, sub, F(13), t["muted"], W - tx, 20, 600)
+            s2, _ = para(tx, y + 62 + n1 * 23 + 6, sub, F(13), t["muted"], W - tx, 20, 600, balance=True)
             b += [s, number(tx, y + 34, k + 1, 26, "start"), s1, s2]
             y += h + 22
         if tier(narrow) == "narrow":
@@ -1090,9 +1091,11 @@ def evaluation(t, narrow=False):
     """PC版と中間の版は2列、小さい中間の版とスマホ版は縦に積む。カードが広ければ指標名の右に棒を置く。"""
     F = sizer(narrow)
 
-    def one(title, sub, vals, w):
+    def one(title, sub, vals, w, rows=None):
+        """rows を渡すと、題をその行数ぶんの高さとして扱う（横に並べたカードで指標の行の高さをそろえる）。"""
         pad = 22
         s1, n1 = para(pad, pad + 16, title, F(15), t["ink"], w - pad * 2, 22, 700)
+        n1 = rows or n1
         s = [s1, text(pad, pad + 16 + n1 * 22, sub, 13, t["muted"], cls="gh", weight=600)]
         y = pad + 16 + n1 * 22 + 26
         # 指標名の列の幅。PC版は150。中間の版では引き上げた文字の大きさで、いちばん長い指標名に合わせる
@@ -1122,7 +1125,8 @@ def evaluation(t, narrow=False):
     else:
         W = TIER_W[tier(narrow)]
         cwid = (W - GAP) / 2
-        parts = [one(*st, cwid) for st in EVAL_SETS]
+        rows = max(para(0, 0, st[0], F(15), t["ink"], cwid - 44, 22, 700)[1] for st in EVAL_SETS)
+        parts = [one(*st, cwid, rows) for st in EVAL_SETS]
         H = max(h for _, h in parts)
         for k, (s, _) in enumerate(parts):
             x = k * (cwid + GAP)
