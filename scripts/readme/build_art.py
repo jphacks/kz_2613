@@ -326,6 +326,8 @@ def flow_phone(t):
 # ---------- 分担AIの流れ ----------
 # 利用者の判断で、この図は形を変えずに使い続ける（2026-11-20）。
 def pipeline(t, narrow=False):
+    if narrow in ("mid", "compact"):  # 中間の版2つは、スマホ版と同じ形を幅に合わせて広げる（形は変えない）
+        return pipeline_phone(t, MID_W if narrow == "mid" else COMPACT_W)
     if narrow:
         return pipeline_phone(t)
     PH = 450  # 1枚の高さ
@@ -426,41 +428,44 @@ def chip(x, y, s, t, color=None, mono=True, size=12.5):
             + text(x + w / 2, y + 15.5, s, size, ink, cls="mono" if mono else "jp", weight=700, anchor="middle"), w)
 
 
-def pipeline_phone(t):
-    """分担AIの流れ（スマホ版）。3段の要点だけを縦に並べ、詳しい説明は下の本文に任せる。"""
-    W = PHONE_W
+def pipeline_phone(t, W=PHONE_W):
+    """分担AIの流れ（スマホ版）。3段の要点だけを縦に並べ、詳しい説明は下の本文に任せる。
+    W を渡すと中間の版：同じ形のまま幅 W に広げ、文字はその版の最小（14.1・14.8px）まで大きくする。"""
+    mid = W != PHONE_W
+    fz = (COMPACT_MIN_FONT if W == COMPACT_W else PHONE_MIN_FONT) if mid else None
+    F = (lambda s: max(s, fz)) if mid else (lambda s: s)
     blue, green, purple = (CHARS[n]["body"] for n in ("blue", "green", "purple"))
     rows = [("①", "ゲームのファイルから自動検出", "19系統の設定・データを解析"),
             ("②", "分担AIが意味と関係を推論", "MiniLM＋独自の2層Transformer"),
             ("③", "スマホ画面へ自動で配分", "Rustでオフライン推論・約80ms")]
     b, y = [], 0
     for i, (n, h1, h2) in enumerate(rows):
-        rh = 118
+        rh = 118 if not mid else 114
         b += [f'<rect x="1" y="{y + 1}" width="{W - 2}" height="{rh - 2}" rx="16" fill="{t["panel"]}" stroke="{t["line"]}"/>',
               text(14, y + 30, n, 20, "url(#brand)", weight=900),
               text(40, y + 29, h1, 16, t["ink"], weight=900),
-              text(40, y + 50, h2, 12.5, t["muted"], weight=700)]
-        cx, cy = 14, y + 66
+              text(40, y + 50 + (3 if mid else 0), h2, F(12.5), t["muted"], weight=700)]
+        cx, cy = 14, y + 66 + (4 if mid else 0)
         if i == 0:
             for label, c in (("W", blue), ("A", blue), ("S", blue), ("D", blue), ("Space", blue), ("Mouse", green),
                              ("MouseL", purple), ("R", purple), ("Wheel", purple)):
-                svg_, w = chip(cx, cy, label, t, c)
+                svg_, w = chip(cx, cy, label, t, c, size=F(12.5))
                 if cx + w > W - 12:
                     cx, cy = 14, cy + 26
-                    svg_, w = chip(cx, cy, label, t, c)
+                    svg_, w = chip(cx, cy, label, t, c, size=F(12.5))
                 b.append(svg_)
                 cx += w + 6
         elif i == 1:
             for label in ("操作名", "→ 意味ベクトル", "→ 分担"):
-                svg_, w = chip(cx, cy, label, t, None, mono=False)
+                svg_, w = chip(cx, cy, label, t, None, mono=False, size=F(12.5))
                 b.append(svg_)
                 cx += w + 6
         else:
             for k, (name, p, role) in enumerate((("blue", "P1", "移動"), ("green", "P2", "視点"), ("purple", "P3", "アクション"))):
                 px = 14 + k * (W - 20) / 3
                 b += [char(name, px - 6, cy - 6, .3, t, delay=k * .4),
-                      text(px + 26, cy + 12, p, 12, CHARS[name]["body"] if name != "green" else "#2FB52E", weight=900),
-                      text(px + 26, cy + 30, role, 13, t["ink"], weight=800)]
+                      text(px + 26, cy + 12, p, F(12), CHARS[name]["body"] if name != "green" else "#2FB52E", weight=900),
+                      text(px + 26, cy + 30, role, F(13), t["ink"], weight=800)]
         y += rh
         if i < 2:
             b.append(f'<path d="M{W / 2 - 8} {y + 4}l8 8 8-8" fill="none" stroke="url(#brand)" stroke-width="4" '
@@ -468,7 +473,7 @@ def pipeline_phone(t):
             y += 18
     # 利用者の判断で形を変えない図なので、スマホ版の文字の引き上げ（phone_min_font）もしない
     return svg(W, y, "".join(b), t, "分担AIの流れ：ゲームのファイルから操作を検出し、MiniLMと2層Transformerで推論して、3人のスマホ画面へ配分する",
-               phone=False)
+               phone=None if mid else False)
 
 
 # ---------- 区切りとフッター ----------
@@ -887,7 +892,7 @@ def main():
         for kind, draw in (("split", split_demo), ("flow", flow), ("pipeline", pipeline), ("footer", footer)):
             files[f"{kind}-{mode}.svg"] = draw(t)
             files[f"{kind}-narrow-{mode}.svg"] = draw(t, narrow=True)
-            if kind in ("flow", "footer"):  # 中間の版2つ（scripts/readme/markup.py の TIERS）
+            if kind in ("flow", "footer", "pipeline"):  # 中間の版2つ（scripts/readme/markup.py の TIERS）
                 files[f"{kind}-mid-{mode}.svg"] = draw(t, narrow="mid")
                 files[f"{kind}-compact-{mode}.svg"] = draw(t, narrow="compact")
     for i, (num, jp, en) in enumerate(HEADS):

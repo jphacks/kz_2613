@@ -217,6 +217,8 @@ WIDE_HIDE = media_of(complement(TIERS["wide"][2]))
 def collapse(text):
     """新形式を、図1つにつき旧形式の <picture> 1つに戻す（読むだけの道具向け。text_readme.py が使う）。"""
     def group(m):
+        if "/pieces/" in m.group(0):  # 録画の図の切り絵は recordings/pieces.py が段階ごとの幅で組むので、そのまま残す
+            return m.group(0)
         pics = [(media, dark, img) for media, dark, img in NEW_PIC.findall(m.group(0))]
         first, wide = pics[0], next(p for p in pics if p[0] in (WIDE_HIDE, f"{MOTION['anim']}, {WIDE_HIDE}"))
         nl, wl = attr(first[2], "src"), attr(wide[2], "src")

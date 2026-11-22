@@ -263,24 +263,29 @@ def caption(W, t, title, sub):
     """図の中の小見出し（何の例か）。(svg, 高さ) を返す。"""
     s1, n1 = para(0, 18, title, 16, t["ink"], W, 23, 700)
     y = 18 + (n1 - 1) * 23
-    s2, n2 = para(0, y + 22, sub, 13, t["muted"], W, 19, 600)
+    sz = art.COMPACT_MIN_FONT if W == art.COMPACT_W else art.PHONE_MIN_FONT if W == art.MID_W else 13
+    s2, n2 = para(0, y + 22, sub, sz, t["muted"], W, 19, 600)
     y += 22 + (n2 - 1) * 19
     return s1 + s2 + f'<rect x="0" y="{y + 16}" width="{W - 14}" height="1.5" rx=".75" fill="{t["line"]}"/>', y + 40
 
 
 def controllers(t, narrow=False):
-    W0 = PHONE_W if narrow else PC_W
+    """PC版は3台を横に並べ、ほかはスマホ画面を左、説明を右にした行を積む。
+    中間の版2つのスマホ画面は、スマホ版と同じ大きさ（幅110）・同じ並びにする。録画の切り絵（recordings/pieces.py）で、
+    スマホ版の録画の枠をそのまま使い、文字の欄だけを広げて切り出すため。"""
+    W0 = TIER_W[tier(narrow)]
+    F = sizer(narrow)
     cap, ch = caption(W0, t, "例：3人で『Minecraft』を遊ぶ場合", "各スマホには、担当する操作だけを並べたコントローラーが表示されます（実際の画面）。")
-    if narrow:
-        W, fw = PHONE_W, 110
+    if tier(narrow) != "wide":
+        W, fw = W0, 110
         b = [cap]
         y = ch
         for name, p, role, sub, image, ops, ui in ROLES:
             s, h = phone(name, 0, y, fw, image, t)
             tx = fw + 16
             b += [s, role_head(tx, y + 8, name, p, role, sub, t)]
-            s1, n1 = para(tx, y + 62, ops, 14, t["ink"], W - tx, 21, 600)
-            s2, n2 = para(tx, y + 62 + n1 * 21 + 8, ui, 13, t["muted"], W - tx, 20)
+            s1, n1 = para(tx, y + 62, ops, F(14), t["ink"], W - tx, 21, 600)
+            s2, n2 = para(tx, y + 62 + n1 * 21 + 8, ui, F(13), t["muted"], W - tx, 20)
             b += [s1, s2]
             y += h + 22
         H = y - 22
@@ -594,19 +599,39 @@ def latency(x, y, w, t):
     return "".join(out), yy - y - 34
 
 
+def latency_row(x, y, w, t, F):
+    """低遅延の2つの数値を横に並べる（中間の版）。(svg, 高さ) を返す。"""
+    out, hs = [], []
+    cw_ = (w - 24) / 2
+    for k, (num, unit, label, sub) in enumerate(LATENCY):
+        xx = x + k * (cw_ + 24)
+        out.append(text(xx, y + 50, num, 52, "url(#brand)", cls="disp", weight=400))
+        out.append(text(xx + vector.width(num, 52) + 3, y + 50, unit, 20, t["muted"], cls="gh", weight=700))
+        s, n = para(xx, y + 76, label, F(15), t["ink"], cw_, 22, 700)
+        out.append(s + text(xx, y + 76 + n * 22, sub, F(13), t["muted"], cls="gh", weight=600))
+        hs.append(76 + n * 22)
+    return "".join(out), max(hs)
+
+
 def focus(t, narrow=False):
+    """PC版は3枚のカードを横に並べ、ほかはスマホ画面を左、説明を右にした行を積んで、低遅延のカードを下に置く。
+    中間の版2つのスマホ画面はスマホ版と同じ大きさ・並び（controllers と同じ理由）。低遅延の2つの数値は横に並べる。"""
     b = []
-    if narrow:
-        W, fw = PHONE_W, 110
+    F = sizer(narrow)
+    if tier(narrow) != "wide":
+        W, fw = TIER_W[tier(narrow)], 110
         y = 0
         for k, (name, image, title, sub) in enumerate(FOCUS):
             s, h = phone(name, 0, y, fw, image, t)
             tx = fw + 16
             s1, n1 = para(tx, y + 62, title, 16, t["ink"], W - tx, 23, 700, balance=True)
-            s2, _ = para(tx, y + 62 + n1 * 23 + 6, sub, 13, t["muted"], W - tx, 20, 600)
+            s2, _ = para(tx, y + 62 + n1 * 23 + 6, sub, F(13), t["muted"], W - tx, 20, 600)
             b += [s, number(tx, y + 34, k + 1, 26, "start"), s1, s2]
             y += h + 22
-        s, h = latency(22, y + 70, W - 44, t)
+        if tier(narrow) == "narrow":
+            s, h = latency(22, y + 70, W - 44, t)
+        else:
+            s, h = latency_row(22, y + 70, W - 44, t, F)
         b += [card(0, y, W, h + 96, t), number(22, y + 38, 3, 26, "start"),
               text(62, y + 36, "違和感のない低遅延", 16, t["ink"], cls="gh", weight=700), s]
         H = y + h + 96
@@ -1114,16 +1139,16 @@ MESSAGE = ("操作を分担する不自由さが、\nそのまま新しい面白
 
 
 def message(t, narrow=False):
-    """注記の囲みではなく、大きな引用符とグラデーションの線で、この製品の考え方を示す。"""
-    W = PHONE_W if narrow else PC_W
-    size, lh = (18, 28) if narrow else (28, 40)
-    q = 40 if narrow else 56
+    """注記の囲みではなく、大きな引用符とグラデーションの線で、この製品の考え方を示す。
+    見出しの2行（「操作を分担する不自由さが、」「そのまま新しい面白さになる。」）が折り返さない大きさを、版ごとに選ぶ。"""
+    W = TIER_W[tier(narrow)]
+    size, lh, q = {"narrow": (18, 28, 40), "compact": (24, 35, 50), "mid": (28, 40, 56), "wide": (28, 40, 56)}[tier(narrow)]
     tx = q + 10
     b = [text(0, q * 1.05, "“", q * 1.7, "url(#brand)", cls="disp", weight=400)]
     s1, n1 = para(tx, size + 8, MESSAGE[0], size, t["ink"], W - tx - 14, lh, 800)
     y = size + 8 + (n1 - 1) * lh + 22
     b.append(f'<rect x="{tx}" y="{y}" width="56" height="4" rx="2" fill="url(#brand)"/>')
-    s2, n2 = para(tx, y + 34, MESSAGE[1], 15, t["muted"], W - tx - 14, 25, 600)
+    s2, n2 = para(tx, y + 34, MESSAGE[1], sizer(narrow)(15), t["muted"], W - tx - 14, 25, 600)
     b += [s1, s2]
     H = y + 34 + (n2 - 1) * 25 + 8
     return finish(W, H, b, t, MESSAGE[0] + MESSAGE[1], top=18, bottom=34)
@@ -1251,21 +1276,21 @@ FIGURES = {"controllers": controllers, "features": features, "genres": genres, "
 
 
 # 中間の版2つを描く図（ほかの図は、その画面幅でスマホ版を原寸で置く。markup.py）
-TIERED = {"techstack", "features", "genres", "stats", "roadmap", "evaluation", "architecture"}
+TIERED = {"techstack", "features", "genres", "stats", "roadmap", "evaluation", "architecture", "message", "controllers", "focus"}
 
 
 def main():
     n = 0
-    for name, make in FIGURES.items():
-        for mode, t in THEMES.items():
-            tiers = (("", False), ("-narrow", True))
-            if name in TIERED:
-                tiers += (("-mid", "mid"), ("-compact", "compact"))
-            for suffix, narrow in tiers:
-                s = make(t, narrow)
-                ET.fromstring(s)  # 属性の重複などがあると GitHub で画像が表示されないので、XMLとして読めることを確かめる
-                (art.OUT / f"{name}{suffix}-{mode}.svg").write_text(s + "\n", encoding="utf-8", newline="\n")
-                n += 1
+    # 中間の版は、PC版・スマホ版をすべて書いたあとに書く（画面のクリップの番号が通し番号なので、
+    # 先に書くとPC版・スマホ版の番号が変わり、見た目が同じでも差分が出る）
+    jobs = [(name, make, mode, t, suffix, narrow) for tiers in ((("", False), ("-narrow", True)), (("-mid", "mid"), ("-compact", "compact")))
+            for name, make in FIGURES.items() for mode, t in THEMES.items() for suffix, narrow in tiers
+            if narrow in (False, True) or name in TIERED]
+    for name, make, mode, t, suffix, narrow in jobs:
+        s = make(t, narrow)
+        ET.fromstring(s)  # 属性の重複などがあると GitHub で画像が表示されないので、XMLとして読めることを確かめる
+        (art.OUT / f"{name}{suffix}-{mode}.svg").write_text(s + "\n", encoding="utf-8", newline="\n")
+        n += 1
     print(f"wrote {n} files to {art.OUT}")
 
 

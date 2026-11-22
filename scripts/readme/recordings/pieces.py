@@ -67,8 +67,60 @@ LAYOUT = {
     },
 }
 
-MODES = {"wide": "", "narrow": "narrow-"}
+MODES = {"wide": "", "narrow": "narrow-", "compact": "compact-", "mid": "mid-"}
 THEMES = ["light", "dark"]
+# 中間の版2つ（scripts/readme/markup.py の版の段階）の図の幅。showcase.py は、中間の版のスマホ画面をスマホ版と同じ大きさ・
+# 並びで描くので、録画の枠はスマホ版の WebP をそのまま使い、文字の枠だけを中間の版の図から切り出す。
+TIER_W = {"compact": 460, "mid": 620}
+
+
+def _rec_y(name, mode):
+    """図の中の最初の録画（スマホ画面）の上端。"""
+    s = (ART / f"{name}-{MODES[mode]}light.svg").read_text(encoding="utf-8")
+    return float(re.search(r'<image [^>]*y="([\d.]+)"[^>]*data-recording=', s).group(1))
+
+
+def _svg_h(name, mode):
+    s = (ART / f"{name}-{MODES[mode]}light.svg").read_text(encoding="utf-8")
+    return float(re.search(r'<svg[^>]* height="([\d.]+)"', s).group(1))
+
+
+def spec_of(name, mode):
+    """版の切り方。中間の版2つは、スマホ版の段を、スマホ画面の上下の位置の差（dy）だけずらして作る。
+    段の数と、各段の枠の種類はスマホ版と同じ。最後の段（文字だけ）の下端は図の下端にする。"""
+    if mode in LAYOUT[name]:
+        return LAYOUT[name][mode]
+    base = LAYOUT[name]["narrow"]
+    dy = _rec_y(name, mode) - _rec_y(name, "narrow")
+    rows = []
+    for k, row in enumerate(base["rows"]):
+        if row is None:
+            rows.append(None)
+            continue
+        y0, y1, kinds = row
+        y0 = 0 if k == 0 else y0 + dy
+        y1 = y1 + dy
+        if k == len(base["rows"]) - 1 and "webp" not in kinds:
+            y1 = _svg_h(name, mode)
+        rows.append((y0, y1, kinds))
+    return dict(unit=TIER_W[mode] / TOTAL, rows=rows)
+
+
+def slots_of(name, mode):
+    """各段の枠の幅（%）。PC版・スマホ版は SLOTS。中間の版2つは、スマホ画面の枠をスマホ版と同じ図の座標の幅
+    （33.8% × スマホ版の unit）にし、残りを文字の枠で分ける。"""
+    if mode in ("wide", "narrow"):
+        return SLOTS[name]
+    phone_w = SLOTS[name][1][0] * LAYOUT[name]["narrow"]["unit"]
+    p = round(phone_w / spec_of(name, mode)["unit"], 3)
+    out = []
+    for slots in SLOTS[name]:
+        if len(slots) == 1:
+            out.append([TOTAL])
+        else:
+            rest = round((TOTAL - p) / (len(slots) - 1), 3)
+            out.append([p] + [rest] * (len(slots) - 1))
+    return out
 
 
 def cells(name, mode):
@@ -79,11 +131,11 @@ def cells(name, mode):
     枠の幅%に比例させ（wide は 1% あたり q×10 画素、段の WebP が1枚なら約2倍の画素）、
     段の高さ h もその画素数から逆算して、SVG の viewBox にも同じ h を使う。
     """
-    spec = LAYOUT[name][mode]
+    spec = spec_of(name, mode)
     u = spec["unit"]
     q = spec.get("q")
     out = []
-    for r, (slots, row) in enumerate(zip(SLOTS[name], spec["rows"])):
+    for r, (slots, row) in enumerate(zip(slots_of(name, mode), spec["rows"])):
         if row is None:
             continue
         y0, y1, kinds = row
@@ -109,6 +161,8 @@ def cells(name, mode):
 
 
 def piece_name(name, mode, theme, r, c, kind):
+    if kind == "webp" and mode in TIER_W:  # 中間の版の録画の枠は、スマホ版の WebP をそのまま使う
+        mode = "narrow"
     return f"{name}-{mode}-{theme}-{r + 1}{'abc'[c]}.{kind}"
 
 
@@ -132,32 +186,33 @@ def write_svg_pieces(name, mode, theme):
 
 
 def html(name, alt):
-    """READMEに入れる <p>…</p>。1つ目の画像に図全体の代替テキストを付ける。"""
-    lines = []
-    first = True
-    for r, slots in enumerate(SLOTS[name]):
-        pics = []
-        for c, pct in enumerate(slots):
-            src = {}
-            for mode in MODES:
-                row = LAYOUT[name][mode]["rows"][r]
-                for theme in THEMES:
-                    src[mode, theme] = BLANK if row is None else \
-                        f"assets/readme/pieces/{piece_name(name, mode, theme, r, c, row[2][c])}"
-            a = alt if first else ""
-            first = False
-            pics.append(
-                '<picture>'
-                f'<source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="{src["narrow", "dark"]}">'
-                f'<source media="(max-width: 700px)" srcset="{src["narrow", "light"]}">'
-                f'<source media="(prefers-color-scheme: dark)" srcset="{src["wide", "dark"]}">'
-                f'<img src="{src["wide", "light"]}" width="{pct:g}%" align="absbottom" alt="{a}">'
-                '</picture>')
-        lines.append("".join(pics))
-    # 旧形式で組んでから、画面幅・外観・動きを減らす設定ごとの版に分ける（scripts/readme/markup.py）。
+    """READMEに入れる <p>…</p>。1つ目の画像に図全体の代替テキストを付ける。
+
+    枠1つを、版の段階（scripts/readme/markup.py の TIERS）ごとの <picture> にして並べる。段階ごとに枠の幅（%）が
+    違ってよい（中間の版2つはスマホ画面の枠が細い）。その段階で使わない段（None）の枠は出さない
+    （その段は1行分の空きになるので、もともと空きのある所に置いてある）。markup.py rebuild はこの段落を組み直さない。"""
     sys.path.insert(0, str(ROOT / "scripts" / "readme"))
     import markup
-    return "<p>" + markup.migrate("<br>\n".join(lines)) + "</p>"
+    lines = []
+    first = True
+    for r in range(len(SLOTS[name])):
+        pics = []
+        for c in range(len(SLOTS[name][r])):
+            groups = {}
+            for tier, (_, _, intervals) in markup.TIERS.items():
+                row = spec_of(name, tier)["rows"][r]
+                if row is None:
+                    continue
+                pct = slots_of(name, tier)[r][c]
+                src = {th: f"assets/readme/pieces/{piece_name(name, tier, th, r, c, row[2][c])}" for th in THEMES}
+                key = (src["light"], src["dark"], f' width="{pct:g}%" align="absbottom"', tier in ("narrow", "wide"))
+                groups.setdefault(key, []).extend(intervals)
+            for (light, dark, attrs, _), intervals in groups.items():
+                for p in markup.versions(intervals, light, dark, attrs, alt if first else ""):
+                    pics.append(p if first else re.sub(r' alt="[^"]*"', ' alt=""', p))
+                    first = False
+        lines.append("".join(pics))
+    return "<p>" + "<br>\n".join(lines) + "</p>"
 
 
 def write_blank():

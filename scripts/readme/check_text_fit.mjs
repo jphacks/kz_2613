@@ -45,7 +45,7 @@ function svgFiles() {
   const md = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
   const set = new Set();
   for (const [, s] of md.matchAll(/(?:src|srcset)="(assets\/readme\/[^"]+-light\.svg)"/g)) {
-    set.add(s.includes('/pieces/') ? s.replace(/pieces\/([a-z]+)-(narrow|mid|wide)-light-.*$/, (_, n, m) => `${n}-${m === 'wide' ? '' : m + '-'}light.svg`) : s);
+    set.add(s.includes('/pieces/') ? s.replace(/pieces\/([a-z]+)-(narrow|compact|mid|wide)-light-.*$/, (_, n, m) => `${n}-${m === 'wide' ? '' : m + '-'}light.svg`) : s);
   }
   return [...set].filter(s => fs.existsSync(path.join(ROOT, s))).sort();
 }
