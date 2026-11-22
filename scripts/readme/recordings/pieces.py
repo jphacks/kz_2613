@@ -16,6 +16,7 @@ READMEでは <img width="〇%" align="absbottom"> を隙間なく並べて1枚�
   （focus の narrow の説明文は、wide の3列に合わせて2つの枠に分けている）。
 """
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -153,7 +154,11 @@ def html(name, alt):
                 f'<img src="{src["wide", "light"]}" width="{pct:g}%" align="absbottom" alt="{a}">'
                 '</picture>')
         lines.append("".join(pics))
-    return "<p>" + "<br>\n".join(lines) + "</p>"
+    # 旧形式で組んでから、画面幅・外観・動きを減らす設定ごとの版に分ける（scripts/readme/markup.py）。
+    # 画面幅 420〜1262px ではスマホ版を原寸で表示するので、本文欄の中央に置く。
+    sys.path.insert(0, str(ROOT / "scripts" / "readme"))
+    import markup
+    return '<p align="center">' + markup.migrate("<br>\n".join(lines)) + "</p>"
 
 
 def write_blank():
@@ -163,6 +168,5 @@ def write_blank():
 
 
 if __name__ == "__main__":
-    import sys
     for n in sys.argv[1:] or SLOTS:
         print(html(n, "（代替テキスト）"))
