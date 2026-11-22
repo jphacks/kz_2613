@@ -588,71 +588,151 @@ def ride(st, g, c, board, pos, t_in, t_out, layer, get_win_pos):
     return outs
 
 
-SCENE = 3.3  # プレゼンと展示の場面の長さ（秒）
+SCENE = 4.7  # 発表と展示の場面の長さ（秒）
+PR = 2.2  # そのうち発表の長さ
 
 
-def booth_art(st, bx, fy):
-    """プレゼンの画面（スライドが2枚切り替わる）と、展示のブース（机とゲームを映したモニター）。"""
+def person(x, y, fill):
+    """観客・来場者のシルエット（頭と肩）。(x, y) は足もと。"""
+    return (f'<circle cx="{x}" cy="{y - 16}" r="5" fill="{fill}"/>'
+            f'<path d="M{x - 8} {y}Q{x - 8} {y - 10} {x} {y - 10}Q{x + 8} {y - 10} {x + 8} {y}Z" fill="{fill}"/>')
+
+
+def scene(st, c, P0, S):
+    """東京で降りたあと、Award Day の発表と展示をする（セリフなし）。S は配置の辞書。
+    発表：スポットライトの当たる演台で青がマイクに向かって話し、大きな画面のスライドが3枚切り替わる（題名→スマホで分担→棒グラフ）。
+    緑と紫は画面を指して補い、最後に3体でおじぎをすると、観客が拍手する（跳ねて星が舞う）。
+    展示：「Re:Cooplay」ののぼりを掲げたブースに観客が集まり、緑が来場者にスマホを手渡す。来場者が遊ぶとモニターの主人公が跳ね、
+    「!」が上がる。"""
     t = st.t
     dark = t is art.THEMES["dark"]
     panel = "#1B1F2C" if dark else "#FFFFFF"
     edge = "#8A95A8" if dark else "#A9B3C3"
     soft = "#3A4255" if dark else "#D8DEE8"
-    board = (f'<rect x="{bx - 1.5}" y="{fy - 9}" width="3" height="9" fill="{edge}"/>'
-             f'<rect x="{bx - 9}" y="{fy - 2}" width="18" height="2" rx="1" fill="{edge}"/>'
-             f'<rect x="{bx - 23}" y="{fy - 36}" width="46" height="28" rx="3.5" fill="{panel}" stroke="{edge}" stroke-width="1.5"/>'
-             f'<g class="sl1"><rect x="{bx - 17}" y="{fy - 31}" width="22" height="3.5" rx="1.75" fill="url(#brand)"/>'
-             f'<rect x="{bx - 17}" y="{fy - 24}" width="30" height="2.5" rx="1.25" fill="{soft}"/>'
-             f'<rect x="{bx - 17}" y="{fy - 19}" width="24" height="2.5" rx="1.25" fill="{soft}"/></g>'
-             f'<g class="sl2">' + "".join(
-                 f'<rect class="bar{i}" x="{bx - 14 + i * 10}" y="{fy - 13 - h}" width="7" height="{h}" rx="1.5" '
-                 f'fill="{art.CHARS[n]["body"]}"/>' for i, (n, h) in enumerate((("purple", 6), ("green", 10), ("blue", 15))))
-             + f'<rect x="{bx - 17}" y="{fy - 13}" width="34" height="1.2" fill="{soft}"/></g>')
-    booth = (f'<rect x="{bx - 26}" y="{fy - 15}" width="52" height="3.5" rx="1.75" fill="{edge}"/>'
-             f'<rect x="{bx - 22}" y="{fy - 12}" width="3" height="12" fill="{edge}"/>'
-             f'<rect x="{bx + 19}" y="{fy - 12}" width="3" height="12" fill="{edge}"/>'
-             f'<rect x="{bx - 2}" y="{fy - 19}" width="4" height="4" fill="{edge}"/>'
-             f'<rect x="{bx - 16}" y="{fy - 37}" width="32" height="19" rx="2.5" fill="#1C2333" stroke="{edge}" stroke-width="1.2"/>'
-             f'<rect x="{bx - 13}" y="{fy - 24}" width="26" height="2" fill="url(#brand)"/>'
-             f'<g class="hero"><rect x="{bx - 9}" y="{fy - 30}" width="4" height="6" rx="1" fill="#FF9F1C"/></g>')
-    st.front.append(f'<g class="fx"><g class="board">{board}</g><g class="booth">{booth}</g></g>')
+    crowd = "#4A5368" if dark else "#B8C0CE"
+    fy, E0, END = S["fy"], P0 + PR, P0 + SCENE
+    sx, px = S["screen"], S["podium"]
+    W2, H2 = S["sw"], S["sh"]
+    top = fy - H2 - 12
 
+    def pop(a, b):
+        return [(a, "scale(0)", OUT_), (a + .2, "scale(1.1)", IO), (a + .32, "scale(1)"), (b - .15, "scale(1)", IN), (b, "scale(0)")]
 
-def scene(st, c, P0, bx, fy, spots):
-    """東京で降りたあと、Award Day のプレゼンと展示をする（約3.3秒、セリフなし）。
-    プレゼン：画面が立ち上がり、青が画面を指して説明する。スライドが棒グラフに変わると、緑と紫がうなずく。
-    展示：画面がブースに変わり、緑と紫が遊んで見せ（モニターの中の主人公が跳ねる）、見に来た人の「!」が上がる。"""
-    pop = lambda a, b: [(a, "scale(0)", OUT_), (a + .2, "scale(1.12)", IO), (a + .32, "scale(1)"),  # noqa: E731
-                        (b - .15, "scale(1)", IN), (b, "scale(0)")]
-    booth_art(st, bx, fy)
-    E0 = P0 + 1.65
-    st.anim("board", pop(P0, E0), origin="50% 100%", base="scale(0)")
-    st.anim("booth", pop(E0, P0 + SCENE), origin="50% 100%", base="scale(0)")
-    st.anim("sl1", [(P0, 1), (P0 + .8, 1), (P0 + .82, 0)], prop="opacity", base="1")
-    st.anim("sl2", [(P0, 0), (P0 + .8, 0), (P0 + .82, 1)], prop="opacity", base="0")
+    def show(a, b):
+        return [(a - .01, 0), (a, 1), (b, 1), (b + .01, 0)]
+
+    # 発表：スポットライト、大きな画面（3枚のスライド）、演台とマイク
+    slides = [
+        # 1枚目：題名（4色の点とグラデーションの帯）
+        f'<rect x="{sx - W2 / 2 + 7}" y="{top + 8}" width="{W2 * .55}" height="4" rx="2" fill="url(#brand)"/>'
+        + "".join(f'<circle cx="{sx - W2 / 2 + 10 + i * 8}" cy="{top + 20}" r="2.6" fill="{art.CHARS[n]["body"]}"/>'
+                  for i, n in enumerate(art.ORDER))
+        + f'<rect x="{sx - W2 / 2 + 7}" y="{top + 27}" width="{W2 * .4}" height="2.4" rx="1.2" fill="{soft}"/>',
+        # 2枚目：3台のスマホから、1つのPC画面へ
+        "".join(f'<rect x="{sx - W2 / 2 + 6 + i * 8}" y="{top + 10 + i * 2}" width="6" height="11" rx="1.5" fill="{art.CHARS[n]["body"]}"/>'
+                for i, n in enumerate(TEAM))
+        + f'<path d="M{sx - 3} {top + 16}h7" stroke="{edge}" stroke-width="1.6" stroke-linecap="round"/>'
+        + f'<path d="M{sx + 2} {top + 13}l3 3-3 3" fill="none" stroke="{edge}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'
+        + f'<rect x="{sx + 8}" y="{top + 9}" width="{W2 / 2 - 14}" height="14" rx="2" fill="#1C2333"/>'
+        + f'<rect x="{sx + 10}" y="{top + 18}" width="{W2 / 2 - 18}" height="1.6" fill="url(#brand)"/>',
+        # 3枚目：棒グラフ
+        "".join(f'<rect class="bar{i}" x="{sx - 13 + i * 10}" y="{top + H2 - 6 - h}" width="7" height="{h}" rx="1.5" fill="{art.CHARS[n]["body"]}"/>'
+                for i, (n, h) in enumerate((("purple", 8), ("green", 14), ("blue", 21))))
+        + f'<rect x="{sx - 17}" y="{top + H2 - 6}" width="34" height="1.2" fill="{soft}"/>',
+    ]
+    span = PR / 3
+    pres = (f'<path d="M{px - 7} {top - 14}L{px + 7} {top - 14}L{px + 20} {fy}L{px - 20} {fy}Z" fill="#FFE27A" opacity=".28" class="spot"/>'
+            f'<rect x="{sx - 1.5}" y="{top + H2}" width="3" height="{fy - top - H2}" fill="{edge}"/>'
+            f'<rect x="{sx - 10}" y="{fy - 2}" width="20" height="2" rx="1" fill="{edge}"/>'
+            f'<rect x="{sx - W2 / 2}" y="{top}" width="{W2}" height="{H2}" rx="3.5" fill="{panel}" stroke="{edge}" stroke-width="1.5"/>'
+            + "".join(f'<g class="sl{i}">{s}</g>' for i, s in enumerate(slides)))
+    podium = (f'<path d="M{px - 12} {fy - 18}H{px + 12}L{px + 9} {fy}H{px - 9}Z" fill="{edge}"/>'
+              f'<rect x="{px - 13}" y="{fy - 20}" width="26" height="3" rx="1.5" fill="{edge}"/>'
+              f'<path d="M{px + 4} {fy - 20}L{px + 8} {fy - 27}" stroke="{edge}" stroke-width="1.5"/>'
+              f'<circle cx="{px + 8.5}" cy="{fy - 28}" r="2.2" fill="#1C2333"/>'
+              + "".join(f'<path class="wave{i}" d="M{px + 13 + i * 4} {fy - 32 + i * -1}q{3 + i} {4 + i} 0 {8 + i * 2}" fill="none" '
+                        f'stroke="#FF9F1C" stroke-width="1.6" stroke-linecap="round"/>' for i in range(2)))
+    st.back.append(f'<g class="fx"><g class="pres">{pres}</g></g>')
+    st.front.append(f'<g class="fx"><g class="podium">{podium}</g></g>')
+    st.anim("pres", pop(P0, E0), origin="50% 100%", base="scale(0)")
+    st.anim("podium", pop(P0, E0), origin="50% 100%", base="scale(0)")
     for i in range(3):
-        st.anim(f"bar{i}", [(P0 + .82 + i * .1, "scale(1,0)", OUT_), (P0 + 1.1 + i * .1, "scale(1,1)")],
+        a = P0 + i * span
+        st.anim(f"sl{i}", show(a if i else P0, a + span if i < 2 else E0), prop="opacity", base="0" if i else "1")
+    for i in range(3):
+        st.anim(f"bar{i}", [(P0 + 2 * span + i * .08, "scale(1,0)", OUT_), (P0 + 2 * span + .3 + i * .08, "scale(1,1)")],
                 origin="50% 100%", base="scale(1,0)")
-    hero = []
+    for i in range(2):
+        fr = [(P0, 0)]
+        for k in range(5):
+            a = P0 + .3 + k * .3 + i * .1
+            fr += [(a, 0), (a + .08, 1), (a + .22, 0)]
+        st.anim(f"wave{i}", fr, prop="opacity", base="0")
+    # 観客：発表では画面の前に並び、拍手（跳ねる）。展示ではブースの前に集まる
+    aud_pres, aud_expo, ay = S["aud_pres"], S["aud_expo"], S["ay"]
+    for k, (x0, x1) in enumerate(zip(aud_pres, aud_expo)):
+        cls = f"aud{k}"
+        st.front.append(f'<g class="fx"><g class="{cls}">{person(0, ay, crowd)}</g></g>')
+        fr = [(P0 - .01, f"translate({x0}px,0px) scale(0)"), (P0 + .1 + k * .05, f"translate({x0}px,0px) scale(1)")]
+        for j in range(3):  # 拍手
+            a = P0 + 1.75 + j * .14 + k * .03
+            fr += [(a, f"translate({x0}px,0px) scale(1)"), (a + .07, f"translate({x0}px,-3px) scale(1)")]
+        fr += [(E0 + .05, f"translate({x0}px,0px) scale(1)"), (E0 + .55 + k * .06, f"translate({x1}px,0px) scale(1)")]
+        if k == 0:  # 試遊する来場者
+            for j in range(3):
+                a = E0 + 1.05 + j * .32
+                fr += [(a, f"translate({x1}px,0px) scale(1)"), (a + .12, f"translate({x1}px,-5px) scale(1)"),
+                       (a + .24, f"translate({x1}px,0px) scale(1)")]
+        fr += [(END - .25, f"translate({x1}px,0px) scale(1)"), (END - .05, f"translate({x1}px,0px) scale(0)")]
+        st.anim(cls, fr, origin="50% 100%", base="scale(0)")
+    st.sparkle(sum(aud_pres) / len(aud_pres), ay - 30, P0 + 1.8, 22, 7)
+    # 展示：のぼり付きのブース、机とモニター（主人公が跳ねる）
+    bx, bw = S["booth"], S["bw"]
+    expo = (f'<rect x="{bx - bw / 2}" y="{fy - 54}" width="{bw}" height="17" rx="3" fill="url(#brand)"/>'
+            + art.text(bx, fy - 41.5, "Re:Cooplay", 13, "#FFFFFF", cls="gh", weight=700, anchor="middle")
+            + f'<rect x="{bx - bw / 2 + 2}" y="{fy - 37}" width="2.5" height="37" fill="{edge}"/>'
+            f'<rect x="{bx + bw / 2 - 4.5}" y="{fy - 37}" width="2.5" height="37" fill="{edge}"/>'
+            f'<rect x="{bx - bw / 2 + 4}" y="{fy - 14}" width="{bw - 8}" height="3.5" rx="1.75" fill="{edge}"/>'
+            f'<rect x="{bx - 2}" y="{fy - 18}" width="4" height="4" fill="{edge}"/>'
+            f'<rect x="{bx - 15}" y="{fy - 35}" width="30" height="18" rx="2.5" fill="#1C2333" stroke="{edge}" stroke-width="1.2"/>'
+            f'<rect x="{bx - 12}" y="{fy - 23}" width="24" height="2" fill="url(#brand)"/>'
+            f'<g class="hero"><rect x="{bx - 8}" y="{fy - 29}" width="4" height="6" rx="1" fill="#FF9F1C"/></g>')
+    st.back.append(f'<g class="fx"><g class="expo">{expo}</g></g>')
+    st.anim("expo", pop(E0, END), origin="50% 100%", base="scale(0)")
+    hero = [(E0, "translate(0px,0px)")]
     for k in range(3):
-        a = E0 + .25 + k * .4
-        hero += [(a, "translate(0px,0px)", OUT_), (a + .18, f"translate({3 + k * 4}px,-6px)", IN), (a + .36, f"translate({6 + k * 4}px,0px)")]
-    hero.append((E0 + 1.6, "translate(0px,0px)"))
+        a = E0 + 1.05 + k * .32
+        hero += [(a, f"translate({k * 5}px,0px)", OUT_), (a + .14, f"translate({k * 5 + 3}px,-6px)", IN), (a + .28, f"translate({k * 5 + 5}px,0px)")]
     st.anim("hero", hero)
+    # スマホの手渡し（緑 → 来場者）
+    g0 = S["team_expo"]["green"]
+    phone = f'<rect x="-3.5" y="-6" width="7" height="12" rx="1.6" fill="{art.CHARS["blue"]["body"]}" stroke="#FFFFFF" stroke-width="1"/>'
+    fly(st, phone, E0 + .6, E0 + .95, (g0, fy - 22), (aud_expo[0] + 9, ay - 14), peak=-18)
+    cls = "phone-held"
+    st.front.append(f'<g class="fx"><g class="{cls}"><g transform="translate({aud_expo[0] + 9} {ay - 14})">{phone}</g></g></g>')
+    st.anim(cls, [(E0 + .95, 0), (E0 + 1.0, 1), (END - .25, 1), (END - .2, 0)], prop="opacity", base="0")
+    st.mark(aud_expo[0], ay - 34, "!", E0 + 1.2, E0 + 2.0, 18)
+    st.mark(aud_expo[2], ay - 32, "!", E0 + 1.5, E0 + 2.2, 15)
+    # 3体の動き
+    tp, te = S["team_pres"], S["team_expo"]
     blue, green, purple = c["blue"], c["green"], c["purple"]
-    blue.wait(P0 + .3).lean(P0 + .45, 14).lean(P0 + .7, 0).wait(P0 + .95).lean(P0 + 1.1, 14).lean(P0 + 1.35, 0)
-    for n, d in (("green", 0), ("purple", .1)):
-        c[n].wait(P0 + 1.15 + d).lean(P0 + 1.3 + d, 12).lean(P0 + 1.5 + d, 0)
-    st.sparkle(bx, fy - 40, P0 + 1.35, 16, 5)
-    for k, n in enumerate(("green", "purple")):
-        a = c[n]
-        for j in range(3):
-            s0 = E0 + .2 + j * .42 + k * .21
-            a.wait(s0).put(s0 + .1, sx=1.1, sy=.88).put(s0 + .2, y=a.y - 6).put(s0 + .32, y=a.y)
-    blue.wait(E0 + .3).shake(E0 + 1.2, 8, 4)
-    st.mark(bx + 30, fy - 34, "!", E0 + .5, E0 + 1.4, 18)
-    st.mark(bx + 42, fy - 22, "!", E0 + .8, E0 + 1.5, 15)
-    return P0 + SCENE + .1
+    for k in range(4):  # 話しながら少し揺れる
+        a = P0 + .3 + k * .4
+        blue.wait(a).lean(a + .2, 5 if k % 2 else -5)
+    blue.lean(P0 + 1.75, 0)
+    green.wait(P0 + span + .1).lean(P0 + span + .25, 16).lean(P0 + span + .7, 16).lean(P0 + span + .85, 0)
+    purple.wait(P0 + 2 * span + .05).lean(P0 + 2 * span + .2, 16).lean(P0 + 2 * span + .55, 16).lean(P0 + 2 * span + .7, 0)
+    for n in TEAM:  # 3体でおじぎ
+        c[n].wait(P0 + 1.75).put(P0 + 1.9, sx=1.1, sy=.84).put(P0 + 2.1)
+    for n in TEAM:
+        c[n].wait(E0 - .05).walk(E0 + .45, te[n])
+    blue.wait(E0 + .7).lean(E0 + .85, -10).lean(E0 + 1.1, 0).wait(E0 + 1.4).lean(E0 + 1.55, -10).lean(E0 + 1.8, 0)
+    green.wait(E0 + .45).put(E0 + .6, sx=1.12, sy=.86).put(E0 + .75)
+    for n, d in (("green", 0), ("purple", .16)):
+        for j in range(2):
+            a = E0 + 1.3 + j * .4 + d
+            c[n].wait(a).jump(a + .3, 7)
+    return END + .1
 
 
 @option("2", "路線図と新幹線",
@@ -738,12 +818,15 @@ def route_pc(t):
     st.mark(X1 + Lt + 12, rl - 26, "♪", t_dep - .4, t_dep + .3)
     # 東京：Innovator認定の右の空いた所で、プレゼンと展示をする
     fy = g.feet(g.q2)
-    bx = 772
-    pos_s = {"blue": 718, "green": 686, "purple": 654}
+    S = {"fy": fy, "screen": 774, "sw": 56, "sh": 34, "podium": 718, "ay": CT + 199,
+         "aud_pres": [664, 690, 716, 742, 768], "aud_expo": [736, 758, 780, 800, 818],
+         "booth": 766, "bw": 84,
+         "team_pres": {"blue": 718, "green": 684, "purple": 654},
+         "team_expo": {"blue": 704, "green": 680, "purple": 654}}
     for k, n in enumerate(TEAM):
         out = t_arr + .25 + k * .22
-        c[n].wait(out + .35).hops(P0 - .15 + k * .05 - .1, [(560 + k * 14, g.top(g.q1)), (pos_s[n], fy)], h=12)
-    scene(st, c, P0, bx, fy, pos_s)
+        c[n].wait(out + .35).hops(P0 - .25 + k * .05, [(560 + k * 14, g.top(g.q1)), (S["team_pres"][n], fy)], h=12)
+    scene(st, c, P0, S)
     sp, inn, dmm = g.spots["green"], g.spots["purple"], g.spots["blue"]
     arrive = {"blue": (TA, TA + .9, [dmm]),
               "green": (TA + .1, TA + .9, [sp]),
@@ -819,18 +902,22 @@ def route_narrow(t):
     st.anim("trainO", [(t_in, 0), (t_in + .4, 1), (t_leave + .8, 1), (t_leave + 1.25, 0)], prop="opacity", base="0")
     board = {"blue": t_in + .7, "green": t_in + 1.0, "purple": t_in + 1.3}
     outs = ride(st, g, c, board, pos, t_in, t_arr + .25, None, lambda n, s: (LX, pos(s) + WIN[n] + 12))
-    # 東京：Innovator認定の文字の上に並び、その右の空いた所でプレゼンと展示をする
-    fy = g.top(g.q2)
-    bx = 262
-    pos_s = {"blue": 186, "green": 156, "purple": 126}
+    # 東京：東京駅の上の空いた所（Hack Day の行と「東京」の間）で、発表と展示をする。
+    # Innovator認定の右はスマホでは狭く、文字に重なるため
+    fy = S2 - 16
+    S = {"fy": fy, "screen": 268, "sw": 50, "sh": 30, "podium": 224, "ay": fy,
+         "aud_pres": [128, 106, 84, 62], "aud_expo": [140, 118, 96, 74],
+         "booth": 262, "bw": 76,
+         "team_pres": {"blue": 224, "green": 194, "purple": 168},
+         "team_expo": {"blue": 210, "green": 162, "purple": 186}}
     for k, n in enumerate(TEAM):
         out = t_arr + .25 + k * .22
-        c[n].wait(out + .35).hops(P0 - .1, [(pos_s[n] - 20, g.top(g.q1)), (pos_s[n], fy)], h=12)
-    scene(st, c, P0, bx, g.feet(g.q2), pos_s)
+        c[n].wait(out + .35).hop(P0 - .1, S["team_pres"][n], fy, 14)
+    scene(st, c, P0, S)
     sp, inn, dmm = g.spots["green"], g.spots["purple"], g.spots["blue"]
-    arrive = {"blue": (TA, TA + 1.0, [dmm]),
-              "green": (TA + .1, TA + .9, [sp]),
-              "purple": (TA + .2, TA + .9, [inn])}
+    arrive = {"blue": (TA, TA + 1.1, [(dmm[0] + 30, g.top(g.q1)), dmm]),
+              "green": (TA + .1, TA + 1.0, [(sp[0] + 20, S2 + 10), sp]),
+              "purple": (TA + .2, TA + 1.1, [(inn[0] + 30, S2 + 10), inn])}
     award_part(st, g, c, TA, arrive, got, outs)
     back = {}
     for k, n in enumerate(TEAM):
