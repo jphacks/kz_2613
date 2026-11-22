@@ -134,8 +134,14 @@ def tier_of(src, tier):
     return m if m != src and (ROOT / m[len(BASE):]).exists() else None
 
 
+# 本文欄いっぱいに広げず、どの段階も原寸で置く図。作品名は GitHub の h1（32px）と同じ大きさに見せるので拡大しない
+# （各段階の版の幅は、その段階の本文欄のいちばん狭い幅に近づけてある。scripts/readme/title.py）
+NATIVE = ("assets/readme/title-",)
+
+
 def figure(nl, nd, wl, wd, alt, width=None, align=None):
     a = f' align="{align}"' if align else ""
+    native = nl[len(BASE):].startswith(NATIVE)
     have = {"narrow": (nl, nd), "wide": (wl, wd)}
     for tier in ("compact", "mid"):
         l, d = tier_of(nl, tier), tier_of(nd, tier)
@@ -145,7 +151,7 @@ def figure(nl, nd, wl, wd, alt, width=None, align=None):
     for i, tier in enumerate(ORDER):
         if tier in have:
             (l, d), size = have[tier], ""
-            if tier != "wide":
+            if tier != "wide" and not native:
                 size = f' width="{width or "100%"}"'
             elif width:
                 size = f' width="{width}"'
