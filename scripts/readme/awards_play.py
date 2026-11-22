@@ -310,10 +310,12 @@ def heading(st, W, ls, y0=PAD):
 
 
 def dots(st, xs, cy, out_at, back_at):
-    """4色の点。out_at[i] 秒にはじけてキャラクターになり、back_at[i] 秒に戻る。"""
+    """4色の点。out_at[i] 秒にはじけてキャラクターになり、back_at[i] 秒に戻る。out_at に入っていない点は動かない。"""
     for i, n in enumerate(art.ORDER):
         cls = f"dot{i}"
         st.back.append(f'<circle class="{cls}" cx="{xs[i]}" cy="{cy}" r="4" fill="{art.CHARS[n]["body"]}"/>')
+        if i >= len(out_at):
+            continue
         a, b = out_at[i], back_at[i]
         st.anim(cls, [(a, "scale(1)", OUT_), (a + .12, "scale(1.6)", IN), (a + .22, "scale(0)"),
                       (b + .15, "scale(0)", OUT_), (b + .32, "scale(1.5)", IO), (b + .48, "scale(1)")])
@@ -353,25 +355,31 @@ def option(key, title, story):
         OPTIONS[key] = (title, story, f)
         return f
     return deco
-
 # ---------- 物語 ----------
 # 事実に沿った筋：私たちは3人のチーム。Hack Day（金沢）で観客賞＝Hack Day の勝者になり、決勝進出＝Award Day への切符を
 # 手にして、新幹線で東京へ行き、Award Day で3つの賞を受けた。
-# 見出しの4色の点のうち、青・緑・紫の3体がチーム、赤は応援してくれる観客。観客賞は赤の投票（ハート）で贈られる。
-# 決勝進出は、3人分の切符が1枚ずつ届き、灰色だった金沢→東京の路線が光って開通することで「資格を得た」ことを表す。
-# セリフは使わず、「!」「♪」やハートなどの記号だけにする。
+# 見出しの4色の点のうち、青・緑・紫の3つがチームのキャラクターになる。赤は点のまま見出しに残る。
+# Hack Day の2つ（勝者・切符）はチームのものなのでグラデーション、Award Day の3つの賞は受け取るキャラクターの色にする。
+# キャラクターの画面は、手にしたものを順に映す：王冠（勝者）→ 切符 → それぞれの賞。
+# 決勝進出では、3人分の切符が1枚ずつ届き、灰色だった金沢→東京の路線が光って開通することで「資格を得た」ことを表す。
+# 移動は、路線図の上を走る小さな新幹線。乗り込むと、窓が乗ったキャラクターの色で光る。
+# セリフは使わず、「!」「♪」などの記号だけにする。
 ICONS["crown"] = '<path d="M3.6 8.6l4.5 3.7L12 5.6l3.9 6.7 4.5-3.7-1.8 9.2H5.4z"/><path d="M5.6 20.6h12.8"/>'
 ICONS["ticket"] = ('<path d="M3 6.6h18v3.1a2.3 2.3 0 0 0 0 4.6v3.1H3v-3.1a2.3 2.3 0 0 0 0-4.6z"/>'
                    '<path d="M14.6 7.8v1.4M14.6 11.3v1.4M14.6 14.8v1.4"/>')
-# 色は、受け取るキャラクターの色にする。観客賞は観客（赤）が贈る賞、切符はチーム3人のものなのでグラデーション
-COLORS = {"aud": ("crown", "red"), "fin": ("ticket", "brand"), "sp": ("star", "green"), "inn": ("bulb", "purple"),
+COLORS = {"aud": ("crown", "brand"), "fin": ("ticket", "brand"), "sp": ("star", "green"), "inn": ("bulb", "purple"),
           "dmm": ("trophy", "blue")}
 for _a in AWARDS:
     _a["icon"], _a["color"] = COLORS[_a["key"]]
-TEAM = ["blue", "green", "purple"]  # 前から順に（青が先頭）
+TEAM = ["blue", "green", "purple"]  # 新幹線では青が先頭
 MINE = {"green": "sp", "purple": "inn", "blue": "dmm"}
 PAGE = {"light": "#FFFFFF", "dark": "#0D1117"}
-HEART = "M0 3.2C-1.6-.6-6.4-.4-6.4 3.4c0 3.4 6.4 6.8 6.4 6.8s6.4-3.4 6.4-6.8C6.4-.4 1.6-.6 0 3.2z"
+WIN = {"purple": 12, "green": 26, "blue": 40}  # 新幹線の窓の位置（後ろの端から）
+TRAIN_LEN = 74
+
+
+def smooth(u):
+    return u * u * (3 - 2 * u)
 
 
 def mode_of(t):
@@ -397,7 +405,7 @@ class Geo:
         return cy + 6.5
 
 
-def fly(st, art_svg, t0, t1, p0, p1, peak=-30, n=8):
+def fly(st, art_svg, t0, t1, p0, p1, peak=-30, n=10):
     """小道具（(0,0) を中心に描いたもの）を、t0〜t1秒に p0 から p1 へ放物線で飛ばす。飛んでいるあいだだけ見える。"""
     cls = f"fly{len(st.css)}"
     (x0, y0), (x1, y1) = p0, p1
@@ -405,9 +413,9 @@ def fly(st, art_svg, t0, t1, p0, p1, peak=-30, n=8):
     for k in range(1, n + 1):
         u = k / n
         x, y = x0 + (x1 - x0) * u, y0 + (y1 - y0) * u + peak * 4 * u * (1 - u)
-        s = .4 + .6 * min(1, u * 3)
-        fr.append((t0 + (t1 - t0) * u, f"translate({x:.1f}px,{y:.1f}px) scale({s:.2f})"))
-    fr += [(t1 + .12, f"translate({x1}px,{y1}px) scale(0)")]
+        s = .4 + .7 * min(1, u * 2.5) - .25 * max(0, u - .8) / .2
+        fr.append((t0 + (t1 - t0) * u, f"translate({x:.1f}px,{y:.1f}px) scale({s:.2f}) rotate({-14 * (1 - u):.0f}deg)"))
+    fr += [(t1 + .1, f"translate({x1}px,{y1}px) scale(0)")]
     st.front.append(f'<g class="fx"><g class="{cls}">{art_svg}</g></g>')
     st.anim(cls, fr, origin="50% 50%", base="scale(0)")
 
@@ -419,18 +427,18 @@ def ticket_art():
             + '<path d="M7-6.5v2.6M7-1.3v2.6M7 3.9v2.6" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round"/>')
 
 
-def heart_art(color="#FF1D00"):
-    return f'<path d="{HEART}" transform="translate(0 -4)" fill="{color}" stroke="#FFFFFF" stroke-width="1.4"/>'
-
-
-def cheer(st, a, t0, x, y):
-    """観客（赤）の応援：跳ねて、ハートを出す。"""
-    a.wait(t0).jump(t0 + .5, 10)
-    cls = f"h{len(st.css)}"
-    st.front.append(f'<g class="fx"><g class="{cls}"><g transform="translate({x} {y})">{heart_art()}</g></g></g>')
-    st.anim(cls, [(t0, "translate(0px,0px) scale(0)", OUT_), (t0 + .25, "translate(0px,-6px) scale(1.15)"),
-                  (t0 + .9, "translate(0px,-16px) scale(.9)", IN), (t0 + 1.1, "translate(0px,-18px) scale(0)")],
-            origin="50% 50%", base="scale(0)")
+def train_icon(t):
+    """路線図を走る小さな新幹線（縦向き、先頭は下）。3つの窓は、乗ったキャラクターの色で光る。"""
+    dark = t is art.THEMES["dark"]
+    body = "#E8EDF5" if dark else "#FFFFFF"
+    edge = "#8A95A8" if dark else "#A9B3C3"
+    out = (f'<path d="M-12 7Q-12 0-5 0H5Q12 0 12 7V50Q12 66 0 74Q-12 66-12 50Z" fill="{body}" stroke="{edge}" stroke-width="1.5"/>'
+           '<rect x="7" y="4" width="3" height="52" rx="1.5" fill="url(#brand)"/>'
+           '<path d="M-6 56H6L3 63H-3Z" fill="#1C2333"/>')
+    for n, y in WIN.items():
+        out += (f'<rect x="-6" y="{y - 4.5}" width="10" height="9" rx="3" fill="#1C2333"/>'
+                f'<rect class="win-{n}" x="-6" y="{y - 4.5}" width="10" height="9" rx="3" fill="{art.CHARS[n]["body"]}"/>')
+    return out
 
 
 def setup(t, narrow, H, D):
@@ -439,8 +447,7 @@ def setup(t, narrow, H, D):
     x0, x1, ry, xs, dy = heading(st, W, 2 if narrow else 4)
     if x1 - x0 < 24:  # スマホでは線が短すぎて描かれない（目次の見出しと同じ）
         st.back[-1] = "</g>"
-    g = Geo(W=W, cw=W - 14, narrow=narrow, x0=x0, ry=ry, xs=xs, dy=dy, CT=78)
-    return st, g
+    return st, Geo(W=W, cw=W - 14, narrow=narrow, x0=x0, ry=ry, xs=xs, dy=dy, CT=78)
 
 
 def rows(st, g, L, R):
@@ -449,7 +456,8 @@ def rows(st, g, L, R):
     for k, x, cy in (("aud", L, g.r1), ("fin", L, g.r2), ("sp", R, g.q1), ("inn", R, g.q2), ("dmm", R, g.q3)):
         g.e[k] = row(st, A[k], x, cy)
     g.L, g.R = L, R
-    g.spots = {n: (g.e[k] + 20, g.feet({"sp": g.q1, "inn": g.q2, "dmm": g.q3}[k])) for n, k in MINE.items()}
+    g.qy = {"sp": g.q1, "inn": g.q2, "dmm": g.q3}
+    g.spots = {n: (g.e[k] + 20, g.feet(g.qy[k])) for n, k in MINE.items()}
     g.tiles = {"aud": (L + 15, g.r1), "fin": (L + 15, g.r2), "sp": (R + 15, g.q1), "inn": (R + 15, g.q2),
                "dmm": (R + 15, g.q3)}
 
@@ -459,57 +467,48 @@ def station(st, x, y, color, cls=""):
     st.back.append(f'<circle{c} cx="{x}" cy="{y}" r="6.5" fill="{PAGE[mode_of(st.t)]}" stroke="{color}" stroke-width="3"/>')
 
 
-def lock(st, shape, ring, t_on, u0, u1, origin):
+def lock(st, shape, ring, t_on, u0, u1, horizontal):
     """路線の「未開通」：灰色の線（と東京駅の灰色の輪）を重ね、u0〜u1秒に金沢側から消して、路線を開通させる。"""
     gray = st.t["line"]
     st.front.insert(0, f'<g class="fx"><g class="lockO"><g class="lockS">{shape(gray)}</g></g>'
                        f'<g class="lockT">{ring(gray)}</g></g>')
-    opa = [(t_on, 0), (t_on + .4, 1), (u1, 1), (u1 + .01, 0)]
-    st.anim("lockO", opa, prop="opacity", base="0")
-    st.anim("lockT", [(t_on, 0), (t_on + .4, 1), (u1 - .1, 1), (u1 + .2, 0)], prop="opacity", base="0")
-    st.anim("lockS", [(u0, "scale(1,1)", IO), (u1, "scale(0,0.999)" if origin.startswith("100%") else "scale(0.999,0)"),
-                      (u1 + .02, "scale(1,1)")], origin=origin)
+    st.anim("lockO", [(t_on, 0), (t_on + .4, 1), (u1, 1), (u1 + .01, 0)], prop="opacity", base="0")
+    st.anim("lockT", [(t_on, 0), (t_on + .4, 1), (u1 - .1, 1), (u1 + .25, 0)], prop="opacity", base="0")
+    st.anim("lockS", [(u0, "scale(1,1)", IO), (u1, "scale(0,1)" if horizontal else "scale(1,0)"), (u1 + .02, "scale(1,1)")],
+            origin="100% 50%" if horizontal else "50% 100%")
 
 
-def common_story(st, g, c, T):
-    """Hack Day で喜ぶところから、切符・開通までを、観客の赤も含めて描く。T：時刻の辞書。"""
-    # 観客（赤）が投票し、ハートが王冠のタイルに届く → Hack Day の勝者
-    rx, ryy = c["red"].x, c["red"].y
-    c["red"].wait(T["vote"] - .4).jump(T["vote"], 12)
-    fly(st, heart_art(), T["vote"], T["vote"] + .7, (rx, ryy - CH - 4), g.tiles["aud"], peak=-26)
-    hit = T["vote"] + .7
+def hackday_and_ticket(st, g, c, hit, tb):
+    """Hack Day の勝者：王冠のタイルが光り、3体の画面に王冠が映る。
+    決勝進出：タイルが大きく光り、3人分の切符が1枚ずつ飛んできて、それぞれの画面の王冠が切符に変わる。
+    返り値：切符を掲げ終わる時刻と、各キャラクターが切符を受け取った時刻。"""
     st.anim("tile-aud", st.pulse("tile-aud", hit, 1.4))
     st.sparkle(*g.tiles["aud"], hit + .02, 22, 8)
-    st.sparkle(*g.tiles["aud"], hit + .02, 12, 5, "#FF1D00")
+    got = {}
     for i, n in enumerate(TEAM):
         c[n].wait(hit + .05 + i * .06).jump(hit + .6 + i * .06, 10).jump(hit + 1.25 + i * .06, 12)
-        c[n].face("happy", hit, hit + 1.8)
     st.mark(g.aud[1], g.top(g.r1) - CH - 6, "♪", hit + .2, hit + 1.6)
-    c["red"].face("happy", hit, hit + 1.8)
-    c["red"].wait(hit + .2).jump(hit + .7, 10)
-    # 決勝進出：青が行へ跳ぶとタイルが大きく光り、3人分の切符が1枚ずつ飛んできて、それぞれの画面に収まる
-    tb = T["ticket"]
     c["blue"].wait(tb).hop(tb + .5, g.e["fin"] + 20, g.feet(g.r2), 10)
     st.anim("tile-fin", [(tb + .55, "scale(1)", OUT_), (tb + .75, "scale(1.5)", IO), (tb + 1.0, "scale(1.3)"),
-                         (tb + 2.1, "scale(1.3)", IO), (tb + 2.35, "scale(1)")])
+                         (tb + 2.2, "scale(1.3)", IO), (tb + 2.45, "scale(1)")])
     st.sparkle(*g.tiles["fin"], tb + .6, 22, 8)
     for k, n in enumerate(TEAM):
         a = c[n]
-        t0 = tb + .9 + k * .38
-        fly(st, ticket_art(), t0, t0 + .55, g.tiles["fin"], (a.x, a.y - CH * .62), peak=-34)
-        a.face("icon:ticket", t0 + .55, T["end_ticket"])
-        a.wait(t0 + .5).put(t0 + .62, sx=1.15, sy=.85).jump(t0 + 1.1, 12)
-        st.sparkle(a.x, a.y - CH * .62, t0 + .56, 14, 5, art.CHARS[n]["body"])
-    # 3人で切符を掲げる（そろって跳ぶ）
-    tj = tb + .9 + 2 * .38 + 1.2
+        t0 = tb + .9 + k * .4
+        fly(st, ticket_art(), t0, t0 + .6, g.tiles["fin"], (a.x, a.y - CH * .62), peak=-36)
+        got[n] = t0 + .6
+        c[n].face("icon:crown", hit + .05, got[n])
+        a.wait(t0 + .55).put(t0 + .67, sx=1.15, sy=.85).jump(t0 + 1.15, 12)
+        st.sparkle(a.x, a.y - CH * .62, t0 + .6, 14, 5, art.CHARS[n]["body"])
+    tj = tb + .9 + 2 * .4 + 1.3
     for n in TEAM:
-        c[n].wait(tj).jump(tj + .5, 14)
+        c[n].wait(tj).jump(tj + .55, 14)
     st.mark(g.e["fin"] + 46, g.feet(g.r2) - CH - 6, "!", tj, tj + .9, 20, "#22C4FA")
-    return tj + .5
+    return tj + .55, got
 
 
-def award_part(st, g, c, T, arrive):
-    """Award Day：3人がそれぞれの賞へ。受け取ると画面に賞が映り、観客の赤が応援する。"""
+def award_part(st, g, c, T, arrive, got):
+    """Award Day：3体がそれぞれの賞へ。受け取ると、画面の切符がその賞に変わる。"""
     A = {a["key"]: a for a in AWARDS}
     for n, (a, b, pts) in arrive.items():
         c[n].wait(a).hops(b, pts, h=12)
@@ -518,40 +517,65 @@ def award_part(st, g, c, T, arrive):
         key = MINE[n]
         st.anim(f"tile-{key}", st.pulse(f"tile-{key}", at, 1.4))
         st.sparkle(*g.tiles[key], at + .05, 18, 6, art.CHARS[n]["body"])
-        c[n].face("icon:" + A[key]["icon"], at + .1, T + 6.0)
+        c[n].face("icon:ticket", got[n], at + .1)
+        c[n].face("icon:" + A[key]["icon"], at + .1, T + 6.2)
         c[n].wait(at).jump(at + .55, 10)
-        cheer(st, c["red"], at + .25, c["red"].x, c["red"].y - CH - 6)
-    for i, n in enumerate(TEAM + ["red"]):
-        c[n].wait(T + 4.4 + i * .07).jump(T + 4.95 + i * .07, 10).jump(T + 5.5 + i * .07, 12)
-    sx, sy = g.spots["purple"]
-    st.mark(sx + 34, sy - CH - 10, "♪", T + 4.5, T + 5.8)
-
-
-def finish(st, g, c, T, back, red_back):
     for i, n in enumerate(TEAM):
-        c[n].wait(T + 6.0 + i * .1).hops(T + 7.6 + i * .15, back[n], h=14)
-    red_back(c["red"], T + 6.2, T + 7.6)
-    order = art.ORDER
-    back_at = [T + 8.1 + i * .14 for i in range(4)]
-    for i, n in enumerate(order):
+        c[n].wait(T + 4.4 + i * .08).jump(T + 4.95 + i * .08, 10).jump(T + 5.55 + i * .08, 13)
+    sx, sy = g.spots["purple"]
+    st.mark(sx + 34, sy - CH - 10, "♪", T + 4.5, T + 5.9)
+
+
+def finish(st, g, c, T, back):
+    """見出しへ戻って並び、そろって跳ねてから、1体ずつ点に戻る。赤の点は最後まで動かない。"""
+    for i, n in enumerate(TEAM):
+        c[n].wait(T + 6.4 + i * .3).hops(T + 8.4 + i * .3, back[n], h=16)
+    tj = T + 9.4
+    for n in TEAM:
+        c[n].wait(tj).jump(tj + .55, 12)
+    back_at = [tj + 1.0 + i * .4 for i in range(3)]
+    for i, n in enumerate(TEAM):
         c[n].wait(back_at[i]).vanish(back_at[i])
-    dots(st, g.xs, g.dy, [3.5 + i * .12 for i in range(4)], back_at)
-    return T + 9.0
+    dots(st, g.xs, g.dy, [3.5 + i * .14 for i in range(3)], back_at)
+    return back_at[-1] + 1.1
 
 
-@option("2", "路線図（3人チームと観客）",
-        "カードを金沢と東京を結ぶ路線図にする。青・緑・紫の3体がチーム、赤は応援する観客。"
-        "観客の赤が投票のハートを送ると、観客賞の王冠が光る（Hack Day の勝者）。決勝進出では、3人分の切符が1枚ずつ飛んできて"
-        "それぞれの画面に収まり、灰色だった路線が金沢から東京まで光って開通する。"
-        "PCでは3体が連なって列車になり、赤は見出しの線の上を並走して見送る。スマホでは縦の路線図で、3体が新幹線に乗って下る。"
-        "東京ではそれぞれ自分の賞を受け取り、赤が応援する。")
+def make_team(st, g):
+    c = {n: st.actor(n, g.xs[i], g.ry) for i, n in enumerate(TEAM)}
+    for i, n in enumerate(TEAM):
+        c[n].appear(3.5 + i * .14)
+    return c
+
+
+def ride(st, g, c, board, pos, t_in, t_out, layer, get_win_pos):
+    """新幹線に乗る：窓の位置へ跳び込んで消え、窓がその色で光る。t_out に窓から飛び出す。
+    pos(s)：その時刻の新幹線の位置。get_win_pos(n, s)：その時刻の窓の位置 (x, y)。"""
+    for k, n in enumerate(TEAM):
+        a, b = c[n], board[n]
+        x, y = get_win_pos(n, b + .45)
+        a.wait(b).hop(b + .45, x, y, 14)
+        a.key(b + .55, sx=0, sy=0, ease=IN).put(b + .56, sx=0, sy=0)
+        out = t_out + k * .22
+        st.anim(f"win-{n}", [(b + .5, 0), (b + .6, 1), (out + .05, 1), (out + .15, 0)], prop="opacity", base="0")
+        x, y = get_win_pos(n, out)
+        a.key(out - .01, x, y, 0, 0, 0)
+        a.x, a.y, a.t = x, y, out - .01
+        a.key(out, sx=0, sy=0, ease=OUT_).key(out + .15, sx=1.2, sy=.85).put(out + .3)
+
+
+@option("2", "路線図と新幹線",
+        "カードを金沢と東京を結ぶ路線図にする。青・緑・紫の3体がチーム（赤は点のまま見出しに残る）。"
+        "3体が観客賞の文字に乗ると王冠が光り、画面に王冠が映る（Hack Day の勝者）。決勝進出では、3人分の切符が1枚ずつ飛んできて"
+        "画面の王冠が切符に変わり、灰色だった路線が金沢から東京まで光って開通する。3体は小さな新幹線に乗り込み"
+        "（窓がそれぞれの色で光る）、路線を走って東京駅へ。それぞれの賞を受け取ると、画面の切符がその賞に変わる。"
+        "最後は見出しへ戻って並び、そろって跳ねてから、1体ずつ点に戻る。")
 def option_2(t, narrow=False):
     return route_narrow(t) if narrow else route_pc(t)
 
 
 def route_pc(t):
     H = 78 + 206
-    D = 26.8
+    D = 32.0
     st, g = setup(t, False, H, D)
     CT, cw = g.CT, g.cw
     card(st, 0, CT, cw, H - CT)
@@ -570,72 +594,71 @@ def route_pc(t):
     rows(st, g, L, R)
     g.aud = [L + 28 + i * 44 for i in range(3)]
     rl = RL - 1.5
-    T = {"vote": 8.9, "ticket": 10.9}
-    unlock0 = 13.5
-    T["end_ticket"] = 26
+    unlock0 = 13.6
     lock(st, lambda c_: f'<rect x="{L}" y="{RL - 1.5}" width="{x1 - L}" height="3" rx="1.5" fill="{c_}"/>',
          lambda c_: f'<circle cx="{R + 8}" cy="{RL}" r="6.5" fill="{PAGE[mode_of(t)]}" stroke="{c_}" stroke-width="3"/>',
-         3.7, unlock0, unlock0 + .9, "100% 50%")
+         3.7, unlock0, unlock0 + .9, True)
     st.anim("st-tokyo", [(unlock0 + .85, "scale(1)", OUT_), (unlock0 + 1.05, "scale(1.6)", IO), (unlock0 + 1.3, "scale(1)")])
     st.sparkle(R + 8, RL, unlock0 + .9, 18, 6, "#22C4FA")
-    c = {n: st.actor(n, g.xs[i], g.ry) for i, n in enumerate(art.ORDER)}
-    for i, n in enumerate(art.ORDER):
-        c[n].appear(3.5 + i * .12)
-    # チームは見出しの線の上を駆けて Hack Day へ。紫は止まりきれずに緑にぶつかる
+    c = make_team(st, g)
+    # 見出しの線の上を駆けて Hack Day へ。紫は止まりきれずに緑にぶつかる
     line_x = [g.x0 + 12 + i * 23 for i in range(3)]
     c["blue"].wait(4.5).run(5.9, line_x[0])
-    c["green"].wait(4.58).run(6.0, line_x[1])
-    c["purple"].wait(4.7).run(6.05, line_x[2] - 5).shake(6.35, 8, 2, 1.1, .88)
+    c["green"].wait(4.6).run(6.0, line_x[1])
+    c["purple"].wait(4.75).run(6.05, line_x[2] - 5).shake(6.35, 8, 2, 1.1, .88)
     c["green"].wait(6.05).lean(6.17, -12).lean(6.4, 0)
     st.mark(line_x[2] - 2, g.ry - CH - 4, "!", 6.05, 6.7)
     for i, n in enumerate(TEAM):
         c[n].wait(6.8 + i * .15).hops(7.9 + i * .15, [(line_x[i] - 40, rl), (g.aud[i], g.top(g.r1))], h=16)
-    # 観客の赤は、見出しの線の上を歩いて Hack Day の上で見守る
-    c["red"].wait(4.9).walk(7.2, 330)
-    common_story(st, g, c, T)
-    # 3人で路線に上がって連なる（青が先頭）
-    gap, front0, front1 = 22, 150, 540
-    tf = unlock0 + 1.2
-    c["blue"].wait(tf).hops(tf + .9, [(210, g.top(g.r1)), (front0, rl)], h=12)
-    c["green"].wait(tf + .1).hop(tf + .8, front0 - gap, rl, 14)
-    c["purple"].wait(tf + .2).hop(tf + .9, front0 - 2 * gap, rl, 14)
-    st.mark(front0 + 14, rl - CH - 6, "♪", tf + .95, tf + 1.5)
-    t_go, t_end = tf + 1.3, tf + 4.3
-    for k, n in enumerate(TEAM):
-        c[n].wait(t_go).walk(t_end, front1 - k * gap, step=10, h=3)
-    # 赤は見出しの線の上を並走して見送る
-    c["red"].wait(t_go - .6).shake(t_go, 10, 4)
-    c["red"].wait(t_go).walk(t_end, 700, step=12, h=4)
-    TA = t_end + .2
+    tj, got = hackday_and_ticket(st, g, c, 8.35, 10.3)
+    # 新幹線：左から金沢駅に入り、3体が乗ると路線を走って東京駅へ。降ろしたあとは路線の先へ走り去る
+    k = 1.3  # PCでは少し大きく描く
+    Lt = TRAIN_LEN * k
+    X0, X1, X2, X3 = -Lt - 10, L + 22, R + 22, x1 - Lt - 6
+    t_in, t_dep, t_arr = unlock0 + 1.0, unlock0 + 3.1, unlock0 + 5.7
+    t_leave = t_arr + 1.4
+
+    def pos(s):
+        if s <= t_in:
+            return X0
+        if s <= t_in + .8:
+            u = (s - t_in) / .8
+            return X0 + (X1 - X0) * (1 - (1 - u) ** 2)
+        if s <= t_dep:
+            return X1
+        if s <= t_arr:
+            return X1 + (X2 - X1) * smooth((s - t_dep) / (t_arr - t_dep))
+        if s <= t_leave:
+            return X2
+        if s <= t_leave + 1.3:
+            return X2 + (X3 - X2) * ((s - t_leave) / 1.3) ** 2
+        return X3
+    frames = [(s / 10, f"translate({pos(s / 10):.1f}px,0px)") for s in range(int(t_in * 10) - 1, int((t_leave + 1.4) * 10))]
+    st.front.append(f'<g class="fx"><g class="trainO"><g class="train"><g transform="translate(0 {rl - 1}) rotate(-90) scale({k})">'
+                    f'{train_icon(t)}</g></g></g></g>')
+    st.anim("train", frames, base=f"translate({X0}px,0px)")
+    st.anim("trainO", [(t_in, 0), (t_in + .3, 1), (t_leave + .9, 1), (t_leave + 1.35, 0)], prop="opacity", base="0")
+    board = {"blue": t_in + 1.0, "green": t_in + 1.3, "purple": t_in + 1.6}
+    ride(st, g, c, board, pos, t_in, t_arr + .25, None,
+         lambda n, s: (pos(s) + WIN[n] * k, rl))
+    st.mark(X1 + Lt + 12, rl - 26, "♪", t_dep - .4, t_dep + .3)
+    TA = t_arr + .4
     sp, inn, dmm = g.spots["green"], g.spots["purple"], g.spots["blue"]
-    arrive = {"green": (TA, TA + .9, [sp]),
-              "purple": (TA + .15, TA + 1.2, [(inn[0] - 40, g.top(g.q1)), inn]),
-              "blue": (TA + .3, TA + 1.5, [(dmm[0] - 70, g.top(g.q1)), (dmm[0] - 40, g.top(g.q2)), dmm])}
-    award_part(st, g, c, TA, arrive)
-    back = {"blue": [(560, g.top(g.q2)), (690, rl), (g.xs[0], g.ry)],
-            "green": [(660, rl), (g.xs[1], g.ry)],
-            "purple": [(570, g.top(g.q1)), (680, rl), (g.xs[2], g.ry)]}
-    finish(st, g, c, TA, back, lambda a, t0, t1: a.wait(t0).walk(t1, g.xs[3]))
+    arrive = {"blue": (TA + .2, TA + 1.3, [(dmm[0] - 50, g.top(g.q2)), dmm]),
+              "green": (TA + .45, TA + 1.25, [sp]),
+              "purple": (TA + .7, TA + 1.5, [inn])}
+    award_part(st, g, c, TA, arrive, got)
+    back = {n: [(g.xs[i] - 70, rl), (g.xs[i], g.ry)] for i, n in enumerate(TEAM)}
+    back["green"] = [(g.e["sp"] + 60, g.top(g.q1)) if False else (680, rl), (g.xs[1], g.ry)]
+    back["purple"] = [(g.e["inn"] - 20, g.top(g.q1)), (700, rl), (g.xs[2], g.ry)]
+    back["blue"] = [(g.e["dmm"] - 20, g.top(g.q2)), (660, g.top(g.q1)), (720, rl), (g.xs[0], g.ry)]
+    end = finish(st, g, c, TA, back)
+    assert end <= D + .01, end
     return st.svg()
 
 
-def train_icon(t):
-    """縦の路線図を下る新幹線（先頭は下）。3つの窓は、乗ったキャラクターの色で光る。"""
-    dark = t is art.THEMES["dark"]
-    body = "#E8EDF5" if dark else "#FFFFFF"
-    edge = "#8A95A8" if dark else "#A9B3C3"
-    out = (f'<path d="M-12 7Q-12 0-5 0H5Q12 0 12 7V50Q12 66 0 74Q-12 66-12 50Z" fill="{body}" stroke="{edge}" stroke-width="1.5"/>'
-           '<rect x="7" y="4" width="3" height="54" rx="1.5" fill="url(#brand)"/>'
-           '<path d="M-6 56H6L3 63H-3Z" fill="#1C2333"/>')
-    for k, n in enumerate(["purple", "green", "blue"]):
-        y = 12 + k * 14
-        out += (f'<rect x="-6" y="{y - 4.5}" width="10" height="9" rx="3" fill="#1C2333"/>'
-                f'<rect class="win-{n}" x="-6" y="{y - 4.5}" width="10" height="9" rx="3" fill="{art.CHARS[n]["body"]}"/>')
-    return out
-
-
 def route_narrow(t):
-    D = 27.2
+    D = 31.6
     CT = 78
     LX = 24
     S1, S2 = CT + 30, CT + 196
@@ -647,66 +670,64 @@ def route_narrow(t):
     for y, name, en in ((S1, "金沢", "HACK DAY"), (S2, "東京", "AWARD DAY")):
         st.back.append(art.text(X0, y + 6, name, 16, t["ink"], cls="gh", weight=700))
         st.back.append(art.text(X0 + 44, y + 5, en, 13, t["muted"], cls="gh", weight=700, extra=' letter-spacing="3"'))
-    st.back.append(f'<rect x="{LX - 1.5}" y="{S1}" width="3" height="{S2 - S1}" rx="1.5" fill="{grad(st, 0, S1, 0, S2)}"/>')
+    y_last = H - 24
+    st.back.append(f'<rect x="{LX - 1.5}" y="{S1}" width="3" height="{y_last - S1}" rx="1.5" fill="{grad(st, 0, S1, 0, y_last)}"/>')
     station(st, LX, S1, "#C03BFF")
-    station(st, LX, S2, "#22C4FA", "st-tokyo")
+    station(st, LX, S2, "#4F9CFC", "st-tokyo")
     g.r1, g.r2 = S1 + 44, S1 + 88
     g.q1, g.q2, g.q3 = S2 + 44, S2 + 88, S2 + 132
     rows(st, g, X0, X0)
     g.aud = [X0 + 52 + i * 38 for i in range(3)]
-    T = {"vote": 8.6, "ticket": 10.6, "end_ticket": 27}
-    unlock0 = 13.2
-    lock(st, lambda c_: f'<rect x="{LX - 1.5}" y="{S1}" width="3" height="{S2 - S1}" rx="1.5" fill="{c_}"/>',
+    unlock0 = 13.3
+    lock(st, lambda c_: f'<rect x="{LX - 1.5}" y="{S1}" width="3" height="{y_last - S1}" rx="1.5" fill="{c_}"/>',
          lambda c_: f'<circle cx="{LX}" cy="{S2}" r="6.5" fill="{PAGE[mode_of(t)]}" stroke="{c_}" stroke-width="3"/>',
-         3.7, unlock0, unlock0 + .9, "50% 100%")
-    st.anim("st-tokyo", [(unlock0 + .85, "scale(1)", OUT_), (unlock0 + 1.05, "scale(1.6)", IO), (unlock0 + 1.3, "scale(1)")])
-    st.sparkle(LX, S2, unlock0 + .9, 18, 6, "#22C4FA")
-    c = {n: st.actor(n, g.xs[i], g.ry) for i, n in enumerate(art.ORDER)}
-    for i, n in enumerate(art.ORDER):
-        c[n].appear(3.5 + i * .12)
-    # チームは観客賞の文字の右端に跳び乗り、文字の上を歩いて並ぶ。赤は見出しに残って見守る
+         3.7, unlock0, unlock0 + 1.0, False)
+    st.anim("st-tokyo", [(unlock0 + .7, "scale(1)", OUT_), (unlock0 + .9, "scale(1.6)", IO), (unlock0 + 1.15, "scale(1)")])
+    st.sparkle(LX, S2, unlock0 + .75, 18, 6, "#22C4FA")
+    c = make_team(st, g)
+    # 観客賞の文字の右端に跳び乗り、文字の上を歩いて並ぶ
     for i, n in enumerate(TEAM):
-        c[n].wait(4.6 + i * .15).hop(5.4 + i * .15, 262 - i * 6, g.top(g.r1), 18).walk(7.0 + i * .2, g.aud[i])
-    c["red"].wait(4.5).walk(5.2, g.xs[3] - 8)
-    common_story(st, g, c, T)
-    # 新幹線が金沢駅に入ってくる。3体は乗り込むと、窓がその色で光る
-    tr_in, ride0 = unlock0 + 1.1, unlock0 + 2.6
-    y_top = S1 + 10
-    ride1 = ride0 + 2.4
+        c[n].wait(4.6 + i * .18).hop(5.4 + i * .18, 262 - i * 6, g.top(g.r1), 18).walk(7.0 + i * .22, g.aud[i])
+    tj, got = hackday_and_ticket(st, g, c, 8.3, 10.2)
+    # 新幹線：上から金沢駅に入り、3体が乗ると路線を下って東京駅へ。降ろしたあとは路線の先へ走り去る
+    y_top = S1 + 8
     y_end = S2 - 50
-    tr = [(tr_in, f"translate(0px,{y_top - 30}px)"), (tr_in + .5, f"translate(0px,{y_top}px)"),
-          (ride0, f"translate(0px,{y_top}px)", IO), (ride1, f"translate(0px,{y_end}px)"),
-          (ride1 + 1.6, f"translate(0px,{y_end}px)"), (ride1 + 2.0, f"translate(0px,{y_end + 20}px)")]
+    y_far = y_last - 74
+    t_in, t_dep, t_arr = unlock0 + 1.1, unlock0 + 3.2, unlock0 + 5.6
+    t_leave = t_arr + 1.4
+
+    def pos(s):
+        if s <= t_in:
+            return y_top - 30
+        if s <= t_in + .5:
+            return y_top - 30 + 30 * (1 - (1 - (s - t_in) / .5) ** 2)
+        if s <= t_dep:
+            return y_top
+        if s <= t_arr:
+            return y_top + (y_end - y_top) * smooth((s - t_dep) / (t_arr - t_dep))
+        if s <= t_leave:
+            return y_end
+        if s <= t_leave + 1.2:
+            return y_end + (y_far - y_end) * ((s - t_leave) / 1.2) ** 2
+        return y_far
+    frames = [(s / 10, f"translate(0px,{pos(s / 10):.1f}px)") for s in range(int(t_in * 10) - 1, int((t_leave + 1.3) * 10))]
     st.front.append(f'<g class="fx"><g class="trainO"><g class="train"><g transform="translate({LX} 0)">{train_icon(t)}</g></g></g></g>')
-    st.anim("train", tr, base=f"translate(0px,{y_top - 30}px)")
-    st.anim("trainO", [(tr_in, 0), (tr_in + .4, 1), (ride1 + 1.6, 1), (ride1 + 2.0, 0)], prop="opacity", base="0")
-    board = {"blue": tr_in + .6, "green": tr_in + .85, "purple": tr_in + 1.1}
-    for k, n in enumerate(TEAM):
-        a = c[n]
-        b = board[n]
-        a.wait(b).hop(b + .45, LX, y_top + 40, 14)
-        a.key(b + .55, sx=0, sy=0, ease=IN).put(b + .56, sx=0, sy=0)
-        st.anim(f"win-{n}", [(b + .5, 0), (b + .6, 1), (ride1 + .3 + k * .2, 1), (ride1 + .4 + k * .2, 0)],
-                prop="opacity", base="0")
-    # 東京駅に着くと、3体が窓から飛び出して、それぞれの賞へ
-    for k, n in enumerate(TEAM):
-        a = c[n]
-        out_t = ride1 + .3 + k * .2
-        a.key(out_t - .01, LX, y_end + 40, 0, 0, 0)
-        a.x, a.y, a.t = LX, y_end + 40, out_t - .01
-        a.key(out_t, sx=0, sy=0, ease=OUT_).key(out_t + .15, sx=1.2, sy=.85).put(out_t + .3)
-    st.mark(LX + 22, y_end + 10, "♪", ride1 + .2, ride1 + .9)
-    TA = ride1 + .4
+    st.anim("train", frames, base=f"translate(0px,{y_top - 30}px)")
+    st.anim("trainO", [(t_in, 0), (t_in + .4, 1), (t_leave + .8, 1), (t_leave + 1.25, 0)], prop="opacity", base="0")
+    board = {"blue": t_in + .7, "green": t_in + 1.0, "purple": t_in + 1.3}
+    ride(st, g, c, board, pos, t_in, t_arr + .25, None, lambda n, s: (LX, pos(s) + WIN[n] + 12))
+    TA = t_arr + .4
     sp, inn, dmm = g.spots["green"], g.spots["purple"], g.spots["blue"]
-    arrive = {"blue": (TA + .35, TA + 1.4, [(dmm[0] - 60, g.top(g.q2)), dmm]),
-              "green": (TA + .55, TA + 1.4, [sp]),
-              "purple": (TA + .75, TA + 1.6, [inn])}
-    award_part(st, g, c, TA, arrive)
+    arrive = {"blue": (TA + .2, TA + 1.4, [(dmm[0] - 50, g.top(g.q2)), dmm]),
+              "green": (TA + .45, TA + 1.25, [sp]),
+              "purple": (TA + .7, TA + 1.6, [(inn[0] - 30, g.top(g.q1)), inn])}
+    award_part(st, g, c, TA, arrive, got)
     back = {}
     for k, n in enumerate(TEAM):
-        x = 250 + k * 18
-        back[n] = [(x - 20, g.top(g.q1)), (x - 40, g.top(g.r2) + 4), (x, g.top(g.r1)), (g.xs[k], g.ry)]
-    finish(st, g, c, TA, back, lambda a, t0, t1: a.wait(t0).walk(t1, g.xs[3]))
+        x = 240 + k * 20
+        back[n] = [(x - 30, g.top(g.q1)), (x - 50, g.top(g.r2)), (x - 10, g.top(g.r1)), (g.xs[k], g.ry)]
+    end = finish(st, g, c, TA, back)
+    assert end <= D + .01, end
     return st.svg()
 
 
