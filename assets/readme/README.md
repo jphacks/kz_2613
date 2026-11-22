@@ -28,7 +28,7 @@
 | [`scenes/`](scenes/README.md) | 各項目の終わりに置く区切りの帯（キャラクターが遊ぶ10種類のアニメーション） |
 | `system-architecture.webp` | 以前の構成図の画像（READMEでは `architecture-*.svg` に置き換えた） |
 
-`-light`／`-dark` はGitHubのテーマ、`-narrow-` は画面幅1265px以下（スマホ・タブレット・狭いPC）用で、READMEの `<picture>` が切り替えます。図と見出しは、GitHubの本文欄と同じ幅（PCは838px、幅390pxのスマホは324px）で描き、READMEでは原寸で表示します（本文欄が広いときスマホ版は中央に置く）。図の文字の大きさがそのまま画面上の大きさになり、本文（16px）との比がPC版とスマホ版でそろいます。図の文字はPC版で13px以上、スマホ版で14.1px以上にし（スマホ版は `build_art.svg()` が引き上げる）、`python scripts/readme/check_text_size.py` で、実測した14通りの画面幅で12.5px以上になるかを確かめます。
+`-light`／`-dark` はGitHubのテーマ、`-narrow-` は画面幅1265px以下（スマホ・タブレット・狭いPC）用で、READMEの `<picture>` が切り替えます。図と見出しは、GitHubの本文欄と同じ幅（PCは838px、幅390pxのスマホは324px）で描き、READMEでは原寸で表示します（本文欄が広いときもスマホ版は左端に置く）。図の文字の大きさがそのまま画面上の大きさになり、本文（16px）との比がPC版とスマホ版でそろいます。図の文字はPC版で13px以上、スマホ版で14.1px以上にし（スマホ版は `build_art.svg()` が引き上げる）、`python scripts/readme/check_text_size.py` で、実測した14通りの画面幅で12.5px以上になるかを確かめます。
 
 ## 版の切り替え（`<picture>` の書き方）
 

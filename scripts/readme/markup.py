@@ -134,12 +134,7 @@ def outside_fences(text, fn):
 
 
 def migrate(text):
-    def one(t):
-        # 複数行で書いた単独の図は、原寸のスマホ版が本文欄の中央に来るよう <p align="center"> で包む
-        t = re.sub(r'(?m)^<picture>\n(?:  .*\n)+?</picture>$',
-                   lambda m: '<p align="center">' + OLD.sub(convert, m.group(0)) + '</p>', t)
-        return OLD.sub(convert, t)
-    return outside_fences(text, one)
+    return outside_fences(text, lambda t: OLD.sub(convert, t))
 
 
 NEW_PIC = re.compile(r'<picture><source media="([^"]+)" srcset="[^"]*hide\.svg" width="0" height="0">'
@@ -147,8 +142,7 @@ NEW_PIC = re.compile(r'<picture><source media="([^"]+)" srcset="[^"]*hide\.svg" 
 
 
 def collapse(text):
-    """新形式を、図1つにつき旧形式の <picture> 1つに戻す（読むだけの道具向け。text_readme.py が使う）。
-    本文欄の中央に置くために足した <p align="center"> も外す。"""
+    """新形式を、図1つにつき旧形式の <picture> 1つに戻す（読むだけの道具向け。text_readme.py が使う）。"""
     def group(m):
         pics = [(media, dark, img) for media, dark, img in NEW_PIC.findall(m.group(0))]
         first, wide = pics[0], next(p for p in pics if p[0] == RANGES["wide"] or p[0] == f"{MOTION['anim']}, {RANGES['wide']}")
@@ -163,9 +157,7 @@ def collapse(text):
     head = rf'<picture><source media="(?:{starts})"'
     text = re.sub(rf'{head}[^>]*>(?:(?!</picture>).)*</picture>(?:(?!{head}){one})*',
                   lambda m: group(m) if NEW_PIC.match(m.group(0)) else m.group(0), text)
-    text = re.sub(r'<p align="center">(<picture>(?:(?!</p>).)*</picture>)</p>', r"\1", text)  # 単独の図
-    text = re.sub(r'<p align="center">(<a href=(?:(?!</p>).)*</a>)</p>', r"\1", text, flags=re.S)  # サムネイル
-    return text.replace('<p align="center"><picture>', "<p><picture>")  # 録画の図の切り絵
+    return text
 
 
 def check(text, here=ROOT):
