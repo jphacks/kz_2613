@@ -1,58 +1,34 @@
-# 受賞結果のカード：比較用の案（第2回）
+# 受賞結果のカード：比較用の案（第3回）
 
-前回のA案（Award Day への道）を基準に、実際の流れに沿って物語を組み直しました。前後とのつり合いが分かるよう、各案の上に**動画への誘導**、下に**目次の見出し**を並べています。PCとスマホ、ライトとダークで、それぞれの画像に切り替わります。
+第2回の案2（路線図）をもとに作り直しました。
 
-## 物語の筋（3案に共通）
+## 前回からの変更
 
-1. 約3.5秒たつと、見出しの右端の4色の点がキャラクターに変わって飛び出す（止まっているあいだは、目次の見出しと同じ形）。
-2. **Hack Day（金沢）の勝者**：観客賞の文字の上に乗り、王冠のタイルが光るなか、みんなで跳ねて喜ぶ。
-3. **Award Day への切符**：青が決勝進出の行へ跳び、画面に切符を映して掲げる。
-4. **金沢から東京へ**（ここが案ごとに違う）。おっちょこちょいの赤が出遅れる（作品名の見出しで「。」を蹴った赤と同じ役）。
-5. **Award Day（東京）で受賞**：それぞれ自分の色の賞の横へ行き、受け取ると画面に賞のアイコンが映る。みんなで喜び、見出しへ戻って点になる。
+- **3人チームとの矛盾を解消しました。** 見出しの4色の点のうち、青・緑・紫の3体がチームで、赤は応援してくれる観客です。観客賞は、観客の赤が送る投票のハートで決まります。そのため、観客賞のタイルは赤にしました。Award Day の3つの賞は、チームの3体が1つずつ受け取ります（審査委員特別賞＝緑、Innovator認定＝紫、DMM.com賞＝青）。
+- **「切符を手にした」「資格を得た」感じを強くしました。** 決勝進出のタイルが大きく光り、3人分の切符が1枚ずつ飛んできて、それぞれの画面に収まります。3体がそろって切符を掲げると、それまで灰色だった金沢→東京の路線が、金沢側から光って開通します。東京駅も光ります。
+- **PC版は前回の案2の動き**（3体が連なって列車になり、路線の上を進む）のままにしました。赤は見出しの線の上を並走して見送り、東京では賞のたびにハートで応援します。
+- **スマホ版は縦の路線図にしました。** 金沢駅を上、東京駅を下にして、駅の右にその日の賞を並べます。3体は小さな新幹線に乗り込み（窓が乗った3体の色で光る）、路線を下って東京駅へ行きます。
+- 3体の画面は、切符を受け取ってから東京で賞を受け取るまで、切符を映したままにしました。
 
-## 前回からの変更（3案に共通）
+## 路線図（3人チームと観客）
 
-- セリフ（吹き出し）をなくし、「!」「♪」「z」の記号だけにしました。
-- 観客賞のアイコンを王冠（Hack Day の勝者）に、決勝進出のアイコンを切符にしました。
-- 会場名は「金沢」「東京」にしました。
+カードを金沢と東京を結ぶ路線図にする。青・緑・紫の3体がチーム、赤は応援する観客。観客の赤が投票のハートを送ると、観客賞の王冠が光る（Hack Day の勝者）。決勝進出では、3人分の切符が1枚ずつ飛んできてそれぞれの画面に収まり、灰色だった路線が金沢から東京まで光って開通する。PCでは3体が連なって列車になり、赤は見出しの線の上を並走して見送る。スマホでは縦の路線図で、3体が新幹線に乗って下る。東京ではそれぞれ自分の賞を受け取り、赤が応援する。
 
-## 案1　新幹線で東京へ
+### PC版
 
-Hack Day（金沢）の勝者＝観客賞の王冠の上でみんなで喜び、青が決勝進出＝Award Day への切符を受け取る。線路に新幹線が入ってきて、3体は窓から顔を出す。喜び疲れて眠っていた赤は、発車に気づいて走り出した新幹線に飛び乗る。東京に着いたら、それぞれ Award Day の自分の賞へ。最後は見出しへ戻り、元の点になる。
+<picture><source media="(prefers-color-scheme: dark)" srcset="awards-2-dark.svg"><img src="awards-2-light.svg" alt="PC版"></picture>
 
-<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../video-cta-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../video-cta-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../video-cta-dark.svg"><img src="../video-cta-light.svg" alt="プロダクト紹介動画を見る"></picture>
+### スマホ版
 
-<br>
+<picture><source media="(prefers-color-scheme: dark)" srcset="awards-2-narrow-dark.svg"><img src="awards-2-narrow-light.svg" alt="スマホ版"></picture>
 
-<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="awards-1-narrow-dark.svg"><source media="(max-width: 700px)" srcset="awards-1-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="awards-1-dark.svg"><img src="awards-1-light.svg" alt="案1"></picture>
-
-<br>
-
-<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../heads/toc-title-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../heads/toc-title-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../heads/toc-title-dark.svg"><img src="../heads/toc-title-light.svg" alt="目次"></picture>
-
-## 案2　路線図
-
-カードを路線図にする。金沢と東京の駅を線でつなぎ、駅の下にそれぞれの日の賞を並べる。Hack Day の勝者として喜んだあと、青が切符を受け取り、4体は連なって列車になる。眠っていた赤は置いていかれ、走って追いかけて最後尾に連結する。東京の駅で降りて、Award Day の賞へ。
+### 前後とのつり合い（閲覧している画面の幅に合わせて切り替わる）
 
 <picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../video-cta-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../video-cta-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../video-cta-dark.svg"><img src="../video-cta-light.svg" alt="プロダクト紹介動画を見る"></picture>
 
 <br>
 
-<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="awards-2-narrow-dark.svg"><source media="(max-width: 700px)" srcset="awards-2-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="awards-2-dark.svg"><img src="awards-2-light.svg" alt="案2"></picture>
-
-<br>
-
-<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../heads/toc-title-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../heads/toc-title-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../heads/toc-title-dark.svg"><img src="../heads/toc-title-light.svg" alt="目次"></picture>
-
-## 案3　切符と改札
-
-カード全体を、金沢から東京への切符の形にする（切り取り線と半円の切り欠き）。Hack Day の勝者として喜んだあと、青が切符を受け取る。切り取り線のところの自動改札に青がタッチして3体が通るが、遅れてきた赤は閉まった扉にぶつかる。青が戻ってもう一度タッチし、赤を通してあげる。そして Award Day の賞へ。
-
-<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="../video-cta-narrow-dark.svg"><source media="(max-width: 700px)" srcset="../video-cta-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="../video-cta-dark.svg"><img src="../video-cta-light.svg" alt="プロダクト紹介動画を見る"></picture>
-
-<br>
-
-<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="awards-3-narrow-dark.svg"><source media="(max-width: 700px)" srcset="awards-3-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="awards-3-dark.svg"><img src="awards-3-light.svg" alt="案3"></picture>
+<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="awards-2-narrow-dark.svg"><source media="(max-width: 700px)" srcset="awards-2-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset="awards-2-dark.svg"><img src="awards-2-light.svg" alt="案"></picture>
 
 <br>
 
@@ -60,4 +36,4 @@ Hack Day（金沢）の勝者＝観客賞の王冠の上でみんなで喜び、
 
 ## 作り方
 
-`python scripts/readme/awards_play.py` で、この比較用の画像（案ごとに4枚）を `assets/readme/awards-options/` に書き出します。決まった案は、選んでもらった後で README の `awards-*.svg` に差し替えます。
+`python scripts/readme/awards_play.py` で、この比較用の画像（4枚）を `assets/readme/awards-options/` に書き出します。決まったら README の `awards-*.svg` を差し替えます。
