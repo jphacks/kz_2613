@@ -319,12 +319,15 @@ def pipeline(t, narrow=False):
         tx = x + 40 + k * 76
         b += [f'<rect x="{tx}" y="100" width="68" height="28" rx="14" fill="{t["code"]}" stroke="{t["line"]}"/>',
               text(tx + 34, 119, tk, 14, t["ink"], cls="mono", weight=700, anchor="middle")]
-    layers = [(150, "多言語エンコーダ（MiniLM・約40MB）", "操作名 → 384次元の意味ベクトル"),
-              (236, "分担判断（2層Transformer・約410KB）", "教師あり＋伏せたキーを当てる学習")]
-    for (y, l1, l2) in layers:
+    # 枠いっぱいの見出しは、Windows（Yu Gothic UI）で測った幅に textLength で固定する。Android の Noto Sans JP や
+    # macOS・iPhone のヒラギノは仮名が広く、そのままでは枠から最大15pxはみ出すため（check_text_fit.mjs、2026-11-22）。
+    # Windows では見た目が変わらず、字幅の広い端末では字を少し詰めて枠に収める。
+    layers = [(150, "多言語エンコーダ（MiniLM・約40MB）", "操作名 → 384次元の意味ベクトル", 278),
+              (236, "分担判断（2層Transformer・約410KB）", "教師あり＋伏せたキーを当てる学習", 294)]
+    for (y, l1, l2, l1w) in layers:
         b += [f'<rect x="{x + 30}" y="{y}" width="{pw - 60}" height="66" rx="14" fill="url(#brand)" opacity=".14"/>',
               f'<rect x="{x + 30}" y="{y}" width="{pw - 60}" height="66" rx="14" fill="none" stroke="url(#brand)" stroke-width="2"/>',
-              text(cx, y + 28, l1, 17, t["ink"], weight=900, anchor="middle"),
+              text(cx, y + 28, l1, 17, t["ink"], weight=900, anchor="middle", length=l1w),
               text(cx, y + 52, l2, 15, t["muted"], weight=700, anchor="middle")]
     for k in range(5):  # 層をつなぐ線
         lx = x + 70 + k * 58
@@ -336,7 +339,7 @@ def pipeline(t, narrow=False):
               text(ox + 48, 349, o1, 16, t["ink"], weight=800, anchor="middle"),
               text(ox + 48, 372, o2, 15, t["muted"], weight=700, anchor="middle")]
     b += [f'<rect x="{cx - 120}" y="400" width="240" height="34" rx="17" fill="{t["stripe"]}" opacity=".9"/>',
-          text(cx, 423, "Rustでオフライン推論・約80ms", 16, "#2E2B48", weight=900, anchor="middle")]
+          text(cx, 423, "Rustでオフライン推論・約80ms", 16, "#2E2B48", weight=900, anchor="middle", length=199)]
     b.append(text(cx, PH, "※14操作のゲームで2〜4人分の分担を作る時間", 13, t["muted"], weight=600, anchor="middle"))
     b.append("</g>")
     # ③ 3人の画面
