@@ -478,33 +478,68 @@ def lock(st, shape, ring, t_on, u0, u1, horizontal):
             origin="100% 50%" if horizontal else "50% 100%")
 
 
-def hackday_and_ticket(st, g, c, hit, tb):
+def hackday_and_ticket(st, g, c, hit):
     """Hack Day の勝者：王冠のタイルが光り、3体の画面に王冠が映る。
-    決勝進出：タイルが大きく光り、3人分の切符が1枚ずつ飛んできて、それぞれの画面の王冠が切符に変わる。
-    返り値：切符を掲げ終わる時刻と、各キャラクターが切符を受け取った時刻。"""
+    決勝進出：3体が観客賞の文字の上にいるまま、決勝進出のタイルが大きく光り、3人分の切符が1枚ずつ飛んできて、
+    それぞれの画面の王冠が切符に変わる。最後に3体でそろって切符を掲げる。
+    返り値：切符を掲げ終わる時刻（= hit + 3.6）と、各キャラクターが切符を受け取った時刻。"""
     st.anim("tile-aud", st.pulse("tile-aud", hit, 1.4))
     st.sparkle(*g.tiles["aud"], hit + .02, 22, 8)
     got = {}
     for i, n in enumerate(TEAM):
         c[n].wait(hit + .05 + i * .06).jump(hit + .6 + i * .06, 10).jump(hit + 1.25 + i * .06, 12)
-    st.mark(g.aud[1], g.top(g.r1) - CH - 6, "♪", hit + .2, hit + 1.6)
-    c["blue"].wait(tb).hop(tb + .5, g.e["fin"] + 20, g.feet(g.r2), 10)
-    st.anim("tile-fin", [(tb + .55, "scale(1)", OUT_), (tb + .75, "scale(1.5)", IO), (tb + 1.0, "scale(1.3)"),
-                         (tb + 2.2, "scale(1.3)", IO), (tb + 2.45, "scale(1)")])
-    st.sparkle(*g.tiles["fin"], tb + .6, 22, 8)
+    st.mark(g.aud[1], g.top(g.r1) - CH - 6, "♪", hit + .2, hit + 1.5)
+    tb = hit + 1.45
+    st.anim("tile-fin", [(tb, "scale(1)", OUT_), (tb + .2, "scale(1.5)", IO), (tb + .4, "scale(1.3)"),
+                         (tb + 1.75, "scale(1.3)", IO), (tb + 2.0, "scale(1)")])
+    st.sparkle(*g.tiles["fin"], tb + .05, 22, 8)
     for k, n in enumerate(TEAM):
         a = c[n]
-        t0 = tb + .9 + k * .4
-        fly(st, ticket_art(), t0, t0 + .6, g.tiles["fin"], (a.x, a.y - CH * .62), peak=-36)
+        t0 = tb + .35 + k * .35
+        fly(st, ticket_art(), t0, t0 + .6, g.tiles["fin"], (a.x, a.y - CH * .62), peak=-30)
         got[n] = t0 + .6
         c[n].face("icon:crown", hit + .05, got[n])
-        a.wait(t0 + .55).put(t0 + .67, sx=1.15, sy=.85).jump(t0 + 1.15, 12)
+        a.wait(t0 + .55).put(t0 + .65, sx=1.15, sy=.85).jump(t0 + 1.1, 12)
         st.sparkle(a.x, a.y - CH * .62, t0 + .6, 14, 5, art.CHARS[n]["body"])
-    tj = tb + .9 + 2 * .4 + 1.3
+    tj = tb + 2.15
     for n in TEAM:
-        c[n].wait(tj).jump(tj + .55, 14)
-    st.mark(g.e["fin"] + 46, g.feet(g.r2) - CH - 6, "!", tj, tj + .9, 20, "#22C4FA")
-    return tj + .55, got
+        c[n].wait(tj).jump(tj + .5, 14)
+    st.mark(g.aud[1], g.top(g.r1) - CH - 8, "!", tj, tj + .8, 20, "#22C4FA")
+    return tj + .5, got
+
+
+def confetti(st, x, y, t0, n=16, seed=0, up=60, spread=55, dur=1.3, rain=None):
+    """紙吹雪。(x, y) からはじけて飛び散り、くるくる回りながら落ちる（クラッカー）。
+    rain=(x0, x1, y0, y1) を渡すと、その範囲の上から降らせる。"""
+    import math
+    import random
+    rnd = random.Random(seed)
+    colors = ["#C03BFF", "#6F86FF", "#22C4FA", art.CHARS["green"]["body"], art.CHARS["purple"]["body"],
+              art.CHARS["blue"]["body"], "#F5B400", "#FF9F1C"]
+    for i in range(n):
+        cls = f"cf{len(st.css)}"
+        col = colors[i % len(colors)]
+        shape = (f'<rect x="-2" y="-4" width="4" height="8" rx="1.2" fill="{col}"/>' if i % 3
+                 else f'<circle r="2.5" fill="{col}"/>')
+        d = dur * rnd.uniform(.8, 1.15)
+        rot = rnd.uniform(-540, 540)
+        if rain:
+            x0, x1, y0, y1 = rain
+            sx, sy = rnd.uniform(x0, x1), y0 - rnd.uniform(0, 20)
+            dx, dy = rnd.uniform(-14, 14), y1 - sy
+            a0 = t0 + rnd.uniform(0, .8)
+            pts = [(u, sx + dx * u + 6 * math.sin(u * 7 + i), sy + dy * u) for u in (k / 8 for k in range(9))]
+        else:
+            ang = math.radians(rnd.uniform(-90 - spread, -90 + spread))
+            v = rnd.uniform(.6, 1.0) * up
+            sx, sy, a0 = x, y, t0
+            pts = [(u, x + math.cos(ang) * v * 1.4 * u, y + math.sin(ang) * v * 2.2 * u + 2.6 * v * u * u) for u in (k / 8 for k in range(9))]
+        fr = [(a0 - .01, f"translate({sx:.1f}px,{sy:.1f}px) rotate(0deg) scale(0)")]
+        for u, px, py in pts:
+            sc = 1 if u < .75 else max(0, 1 - (u - .75) / .25)
+            fr.append((a0 + d * u, f"translate({px:.1f}px,{py:.1f}px) rotate({rot * u:.0f}deg) scale({sc:.2f})"))
+        st.front.append(f'<g class="fx"><g class="{cls}">{shape}</g></g>')
+        st.anim(cls, fr, origin="50% 50%", base="scale(0)")
 
 
 TENSE = 1.3  # 発表直前のドキドキの分だけ、受賞以降を後ろへずらす
@@ -540,12 +575,17 @@ def award_part(st, g, c, T, arrive, got, outs):
                                (at + .45, "scale(1)")]
         st.anim(f"tile-{key}", frames)
         st.sparkle(*g.tiles[key], at + .05, 18, 6, art.CHARS[n]["body"])
+        confetti(st, *g.tiles[key], at + .05, n=26, seed={"sp": 1, "inn": 2, "dmm": 3}[key], up=125, spread=70, dur=1.7)
         c[n].face("icon:" + A[key]["icon"], at + .1, T + 6.2 + TENSE)
         c[n].wait(at).jump(at + .55, 12)
     for i, n in enumerate(TEAM):
         c[n].wait(T + 4.4 + TENSE + i * .08).jump(T + 4.95 + TENSE + i * .08, 10).jump(T + 5.55 + TENSE + i * .08, 13)
     sx, sy = g.spots["purple"]
     st.mark(sx + 34, sy - CH - 10, "♪", T + 4.5 + TENSE, T + 5.9 + TENSE)
+    # 3つそろったら、Award Day の欄に紙吹雪が降る
+    x0 = g.R
+    x1 = g.cw - 20
+    confetti(st, 0, 0, T + 4.35 + TENSE, n=44, seed=7, dur=1.8, rain=(x0, x1, g.q1 - 50, g.q3 + 16))
 
 
 def finish(st, g, c, T, back):
@@ -747,7 +787,7 @@ def option_2(t, narrow=False):
 
 def route_pc(t):
     H = 78 + 206
-    unlock0 = 13.6
+    unlock0 = 8.35 + 4.2
     t_in, t_dep, t_arr = unlock0 + 1.0, unlock0 + 3.0, unlock0 + 5.2
     P0 = t_arr + 1.55
     TA = P0 + SCENE + .1
@@ -785,7 +825,7 @@ def route_pc(t):
     st.mark(line_x[2] - 2, g.ry - CH - 4, "!", 6.05, 6.7)
     for i, n in enumerate(TEAM):
         c[n].wait(6.8 + i * .15).hops(7.9 + i * .15, [(line_x[i] - 40, rl), (g.aud[i], g.top(g.r1))], h=16)
-    tj, got = hackday_and_ticket(st, g, c, 8.35, 10.3)
+    tj, got = hackday_and_ticket(st, g, c, 8.35)
     # 新幹線：左から金沢駅に入り、3体が乗ると路線を走って東京駅へ。降ろしたあとは路線の先へ走り去る
     k = 1.3  # PCでは少し大きく描く
     Lt = TRAIN_LEN * k
@@ -842,7 +882,7 @@ def route_pc(t):
 
 
 def route_narrow(t):
-    unlock0 = 13.3
+    unlock0 = 8.3 + 4.2
     t_in, t_dep, t_arr = unlock0 + 1.1, unlock0 + 3.1, unlock0 + 5.2
     P0 = t_arr + 1.3
     TA = P0 + SCENE + .1
@@ -875,7 +915,7 @@ def route_narrow(t):
     # 観客賞の文字の右端に跳び乗り、文字の上を歩いて並ぶ
     for i, n in enumerate(TEAM):
         c[n].wait(4.6 + i * .18).hop(5.4 + i * .18, 262 - i * 6, g.top(g.r1), 18).walk(7.0 + i * .22, g.aud[i])
-    tj, got = hackday_and_ticket(st, g, c, 8.3, 10.2)
+    tj, got = hackday_and_ticket(st, g, c, 8.3)
     # 新幹線：上から金沢駅に入り、3体が乗ると路線を下って東京駅へ。降ろしたあとは路線の先へ走り去る
     y_top = S1 + 8
     y_end = S2 - 50
@@ -904,7 +944,7 @@ def route_narrow(t):
     outs = ride(st, g, c, board, pos, t_in, t_arr + .25, None, lambda n, s: (LX, pos(s) + WIN[n] + 12))
     # 東京：東京駅の上の空いた所（Hack Day の行と「東京」の間）で、発表と展示をする。
     # Innovator認定の右はスマホでは狭く、文字に重なるため
-    fy = S2 - 16
+    fy = S2 - 10
     S = {"fy": fy, "screen": 268, "sw": 50, "sh": 30, "podium": 224, "ay": fy,
          "aud_pres": [128, 106, 84, 62], "aud_expo": [140, 118, 96, 74],
          "booth": 262, "bw": 76,
