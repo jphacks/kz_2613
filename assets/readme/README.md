@@ -28,7 +28,16 @@
 | [`scenes/`](scenes/README.md) | 各項目の終わりに置く区切りの帯（キャラクターが遊ぶ10種類のアニメーション） |
 | `system-architecture.webp` | 以前の構成図の画像（READMEでは `architecture-*.svg` に置き換えた） |
 
-`-light`／`-dark` はGitHubのテーマ、`-narrow-` は画面幅1265px以下（スマホ・タブレット・狭いPC）用、`-mid-` は本文欄が555〜808pxになる画面幅（668〜767px と 932〜1265px）用の中間の版で、READMEの `<picture>` が切り替えます。中間の版は幅620pxで描き、本文欄の幅いっぱい（0.895〜1.30倍）に表示します。文字はスマホ版と同じく14.1px以上です。いまは項目の見出し・大見出し・目次・動画への誘導だけにあり、中間の版がない図は、その画面幅でもスマホ版を使います。図と見出しは、GitHubの本文欄と同じ幅（PCは838px、幅390pxのスマホは324px）で描き、READMEでは原寸で表示します（本文欄が広いときもスマホ版は左端に置く）。図の文字の大きさがそのまま画面上の大きさになり、本文（16px）との比がPC版とスマホ版でそろいます。図の文字はPC版で13px以上、スマホ版で14.1px以上にし（スマホ版は `build_art.svg()` が引き上げる）、`python scripts/readme/check_text_size.py` で、実測した25通りの画面幅（版の境目の両側を含む）で12.5px以上になるかを確かめます。
+`-light`／`-dark` はGitHubのテーマです。画面幅の版は4段階で、READMEの `<picture>` が切り替えます（`scripts/readme/markup.py` の `TIERS`、`docs/readme-design.md` 4.6節）。
+
+| 名前の印 | 描いた幅 | 本文欄の幅 | 文字の最小 |
+|---|---|---|---|
+| `-narrow-` | 324px | 〜399px（スマホの縦向き） | 14.1px |
+| `-compact-` | 460px | 400〜554px（iPad の縦向き、スマホの横向き、画面を半分に分けたPC） | 14.8px |
+| `-mid-` | 620px | 555〜808px（iPad の横向き、狭いPC） | 14.1px |
+| なし | 838px | 809px〜（PC） | 13px |
+
+PC版以外は本文欄の幅いっぱい（0.85〜1.3倍）に表示します。`-compact-`・`-mid-` の版がない図（作品名・引用・処理の流れ・録画の図）は、その画面幅ではスマホ版を原寸で左端に置きます。文字の最小は `build_art.svg()` が引き上げ、`python scripts/readme/check_text_size.py` が、実測した41通りの画面幅で12.5px以上になるかを確かめます。
 
 ## 版の切り替え（`<picture>` の書き方）
 
@@ -36,7 +45,7 @@ GitHub は `<picture>` を `<themed-picture>` で包み、外観を「ライト�
 
 - 書くときは、4枚を1つの `<picture>` に並べた書きやすい旧形式で書き、`python scripts/readme/markup.py migrate` で新形式にします。`python scripts/readme/markup.py check`（CI の `structure` でも実行）が決まりを確かめます。詳しくは `markup.py` の説明を参照してください。
 - 幅を % で指定する画像（目次・録画の図の切り絵）は、画面幅420〜1265pxでスマホ版を px の原寸で並べ、本文欄に合わせて拡大されないようにします。
-- 中間の版（`-narrow-` を `-mid-` にした名前のファイル）を書き出したら、`python scripts/readme/markup.py rebuild` で README を組み直します。ファイルがあれば中間の版の `<picture>` が加わり、`check` は使い忘れも見つけます。
+- 中間の版（`-narrow-` を `-compact-`・`-mid-` にした名前のファイル）を書き出したら、`python scripts/readme/markup.py rebuild` で README を組み直します。ファイルがあれば中間の版の `<picture>` が加わり、`check` は使い忘れも見つけます。
 - アニメーションWebP には、OS で「視差効果を減らす」を選んだ閲覧者向けの静止画（`pieces/*-still.webp`、`scripts/readme/recordings/stills.py`）の版を並べます。
 - 外観の設定と OS の設定が食い違う閲覧者（例：GitHub はダークに固定、OS はライト）には、GitHub がページを読み込んだ後に版を差し替えるため、両方の版を取得します（main でも同じ。README 側では避けられない）。
 - 図には GitHub の背景色を描き込まないようにしています。GitHub の Dark dimmed（背景 `#212830`）などほかのテーマでは、図の中の背景色が四角く浮いて見えるためです（`themed-picture` はライトとダークしか区別しない）。受賞結果の駅の印の中心だけは、路線の線を隠すため背景色で塗っています。
