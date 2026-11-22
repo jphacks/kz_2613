@@ -252,7 +252,9 @@ STEPS = [("qr", "スマホでQR参加", "ブラウザで読み取るだけ。", 
 
 
 def flow(t, narrow=False):
-    """遊ぶまでの4ステップ（PC版）。"""
+    """遊ぶまでの4ステップ（PC版）。中間の版2つは flow_grid、スマホ版は flow_phone。"""
+    if narrow in ("mid", "compact"):
+        return flow_grid(t, MID_W if narrow == "mid" else COMPACT_W)
     if narrow:
         return flow_phone(t)
     W, H, gap = PC_W, 196, 26
@@ -275,6 +277,29 @@ def flow(t, narrow=False):
             ax = x + cw + gap / 2
             b.append(f'<path d="M{ax - 5} 82l7 7-7 7" fill="none" stroke="url(#brand)" stroke-width="4" '
                      'stroke-linecap="round" stroke-linejoin="round"/>')
+    return svg(W, H + 24, "".join(b), t, "遊ぶまでの4ステップ：スマホでQR参加、ゲームを選ぶ、AIが操作を分担、開始ボタンでプレイ")
+
+
+def flow_grid(t, W):
+    """遊ぶまでの4ステップ（中間の版）。横4列では「開始ボタンでプレイ」が入らないので2×2にし、
+    PC版と同じく説明の2行も載せる。"""
+    gap, ch = 14, 196
+    cw = (W - gap) / 2
+    b = []
+    for i, (kind, title, d1, d2) in enumerate(STEPS):
+        name = ORDER[i]
+        c = CHARS[name]["body"]
+        x, y = (i % 2) * (cw + gap), (i // 2) * (ch + gap)
+        b += [f'<rect x="{x + 1}" y="{y + 1}" width="{cw - 2}" height="{ch - 2}" rx="16" fill="{t["panel"]}" stroke="{t["line"]}"/>',
+              f'<circle cx="{x + 24}" cy="{y + 24}" r="13" fill="{c}"/>',
+              text(x + 24, y + 30, str(i + 1), 16, "#FFFFFF" if name != "green" else "#103B10", cls="disp", weight=400, anchor="middle"),
+              text(x + 44, y + 29, f"STEP {i + 1}", 13, t["muted"], cls="mono", weight=700),
+              char(name, x + cw / 2 - 54, y + 40, .46, t, delay=i * .4),
+              f'<g transform="translate({x + cw / 2 + 8} {y + 54}) scale(.66)">{icon(kind, 0, 0, c, t)}</g>',
+              text(x + cw / 2, y + 128, title, 16, t["ink"], weight=900, anchor="middle"),
+              text(x + cw / 2, y + 154, d1, 13, t["muted"], weight=700, anchor="middle"),
+              text(x + cw / 2, y + 175, d2, 13, t["muted"], weight=700, anchor="middle")]
+    H = 2 * ch + gap
     return svg(W, H + 24, "".join(b), t, "遊ぶまでの4ステップ：スマホでQR参加、ゲームを選ぶ、AIが操作を分担、開始ボタンでプレイ")
 
 
@@ -448,7 +473,10 @@ def pipeline_phone(t):
 
 # ---------- 区切りとフッター ----------
 def footer(t, narrow=False):
-    W, H = (PHONE_W, 272) if narrow else (PC_W, 230)
+    """締めのカード。中間の版（620）はPC版と同じ組み方。小さい中間の版（460）は副題を2行にし、札はPC版と同じ1本。"""
+    compact = narrow == "compact"
+    W, H = (PHONE_W, 272) if narrow is True else (MID_W if narrow == "mid" else COMPACT_W if compact else PC_W, 252 if compact else 230)
+    narrow = narrow is True
     cx = W / 2
     b = [f'<rect width="{W}" height="{H}" rx="22" fill="url(#bg)"/>',
          f'<clipPath id="card"><rect width="{W}" height="{H}" rx="22"/></clipPath><g clip-path="url(#card)">',
@@ -459,6 +487,11 @@ def footer(t, narrow=False):
               text(cx, 80, "PCのゲームはそのままに、", 14, t["muted"], cls="rnd", weight=700, anchor="middle"),
               text(cx, 100, "友達と集まったその場で協力プレイ", 14, t["muted"], cls="rnd", weight=700, anchor="middle")]
         top, gap, s = 116, 62, .5
+    elif compact:
+        b += [text(cx, 56, "さあ、みんなで遊ぼう！", 34, t["ink"], cls="hand", weight=400, anchor="middle"),
+              text(cx, 86, "PCのゲームはそのままに、", 15, t["muted"], cls="rnd", weight=700, anchor="middle"),
+              text(cx, 108, "友達と集まったその場で協力プレイ", 15, t["muted"], cls="rnd", weight=700, anchor="middle")]
+        top, gap, s = 124, 76, .5
     else:
         b += [text(cx, 58, "さあ、みんなで遊ぼう！", 36, t["ink"], cls="hand", weight=400, anchor="middle"),
               text(cx, 88, "PCのゲームはそのままに、友達と集まったその場で協力プレイ", 15, t["muted"], cls="rnd", weight=700, anchor="middle")]
@@ -469,14 +502,15 @@ def footer(t, narrow=False):
         b.append(f'<ellipse cx="{x0 + i * gap + 50 * s:.1f}" cy="{top + 63}" rx="18" ry="3.5" fill="{t["shadow"]}" opacity=".12"/>')
     # まだ一般公開（リリース）していないことを、締めの気分を壊さない札で伝える
     label, note = "COMING SOON", "一般公開に向けて準備中です"
-    lw = len(label) * 10.6  # 13px・太字・字間2の英大文字の幅の見積もり
+    # 13px・太字・字間2の英大文字の幅の見積もり。PC版以外は art.svg が文字を引き上げるので、その大きさで見積もる
+    lw = len(label) * 10.6 * (1 if W == PC_W else (COMPACT_MIN_FONT if compact else PHONE_MIN_FONT) / 13)
     ph = 34
     if narrow:  # 幅が狭いので、札は「COMING SOON」だけにして、説明はその下に置く
         pw = 34 + lw + 16
         px, py = cx - pw / 2, top + 76
         b.append(text(cx, py + ph + 24, note, 14, t["ink"], cls="rnd", weight=700, anchor="middle"))
     else:
-        pw = 34 + lw + 18 + len(note) * 14 + 22
+        pw = 34 + lw + 18 + len(note) * (COMPACT_MIN_FONT if compact else PHONE_MIN_FONT if W == MID_W else 14) + 22
         px, py = cx - pw / 2, top + 78
         b += [f'<rect x="{px + 34 + lw + 8:.1f}" y="{py + 9}" width="1.5" height="{ph - 18}" fill="{t["line"]}"/>',
               text(px + 34 + lw + 18, py + 22.5, note, 14, t["ink"], cls="rnd", weight=700)]
@@ -853,6 +887,9 @@ def main():
         for kind, draw in (("split", split_demo), ("flow", flow), ("pipeline", pipeline), ("footer", footer)):
             files[f"{kind}-{mode}.svg"] = draw(t)
             files[f"{kind}-narrow-{mode}.svg"] = draw(t, narrow=True)
+            if kind in ("flow", "footer"):  # 中間の版2つ（scripts/readme/markup.py の TIERS）
+                files[f"{kind}-mid-{mode}.svg"] = draw(t, narrow="mid")
+                files[f"{kind}-compact-{mode}.svg"] = draw(t, narrow="compact")
     for i, (num, jp, en) in enumerate(HEADS):
         name = ORDER[i % 4]
         for mode, t in THEMES.items():
