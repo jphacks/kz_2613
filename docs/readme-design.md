@@ -27,7 +27,7 @@ Re:CooplayのREADMEは見出し・目次・図の1枚1枚まで作り込んで�
 | まとまり | 節 | 内容 |
 |---|---|---|
 | 狙い | 1〜3 | READMEで読み手に何を感じてもらうか。最初の見出しと、下へ進むほど増える要素 |
-| 土台 | 4 | すべての図に共通する、ライト・ダーク × PC・スマホの4種類の画像 |
+| 土台 | 4 | すべての図に共通する、ライト・ダーク × 画面の幅に合わせた4段階の、8種類の画像 |
 | 配置 | 5 | 図の見た目より先に決めた、冒頭と各項目の並べ方 |
 | 見た目の決まり | 6〜12 | 色・文字・部品・見出し・キャラクター・動き・実際の画面 |
 | 画像の形式と代わりの手段 | 13〜14 | SVGとWebPの使い分けと、画像が読み込めないときの文字だけのREADME |
@@ -37,7 +37,7 @@ Re:CooplayのREADMEは見出し・目次・図の1枚1枚まで作り込んで�
 
 特定の部分のデザインを説明する所には、READMEで使っている画像の実物を置いています。画像はすべて「画像1」のような番号の見出しと、ファイルの場所を書いた枠の中に入れています。**枠の中は画像、枠の外はこの資料の本文です。** とくに見出しの画像は本物の見出しと見分けがつかないように作っているため、枠の外に置くとこの資料の見出しと区別できなくなります。
 
-画像はREADMEと同じ方法で、閲覧している画面のテーマ（ライト・ダーク）と幅（PC・スマホ）に合う1枚を表示します。4種類をすべて並べているのは、4節の画像3だけです。
+画像はREADMEと同じ方法で、閲覧している画面のテーマ（ライト・ダーク）と幅（4段階）に合う1枚を表示します。複数の版を並べているのは、4節の画像3だけです。
 
 ## 1. いちばんの狙い：「ぱっと見ふつう」から「えええ」へ
 
@@ -45,7 +45,7 @@ Re:CooplayのREADMEは見出し・目次・図の1枚1枚まで作り込んで�
 
 1. 開いた瞬間は、ありきたりな製品紹介のREADMEに見えます。作品名の見出しも概要文もGitHubでいつも見る見た目です。
 2. 概要文を読んでいると、見出しがいきなり動き出します。いつも見ているものだと思っていたら、いつもではありえないことが始まります。ここで最初の驚きを届けます。
-3. 下へ読み進めると、ふつうのREADMEではまず見ない要素が続きます。見出しの横で演じるキャラクター、実機の操作の録画、ライト・ダークとスマホに合わせた図。最後は「圧巻」と感じてもらうことを狙っています。
+3. 下へ読み進めると、ふつうのREADMEではまず見ない要素が続きます。見出しの横で演じるキャラクター、実機の操作の録画、ライト・ダークと画面の幅に合わせて描き分けた図。最後は「圧巻」と感じてもらうことを狙っています。
 
 最初から派手にすると、読み手は「凝ったページだ」と身構え、驚きは小さくなります。**期待を一度ふつうまで下げてから裏切る**ことで、同じ演出でも印象が大きく変わります。
 
@@ -59,12 +59,12 @@ Re:CooplayのREADMEは見出し・目次・図の1枚1枚まで作り込んで�
 
 | 工夫 | 理由 |
 |---|---|
-| 文字はGitHub本体と同じフォント指定・大きさ・太さ（作品名はh1の32px、キャッチコピーはh2と同じ24px、太さ600）で描く | 画像だと気づかれないようにする |
+| 文字はGitHub本体と同じフォント指定・大きさ・太さ（作品名はh1の32px、キャッチコピーはh2と同じ24px、太さ600）で描き、どの版も拡大せず原寸で置く | 画像だと気づかれないようにする |
 | 1文字ずつの位置は、GitHubの見出しをChromeで実測した幅で置く | OSの書体の差で文字の並びが不自然にならないようにする |
 | `<h1>` の中に `align="absbottom"` で画像を入れる | 見出しの下線までの間隔を、ふつうの見出しと同じにする |
 | 一番上に「※JPHACKS 2026 Award Dayでの内容です」を、GitHubの引用と同じ見た目で描く | 下の2つを参照 |
 
-注釈を入れる形は、前年のJPHACKS作品（[kz_2504](https://github.com/jphacks/kz_2504)）のREADMEと同じです。一番上の「※」の注釈には、2つの役割があります。
+注釈を入れる形は前年のJPHACKS作品（[kz_2504](https://github.com/jphacks/kz_2504)）のREADMEと同じです。一番上の「※」の注釈には、2つの役割があります。
 
 - 蹴られた「。」の放物線が見える場所になります。注釈の行と見出しの間の余白を、ボールが飛ぶ空間として使います。
 - 不自然な余白を作りません。放物線のための余白を何もない空白として取ると、見出しの上が妙に空いて、画像だと気づかれます。引用の行で埋めると、READMEの先頭に注釈と見出しを並べたときと同じ位置になり、違和感がなくなります。
@@ -95,57 +95,71 @@ Re:CooplayのREADMEは見出し・目次・図の1枚1枚まで作り込んで�
 | 冒頭 | 受賞結果の見出しの点がキャラクターになり、金沢から東京へのJPHACKSの道のりを演じる | 目次と同じ見出しだと思っていた点が動き出す |
 | 各項目の見出し | 見出しの横で、スマホの形をしたキャラクターが項目の内容を演じる | 見出しごとに違う小さな劇がある |
 | 製品説明・注力したこと | 図の中のスマホ画面で、実機の操作の録画が動く | 図だと思ったら本物の画面が動いている |
-| 全体 | ライト・ダークのテーマと、スマホの画面幅に合わせて、図が描き直される | どの環境で開いても崩れない |
+| 全体 | ライト・ダークのテーマと、スマホ・タブレット・PCの画面幅に合わせて、図が描き直される | どの環境で開いても、その画面のために作ったように見える |
 | 末尾 | 締めの「さあ、みんなで遊ぼう！」 | 製品の世界観で終わる |
 
 <table><tr><th align="left">画像2　項目の見出しと、横で内容を演じるキャラクター<br><sub>READMEで使っている画像の実物：<code>assets/readme/heads/play-03-*.svg</code></sub></th></tr><tr><td><picture><source media="(min-width: 481px)" srcset="../assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/play-03-narrow-dark.svg"><img src="../assets/readme/heads/play-03-narrow-light.svg" width="100%" alt="画像：heads/play-03（READMEで使っている画像）"></picture><picture><source media="(max-width: 480px), (min-width: 668px) and (max-width: 767px), (min-width: 932px)" srcset="../assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/play-03-compact-dark.svg"><img src="../assets/readme/heads/play-03-compact-light.svg" width="100%" alt=""></picture><picture><source media="(max-width: 667px), (min-width: 768px) and (max-width: 931px), (min-width: 1266px)" srcset="../assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/play-03-mid-dark.svg"><img src="../assets/readme/heads/play-03-mid-light.svg" width="100%" alt=""></picture><picture><source media="(max-width: 1265px)" srcset="../assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/play-03-dark.svg"><img src="../assets/readme/heads/play-03-light.svg" alt=""></picture></td></tr></table>
 
-## 4. 1つの図に4種類の画像を用意する
+## 4. 1つの図に8種類の画像を用意する
 
-READMEの図は見出し・目次・カード・録画の図まで含めて、**すべて4種類の画像を用意しています**。ライトとダークの2つのテーマと、PCとスマホの2つの画面幅の組み合わせです。閲覧者の環境に合う1枚だけを表示するので、どの環境で開いても、その環境のために描いた図が出ます。
+READMEの図は、見出し・目次・カード・録画の図まで含めて、**すべて8種類の画像を用意しています**。ライトとダークの2つのテーマと、画面の幅に合わせた4段階の版の組み合わせです。閲覧者の環境に合う1枚だけを表示するので、どの環境で開いても、その画面のために描いた図が出ます。
 
-色を反転させたり、PC用の図を縮めたりして済ませないのは、それでは崩れるからです。ダークの画面で白い背景の図は浮き、スマホでPC用の図を縮めると文字が読めないほど小さくなります。「ふつうのREADMEに見える」ことを狙う以上、どの環境でもGitHubの本文になじむ必要があります。
+色を反転させたり、PC用の図を縮めたりして済ませないのは、それでは崩れるからです。ダークの画面で白い背景の図は浮き、スマホでPC用の図を縮めると文字が読めないほど小さくなります。逆に、スマホ用の図をタブレットにそのまま置くと、図と区切り線が本文欄の途中で止まり、右に大きな空きができます。「ふつうのREADMEに見える」ことを狙う以上、どの環境でもGitHubの本文になじむ必要があります。
 
-### 4.1 4種類の画像
+### 4.1 4段階の版
 
-| 種類 | ファイル名の末尾 | 画像の幅 | 表示する環境 |
-|---|---|---|---|
-| PC・ライト | `-light` | 838px | 画面の幅が1266px以上で、ライトのテーマ |
-| PC・ダーク | `-dark` | 838px | 画面の幅が1266px以上で、ダークのテーマ |
-| スマホ・ライト | `-narrow-light` | 324px | 画面の幅が1265px以下で、ライトのテーマ |
-| スマホ・ダーク | `-narrow-dark` | 324px | 画面の幅が1265px以下で、ダークのテーマ |
+GitHubの本文欄の幅は画面の幅どおりには変わりません。画面の幅が768px以上になると本文の横に欄が出て、本文欄が狭くなるためです（画面幅767pxで本文欄654px、768pxで391px）。そこで、版の段階は**本文欄の幅**で区切り、Chromeで実測した対応から画面の幅に直しています。
 
-多くの図には、この間に「中間」（620px）と「小さい中間」（460px）の版もあり、タブレットや狭いPCの画面で使います（4.6節）。
+| 版 | ファイル名の印 | 描いた幅 | 本文欄の幅 | 画面の幅 | 主な端末 | 文字の最小 |
+|---|---|---|---|---|---|---|
+| スマホ | `-narrow-` | 324px | 〜399px | 〜480px | スマホの縦向き | 14.1px |
+| 小さい中間 | `-compact-` | 460px | 400〜554px | 481〜667px、768〜931px | iPadの縦向き、スマホの横向き、画面を半分に分けたPC | 14.8px |
+| 中間 | `-mid-` | 620px | 555〜808px | 668〜767px、932〜1265px | iPadの横向き、幅の狭いPC | 14.1px |
+| PC | なし | 838px | 809px〜 | 1266px〜 | PC | 13px |
 
-作品名の見出しの4種類を、切り替えずにすべて並べると次のようになります。ダークの2枚は暗い背景用の色なので、ライトの画面では文字が薄く見えます。
+- 画面の幅はスクロールバーのあるChromeで実測した値です。スクロールバーのないスマホやMacでは、本文欄が15px広くなります。
+- 768〜1011pxでは右の欄が下へ回り、本文欄が狭くなります。そのため、小さい中間と中間の区間はそれぞれ2つに分かれます。
+- どの版にも、ライト用（`-light`）とダーク用（`-dark`）があります。例えば特長の図は `features-narrow-light.svg`・`features-compact-dark.svg`・`features-mid-light.svg`・`features-dark.svg` のように8枚です。
 
-<table><tr><th align="left">画像3　作品名の見出しの4種類（切り替えずに4枚とも並べたもの）<br><sub>READMEで使っている画像の実物：<code>assets/readme/title-*.svg</code></sub></th></tr><tr><td><sub>PC・ライト：<code>title-light.svg</code>（幅838px）</sub><br><img src="../assets/readme/title-light.svg" alt="画像：作品名の見出しのPC・ライト"></td></tr><tr><td><sub>PC・ダーク：<code>title-dark.svg</code>（幅838px）</sub><br><img src="../assets/readme/title-dark.svg" alt="画像：作品名の見出しのPC・ダーク"></td></tr><tr><td><sub>スマホ・ライト：<code>title-narrow-light.svg</code>（幅324px）</sub><br><img src="../assets/readme/title-narrow-light.svg" alt="画像：作品名の見出しのスマホ・ライト"></td></tr><tr><td><sub>スマホ・ダーク：<code>title-narrow-dark.svg</code>（幅324px）</sub><br><img src="../assets/readme/title-narrow-dark.svg" alt="画像：作品名の見出しのスマホ・ダーク"></td></tr></table>
+作品名の見出しの4段階を、ライト用で切り替えずにすべて並べると次のようになります。幅に合わせて改行の位置を変えています（4.4節）。
+
+<table><tr><th align="left">画像3　作品名の見出しの4段階（ライト用を、切り替えずに4枚とも並べたもの）<br><sub>READMEで使っている画像の実物：<code>assets/readme/title-*.svg</code></sub></th></tr><tr><td><sub>PC：<code>title-light.svg</code>（幅838px）</sub><br><img src="../assets/readme/title-light.svg" alt="画像：作品名の見出しのPC用"></td></tr><tr><td><sub>中間：<code>title-mid-light.svg</code>（幅555px）</sub><br><img src="../assets/readme/title-mid-light.svg" alt="画像：作品名の見出しの中間の版"></td></tr><tr><td><sub>小さい中間：<code>title-compact-light.svg</code>（幅420px）</sub><br><img src="../assets/readme/title-compact-light.svg" alt="画像：作品名の見出しの小さい中間の版"></td></tr><tr><td><sub>スマホ：<code>title-narrow-light.svg</code>（幅324px）</sub><br><img src="../assets/readme/title-narrow-light.svg" alt="画像：作品名の見出しのスマホ用"></td></tr></table>
 
 ### 4.2 切り替え方
 
-READMEでは、図1つを、PC用とスマホ用の2つの `<picture>` に分けて隙間なく並べます。それぞれの最初の `<source>` は、その版を使わない画面幅で、幅0・高さ0の透明な画像（`hide.svg`）に差し替えて消すためのものです。2つ目の `<source>` はダークのテーマの条件だけを持ちます。
+READMEでは、図1つを版ごとの `<picture>` に分けて隙間なく並べます。各 `<picture>` の最初の `<source>` は、その版を使わない画面の幅で、幅0・高さ0の透明な画像（`hide.svg`）に差し替えて消すためのものです。2つ目の `<source>` はダークのテーマの条件だけを持ちます。
 
 ```html
-<picture><source media="(min-width: 1266px)" srcset="assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/features-narrow-dark.svg"><img src="assets/readme/features-narrow-light.svg" alt="（図の内容をすべて書いた代替テキスト）"></picture><picture><source media="(max-width: 1265px)" srcset="assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/features-dark.svg"><img src="assets/readme/features-light.svg" alt=""></picture>
+<picture><source media="(min-width: 481px)" srcset="assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/features-narrow-dark.svg"><img src="assets/readme/features-narrow-light.svg" width="100%" alt="（図の内容をすべて書いた代替テキスト）"></picture><picture><source media="(max-width: 480px), (min-width: 668px) and (max-width: 767px), (min-width: 932px)" srcset="assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/features-compact-dark.svg"><img src="assets/readme/features-compact-light.svg" width="100%" alt=""></picture><picture><source media="(max-width: 667px), (min-width: 768px) and (max-width: 931px), (min-width: 1266px)" srcset="assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/features-mid-dark.svg"><img src="assets/readme/features-mid-light.svg" width="100%" alt=""></picture><picture><source media="(max-width: 1265px)" srcset="assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="assets/readme/features-dark.svg"><img src="assets/readme/features-light.svg" alt=""></picture>
 ```
 
-1つの `<source>` に「画面幅」と「テーマ」の条件を一緒に書かないのは、GitHubが `<picture>` を `<themed-picture>` で包み、外観を「ライト」か「ダーク」に固定した利用者には、テーマの条件を含む `<source>` の条件を丸ごと書き換えるためです（2026-11-22に確認）。`(max-width: 700px) and (prefers-color-scheme: dark)` と書くと幅の条件も消え、ダークに固定した利用者には、PCでもスマホ用の図が出ていました。
+1つの `<source>` に「画面の幅」と「テーマ」の条件を一緒に書かないのには、理由があります。GitHubは `<picture>` を `<themed-picture>` で包み、外観を「ライト」か「ダーク」に固定した利用者には、テーマの条件を含む `<source>` の条件を丸ごと書き換えます（2026-11-22に確認）。`(max-width: 700px) and (prefers-color-scheme: dark)` と書くと幅の条件も消え、ダークに固定した利用者には、PCでもスマホ用の図が出ていました。
 
-この形は手では書きにくいので、上の4.1節の4枚を1つの `<picture>` に並べた書きやすい形（`(max-width: 700px) and (prefers-color-scheme: dark)` などの旧形式）で書き、`python scripts/readme/markup.py migrate` で書き換えます。`python scripts/readme/markup.py check`（CIの `structure` でも実行）が、テーマの条件とほかの条件を一緒に書いていないかを確かめます。
+- 代替テキストは最初の `<picture>` にだけ付け、ほかは空にします。読み上げが重ならないようにするためです。
+- この形は手では書きにくいので、`scripts/readme/markup.py` が組みます。各版が使う画面の幅の区間を持っていて、消すための条件はその区間の補集合から作ります。図を書き出したら `python scripts/readme/markup.py rebuild` で組み直します。`-narrow-` を `-compact-`・`-mid-` にした名前のファイルがあれば、その版の `<picture>` が加わります。
+- `python scripts/readme/markup.py check`（CIの `structure` でも実行）が、テーマの条件とほかの条件を一緒に書いていないか、作った版を使い忘れていないかを確かめます。
 
-### 4.3 画像の幅は、GitHubの本文欄の幅に合わせる
+### 4.3 本文欄の幅いっぱいに表示する
 
-- 図はGitHubの本文欄と同じ幅で描きます。PCは838px、幅390pxのスマホは324pxです（どちらも実測）。本文欄の幅は画面の幅どおりには変わらず、画面幅1012〜1279pxでは555〜823px、768〜1011pxでは391〜634pxです（右の欄が下へ回るため）。
-- READMEでは幅を指定せず、原寸で表示します。縮小も拡大もしないので、ぼやけません。
-- 原寸で表示するので、図の中の文字の大きさがそのまま画面上の大きさになります。本文の16pxと図の文字の大きさの比が、PCとスマホでそろいます。
-- 図の文字はPC用で13px以上、スマホ用と中間の版で14.1px以上、小さい中間の版で14.8px以上にします（`build_art.svg()` が引き上げる）。`python scripts/readme/check_text_size.py` が、実測した41通りの画面幅（よく使われる画面幅と、版の境目の両側）で表示時の大きさを計算し、12.5px以上かを確かめます。幅360pxのAndroidでもスマホ用の図は0.89〜0.91倍に縮むので、スマホ用は少し大きめにしています。
-- 図の文字は閲覧者の端末のフォントで描くので、端末によって字幅が変わります。`node scripts/readme/check_text_fit.mjs` が、Windows・Android（Noto）・macOSとiPhone（Arialとヒラギノに近いNoto Sans JP）の字幅で描き、文字が枠や図の外にはみ出さないかを確かめます。
+- スマホ・小さい中間・中間の版は、本文欄の幅いっぱい（`width="100%"`）に表示します。図の左右の端が本文の左右の端とそろい、区切り線も本文欄の右端まで届きます。表示の倍率は版の中でおおむね0.85〜1.33倍です。
+- PC用は幅を指定せず、原寸で表示します（本文欄は809〜838px）。
+- 作品名の見出しだけは、どの版も拡大せず原寸で置きます。GitHubのh1（32px）と同じ大きさに見せるためです（2節）。図の幅はその版の本文欄のいちばん狭い幅に近づけています（中間555px、小さい中間420px）。
+- 図は本文と同じく左端に置きます。中央に置く案も試しましたが、左寄せの本文と図の左端がずれ、見た目が不自然でした。
+- 図の文字は縮んだときにも12.5px以上になる大きさを下限にしています（4.1節の表）。下限は `build_art.svg()` が引き上げ、折り返しもその大きさで計算します。`python scripts/readme/check_text_size.py`（CIの `structure` でも実行）が、実測した41通りの画面幅（よく使われる幅と、版の境目の両側）で表示時の大きさを計算し、12.5px以上かを確かめます。
+- 図の文字は閲覧者の端末のフォントで描くので、端末によって字幅が変わります。`node scripts/readme/check_text_fit.mjs` が、Windows・Android（Noto）・macOSとiPhone（ArialとヒラギノのかわりのNoto Sans JP）の字幅で描き、文字が枠や図の外にはみ出さないかを確かめます。
 
-### 4.4 スマホ用の画像は、縮めずに組み替える
+### 4.4 版ごとに組み替える
 
-- 文字の大きさはPC用と同じにして、配置を組み替えます。横に並べたカードは縦1列にし、見出しは改行の位置を変えます。
-- 作品名の見出しは、PC用では「Re:Cooplay（リコープレイ）」と「ゲームはそのまま。1キャラを、みんなで操作。」の2行、スマホ用では4行に分けています（画像3）。
-- 画面の幅で見え方を変えるのはGitHub本体も同じなので、スマホで開いても「ふつうのREADME」に見えます。
+どの版も、PC用を縮めたり広げたりして作るのではなく、その幅に合わせて並べ方を組み替えます。
+
+- 横に並べると1列が狭くなる図（特長・活用した技術）は、PC以外では縦に積みます。カードがスマホ用と同じくらいの幅になる図（ジャンル・評価・展望・数値）は、中間の版でも横に並べます。遊ぶまでの流れは、PCは横4列、中間の版2つは説明つきの2×2、スマホは説明を省いた2×2です。
+- 項目の見出しは、PCと中間では番号の右に英字ラベルと見出しを並べて右に舞台を置きます。小さい中間では番号の行の右に舞台を置き、見出しをその下に置きます。スマホでは舞台を上に置きます（画像2）。長い見出しは意味の切れ目で2行に分けます。
+- 作品名の見出しは、PCと中間では「Re:Cooplay（リコープレイ）」と「ゲームはそのまま。1キャラを、みんなで操作。」の2行です。小さい中間ではキャッチコピーを2行に分けた3行、スマホでは作品名も2つに分けた4行です（画像3）。
+- 受賞結果は、PCでは金沢から東京への路線を横に引き、中間の版2つとスマホでは縦の路線図にします。中間の版2つでは、東京での発表と展示の場面を、PCと同じく受賞の行の右の空いた所に置きます。物語と演出はどの版も同じです。
+- システム構成の図は、PCでは3列、ほかでは箱を2列に積みます。中間の版2つでは、PC用の右の列にある通信の補足を、ローカルWi-Fiの帯の中の札に載せます。
+- 処理の流れの図は形を変えないと決めているので、中間の版2つはスマホ用と同じ形を幅に合わせて広げたものです。
+- 録画の図は、中間の版2つでもスマホ用と同じく「左にスマホ画面、右に説明」の行を積みます（13.2節）。
+- 画面の幅で見え方を変えるのはGitHub本体も同じなので、どの幅で開いても「ふつうのREADME」に見えます。
 
 ### 4.5 ライトとダークは、テーマごとに描き直す
 
@@ -160,30 +174,6 @@ READMEでは、図1つを、PC用とスマホ用の2つの `<picture>` に分け
 | 目次の項目名（GitHubのリンク色） | `#0969DA` | `#4493F8` |
 
 ブランドのグラデーションとキャラクターの4色は、どちらのテーマでも同じ色です（6節）。
-
-### 4.6 画面の幅に合わせて4段階の版を使う
-
-GitHubは画面の幅が768px以上になると、本文の横に欄を出し、本文欄が狭くなります。PC用の図（幅838px）は、本文欄が808pxより狭いと縮み、13pxの文字が12.5pxを下回ります。iPadの縦向き（768〜834px）では本文欄が391〜457pxになり、文字が6〜7pxまで縮んでいました。
-
-スマホ用の図だけを原寸で置くと、本文欄が広い画面（iPadの縦向き・横向き、スマホの横向き、画面を半分に分けたPC、幅1100pxのPCなど）では、図と区切り線が本文欄の途中で止まり、右に大きな空きができます。そこで、本文欄の幅で区切った4段階の版を用意し、どの段階も本文欄の幅いっぱいに表示します。
-
-| 版 | 描いた幅 | 本文欄の幅 | 画面の幅（スクロールバーのあるChromeの実測から） | 表示の倍率 | 文字の最小 |
-|---|---|---|---|---|---|
-| スマホ | 324px | 〜399px | 〜480px | 0.91〜1.28倍 | 14.1px |
-| 小さい中間 | 460px | 400〜554px | 481〜667px、768〜931px | 0.85〜1.24倍 | 14.8px |
-| 中間 | 620px | 555〜808px | 668〜767px、932〜1265px | 0.89〜1.33倍 | 14.1px |
-| PC | 838px | 809px〜 | 1266px〜 | 0.97〜1.0倍 | 13px |
-
-- 倍率の上限は、スクロールバーのないスマホ・Macで本文欄が15px広い場合です。
-- 本文欄は画面の幅どおりには変わりません。768〜1011pxでは右の欄が下へ回って本文欄が狭くなるので、中間の版の区間が2つに分かれます。
-- 横に並べると1列が狭くなる図（特長・活用した技術）は、中間の版でも縦に積みます。カードがスマホ用と同じくらいの幅になる図（ジャンル・評価・展望・数値・流れ）は、中間の版でも横に並べます。
-- 項目の見出しは、中間の版ではPC用と同じく番号の右に英字ラベルと見出しを並べて右に舞台を置き、小さい中間の版では番号の行の右に舞台を置いて見出しをその下に置きます。
-- 作品名は GitHub の h1（32px）と同じ大きさに見せるため、どの版も拡大せず原寸で置き、幅に合わせて改行を変えます。PC用と中間は「作品名／キャッチコピー」の2行、小さい中間は「作品名／ゲームはそのまま。／1キャラを、みんなで操作。」の3行、スマホ用は作品名も2つに分けた4行です。図の幅は、その版の本文欄のいちばん狭い幅に近づけています（中間555px、小さい中間420px）。
-- 受賞結果は、中間の版2つではスマホ用の縦の路線図を土台にカードを幅いっぱいに広げ、東京での発表と展示の場面を、PC用と同じく受賞の行の右に置きます。物語と演出はスマホ用と同じです。
-- 処理の流れの図は形を変えない判断なので、中間の版2つはスマホ用と同じ形（3段のカードと札）を幅に合わせて広げたものにしています。PC用・スマホ用は変えていません。
-- 録画の図（分担・注力したこと）は、中間の版2つでもスマホ用と同じく「左にスマホ画面、右に説明」の行を積みます。スマホ画面の大きさと並びをスマホ用と同じにして、録画の枠はスマホ用のWebPをそのまま使い、文字の欄だけを広げて切り出します（録画を焼き直さない）。注力したことの低遅延の2つの数値は、横に並べます。
-- 引用は、見出しの2行が折り返さない大きさを版ごとに選びます。
-- 図は本文と同じく左端に置きます。中央に置く案も試しましたが、左寄せの本文と図の左端がずれ、見た目が不自然でした。
 
 ## 5. 配置
 
@@ -224,7 +214,7 @@ GitHubは画面の幅が768px以上になると、本文の横に欄を出し、
 
 - 基本はGitHubと同じ書体にして、本文から浮かないようにします。個性を出すのは、数字と、締めのカード・吹き出しの文字だけです。
 - 「日本語の見出し＋小さな英字ラベル」の2段の組み方を、見出し・カード・展望でくり返します。
-- 日本語の折り返しは、行頭の禁則（「、」「。」「）」「ー」など）、句読点の後での改行、行の長さの釣り合いを、生成スクリプトで処理します。行頭の「（」は字下げに見えるので、半文字ぶん左へ寄せます。
+- 日本語の折り返しは生成スクリプトで処理します。文節（[BudouX](https://github.com/google/budoux)）の切れ目で折り返し、「共／有」「パー／ティー」のように語の途中で切りません。行末の近くに読点・句点があればその後ろで切り、見出しは行の長さを釣り合わせます。行頭の「（」は字下げに見えるので、半文字ぶん左へ寄せます。
 
 <table><tr><th align="left">画像6　埋め込みフォントを使う締めのカード<br><sub>READMEで使っている画像の実物：<code>assets/readme/footer-*.svg</code></sub></th></tr><tr><td><picture><source media="(min-width: 481px)" srcset="../assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/footer-narrow-dark.svg"><img src="../assets/readme/footer-narrow-light.svg" width="100%" alt="画像：footer（READMEで使っている画像）"></picture><picture><source media="(max-width: 480px), (min-width: 668px) and (max-width: 767px), (min-width: 932px)" srcset="../assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/footer-compact-dark.svg"><img src="../assets/readme/footer-compact-light.svg" width="100%" alt=""></picture><picture><source media="(max-width: 667px), (min-width: 768px) and (max-width: 931px), (min-width: 1266px)" srcset="../assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/footer-mid-dark.svg"><img src="../assets/readme/footer-mid-light.svg" width="100%" alt=""></picture><picture><source media="(max-width: 1265px)" srcset="../assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/footer-dark.svg"><img src="../assets/readme/footer-light.svg" alt=""></picture></td></tr></table>
 
@@ -256,7 +246,7 @@ GitHubは画面の幅が768px以上になると、本文の横に欄を出し、
 | 目次 | 「PART 1」「PART 2」の2列。番号＋リンク色の項目名＋下線 |
 
 - 背景の帯を使うのは大見出しだけにして、格の違いを背景の有無で示します。
-- 目次は表を使わず、本文欄の幅の49%ずつの画像を並べます。表は幅いっぱいに広がらず、中央に浮いてしまうためです。
+- 目次は表を使わず、本文欄の幅の49%ずつの画像を並べます。表は幅いっぱいに広がらず、中央に浮いてしまうためです。目次の項目の英字ラベルは項目名と重ならない幅のある版（PCと中間）にだけ付けます。
 - 見出しを画像にしても、`<a id>` を置いて目次のリンクが効くようにします。
 
 <table><tr><th align="left">画像10　大見出し（PART）<br><sub>READMEで使っている画像の実物：<code>assets/readme/heads/part-1-*.svg</code></sub></th></tr><tr><td><picture><source media="(min-width: 481px)" srcset="../assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/part-1-narrow-dark.svg"><img src="../assets/readme/heads/part-1-narrow-light.svg" width="100%" alt="画像：heads/part-1（READMEで使っている画像）"></picture><picture><source media="(max-width: 480px), (min-width: 668px) and (max-width: 767px), (min-width: 932px)" srcset="../assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/part-1-compact-dark.svg"><img src="../assets/readme/heads/part-1-compact-light.svg" width="100%" alt=""></picture><picture><source media="(max-width: 667px), (min-width: 768px) and (max-width: 931px), (min-width: 1266px)" srcset="../assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/part-1-mid-dark.svg"><img src="../assets/readme/heads/part-1-mid-light.svg" width="100%" alt=""></picture><picture><source media="(max-width: 1265px)" srcset="../assets/readme/hide.svg" width="0" height="0"><source media="(prefers-color-scheme: dark)" srcset="../assets/readme/heads/part-1-dark.svg"><img src="../assets/readme/heads/part-1-light.svg" alt=""></picture></td></tr></table>
@@ -269,7 +259,7 @@ GitHubは画面の幅が768px以上になると、本文の横に欄を出し、
 - キャラクターは作品名の見出し（画像1）、受賞結果、項目の見出しの横（画像2）、手順や構成の図（画像8・画像9）、締めのカード（画像6）に使います。**文章と表には使いません**。読む場所は読むことに集中してもらうためです。
 - 遊びと事実を見た目で分けます。実際の画面を見せる図ではキャラクターの形を使わず、ふつうのスマホの枠に入れます（画像12）。演出と証拠が混ざらないようにするためです。
 - 項目の見出しの横では、画面が顔から操作画面に切り替わる、カメラで読み取る、横に寝かせて横持ちになる、といった、スマホらしい動きで各項目を表します。キャラクターはスマホそのものなので、場面は製品の使い方に関わるものにしています。
-- 見出しの横の演技は、見出しの文字を邪魔しないこと、決めた領域に収まること、自然で納得感があることにこだわりました。品質のためなら、場面の筋書きを変えてもよいとしています。
+- 見出しの横の演技は見出しの文字を邪魔しないこと、決めた領域に収まること、自然で納得感があることにこだわりました。品質のためなら、場面の筋書きを変えてもよいとしています。
 
 - 受賞結果では、実際の流れをそのまま物語にしています。私たちは3人のチームなので、動くのは見出しの青・緑・紫の3体だけで、赤は点のまま残します。観客賞（Hack Day の勝者）で画面に王冠が映り、決勝進出では3人分の切符が届いて、灰色だった金沢→東京の路線が光って開通します（Award Day への資格を得た瞬間）。新幹線で東京へ行き、発表と展示をして、発表直前にドキドキしてから3つの賞を受け取ります。セリフは使わず、記号と動きだけで伝えます。PCは路線を横、スマホは縦の路線図にし、それぞれの画面の形に合わせて移動の向きを変えています。
 
@@ -299,7 +289,7 @@ GitHubは画面の幅が768px以上になると、本文の横に欄を出し、
 
 ## 13. SVGとWebPの使い分け
 
-READMEの図は**SVGを基本**にし、**実機の録画を含む図だけ、スマホ画面の部分をアニメーションWebP**にしています。この図も、4節と同じ4種類を用意しています。
+READMEの図は**SVGを基本**にし、**実機の録画を含む図だけ、スマホ画面の部分をアニメーションWebP**にしています。この図も4節と同じ8種類を用意しています。
 
 | 形式 | 使う図 | 選んだ理由 |
 |---|---|---|
@@ -313,7 +303,7 @@ READMEの図は**SVGを基本**にし、**実機の録画を含む図だけ、�
 - 文字を文字のまま描ける。図の文字は閲覧者の端末のフォントで、GitHub本体と同じ指定のまま表示されます。画像の中の文字が本文と同じ書体になるので、図が本文から浮きません。画像1の見出しの錯覚も文字を文字として描けるから成り立ちます。
 - 拡大してもぼやけない。高解像度の画面でも線と文字がくっきり表示されます。
 - CSSで動かせる。キャラクターのまばたきや見出しの物語は、SVGの中のCSSアニメーションで動かしています。動きを足してもファイルはほとんど大きくならず、「視差効果を減らす」の設定で止めることもできます。
-- 4種類の描き分けが安い。ライト・ダークとPC・スマホの4種類は、同じ生成スクリプトで色と配置を変えて書き出すだけです。
+- 8種類の描き分けが安い。ライト・ダークと4段階の版は、同じ生成スクリプトで色と配置を変えて書き出すだけです。
 - 検査できる。文字がデータとして残るので、`check_text_size.py` で表示時の文字の大きさを計算できます。代替テキストと `README-text.md` も図と同じデータから作れます。
 - 軽い。SVGはgzipで配信されるので、録画を含まない約50枚を合わせても転送量は約230〜250KBです（2026-11-22の計算）。
 
@@ -326,10 +316,11 @@ SVGには制約もあります。READMEの画像は `raw.githubusercontent.com` 
 - SVGの中で録画を動かすと重い。SVGの中に動く画像を入れると、ブラウザは画像が1コマ進むたびにSVG全体を描き直します。録画が複数ある図では重くなり、止まって見えます。
 - 動く所だけをWebPにする。`bake.py` が、SVGの図をChromeで3倍の解像度・透明の背景で撮り、スマホ画面の位置に録画のコマを重ねて、スマホの部分だけをアニメーションWebPに切り出します（PC用は約2.4倍、スマホ用は2倍の画素）。変わった所（スマホの画面）だけを描き直すので、動きが滑らかになります。
 - 文字はSVGのまま残す。以前は図ごと1本のWebPにしていましたが、見出しや説明の文字までラスタになり、ぼやけて見えました。いまは図を段と列の枠に切り、文字の枠は元のSVGを `viewBox` で切り出したSVGにしています。READMEでは各枠を `<img width="〇%" align="absbottom">` で隙間なく並べます。枠の幅が親の幅に対する割合なので、GitHub上のどの横幅でも同じ比率で縮み、継ぎ目がずれません。`align="absbottom"` で、画像の下に文字の下がり分の隙間もできません。同じ段の枠は表示の高さがぴったりそろうように、WebPの画素数を枠の幅に比例させ、SVGの高さもそこから決めています（そろわないと、カードの枠線の継ぎ目に1px弱の切れ目が出ます）。
-- PC用とスマホ用で枠の幅をそろえる。PC用とスマホ用の枠を同じ行に並べ、使わない版を幅0の画像で消すので（4.2節）、段の数と各段の枠の幅の並びを両方の版でそろえています。片方の版で使わない段には高さがほぼ0の画像を入れ、その段は1行分（約24px）の空きになるので、もともと空きのある所に置いています。画面幅420〜1265pxでは、スマホ用の枠を%ではなくpxの原寸（段の合計329px）で並べ、本文欄の左端に置きます（4.6節）。
+- 版ごとに枠の幅を変える。図1つを版ごとの `<picture>` に分けて並べるので（4.2節）、枠の幅は版ごとに違ってよく、段の数だけをそろえます。片方の版で使わない段の枠は出さず、その段は1行分（約24px）の空きになるので、もともと空きのある所に置いています。`scripts/readme/recordings/pieces.py` が、版ごとの切り方とREADMEの段落を組みます（`markup.py rebuild` はこの段落を組み直しません）。
+- 中間の版2つは録画を焼き直さない。中間の版2つの図では、スマホ画面をスマホ用と同じ大きさ・同じ並びで描きます。こうすると、スマホ画面の枠はスマホ用のWebPをそのまま使え、文字の欄だけを広げて切り出せます。録画の焼き直しは図全体を高い解像度のコマで扱うため時間もメモリも多く使うので、避けています。
 - 動きを止める設定に合わせる。アニメーションWebPは `<img>` の中では止められないので、OSで「視差効果を減らす」を選んだ閲覧者には、録画の1コマを止めた静止画（`*-still.webp`、`recordings/stills.py`）を出します。枠の合計は99.8%にして、ブラウザの丸めで最後の枠が次の行に落ちないようにしています。詳しくは `scripts/readme/recordings/pieces.py` を参照してください。
 - 画質と大きさを比べて決めた。Pillow（libwebp）の品質80で書き出しています。ffmpegの品質90で書き出すより元の画像に近く（PSNRで0.5〜1.4dB上）、ファイルは21〜24%小さくなります（2026-11-21の比較）。
-- 重さのほとんどはこのWebPにある。閲覧1回の転送量は、PCで約2.3MB、タブレットとスマホで約1.3MBで、その8割前後がこのWebPです（2026-11-22の計算。紹介動画のサムネイルをPNGの約880KBからWebPの約140KBにした後）。GitHubは `<img>` の `loading` 属性を取り除くため、遅延読み込みでは軽くできません。
+- 重さのほとんどはこのWebPにある。閲覧1回の転送量はPCで約2.3MB、タブレットとスマホで約1.3MBで、その8割前後がこのWebPです（2026-11-22の計算。紹介動画のサムネイルをPNGの約880KBからWebPの約140KBにした後）。GitHubは `<img>` の `loading` 属性を取り除くため、遅延読み込みでは軽くできません。
 
 切り分ける前の元のSVG（`controllers-*.svg`・`focus-*.svg`）は残しています。文字の大きさの確認は同じ名前のSVGで行います。枠はすべてこのSVGから作るので、図の中身はSVGの生成スクリプトで直します。
 
@@ -346,9 +337,9 @@ SVGには制約もあります。READMEの画像は `raw.githubusercontent.com` 
 
 ## 15. 作り方の判断
 
-- 図は生成スクリプトから書き出します。SVGは手で直さず、`scripts/readme/` のスクリプトを直してから書き出します。4種類の画像、文字だけのREADME（`README-text.md`）、画像の代替テキストを、同じデータから作るためです。
+- 図は生成スクリプトから書き出します。SVGは手で直さず、`scripts/readme/` のスクリプトを直してから書き出します。8種類の画像、文字だけのREADME（`README-text.md`）、画像の代替テキストを、同じデータから作るためです。
 - 案は並べて選びます。作品名の見出しや項目の見出しは、比較用のブランチで複数の案を作り、GitHub上で見比べてから決めました。
-- GitHub上で確かめます。手元のブラウザだけでなく、GitHubに表示したREADMEを、PCとスマホ、ライトとダークで撮って確かめます。
+- GitHub上で確かめます。手元のブラウザだけでなく、GitHubに表示したREADMEを、よく使われる画面の幅（スマホの縦横・iPadの縦横・画面を半分に分けたPC・PC）とライト・ダークで撮って確かめます。版の取り違えや消し残しはヘッドレスのChromeで多くの幅を開いて数え、Androidの実機でも測ります。
 - READMEの変更は、作者が確認してからmainへ入れます。
 
 ## 16. ほかのREADMEに持ち出すときのチェックリスト
@@ -356,9 +347,9 @@ SVGには制約もあります。READMEの画像は `raw.githubusercontent.com` 
 どのREADMEにも使えることだけを並べます。「ぱっと見ふつう」から驚かせる見せ方（1〜3節）とキャラクターの演出は、遊び心をテーマにしたこのREADMEのためのものなので、ここには入れていません。
 
 1. 図の見た目より先に並べ方を決める。各項目は「文章 → 図」の順にし、図1枚でページを占有しない。
-2. すべての図に、ライト・ダーク × PC・スマホの4種類の画像を作り、`<picture>` で切り替える。
-3. 図は本文欄の幅で描き、原寸で表示する。文字は13px以上にする。
-4. スマホ用の画像は縮めずに組み替える。
+2. すべての図に、ライト・ダーク × 画面の幅の版を作り、`<picture>` で切り替える。版の段階は画面の幅ではなく本文欄の幅で区切る。
+3. 図は本文欄の幅いっぱいに表示し、どの幅でも文字が12.5px以上になる大きさで描く。
+4. 画面の幅ごとに、縮めたり広げたりせずに並べ方を組み替える。
 5. 背景を塗らず、枠線と文字で組んで、どちらのテーマにもなじませる。
 6. ブランドの色は数字・線・矢印などの要所に絞る。
 7. 色に意味を持たせ、最後まで同じ意味で使う。
