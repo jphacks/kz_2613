@@ -28,19 +28,32 @@
 | [`scenes/`](scenes/README.md) | 各項目の終わりに置く区切りの帯（キャラクターが遊ぶ10種類のアニメーション） |
 | `system-architecture.webp` | 以前の構成図の画像（READMEでは `architecture-*.svg` に置き換えた） |
 
-`-light`／`-dark` はGitHubのテーマ、`-narrow-` はスマホなど幅700px以下の画面用で、READMEの `<picture>` が切り替えます。図と見出しは、GitHubの本文欄と同じ幅（PCは838px、幅390pxのスマホは324px）で描き、READMEでは幅を指定せず原寸で表示します。図の文字の大きさがそのまま画面上の大きさになり、本文（16px）との比がPC版とスマホ版でそろいます。図の文字は13px以上にし、`python scripts/readme/check_text_size.py` で確かめます。
+`-light`／`-dark` はGitHubのテーマ、`-narrow-` は画面幅1265px以下（スマホ・タブレット・狭いPC）用で、READMEの `<picture>` が切り替えます。図と見出しは、GitHubの本文欄と同じ幅（PCは838px、幅390pxのスマホは324px）で描き、READMEでは原寸で表示します（本文欄が広いときスマホ版は中央に置く）。図の文字の大きさがそのまま画面上の大きさになり、本文（16px）との比がPC版とスマホ版でそろいます。図の文字はPC版で13px以上、スマホ版で14.1px以上にし（スマホ版は `build_art.svg()` が引き上げる）、`python scripts/readme/check_text_size.py` で、実測した14通りの画面幅で12.5px以上になるかを確かめます。
+
+## 版の切り替え（`<picture>` の書き方）
+
+GitHub は `<picture>` を `<themed-picture>` で包み、外観を「ライト」か「ダーク」に固定した利用者には、`prefers-color-scheme` を含む `<source>` の `media` を丸ごと書き換えます。幅の条件と外観の条件を1つの `<source>` に書くと幅の条件が消え、ダークに固定した利用者には PC でもスマホ版が出ていました（2026-11-22 に確認）。そこで README では、図1つを版ごとの `<picture>` に分けて並べ、使わない画面では幅0の透明な画像（`hide.svg`）で消します。外観の条件は単独で書きます。
+
+- 書くときは、4枚を1つの `<picture>` に並べた書きやすい旧形式で書き、`python scripts/readme/markup.py migrate` で新形式にします。`python scripts/readme/markup.py check`（CI の `structure` でも実行）が決まりを確かめます。詳しくは `markup.py` の説明を参照してください。
+- 幅を % で指定する画像（目次・録画の図の切り絵）は、画面幅420〜1265pxでスマホ版を px の原寸で並べ、本文欄に合わせて拡大されないようにします。
+- アニメーションWebP には、OS で「視差効果を減らす」を選んだ閲覧者向けの静止画（`pieces/*-still.webp`、`scripts/readme/recordings/stills.py`）の版を並べます。
+- 外観の設定と OS の設定が食い違う閲覧者（例：GitHub はダークに固定、OS はライト）には、GitHub がページを読み込んだ後に版を差し替えるため、両方の版を取得します（main でも同じ。README 側では避けられない）。
+- GitHub の Dark dimmed（背景 `#212830`）では、見出しの舞台の端を溶かすために描いた背景色 `#0D1117` が、暗い四角として見えます。`themed-picture` はライトとダークしか区別しないので、図の側では背景色を知れません。
 
 ## 画像の埋め込みと配信
 
 READMEの相対パスの画像は `raw.githubusercontent.com` から配信され、`Content-Security-Policy: default-src 'none'` と `Cache-Control: max-age=300` が付きます。`<img>` で表示したSVGは、もともと外部の画像やフォントを読み込めません。そのため、SVGの中の写真とフォントはBase64で埋め込みます。
 
 - SVGはgzipで配信されるため、Base64による増加はほぼ打ち消されます。2026-11-21に測ると、JPEGを3枚埋め込んだ `controllers-light.svg`（main、94KB）の転送量は59KBでした。JPEGとSVGを別のファイルに分けた場合は計68KBで、2回の通信が要ります。
-- 動く録画を含む図（`controllers`・`focus`）は、文字の枠をSVG、スマホ画面の枠をアニメーションWebPに切り分け（`pieces/`）、READMEで隙間なく並べて1枚の図に見せます。図ごと1本のWebPにすると文字までラスタになってぼやけるためです（2026-11-21に変更）。並べ方は `scripts/readme/recordings/pieces.py` の説明を参照してください。閲覧1回の転送量の9割以上はこのWebPです（PC版は計約1.7MB、スマホ版は計約1.0MB。そのほかのSVGは、gzipで計約150KB）。
+- 動く録画を含む図（`controllers`・`focus`）は、文字の枠をSVG、スマホ画面の枠をアニメーションWebPに切り分け（`pieces/`）、READMEで隙間なく並べて1枚の図に見せます。図ごと1本のWebPにすると文字までラスタになってぼやけるためです（2026-11-21に変更）。並べ方は `scripts/readme/recordings/pieces.py` の説明を参照してください。閲覧1回の転送量は、PCで約2.3MB、タブレットとスマホで約1.3MBで、その8割前後がこのWebPです（そのほかのSVGは gzip で計約230〜250KB。2026-11-22の計算）。
+- 紹介動画のサムネイルは、利用者が用意した1920×1080のPNG（約880KB）を残したまま、表示幅の2倍の幅1676pxのWebP（約140KB）にして README に置きます（`scripts/readme/thumbnail.py`）。
 - GitHubは `<img>` の `loading` 属性を取り除くため、遅延読み込みは指定できません。
 
 ## フォント
 
 `<img>` で表示したSVGは外部のフォントを読めません。そのため、締めの文字は、使う字だけに絞ったフォントをSVGに埋め込んでいます。ほかの図の文字は、閲覧者の端末の日本語フォントで表示します。
+
+端末ごとに字幅が違うので、`node scripts/readme/check_text_fit.mjs` で、Windows（Segoe UI・Yu Gothic UI）・Android（Noto Sans・Noto Sans JP）・macOS と iPhone の代わり（Arial・Noto Sans JP）の3通りに差し替えて描き、文字が図や枠の外へはみ出さないか、重ならないかを確かめます（Chrome と `data/local/readme-fonts/` のフォントを使う）。Windows の Yu Gothic UI は仮名が狭く、ほかの端末では日本語が最大で約14%広くなります。枠いっぱいの文字は `textLength` で Windows の幅に固定し、広い端末では字を少し詰めて収めます（処理の流れの図の3か所）。
 
 | フォント | 使う場所 | ライセンス |
 |:--|:--|:--|
@@ -61,7 +74,7 @@ iPhone の Safari（WebKit）は、`<img>` で表示した SVG の中の「グ�
 - 光彩（`filter="url(#glow)"`）は、にじみだけをフィルタで描き、元の図形はフィルタの外に重ねる。にじみはもともとぼやけた絵なので、画像になっても見た目は変わらない。
 - 項目の見出しの舞台の端のフェードは、マスクの代わりに、矩形で切り抜いて端に GitHub の背景色（ライト `#FFFFFF`、ダーク `#0D1117`）のグラデーションを重ねる（`head_play.stage`）。GitHub の Dark dimmed など、ほかの背景色のテーマでは端に帯が見える。
 
-README で画像（ラスタ）のまま表示するのは、実機の録画（`pieces/*.webp`）と紹介動画のサムネイル（PNG）だけです。
+README で画像（ラスタ）のまま表示するのは、実機の録画（`pieces/*.webp`）と紹介動画のサムネイル（WebP）だけです。
 
 ## 作り直し方
 
@@ -75,5 +88,13 @@ python scripts/readme/showcase.py
 ```
 
 `showcase.py` は `docs/screenshots/device/` の撮影画像を縮めて埋め込むので、画面を撮り直したら書き出し直します。
+
+受賞結果と作品名の見出しは `awards_play.py`・`title.py`、紹介動画のサムネイルは `thumbnail.py`、録画の切り絵の静止画は `recordings/stills.py` で書き出します。書き出したら、次の検査を通します。
+
+```
+python scripts/readme/markup.py check         # <picture> の書き方
+python scripts/readme/check_text_size.py      # 各画面幅で文字が12.5px以上か
+node scripts/readme/check_text_fit.mjs        # 端末のフォントで文字がはみ出さないか
+```
 
 数値や受賞名を変えるときは、README本文と画像の代替テキスト（`alt`）も合わせて直します。

@@ -1,7 +1,9 @@
 """READMEの画像を、画面幅とGitHubの外観（ライト・ダーク）に合わせて差し替えるための <picture> を書く。
 
-    python scripts/readme/markup.py migrate   # 書きやすい旧形式の <picture> を、下の新形式に書き換える
-    python scripts/readme/markup.py check     # README の <picture> が新形式の決まりを守っているか確かめる
+    python scripts/readme/markup.py migrate [ファイル…]   # 書きやすい旧形式の <picture> を、下の新形式に書き換える
+    python scripts/readme/markup.py check [ファイル…]     # <picture> が新形式の決まりを守っているか確かめる
+
+ファイルを省くと、README.md と、README の図を並べて説明する docs/readme-design.md を扱う。
 
 ## 旧形式（人が書きやすい形。migrate で新形式に変わる）
 
@@ -40,8 +42,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-README = ROOT / "README.md"
-HIDE = "assets/readme/hide.svg"
+FILES = ["README.md", "docs/readme-design.md"]
+HIDE_PATH = "assets/readme/hide.svg"
+BASE = ""  # 扱っているファイルから見たリポジトリの根（docs/ の中なら "../"）。main が設定する
 WIDE_MIN = 1266   # PC版を使う最小の画面幅（スクロールバーがあっても本文欄が 808px 以上。見出しの13pxが12.5px以上）
 FIXED_MIN = 420   # スマホ版を原寸で並べる最小の画面幅（本文欄が 339px 以上で、約330px の段が収まる）
 DARK = "(prefers-color-scheme: dark)"
@@ -59,7 +62,7 @@ def still(src):
 
 
 def picture(hide, light, dark, attrs, alt):
-    s = f'<picture><source media="{hide}" srcset="{HIDE}" width="0" height="0">'
+    s = f'<picture><source media="{hide}" srcset="{BASE}{HIDE_PATH}" width="0" height="0">'
     if dark != light:
         s += f'<source media="{DARK}" srcset="{dark}">'
     return s + f'<img src="{light}"{attrs} alt="{alt}"></picture>'
@@ -75,7 +78,7 @@ def versions(rng, light, dark, attrs, alt):
 
 def intrinsic_width(src):
     """スマホ版の原寸の表示幅（CSS px）。SVG は width 属性、WebP は2倍の画素で書き出してあるので半分。"""
-    p = ROOT / src
+    p = ROOT / src[len(BASE):]
     if src.endswith(".svg"):
         return float(re.search(r'<svg[^>]* width="([\d.]+)"', p.read_text(encoding="utf-8")).group(1))
     from PIL import Image
@@ -118,14 +121,55 @@ def convert(m):
     return figure(nl, nd, attr(img, "src"), wd, attr(img, "alt") or "", attr(img, "width"), attr(img, "align"))
 
 
+FENCE = re.compile(r"(?ms)^```.*?^```")
+
+
+def outside_fences(text, fn):
+    """コードブロック（```〜```）の外だけに fn を当てる。説明用の例は書き換えない。"""
+    out, last = [], 0
+    for m in FENCE.finditer(text):
+        out += [fn(text[last:m.start()]), m.group(0)]
+        last = m.end()
+    return "".join(out + [fn(text[last:])])
+
+
 def migrate(text):
-    # 複数行で書いた単独の図は、原寸のスマホ版が本文欄の中央に来るよう <p align="center"> で包む
-    text = re.sub(r'(?m)^<picture>\n(?:  .*\n)+?</picture>$',
-                  lambda m: '<p align="center">' + OLD.sub(convert, m.group(0)) + '</p>', text)
-    return OLD.sub(convert, text)
+    def one(t):
+        # 複数行で書いた単独の図は、原寸のスマホ版が本文欄の中央に来るよう <p align="center"> で包む
+        t = re.sub(r'(?m)^<picture>\n(?:  .*\n)+?</picture>$',
+                   lambda m: '<p align="center">' + OLD.sub(convert, m.group(0)) + '</p>', t)
+        return OLD.sub(convert, t)
+    return outside_fences(text, one)
 
 
-def check(text):
+NEW_PIC = re.compile(r'<picture><source media="([^"]+)" srcset="[^"]*hide\.svg" width="0" height="0">'
+                     r'(?:<source media="\(prefers-color-scheme: dark\)" srcset="([^"]+)">)?<img ([^>]*)></picture>')
+
+
+def collapse(text):
+    """新形式を、図1つにつき旧形式の <picture> 1つに戻す（読むだけの道具向け。text_readme.py が使う）。
+    本文欄の中央に置くために足した <p align="center"> も外す。"""
+    def group(m):
+        pics = [(media, dark, img) for media, dark, img in NEW_PIC.findall(m.group(0))]
+        first, wide = pics[0], next(p for p in pics if p[0] == RANGES["wide"] or p[0] == f"{MOTION['anim']}, {RANGES['wide']}")
+        nl, wl = attr(first[2], "src"), attr(wide[2], "src")
+        nd, wd = first[1] or nl, wide[1] or wl
+        attrs = "".join(f' {k}="{attr(wide[2], k)}"' for k in ("width", "align") if attr(wide[2], k))
+        return ('<picture><source media="(max-width: 700px) and (prefers-color-scheme: dark)" '
+                f'srcset="{nd}"><source media="(max-width: 700px)" srcset="{nl}">'
+                f'<source media="{DARK}" srcset="{wd}"><img src="{wl}"{attrs} alt="{attr(first[2], "alt")}"></picture>')
+    starts = "|".join(re.escape(r) for r in (RANGES["narrow"], RANGES["fluid"], f"{MOTION['anim']}, {RANGES['fluid']}"))
+    one = NEW_PIC.pattern
+    head = rf'<picture><source media="(?:{starts})"'
+    text = re.sub(rf'{head}[^>]*>(?:(?!</picture>).)*</picture>(?:(?!{head}){one})*',
+                  lambda m: group(m) if NEW_PIC.match(m.group(0)) else m.group(0), text)
+    text = re.sub(r'<p align="center">(<picture>(?:(?!</p>).)*</picture>)</p>', r"\1", text)  # 単独の図
+    text = re.sub(r'<p align="center">(<a href=(?:(?!</p>).)*</a>)</p>', r"\1", text, flags=re.S)  # サムネイル
+    return text.replace('<p align="center"><picture>', "<p><picture>")  # 録画の図の切り絵
+
+
+def check(text, here=ROOT):
+    text = FENCE.sub(lambda m: "\n" * m.group(0).count("\n"), text)  # 説明用の例は調べない（行番号は保つ）
     errors = []
     for m in re.finditer(r"<picture>(.*?)</picture>", text, re.S):
         p = m.group(1)
@@ -135,7 +179,7 @@ def check(text):
             errors.append(f"{line}: <source> がない")
             continue
         first = sources[0]
-        if attr(first, "srcset") != HIDE or attr(first, "width") != "0" or attr(first, "height") != "0":
+        if attr(first, "srcset") != BASE + HIDE_PATH or attr(first, "width") != "0" or attr(first, "height") != "0":
             errors.append(f"{line}: 最初の <source> が、使わない画面で消すための HIDE（幅0・高さ0）になっていない")
         if "prefers-color-scheme" in (attr(first, "media") or ""):
             errors.append(f"{line}: 消すための <source> に外観の条件がある（GitHub に書き換えられる）")
@@ -143,24 +187,31 @@ def check(text):
             if "prefers-color-scheme" in (attr(s, "media") or "") and attr(s, "media") != DARK:
                 errors.append(f"{line}: 外観の <source> にほかの条件がある：{attr(s, 'media')}")
         for src in re.findall(r'(?:srcset|src)="([^"]+)"', p):
-            if not src.startswith("http") and not (ROOT / src).exists():
+            if not src.startswith("http") and not (here / src).exists():
                 errors.append(f"{line}: ファイルがない：{src}")
     return errors
 
 
 def main():
+    global BASE
     cmd = sys.argv[1] if len(sys.argv) > 1 else "check"
-    text = README.read_text(encoding="utf-8")
-    if cmd == "migrate":
-        new = migrate(text)
-        README.write_text(new, encoding="utf-8", newline="\n")
-        print("migrated" if new != text else "no change")
-    errors = check(README.read_text(encoding="utf-8"))
-    for e in errors:
-        print("NG", e)
-    if errors:
+    bad = False
+    for name in sys.argv[2:] or FILES:
+        path = ROOT / name
+        BASE = "../" * (len(Path(name).parts) - 1)
+        text = path.read_text(encoding="utf-8")
+        if cmd == "migrate":
+            new = migrate(text)
+            path.write_text(new, encoding="utf-8", newline="\n")
+            print(f"{name}: {'migrated' if new != text else 'no change'}")
+        errors = check(path.read_text(encoding="utf-8"), path.parent)
+        for e in errors:
+            print(f"NG {name}:{e}")
+        bad |= bool(errors)
+        if not errors:
+            print(f"PASS: {name} の <picture> はすべて新形式")
+    if bad:
         sys.exit(1)
-    print("PASS: README の <picture> はすべて新形式")
 
 
 if __name__ == "__main__":

@@ -12,6 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_art as art  # noqa: E402
+import markup  # noqa: E402
 import showcase as sc  # noqa: E402
 
 ROOT = art.ROOT
@@ -171,7 +172,8 @@ def head_text(block, alt):
 
 
 def main():
-    body = convert(SRC.read_text(encoding="utf-8"))
+    # README の <picture> は画面幅・外観ごとの版に分けてあるので（markup.py）、図1つ1つの形に戻してから読む
+    body = convert(markup.collapse(SRC.read_text(encoding="utf-8")))
     intro = ("<!-- このファイルは scripts/readme/text_readme.py で README.md から生成する。直接編集しない。 -->\n\n"
              "> [!NOTE]\n> 画像を使わず、文字だけで読める版のREADMEです。図・表・アニメーション入りの通常版は [README.md](README.md) です。\n\n")
     if "<img" in body or "<picture" in body:

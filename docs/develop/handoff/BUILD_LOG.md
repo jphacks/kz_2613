@@ -2962,3 +2962,32 @@
 - 確認：変更前後の SVG を Chrome と WebKit で並べて表示し、番号・単位・引用符・舞台・光彩・締めのカードが同じ見た目であることを確かめた。Windows の Chrome では、数字の書体が Impact から Anton（輪郭）に変わる。iPhone には Impact がなく、以前は端末の別の書体で表示されていたので、今後はどの端末でも同じ形になる。`python scripts/readme/check_text_size.py`・`python scripts/check-public-docs.py`・`python scripts/verify_overlay.py` PASS。`README-text.md` は変化なし。
 - 追記（2026-11-22）：READMEの受賞結果（`assets/readme/awards-*.svg`）を、キャラクターが JPHACKS 2026 の流れを演じる路線図のアニメーションにした（利用者と比較用ブランチ `claude/readme-awards-options` で8回やりとりして決めた案）。生成は `python scripts/readme/awards_play.py`。見出しは目次と同じ形のままで、約3.5秒たつと青・緑・紫の点が3人のチームになり、Hack Day の勝者（観客賞）→ 3人分の切符と路線の開通（決勝進出）→ 新幹線で東京へ → 発表と展示 → 発表直前のドキドキ → 3つの賞を受け取る（紙吹雪）→ 点に戻る、を演じる（1周 PC 37.7秒・スマホ 37.4秒）。`build_art.py` の古いメダル版の描画は取り除き、受賞のデータ（`AWARDS`、文字だけのREADMEで使う）だけ残した。確認：生成した4枚が利用者の確認した比較用の画像とバイト単位で一致、`build_art.py`・`text_readme.py` を実行してほかのファイルに差分なし、`check_text_size.py` PASS、XMLとして読めること、グラデーションの文字・マスクなし、Chrome の「視差効果を減らす」で止まった路線図だけになること、1周の始めと終わりの画面が一致すること、PC・スマホ×ライト・ダークのコマ撮り。iPhone の Safari での表示は未確認。
 - 追記（2026-11-22）：2026-11-20 に公開された RUSTSEC-2026-0592（`url` 2.5.8 以前の `Url::origin()` が入れ子の `blob:` URL でスタックあふれ）で、必須チェック `cargo-audit (host-rs)`・`cargo-audit (desktop)` が失敗するようになった（PR #612 で検出。READMEだけの変更でも失敗する）。`cargo update -p url --precise 2.5.9` で `apps/host-rs`・`apps/desktop` の `Cargo.lock` を更新した（あわせて `form_urlencoded` 1.2.2 → 1.2.3）。コードは `Url::origin`・`blob:` を直接使っていない。確認はCIの必須チェックで行う（手元に cargo-audit がない）。
+
+## 2026-11-22 — READMEを、GitHubの外観の固定・タブレットの画面幅・端末のフォントでも想定どおりに見せる（Claude Code）
+
+- 利用者の依頼：2026年の一般的な閲覧環境（画面比率・回線・端末性能・フォント）で README に支障が出る所を洗い出し、直せるものをすべて直す。
+- 実測で見つけた問題（GitHub の `jphacks/kz_2613` をヘッドレス Chrome・Playwright の WebKit と Firefox で開いて測定）：
+  1. GitHub は `<picture>` を `<themed-picture>` で包み、外観を「ライト」「ダーク」に固定した利用者には、`prefers-color-scheme` を含む `<source>` の `media` を丸ごと書き換える（スクリプトを読んで確認）。`(max-width: 700px) and (prefers-color-scheme: dark)` の幅の条件も消え、**ダーク固定の利用者には PC でもスマホ版の図が出ていた**（1440px で `title-narrow-dark.svg` が幅324px）。
+  2. 本文欄の幅は画面幅どおりに変わらない（1440→838、1280→823、1100→643、1024→567、900→523、834→457、768→391、744→631、701→588px）。701〜1279px では PC 版の図が縮み、図の文字が 6.1〜10px になっていた（iPad 縦で約6px）。
+  3. 紹介動画のサムネイルが 1920×1080 の PNG（881KB）で、スマホでも転送量の4割を占めていた。
+  4. 幅360px の Android（本文欄294px）で、スマホ版の13pxの文字が11.8pxになっていた。
+  5. 端末のフォントの違い：処理の流れの図（`pipeline-light.svg`）の見出し3つが、Noto Sans JP（Android）とヒラギノ相当（Apple）の字幅で枠から 2.5〜15px はみ出していた。Windows の Yu Gothic UI は仮名が狭い。
+  6. 録画のアニメーションWebP は「視差効果を減らす」の設定でも動き続けていた。
+- 対応：
+  - `scripts/readme/markup.py`（新規）：図1つを版ごとの `<picture>` に分けて並べ、使わない画面では幅0・高さ0の `assets/readme/hide.svg` で消す。外観の条件は単独の `<source>` に書く。PC 版は画面幅1266px 以上（スクロールバーがあっても本文欄808px以上で、13pxが12.5px以上）、それより狭い画面はスマホ版を原寸で中央に置く。% 指定の目次・録画の切り絵は 420〜1265px で px 指定の版を使う。アニメーションWebP には「視差効果を減らす」向けの静止画の版を並べる（`recordings/stills.py`、18枚・計約0.3MB）。`migrate` で旧形式から書き換え、`check` で決まりを確かめる（CI の `structure` に追加）。`collapse` で旧形式に戻せる（`text_readme.py` が使う。`README-text.md` は変化なし）。
+  - サムネイル：元の PNG は残し、幅1676px・品質86の WebP（144KB）を README に置く（`scripts/readme/thumbnail.py`）。
+  - スマホ版の文字の最小を14.1px にした（`build_art.svg()` の `phone_min_font`。処理の流れの図は利用者の判断で形を変えないので除く）。活用した技術のカードは折り返しも14.1px で計算する。
+  - 処理の流れの図の見出し3つを `textLength` で Windows の幅に固定した（Windows では見た目が変わらない）。
+  - `scripts/readme/check_text_size.py`：新形式の `<picture>` を読み、実測した14通りの画面幅で調べる（以前は 1280px＝838px と 390px の2通りだけで、中間の幅を調べていなかった）。CI の `structure` に追加。
+  - `scripts/readme/check_text_fit.mjs`（新規）：Windows・Android（Noto）・Apple 相当（Arial＋Noto Sans JP）のフォントで各 SVG を描き、文字が図・枠の外へはみ出さないか、重ならないかを調べる。
+  - `docs/readme-design.md` の図も同じ形に直し、4節（切り替え方・幅・タブレット）と13節（転送量・静止画）を書き直した。資料4つ（`docs/usage.md` ほか）の録画のスマホ版は `width="324"` で原寸にした（以前は幅431〜700pxで最大2倍に引き伸ばされていた）。
+- 確認：
+  - GitHub 上（作業ブランチ）を画面幅 1440・1266・1265・1100・834・768・600・420・419・390・360・320px × 外観（OS に合わせる・ライト固定・ダーク固定）× OS のライト／ダーク × 動きを減らす設定の14条件で、条件ごとにブラウザを起動し直して測定：版の誤り・消し残し・はみ出し・横スクロールはすべて0。WebKit・Firefox でも7条件ずつで同じく0。
+  - `python scripts/readme/markup.py check`・`python scripts/readme/check_text_size.py`・`node scripts/readme/check_text_fit.mjs`・`python scripts/check-public-docs.py`・`python scripts/verify_overlay.py` PASS。
+  - 転送量（閲覧1回、計算）：PC 約3.1MB→約2.3MB、タブレット・スマホ 約2.0〜3.1MB→約1.3MB。
+  - 描画の負荷（Chrome のトレース）：受賞の図1枚で、アニメーション中の描画とラスタはデスクトップCPUの1コアの約13%。ぼかしフィルタを外しても約1割しか減らない。画面外の図はほぼ負荷にならない。`--force-prefers-reduced-motion` で SVG の動きが止まり、負荷が0になることも確かめた（DevTools の「動きを減らす」の再現は `<img>` の SVG の中に届かない）。
+  - 同じ録画を分けた WebP（`controllers` の 3a・3b）の再生のずれ：3Mbps に絞った Chrome で、見分けのつくコマどうしは0〜0.25秒。P1 と P2 は別の操作を映すので直さなかった。
+- 残る点：
+  - GitHub の外観と OS の設定が食い違う閲覧者は、ページを読み込んだ後に GitHub が版を差し替えるため、両方の版を取得する（main でも同じ。README 側では避けられない）。
+  - GitHub の Dark dimmed（背景 `#212830`）では、見出しの舞台の端に描いた背景色 `#0D1117` が暗い四角に見える。`themed-picture` はライトとダークしか区別しない。直すには端のぼかしをやめるしかなく、通常のダークでの見た目が変わるので、利用者の判断を待つ。
+  - iPhone の Safari・Android 実機・GitHub のスマホアプリでは確かめていない（Windows 版 WebKit で代わりに確認した）。
