@@ -30,23 +30,16 @@ PLAY = {"01": ps.alone, "02": ps.together, "03": ps.join, "04": ps.genres, "05":
         "07": ps.remocon, "08": ps.hotspot, "09": ps.lanes, "10": ps.build, "11": ps.assign}
 
 
-PAGE = {False: "#FFFFFF", True: "#0D1117"}  # GitHub の本文の背景色（画像の後ろの色）
+def stage(sc, x, y, k):
+    """場面を (x, y) に縮尺 k で置き、舞台の矩形で切り抜く。
 
-
-def stage(sc, x, y, k, t, fade_l=.12, fade_r=.08):
-    """場面を (x, y) に縮尺 k で置く。左右の端は溶けるように消す。
-
-    マスクは Safari で画像になってぼやけるので使わない。舞台を矩形で切り抜き、端に GitHub の
-    背景色（ライト #FFFFFF、ダーク #0D1117）のグラデーションを重ねて溶かす。"""
+    以前は左右の端に GitHub の背景色（ライト #FFFFFF、ダーク #0D1117）のグラデーションを重ねて溶かしていたが、
+    GitHub の Dark dimmed など背景色の違うテーマで暗い四角に見えた。全場面を0.2秒ごとに描いて確かめると、
+    動きは舞台の横幅の約19〜76%に収まり、端の帯には何も描かれないので、重ねるのをやめた（2026-11-22）。"""
     w, h = scenes.W * k, scenes.H * k
-    page = PAGE[t is art.THEMES["dark"]]
-    defs = (f'<linearGradient id="stagefade" x1="{x}" y1="0" x2="{x + w}" y2="0" gradientUnits="userSpaceOnUse">'
-            f'<stop offset="0" stop-color="{page}"/><stop offset="{fade_l}" stop-color="{page}" stop-opacity="0"/>'
-            f'<stop offset="{1 - fade_r}" stop-color="{page}" stop-opacity="0"/><stop offset="1" stop-color="{page}"/></linearGradient>'
-            f'<clipPath id="stage"><rect x="{x}" y="{y - 20}" width="{w}" height="{h + 40}"/></clipPath>')
+    defs = f'<clipPath id="stage"><rect x="{x}" y="{y - 20}" width="{w}" height="{h + 40}"/></clipPath>'
     return (f'<defs>{defs}</defs><g clip-path="url(#stage)"><svg x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" '
-            f'viewBox="0 0 {scenes.W} {scenes.H}" overflow="visible">{"".join(sc.svg)}</svg>'
-            f'<rect x="{x}" y="{y - 20}" width="{w}" height="{h + 40}" fill="url(#stagefade)"/></g>')
+            f'viewBox="0 0 {scenes.W} {scenes.H}" overflow="visible">{"".join(sc.svg)}</svg></g>')
 
 
 def play_head(num, jp, en, make, t, narrow=False):
@@ -56,13 +49,13 @@ def play_head(num, jp, en, make, t, narrow=False):
         k = art.PHONE_W / scenes.W
         top = round(scenes.G * k) - 4  # 舞台の地面を、番号の行の少し上に置く
         W, H, body = art.head_parts(num, jp, en, t, narrow=True)
-        body = stage(sc, 0, 0, k, t, .06, .06) + f'<g transform="translate(0 {top})">{body}</g>'
+        body = stage(sc, 0, 0, k) + f'<g transform="translate(0 {top})">{body}</g>'
         H += top
     else:
         k = PC_SCALE
         W, H, body = art.head_parts(num, jp, en, t)
-        # 舞台の端に背景色を重ねるので、見出しの文字より先（下）に描く
-        body = stage(sc, PC_W - scenes.W * k, BASE - scenes.G * k, k, t) + body
+        # 舞台は見出しの文字より先（下）に描く
+        body = stage(sc, PC_W - scenes.W * k, BASE - scenes.G * k, k) + body
     if num not in FIRST:
         # 前の項目との区切り：目次・受賞結果の見出しと同じ、細い線と4色の点。少し間を空けてから見出しを置く
         x1 = W - 67
