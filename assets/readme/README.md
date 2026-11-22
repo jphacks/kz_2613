@@ -37,7 +37,7 @@
 | `-mid-` | 620px | 555〜808px（iPad の横向き、狭いPC） | 14.1px |
 | なし | 838px | 809px〜（PC） | 13px |
 
-PC版以外は本文欄の幅いっぱい（0.85〜1.3倍）に表示します。ただし作品名（`title-*`）は GitHub の h1 と同じ大きさに見せるため、どの版も原寸で置きます（`markup.py` の `NATIVE`）。`-compact-`・`-mid-` の版がない図（引用・処理の流れ・録画の図）は、その画面幅ではスマホ版を原寸で左端に置きます。文字の最小は `build_art.svg()` が引き上げ、`python scripts/readme/check_text_size.py` が、実測した41通りの画面幅で12.5px以上になるかを確かめます。
+PC版以外は本文欄の幅いっぱい（0.85〜1.3倍）に表示します。ただし作品名（`title-*`）は GitHub の h1 と同じ大きさに見せるため、どの版も原寸で置きます（`markup.py` の `NATIVE`）。README のすべての図に4段階の版があります（`-compact-`・`-mid-` の版がない図を足したときは、その画面幅ではスマホ版を原寸で左端に置きます）。録画の図の中間の版は、録画の枠にスマホ版の WebP をそのまま使います（`scripts/readme/recordings/pieces.py`）。文字の最小は `build_art.svg()` が引き上げ、`python scripts/readme/check_text_size.py` が、実測した41通りの画面幅で12.5px以上になるかを確かめます。
 
 ## 版の切り替え（`<picture>` の書き方）
 
