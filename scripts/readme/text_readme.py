@@ -98,12 +98,26 @@ def techstack():
 
 
 def pipeline():
+    (n1, h1, s1), (n2, h2, s2), (n3, h3, s3) = art.PIPE_DETECT, art.PIPE_AI, art.PIPE_RESULT
+    keys = "、".join(f"`{act}`:{key}" for act, key, _ in art.PIPE_KEYS)
+    toks = "・".join(f"`{tk}`" for tk in art.PIPE_TOKS)
+    layers = "\n".join(f"   - **{a}**：{b}。{c}" for a, b, c in art.PIPE_LAYERS)
+    outs = "、".join(f"{a}（{b}）" for a, b in art.PIPE_OUTS)
+    steps = "\n".join(f"     {k + 1}. {s}" for k, s in enumerate(art.PIPE_STEPS))
+    players = "、".join(f"{p}に{role}（{l1}{l2.replace('＋ ', '＋')}）" if l2.startswith("＋")
+                       else f"{p}に{role}（{l1}、{l2}）" for _, p, role, l1, l2 in art.PIPE_PLAYERS)
     return "\n".join([
         "分担AIの流れ：",
         "",
-        "1. **ゲームのファイルから自動検出：** MoveForward:W、Jump:Space、Look:Mouse、Fire:MouseL などの操作を19系統で読み取る",
-        "2. **分担AIが意味と関係を推論：** 多言語エンコーダ MiniLM と独自の2層Transformerで、カテゴリ・同じ人が持つ確率・方向軸を推論",
-        "3. **スマホ画面へ自動で配分：** P1に移動（WASD＋Space）、P2に視点（Mouse）、P3にアクション（左右クリック・Rキー・ホイール）"])
+        f"1. **{n1} {h1}：** {s1}。{art.PIPE_KEYS_LABEL}：{keys}",
+        f"2. **{n2} {h2}：** {s2}。{art.PIPE_TOKS_LABEL}：{toks}",
+        layers,
+        f"   - 分担判断の入力：意味ベクトル{art.PIPE_EXTRA.lstrip('＋ ').join(['と', ''])}",
+        f"   - 出力：{outs}。{art.PIPE_OUTS_NOTE}",
+        f"   - {art.PIPE_BUILD}：",
+        steps,
+        f"   - {art.PIPE_SPEED}（{art.PIPE_NOTE.lstrip('※')}）",
+        f"3. **{n3}：{h3}：** {s3}。{players}。{art.PIPE_RESULT_NOTE}"])
 
 
 def evaluation():
