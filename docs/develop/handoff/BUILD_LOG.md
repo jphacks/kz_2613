@@ -3028,3 +3028,9 @@
 - 変更：`scripts/readme/build_art.py` の `pipeline_stack`。スマホ版・小さい中間の版・中間の版で、PC版の3枚の中身（10操作のキー割り当て、操作名の例、2つのモデルと大きさ、推定する3つ、推論時間と注記、3人の担当の詳細）を省かずに縦に積む。中身は PC 版と同じ定数（`PIPE_*`）から作る。PC版の出力は変わらない。①の点の色が③の担当であることを①の下に書いた。README の alt も図の中身に合わせた。スマホ版も `check_text_size.py` の検査対象に戻した。
 - 確認：`python scripts/readme/build_art.py`（PC版の SVG は差分なし）、`python scripts/readme/markup.py rebuild`・`check`、`python scripts/readme/check_text_size.py`（PASS）、`node scripts/readme/check_text_fit.mjs`（PASS）、`python scripts/check-public-docs.py`、`python scripts/verify_overlay.py`。3つの版をライト・ダークで画像にして目視した。
 - 残る点：GitHub 上の実際の表示、iPhone の Safari は未確認。PC版の層をつなぐ縦の点線は、幅0の線にグラデーションを塗っているため描かれていない（形を変えない約束の図なので触れていない）。
+- 追記（2026-11-23、利用者の依頼「分かりやすく、詳細で、厳密に。いくらでも直してよい」）：中身を `docs/preset-model-specification.md` と `apps/host-rs/src/preset_model.rs` に照らして直し、PC版も描き直した。
+  - 足りなかった点：分担判断の入力（初期キー86種・入力の種類5種）、モデルの出力から2〜4人へ分ける決まった手順（6段）、カテゴリ6種の中身、①の表が例であること、各スマホが担当の操作画面になること。
+  - 不正確だった点：出力の「方向軸」→「同じ軸か」。3枚目の「③」は README 本文の③（通信）と食い違うので「結果」にした。①②は本文の見出しと同じ番号。
+  - PC版は「①→②→結果」の横並びを保ち、②の中を「推論｜組み立て」の2列にした。層をつなぐ縦の点線が描かれていなかった（幅0の線に url(#brand)）ので単色にした。
+  - 文字だけの版（`README-text.md`）も同じ定数から書くようにし、README の alt を図の中身に合わせた。
+  - 確認：`check_text_size.py`・`check_text_fit.mjs`・`markup.py check`・`check-public-docs.py`・`verify_overlay.py` が PASS。4つの版をライト・ダークで画像にして目視した。PC版は幅1280を縮めて表示するため、文字は約9.8px以上（以前の8.5pxより大きいが、ほかの図の12.5pxより小さい）。
