@@ -33,7 +33,7 @@ COLUMNS = {
 MIN_PX = 12.5
 DECOR = ("assets/readme/scenes/",)  # 区切りの帯。文字は吹き出しの飾りだけ
 # 利用者の判断で形を変えずに使う図（2026-11-20）。大きさは表示するが、検査の対象から外す
-FIXED = ("assets/readme/pipeline-light", "assets/readme/pipeline-dark", "assets/readme/pipeline-narrow-")  # 中間の版は対象にする
+FIXED = ("assets/readme/pipeline-light", "assets/readme/pipeline-dark")  # PC版だけ。PC以外の版は対象にする
 
 
 def svg_info(path):

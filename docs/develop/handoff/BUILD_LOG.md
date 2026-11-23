@@ -3021,3 +3021,10 @@
 - 残る点：iPhone の Safari と GitHub のスマホアプリでは確かめていない。
 - 追記（2026-11-23、利用者の依頼で作品名と受賞結果のアニメーションも4段階に）：GitHub 上で31の画面幅を測り直し、問題は0。作品名はどの幅でも原寸（縮むのは768pxで0.93倍、360pxで0.91倍だけ）、受賞結果は本文欄いっぱい。動きは中間の版2つを時刻ごとに撮り、物語の流れが PC 版・スマホ版と同じことを確かめた。
 - 追記（2026-11-23、すべての図を4段階に）：段階ごとにすべての図を表示する幅で並べて目視し、数値のスマホ版の補足と棒グラフの重なり、評価の中間の版の左右のずれ、注力したことの「なる」だけの行を直した。スマホ版も、実際に描く14.1pxで折り返しを計算するようにした。GitHub 上の31幅で問題0、Android 実機の縦（スマホ版）・横（中間の版）で消し残し・はみ出しなし、60fps。
+
+## 2026-11-23 README の処理の流れの図を、PC以外でもPC版と同じ詳しさにする（Claude Code）
+
+- 依頼：PC版以外でも、PC版ぐらい詳細な図にする（分かりやすさ・詳しさ・厳密さを重視）。
+- 変更：`scripts/readme/build_art.py` の `pipeline_stack`。スマホ版・小さい中間の版・中間の版で、PC版の3枚の中身（10操作のキー割り当て、操作名の例、2つのモデルと大きさ、推定する3つ、推論時間と注記、3人の担当の詳細）を省かずに縦に積む。中身は PC 版と同じ定数（`PIPE_*`）から作る。PC版の出力は変わらない。①の点の色が③の担当であることを①の下に書いた。README の alt も図の中身に合わせた。スマホ版も `check_text_size.py` の検査対象に戻した。
+- 確認：`python scripts/readme/build_art.py`（PC版の SVG は差分なし）、`python scripts/readme/markup.py rebuild`・`check`、`python scripts/readme/check_text_size.py`（PASS）、`node scripts/readme/check_text_fit.mjs`（PASS）、`python scripts/check-public-docs.py`、`python scripts/verify_overlay.py`。3つの版をライト・ダークで画像にして目視した。
+- 残る点：GitHub 上の実際の表示、iPhone の Safari は未確認。PC版の層をつなぐ縦の点線は、幅0の線にグラデーションを塗っているため描かれていない（形を変えない約束の図なので触れていない）。

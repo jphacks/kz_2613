@@ -324,12 +324,31 @@ def flow_phone(t):
 
 
 # ---------- 分担AIの流れ ----------
-# 利用者の判断で、この図は形を変えずに使い続ける（2026-11-20）。
+# PC版の形は、利用者の判断で変えない（2026-11-20）。PC以外の3つの版は、利用者の依頼でPC版と同じ中身を
+# 縦に積んで描く（2026-11-23）。中身はどの版も次の定数から作るので、版によって数や名前が食い違わない。
+PIPE_HEADS = [("①", "ゲームのファイルから自動検出", "設定・データを19系統で解析"),
+              ("②", "分担AIが意味と関係を推論", "MiniLM＋独自の2層Transformer"),
+              ("③", "スマホ画面へ自動で配分", "3人プレイの例")]
+# (操作名, キー, 担当するキャラクター)。点の色は③で決まる担当
+PIPE_KEYS = [("MoveForward", "W", "blue"), ("MoveBack", "S", "blue"), ("MoveLeft", "A", "blue"), ("MoveRight", "D", "blue"),
+             ("Jump", "Space", "blue"), ("Look", "Mouse", "green"), ("Fire", "MouseL", "purple"), ("Aim", "MouseR", "purple"),
+             ("Reload", "R", "purple"), ("WeaponNext", "Wheel", "purple")]
+PIPE_TOKS = ["IA_Jump", "+attack", "前進", "Look"]
+# (見出し, 説明, Windows で測った見出しの幅（17px）)
+PIPE_LAYERS = [("多言語エンコーダ（MiniLM・約40MB）", "操作名 → 384次元の意味ベクトル", 278),
+               ("分担判断（2層Transformer・約410KB）", "教師あり＋伏せたキーを当てる学習", 294)]
+PIPE_OUTS = [("カテゴリ", "6種"), ("同じ人か", "確率"), ("方向軸", "縦・横")]
+PIPE_SPEED = "Rustでオフライン推論・約80ms"
+PIPE_NOTE = "※14操作のゲームで2〜4人分の分担を作る時間"
+PIPE_PLAYERS = [("blue", "P1", "移動", "8方向スティック（WASD）", "＋ Space"),
+                ("green", "P2", "視点", "ドラッグパッド（Mouse）", "感度調整つき"),
+                ("purple", "P3", "アクション", "左右クリック・R キー", "＋ ホイール上下")]
+PIPE_TITLE = "分担AIの流れ：ゲームのファイルから操作を検出し、MiniLMと2層Transformerで推論して、3人のスマホ画面へ配分する"
+
+
 def pipeline(t, narrow=False):
-    if narrow in ("mid", "compact"):  # 中間の版2つは、スマホ版と同じ形を幅に合わせて広げる（形は変えない）
-        return pipeline_phone(t, MID_W if narrow == "mid" else COMPACT_W)
     if narrow:
-        return pipeline_phone(t)
+        return pipeline_stack(t, {"mid": MID_W, "compact": COMPACT_W}.get(narrow, PHONE_W))
     PH = 450  # 1枚の高さ
     W, H = 1280, PH + 20
     pw, x0 = 372, 20
@@ -338,12 +357,8 @@ def pipeline(t, narrow=False):
     def at(i):
         return "<g>"
 
-    blue, green, purple = (CHARS[n]["body"] for n in ("blue", "green", "purple"))
     b = []
-    heads = [("①", "ゲームのファイルから自動検出", "設定・データを19系統で解析"),
-             ("②", "分担AIが意味と関係を推論", "MiniLM＋独自の2層Transformer"),
-             ("③", "スマホ画面へ自動で配分", "3人プレイの例")]
-    for i, (n, h1, h2) in enumerate(heads):
+    for i, (n, h1, h2) in enumerate(PIPE_HEADS):
         x = xs[i]
         b += [at(i), f'<rect x="{x}" y="10" width="{pw}" height="{PH}" rx="22" fill="{t["panel"]}" stroke="{t["line"]}"/>',
               text(x + 24, 52, n, 26, "url(#brand)", weight=900),
@@ -354,15 +369,12 @@ def pipeline(t, narrow=False):
             b.append(f'<path d="M{ax - 14} {PH / 2 + 10}H{ax + 8}M{ax} {PH / 2 + 1}l9 9-9 9" fill="none" stroke="url(#brand)" '
                      'stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>')
     # ① キー割り当て
-    rows = [("MoveForward", "W", blue), ("MoveBack", "S", blue), ("MoveLeft", "A", blue), ("MoveRight", "D", blue),
-            ("Jump", "Space", blue), ("Look", "Mouse", green), ("Fire", "MouseL", purple), ("Aim", "MouseR", purple),
-            ("Reload", "R", purple), ("WeaponNext", "Wheel", purple)]
     x = xs[0]
     b.append(at(0))
-    b.append(f'<rect x="{x + 22}" y="96" width="{pw - 44}" height="{len(rows) * 32 + 16}" rx="12" fill="{t["code"]}"/>')
-    for k, (act, key, c) in enumerate(rows):
+    b.append(f'<rect x="{x + 22}" y="96" width="{pw - 44}" height="{len(PIPE_KEYS) * 32 + 16}" rx="12" fill="{t["code"]}"/>')
+    for k, (act, key, name) in enumerate(PIPE_KEYS):
         y = 124 + k * 32
-        b += [f'<circle cx="{x + 42}" cy="{y - 5}" r="5" fill="{c}"/>',
+        b += [f'<circle cx="{x + 42}" cy="{y - 5}" r="5" fill="{CHARS[name]["body"]}"/>',
               text(x + 56, y, act, 16, t["ink"], cls="mono", weight=600),
               f'<rect x="{x + pw - 128}" y="{y - 19}" width="86" height="24" rx="6" fill="{t["panel"]}" stroke="{t["line"]}"/>',
               text(x + pw - 85, y - 2, key, 14, t["ink"], cls="mono", weight=700, anchor="middle")]
@@ -371,17 +383,14 @@ def pipeline(t, narrow=False):
     b.append(at(1))
     x = xs[1]
     cx = x + pw / 2
-    toks = ["IA_Jump", "+attack", "前進", "Look"]
-    for k, tk in enumerate(toks):
+    for k, tk in enumerate(PIPE_TOKS):
         tx = x + 40 + k * 76
         b += [f'<rect x="{tx}" y="100" width="68" height="28" rx="14" fill="{t["code"]}" stroke="{t["line"]}"/>',
               text(tx + 34, 119, tk, 14, t["ink"], cls="mono", weight=700, anchor="middle")]
     # 枠いっぱいの見出しは、Windows（Yu Gothic UI）で測った幅に textLength で固定する。Android の Noto Sans JP や
     # macOS・iPhone のヒラギノは仮名が広く、そのままでは枠から最大15pxはみ出すため（check_text_fit.mjs、2026-11-22）。
     # Windows では見た目が変わらず、字幅の広い端末では字を少し詰めて枠に収める。
-    layers = [(150, "多言語エンコーダ（MiniLM・約40MB）", "操作名 → 384次元の意味ベクトル", 278),
-              (236, "分担判断（2層Transformer・約410KB）", "教師あり＋伏せたキーを当てる学習", 294)]
-    for (y, l1, l2, l1w) in layers:
+    for (y, (l1, l2, l1w)) in zip((150, 236), PIPE_LAYERS):
         b += [f'<rect x="{x + 30}" y="{y}" width="{pw - 60}" height="66" rx="14" fill="url(#brand)" opacity=".14"/>',
               f'<rect x="{x + 30}" y="{y}" width="{pw - 60}" height="66" rx="14" fill="none" stroke="url(#brand)" stroke-width="2"/>',
               text(cx, y + 28, l1, 17, t["ink"], weight=900, anchor="middle", length=l1w),
@@ -389,23 +398,19 @@ def pipeline(t, narrow=False):
     for k in range(5):  # 層をつなぐ線
         lx = x + 70 + k * 58
         b.append(f'<path d="M{lx} 216V236" stroke="url(#brand)" stroke-width="2.5" class="flow" style="animation-delay:{k * .15:.2f}s"/>')
-    outs = [("カテゴリ", "6種"), ("同じ人か", "確率"), ("方向軸", "縦・横")]
-    for k, (o1, o2) in enumerate(outs):
+    for k, (o1, o2) in enumerate(PIPE_OUTS):
         ox = x + 30 + k * 108
         b += [f'<rect x="{ox}" y="324" width="96" height="58" rx="12" fill="{t["code"]}" stroke="{t["line"]}"/>',
               text(ox + 48, 349, o1, 16, t["ink"], weight=800, anchor="middle"),
               text(ox + 48, 372, o2, 15, t["muted"], weight=700, anchor="middle")]
     b += [f'<rect x="{cx - 120}" y="400" width="240" height="34" rx="17" fill="{t["stripe"]}" opacity=".9"/>',
-          text(cx, 423, "Rustでオフライン推論・約80ms", 16, "#2E2B48", weight=900, anchor="middle", length=199)]
-    b.append(text(cx, PH, "※14操作のゲームで2〜4人分の分担を作る時間", 13, t["muted"], weight=600, anchor="middle"))
+          text(cx, 423, PIPE_SPEED, 16, "#2E2B48", weight=900, anchor="middle", length=199)]
+    b.append(text(cx, PH, PIPE_NOTE, 13, t["muted"], weight=600, anchor="middle"))
     b.append("</g>")
     # ③ 3人の画面
     b.append(at(2))
     x = xs[2]
-    players = [("blue", "P1", "移動", "8方向スティック（WASD）", "＋ Space"),
-               ("green", "P2", "視点", "ドラッグパッド（Mouse）", "感度調整つき"),
-               ("purple", "P3", "アクション", "左右クリック・R キー", "＋ ホイール上下")]
-    for k, (name, p, role, l1, l2) in enumerate(players):
+    for k, (name, p, role, l1, l2) in enumerate(PIPE_PLAYERS):
         y = 100 + k * 116
         c = CHARS[name]["body"]
         b += [f'<rect x="{x + 22}" y="{y}" width="{pw - 44}" height="102" rx="16" fill="{t["panel2"]}" stroke="{c}" stroke-width="2"/>',
@@ -416,7 +421,7 @@ def pipeline(t, narrow=False):
               text(x + 112, y + 65, l1, 16, t["ink"], weight=700),
               text(x + 112, y + 88, l2, 15, t["muted"], weight=700)]
     b.append("</g>")
-    return svg(W, H, "".join(b), t, "分担AIの流れ：ゲームのファイルから操作を検出し、MiniLMと2層Transformerで推論して、3人のスマホ画面へ配分する")
+    return svg(W, H, "".join(b), t, PIPE_TITLE)
 
 
 def chip(x, y, s, t, color=None, mono=True, size=12.5):
@@ -428,52 +433,111 @@ def chip(x, y, s, t, color=None, mono=True, size=12.5):
             + text(x + w / 2, y + 15.5, s, size, ink, cls="mono" if mono else "jp", weight=700, anchor="middle"), w)
 
 
-def pipeline_phone(t, W=PHONE_W):
-    """分担AIの流れ（スマホ版）。3段の要点だけを縦に並べ、詳しい説明は下の本文に任せる。
-    W を渡すと中間の版：同じ形のまま幅 W に広げ、文字はその版の最小（14.1・14.8px）まで大きくする。"""
-    mid = W != PHONE_W
-    fz = (COMPACT_MIN_FONT if W == COMPACT_W else PHONE_MIN_FONT) if mid else None
-    F = (lambda s: max(s, fz)) if mid else (lambda s: s)
-    blue, green, purple = (CHARS[n]["body"] for n in ("blue", "green", "purple"))
-    rows = [("①", "ゲームのファイルから自動検出", "19系統の設定・データを解析"),
-            ("②", "分担AIが意味と関係を推論", "MiniLM＋独自の2層Transformer"),
-            ("③", "スマホ画面へ自動で配分", "Rustでオフライン推論・約80ms")]
+def pipeline_stack(t, W):
+    """分担AIの流れ（PC以外の版）。PC版の3枚を、中身を省かずに上から下へ積む。
+    文字はその版の最小（スマホ・中間 14.1px、小さい中間 14.8px）以上で描く。①の表は、スマホは1列、中間の版2つは
+    担当ごとに2列（左にP1、右にP2・P3）。"""
+    narrow = W == PHONE_W
+    fz = COMPACT_MIN_FONT if W == COMPACT_W else PHONE_MIN_FONT
+    pad = 14 if narrow else 18
+    iw = W - 2 * pad
+    cx = W / 2
+    flow_n = 3 if narrow else 5
+
+    def flow_lines(y0, y1):  # 処理が下へ流れることを示す点線。縦線は外枠の幅が0で url(#brand) が塗られないので、ブランド色の中間の単色
+        step = iw / (flow_n + 1)
+        return [f'<path d="M{pad + step * (k + 1):.1f} {y0}V{y1}" stroke="#6F86FF" stroke-width="2.5" class="flow" '
+                f'style="animation-delay:{k * .15:.2f}s"/>' for k in range(flow_n)]
+
     b, y = [], 0
-    for i, (n, h1, h2) in enumerate(rows):
-        rh = 118 if not mid else 114
-        b += [f'<rect x="1" y="{y + 1}" width="{W - 2}" height="{rh - 2}" rx="16" fill="{t["panel"]}" stroke="{t["line"]}"/>',
-              text(14, y + 30, n, 20, "url(#brand)", weight=900),
-              text(40, y + 29, h1, 16, t["ink"], weight=900),
-              text(40, y + 50 + (3 if mid else 0), h2, F(12.5), t["muted"], weight=700)]
-        cx, cy = 14, y + 66 + (4 if mid else 0)
-        if i == 0:
-            for label, c in (("W", blue), ("A", blue), ("S", blue), ("D", blue), ("Space", blue), ("Mouse", green),
-                             ("MouseL", purple), ("R", purple), ("Wheel", purple)):
-                svg_, w = chip(cx, cy, label, t, c, size=F(12.5))
-                if cx + w > W - 12:
-                    cx, cy = 14, cy + 26
-                    svg_, w = chip(cx, cy, label, t, c, size=F(12.5))
-                b.append(svg_)
-                cx += w + 6
-        elif i == 1:
-            for label in ("操作名", "→ 意味ベクトル", "→ 分担"):
-                svg_, w = chip(cx, cy, label, t, None, mono=False, size=F(12.5))
-                b.append(svg_)
-                cx += w + 6
-        else:
-            for k, (name, p, role) in enumerate((("blue", "P1", "移動"), ("green", "P2", "視点"), ("purple", "P3", "アクション"))):
-                px = 14 + k * (W - 20) / 3
-                b += [char(name, px - 6, cy - 6, .3, t, delay=k * .4),
-                      text(px + 26, cy + 12, p, F(12), CHARS[name]["body"] if name != "green" else "#2FB52E", weight=900),
-                      text(px + 26, cy + 30, role, F(13), t["ink"], weight=800)]
-        y += rh
+    for i, (n, h1, h2) in enumerate(PIPE_HEADS):
+        y0, mark = y, len(b)
+        b += [text(pad, y0 + 34, n, 22, "url(#brand)", weight=900),
+              text(pad + 30, y0 + 33, h1, 17 if narrow else 19, t["ink"], weight=900),
+              text(pad + 30, y0 + 57, h2, fz, t["muted"], weight=700)]
+        cy = y0 + 74
+        if i == 0:  # 読み取った操作名とキー
+            cols = 1 if narrow else 2
+            per = -(-len(PIPE_KEYS) // cols)
+            rh, colw, kw = 30, iw / cols, (64 if W == COMPACT_W else 74)
+            b.append(f'<rect x="{pad}" y="{cy}" width="{iw}" height="{per * rh + 12}" rx="12" fill="{t["code"]}"/>')
+            if cols == 2:
+                b.append(f'<path d="M{pad + colw:.1f} {cy + 10}V{cy + per * rh + 2}" stroke="{t["line"]}" stroke-width="1.5"/>')
+            for k, (act, key, name) in enumerate(PIPE_KEYS):
+                x0, ry = pad + (k // per) * colw, cy + 6 + (k % per) * rh + 20
+                b += [f'<circle cx="{x0 + 15:.1f}" cy="{ry - 5}" r="5" fill="{CHARS[name]["body"]}"/>',
+                      text(x0 + 27, ry, act, 15, t["ink"], cls="mono", weight=600),
+                      f'<rect x="{x0 + colw - kw - 10:.1f}" y="{ry - 17}" width="{kw}" height="23" rx="6" '
+                      f'fill="{t["panel"]}" stroke="{t["line"]}"/>',
+                      text(x0 + colw - kw / 2 - 10, ry - 1, key, fz, t["ink"], cls="mono", weight=700, anchor="middle")]
+            cy += per * rh + 12 + 24
+            # 点の色の意味（PC版では③と見比べて分かる。縦に積むと③が離れるので、ここで書く）
+            note = "点の色は③で決まる担当"
+            b.append(text(pad, cy, note, fz, t["muted"], weight=700))
+            lx = pad + len(note) * fz + 12
+            for name, p, *_ in PIPE_PLAYERS:
+                b += [f'<circle cx="{lx + 5:.1f}" cy="{cy - 5}" r="5" fill="{CHARS[name]["body"]}"/>',
+                      text(lx + 14, cy, p, fz, t["ink"], weight=800)]
+                lx += 14 + 2 * fz * .62 + 14
+            cy += 14
+        elif i == 1:  # 2つのモデルと、推定する3つ
+            b.append(text(pad, cy + 14, "操作名の例（日本語・英語の識別子）", fz, t["muted"], weight=700))
+            cy += 26
+            tx = pad
+            for tk in PIPE_TOKS:
+                s_, w_ = chip(tx, cy, tk, t, None, size=fz)
+                b.append(s_)
+                tx += w_ + 8
+            cy += 22
+            lh = 15 if narrow else 17
+            for k, (l1, l2, l1w) in enumerate(PIPE_LAYERS):
+                b += flow_lines(cy + 3, cy + 19)
+                cy += 22
+                b += [f'<rect x="{pad}" y="{cy}" width="{iw}" height="64" rx="14" fill="url(#brand)" opacity=".14"/>',
+                      f'<rect x="{pad}" y="{cy}" width="{iw}" height="64" rx="14" fill="none" stroke="url(#brand)" stroke-width="2"/>',
+                      text(cx, cy + 27, l1, lh, t["ink"], weight=900, anchor="middle", length=round(l1w * lh / 17)),
+                      text(cx, cy + 50, l2, fz, t["muted"], weight=700, anchor="middle")]
+                cy += 64
+            b += flow_lines(cy + 3, cy + 19)
+            cy += 22
+            gap = 8 if narrow else 12
+            ow = (iw - 2 * gap) / 3
+            for k, (o1, o2) in enumerate(PIPE_OUTS):
+                ox = pad + k * (ow + gap)
+                b += [f'<rect x="{ox:.1f}" y="{cy}" width="{ow:.1f}" height="58" rx="12" fill="{t["code"]}" stroke="{t["line"]}"/>',
+                      text(ox + ow / 2, cy + 25, o1, 16, t["ink"], weight=800, anchor="middle"),
+                      text(ox + ow / 2, cy + 47, o2, fz, t["muted"], weight=700, anchor="middle")]
+            cy += 58 + 14
+            b += [f'<rect x="{cx - 120}" y="{cy}" width="240" height="34" rx="17" fill="{t["stripe"]}" opacity=".9"/>',
+                  text(cx, cy + 23, PIPE_SPEED, 16, "#2E2B48", weight=900, anchor="middle", length=199)]
+            cy += 34 + 22
+            # スマホ版の幅（本文欄294px）では1行に収まらないので、意味の切れ目で2行に分ける
+            head, sep, rest = PIPE_NOTE.partition("ゲームで")
+            for line in ((head + sep, rest) if narrow else (PIPE_NOTE,)):
+                b.append(text(cx, cy, line, fz, t["muted"], weight=600, anchor="middle"))
+                cy += 21
+            cy -= 7
+        else:  # 3人のスマホ画面
+            ch = 100
+            for k, (name, p, role, l1, l2) in enumerate(PIPE_PLAYERS):
+                c = CHARS[name]["body"]
+                tx = pad + (76 if narrow else 92)
+                pw_ = 40
+                b += [f'<rect x="{pad}" y="{cy}" width="{iw}" height="{ch}" rx="16" fill="{t["panel2"]}" stroke="{c}" stroke-width="2"/>',
+                      char(name, pad + (6 if narrow else 14), cy + 12, .62, t, delay=k * .4),
+                      f'<rect x="{tx}" y="{cy + 15}" width="{pw_}" height="23" rx="11.5" fill="{c}"/>',
+                      text(tx + pw_ / 2, cy + 32, p, fz, "#FFFFFF" if name != "green" else "#103B10", weight=900, anchor="middle"),
+                      text(tx + pw_ + 10, cy + 33, role, 19, t["ink"], weight=900),
+                      text(tx, cy + 64, l1, 16, t["ink"], weight=700),
+                      text(tx, cy + 87, l2, fz, t["muted"], weight=700)]
+                cy += ch + (10 if k < 2 else 0)
+        y = cy + pad
+        b.insert(mark, f'<rect x="1" y="{y0 + 1}" width="{W - 2}" height="{y - y0 - 2}" rx="18" fill="{t["panel"]}" stroke="{t["line"]}"/>')
         if i < 2:
-            b.append(f'<path d="M{W / 2 - 8} {y + 4}l8 8 8-8" fill="none" stroke="url(#brand)" stroke-width="4" '
+            b.append(f'<path d="M{cx - 9} {y + 7}l9 9 9-9" fill="none" stroke="url(#brand)" stroke-width="4" '
                      'stroke-linecap="round" stroke-linejoin="round"/>')
-            y += 18
-    # 利用者の判断で形を変えない図なので、スマホ版の文字の引き上げ（phone_min_font）もしない
-    return svg(W, y, "".join(b), t, "分担AIの流れ：ゲームのファイルから操作を検出し、MiniLMと2層Transformerで推論して、3人のスマホ画面へ配分する",
-               phone=None if mid else False)
+            y += 24
+    return svg(W, y, "".join(b), t, PIPE_TITLE)
 
 
 # ---------- 区切りとフッター ----------
