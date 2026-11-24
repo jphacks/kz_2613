@@ -29,10 +29,41 @@
 | 対応環境の明示 | 案あり | Windows 11 x64・WebView2・VC++ v14（x64）、Android Chrome・iPhone Safari、同じローカル Wi-Fi（ホットスポット推奨）。USB は開発用で通常利用の手段にしない |
 | 既知の制限の明示 | 案あり | `docs/verification.md` の「確認状況」と、操作定義 502 本は動作保証ではないこと、エンジンの読み取りの多くは実ゲームで未確認であること（#481）、アンチチートのある作品は対象外寄り |
 | 利用条件・素材 | 一部 | #42：Minecraft の Usage Guidelines と照合済み。発表素材の個別確認、公開できる責任者と連絡先、EULA 全体の照合が残る。ゲームへの入力の合成が各作品の規約に合うかは保証しない |
-| ライセンス | 一部 | ソースコードは MIT。分担のモデルの版 2（同梱）は CC BY-NC-ND 4.0（非営利・改変禁止）で、商用配布の扱いを決める必要がある |
+| ライセンス | 一部 | ソースコードは MIT。分担のモデルの版 2（同梱）は CC BY-NC-ND 4.0（非営利・改変禁止）で、商用配布・表示整合・外部依存表記の扱いを決める必要がある（§2.1・#620 を参照） |
 | 版の付け方・リリースノート | 未定 | GitHub Release に添付するか、版番号（`package-manifest.json` の版とコミット）とリリースノートの書き方 |
 | 問い合わせ・更新の方法 | 未定 | 連絡先、更新の知らせ方（自動更新はない） |
 | 責任者・担当 | 未定 | Go/No-Go の判定者、公開作業の担当、問題が起きたときの連絡先 |
+
+### 2.1 ライセンス・コード署名の判断材料（2026-11-24 追記）
+
+2026-11-24 の技術討論（基準コミット `c406a4e`、詳細は [2026-11-24-architecture-review.md](../decisions/2026-11-24-architecture-review.md)）で整理した、チーム判断前の事実と不明点を以下にまとめる。**これらは法的結論ではなく、AI の調査・合意のみで権利関係が解決済みとは扱わない。**
+
+判断と対応は次の 6 区分に分けて管理する。
+
+1. `NOTICE` の事実誤りとモデルカード記載の不整合の訂正（[#620](https://github.com/jphacks/kz_2613/issues/620) で追跡。遅くとも公開 Go 判断前に実施）
+2. 現在の配布物に必要なライセンス表示・義務の確認（インストーラー表示、外部依存クレート・npm パッケージのライセンス表記を含む）
+3. モデルの権利者・学習データの来歴の確認
+4. 商用利用・改変・再配布に関する将来方針
+5. コード署名の採用・費用・取得主体
+6. 一般公開の Go/No-Go 判断
+
+#### ファイル単位のライセンス・権利整理
+
+| 対象ファイル | 出所 | 原著作物のライセンス | 加えた変更 | 現在表示しているライセンス | 付与権限・法的留意点 | 不明点と確認先 |
+|:--|:--|:--|:--|:--|:--|:--|
+| ソースコード・`recooplay-host.exe`・`recooplay-desktop.exe`・`apps/web/dist/` | 本リポジトリ（JPHACKS） | MIT（外部 Rust クレート・npm 依存は各 OSS ライセンス） | 本チーム開発 | [LICENSE](../../../LICENSE)（MIT, Copyright 2026 JPHACKS） | JPHACKS / チーム | 配布物へ外部依存ライブラリ（Rust・npm）のサードパーティライセンス一覧を同梱する義務・範囲の確認（チーム） |
+| `preset-model-v2/text-encoder.bin`（約 39.9MB） | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` 由来、HF `YOSHI0209/recooplay-preset-model-v2` 経由 | Apache License 2.0（Nils Reimers, Iryna Gurevych） | 語彙 43,691 語への削減、行ごと int8 量子化、`RCTE` バイナリ化（`train.py`） | CC BY-NC-ND 4.0（[preset-model-v2.json](../../../scripts/windows/preset-model-v2.json)・モデルカード・`README.txt`）＋ `NOTICE`・`LICENSE-APACHE-2.0` 同梱 | Apache 2.0 Section 4 は、義務履行を条件に改変部分または派生著作物全体へ別条件を付すことを文言上許容するが、元の部分の権利は Apache 2.0 のまま残る | ① `YOSHI0209` と JPHACKS 間の権利帰属 ② NC-ND 付与の理由 ③ 商用・改変配布の将来方針（`YOSHI0209`・チーム） |
+| `preset-model-v2/preset-model.bin`（約 419KB） | 本プロジェクト独自学習、HF `YOSHI0209/recooplay-preset-model-v2` 経由 | 独自学習物（市販ゲーム抽出・多様なライセンスの GitHub 操作定義・Claude 生成データを使用） | 新規学習・`RCPM` バイナリ化 | CC BY-NC-ND 4.0 | 作者（`YOSHI0209`）／チーム | 学習データ各元の利用規約・ライセンスと、非営利・商用配布時の確認範囲（`YOSHI0209`・データ保持メンバー・チーム） |
+| `preset-model-v2/tokenizer.json`（約 17.1MB） | 元 MiniLM モデル由来だが、`train.py`（100・733 行目）の `save_pretrained` で再書き出し | Apache License 2.0 | `pretty=True` 相当の再整形、`truncation (max_length 48)` 等が混入し元ファイル（9,081,518 バイト）と不一致 | モデルカード 137〜142 行目は「すべて CC BY-NC-ND」、146 行目は「作者が加えた部分」、`NOTICE` は「元のまま再配布」と記述が矛盾 | 実質的に未改変に近く独自著作性が疑わしいため、元ファイル部分へ NC-ND を及ぼせるかは不確実（法的判断は未了） | `#620` で表記を訂正し、次回書き出し時に元モデル（9.08MB、Apache-2.0）の無改変同梱へ切り替えられるか検証（`YOSHI0209`） |
+| `preset-model-v2/NOTICE`・`LICENSE-APACHE-2.0`・`README.md` | HF `YOSHI0209/recooplay-preset-model-v2` | Apache 2.0 通知文書・モデルカード | 作者作成 | 同梱文書（`bundle: true`） | `YOSHI0209` | `NOTICE` の事実誤りとモデルカード不整合の訂正時期（`#620`、`YOSHI0209`） |
+| インストーラー同意画面（[installer.nsi](../../../scripts/windows/installer.nsi)） | 本リポジトリ | ― | `MUI_PAGE_LICENSE "${SRC}\LICENSE"` のみ表示 | 同意画面では MIT のみ表示（モデルの CC BY-NC-ND 4.0 は `README.txt` で告知） | チーム | 配布物全体が MIT と誤認されないよう、同意画面にモデル別ライセンスを並記するか、モデルを任意取得へ分離するか（チーム判断） |
+
+#### コード署名に関する調査結果（2026-11-24 時点）
+
+- **Azure Artifact Signing（旧 Trusted Signing、約 $9.99/月）**：Microsoft Learn 公式クイックスタート（2026-11-20 更新確認）上、Public Trust 証明書の組織対象国に日本は含まれるが、組織審査には法人（legal business entity）としての登記等の書類（12 か月以内発行）・法人ドメイン・事業者識別子が必要で、審査に 1〜30 営業日かかる。個人開発者の対象は米国とカナダのみ。法人格のない日本の学生チームによる利用は実質的に難しい。
+- **OV コード署名証明書**：年 $150〜300 程度。2023 年 6 月以降、秘密鍵のハードウェアトークンまたはクラウド HSM での保管が必須。個人名義で取得した場合、UAC 等に個人名が表示される場合がある。本人確認の所要日数は未確認。
+- **EV コード署名証明書**：2024 年以降の Microsoft Trusted Root Program 変更により、EV 証明書でも SmartScreen の警告を即座に消す効果は廃止されており、OV と同じく配布実績による評判の蓄積が必要。
+- **残るチーム判断**：未署名のまま既知の制限として警告を案内するか、予算・取得主体・表示名を決めて証明書を導入するか。
 
 ## 3. 現時点の判定案
 
@@ -49,10 +80,10 @@
 - 配布：#219、#41、#148
 - スマホ：#437、#426、#452
 - 会場：#415（B）
-- 利用条件：#42 の残り（発表素材・責任者・EULA）
+- 利用条件・モデル表示：#42 の残り（発表素材・責任者・EULA）、[#620](https://github.com/jphacks/kz_2613/issues/620)（版 2 モデルの NOTICE 事実誤りとモデルカード不整合の訂正）
 
-足りない作業で Issue がないものは、この文書の作成時点では見つからなかった。署名（コード署名証明書）とモデルの版 2 のライセンスの扱いは、チームの判断が出てから Issue にする。
+足りない作業で Issue がないものは、この文書の作成時点では見つからなかった。署名（コード署名証明書）とモデルの版 2 の権利帰属・商用利用方針・インストーラー表示の扱いは、§2.1 の判断材料をもとにチームの判断が出てから Issue にする。
 
 ## 関連
 
-[Award Day 実機受入試験](README.md)・[動作確認の範囲](../../verification.md)・[導入・配布状況](../../getting-started.md)・[実機ゲート](../architecture/validation-gates.md)
+[Award Day 実機受入試験](README.md)・[動作確認の範囲](../../verification.md)・[導入・配布状況](../../getting-started.md)・[実機ゲート](../architecture/validation-gates.md)・[技術選定とアーキテクチャの再評価記録](../decisions/2026-11-24-architecture-review.md)

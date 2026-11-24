@@ -3034,3 +3034,15 @@
   - PC版は「①→②→結果」の横並びを保ち、②の中を「推論｜組み立て」の2列にした。層をつなぐ縦の点線が描かれていなかった（幅0の線に url(#brand)）ので単色にした。
   - 文字だけの版（`README-text.md`）も同じ定数から書くようにし、README の alt を図の中身に合わせた。
   - 確認：`check_text_size.py`・`check_text_fit.mjs`・`markup.py check`・`check-public-docs.py`・`verify_overlay.py` が PASS。4つの版をライト・ダークで画像にして目視した。PC版は幅1280を縮めて表示するため、文字は約9.8px以上（以前の8.5pxより大きいが、ほかの図の12.5pxより小さい）。
+
+## 2026-11-24 — 技術選定・アーキテクチャ再評価の結果反映（Gemini）
+
+- 基準コミット：`c406a4e62022fd60a6a0341ec77c30f6b9b99eb3`（`main`、PR は最新 `origin/main` `df3e919` ベースで提出）。ChatGPT・Claude Code・Geminiによる3者間技術討論の結果を、Issueと設計資料へ反映した（製品コードの変更なし）。
+- GitHub Issueの更新：
+  - 新規作成：[#620](https://github.com/jphacks/kz_2613/issues/620)（版2分担AIモデルの `NOTICE` 事実誤りとモデルカード記載の不整合の訂正、次回書き出し時の元モデル `tokenizer.json` 無改変同梱の等価性検証）。
+  - 追記：[#619](https://github.com/jphacks/kz_2613/issues/619)（キー正規化取りこぼし実測 21/22/35件、`lbracket` 要調査、共通 fixture の P2 差異検出試験、`apps/host-rs` 配下での `include_str!` 方式、実学習データ調査、再学習・着手条件）、[#219](https://github.com/jphacks/kz_2613/issues/219)（3バイナリの PE インポート実測、静的 CRT の限定検証方針、代替 WebRTC ライブラリ再検討 3 条件と PoC 合格基準）。
+  - #617・#272・#278・#451・#618 は既存内容と整合しているため変更なし。
+- 資料の更新・追加（ブランチ `gemini/620-architecture-review-records`）：
+  - `docs/develop/acceptance/release-readiness.md`：§2.1 として 6 区分整理・ファイル単位のライセンス表（外部依存表記の確認を含む）・コード署名調査結果（Azure Artifact Signing・OV・EV）を追記し、#620 と意思決定記録へリンクした。
+  - `docs/develop/decisions/2026-11-24-architecture-review.md`：討論で確定した事実・実測値・採用方針・見送り理由・再検討条件を集約した。
+- 確認：`python scripts/verify_overlay.py` PASS（40パス）、`python scripts/check-public-docs.py` PASS（19ファイル・943ローカル参照）、変更 2 文書（`release-readiness.md`・`2026-11-24-architecture-review.md`）のローカル参照 15 件 PASS、`python scripts/sync-protocol-version.py --check` PASS、`git diff --check` PASS。実機受入・コードビルドの合格に代わるものではない。
